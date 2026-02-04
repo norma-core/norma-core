@@ -1,8 +1,8 @@
 package bench
 
 import (
-	google_pb "github.com/norma-core/norma-core/gremlin_go/bench/google_pb/protobufs"
-	gremlin_pb "github.com/norma-core/norma-core/gremlin_go/bench/gremlin_pb/benchmark"
+	google_pb "github.com/norma-core/norma-core/shared/gremlin_go/bench/google_pb/protobufs"
+	gremlin_pb "github.com/norma-core/norma-core/shared/gremlin_go/bench/gremlin_pb/benchmark"
 )
 
 func CreateDeepNestedGremlin() *gremlin_pb.DeepNested {

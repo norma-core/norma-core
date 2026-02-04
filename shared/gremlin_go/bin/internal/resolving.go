@@ -2,7 +2,7 @@ package internal
 
 import (
 	"fmt"
-	"github.com/norma-core/norma-core/gremlin_go/bin/internal/types"
+	"github.com/norma-core/norma-core/shared/gremlin_go/bin/internal/types"
 	"strings"
 
 	"github.com/emicklei/proto"

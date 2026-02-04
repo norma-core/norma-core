@@ -27,10 +27,10 @@ protoc --go_out=. --go_opt=paths=source_relative \
 
 ```bash
 # Install gremlin generator if not already installed
-go install github.com/norma-core/norma-core/gremlin_go/bin@latest
+go install github.com/norma-core/norma-core/shared/gremlin_go/bin@latest
 
 # Generate Gremlin code
-gremlin -src ./gremlin_pb -out ./gremlin_pb -module github.com/norma-core/norma-core/gremlin_go/bench/gremlin_pb
+gremlin -src ./gremlin_pb -out ./gremlin_pb -module github.com/norma-core/norma-core/shared/gremlin_go/bench/gremlin_pb
 ```
 
 ## Running Benchmarks

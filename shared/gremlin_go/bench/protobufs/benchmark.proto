@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package benchmark;
 
-option go_package = "github.com/norma-core/norma-core/gremlin_go/bench/google_pb";
+option go_package = "github.com/norma-core/norma-core/shared/gremlin_go/bench/google_pb";
 
 // Deep nested message structure to test lazy parsing and allocation efficiency
 message Level4 {

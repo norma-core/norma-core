@@ -1,7 +1,7 @@
 package internal
 
 import (
-	"github.com/norma-core/norma-core/gremlin_go/bin/internal/types"
+	"github.com/norma-core/norma-core/shared/gremlin_go/bin/internal/types"
 	"io/fs"
 	"log"
 	"os"

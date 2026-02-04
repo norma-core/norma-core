@@ -2,8 +2,8 @@ package fields
 
 import (
 	"fmt"
-	"github.com/norma-core/norma-core/gremlin_go/bin/internal/generators/golang/core"
-	"github.com/norma-core/norma-core/gremlin_go/bin/internal/types"
+	"github.com/norma-core/norma-core/shared/gremlin_go/bin/internal/generators/golang/core"
+	"github.com/norma-core/norma-core/shared/gremlin_go/bin/internal/types"
 )
 
 type GoEntitiesProvider interface {

@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/norma-core/norma-core/gremlin_go/example/generated/example"
+	"github.com/norma-core/norma-core/shared/gremlin_go/example/generated/example"
 )
 
 func main() {

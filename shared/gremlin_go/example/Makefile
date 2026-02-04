@@ -3,7 +3,7 @@
 generate:
 	@echo "Generating protobuf code..."
 	@mkdir -p generated
-	@go run ../bin/gremlin.go -src ./proto -out ./generated -module github.com/norma-core/norma-core/gremlin_go/example/generated
+	@go run ../bin/gremlin.go -src ./proto -out ./generated -module github.com/norma-core/norma-core/shared/gremlin_go/example/generated
 
 run: generate
 	@echo "Running example..."

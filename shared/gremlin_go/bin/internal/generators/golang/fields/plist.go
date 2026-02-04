@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/norma-core/norma-core/gremlin_go/bin/internal/formatting"
-	"github.com/norma-core/norma-core/gremlin_go/bin/internal/generators/golang/core"
+	"github.com/norma-core/norma-core/shared/gremlin_go/bin/internal/formatting"
+	"github.com/norma-core/norma-core/shared/gremlin_go/bin/internal/generators/golang/core"
 )
 
 type goRepeatedPackedValueType struct {

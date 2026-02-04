@@ -10,8 +10,8 @@ import (
 
 	"github.com/logrusorgru/aurora"
 
-	"github.com/norma-core/norma-core/gremlin_go/bin/internal"
-	"github.com/norma-core/norma-core/gremlin_go/bin/internal/generators/golang"
+	"github.com/norma-core/norma-core/shared/gremlin_go/bin/internal"
+	"github.com/norma-core/norma-core/shared/gremlin_go/bin/internal/generators/golang"
 )
 
 var srcPath = flag.String("src", "", "source path where proto files are located")

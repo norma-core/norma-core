@@ -1,8 +1,8 @@
 package golang
 
 import (
-	"github.com/norma-core/norma-core/gremlin_go/bin/internal/generators/golang/mapper"
-	"github.com/norma-core/norma-core/gremlin_go/bin/internal/types"
+	"github.com/norma-core/norma-core/shared/gremlin_go/bin/internal/generators/golang/mapper"
+	"github.com/norma-core/norma-core/shared/gremlin_go/bin/internal/types"
 	"os"
 	"path/filepath"
 )

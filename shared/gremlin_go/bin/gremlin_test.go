@@ -6,11 +6,11 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/norma-core/norma-core/gremlin_go/bin/testdata"
-	"github.com/norma-core/norma-core/gremlin_go/bin/testpb/map_test"
-	"github.com/norma-core/norma-core/gremlin_go/bin/testpb/protobuf_unittest"
-	"github.com/norma-core/norma-core/gremlin_go/bin/testpb/protobuf_unittest_import"
-	"github.com/norma-core/norma-core/gremlin_go/bin/testpb/test"
+	"github.com/norma-core/norma-core/shared/gremlin_go/bin/testdata"
+	"github.com/norma-core/norma-core/shared/gremlin_go/bin/testpb/map_test"
+	"github.com/norma-core/norma-core/shared/gremlin_go/bin/testpb/protobuf_unittest"
+	"github.com/norma-core/norma-core/shared/gremlin_go/bin/testpb/protobuf_unittest_import"
+	"github.com/norma-core/norma-core/shared/gremlin_go/bin/testpb/test"
 )
 
 func TestGoldenMessage(t *testing.T) {

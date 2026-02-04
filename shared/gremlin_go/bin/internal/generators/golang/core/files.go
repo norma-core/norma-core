@@ -2,7 +2,7 @@ package core
 
 import (
 	"fmt"
-	"github.com/norma-core/norma-core/gremlin_go/bin/internal/types"
+	"github.com/norma-core/norma-core/shared/gremlin_go/bin/internal/types"
 	"strconv"
 	"strings"
 )
@@ -173,7 +173,7 @@ func (g *GoImport) FindStruct(msgType *types.MessageDefinition) GoType {
 
 func (g *GoGeneratedFile) GenerateCode() string {
 	if len(g.structs) > 0 {
-		g.AddImport("github.com/norma-core/norma-core/gremlin_go", "gremlin")
+		g.AddImport("github.com/norma-core/norma-core/shared/gremlin_go", "gremlin")
 	}
 	sb := &strings.Builder{}
 
