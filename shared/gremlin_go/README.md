@@ -104,7 +104,10 @@ protobuf:
 ```go
 package main
 
-import "yourmodule/generated/example"
+import (
+    "fmt"
+    "yourmodule/generated/example"
+)
 
 func main() {
     // Create and serialize
@@ -123,17 +126,18 @@ func main() {
     // Deserialize and read
     reader := example.NewUserReader()
     if err := reader.Unmarshal(data); err != nil {
-        exit(-1)
+        panic(err)
     }
 
     // Null-safe access - no panics!
-    id := reader.GetId()
-    username := reader.GetUsername()
-    fullName := reader.GetProfile().GetFullName()  // Lazy parsing
+    fmt.Printf("ID: %d\n", reader.GetId())
+    fmt.Printf("Username: %s\n", reader.GetUsername())
+    fmt.Printf("Full Name: %s\n", reader.GetProfile().GetFullName())  // Lazy parsing
 
     // Convert to mutable struct when needed
     mutableUser := reader.ToStruct()
     mutableUser.Username = "updated"
+    fmt.Printf("Updated username: %s\n", mutableUser.Username)
 }
 ```
 
@@ -178,7 +182,7 @@ make run
 ## 🛠️ Generator Options
 
 ```bash
-gremlinc [options]
+gremlin [options]
 
 Options:
   -src string
@@ -221,7 +225,7 @@ go test ./...
 
 # Generator tests
 cd gremlinc
-go run main.go -src ./testproto -out ./testpb -module github.com/norma-core/norma-core/shared/gremlin_go/gremlinc/testpb
+go run . -src ./testproto -out ./testpb -module github.com/norma-core/norma-core/shared/gremlin_go/gremlinc/testpb
 go test ./internal/...
 
 # Benchmarks

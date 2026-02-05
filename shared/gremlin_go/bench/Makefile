@@ -6,7 +6,7 @@ protobuf: protobuf-gremlin protobuf-google
 # Generate Gremlin protobuf code
 protobuf-gremlin:
 	@echo "Generating Gremlin protobuf code..."
-	@go run ../gremlinc/main.go -src ./protobufs -out ./gremlin_pb -module github.com/norma-core/norma-core/shared/gremlin_go/bench/gremlin_pb
+	@cd ../gremlinc && go run . -src ../bench/protobufs -out ../bench/gremlin_pb -module github.com/norma-core/norma-core/shared/gremlin_go/bench/gremlin_pb
 	@echo "✅ Gremlin protobuf code generated"
 
 # Generate Google protobuf code

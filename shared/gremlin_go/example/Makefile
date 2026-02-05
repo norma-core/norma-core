@@ -2,7 +2,7 @@
 
 generate:
 	@echo "Generating protobuf code..."
-	@go run ../gremlinc/main.go -src ./proto -out ./generated -module github.com/norma-core/norma-core/shared/gremlin_go/example/generated
+	@cd ../gremlinc && go run . -src ../example/proto -out ../example/generated -module github.com/norma-core/norma-core/shared/gremlin_go/example/generated
 
 run: generate
 	@echo "Running example..."

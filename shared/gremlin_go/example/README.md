@@ -37,9 +37,9 @@ example/
 If you prefer not to use make:
 
 ```bash
-go run ../gremlinc/main.go \
-  -src ./proto \
-  -out ./generated \
+cd ../gremlinc && go run . \
+  -src ../example/proto \
+  -out ../example/generated \
   -module github.com/norma-core/norma-core/shared/gremlin_go/example/generated
 ```
 
