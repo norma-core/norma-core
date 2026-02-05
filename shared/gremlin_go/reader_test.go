@@ -1,9 +1,6 @@
-//go:build integration
-
 package gremlin
 
 import (
-	"encoding/hex"
 	"testing"
 )
 
@@ -17,16 +14,12 @@ func TestDecodeInt64(t *testing.T) {
 }
 
 func TestVectorOfEnums(t *testing.T) {
-	request := "0a03000102"
-	data, err := hex.DecodeString(request)
-	if err != nil {
-		t.Fatalf("failed to decode hex string: %v", err)
-	}
+	data := []byte{0xa0, 0x03, 0x00, 0x01, 0x02}
 
 	buf := NewReader(data)
 	offset := 0
 	for buf.HasNext(offset, 0) {
-		tag, wire, tagSize, err := buf.ReadTagAt(offset)
+		_, wire, tagSize, err := buf.ReadTagAt(offset)
 		if err != nil {
 			t.Fatalf("failed to read tag: %v", err)
 		}

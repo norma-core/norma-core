@@ -4,7 +4,7 @@
 package protobuf_unittest
 
 import (
-	protobuf_unittest_import "github.com/norma-core/norma-core/shared/gremlin_go/gremlinc/testpb/protobuf_unittest_import"
+	protobuf_unittest_import "github.com/norma-core/norma-core/shared/gremlin_go/bench/gremlin_pb/protobuf_unittest_import"
 	bytes "bytes"
 	math "math"
 	gremlin "github.com/norma-core/norma-core/shared/gremlin_go"

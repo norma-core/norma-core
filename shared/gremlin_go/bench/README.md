@@ -2,120 +2,74 @@
 
 This directory contains performance benchmarks comparing Gremlin against Google's standard protobuf implementation.
 
+## Quick Start
+
+```bash
+# Fast benchmark (1 second per test, recommended for quick feedback)
+make run-gobench
+
+# Comprehensive benchmark (200K iterations default)
+make run-bin
+```
+
 ## Prerequisites
 
-- Go 1.25+ installed
-- `protoc` (Protocol Buffer Compiler) installed
-- Gremlin generator installed
+**To run benchmarks:** Only Go 1.25+ is required. Generated protobuf code is included in the repository.
 
-## Building Protobuf Code
-
-Before running benchmarks, you need to generate the Go code from the `.proto` files.
-
-### 1. Generate Google Protobuf Code
-
-```bash
-# Install protoc-gen-go if not already installed
-go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
-
-# Generate Google protobuf code
-protoc --go_out=. --go_opt=paths=source_relative \
-    protobufs/benchmark.proto
-```
-
-### 2. Generate Gremlin Code
-
-```bash
-# Install gremlin generator if not already installed
-go install github.com/norma-core/norma-core/shared/gremlin_go/gremlinc@latest
-
-# Generate Gremlin code
-gremlinc -src ./protobufs -out ./gremlin_pb -module github.com/norma-core/norma-core/shared/gremlin_go/bench/gremlin_pb
-```
+**To regenerate protobuf code (optional):** If you want to regenerate the protobuf files:
+- `protoc` (Protocol Buffer Compiler) - [Installation Guide](https://grpc.io/docs/protoc-installation/)
+- `protoc-gen-go` plugin: `go install google.golang.org/protobuf/cmd/protoc-gen-go@latest`
 
 ## Running Benchmarks
 
-### Go Test Benchmarks
-
-Run the standard Go benchmarks:
+### Makefile Targets
 
 ```bash
-go test -bench=. -benchmem
+# Fast benchmarks using go test -bench (1 second per test)
+make run-gobench
+
+# Comprehensive benchmarks (200K iterations default)
+make run-bin
+
+# Custom iterations
+make run-bin N=1000000
 ```
 
-Run specific benchmarks:
+## Regenerating Protobuf Code
 
 ```bash
-# Marshal benchmarks only
-go test -bench=Marshal -benchmem
+# Clean generated files
+make clean
 
-# Unmarshal benchmarks only
-go test -bench=Unmarshal -benchmem
+# Regenerate both Gremlin and Google protobuf code
+make protobuf
 
-# Lazy parsing benchmarks
-go test -bench=RootOnly -benchmem
-```
-
-### Standalone Benchmark Binary
-
-Build and run the standalone benchmark binary:
-
-```bash
-# Build for current platform
-go build -o gremlin-bench ./cmd/benchmark
-
-# Run with default settings (10M iterations)
-./gremlin-bench
-
-# Run with custom iterations
-./gremlin-bench -n 1000000
-```
-
-### Cross-Platform Binaries
-
-Build binaries for multiple platforms:
-
-```bash
-./build.sh
-```
-
-This creates binaries in `binaries/`:
-- `gremlin-bench-freebsd-amd64`
-- `gremlin-bench-linux-amd64`
-- `gremlin-bench-linux-arm64`
-- `gremlin-bench-darwin-arm64`
-
-Transfer the appropriate binary to your target device and run it:
-
-```bash
-./gremlin-bench-linux-arm64 -n 10000000
+# Or regenerate individually
+make protobuf-gremlin
+make protobuf-google
 ```
 
 ## Benchmark Structure
 
-The benchmarks test 4 scenarios with complex deeply-nested messages:
+The benchmarks test two message types with 4 scenarios each:
+
+### Message Types
+
+1. **Deep Nested Messages**: Artificial deeply-nested structures (4+ levels)
+2. **Golden Message**: Official protobuf test data (`protobuf_unittest.TestAllTypes`)
+
+### Test Scenarios
 
 1. **Marshal**: Serialize a message to wire format
 2. **Unmarshal**: Deserialize wire format (but don't access fields)
 3. **Root Access**: Unmarshal + access only root-level fields (shows lazy parsing benefit)
 4. **Full Access**: Unmarshal + access all nested fields (worst case)
 
-## Test Data
-
-Test messages are defined in `bench_data.go`:
-- `CreateDeepNestedGremlin()` - Creates a Gremlin message
-- `CreateDeepNestedGoogle()` - Creates an identical Google protobuf message
-
-Both create the same structure:
-- 4+ levels of nesting
-- Repeated fields
-- Maps
-- Byte arrays
-- Multiple data types
-
 ## Protobuf Definitions
 
-- `google_pb/protobufs/benchmark.proto` - Standard protobuf definition for Google's implementation
-- `gremlin_pb/benchmark.proto` - Same definition used by Gremlin generator
+- `protobufs/benchmark.proto` - Deep nested message definition
+- `protobufs/unittest.proto` - Official protobuf unittest (golden message)
+- `protobufs/unittest_import.proto` - Supporting unittest definitions
+- `protobufs/unittest_import_public.proto` - Public unittest imports
 
-Both use identical proto definitions to ensure fair comparison.
+Both Gremlin and Google implementations use identical proto definitions to ensure fair comparison.

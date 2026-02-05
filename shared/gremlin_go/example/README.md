@@ -37,11 +37,7 @@ example/
 If you prefer not to use make:
 
 ```bash
-# Create output directory
-mkdir -p generated
-
-# Run the generator
-go run ../bin/gremlin.go \
+go run ../gremlinc/main.go \
   -src ./proto \
   -out ./generated \
   -module github.com/norma-core/norma-core/shared/gremlin_go/example/generated
@@ -75,7 +71,9 @@ data := user.Marshal()  // Single allocation
 
 ```go
 reader := example.NewUserReader()
-reader.Unmarshal(data)
+if err := reader.Unmarshal(data); err != nil {
+    ...
+}
 ```
 
 ### Accessing Fields
@@ -102,17 +100,8 @@ user := reader.ToStruct()
 user.Username = "new_username"
 ```
 
-## Performance Benefits
-
-Compared to standard Go protobuf:
-
-- **Marshal**: ~1.3x faster with single allocation
-- **Unmarshal**: ~20x faster with significantly fewer allocations
-- **Lazy Parsing**: Only parse what you access
-- **Memory Efficiency**: Drastically reduced memory allocations
-
 ## Learn More
 
 - See `../bench/` for detailed performance benchmarks
-- Check `../bin/` for the code generator
-- Visit the root README for complete documentation
+- Check `../gremlinc/` for the code generator
+- Visit the root `../README.md` for complete documentation

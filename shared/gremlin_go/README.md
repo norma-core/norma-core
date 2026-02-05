@@ -118,11 +118,13 @@ func main() {
         },
     }
 
-    data := user.Marshal()
+    data := user.Marshal() // no errors!
 
     // Deserialize and read
     reader := example.NewUserReader()
-    reader.Unmarshal(data)
+    if err := reader.Unmarshal(data); err != nil {
+        exit(-1)
+    }
 
     // Null-safe access - no panics!
     id := reader.GetId()
@@ -154,9 +156,8 @@ All benchmarks use complex deeply-nested messages (4+ levels deep with repeated 
 **Run Benchmarks Yourself:**
 ```bash
 cd bench
-go test -bench=. -benchmem               # Go benchmarks
-./build.sh                               # Build cross-platform binaries
-./binaries/gremlin-bench-darwin-arm64    # Run standalone benchmark
+make run-gobench    # Fast benchmarks using go test (1 second per test)
+make run-bin        # Comprehensive benchmarks (200K iterations)
 ```
 
 ## 🎓 Examples
@@ -177,7 +178,7 @@ make run
 ## 🛠️ Generator Options
 
 ```bash
-gremlin [options]
+gremlinc [options]
 
 Options:
   -src string
@@ -218,15 +219,15 @@ gremlin_go/
 # Runtime library tests
 go test ./...
 
-# Generator tests (requires building test protobufs first)
-cd bin
-go build -o gremlinc .          # Build the generator
-./gremlinc -src ./testproto -out ./testpb -module github.com/norma-core/norma-core/shared/gremlin_go/gremlinc/testpb
-go test ./...                   # Run tests
+# Generator tests
+cd gremlinc
+go run main.go -src ./testproto -out ./testpb -module github.com/norma-core/norma-core/shared/gremlin_go/gremlinc/testpb
+go test ./internal/...
 
 # Benchmarks
 cd bench
-go test -bench=. -benchmem
+make run-gobench    # Fast benchmarks
+make run-bin        # Comprehensive benchmarks
 ```
 
 ## 📝 Features

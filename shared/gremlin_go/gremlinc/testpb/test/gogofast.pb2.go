@@ -3,7 +3,7 @@
 
 package test
 
-import gremlin "github.com/norma-core/norma-core/gremlin_go"
+import gremlin "github.com/norma-core/norma-core/shared/gremlin_go"
 
 type TheTestEnum int32
 

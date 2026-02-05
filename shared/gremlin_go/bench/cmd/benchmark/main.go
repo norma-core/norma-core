@@ -5,12 +5,15 @@ import (
 	"fmt"
 	"os/exec"
 	"runtime"
+	"strconv"
 	"strings"
 	"time"
 
 	"github.com/norma-core/norma-core/shared/gremlin_go/bench"
-	google_pb "github.com/norma-core/norma-core/shared/gremlin_go/bench/google_pb/protobufs"
+	google_benchmark "github.com/norma-core/norma-core/shared/gremlin_go/bench/google_pb/benchmark"
+	google_unittest "github.com/norma-core/norma-core/shared/gremlin_go/bench/google_pb/unittest"
 	gremlin_pb "github.com/norma-core/norma-core/shared/gremlin_go/bench/gremlin_pb/benchmark"
+	unittest_gremlin "github.com/norma-core/norma-core/shared/gremlin_go/bench/gremlin_pb/protobuf_unittest"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -19,6 +22,22 @@ type BenchResult struct {
 	NsPerOp     int64
 	BytesPerOp  int64
 	AllocsPerOp int64
+}
+
+func formatWithUnderscores(n int) string {
+	s := strconv.Itoa(n)
+	if len(s) <= 3 {
+		return s
+	}
+
+	var result strings.Builder
+	for i, digit := range s {
+		if i > 0 && (len(s)-i)%3 == 0 {
+			result.WriteByte('_')
+		}
+		result.WriteRune(digit)
+	}
+	return result.String()
 }
 
 func getCPUInfo() string {
@@ -74,7 +93,7 @@ func runBenchmark(name string, iterations int, fn func()) BenchResult {
 }
 
 func main() {
-	iterations := flag.Int("n", 10000000, "number of iterations per benchmark")
+	iterations := flag.Int("n", 200000, "number of iterations per benchmark")
 	flag.Parse()
 
 	fmt.Println("===========================================")
@@ -84,9 +103,22 @@ func main() {
 	fmt.Printf("CPU: %s\n", getCPUInfo())
 	fmt.Printf("CPU Cores: %d\n", runtime.NumCPU())
 	fmt.Printf("Go Version: %s\n", runtime.Version())
-	fmt.Printf("Iterations: %d\n", *iterations)
+	fmt.Printf("Iterations: %s\n", formatWithUnderscores(*iterations))
 	fmt.Println("===========================================")
 	fmt.Println()
+
+	runDeepNestedBenchmarks(*iterations)
+	fmt.Println()
+	runGoldenMessageBenchmarks(*iterations)
+
+	fmt.Println("===========================================")
+	fmt.Println("✅ Benchmark Complete!")
+	fmt.Println("===========================================")
+}
+
+func runDeepNestedBenchmarks(iterations int) {
+	fmt.Println("🌳 DEEP NESTED MESSAGE BENCHMARKS")
+	fmt.Println("-------------------------------------------")
 
 	// Prepare data
 	gremlinMsg := bench.CreateDeepNestedGremlin()
@@ -100,36 +132,36 @@ func main() {
 	fmt.Printf("  Google:  %d bytes\n\n", len(googleData))
 
 	// Marshal benchmarks
-	fmt.Println("🔨 Marshal (Serialize) Benchmarks:")
-	result := runBenchmark("Gremlin Marshal", *iterations, func() {
+	fmt.Println("🔨 Marshal (Serialize):")
+	result := runBenchmark("Gremlin Marshal", iterations, func() {
 		gremlinMsg.RootId = 1
 		_ = gremlinMsg.Marshal()
 	})
 	fmt.Printf("  Gremlin: %10d ns/op  %8d B/op  %6d allocs/op\n", result.NsPerOp, result.BytesPerOp, result.AllocsPerOp)
 
-	result = runBenchmark("Google Marshal", *iterations, func() {
+	result = runBenchmark("Google Marshal", iterations, func() {
 		googleMsg.RootId = 1
 		_, _ = proto.Marshal(googleMsg)
 	})
 	fmt.Printf("  Google:  %10d ns/op  %8d B/op  %6d allocs/op\n\n", result.NsPerOp, result.BytesPerOp, result.AllocsPerOp)
 
 	// Unmarshal benchmarks
-	fmt.Println("📖 Unmarshal (Deserialize) Benchmarks:")
-	result = runBenchmark("Gremlin Unmarshal", *iterations, func() {
+	fmt.Println("📖 Unmarshal (Deserialize):")
+	result = runBenchmark("Gremlin Unmarshal", iterations, func() {
 		reader := gremlin_pb.NewDeepNestedReader()
 		_ = reader.Unmarshal(gremlinData)
 	})
 	fmt.Printf("  Gremlin: %10d ns/op  %8d B/op  %6d allocs/op\n", result.NsPerOp, result.BytesPerOp, result.AllocsPerOp)
 
-	result = runBenchmark("Google Unmarshal", *iterations, func() {
-		reader := &google_pb.DeepNested{}
+	result = runBenchmark("Google Unmarshal", iterations, func() {
+		reader := &google_benchmark.DeepNested{}
 		_ = proto.Unmarshal(googleData, reader)
 	})
 	fmt.Printf("  Google:  %10d ns/op  %8d B/op  %6d allocs/op\n\n", result.NsPerOp, result.BytesPerOp, result.AllocsPerOp)
 
 	// Root-only access (lazy parsing benefit)
 	fmt.Println("🎯 Unmarshal + Root Access (Lazy Parsing):")
-	result = runBenchmark("Gremlin Root Only", *iterations, func() {
+	result = runBenchmark("Gremlin Root Only", iterations, func() {
 		reader := gremlin_pb.NewDeepNestedReader()
 		_ = reader.Unmarshal(gremlinData)
 		_ = reader.GetRootId()
@@ -138,8 +170,8 @@ func main() {
 	})
 	fmt.Printf("  Gremlin: %10d ns/op  %8d B/op  %6d allocs/op\n", result.NsPerOp, result.BytesPerOp, result.AllocsPerOp)
 
-	result = runBenchmark("Google Root Only", *iterations, func() {
-		reader := &google_pb.DeepNested{}
+	result = runBenchmark("Google Root Only", iterations, func() {
+		reader := &google_benchmark.DeepNested{}
 		_ = proto.Unmarshal(googleData, reader)
 		_ = reader.GetRootId()
 		_ = reader.GetRootName()
@@ -149,7 +181,7 @@ func main() {
 
 	// Full deep access
 	fmt.Println("🔍 Full Deep Access (All Nested Fields):")
-	result = runBenchmark("Gremlin Full Access", *iterations, func() {
+	result = runBenchmark("Gremlin Full Access", iterations, func() {
 		reader := gremlin_pb.NewDeepNestedReader()
 		_ = reader.Unmarshal(gremlinData)
 		_ = reader.GetRootId()
@@ -160,8 +192,8 @@ func main() {
 	})
 	fmt.Printf("  Gremlin: %10d ns/op  %8d B/op  %6d allocs/op\n", result.NsPerOp, result.BytesPerOp, result.AllocsPerOp)
 
-	result = runBenchmark("Google Full Access", *iterations, func() {
-		reader := &google_pb.DeepNested{}
+	result = runBenchmark("Google Full Access", iterations, func() {
+		reader := &google_benchmark.DeepNested{}
 		_ = proto.Unmarshal(googleData, reader)
 		_ = reader.GetRootId()
 		if nested := reader.GetNested(); nested != nil {
@@ -177,9 +209,102 @@ func main() {
 			}
 		}
 	})
+	fmt.Printf("  Google:  %10d ns/op  %8d B/op  %6d allocs/op\n", result.NsPerOp, result.BytesPerOp, result.AllocsPerOp)
+}
+
+func runGoldenMessageBenchmarks(iterations int) {
+	fmt.Println("📜 GOLDEN MESSAGE BENCHMARKS (protobuf_unittest)")
+	fmt.Println("-------------------------------------------")
+
+	// Prepare data
+	gremlinMsg := bench.CreateGoldenMessageGremlin()
+	googleMsg := bench.CreateGoldenMessageGoogle()
+
+	gremlinData := gremlinMsg.Marshal()
+	googleData, _ := proto.Marshal(googleMsg)
+
+	goldenData := bench.GetTestFileContent("golden_message")
+
+	fmt.Println("📦 Message Size:")
+	fmt.Printf("  Gremlin: %d bytes\n", len(gremlinData))
+	fmt.Printf("  Google:  %d bytes\n", len(googleData))
+	fmt.Printf("  Golden (binary test data): %d bytes\n\n", len(goldenData))
+
+	// Marshal benchmarks
+	fmt.Println("🔨 Marshal (Serialize):")
+	result := runBenchmark("Gremlin Marshal", iterations, func() {
+		bench.UpdateGoldenMessageGremlin(gremlinMsg, 1)
+		_ = gremlinMsg.Marshal()
+	})
+	fmt.Printf("  Gremlin: %10d ns/op  %8d B/op  %6d allocs/op\n", result.NsPerOp, result.BytesPerOp, result.AllocsPerOp)
+
+	result = runBenchmark("Google Marshal", iterations, func() {
+		bench.UpdateGoldenMessageGoogle(googleMsg, 1)
+		_, _ = proto.Marshal(googleMsg)
+	})
 	fmt.Printf("  Google:  %10d ns/op  %8d B/op  %6d allocs/op\n\n", result.NsPerOp, result.BytesPerOp, result.AllocsPerOp)
 
-	fmt.Println("===========================================")
-	fmt.Println("✅ Benchmark Complete!")
-	fmt.Println("===========================================")
+	// Unmarshal benchmarks
+	fmt.Println("📖 Unmarshal (Deserialize):")
+	result = runBenchmark("Gremlin Unmarshal", iterations, func() {
+		reader := unittest_gremlin.NewTestAllTypesReader()
+		_ = reader.Unmarshal(goldenData)
+	})
+	fmt.Printf("  Gremlin: %10d ns/op  %8d B/op  %6d allocs/op\n", result.NsPerOp, result.BytesPerOp, result.AllocsPerOp)
+
+	result = runBenchmark("Google Unmarshal", iterations, func() {
+		reader := &google_unittest.TestAllTypes{}
+		_ = proto.Unmarshal(goldenData, reader)
+	})
+	fmt.Printf("  Google:  %10d ns/op  %8d B/op  %6d allocs/op\n\n", result.NsPerOp, result.BytesPerOp, result.AllocsPerOp)
+
+	// Root-only access
+	fmt.Println("🎯 Unmarshal + Root Access (Lazy Parsing):")
+	result = runBenchmark("Gremlin Root Only", iterations, func() {
+		reader := unittest_gremlin.NewTestAllTypesReader()
+		_ = reader.Unmarshal(goldenData)
+		_ = reader.GetOptionalInt32()
+		_ = reader.GetOptionalInt64()
+		_ = reader.GetOptionalString()
+	})
+	fmt.Printf("  Gremlin: %10d ns/op  %8d B/op  %6d allocs/op\n", result.NsPerOp, result.BytesPerOp, result.AllocsPerOp)
+
+	result = runBenchmark("Google Root Only", iterations, func() {
+		reader := &google_unittest.TestAllTypes{}
+		_ = proto.Unmarshal(goldenData, reader)
+		_ = reader.GetOptionalInt32()
+		_ = reader.GetOptionalInt64()
+		_ = reader.GetOptionalString()
+	})
+	fmt.Printf("  Google:  %10d ns/op  %8d B/op  %6d allocs/op\n\n", result.NsPerOp, result.BytesPerOp, result.AllocsPerOp)
+
+	// Deep access
+	fmt.Println("🔍 Deep Access (Including Nested Messages):")
+	result = runBenchmark("Gremlin Deep Access", iterations, func() {
+		reader := unittest_gremlin.NewTestAllTypesReader()
+		_ = reader.Unmarshal(goldenData)
+		_ = reader.GetOptionalInt32()
+		_ = reader.GetOptionalString()
+		_ = reader.GetOptionalNestedMessage().GetBb()
+		_ = reader.GetOptionalForeignMessage().GetC()
+		_ = reader.GetRepeatedInt32()
+		_ = reader.GetRepeatedString()
+	})
+	fmt.Printf("  Gremlin: %10d ns/op  %8d B/op  %6d allocs/op\n", result.NsPerOp, result.BytesPerOp, result.AllocsPerOp)
+
+	result = runBenchmark("Google Deep Access", iterations, func() {
+		reader := &google_unittest.TestAllTypes{}
+		_ = proto.Unmarshal(goldenData, reader)
+		_ = reader.GetOptionalInt32()
+		_ = reader.GetOptionalString()
+		if nested := reader.GetOptionalNestedMessage(); nested != nil {
+			_ = nested.GetBb()
+		}
+		if foreign := reader.GetOptionalForeignMessage(); foreign != nil {
+			_ = foreign.GetC()
+		}
+		_ = reader.GetRepeatedInt32()
+		_ = reader.GetRepeatedString()
+	})
+	fmt.Printf("  Google:  %10d ns/op  %8d B/op  %6d allocs/op\n", result.NsPerOp, result.BytesPerOp, result.AllocsPerOp)
 }
