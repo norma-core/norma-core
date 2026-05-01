@@ -53,6 +53,13 @@ pub struct Drivers {
 
     #[serde(rename = "usb-video", skip_serializing_if = "Option::is_none")]
     pub usb_video: Option<UsbVideoConfig>,
+
+    /// Dogzilla robot dog configuration
+    pub dogzilla: Option<DogzillaConfig>,
+
+    /// OV5647 camera configuration
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub ov5647: Option<Ov5647Config>,
 }
 
 /// ST3215 servo bus configuration
@@ -190,12 +197,69 @@ pub struct HikvisionConfig {
     pub rtsp: Vec<String>,
 }
 
+#[derive(Debug, Serialize, Deserialize, Clone, Copy)]
+#[serde(rename_all = "lowercase")]
+pub enum DogzillaMode {
+    Real,
+    Simulation,
+}
+
+fn default_dogzilla_mode() -> DogzillaMode {
+    DogzillaMode::Real
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct DogzillaConfig {
+    #[serde(default)]
+    pub enabled: bool,
+
+    #[serde(default = "default_dogzilla_mode")]
+    pub mode: DogzillaMode,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct Ov5647Config {
+    #[serde(default)]
+    pub enabled: bool,
+
+    #[serde(default = "default_ov5647_dimension", rename = "dimension")]
+    pub dimension: String,
+
+    #[serde(default = "default_ov5647_fps", rename = "frames-per-second")]
+    pub frames_per_second: u16,
+}
+
+fn default_ov5647_dimension() -> String {
+    "320x240".to_string()
+}
+
+fn default_ov5647_fps() -> u16 {
+    30
+}
+
+pub fn parse_ov5647_dimension(value: &str) -> Option<(u32, u32)> {
+    let trimmed = value.trim();
+    if trimmed.is_empty() {
+        return None;
+    }
+
+    let (width, height) = trimmed.split_once('x')?;
+    let width = width.trim().parse::<u32>().ok()?;
+    let height = height.trim().parse::<u32>().ok()?;
+    if width == 0 || height == 0 {
+        return None;
+    }
+    Some((width, height))
+}
+
 impl Default for Drivers {
     fn default() -> Self {
         Self {
             st3215: Some(St3215Config::default()),
             system_info: true,
             usb_video: Some(UsbVideoConfig::default()),
+            dogzilla: None,
+            ov5647: None,
         }
     }
 }
