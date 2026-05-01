@@ -245,14 +245,19 @@ export namespace drivers {
         QDT_USB_VIDEO_FRAMES = 21,
         QDT_INFERENCE_FRAMES = 22,
         QDT_MOTOR_MIRRORING_MODES = 30,
-        QDT_MOTOR_MIRRORING_RX = 32
+        QDT_MOTOR_MIRRORING_RX = 32,
+        QDT_DOGZILLA_SERIAL_TX = 40,
+        QDT_DOGZILLA_SERIAL_RX = 41,
+        QDT_DOGZILLA_INFERENCE = 42,
+        QDT_OV5647_FRAMES = 43
     }
 
     /** StationCommandType enum. */
     enum StationCommandType {
         STC_ST3215_COMMAND = 0,
         STC_MOTOR_MIRRORING_COMMAND = 1,
-        STC_INFERENCE_TAG_COMMAND = 2
+        STC_INFERENCE_TAG_COMMAND = 2,
+        STC_DOGZILLA_COMMAND = 3
     }
 }
 

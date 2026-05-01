@@ -257,6 +257,78 @@ impl Station {
             log::info!("No USB video configuration found");
         }
 
+        // Start DOGZILLA robot dog if enabled
+        if let Some(dogzilla_config) = &self.config.drivers.dogzilla {
+            if dogzilla_config.enabled {
+                let simulation = matches!(dogzilla_config.mode, station_iface::config::DogzillaMode::Simulation);
+                match dogzilla::start_dogzilla_driver(
+                    self.normfs.clone(),
+                    self.engine.clone(),
+                    simulation,
+                )
+                .await
+                {
+                    Ok(_) => {
+                        let mode = if simulation { "simulation" } else { "real" };
+                        log::info!("DOGZILLA driver started (mode: {})", mode);
+                    },
+                    Err(e) => log::warn!("Failed to start DOGZILLA driver: {}", e),
+                }
+            } else {
+                log::info!("DOGZILLA driver disabled by configuration");
+            }
+        } else {
+            log::info!("DOGZILLA driver disabled by configuration");
+        }
+
+        #[cfg(feature = "ov5647")]
+        if let Some(ov5647_config) = &self.config.drivers.ov5647 {
+            if ov5647_config.enabled {
+                let (width, height) =
+                    match station_iface::config::parse_ov5647_dimension(&ov5647_config.dimension) {
+                        Some((w, h)) => (w, h),
+                        None => {
+                            if !ov5647_config.dimension.trim().is_empty() {
+                                log::warn!(
+                                    "Invalid OV5647 dimension '{}', using default {}x{}",
+                                    ov5647_config.dimension,
+                                    ov5647::DEFAULT_WIDTH,
+                                    ov5647::DEFAULT_HEIGHT,
+                                );
+                            }
+                            (ov5647::DEFAULT_WIDTH, ov5647::DEFAULT_HEIGHT)
+                        }
+                    };
+
+                match ov5647::start_ov5647(
+                    self.normfs.clone(),
+                    self.engine.clone(),
+                    width,
+                    height,
+                    ov5647_config.frames_per_second as u32,
+                    "video/ov5647",
+                )
+                .await
+                {
+                    Ok(handle) => {
+                        *self.ov5647_handle.lock() = Some(handle);
+                        log::info!("OV5647 driver started");
+                    }
+                    Err(e) => log::warn!("Failed to start OV5647 driver: {}", e),
+                }
+            } else {
+                log::info!("OV5647 driver disabled by configuration");
+            }
+        } else {
+            log::info!("No OV5647 configuration found");
+        }
+
+        #[cfg(not(feature = "ov5647"))]
+        if self.config.drivers.ov5647.as_ref().map_or(false, |c| c.enabled) {
+            log::warn!("OV5647 driver requested but not compiled (missing 'ov5647' feature)");
+        }
+
+
         // Start inference drivers
         match &self.config.inference {
             Some(inference_configs) => {

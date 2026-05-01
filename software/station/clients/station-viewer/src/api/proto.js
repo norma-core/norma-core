@@ -189,6 +189,7 @@ export const commands = $root.commands = (() => {
                 case 0:
                 case 1:
                 case 2:
+                case 3:
                     break;
                 }
             if (message.body != null && message.hasOwnProperty("body"))
@@ -232,6 +233,10 @@ export const commands = $root.commands = (() => {
             case "STC_INFERENCE_TAG_COMMAND":
             case 2:
                 message.type = 2;
+                break;
+            case "STC_DOGZILLA_COMMAND":
+            case 3:
+                message.type = 3;
                 break;
             }
             if (object.body != null)
@@ -671,6 +676,10 @@ export const drivers = $root.drivers = (() => {
      * @property {number} QDT_INFERENCE_FRAMES=22 QDT_INFERENCE_FRAMES value
      * @property {number} QDT_MOTOR_MIRRORING_MODES=30 QDT_MOTOR_MIRRORING_MODES value
      * @property {number} QDT_MOTOR_MIRRORING_RX=32 QDT_MOTOR_MIRRORING_RX value
+     * @property {number} QDT_DOGZILLA_SERIAL_TX=40 QDT_DOGZILLA_SERIAL_TX value
+     * @property {number} QDT_DOGZILLA_SERIAL_RX=41 QDT_DOGZILLA_SERIAL_RX value
+     * @property {number} QDT_DOGZILLA_INFERENCE=42 QDT_DOGZILLA_INFERENCE value
+     * @property {number} QDT_OV5647_FRAMES=43 QDT_OV5647_FRAMES value
      */
     drivers.QueueDataType = (function() {
         const valuesById = {}, values = Object.create(valuesById);
@@ -687,6 +696,10 @@ export const drivers = $root.drivers = (() => {
         values[valuesById[22] = "QDT_INFERENCE_FRAMES"] = 22;
         values[valuesById[30] = "QDT_MOTOR_MIRRORING_MODES"] = 30;
         values[valuesById[32] = "QDT_MOTOR_MIRRORING_RX"] = 32;
+        values[valuesById[40] = "QDT_DOGZILLA_SERIAL_TX"] = 40;
+        values[valuesById[41] = "QDT_DOGZILLA_SERIAL_RX"] = 41;
+        values[valuesById[42] = "QDT_DOGZILLA_INFERENCE"] = 42;
+        values[valuesById[43] = "QDT_OV5647_FRAMES"] = 43;
         return values;
     })();
 
@@ -697,12 +710,14 @@ export const drivers = $root.drivers = (() => {
      * @property {number} STC_ST3215_COMMAND=0 STC_ST3215_COMMAND value
      * @property {number} STC_MOTOR_MIRRORING_COMMAND=1 STC_MOTOR_MIRRORING_COMMAND value
      * @property {number} STC_INFERENCE_TAG_COMMAND=2 STC_INFERENCE_TAG_COMMAND value
+     * @property {number} STC_DOGZILLA_COMMAND=3 STC_DOGZILLA_COMMAND value
      */
     drivers.StationCommandType = (function() {
         const valuesById = {}, values = Object.create(valuesById);
         values[valuesById[0] = "STC_ST3215_COMMAND"] = 0;
         values[valuesById[1] = "STC_MOTOR_MIRRORING_COMMAND"] = 1;
         values[valuesById[2] = "STC_INFERENCE_TAG_COMMAND"] = 2;
+        values[valuesById[3] = "STC_DOGZILLA_COMMAND"] = 3;
         return values;
     })();
 
@@ -1240,6 +1255,10 @@ export const inference = $root.inference = (() => {
                     case 22:
                     case 30:
                     case 32:
+                    case 40:
+                    case 41:
+                    case 42:
+                    case 43:
                         break;
                     }
                 return null;
@@ -1322,6 +1341,22 @@ export const inference = $root.inference = (() => {
                 case "QDT_MOTOR_MIRRORING_RX":
                 case 32:
                     message.type = 32;
+                    break;
+                case "QDT_DOGZILLA_SERIAL_TX":
+                case 40:
+                    message.type = 40;
+                    break;
+                case "QDT_DOGZILLA_SERIAL_RX":
+                case 41:
+                    message.type = 41;
+                    break;
+                case "QDT_DOGZILLA_INFERENCE":
+                case 42:
+                    message.type = 42;
+                    break;
+                case "QDT_OV5647_FRAMES":
+                case 43:
+                    message.type = 43;
                     break;
                 }
                 return message;
