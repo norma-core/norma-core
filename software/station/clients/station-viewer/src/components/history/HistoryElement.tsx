@@ -1,12 +1,12 @@
 import { useState } from 'react';
-import { usbvideo, st3215, motors_mirroring, sysinfo, normvla } from '@/api/proto.js';
-import { formatBytes, parseUsbVideoData, parseMirroringData, parseSysinfoData, parseNormvlaData } from '@/components/history/history-utils';
+import { usbvideo, st3215, motors_mirroring, sysinfo, ov5647, dogzilla, normvla } from '@/api/proto.js';
+import { formatBytes, parseUsbVideoData, parseOv5647Data, parseMirroringData, parseSysinfoData, parseDogzillaData, parseNormvlaData } from '@/components/history/history-utils';
 import ExpandedView from '@/components/history/ExpandedView';
 
 export interface HistoryElementData {
   queueId: string;
   entryId: Uint8Array;
-  data: Uint8Array | usbvideo.IRxEnvelope | st3215.IInferenceState | st3215.ITxEnvelope | motors_mirroring.IRxEnvelope | sysinfo.IEnvelope | normvla.IFrame | null;
+  data: Uint8Array | usbvideo.IRxEnvelope | ov5647.IRxEnvelope | st3215.IInferenceState | st3215.ITxEnvelope | motors_mirroring.IRxEnvelope | sysinfo.IEnvelope | dogzilla.IInferenceState | normvla.IFrame | null;
   rawData?: Uint8Array | null;
   error?: string;
   type?: string;
@@ -39,12 +39,14 @@ function formatQueueIdForDisplay(queueId: string): string {
 }
 
 function HistoryElement({ element, index, dataQueueType, dataQueueId }: HistoryElementProps) {
-  const [isExpanded, setIsExpanded] = useState(element.type === 'usbvideo' || element.type === 'st3215' || element.type === 'normvla' || element.type === 'st3215tx');
+  const [isExpanded, setIsExpanded] = useState(element.type === 'usbvideo' || element.type === 'ov5647' || element.type === 'st3215' || element.type === 'dogzilla' || element.type === 'normvla' || element.type === 'st3215tx');
   const displayQueueId = formatQueueIdForDisplay(element.queueId);
 
   const usbVideoData = element.type === 'usbvideo' && element.data ? parseUsbVideoData(element.data) : null;
+  const ov5647Data = element.type === 'ov5647' && element.data ? parseOv5647Data(element.data) : null;
   const mirroringData = element.type === 'mirroring' && element.data ? parseMirroringData(element.data) : null;
   const sysinfoData = element.type === 'sysinfo' && element.data ? parseSysinfoData(element.data) : null;
+  const dogzillaData = element.type === 'dogzilla' && element.data ? parseDogzillaData(element.data) : null;
   const normvlaData = element.type === 'normvla' && element.data ? parseNormvlaData(element.data as Uint8Array | normvla.IFrame) : null;
   const st3215TxData = element.type === 'st3215tx' && element.data && !(element.data instanceof Uint8Array) ? element.data as st3215.ITxEnvelope : null;
 
@@ -134,6 +136,16 @@ function HistoryElement({ element, index, dataQueueType, dataQueueId }: HistoryE
             </div>
           )}
 
+          {ov5647Data && (
+            <div className="space-y-1">
+              {ov5647Data.frames?.stamps && ov5647Data.frames.stamps.length > 0 && (
+                <div className="text-xs text-accent-warning">
+                  Frames: {ov5647Data.frames.stamps.length}
+                </div>
+              )}
+            </div>
+          )}
+
           {mirroringData && (
             <div className="space-y-1">
               {mirroringData.state?.mirroring && mirroringData.state.mirroring.length > 0 && (
@@ -160,6 +172,21 @@ function HistoryElement({ element, index, dataQueueType, dataQueueId }: HistoryE
                 <span className="text-text-label">
                   {sysinfoData.data.hostname}
                 </span>
+              )}
+            </div>
+          )}
+
+          {dogzillaData && (
+            <div className="space-y-1">
+              {dogzillaData.devices && dogzillaData.devices.length > 0 && (
+                <div className="text-xs text-accent-data">
+                  Devices: {dogzillaData.devices.length}
+                  {dogzillaData.devices.filter(d => d.isConnected).length > 0 && (
+                    <span className="text-accent-success ml-2">
+                      ({dogzillaData.devices.filter(d => d.isConnected).length} connected)
+                    </span>
+                  )}
+                </div>
               )}
             </div>
           )}

@@ -1,11 +1,12 @@
 import { forwardRef, useImperativeHandle, useRef } from 'react';
-import { st3215, usbvideo } from '../api/proto';
+import { st3215, usbvideo, ov5647 } from '../api/proto';
 import SO101Renderer from './SO101Renderer';
 import ElRobotRenderer from './ElRobotRenderer';
 import { BaseRobotRendererRef } from './BaseRobotRenderer';
 import MotorDataTable from './MotorDataTable';
 import { Link } from 'react-router-dom';
 import CameraViewer from '../usbvideo/CameraViewer';
+import Ov5647CameraViewer from '../ov5647/CameraViewer';
 
 interface BusWebGLRendererProps {
   busSerialNumber: string | null | undefined;
@@ -14,7 +15,9 @@ interface BusWebGLRendererProps {
   showMotorData?: boolean;
   showCalibrateButton?: boolean;
   needsCalibration?: boolean;
-  selectedVideoSource?: usbvideo.IRxEnvelope;
+  selectedVideoSource?:
+    | { kind: 'usbvideo'; data: usbvideo.IRxEnvelope }
+    | { kind: 'ov5647'; data: ov5647.IRxEnvelope };
   isLeader?: boolean;
   inCalibrationView?: boolean;
   isWebControlled?: boolean;
@@ -50,7 +53,11 @@ const BusWebGLRendererComponent = forwardRef<BusWebGLRendererRef, BusWebGLRender
         }
         {selectedVideoSource && (
           <div className="absolute top-4 lg:top-auto lg:bottom-4 right-4 w-2/5 h-[200px] pointer-events-auto">
-            <CameraViewer inferenceState={selectedVideoSource} />
+            {selectedVideoSource.kind === 'usbvideo' ? (
+              <CameraViewer inferenceState={selectedVideoSource.data} />
+            ) : (
+              <Ov5647CameraViewer inferenceState={selectedVideoSource.data} />
+            )}
           </div>
         )}
         {showCalibrateButton && !inCalibrationView && needsCalibration && (

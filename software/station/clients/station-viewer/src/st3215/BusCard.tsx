@@ -1,8 +1,9 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { st3215, usbvideo, motors_mirroring } from "../api/proto";
+import { st3215, usbvideo, motors_mirroring, ov5647 } from "../api/proto";
 import BusWebGLRenderer from "./BusWebGLRenderer";
 import CameraViewer from "../usbvideo/CameraViewer";
+import Ov5647CameraViewer from "../ov5647/CameraViewer";
 import { serverToLocal } from "../api/timestamp-utils";
 import Long from "long";
 import { commandManager } from "../api/commands";
@@ -30,6 +31,7 @@ interface BusCardProps {
   bus: st3215.InferenceState.IBusState;
   busIndex: number;
   videoSources?: FrameEntry<usbvideo.IRxEnvelope>[];
+  ov5647Sources?: FrameEntry<ov5647.IRxEnvelope>[];
   allBuses?: st3215.InferenceState.IBusState[] | null;
   mirroringState?: motors_mirroring.IInferenceState;
 }
@@ -38,6 +40,7 @@ const BusCard: React.FC<BusCardProps> = ({
   bus,
   busIndex,
   videoSources,
+  ov5647Sources,
   allBuses,
   mirroringState,
 }) => {
@@ -48,13 +51,9 @@ const BusCard: React.FC<BusCardProps> = ({
   const [isWebControlled, setIsWebControlled] = useState(false);
 
   const activeVideoSources = useMemo(() => {
-    if (!videoSources) {
-      return [];
-    }
-
     const nowMs = Date.now();
 
-    return videoSources.filter((entry) => {
+    const isFresh = (entry: FrameEntry<usbvideo.IRxEnvelope> | FrameEntry<ov5647.IRxEnvelope>) => {
       const monotonicStampNs = entry.data.stamp?.monotonicStampNs;
       if (!monotonicStampNs) {
         return true;
@@ -64,12 +63,32 @@ const BusCard: React.FC<BusCardProps> = ({
       const ageMs = nowMs - localStampNs.toNumber() / 1e6;
 
       return ageMs <= STALE_CAMERA_MAX_AGE_MS;
-    });
-  }, [videoSources]);
+    };
+
+    return [
+      ...(videoSources ?? []).filter(isFresh).map((entry) => ({
+        id: entry.data.camera?.uniqueId ? `usbvideo:${entry.data.camera.uniqueId}` : '',
+        label: `${entry.data.camera?.deviceNumber ?? 'USB'} (${entry.data.camera?.uniqueId ?? 'unknown'})`,
+        kind: 'usbvideo' as const,
+        data: entry.data,
+        queueId: entry.queueId,
+      })),
+      ...(ov5647Sources ?? []).filter(isFresh).map((entry) => {
+        const cameraId = entry.data.camera?.uniqueId || entry.data.camera?.id || '';
+        return {
+          id: cameraId ? `ov5647:${cameraId}` : '',
+          label: `OV5647 ${entry.data.camera?.name || entry.data.camera?.id || 'camera'} (${cameraId || 'unknown'})`,
+          kind: 'ov5647' as const,
+          data: entry.data,
+          queueId: entry.queueId,
+        };
+      }),
+    ].filter((entry) => entry.id);
+  }, [ov5647Sources, videoSources]);
 
   const selectedVideoSource = activeVideoSources.find(
-    (entry) => entry.data.camera?.uniqueId === selectedVideoSourceId,
-  )?.data;
+    (entry) => entry.id === selectedVideoSourceId,
+  );
 
   useEffect(() => {
     if (!selectedVideoSourceId) {
@@ -77,7 +96,7 @@ const BusCard: React.FC<BusCardProps> = ({
     }
 
     const hasSelectedSource = activeVideoSources.some(
-      (entry) => entry.data.camera?.uniqueId === selectedVideoSourceId,
+      (entry) => entry.id === selectedVideoSourceId,
     );
 
     if (!hasSelectedSource) {
@@ -286,11 +305,11 @@ const BusCard: React.FC<BusCardProps> = ({
             <option value="">No Video</option>
             {activeVideoSources.map((entry) => (
               <option
-                key={`${entry.queueId}-${entry.data.camera?.uniqueId || "unknown-camera"}`}
-                value={entry.data.camera?.uniqueId || ""}
-                title={`${entry.data.camera?.deviceNumber} (${entry.data.camera?.uniqueId})`}
+                key={`${entry.queueId}-${entry.id}`}
+                value={entry.id}
+                title={entry.label}
               >
-                {entry.data.camera?.deviceNumber} ({entry.data.camera?.uniqueId})
+                {entry.label}
               </option>
             ))}
           </select>
@@ -374,7 +393,11 @@ const BusCard: React.FC<BusCardProps> = ({
           </div>
           {selectedVideoSource && (
             <div className="absolute top-4 lg:top-auto lg:bottom-4 right-4 w-2/5 h-[200px] pointer-events-auto">
-              <CameraViewer inferenceState={selectedVideoSource} />
+              {selectedVideoSource.kind === 'usbvideo' ? (
+                <CameraViewer inferenceState={selectedVideoSource.data} />
+              ) : (
+                <Ov5647CameraViewer inferenceState={selectedVideoSource.data} />
+              )}
             </div>
           )}
         </div>

@@ -52,6 +52,9 @@ function HistoryPage() {
     };
   }, []);
 
+  const videoQueueCount = parsedFrame?.videoQueues?.length ?? 0;
+  const ov5647QueueCount = parsedFrame?.ov5647Queues?.length ?? 0;
+
   return (
     <div className="w-full h-full flex flex-col">
       <div className="p-4 flex-shrink-0">
@@ -165,14 +168,25 @@ function HistoryPage() {
                             </div>
                           </div>
                         )}
-                        {parsedFrame.videoQueues?.map((video, idx) => (
-                          <div key={idx} className="flex items-center justify-between">
+                        {parsedFrame.videoQueues?.map((video) => (
+                          <div key={video.queueId} className="flex items-center justify-between">
                             <div className="flex items-center gap-3">
                               <span className="text-accent-warning font-mono">{video.queueId}</span>
                               <span className="text-accent-success text-xs px-1 py-0.5 bg-accent-success/10 rounded">VIDEO</span>
                             </div>
                             <div className="text-text-label font-mono">
                               {formatPtrBytes(video.ptr)}
+                            </div>
+                          </div>
+                        ))}
+                        {parsedFrame.ov5647Queues?.map((camera) => (
+                          <div key={camera.queueId} className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <span className="text-accent-warning font-mono">{camera.queueId}</span>
+                              <span className="text-accent-warning text-xs px-1 py-0.5 bg-accent-warning/10 rounded">OV5647</span>
+                            </div>
+                            <div className="text-text-label font-mono">
+                              {formatPtrBytes(camera.ptr)}
                             </div>
                           </div>
                         ))}
@@ -206,6 +220,17 @@ function HistoryPage() {
                             </div>
                             <div className="text-text-label font-mono">
                               {formatPtrBytes(parsedFrame.sysinfo.ptr)}
+                            </div>
+                          </div>
+                        )}
+                        {parsedFrame.dogzilla && (
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <span className="text-accent-warning font-mono">{parsedFrame.dogzilla.queueId}</span>
+                              <span className="text-accent-data text-xs px-1 py-0.5 bg-accent-data/10 rounded">DOGZILLA</span>
+                            </div>
+                            <div className="text-text-label font-mono">
+                              {formatPtrBytes(parsedFrame.dogzilla.ptr)}
                             </div>
                           </div>
                         )}
@@ -254,7 +279,7 @@ function HistoryPage() {
                   )}
                   {parsedFrame.videoQueues?.map((video, idx) => (
                     <HistoryElement
-                      key={`video-${idx}`}
+                      key={video.queueId}
                       element={{
                         queueId: video.queueId,
                         entryId: video.ptr,
@@ -268,6 +293,22 @@ function HistoryPage() {
                       dataQueueId={video.queueId}
                     />
                   ))}
+                  {parsedFrame.ov5647Queues?.map((camera, idx) => (
+                    <HistoryElement
+                      key={camera.queueId}
+                      element={{
+                        queueId: camera.queueId,
+                        entryId: camera.ptr,
+                        data: camera.data,
+                        rawData: camera.rawData ?? null,
+                        type: getQueueType(camera.queueType),
+                        queueType: camera.queueType,
+                      }}
+                      index={videoQueueCount + idx + 1}
+                      dataQueueType="ov5647"
+                      dataQueueId={camera.queueId}
+                    />
+                  ))}
                   {parsedFrame.mirroring && (
                     <HistoryElement
                       element={{
@@ -278,7 +319,7 @@ function HistoryPage() {
                         type: getQueueType(parsedFrame.mirroring.queueType),
                         queueType: parsedFrame.mirroring.queueType,
                       }}
-                      index={(parsedFrame.videoQueues?.length || 0) + 1}
+                      index={videoQueueCount + ov5647QueueCount + 1}
                       dataQueueType="mirroring"
                       dataQueueId={parsedFrame.mirroring.queueId}
                     />
@@ -293,9 +334,24 @@ function HistoryPage() {
                         type: getQueueType(parsedFrame.sysinfo.queueType),
                         queueType: parsedFrame.sysinfo.queueType,
                       }}
-                      index={(parsedFrame.videoQueues?.length || 0) + (parsedFrame.mirroring ? 2 : 1)}
+                      index={videoQueueCount + ov5647QueueCount + (parsedFrame.mirroring ? 2 : 1)}
                       dataQueueType="sysinfo"
                       dataQueueId={parsedFrame.sysinfo.queueId}
+                    />
+                  )}
+                  {parsedFrame.dogzilla && (
+                    <HistoryElement
+                      element={{
+                        queueId: parsedFrame.dogzilla.queueId,
+                        entryId: parsedFrame.dogzilla.ptr,
+                        data: parsedFrame.dogzilla.data,
+                        rawData: parsedFrame.dogzilla.rawData ?? null,
+                        type: getQueueType(parsedFrame.dogzilla.queueType),
+                        queueType: parsedFrame.dogzilla.queueType,
+                      }}
+                      index={videoQueueCount + ov5647QueueCount + (parsedFrame.mirroring ? 2 : 1) + (parsedFrame.sysinfo ? 1 : 0)}
+                      dataQueueType="dogzilla"
+                      dataQueueId={parsedFrame.dogzilla.queueId}
                     />
                   )}
                   {parsedFrame.normvla && (
@@ -308,7 +364,7 @@ function HistoryPage() {
                         type: 'normvla',
                         queueType: parsedFrame.normvla.queueType,
                       }}
-                      index={(parsedFrame.videoQueues?.length || 0) + (parsedFrame.mirroring ? 2 : 1) + (parsedFrame.sysinfo ? 1 : 0)}
+                      index={videoQueueCount + ov5647QueueCount + (parsedFrame.mirroring ? 2 : 1) + (parsedFrame.sysinfo ? 1 : 0) + (parsedFrame.dogzilla ? 1 : 0)}
                       dataQueueType="normvla"
                       dataQueueId={parsedFrame.normvla.queueId}
                     />
@@ -323,7 +379,7 @@ function HistoryPage() {
                         type: 'st3215tx',
                         queueType: parsedFrame.st3215Tx.queueType,
                       }}
-                      index={(parsedFrame.videoQueues?.length || 0) + (parsedFrame.mirroring ? 2 : 1) + (parsedFrame.sysinfo ? 1 : 0) + (parsedFrame.normvla ? 1 : 0)}
+                      index={videoQueueCount + ov5647QueueCount + (parsedFrame.mirroring ? 2 : 1) + (parsedFrame.sysinfo ? 1 : 0) + (parsedFrame.dogzilla ? 1 : 0) + (parsedFrame.normvla ? 1 : 0)}
                       dataQueueType="st3215tx"
                       dataQueueId={parsedFrame.st3215Tx.queueId}
                     />
@@ -338,7 +394,7 @@ function HistoryPage() {
                         rawData: entry.data,
                         type: undefined,
                       }}
-                      index={(parsedFrame.videoQueues?.length || 0) + (parsedFrame.mirroring ? 2 : 1) + (parsedFrame.sysinfo ? 1 : 0) + (parsedFrame.normvla ? 1 : 0) + (parsedFrame.st3215Tx ? 1 : 0) + idx}
+                      index={videoQueueCount + ov5647QueueCount + (parsedFrame.mirroring ? 2 : 1) + (parsedFrame.sysinfo ? 1 : 0) + (parsedFrame.dogzilla ? 1 : 0) + (parsedFrame.normvla ? 1 : 0) + (parsedFrame.st3215Tx ? 1 : 0) + idx}
                       dataQueueType="other"
                       dataQueueId={queueId}
                     />
