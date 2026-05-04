@@ -3,6 +3,10 @@ name = "station"
 version.workspace = true
 edition = "2024"
 
+[features]
+default = []
+ov5647 = ["dep:ov5647"]
+
 [dependencies]
 prost = { workspace = true }
 normfs = { workspace = true, features = ["websocket"] }

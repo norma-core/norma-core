@@ -1,26 +1,27 @@
 # Makefile for building station binary for ARM64 and AMD64 Linux using cargo-zigbuild
 
 # Configuration
-TARGET_ARM64 := aarch64-unknown-linux-gnu
+TARGET_ARM64_BASE := aarch64-unknown-linux-gnu
+TARGET_ARM64_GLIBC_236 := $(TARGET_ARM64_BASE).2.36
 TARGET_AMD64 := x86_64-unknown-linux-gnu
+
+# Use rustup-managed rustc (Homebrew rustc lacks cross-compilation targets)
+RUSTC := $(shell rustup which rustc 2>/dev/null)
+export RUSTC
 BINARY_NAME := station
-OUTPUT_DIR_ARM64 := target/$(TARGET_ARM64)/release
+OUTPUT_DIR_ARM64 := target/$(TARGET_ARM64_BASE)/release
 OUTPUT_DIR_AMD64 := target/$(TARGET_AMD64)/release
 PACKAGE := station
 WORKSPACE_ROOT := $(shell cd ../../../.. && pwd)
-RUSTC := $(shell rustup which rustc 2>/dev/null)
-export RUSTC
 LIBCAMERA_VERSION ?= 0.6.0
 LIBCAMERA_INSTALL_DIR := $(WORKSPACE_ROOT)/shared/libcamera/library/$(LIBCAMERA_VERSION)
-
-# libcamera cross-compilation paths (ARM64 only)
 LIBCAMERA_LIB_DIR := $(LIBCAMERA_INSTALL_DIR)/usr/lib/aarch64-linux-gnu
 LIBCAMERA_PKG_CONFIG_PATH := $(LIBCAMERA_LIB_DIR)/pkgconfig
 
 # Build flags
 FEATURES ?=
 CARGO_FEATURES := $(if $(FEATURES),--features $(FEATURES),)
-CARGO_FLAGS := --release --package=$(PACKAGE)
+CARGO_FLAGS := --release --package=$(PACKAGE) $(CARGO_FEATURES)
 
 HAS_LIBCAMERA := $(findstring ov5647,$(FEATURES))
 LIBCAMERA_ENV := \
@@ -29,7 +30,10 @@ LIBCAMERA_ENV := \
 	LIBCAMERA_LIB_DIR=$(LIBCAMERA_LIB_DIR)
 BUILD_ENV := $(if $(HAS_LIBCAMERA),$(LIBCAMERA_ENV),)
 
-.PHONY: all build client build-arm64 build-amd64 clean help
+# Target glibc 2.36 (Raspberry Pi OS 5 / Debian Bookworm) only for libcamera/ov5647.
+TARGET_ARM64 := $(if $(HAS_LIBCAMERA),$(TARGET_ARM64_GLIBC_236),$(TARGET_ARM64_BASE))
+
+.PHONY: all build client build-macos build-arm64 build-amd64 clean help
 
 all: build
 
@@ -68,6 +72,7 @@ help:
 	@echo ""
 	@echo "Prerequisites:"
 	@echo "  cargo-zigbuild must be installed: cargo install cargo-zigbuild"
+	@echo "  For ov5647 feature: pre-built libcamera libraries at shared/libcamera/library/$(LIBCAMERA_VERSION)/"
 	@echo ""
 	@echo "Targets:"
 	@echo "  all         - Build binaries for both architectures (default)"

@@ -78,6 +78,9 @@ struct Station {
     usbvideo_instances: parking_lot::Mutex<Vec<Arc<usbvideo::pipeline::USBVideoManager<usbvideo::osx::CameraMacDriver>>>>,
     #[cfg(target_os = "linux")]
     usbvideo_instances: parking_lot::Mutex<Vec<Arc<usbvideo::pipeline::USBVideoManager<usbvideo::linux::CameraLinuxDriver>>>>,
+
+    #[cfg(feature = "ov5647")]
+    ov5647_handle: Mutex<Option<ov5647::Ov5647Handle>>,
 }
 
 struct Engine {
@@ -125,8 +128,10 @@ impl Station {
             engine: Arc::new(Engine {
                 main_queue: None,
                 inference: Mutex::new(None),
-             }),
+            }),
             usbvideo_instances: parking_lot::Mutex::new(Vec::new()),
+            #[cfg(feature = "ov5647")]
+            ov5647_handle: Mutex::new(None),
         })
     }
 
@@ -383,6 +388,13 @@ impl Station {
             instance.stop().await;
         }
         log::info!("USB video instances stopped");
+
+        #[cfg(feature = "ov5647")]
+        if let Some(handle) = self.ov5647_handle.lock().take() {
+            log::info!("Stopping OV5647 driver...");
+            handle.stop().await;
+            log::info!("OV5647 driver stopped");
+        }
 
         log::info!("Closing NormFS (writing WAL)...");
 
