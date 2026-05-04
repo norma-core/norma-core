@@ -6,14 +6,27 @@ interface DogzillaExpandedProps {
   data: dogzilla.InferenceState;
 }
 
+const SERVO_LABELS = [
+  { id: 11, label: 'front left leg elbow' },
+  { id: 12, label: 'front left leg arm' },
+  { id: 13, label: 'front left leg shoulder' },
+  { id: 21, label: 'front right leg elbow' },
+  { id: 22, label: 'front right leg arm' },
+  { id: 23, label: 'front right leg shoulder' },
+  { id: 31, label: 'rear right leg elbow' },
+  { id: 32, label: 'rear right leg arm' },
+  { id: 33, label: 'rear right leg shoulder' },
+  { id: 41, label: 'rear left leg elbow' },
+  { id: 42, label: 'rear left leg arm' },
+  { id: 43, label: 'rear left leg shoulder' },
+  { id: 51, label: 'arm gripper' },
+  { id: 52, label: 'arm elbow' },
+  { id: 53, label: 'arm shoulder' },
+];
+
 function ServoTable({ status }: { status: dogzilla.IDogzillaStatus }) {
   const positions = status.servoPositions ?? [];
   const angles = status.servoAngles ?? [];
-  const servoLabels = [
-    '1.1', '1.2', '1.3', '2.1', '2.2', '2.3',
-    '3.1', '3.2', '3.3', '4.1', '4.2', '4.3',
-    'Grip', 'Arm1', 'Arm2'
-  ];
 
   if (positions.length === 0 && angles.length === 0) {
     return <div className="text-xs text-gray-500">No servo data.</div>;
@@ -21,22 +34,29 @@ function ServoTable({ status }: { status: dogzilla.IDogzillaStatus }) {
 
   return (
     <div className="overflow-x-auto">
-      <table className="min-w-full text-xs text-gray-300">
+      <table className="min-w-full table-fixed text-xs text-gray-300">
+        <colgroup>
+          <col className="w-1/3" />
+          <col className="w-1/3" />
+          <col className="w-1/3" />
+        </colgroup>
         <thead>
           <tr className="text-gray-400 border-b-2 border-gray-700">
-            <th className="text-center font-semibold py-1 pr-2">Servo</th>
-            <th className="text-center font-semibold py-1 pr-2">Position</th>
-            <th className="text-center font-semibold py-1">Angle</th>
+            <th className="px-2 py-1 text-left font-semibold">Servo</th>
+            <th className="px-2 py-1 text-center font-semibold">Position</th>
+            <th className="px-2 py-1 text-center font-semibold">Angle</th>
           </tr>
         </thead>
         <tbody>
-          {servoLabels.map((label, idx) => (
-            <tr key={label} className={`border-t border-gray-800 ${idx % 2 === 1 ? 'bg-gray-900/30' : ''}`}>
-              <td className="py-0.5 pr-2 text-center text-cyan-400 font-mono">{label}</td>
-              <td className="py-0.5 pr-2 text-center text-purple-400 font-mono">
+          {SERVO_LABELS.map((servo, idx) => (
+            <tr key={servo.id} className={`border-t border-gray-800 ${idx % 2 === 1 ? 'bg-gray-900/30' : ''}`}>
+              <td className="break-words px-2 py-0.5 text-left text-cyan-400">
+                <span className="font-mono text-cyan-300">{servo.id}</span> ({servo.label})
+              </td>
+              <td className="px-2 py-0.5 text-center font-mono text-purple-400">
                 {positions[idx] !== undefined ? positions[idx] : '--'}
               </td>
-              <td className="py-0.5 text-center text-blue-400 font-mono">
+              <td className="px-2 py-0.5 text-center font-mono text-blue-400">
                 {angles[idx] !== undefined ? `${angles[idx].toFixed(1)}` : '--'}
               </td>
             </tr>
@@ -113,8 +133,8 @@ const DogzillaExpanded = memo(function DogzillaExpanded({ data }: DogzillaExpand
               </div>
             )}
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-              <div className="bg-gray-950 rounded h-48 overflow-hidden lg:order-1">
+            <div className="grid grid-cols-1 items-stretch gap-3 lg:grid-cols-2">
+              <div className="min-h-[280px] overflow-hidden rounded bg-gray-950 lg:order-1">
                 <DogzillaViewer status={status} />
               </div>
               <div className="lg:order-2">
