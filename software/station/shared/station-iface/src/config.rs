@@ -167,6 +167,24 @@ impl Inference {
             update_interval: default_update_interval(),
         }
     }
+
+    /// Create a default Dogzilla inference mirror configuration.
+    pub fn default_dogzilla() -> Self {
+        let shm_path = if cfg!(target_os = "linux") {
+            PathBuf::from("/dev/shm/dogzilla")
+        } else {
+            PathBuf::from("/tmp/dogzilla")
+        };
+
+        Self {
+            queue_id: "inference/dogzilla".to_string(),
+            shm: shm_path,
+            shm_size_mb: 1,
+            format: "dogzilla".to_string(),
+            st3215_bus: "auto".to_string(),
+            update_interval: default_update_interval(),
+        }
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

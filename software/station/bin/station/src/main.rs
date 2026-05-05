@@ -339,20 +339,25 @@ impl Station {
             Some(inference_configs) => {
                 // User specified inference config (might be empty to disable)
                 if !inference_configs.is_empty() {
+                    let inference_configs =
+                        self.with_default_dogzilla_inference(inference_configs.clone());
                     log::info!("Starting inference driver with {} configurations", inference_configs.len());
                     inferences::start(
                         self.normfs.clone(),
                         self.engine.clone(),
-                        inference_configs.clone(),
+                        inference_configs,
                     ).await?;
                 } else {
                     log::info!("Inference explicitly disabled (empty config)");
                 }
             }
             None => {
-                // User did not specify inference config, use default normvla
-                log::info!("No inference configuration found, using default normvla config");
-                let default_config = vec![station_iface::config::Inference::default_normvla()];
+                // User did not specify inference config, use default inference outputs.
+                let default_config = self.default_inference_configs();
+                log::info!(
+                    "No inference configuration found, using {} default inference configuration(s)",
+                    default_config.len()
+                );
                 inferences::start(
                     self.normfs.clone(),
                     self.engine.clone(),
@@ -362,6 +367,38 @@ impl Station {
         }
 
         Ok(())
+    }
+
+    fn default_inference_configs(&self) -> Vec<station_iface::config::Inference> {
+        self.with_default_dogzilla_inference(vec![
+            station_iface::config::Inference::default_normvla(),
+        ])
+    }
+
+    fn with_default_dogzilla_inference(
+        &self,
+        mut configs: Vec<station_iface::config::Inference>,
+    ) -> Vec<station_iface::config::Inference> {
+        let dogzilla_enabled = self
+            .config
+            .drivers
+            .dogzilla
+            .as_ref()
+            .is_some_and(|config| config.enabled);
+        if !dogzilla_enabled {
+            return configs;
+        }
+
+        let has_dogzilla_config = configs
+            .iter()
+            .any(|config| config.format == "dogzilla" || config.queue_id == "inference/dogzilla");
+        if has_dogzilla_config {
+            return configs;
+        }
+
+        log::info!("Dogzilla enabled; adding default dogzilla inference mirror");
+        configs.push(station_iface::config::Inference::default_dogzilla());
+        configs
     }
 
     async fn start_server(

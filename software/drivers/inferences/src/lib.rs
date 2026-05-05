@@ -134,7 +134,7 @@ pub async fn start<T: StationEngine>(
         // Register queue with station engine
         station_engine.register_queue(
             &queue_id,
-            station_iface::iface_proto::drivers::QueueDataType::QdtInferenceFrames,
+            formats::queue_data_type_for_format(&config.format),
             vec![],
         );
 

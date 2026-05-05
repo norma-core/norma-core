@@ -1094,6 +1094,7 @@ name = "inferences"
 version = "0.1.0-beta.6"
 dependencies = [
  "bytes",
+ "dogzilla",
  "lazy_static",
  "log",
  "memmap2",
