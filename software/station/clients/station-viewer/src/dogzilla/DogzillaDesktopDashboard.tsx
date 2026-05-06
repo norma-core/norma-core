@@ -3,9 +3,9 @@ import { commandManager } from '@/api/commands.js';
 import { dogzilla, ov5647, usbvideo } from '@/api/proto.js';
 import DogzillaDesktopActionPanel from '@/dogzilla/DogzillaDesktopActionPanel';
 import DogzillaDesktopMovementPanel from '@/dogzilla/DogzillaDesktopMovementPanel';
+import type { DogzillaViewMode } from '@/dogzilla/DogzillaViewModeSwitch';
 import DogzillaViewer from '@/dogzilla/DogzillaViewer';
 import Ov5647CameraViewer from '@/ov5647/CameraViewer';
-import type { ViewMode } from '@/st3215/ViewModeSwitch';
 import UsbCameraViewer from '@/usbvideo/CameraViewer';
 import { getGradientClass } from '@/utils/color-utils';
 
@@ -65,7 +65,7 @@ interface DogzillaDesktopDashboardProps {
   deviceState: dogzilla.InferenceState.IDeviceState | null;
   refreshToken?: number;
   selectedVideoSource?: SelectedVideoSource;
-  mainViewMode?: ViewMode;
+  mainViewMode?: DogzillaViewMode;
 }
 
 interface PanelCardProps {

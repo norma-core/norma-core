@@ -4,7 +4,7 @@ import type { FrameEntry } from '@/api/frame-parser';
 import { serverToLocal } from '@/api/timestamp-utils';
 import { dogzilla, ov5647, usbvideo } from '@/api/proto.js';
 import DogzillaDesktopDashboard from '@/dogzilla/DogzillaDesktopDashboard';
-import ViewModeSwitch, { type ViewMode } from '@/st3215/ViewModeSwitch';
+import DogzillaViewModeSwitch, { type DogzillaViewMode } from '@/dogzilla/DogzillaViewModeSwitch';
 import { getLatencyBgColor, getLatencyTextColor } from '@/utils/color-utils';
 
 interface LatencyReading {
@@ -32,7 +32,7 @@ const DogzillaDesktopCard = memo(function DogzillaDesktopCard({
   ov5647Sources
 }: DogzillaDesktopCardProps) {
   const [selectedVideoSourceId, setSelectedVideoSourceId] = useState('');
-  const [mainViewMode, setMainViewMode] = useState<ViewMode>('3d');
+  const [mainViewMode, setMainViewMode] = useState<DogzillaViewMode>('3d');
   const latencyHistoryRef = useRef<Map<string, LatencyReading[]>>(new Map());
 
   const now = Date.now();
@@ -123,7 +123,7 @@ const DogzillaDesktopCard = memo(function DogzillaDesktopCard({
           <span className="text-lg font-bold text-accent-data">
             {device?.serialNumber ? `#${device.serialNumber}` : 'Dogzilla'}
           </span>
-          <ViewModeSwitch
+          <DogzillaViewModeSwitch
             value={mainViewMode}
             onChange={setMainViewMode}
             photoDisabled={!selectedVideoSource}
