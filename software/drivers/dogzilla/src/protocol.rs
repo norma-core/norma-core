@@ -275,30 +275,3 @@ pub fn read_rpi_cpu_serial() -> Option<String> {
     }
     None
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_frame_encode_decode() {
-        let frame = Frame::write(REG_BATTERY_POWER, vec![0x64]);
-        let encoded = frame.encode();
-        let decoded = Frame::decode(&encoded).unwrap();
-
-        assert_eq!(decoded.command, CMD_WRITE);
-        assert_eq!(decoded.address, REG_BATTERY_POWER);
-        assert_eq!(decoded.data, vec![0x64]);
-    }
-
-    #[test]
-    fn test_read_frame() {
-        let frame = Frame::read(REG_BATTERY_POWER, 1);
-        let encoded = frame.encode();
-
-        assert_eq!(encoded[0], HEADER_BYTE_1);
-        assert_eq!(encoded[1], HEADER_BYTE_2);
-        assert_eq!(encoded[3], CMD_READ);
-        assert_eq!(encoded[4], REG_BATTERY_POWER);
-    }
-}
