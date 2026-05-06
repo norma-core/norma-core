@@ -20,14 +20,14 @@
   },
   "dependencies": {
     "@tailwindcss/aspect-ratio": "^0.4.2",
-    "@types/three": "^0.181.0",
+    "@types/three": "^0.184.0",
     "long": "^5.2.3",
     "lucide-react": "^0.552.0",
     "nosleep.js": "^0.12.0",
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
-    "react-router-dom": "^7.14.1",
-    "three": "^0.183.2",
+    "react-router-dom": "^7.14.2",
+    "three": "^0.184.0",
     "urdf-loader": "^0.12.7"
   },
   "devDependencies": {
