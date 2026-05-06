@@ -386,10 +386,6 @@ const DogzillaDesktopDashboard = memo(function DogzillaDesktopDashboard({
     <PanelCard title="Status">
       <div className="mt-1 space-y-2 text-xs text-text-secondary">
         <div className="flex items-center justify-between gap-3">
-          <span className="text-text-muted">Serial</span>
-          <span className="truncate text-text-primary">{device?.serialNumber || '—'}</span>
-        </div>
-        <div className="flex items-center justify-between gap-3">
           <span className="text-text-muted">Model</span>
           <span className="truncate text-text-primary">{modelLabel}</span>
         </div>
@@ -549,6 +545,11 @@ const DogzillaDesktopDashboard = memo(function DogzillaDesktopDashboard({
                 servoAngles={liveAngles}
                 refreshToken={refreshToken}
               />
+            )}
+            {mainViewMode === '3d' && selectedVideoSource && (
+              <div className="pointer-events-auto absolute right-4 top-4 z-10 h-[200px] w-[320px] max-w-[calc(100%-2rem)] overflow-hidden rounded-lg border border-border-default bg-surface-primary shadow-lg">
+                {renderCameraContent()}
+              </div>
             )}
             <div className="pointer-events-none absolute inset-x-4 bottom-4 z-10">
               <DogzillaDesktopMovementPanel deviceSerial={device?.serialNumber ?? ''} />
