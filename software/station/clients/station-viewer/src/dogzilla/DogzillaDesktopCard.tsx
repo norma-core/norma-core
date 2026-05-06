@@ -4,6 +4,8 @@ import type { FrameEntry } from '@/api/frame-parser';
 import { serverToLocal } from '@/api/timestamp-utils';
 import { dogzilla, ov5647, usbvideo } from '@/api/proto.js';
 import DogzillaDesktopDashboard from '@/dogzilla/DogzillaDesktopDashboard';
+import ViewModeSwitch, { type ViewMode } from '@/st3215/ViewModeSwitch';
+import { getLatencyBgColor, getLatencyTextColor } from '@/utils/color-utils';
 
 interface LatencyReading {
   timestamp: number;
@@ -30,6 +32,7 @@ const DogzillaDesktopCard = memo(function DogzillaDesktopCard({
   ov5647Sources
 }: DogzillaDesktopCardProps) {
   const [selectedVideoSourceId, setSelectedVideoSourceId] = useState('');
+  const [mainViewMode, setMainViewMode] = useState<ViewMode>('3d');
   const latencyHistoryRef = useRef<Map<string, LatencyReading[]>>(new Map());
 
   const now = Date.now();
@@ -57,35 +60,6 @@ const DogzillaDesktopCard = memo(function DogzillaDesktopCard({
       min: Math.min(...latencies),
       max: Math.max(...latencies)
     };
-  };
-
-  const getStatusColor = (latency: number, hasError: boolean) => {
-    if (hasError || !isConnected) {
-      return 'bg-red-500';
-    }
-    if (latency < 100) {
-      return 'bg-green-500';
-    }
-    if (latency < 500) {
-      return 'bg-yellow-500';
-    }
-    if (latency < 1000) {
-      return 'bg-orange-500';
-    }
-    return 'bg-red-500';
-  };
-
-  const getLatencyColor = (latency: number) => {
-    if (latency < 100) {
-      return 'text-green-400';
-    }
-    if (latency < 500) {
-      return 'text-yellow-400';
-    }
-    if (latency < 1000) {
-      return 'text-orange-400';
-    }
-    return 'text-red-400';
   };
 
   const adjustedStamp = deviceState.monotonicStampNs
@@ -136,20 +110,28 @@ const DogzillaDesktopCard = memo(function DogzillaDesktopCard({
     }
   }, [ov5647Sources, selectedVideoSourceId, usbVideoSources]);
 
+  useEffect(() => {
+    if (!selectedVideoSource && mainViewMode === 'photo') {
+      setMainViewMode('3d');
+    }
+  }, [mainViewMode, selectedVideoSource]);
+
   return (
-    <div className="w-full min-w-[300px] rounded-lg border border-gray-700 bg-gray-900/50 lg:col-span-2">
-      <div className="flex items-center justify-between rounded-t-lg border-b border-gray-700 bg-gray-800/50 px-4 py-2">
-        <div className="flex items-center gap-2">
-          <span className="text-lg font-bold text-cyan-400">
+    <div className="mx-auto flex h-[min(86vh,58rem)] min-h-[46rem] w-full min-w-[300px] max-w-[1536px] flex-col overflow-hidden rounded-lg border border-border-default bg-surface-primary/50 lg:col-span-2">
+      <div className="flex flex-wrap items-start gap-x-6 gap-y-2 rounded-t-lg border-b border-border-default bg-surface-secondary/50 px-4 py-2 sm:items-center">
+        <div className="flex flex-wrap items-center gap-2 sm:flex-nowrap">
+          <span className="text-lg font-bold text-accent-data">
             {device?.serialNumber ? `#${device.serialNumber}` : 'Dogzilla'}
           </span>
-          {!isConnected && (
-            <span className="text-xs uppercase text-red-400">(Disconnected)</span>
-          )}
+          <ViewModeSwitch
+            value={mainViewMode}
+            onChange={setMainViewMode}
+            photoDisabled={!selectedVideoSource}
+          />
           <select
             value={selectedVideoSourceId}
             onChange={(event) => setSelectedVideoSourceId(event.target.value)}
-            className="block rounded-md border-gray-600 bg-gray-800 py-1 pl-3 pr-10 text-base text-white focus:border-green-500 focus:outline-none focus:ring-green-500 sm:text-sm"
+            className="block max-w-[180px] rounded-md border-border-subtle bg-surface-secondary py-1 pl-3 pr-10 text-base text-text-primary focus:border-accent-success-deep focus:outline-none focus:ring-accent-success-deep sm:text-sm"
           >
             <option value="">No Video</option>
             {usbVideoSources.map((entry) => {
@@ -177,26 +159,30 @@ const DogzillaDesktopCard = memo(function DogzillaDesktopCard({
         </div>
         <div className="flex items-center gap-4 text-sm">
           <div className="flex items-center gap-1.5">
-            <span className="text-gray-500">Port:</span>
-            <span className="text-cyan-400">{device?.portName || 'N/A'}</span>
+            <span className="text-text-muted">Port:</span>
+            <span className="text-accent-data">{device?.portName || 'N/A'}</span>
           </div>
-          {isConnected && (
-            <span className={getLatencyColor(latency)}>
+          {isConnected ? (
+            <span className={getLatencyTextColor(latency)}>
               {latencyAvg.avg < 1000
                 ? `${latencyAvg.avg.toFixed(0)}ms`
-                : `${(latencyAvg.avg / 1000).toFixed(1)}s`
-              }
+                : `${(latencyAvg.avg / 1000).toFixed(1)}s`}
             </span>
+          ) : (
+            <span className="text-accent-critical">Disconnected</span>
           )}
-          <span className={`h-3 w-3 rounded-full ${getStatusColor(latency, false)}`}></span>
+          <span className={`h-3 w-3 rounded-full ${getLatencyBgColor(latency, !isConnected)}`}></span>
         </div>
       </div>
 
-      <DogzillaDesktopDashboard
-        deviceState={deviceState}
-        refreshToken={deviceIndex}
-        selectedVideoSource={selectedVideoSource}
-      />
+      <div className="min-h-0 flex-1">
+        <DogzillaDesktopDashboard
+          deviceState={deviceState}
+          refreshToken={deviceIndex}
+          selectedVideoSource={selectedVideoSource}
+          mainViewMode={mainViewMode}
+        />
+      </div>
     </div>
   );
 });

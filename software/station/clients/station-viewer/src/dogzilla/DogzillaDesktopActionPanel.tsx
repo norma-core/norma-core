@@ -44,11 +44,11 @@ const DogzillaDesktopActionPanel = memo(function DogzillaDesktopActionPanel({
   };
 
   return (
-    <div className="rounded-lg border border-gray-700 bg-gray-900/90 p-2 backdrop-blur">
-      <h3 className="border-b border-gray-700 pb-1 text-[10px] font-semibold uppercase tracking-wide text-cyan-400">
+    <div className="rounded-xl border border-border-default bg-surface-primary/80 p-3 backdrop-blur">
+      <h3 className="flex min-h-6 items-center pb-1 text-[10px] font-semibold uppercase tracking-[0.22em] text-accent-data">
         Actions
       </h3>
-      <div className="mt-2 grid grid-cols-3 gap-1 text-[9px] text-gray-200">
+      <div className="mt-1 grid grid-cols-4 gap-2 text-[9px] font-semibold uppercase tracking-[0.05em] text-text-primary">
         {ACTIONS.map((action) => {
           const isReset = action.value === dogzilla.ActionType.ACTION_RESTORE_DEFAULT;
           return (
@@ -56,12 +56,14 @@ const DogzillaDesktopActionPanel = memo(function DogzillaDesktopActionPanel({
               key={action.value}
               type="button"
               onClick={() => sendAction(action.value)}
-              className={isReset
-                ? 'rounded border border-blue-500/50 bg-blue-950/70 px-1.5 py-1 text-center text-blue-200 transition hover:border-blue-400 hover:text-blue-100'
-                : 'rounded border border-gray-700 bg-gray-800/80 px-1.5 py-1 text-center transition hover:border-cyan-400/60 hover:text-cyan-200'
-              }
+              className={`min-h-14 w-full rounded px-1.5 py-2 text-center transition-colors active:bg-surface-active ${isReset
+                ? 'bg-accent-info-bg text-text-primary hover:bg-accent-info-deep'
+                : 'bg-surface-tertiary text-text-primary hover:bg-surface-elevated'
+              }`}
             >
-              {action.label}
+              <span className="flex h-full items-center justify-center whitespace-normal text-center leading-tight">
+                {action.label}
+              </span>
             </button>
           );
         })}

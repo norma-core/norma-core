@@ -72,6 +72,11 @@ const TAB_DEFINITIONS = [
   { id: 'status', label: 'Status', icon: Activity }
 ] as const;
 
+const formatAcceleration = (value: number | null | undefined) => {
+  const formattedValue = (value ?? 0).toFixed(1);
+  return formattedValue === '-0.0' ? '0.0' : formattedValue;
+};
+
 type TabId = (typeof TAB_DEFINITIONS)[number]['id'];
 type JointTabId = 'legs' | 'arm';
 type LegKey = (typeof LEG_CONFIGS)[number]['key'];
@@ -479,9 +484,9 @@ const DogzillaDashboard = memo(function DogzillaDashboard({
     { label: 'Roll', value: `${Math.round(status?.orientation?.roll ?? 0)}°` },
     { label: 'Pitch', value: `${Math.round(status?.orientation?.pitch ?? 0)}°` },
     { label: 'Yaw', value: `${Math.round(status?.orientation?.yaw ?? 0)}°` },
-    { label: 'Accel X', value: (status?.acceleration?.x ?? 0).toFixed(1) },
-    { label: 'Accel Y', value: (status?.acceleration?.y ?? 0).toFixed(1) },
-    { label: 'Accel Z', value: (status?.acceleration?.z ?? 0).toFixed(1) }
+    { label: 'Accel X', value: formatAcceleration(status?.acceleration?.x) },
+    { label: 'Accel Y', value: formatAcceleration(status?.acceleration?.y) },
+    { label: 'Accel Z', value: formatAcceleration(status?.acceleration?.z) }
   ];
 
   const networkRows = [

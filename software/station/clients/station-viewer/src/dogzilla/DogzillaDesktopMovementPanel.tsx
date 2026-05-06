@@ -1,41 +1,81 @@
-import {
-  memo,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type PointerEvent
-} from 'react';
+import { memo, useCallback, useEffect, useRef, useState, type PointerEvent } from 'react';
 import { commandManager } from '@/api/commands.js';
+import { dogzilla } from '@/api/proto.js';
 
 interface DogzillaDesktopMovementPanelProps {
   deviceSerial: string;
+  reverseOrder?: boolean;
+  showHints?: boolean;
+}
+
+interface KeyboardState {
+  forward: boolean;
+  backward: boolean;
+  left: boolean;
+  right: boolean;
+  rotateLeftKey: boolean;
+  rotateLeftArrow: boolean;
+  rotateRightKey: boolean;
+  rotateRightArrow: boolean;
 }
 
 const NEUTRAL = 128;
 const THROTTLE_MS = 50;
 const PAD_RADIUS = 48;
-const KNOB_RADIUS = 16;
-const KNOB_TRAVEL = PAD_RADIUS - KNOB_RADIUS;
+const MOVE_KNOB_SIZE = 40;
+const KNOB_TRAVEL = PAD_RADIUS - MOVE_KNOB_SIZE / 2 - 4;
+const ROTATION_SOCKET_WIDTH = 112;
+const ROTATION_KNOB_SIZE = 40;
+const ROTATION_KNOB_TRAVEL = ROTATION_SOCKET_WIDTH / 2 - ROTATION_KNOB_SIZE / 2 - 4;
+
+const PAD_SOCKET_CLASS = 'relative h-24 w-24 touch-none rounded-full border-2 border-border-default bg-surface-secondary shadow-inner';
+const ROTATION_SOCKET_CLASS = 'relative h-12 w-28 touch-none rounded-full border-2 border-border-default bg-surface-secondary shadow-inner';
+const STICK_KNOB_CLASS = 'absolute left-1/2 top-1/2 rounded-full border border-border-default bg-surface-elevated shadow-sm';
 
 const clampNormalized = (value: number) => Math.max(-1, Math.min(1, value));
 const normalizedToByte = (value: number) => Math.max(0, Math.min(255, Math.round(NEUTRAL + value * 127)));
+const byteToNormalized = (value: number) => clampNormalized((value - NEUTRAL) / 127);
+const createKeyboardState = (): KeyboardState => ({
+  forward: false,
+  backward: false,
+  left: false,
+  right: false,
+  rotateLeftKey: false,
+  rotateLeftArrow: false,
+  rotateRightKey: false,
+  rotateRightArrow: false
+});
+
+const isEditableTarget = (target: EventTarget | null) => {
+  if (!(target instanceof HTMLElement)) {
+    return false;
+  }
+
+  return (
+    target.isContentEditable ||
+    ['INPUT', 'TEXTAREA', 'SELECT', 'BUTTON'].includes(target.tagName)
+  );
+};
 
 const DogzillaDesktopMovementPanel = memo(function DogzillaDesktopMovementPanel({
-  deviceSerial
+  deviceSerial,
+  reverseOrder = false,
+  showHints = true
 }: DogzillaDesktopMovementPanelProps) {
   const padRef = useRef<HTMLDivElement | null>(null);
+  const rotationRef = useRef<HTMLDivElement | null>(null);
   const lastSentRef = useRef(0);
   const pendingRef = useRef<{ moveX: number; moveY: number; moveYaw: number } | null>(null);
   const timerRef = useRef<number | null>(null);
   const joystickRef = useRef({ x: 0, y: 0 });
   const yawRef = useRef(NEUTRAL);
   const draggingRef = useRef(false);
-
+  const rotatingRef = useRef(false);
+  const keyboardStateRef = useRef<KeyboardState>(createKeyboardState());
   const [joystick, setJoystick] = useState({ x: 0, y: 0 });
   const [yaw, setYaw] = useState(NEUTRAL);
   const [isDragging, setIsDragging] = useState(false);
+  const [isRotating, setIsRotating] = useState(false);
 
   const sendMovementCommand = useCallback(
     (values: { moveX: number; moveY: number; moveYaw: number }) => {
@@ -50,6 +90,13 @@ const DogzillaDesktopMovementPanel = memo(function DogzillaDesktopMovementPanel(
     },
     [deviceSerial]
   );
+
+  const sendSitAction = useCallback(() => {
+    commandManager.sendDogzillaCommand({
+      targetDeviceSerial: deviceSerial,
+      action: { action: dogzilla.ActionType.ACTION_SIT_DOWN }
+    });
+  }, [deviceSerial]);
 
   const flushPending = useCallback(() => {
     if (pendingRef.current) {
@@ -86,70 +133,67 @@ const DogzillaDesktopMovementPanel = memo(function DogzillaDesktopMovementPanel(
     };
   }, []);
 
-  const movementValues = useMemo(() => {
-    const moveX = normalizedToByte(-joystick.y);
-    const moveY = normalizedToByte(-joystick.x);
-    return { moveX, moveY, moveYaw: yaw };
-  }, [joystick, yaw]);
-
-  const updateJoystick = useCallback(
-    (next: { x: number; y: number }) => {
-      joystickRef.current = next;
-      setJoystick(next);
-      scheduleSend({
-        moveX: normalizedToByte(-next.y),
-        moveY: normalizedToByte(-next.x),
-        moveYaw: yawRef.current
-      });
-    },
-    [scheduleSend]
-  );
-
-  const updateYaw = useCallback(
-    (nextYaw: number) => {
+  const setControls = useCallback(
+    (nextJoystick: { x: number; y: number }, nextYaw: number) => {
+      joystickRef.current = nextJoystick;
       yawRef.current = nextYaw;
+      setJoystick(nextJoystick);
       setYaw(nextYaw);
       scheduleSend({
-        moveX: normalizedToByte(-joystickRef.current.y),
-        moveY: normalizedToByte(-joystickRef.current.x),
+        moveX: normalizedToByte(-nextJoystick.y),
+        moveY: normalizedToByte(-nextJoystick.x),
         moveYaw: nextYaw
       });
     },
     [scheduleSend]
   );
 
+  const yawNormalized = byteToNormalized(yaw);
+
+  const updateJoystick = useCallback(
+    (next: { x: number; y: number }) => {
+      setControls(next, yawRef.current);
+    },
+    [setControls]
+  );
+
+  const updateYaw = useCallback(
+    (nextYaw: number) => {
+      setControls(joystickRef.current, nextYaw);
+    },
+    [setControls]
+  );
+
   const stopTranslation = useCallback(() => {
-    const next = { x: 0, y: 0 };
-    joystickRef.current = next;
-    setJoystick(next);
-    scheduleSend({
-      moveX: NEUTRAL,
-      moveY: NEUTRAL,
-      moveYaw: yawRef.current
-    });
-  }, [scheduleSend]);
+    setControls({ x: 0, y: 0 }, yawRef.current);
+  }, [setControls]);
 
   const stopYaw = useCallback(() => {
-    yawRef.current = NEUTRAL;
-    setYaw(NEUTRAL);
-    scheduleSend({
-      moveX: normalizedToByte(-joystickRef.current.y),
-      moveY: normalizedToByte(-joystickRef.current.x),
-      moveYaw: NEUTRAL
-    });
-  }, [scheduleSend]);
+    setControls(joystickRef.current, NEUTRAL);
+  }, [setControls]);
 
   const stopAll = useCallback(() => {
-    joystickRef.current = { x: 0, y: 0 };
-    yawRef.current = NEUTRAL;
-    setJoystick({ x: 0, y: 0 });
-    setYaw(NEUTRAL);
-    scheduleSend({
-      moveX: NEUTRAL,
-      moveY: NEUTRAL,
-      moveYaw: NEUTRAL
-    });
-  }, [scheduleSend]);
+    setControls({ x: 0, y: 0 }, NEUTRAL);
+  }, [setControls]);
+
+  const applyKeyboardState = useCallback(() => {
+    const keyboard = keyboardStateRef.current;
+    let x = (keyboard.right ? 1 : 0) - (keyboard.left ? 1 : 0);
+    let y = (keyboard.backward ? 1 : 0) - (keyboard.forward ? 1 : 0);
+    const magnitude = Math.hypot(x, y);
+
+    if (magnitude > 1) {
+      x /= magnitude;
+      y /= magnitude;
+    }
+
+    const yawDirection = (
+      keyboard.rotateLeftKey || keyboard.rotateLeftArrow ? 1 : 0
+    ) - (
+      keyboard.rotateRightKey || keyboard.rotateRightArrow ? 1 : 0
+    );
+    setControls({ x, y }, normalizedToByte(yawDirection));
+  }, [setControls]);
 
   const updateFromPointer = useCallback(
     (event: PointerEvent<HTMLDivElement>) => {
@@ -173,6 +217,23 @@ const DogzillaDesktopMovementPanel = memo(function DogzillaDesktopMovementPanel(
       updateJoystick({ x, y });
     },
     [updateJoystick]
+  );
+
+  const updateRotationFromPointer = useCallback(
+    (event: PointerEvent<HTMLDivElement>) => {
+      const ring = rotationRef.current;
+      if (!ring) {
+        return;
+      }
+
+      const rect = ring.getBoundingClientRect();
+      const centerX = rect.left + rect.width / 2;
+      const dx = event.clientX - centerX;
+      const radius = rect.width / 2;
+      const normalized = clampNormalized(-dx / radius);
+      updateYaw(normalizedToByte(normalized));
+    },
+    [updateYaw]
   );
 
   const handlePointerDown = useCallback(
@@ -208,24 +269,183 @@ const DogzillaDesktopMovementPanel = memo(function DogzillaDesktopMovementPanel(
     [stopTranslation]
   );
 
+  const handleRotationPointerDown = useCallback(
+    (event: PointerEvent<HTMLDivElement>) => {
+      rotatingRef.current = true;
+      setIsRotating(true);
+      event.currentTarget.setPointerCapture(event.pointerId);
+      updateRotationFromPointer(event);
+    },
+    [updateRotationFromPointer]
+  );
+
+  const handleRotationPointerMove = useCallback(
+    (event: PointerEvent<HTMLDivElement>) => {
+      if (!rotatingRef.current) {
+        return;
+      }
+      updateRotationFromPointer(event);
+    },
+    [updateRotationFromPointer]
+  );
+
+  const handleRotationPointerUp = useCallback(
+    (event: PointerEvent<HTMLDivElement>) => {
+      if (!rotatingRef.current) {
+        return;
+      }
+      rotatingRef.current = false;
+      setIsRotating(false);
+      event.currentTarget.releasePointerCapture(event.pointerId);
+      stopYaw();
+    },
+    [stopYaw]
+  );
+
   useEffect(() => {
     const handleVisibility = () => {
       if (document.visibilityState !== 'visible') {
+        keyboardStateRef.current = createKeyboardState();
         stopAll();
       }
     };
+
+    const handleBlur = () => {
+      keyboardStateRef.current = createKeyboardState();
+      stopAll();
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.altKey || event.ctrlKey || event.metaKey || isEditableTarget(event.target)) {
+        return;
+      }
+
+      const keyboard = keyboardStateRef.current;
+      let handled = true;
+      let changed = false;
+
+      switch (event.code) {
+        case 'KeyW':
+          changed = !keyboard.forward;
+          keyboard.forward = true;
+          break;
+        case 'KeyS':
+          changed = !keyboard.backward;
+          keyboard.backward = true;
+          break;
+        case 'KeyA':
+          changed = !keyboard.left;
+          keyboard.left = true;
+          break;
+        case 'KeyD':
+          changed = !keyboard.right;
+          keyboard.right = true;
+          break;
+        case 'KeyQ':
+          changed = !keyboard.rotateLeftKey;
+          keyboard.rotateLeftKey = true;
+          break;
+        case 'ArrowLeft':
+          changed = !keyboard.rotateLeftArrow;
+          keyboard.rotateLeftArrow = true;
+          break;
+        case 'KeyE':
+          changed = !keyboard.rotateRightKey;
+          keyboard.rotateRightKey = true;
+          break;
+        case 'ArrowRight':
+          changed = !keyboard.rotateRightArrow;
+          keyboard.rotateRightArrow = true;
+          break;
+        case 'Space':
+          if (!event.repeat) {
+            sendSitAction();
+          }
+          changed = false;
+          break;
+        default:
+          handled = false;
+      }
+
+      if (!handled) {
+        return;
+      }
+
+      event.preventDefault();
+      if (changed) {
+        applyKeyboardState();
+      }
+    };
+
+    const handleKeyUp = (event: KeyboardEvent) => {
+      const keyboard = keyboardStateRef.current;
+      let handled = true;
+      let changed = false;
+
+      switch (event.code) {
+        case 'KeyW':
+          changed = keyboard.forward;
+          keyboard.forward = false;
+          break;
+        case 'KeyS':
+          changed = keyboard.backward;
+          keyboard.backward = false;
+          break;
+        case 'KeyA':
+          changed = keyboard.left;
+          keyboard.left = false;
+          break;
+        case 'KeyD':
+          changed = keyboard.right;
+          keyboard.right = false;
+          break;
+        case 'KeyQ':
+          changed = keyboard.rotateLeftKey;
+          keyboard.rotateLeftKey = false;
+          break;
+        case 'ArrowLeft':
+          changed = keyboard.rotateLeftArrow;
+          keyboard.rotateLeftArrow = false;
+          break;
+        case 'KeyE':
+          changed = keyboard.rotateRightKey;
+          keyboard.rotateRightKey = false;
+          break;
+        case 'ArrowRight':
+          changed = keyboard.rotateRightArrow;
+          keyboard.rotateRightArrow = false;
+          break;
+        default:
+          handled = false;
+      }
+
+      if (!handled) {
+        return;
+      }
+
+      event.preventDefault();
+      if (changed) {
+        applyKeyboardState();
+      }
+    };
+
     document.addEventListener('visibilitychange', handleVisibility);
+    window.addEventListener('blur', handleBlur);
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+
     return () => {
       document.removeEventListener('visibilitychange', handleVisibility);
+      window.removeEventListener('blur', handleBlur);
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
     };
-  }, [stopAll]);
+  }, [applyKeyboardState, sendSitAction, stopAll]);
 
-  return (
-    <div className="rounded-lg border border-gray-700 bg-gray-900/90 p-2 backdrop-blur">
-      <h3 className="border-b border-gray-700 pb-1 text-[10px] font-semibold uppercase tracking-wide text-cyan-400">
-        Movement
-      </h3>
-      <div className="mt-2 flex flex-col items-center gap-2 text-[10px] text-gray-300">
+  const keycapClass = 'flex h-6 w-6 items-center justify-center rounded-md border border-border-subtle bg-surface-primary/85 text-[9px] font-medium uppercase tracking-[0.14em] text-text-label';
+  const movementBlock = (
+    <div className="pointer-events-auto flex items-center gap-3">
+      <div className="flex flex-col items-center gap-2">
         <div
           ref={padRef}
           role="presentation"
@@ -233,48 +453,73 @@ const DogzillaDesktopMovementPanel = memo(function DogzillaDesktopMovementPanel(
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}
           onPointerCancel={handlePointerUp}
-          className="relative h-24 w-24 touch-none rounded-full border border-gray-600 bg-gray-800/70"
+          className={PAD_SOCKET_CLASS}
         >
           <div
-            className="absolute left-1/2 top-1/2 h-8 w-8 rounded-full border border-cyan-400/70 bg-cyan-500/60"
+            className={`${STICK_KNOB_CLASS} transition-transform ${isDragging ? 'scale-[1.02]' : ''}`}
             style={{
+              width: `${MOVE_KNOB_SIZE}px`,
+              height: `${MOVE_KNOB_SIZE}px`,
               transform: `translate(-50%, -50%) translate(${joystick.x * KNOB_TRAVEL}px, ${joystick.y * KNOB_TRAVEL}px)`
             }}
           />
-          <div className="absolute left-1/2 top-1/2 h-1 w-1 rounded-full bg-gray-400" />
-        </div>
-        <div className="flex w-full items-center justify-between text-[9px] text-gray-400">
-          <span>X {movementValues.moveX}</span>
-          <span>Y {movementValues.moveY}</span>
-          <span>Yaw {movementValues.moveYaw}</span>
-        </div>
-        <div className="w-full">
-          <div className="flex items-center justify-between text-[9px] text-gray-400">
-            <span>Rotate</span>
-            <span className="font-mono text-cyan-200">{yaw}</span>
-          </div>
-          <input
-            type="range"
-            min={0}
-            max={255}
-            value={yaw}
-            onChange={(event) => updateYaw(Number(event.target.value))}
-            onMouseUp={stopYaw}
-            onTouchEnd={stopYaw}
-            className="h-1 w-full accent-cyan-400"
-          />
-        </div>
-        <button
-          type="button"
-          onClick={stopAll}
-          className="w-full rounded border border-red-500/60 bg-red-500/20 py-1 text-[9px] font-semibold uppercase tracking-wide text-red-200 transition hover:border-red-300 hover:text-red-100"
-        >
-          Stop
-        </button>
-        <div className={`text-[9px] ${isDragging ? 'text-cyan-300' : 'text-gray-500'}`}>
-          {isDragging ? 'Dragging' : 'Idle'}
         </div>
       </div>
+      {showHints && (
+        <div className="flex flex-col gap-1">
+          <div className="flex justify-center">
+            <div className={keycapClass}>W</div>
+          </div>
+          <div className="flex gap-1">
+            <div className={keycapClass}>A</div>
+            <div className={keycapClass}>S</div>
+            <div className={keycapClass}>D</div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+  const rotationBlock = (
+    <div className="pointer-events-auto flex items-center gap-3">
+      <div className="flex flex-col items-center">
+        <div
+          ref={rotationRef}
+          role="slider"
+          aria-label="Rotation"
+          aria-valuemin={0}
+          aria-valuemax={255}
+          aria-valuenow={yaw}
+          onPointerDown={handleRotationPointerDown}
+          onPointerMove={handleRotationPointerMove}
+          onPointerUp={handleRotationPointerUp}
+          onPointerCancel={handleRotationPointerUp}
+          className={ROTATION_SOCKET_CLASS}
+        >
+          <div
+            className={`${STICK_KNOB_CLASS} transition-transform ${isRotating ? 'scale-[1.02]' : ''}`}
+            style={{
+              width: `${ROTATION_KNOB_SIZE}px`,
+              height: `${ROTATION_KNOB_SIZE}px`,
+              transform: `translate(-50%, -50%) translate(${-yawNormalized * ROTATION_KNOB_TRAVEL}px, 0)`
+            }}
+          />
+        </div>
+      </div>
+      {showHints && (
+        <div className="flex flex-col gap-1">
+          <div className="flex gap-1">
+            <div className={keycapClass}>Q</div>
+            <div className={keycapClass}>E</div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+
+  return (
+    <div className="flex w-full select-none items-center justify-between gap-4 text-[10px] text-text-secondary">
+      {reverseOrder ? rotationBlock : movementBlock}
+      {reverseOrder ? movementBlock : rotationBlock}
     </div>
   );
 });

@@ -68,7 +68,7 @@ const CameraViewer: React.FC<CameraViewerProps> = React.memo(({ inferenceState }
 
   return (
     <div className="overflow-hidden h-full">
-      <div className="relative flex justify-end items-center h-full">
+      <div className="relative flex justify-center items-center h-full">
         {imageUrl && (
           <img
             src={imageUrl}

@@ -2,6 +2,8 @@ import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { dogzilla } from '../api/proto.js';
+import { useTheme } from '@/hooks/useTheme';
+import { getRendererThemeColors } from '@/utils/theme-colors';
 
 // Servo position neutral value (0x80 = 128)
 const SERVO_NEUTRAL = 128;
@@ -394,10 +396,12 @@ class DogzillaRobot {
 }
 
 export default function DogzillaViewer({ status, servoPositions, servoAngles, cameraPreset = 'iso', refreshToken }: DogzillaViewerProps) {
+  const { theme } = useTheme();
   const containerRef = useRef<HTMLDivElement>(null);
   const robotRef = useRef<DogzillaRobot | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
+  const gridRef = useRef<THREE.GridHelper | null>(null);
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
   const controlsRef = useRef<OrbitControls | null>(null);
   const animationIdRef = useRef<number>(0);
@@ -414,13 +418,23 @@ export default function DogzillaViewer({ status, servoPositions, servoAngles, ca
     return current + diff * t;
   };
 
+  const disposeGrid = (grid: THREE.GridHelper | null) => {
+    if (!grid) return;
+    grid.geometry.dispose();
+    if (Array.isArray(grid.material)) {
+      grid.material.forEach((material) => material.dispose());
+    } else {
+      grid.material.dispose();
+    }
+  };
+
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
 
     // Scene
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x1a1a2e);
+    scene.background = new THREE.Color(0x303030);
     sceneRef.current = scene;
 
     // Camera
@@ -432,6 +446,9 @@ export default function DogzillaViewer({ status, servoPositions, servoAngles, ca
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(container.clientWidth, container.clientHeight);
     renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.domElement.style.display = 'block';
+    renderer.domElement.style.width = '100%';
+    renderer.domElement.style.height = '100%';
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     container.appendChild(renderer.domElement);
@@ -444,19 +461,6 @@ export default function DogzillaViewer({ status, servoPositions, servoAngles, ca
     directionalLight.position.set(5, 10, 5);
     directionalLight.castShadow = true;
     scene.add(directionalLight);
-
-    // Ground
-    const groundGeometry = new THREE.PlaneGeometry(2, 2);
-    const groundMaterial = new THREE.MeshPhongMaterial({ color: 0x2a2a3a, side: THREE.DoubleSide });
-    const ground = new THREE.Mesh(groundGeometry, groundMaterial);
-    ground.rotation.x = -Math.PI / 2;
-    ground.receiveShadow = true;
-    scene.add(ground);
-
-    // Grid
-    const gridHelper = new THREE.GridHelper(1, 20, 0x444466, 0x333355);
-    gridHelper.position.y = 0.001;
-    scene.add(gridHelper);
 
     // Robot
     const robot = new DogzillaRobot();
@@ -496,23 +500,52 @@ export default function DogzillaViewer({ status, servoPositions, servoAngles, ca
     };
     animate();
 
-    // Resize handler
-    const handleResize = () => {
-      camera.aspect = container.clientWidth / container.clientHeight;
+    const resizeRenderer = () => {
+      const width = container.clientWidth;
+      const height = container.clientHeight;
+      if (width === 0 || height === 0) return;
+
+      camera.aspect = width / height;
       camera.updateProjectionMatrix();
-      renderer.setSize(container.clientWidth, container.clientHeight);
+      renderer.setSize(width, height, false);
     };
-    window.addEventListener('resize', handleResize);
+    const resizeObserver = new ResizeObserver(resizeRenderer);
+    resizeObserver.observe(container);
+    window.addEventListener('resize', resizeRenderer);
+    resizeRenderer();
 
     return () => {
-      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('resize', resizeRenderer);
+      resizeObserver.disconnect();
       cancelAnimationFrame(animationIdRef.current);
+      if (gridRef.current) {
+        scene.remove(gridRef.current);
+        disposeGrid(gridRef.current);
+        gridRef.current = null;
+      }
       renderer.dispose();
       if (renderer.domElement.parentNode === container) {
         container.removeChild(renderer.domElement);
       }
     };
   }, []);
+
+  useEffect(() => {
+    const scene = sceneRef.current;
+    if (!scene) return;
+
+    const colors = getRendererThemeColors(theme);
+    scene.background = colors.sceneBackground;
+
+    if (gridRef.current) {
+      scene.remove(gridRef.current);
+      disposeGrid(gridRef.current);
+    }
+
+    const grid = new THREE.GridHelper(2, 20, colors.gridPrimary, colors.gridSecondary);
+    gridRef.current = grid;
+    scene.add(grid);
+  }, [theme]);
 
   // Update robot when status changes
   useEffect(() => {
@@ -603,6 +636,6 @@ export default function DogzillaViewer({ status, servoPositions, servoAngles, ca
   }, [refreshToken, cameraPreset]);
 
   return (
-    <div ref={containerRef} className="h-full min-h-[280px] w-full" />
+    <div ref={containerRef} className="h-full min-h-[280px] w-full overflow-hidden" />
   );
 }
