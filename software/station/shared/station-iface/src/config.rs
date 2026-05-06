@@ -171,7 +171,7 @@ impl Inference {
     /// Create a default Dogzilla inference mirror configuration.
     pub fn default_dogzilla() -> Self {
         let shm_path = if cfg!(target_os = "linux") {
-            PathBuf::from("/dev/shm/dogzilla")
+            PathBuf::from("/run/station/dogzilla")
         } else {
             PathBuf::from("/tmp/dogzilla")
         };
