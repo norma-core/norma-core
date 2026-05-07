@@ -1,4 +1,5 @@
-use crate::dogzilla_proto::{Command, DogzillaDevice, ImuOrientation, TxEnvelope};
+use crate::command_inbox::{CommandReceiver, command_inbox};
+use crate::dogzilla_proto::{DogzillaDevice, ImuOrientation, TxEnvelope};
 use crate::shared::{
     CommandEffect, DEFAULT_SERVO_POSITIONS, build_status, compute_command_effect,
     send_status_update, target_matches,
@@ -8,7 +9,6 @@ use log::warn;
 use prost::Message;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
-use tokio::sync::mpsc;
 use tokio::time::interval;
 
 const SIM_POLL_INTERVAL: Duration = Duration::from_millis(20);
@@ -71,7 +71,7 @@ impl DogzillaSimulator {
     }
 
     pub(crate) async fn run(&mut self) -> Result<(), Box<dyn std::error::Error>> {
-        let (tx_sender, tx_receiver) = mpsc::unbounded_channel::<Command>();
+        let (tx_sender, tx_receiver) = command_inbox();
 
         let device_serial = self.device_info.serial_number.clone();
         let normfs = self.com.normfs.clone();
@@ -90,8 +90,8 @@ impl DogzillaSimulator {
                                 continue;
                             };
 
-                            if let Err(e) = tx_sender.send(command) {
-                                warn!("Failed to forward TX command: {}", e);
+                            if let Err(e) = tx_sender.push(command) {
+                                warn!("Failed to queue TX command: {}", e);
                             }
                         }
                         Err(e) => {
@@ -110,17 +110,22 @@ impl DogzillaSimulator {
 
     async fn main_loop(
         &mut self,
-        mut tx_receiver: mpsc::UnboundedReceiver<Command>,
+        mut tx_receiver: CommandReceiver,
     ) -> Result<(), Box<dyn std::error::Error>> {
         let mut poll_interval = interval(SIM_POLL_INTERVAL);
 
         loop {
             tokio::select! {
-                Some(command) = tx_receiver.recv() => {
-                    let effect = compute_command_effect(&command);
-                    self.apply_command_effect(effect);
-                    if let Some(movement) = command.movement {
-                        self.apply_movement_command(movement.move_x, movement.move_y, movement.move_yaw);
+                command = tx_receiver.recv() => {
+                    match command {
+                        Some(command) => {
+                            let effect = compute_command_effect(&command);
+                            self.apply_command_effect(effect);
+                            if let Some(movement) = command.movement {
+                                self.apply_movement_command(movement.move_x, movement.move_y, movement.move_yaw);
+                            }
+                        }
+                        None => return Ok(()),
                     }
                 }
                 _ = poll_interval.tick() => {

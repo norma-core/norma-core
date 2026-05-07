@@ -61,11 +61,15 @@ impl DogzillaCommunicator {
 
     fn add_device(&self, device: &DogzillaDevice, envelope: &RxEnvelope) {
         let mut state = self.state.write();
-        if state
+        if let Some(device_state) = state
             .devices
-            .iter()
-            .any(|d| d.device.as_ref().map(|d| &d.port_name) == Some(&device.port_name))
+            .iter_mut()
+            .find(|d| d.device.as_ref().map(|d| &d.port_name) == Some(&device.port_name))
         {
+            device_state.device = Some(device.clone());
+            device_state.monotonic_stamp_ns = envelope.monotonic_stamp_ns;
+            device_state.system_stamp_ns = envelope.local_stamp_ns;
+            device_state.is_connected = true;
             return;
         }
 
@@ -80,11 +84,18 @@ impl DogzillaCommunicator {
             });
     }
 
-    fn remove_device(&self, device: &DogzillaDevice) {
+    fn disconnect_device(&self, device: &DogzillaDevice, envelope: &RxEnvelope) {
         let mut state = self.state.write();
-        state
+        if let Some(device_state) = state
             .devices
-            .retain(|d| d.device.as_ref().map(|d| &d.port_name) != Some(&device.port_name));
+            .iter_mut()
+            .find(|d| d.device.as_ref().map(|d| &d.port_name) == Some(&device.port_name))
+        {
+            device_state.device = Some(device.clone());
+            device_state.monotonic_stamp_ns = envelope.monotonic_stamp_ns;
+            device_state.system_stamp_ns = envelope.local_stamp_ns;
+            device_state.is_connected = false;
+        }
     }
 
     fn update_device_status(&self, envelope: &RxEnvelope) {
@@ -102,6 +113,7 @@ impl DogzillaCommunicator {
             device_state.monotonic_stamp_ns = envelope.monotonic_stamp_ns;
             device_state.system_stamp_ns = envelope.local_stamp_ns;
             device_state.status = envelope.status.clone();
+            device_state.is_connected = true;
         }
     }
 
@@ -113,7 +125,9 @@ impl DogzillaCommunicator {
 
         match DogzillaSignalType::try_from(envelope.signal_type) {
             Ok(DogzillaSignalType::DogzillaConnected) => self.add_device(device, envelope),
-            Ok(DogzillaSignalType::DogzillaDisconnected) => self.remove_device(device),
+            Ok(DogzillaSignalType::DogzillaDisconnected) => {
+                self.disconnect_device(device, envelope)
+            }
             Ok(DogzillaSignalType::DogzillaStatusUpdate | DogzillaSignalType::DogzillaError) => {
                 self.update_device_status(envelope);
             }

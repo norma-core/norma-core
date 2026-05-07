@@ -2,6 +2,7 @@ pub mod dogzilla_proto {
     include!(concat!(env!("OUT_DIR"), "/dogzilla.rs"));
 }
 
+mod command_inbox;
 mod driver;
 mod errors;
 mod port;

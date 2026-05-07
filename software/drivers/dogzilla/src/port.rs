@@ -1,3 +1,4 @@
+use crate::command_inbox::{CommandReceiver, command_inbox};
 use crate::dogzilla_proto::{
     Acceleration, Command, DogzillaDevice, DogzillaStatus, ImuOrientation, TxEnvelope,
 };
@@ -12,7 +13,6 @@ use prost::Message;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
-use tokio::sync::mpsc;
 use tokio::time::timeout;
 use tokio_serial::SerialStream;
 
@@ -88,7 +88,7 @@ impl DogzillaPort {
 
         self.write_startup_frames(&mut serial).await;
 
-        let (tx_sender, tx_receiver) = mpsc::unbounded_channel::<Command>();
+        let (tx_sender, tx_receiver) = command_inbox();
         let device_serial = self.device_info.serial_number.clone();
         let normfs = self.com.normfs.clone();
         let tx_queue_id = self.com.tx_queue_id.clone();
@@ -107,8 +107,8 @@ impl DogzillaPort {
                                     continue;
                                 };
 
-                                if let Err(e) = tx_sender.send(command) {
-                                    warn!("Failed to forward TX command: {}", e);
+                                if let Err(e) = tx_sender.push(command) {
+                                    warn!("Failed to queue TX command: {}", e);
                                 }
                             }
                             Err(e) => warn!("Failed to decode TX envelope: {}", e),
@@ -188,16 +188,21 @@ impl DogzillaPort {
     async fn feedback_loop(
         &mut self,
         serial: &mut SerialStream,
-        mut tx_receiver: mpsc::UnboundedReceiver<Command>,
+        mut tx_receiver: CommandReceiver,
     ) -> Result<(), Box<dyn std::error::Error>> {
         let mut buffer = Vec::with_capacity(128);
         let mut temp = [0u8; 128];
 
         loop {
             tokio::select! {
-                biased;
-                Some(command) = tx_receiver.recv() => {
-                    self.process_command(serial, &command).await;
+                command = tx_receiver.recv() => {
+                    match command {
+                        Some(command) => self.process_command(serial, &command).await,
+                        None => {
+                            warn!("DOGZILLA command channel closed");
+                            return Ok(());
+                        }
+                    }
                 }
                 result = serial.read(&mut temp) => {
                     match result {
