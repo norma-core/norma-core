@@ -1,17 +1,12 @@
-//! Camera format enumeration and selection.
-
 use crate::buffer::PixelFormat;
 use libcamera_sys_static as ffi;
 
-/// Represents a supported camera format with resolution and estimated FPS.
 #[derive(Debug, Clone)]
 pub struct CameraFormat {
     pub pixel_format: PixelFormat,
     pub width: u32,
     pub height: u32,
-    /// Estimated FPS based on resolution (sensor-specific).
     pub estimated_fps: u32,
-    /// FourCC string for logging and telemetry.
     pub fourcc: String,
 }
 
@@ -48,7 +43,10 @@ pub fn enumerate_formats(stream_cfg: *mut ffi::lc_stream_configuration_t) -> Vec
 
             let size_count = ffi::lc_stream_formats_sizes_count(stream_formats, pixel_format);
             for size_idx in 0..size_count {
-                let mut size = ffi::lc_size_t { width: 0, height: 0 };
+                let mut size = ffi::lc_size_t {
+                    width: 0,
+                    height: 0,
+                };
                 if ffi::lc_stream_formats_size_at(stream_formats, pixel_format, size_idx, &mut size)
                     == ffi::lc_status_t_LC_STATUS_OK
                 {
@@ -65,8 +63,14 @@ pub fn enumerate_formats(stream_cfg: *mut ffi::lc_stream_configuration_t) -> Vec
 
             if size_count == 0 {
                 let mut range = ffi::lc_size_range_info_t {
-                    min: ffi::lc_size_t { width: 0, height: 0 },
-                    max: ffi::lc_size_t { width: 0, height: 0 },
+                    min: ffi::lc_size_t {
+                        width: 0,
+                        height: 0,
+                    },
+                    max: ffi::lc_size_t {
+                        width: 0,
+                        height: 0,
+                    },
                     hstep: 0,
                     vstep: 0,
                 };

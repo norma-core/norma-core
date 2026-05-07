@@ -1,45 +1,27 @@
-//! State tracking for OV5647 camera driver.
-//!
-//! Manages frame enqueueing and event notifications via NormFS.
-
 use bytes::{Bytes, BytesMut};
 use prost::Message;
 use std::sync::Arc;
 
-use station_iface::{
-    StationEngine,
-    iface_proto::drivers::QueueDataType,
-};
 use normfs::{NormFS, UintN};
+use station_iface::{StationEngine, iface_proto::drivers::QueueDataType};
 
-use crate::proto::{Camera, CameraFormat, RxEnvelope, RxEnvelopeType};
 use crate::proto::frame::{FrameFormat, FrameFormatKind, FrameStamp, FramesPack};
+use crate::proto::{Camera, CameraFormat, RxEnvelope, RxEnvelopeType};
 
-/// State tracker for OV5647 driver.
-pub struct StateTracker<K: StationEngine> {
-    #[allow(dead_code)]
+pub(crate) struct StateTracker<K: StationEngine> {
     engine: Arc<K>,
     normfs: Arc<NormFS>,
     queue_id: normfs::QueueId,
     inference_states_queue_id: normfs::QueueId,
-
-    // Current camera info
     camera: arc_swap::ArcSwap<Option<Camera>>,
     format: arc_swap::ArcSwap<Option<CameraFormat>>,
     recording: std::sync::atomic::AtomicBool,
-
-    // Statistics
     frames_captured: std::sync::atomic::AtomicU64,
     frames_dropped: std::sync::atomic::AtomicU64,
 }
 
 impl<K: StationEngine> StateTracker<K> {
-    /// Create a new state tracker.
-    pub fn new(
-        engine: Arc<K>,
-        normfs: Arc<NormFS>,
-        queue_id: String,
-    ) -> Self {
+    pub(crate) fn new(engine: Arc<K>, normfs: Arc<NormFS>, queue_id: String) -> Self {
         let resolved_queue_id = normfs.resolve(&queue_id);
         let inference_states_queue_id = normfs.resolve("inference-states");
         Self {
@@ -55,7 +37,7 @@ impl<K: StationEngine> StateTracker<K> {
         }
     }
 
-    pub async fn start_queue(&self) {
+    pub(crate) async fn start_queue(&self) {
         let _ = self
             .normfs
             .ensure_queue_exists_for_write(&self.queue_id)
@@ -64,8 +46,7 @@ impl<K: StationEngine> StateTracker<K> {
             .register_queue(&self.queue_id, QueueDataType::QdtOv5647Frames, vec![]);
     }
 
-    /// Enqueue frame data into NormFS.
-    pub fn enqueue_frame(
+    pub(crate) fn enqueue_frame(
         &self,
         camera: &Camera,
         stamp: FrameStamp,
@@ -95,25 +76,27 @@ impl<K: StationEngine> StateTracker<K> {
         let mut buf = BytesMut::new();
         if envelope.encode(&mut buf).is_err() {
             log::error!("OV5647 failed to encode frame envelope");
-            self.frames_dropped.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+            self.frames_dropped
+                .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
             return false;
         }
 
         match self.normfs.enqueue(&self.queue_id, buf.freeze()) {
             Ok(_) => {
-                self.frames_captured.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+                self.frames_captured
+                    .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
                 true
             }
             Err(e) => {
                 log::error!("OV5647 failed to enqueue frame: {}", e);
-                self.frames_dropped.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+                self.frames_dropped
+                    .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
                 false
             }
         }
     }
 
-    /// Enqueue device connected event.
-    pub fn enqueue_device_connected(&self, camera: &Camera, formats: Vec<CameraFormat>) {
+    pub(crate) fn enqueue_device_connected(&self, camera: &Camera, formats: Vec<CameraFormat>) {
         self.camera.store(Arc::new(Some(camera.clone())));
         if let Some(format) = formats.first() {
             self.format.store(Arc::new(Some(format.clone())));
@@ -135,11 +118,11 @@ impl<K: StationEngine> StateTracker<K> {
         let _ = self.send_envelope(&envelope);
     }
 
-    /// Enqueue device disconnected event.
-    pub fn enqueue_device_disconnected(&self, camera: &Camera) {
+    pub(crate) fn enqueue_device_disconnected(&self, camera: &Camera) {
         self.camera.store(Arc::new(None));
         self.format.store(Arc::new(None));
-        self.recording.store(false, std::sync::atomic::Ordering::Relaxed);
+        self.recording
+            .store(false, std::sync::atomic::Ordering::Relaxed);
 
         let envelope = RxEnvelope {
             r#type: RxEnvelopeType::EtDeviceDisconnected as i32,
@@ -156,9 +139,9 @@ impl<K: StationEngine> StateTracker<K> {
         let _ = self.send_envelope(&envelope);
     }
 
-    /// Enqueue recording start event.
-    pub fn enqueue_recording_start(&self, camera: &Camera, format: &CameraFormat) {
-        self.recording.store(true, std::sync::atomic::Ordering::Relaxed);
+    pub(crate) fn enqueue_recording_start(&self, camera: &Camera, format: &CameraFormat) {
+        self.recording
+            .store(true, std::sync::atomic::Ordering::Relaxed);
         self.format.store(Arc::new(Some(format.clone())));
 
         let envelope = RxEnvelope {
@@ -177,9 +160,9 @@ impl<K: StationEngine> StateTracker<K> {
         let _ = self.send_envelope(&envelope);
     }
 
-    /// Enqueue recording end event.
-    pub fn enqueue_recording_end(&self, camera: &Camera) {
-        self.recording.store(false, std::sync::atomic::Ordering::Relaxed);
+    pub(crate) fn enqueue_recording_end(&self, camera: &Camera) {
+        self.recording
+            .store(false, std::sync::atomic::Ordering::Relaxed);
 
         let envelope = RxEnvelope {
             r#type: RxEnvelopeType::EtDeviceRecordingEnd as i32,
@@ -196,8 +179,7 @@ impl<K: StationEngine> StateTracker<K> {
         let _ = self.send_envelope(&envelope);
     }
 
-    /// Enqueue error event.
-    pub fn enqueue_error(&self, camera: &Camera, error: String) {
+    pub(crate) fn enqueue_error(&self, camera: &Camera, error: String) {
         let envelope = RxEnvelope {
             r#type: RxEnvelopeType::EtError as i32,
             camera: Some(camera.clone()),
@@ -213,17 +195,6 @@ impl<K: StationEngine> StateTracker<K> {
 
         let _ = self.send_envelope(&envelope);
     }
-
-    /// Get current statistics.
-    #[allow(dead_code)]
-    pub fn stats(&self) -> (u64, u64) {
-        (
-            self.frames_captured.load(std::sync::atomic::Ordering::Relaxed),
-            self.frames_dropped.load(std::sync::atomic::Ordering::Relaxed),
-        )
-    }
-
-    // Private methods
 
     fn send_envelope(&self, envelope: &RxEnvelope) -> Result<UintN, String> {
         let mut buf = BytesMut::new();

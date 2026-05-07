@@ -5,14 +5,31 @@ use crate::dogzilla_proto::{
 use crate::protocol;
 use crate::state::DogzillaCommunicator;
 use log::warn;
-use systime;
 
 pub(crate) const SERVO_COUNT: usize = 15;
 pub(crate) const DEFAULT_SERVO_POSITIONS: [u32; SERVO_COUNT] = [
     128, 200, 110, 128, 200, 110, 128, 200, 110, 128, 200, 110, 0, 255, 0,
 ];
 
-#[derive(Debug, Clone)]
+const SERVO_MAP: [(u32, u8, usize); SERVO_COUNT] = [
+    (11, protocol::REG_SERVO_11, 0),
+    (12, protocol::REG_SERVO_12, 1),
+    (13, protocol::REG_SERVO_13, 2),
+    (21, protocol::REG_SERVO_21, 3),
+    (22, protocol::REG_SERVO_22, 4),
+    (23, protocol::REG_SERVO_23, 5),
+    (31, protocol::REG_SERVO_31, 6),
+    (32, protocol::REG_SERVO_32, 7),
+    (33, protocol::REG_SERVO_33, 8),
+    (41, protocol::REG_SERVO_41, 9),
+    (42, protocol::REG_SERVO_42, 10),
+    (43, protocol::REG_SERVO_43, 11),
+    (51, protocol::REG_GRIPPER_STATUS, 12),
+    (52, protocol::REG_SERVO_ARM_52, 13),
+    (53, protocol::REG_SERVO_ARM_53, 14),
+];
+
+#[derive(Debug)]
 pub(crate) struct ServoWrite {
     pub servo_id: u32,
     pub register: u8,
@@ -27,85 +44,32 @@ pub(crate) struct CommandEffect {
     pub arm_servo_speed: Option<u32>,
 }
 
-/// Maps a servo ID (11-13, 21-23, 31-33, 41-43, 51-53) to its register address
-fn servo_id_to_register(servo_id: u32) -> Option<u8> {
-    match servo_id {
-        // Leg 1 (Front Right)
-        11 => Some(protocol::REG_SERVO_11),
-        12 => Some(protocol::REG_SERVO_12),
-        13 => Some(protocol::REG_SERVO_13),
-        // Leg 2 (Front Left)
-        21 => Some(protocol::REG_SERVO_21),
-        22 => Some(protocol::REG_SERVO_22),
-        23 => Some(protocol::REG_SERVO_23),
-        // Leg 3 (Rear Left)
-        31 => Some(protocol::REG_SERVO_31),
-        32 => Some(protocol::REG_SERVO_32),
-        33 => Some(protocol::REG_SERVO_33),
-        // Leg 4 (Rear Right)
-        41 => Some(protocol::REG_SERVO_41),
-        42 => Some(protocol::REG_SERVO_42),
-        43 => Some(protocol::REG_SERVO_43),
-        // Arm servos
-        51 => Some(protocol::REG_GRIPPER_STATUS), // Gripper
-        52 => Some(protocol::REG_SERVO_ARM_52),   // Shoulder
-        53 => Some(protocol::REG_SERVO_ARM_53),   // Base
-        _ => None,
-    }
-}
-
-fn servo_id_to_index(servo_id: u32) -> Option<usize> {
-    match servo_id {
-        11 => Some(0),
-        12 => Some(1),
-        13 => Some(2),
-        21 => Some(3),
-        22 => Some(4),
-        23 => Some(5),
-        31 => Some(6),
-        32 => Some(7),
-        33 => Some(8),
-        41 => Some(9),
-        42 => Some(10),
-        43 => Some(11),
-        51 => Some(12),
-        52 => Some(13),
-        53 => Some(14),
-        _ => None,
-    }
-}
-
 pub(crate) fn compute_command_effect(command: &Command) -> CommandEffect {
     let mut effect = CommandEffect::default();
 
     if let Some(servo) = &command.servo {
-        let position = servo.position.clamp(0, 255) as u8;
-        match (
-            servo_id_to_register(servo.servo_id),
-            servo_id_to_index(servo.servo_id),
-        ) {
-            (Some(register), Some(index)) => {
+        match servo_meta(servo.servo_id) {
+            Some((register, index)) => {
                 effect.servo_writes.push(ServoWrite {
                     servo_id: servo.servo_id,
                     register,
-                    position,
+                    position: command_byte(servo.position),
                     index,
                 });
             }
-            _ => warn!("Unknown servo ID: {}", servo.servo_id),
+            None => warn!("Unknown servo ID: {}", servo.servo_id),
         }
     }
 
     if let Some(speed) = &command.servo_speed {
-        if let Some(body_speed) = speed.body_speed.as_ref() {
-            if let servo_speed_command::BodySpeed::BodyServoSpeed(body_speed_val) = body_speed {
-                effect.leg_servo_speed = Some((*body_speed_val).clamp(0, 255) as u32);
-            }
+        if let Some(servo_speed_command::BodySpeed::BodyServoSpeed(value)) =
+            speed.body_speed.as_ref()
+        {
+            effect.leg_servo_speed = Some((*value).clamp(0, 255));
         }
-        if let Some(arm_speed) = speed.arm_speed.as_ref() {
-            if let servo_speed_command::ArmSpeed::ArmServoSpeed(arm_speed_val) = arm_speed {
-                effect.arm_servo_speed = Some((*arm_speed_val).clamp(0, 255) as u32);
-            }
+        if let Some(servo_speed_command::ArmSpeed::ArmServoSpeed(value)) = speed.arm_speed.as_ref()
+        {
+            effect.arm_servo_speed = Some((*value).clamp(0, 255));
         }
     }
 
@@ -120,13 +84,12 @@ pub(crate) fn build_status(
     battery_level: u32,
     orientation: ImuOrientation,
 ) -> DogzillaStatus {
-    let servo_angles: Vec<f32> = servo_positions
+    let servo_angles = servo_positions
         .iter()
         .enumerate()
         .map(|(i, &raw)| {
             let limit = protocol::get_servo_limit_lite(i);
-            let raw_u8 = raw.min(255) as u8;
-            protocol::servo_position_to_angle(raw_u8, limit)
+            protocol::servo_position_to_angle(command_byte(raw), limit)
         })
         .collect();
 
@@ -141,6 +104,14 @@ pub(crate) fn build_status(
         orientation: Some(orientation),
         acceleration: None,
     }
+}
+
+pub(crate) fn command_byte(value: u32) -> u8 {
+    value.min(255) as u8
+}
+
+pub(crate) fn target_matches(target_serial: &str, device_serial: &str) -> bool {
+    target_serial.is_empty() || target_serial == device_serial
 }
 
 pub(crate) fn send_status_update(
@@ -161,4 +132,10 @@ pub(crate) fn send_status_update(
     if let Err(e) = comm.send_rx(&envelope) {
         warn!("Failed to send status: {}", e);
     }
+}
+
+fn servo_meta(servo_id: u32) -> Option<(u8, usize)> {
+    SERVO_MAP
+        .iter()
+        .find_map(|&(id, register, index)| (id == servo_id).then_some((register, index)))
 }

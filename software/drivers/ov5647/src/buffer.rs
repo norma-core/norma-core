@@ -1,9 +1,6 @@
-//! Frame buffer management.
-
 use crate::error::{Ov5647Error, Result};
 use std::os::unix::io::RawFd;
 
-/// Pixel formats supported by the camera.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum PixelFormat {
     Unknown,
@@ -19,7 +16,6 @@ pub enum PixelFormat {
 }
 
 impl PixelFormat {
-    /// Convert from FFI pixel format value.
     pub(crate) fn from_ffi(value: i32) -> Self {
         match value {
             1 => PixelFormat::Rgb888,
@@ -35,8 +31,6 @@ impl PixelFormat {
         }
     }
 
-    /// Convert to FFI pixel format value.
-    #[allow(dead_code)]
     pub(crate) fn to_ffi(self) -> i32 {
         match self {
             PixelFormat::Unknown => 0,
@@ -51,41 +45,23 @@ impl PixelFormat {
             PixelFormat::Mjpeg => 9,
         }
     }
-
-    /// Get bytes per pixel (for packed formats).
-    #[allow(dead_code)]
-    pub fn bytes_per_pixel(&self) -> Option<usize> {
-        match self {
-            PixelFormat::Rgb888 | PixelFormat::Bgr888 => Some(3),
-            PixelFormat::Yuyv | PixelFormat::Yvyu | PixelFormat::Uyvy => Some(2),
-            _ => None, // Planar formats don't have fixed bpp
-        }
-    }
 }
 
-/// Information about a buffer plane.
 #[derive(Debug, Clone)]
 pub struct PlaneInfo {
-    /// File descriptor for the plane's DMA buffer.
     pub fd: RawFd,
-    /// Offset within the DMA buffer.
     pub offset: u32,
-    /// Length of the plane data.
     pub length: u32,
 }
 
-/// A mapped frame buffer for reading pixel data.
 pub struct MappedBuffer {
     base_ptr: *mut u8,
     ptr: *mut u8,
     len: usize,
-    #[allow(dead_code)]
-    fd: RawFd,
     map_len: usize,
 }
 
 impl MappedBuffer {
-    /// Map a buffer plane into memory.
     pub(crate) fn map(plane: &PlaneInfo) -> Result<Self> {
         let page_size = unsafe { libc::sysconf(libc::_SC_PAGESIZE) };
         if page_size <= 0 {
@@ -121,26 +97,12 @@ impl MappedBuffer {
             base_ptr: ptr as *mut u8,
             ptr: unsafe { (ptr as *mut u8).add(delta) },
             len: plane.length as usize,
-            fd: plane.fd,
             map_len,
         })
     }
 
-    /// Get the buffer data as a slice.
     pub fn as_slice(&self) -> &[u8] {
         unsafe { std::slice::from_raw_parts(self.ptr, self.len) }
-    }
-
-    /// Get the length of the mapped buffer.
-    #[allow(dead_code)]
-    pub fn len(&self) -> usize {
-        self.len
-    }
-
-    /// Check if the buffer is empty.
-    #[allow(dead_code)]
-    pub fn is_empty(&self) -> bool {
-        self.len == 0
     }
 }
 
@@ -154,25 +116,15 @@ impl Drop for MappedBuffer {
     }
 }
 
-// SAFETY: MappedBuffer only holds a pointer to memory-mapped data
-// which is safe to send between threads.
 unsafe impl Send for MappedBuffer {}
 unsafe impl Sync for MappedBuffer {}
 
-/// Frame data from a completed capture.
 pub struct FrameData {
-    /// Pixel data buffer (planes concatenated in order).
     pub buffer: Vec<u8>,
-    /// Pixel format of the data.
     pub format: PixelFormat,
-    /// Image width.
     pub width: u32,
-    /// Image height.
     pub height: u32,
-    /// Stride (bytes per row).
     pub stride: u32,
-    /// Capture timestamp in nanoseconds.
     pub timestamp_ns: u64,
-    /// Frame sequence number.
     pub sequence: u64,
 }

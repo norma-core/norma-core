@@ -1,5 +1,5 @@
 pub mod dogzilla_proto {
-    include!("proto/dogzilla.rs");
+    include!(concat!(env!("OUT_DIR"), "/dogzilla.rs"));
 }
 
 mod driver;
@@ -11,4 +11,3 @@ mod sim;
 mod state;
 
 pub use driver::{DogzillaDriver, start_dogzilla_driver};
-pub use errors::DogzillaError;

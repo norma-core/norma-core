@@ -1,7 +1,7 @@
 use crate::dogzilla_proto::{Command, DogzillaDevice, ImuOrientation, TxEnvelope};
 use crate::shared::{
     CommandEffect, DEFAULT_SERVO_POSITIONS, build_status, compute_command_effect,
-    send_status_update,
+    send_status_update, target_matches,
 };
 use crate::state::DogzillaCommunicator;
 use log::warn;
@@ -27,7 +27,7 @@ const GAIT_YAW_RATE_DEG: f32 = 70.0;
 const LEG_SERVO_GROUPS: [(usize, usize, usize); 4] = [(0, 1, 2), (3, 4, 5), (6, 7, 8), (9, 10, 11)];
 const LEG_PHASE_OFFSETS: [f32; 4] = [0.0, std::f32::consts::PI, 0.0, std::f32::consts::PI];
 
-pub struct DogzillaSimulator {
+pub(crate) struct DogzillaSimulator {
     device_info: DogzillaDevice,
     com: Arc<DogzillaCommunicator>,
     leg_servo_speed: u32,
@@ -46,7 +46,7 @@ pub struct DogzillaSimulator {
 }
 
 impl DogzillaSimulator {
-    pub fn new(device_info: DogzillaDevice, com: Arc<DogzillaCommunicator>) -> Self {
+    pub(crate) fn new(device_info: DogzillaDevice, com: Arc<DogzillaCommunicator>) -> Self {
         Self {
             device_info,
             com,
@@ -70,10 +70,9 @@ impl DogzillaSimulator {
         }
     }
 
-    pub async fn run(&mut self) -> Result<(), Box<dyn std::error::Error>> {
+    pub(crate) async fn run(&mut self) -> Result<(), Box<dyn std::error::Error>> {
         let (tx_sender, tx_receiver) = mpsc::unbounded_channel::<Command>();
 
-        let tx_sender_clone = tx_sender.clone();
         let device_serial = self.device_info.serial_number.clone();
         let normfs = self.com.normfs.clone();
         let tx_queue_id = self.com.tx_queue_id.clone();
@@ -83,14 +82,16 @@ impl DogzillaSimulator {
                 for (_id, data) in entries {
                     match TxEnvelope::decode(data.as_ref()) {
                         Ok(envelope) => {
-                            if envelope.target_device_serial.is_empty()
-                                || envelope.target_device_serial == device_serial
-                            {
-                                if let Some(command) = envelope.command {
-                                    if let Err(e) = tx_sender_clone.send(command) {
-                                        warn!("Failed to forward TX command: {}", e);
-                                    }
-                                }
+                            if !target_matches(&envelope.target_device_serial, &device_serial) {
+                                continue;
+                            }
+
+                            let Some(command) = envelope.command else {
+                                continue;
+                            };
+
+                            if let Err(e) = tx_sender.send(command) {
+                                warn!("Failed to forward TX command: {}", e);
                             }
                         }
                         Err(e) => {

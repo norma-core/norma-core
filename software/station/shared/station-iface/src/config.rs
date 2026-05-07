@@ -54,10 +54,8 @@ pub struct Drivers {
     #[serde(rename = "usb-video", skip_serializing_if = "Option::is_none")]
     pub usb_video: Option<UsbVideoConfig>,
 
-    /// Dogzilla robot dog configuration
     pub dogzilla: Option<DogzillaConfig>,
 
-    /// OV5647 camera configuration
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub ov5647: Option<Ov5647Config>,
 }
@@ -168,7 +166,6 @@ impl Inference {
         }
     }
 
-    /// Create a default Dogzilla inference mirror configuration.
     pub fn default_dogzilla() -> Self {
         let shm_path = if cfg!(target_os = "linux") {
             PathBuf::from("/run/station/dogzilla")

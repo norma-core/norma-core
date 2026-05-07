@@ -3,21 +3,22 @@ use crate::dogzilla_proto::{
 };
 use bytes::{Bytes, BytesMut};
 use log::warn;
-use normfs::NormFS;
-use normfs::UintN;
+use normfs::{NormFS, UintN};
 use prost::Message;
 use std::sync::Arc;
 
-pub struct DogzillaCommunicator {
-    pub normfs: Arc<NormFS>,
-    pub rx_queue_id: normfs::QueueId,
-    pub tx_queue_id: normfs::QueueId,
-    pub inference_queue_id: normfs::QueueId,
+type SendResult<T> = Result<T, Box<dyn std::error::Error + Send + Sync>>;
+
+pub(crate) struct DogzillaCommunicator {
+    pub(crate) normfs: Arc<NormFS>,
+    pub(crate) rx_queue_id: normfs::QueueId,
+    pub(crate) tx_queue_id: normfs::QueueId,
+    pub(crate) inference_queue_id: normfs::QueueId,
     state: Arc<parking_lot::RwLock<InferenceState>>,
 }
 
 impl DogzillaCommunicator {
-    pub fn new(
+    pub(crate) fn new(
         normfs: Arc<NormFS>,
         rx_queue_id: normfs::QueueId,
         tx_queue_id: normfs::QueueId,
@@ -32,31 +33,27 @@ impl DogzillaCommunicator {
         }
     }
 
+    pub(crate) fn send_rx(&self, envelope: &RxEnvelope) -> SendResult<()> {
+        self.send_envelope(&self.rx_queue_id, envelope)?;
+        if let Err(e) = self.update_state(envelope) {
+            warn!("Failed to update DOGZILLA inference state: {}", e);
+        }
+        Ok(())
+    }
+
+    pub(crate) fn send_tx(&self, envelope: &TxEnvelope) -> SendResult<()> {
+        self.send_envelope(&self.tx_queue_id, envelope)?;
+        Ok(())
+    }
+
     fn send_envelope<M: Message>(
         &self,
         queue_id: &normfs::QueueId,
         envelope: &M,
-    ) -> Result<UintN, normfs::Error> {
+    ) -> SendResult<UintN> {
         let mut buf = Vec::new();
-        envelope.encode(&mut buf).unwrap();
-        self.normfs.enqueue(queue_id, Bytes::from(buf))
-    }
-
-    pub fn send_rx(
-        &self,
-        envelope: &RxEnvelope,
-    ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        let ptr = self.send_envelope(&self.rx_queue_id, envelope)?;
-        self.update_state(envelope, ptr);
-        Ok(())
-    }
-
-    pub fn send_tx(
-        &self,
-        envelope: &TxEnvelope,
-    ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        self.send_envelope(&self.tx_queue_id, envelope)?;
-        Ok(())
+        envelope.encode(&mut buf)?;
+        Ok(self.normfs.enqueue(queue_id, Bytes::from(buf))?)
     }
 
     fn add_device(&self, device: &DogzillaDevice, envelope: &RxEnvelope) {
@@ -68,6 +65,7 @@ impl DogzillaCommunicator {
         {
             return;
         }
+
         state
             .devices
             .push(dogzilla_proto::inference_state::DeviceState {
@@ -104,23 +102,16 @@ impl DogzillaCommunicator {
         }
     }
 
-    fn update_state(&self, envelope: &RxEnvelope, _ptr: UintN) {
+    fn update_state(&self, envelope: &RxEnvelope) -> SendResult<()> {
         let device = match &envelope.device {
             Some(d) => d,
-            None => return,
+            None => return Ok(()),
         };
 
         match DogzillaSignalType::try_from(envelope.signal_type) {
-            Ok(DogzillaSignalType::DogzillaConnected) => {
-                self.add_device(device, envelope);
-            }
-            Ok(DogzillaSignalType::DogzillaDisconnected) => {
-                self.remove_device(device);
-            }
-            Ok(DogzillaSignalType::DogzillaStatusUpdate) => {
-                self.update_device_status(envelope);
-            }
-            Ok(DogzillaSignalType::DogzillaError) => {
+            Ok(DogzillaSignalType::DogzillaConnected) => self.add_device(device, envelope),
+            Ok(DogzillaSignalType::DogzillaDisconnected) => self.remove_device(device),
+            Ok(DogzillaSignalType::DogzillaStatusUpdate | DogzillaSignalType::DogzillaError) => {
                 self.update_device_status(envelope);
             }
             _ => {}
@@ -131,18 +122,16 @@ impl DogzillaCommunicator {
             state.last_inference_queue_ptr = self.get_last_inference_id_bytes().to_vec();
         }
 
+        self.publish_state()
+    }
+
+    fn publish_state(&self) -> SendResult<()> {
         let state = self.state.read();
         let mut buf = Vec::new();
-        state.encode(&mut buf).unwrap();
-        let data = Bytes::from(buf);
-
-        let iptr = self.normfs.enqueue(&self.inference_queue_id, data.clone());
-        if iptr.is_err() {
-            warn!("Failed to enqueue inference state: {}", iptr.err().unwrap());
-            return;
-        }
-
-        let _ = iptr.unwrap();
+        state.encode(&mut buf)?;
+        self.normfs
+            .enqueue(&self.inference_queue_id, Bytes::from(buf))?;
+        Ok(())
     }
 
     fn get_last_inference_id_bytes(&self) -> Bytes {

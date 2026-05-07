@@ -1,11 +1,9 @@
-//! Pipeline manager for OV5647 camera capture.
-
-use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{Duration, Instant};
 
-use station_iface::StationEngine;
 use normfs::NormFS;
+use station_iface::StationEngine;
 use tokio::task::JoinHandle;
 
 use crate::buffer::PixelFormat;
@@ -13,21 +11,16 @@ use crate::camera::Ov5647Camera;
 use crate::config::{CaptureConfig, Quality};
 use crate::error::Ov5647Error;
 use crate::frame2tensor;
-use crate::proto::{Camera, CameraFormat};
 use crate::proto::frame::FrameStamp;
+use crate::proto::{Camera, CameraFormat};
 use crate::state::StateTracker;
 
-/// Non-generic handle for stopping the OV5647 driver.
-///
-/// Returned by [`Ov5647Manager::new`] and stored in the station so
-/// the background task can be signalled to exit on shutdown.
 pub struct Ov5647Handle {
     stopped: Arc<AtomicBool>,
     task_handle: JoinHandle<()>,
 }
 
 impl Ov5647Handle {
-    /// Signal the background task to stop and wait briefly for it to exit.
     pub async fn stop(&self) {
         self.stopped.store(true, Ordering::Release);
         tokio::time::sleep(Duration::from_millis(100)).await;
@@ -41,15 +34,11 @@ impl Drop for Ov5647Handle {
     }
 }
 
-/// OV5647 camera driver manager (internal).
-pub(crate) struct Ov5647Manager<K: StationEngine + Send + Sync + 'static> {
-    tracker: Arc<StateTracker<K>>,
-    stopped: Arc<AtomicBool>,
-    task_handle: JoinHandle<()>,
-}
+pub(crate) struct Ov5647Manager<K: StationEngine + Send + Sync + 'static>(
+    std::marker::PhantomData<K>,
+);
 
 impl<K: StationEngine + Send + Sync + 'static> Ov5647Manager<K> {
-    /// Create a new OV5647 manager and return a handle to stop it.
     pub async fn new(
         normfs: Arc<NormFS>,
         engine: Arc<K>,
@@ -58,37 +47,30 @@ impl<K: StationEngine + Send + Sync + 'static> Ov5647Manager<K> {
         fps: u32,
         queue_id: String,
     ) -> Result<Ov5647Handle, Ov5647Error> {
-        let tracker = Arc::new(StateTracker::new(
-            engine.clone(),
-            normfs.clone(),
-            queue_id,
-        ));
+        let tracker = Arc::new(StateTracker::new(engine.clone(), normfs.clone(), queue_id));
         tracker.start_queue().await;
 
         let stopped = Arc::new(AtomicBool::new(false));
         let worker_stopped = stopped.clone();
         let tracker_task = tracker.clone();
 
-        // Use spawn_blocking because libcamera uses raw pointers that are not Send.
-        // We create a local runtime inside the blocking task for async operations.
         let task_handle = tokio::task::spawn_blocking(move || {
-            let rt = tokio::runtime::Builder::new_current_thread()
+            let rt = match tokio::runtime::Builder::new_current_thread()
                 .enable_all()
                 .build()
-                .expect("Failed to create runtime for OV5647 worker");
+            {
+                Ok(rt) => rt,
+                Err(e) => {
+                    log::error!("Failed to create runtime for OV5647 worker: {}", e);
+                    return;
+                }
+            };
 
             rt.block_on(async move {
-                watch_camera(
-                    tracker_task,
-                    width,
-                    height,
-                    fps,
-                    worker_stopped,
-                ).await;
+                watch_camera(tracker_task, width, height, fps, worker_stopped).await;
             });
         });
 
-        // Wrap the blocking task handle in a spawned task so it returns JoinHandle<()>
         let task_handle = tokio::spawn(async move {
             let _ = task_handle.await;
         });
@@ -100,7 +82,6 @@ impl<K: StationEngine + Send + Sync + 'static> Ov5647Manager<K> {
     }
 }
 
-/// Background task that monitors for camera and runs capture.
 async fn watch_camera<K: StationEngine + Send + Sync + 'static>(
     tracker: Arc<StateTracker<K>>,
     width: u32,
@@ -108,17 +89,14 @@ async fn watch_camera<K: StationEngine + Send + Sync + 'static>(
     fps: u32,
     stopped: Arc<AtomicBool>,
 ) {
-    // Poll every 1 second (matching usbvideo)
     let poll_interval = Duration::from_secs(1);
 
     loop {
-        // Check if stopped
         if stopped.load(Ordering::Acquire) {
             log::info!("OV5647 driver stopping");
             break;
         }
 
-        // Try to open camera
         match Ov5647Camera::open().await {
             Ok(camera) => {
                 let camera_id = camera.id().await;
@@ -132,7 +110,6 @@ async fn watch_camera<K: StationEngine + Send + Sync + 'static>(
                     unique_id: camera_id.clone(),
                 };
 
-                // Run capture session
                 let session_camera_info = run_capture_session(
                     &camera,
                     &tracker,
@@ -141,9 +118,9 @@ async fn watch_camera<K: StationEngine + Send + Sync + 'static>(
                     height,
                     fps,
                     &stopped,
-                ).await;
+                )
+                .await;
 
-                // Notify device disconnected
                 tracker.enqueue_device_disconnected(&session_camera_info);
 
                 log::info!("OV5647 camera disconnected (id={})", camera_info.id);
@@ -157,7 +134,6 @@ async fn watch_camera<K: StationEngine + Send + Sync + 'static>(
     }
 }
 
-/// Run capture session until stopped or error.
 async fn run_capture_session<K: StationEngine + Send + Sync + 'static>(
     camera: &Ov5647Camera,
     tracker: &Arc<StateTracker<K>>,
@@ -178,7 +154,10 @@ async fn run_capture_session<K: StationEngine + Send + Sync + 'static>(
         Ok(s) => s,
         Err(e) => {
             log::error!("OV5647 failed to create capture session: {}", e);
-            tracker.enqueue_error(camera_info, format!("Failed to create capture session: {}", e));
+            tracker.enqueue_error(
+                camera_info,
+                format!("Failed to create capture session: {}", e),
+            );
             return camera_info.clone();
         }
     };
@@ -244,12 +223,10 @@ async fn run_capture_session<K: StationEngine + Send + Sync + 'static>(
     loop {
         let frame_start = Instant::now();
 
-        // Check for stop signal
         if stopped.load(Ordering::Acquire) {
             break;
         }
 
-        // Capture frame
         match session.capture_with_timeout(capture_timeout).await {
             Ok(image) => {
                 log::trace!(
@@ -259,7 +236,6 @@ async fn run_capture_session<K: StationEngine + Send + Sync + 'static>(
                     image.data.len()
                 );
 
-                // Create frame data for processing
                 let frame_data = crate::buffer::FrameData {
                     buffer: image.data.clone(),
                     format: image.format,
@@ -270,7 +246,6 @@ async fn run_capture_session<K: StationEngine + Send + Sync + 'static>(
                     sequence: image.sequence,
                 };
 
-                // Convert frame to JPEG
                 match frame2tensor::convert_frame(&frame_data, Quality::HIGH) {
                     Ok(converted) => {
                         let stamp = FrameStamp {
@@ -307,7 +282,6 @@ async fn run_capture_session<K: StationEngine + Send + Sync + 'static>(
             }
         }
 
-        // Rate limiting
         let elapsed = frame_start.elapsed();
         if elapsed < frame_interval {
             tokio::time::sleep(frame_interval - elapsed).await;

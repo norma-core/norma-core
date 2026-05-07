@@ -262,7 +262,6 @@ impl Station {
             log::info!("No USB video configuration found");
         }
 
-        // Start DOGZILLA robot dog if enabled
         if let Some(dogzilla_config) = &self.config.drivers.dogzilla {
             if dogzilla_config.enabled {
                 let simulation = matches!(dogzilla_config.mode, station_iface::config::DogzillaMode::Simulation);
@@ -333,11 +332,8 @@ impl Station {
             log::warn!("OV5647 driver requested but not compiled (missing 'ov5647' feature)");
         }
 
-
-        // Start inference drivers
         match &self.config.inference {
             Some(inference_configs) => {
-                // User specified inference config (might be empty to disable)
                 if !inference_configs.is_empty() {
                     let inference_configs =
                         self.with_default_dogzilla_inference(inference_configs.clone());
@@ -352,7 +348,6 @@ impl Station {
                 }
             }
             None => {
-                // User did not specify inference config, use default inference outputs.
                 let default_config = self.default_inference_configs();
                 log::info!(
                     "No inference configuration found, using {} default inference configuration(s)",

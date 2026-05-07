@@ -2,25 +2,24 @@ use crate::dogzilla_proto::{
     Command, DogzillaDevice, DogzillaModel, DogzillaSignalType, RxEnvelope, TxEnvelope,
 };
 use crate::port::DogzillaPort;
-use crate::protocol::{self, BAUD_RATE, RPI_UART_PORT};
+use crate::protocol::{BAUD_RATE, RPI_UART_PORT};
 use crate::sim::DogzillaSimulator;
 use crate::state::DogzillaCommunicator;
-use bytes::Bytes;
 use log::{error, info, warn};
 use normfs::NormFS;
 use prost::Message;
 use station_iface::StationEngine;
 use station_iface::iface_proto::commands;
 use station_iface::iface_proto::drivers::{self, QueueDataType};
+use std::fs;
 use std::path::Path;
 use std::sync::Arc;
 use std::time::Duration;
-use systime;
 use tokio::sync::RwLock;
 
-pub const RX_QUEUE_ID: &str = "dogzilla/rx";
-pub const TX_QUEUE_ID: &str = "dogzilla/tx";
-pub const INFERENCE_QUEUE_ID: &str = "dogzilla/inference";
+const RX_QUEUE_ID: &str = "dogzilla/rx";
+const TX_QUEUE_ID: &str = "dogzilla/tx";
+const INFERENCE_QUEUE_ID: &str = "dogzilla/inference";
 const SIM_PORT_NAME: &str = "dogzilla-sim";
 const DETECTION_RETRY_INTERVAL: Duration = Duration::from_secs(2);
 
@@ -43,19 +42,16 @@ impl DogzillaDriver {
         simulation: bool,
     ) -> Result<Self, Box<dyn std::error::Error>> {
         let connected_port = Arc::new(RwLock::new(None));
-
         let rx_queue_id = normfs.resolve(RX_QUEUE_ID);
         let tx_queue_id = normfs.resolve(TX_QUEUE_ID);
         let inference_queue_id = normfs.resolve(INFERENCE_QUEUE_ID);
 
-        // Create queues
         normfs.ensure_queue_exists_for_write(&rx_queue_id).await?;
         normfs.ensure_queue_exists_for_write(&tx_queue_id).await?;
         normfs
             .ensure_queue_exists_for_write(&inference_queue_id)
             .await?;
 
-        // Register queues with station
         station_engine.register_queue(&rx_queue_id, QueueDataType::QdtDogzillaSerialRx, vec![]);
         station_engine.register_queue(&tx_queue_id, QueueDataType::QdtDogzillaSerialTx, vec![]);
         station_engine.register_queue(
@@ -77,32 +73,34 @@ impl DogzillaDriver {
             &commands_queue_id,
             Box::new(move |entries: &[(normfs::UintN, bytes::Bytes)]| {
                 for (_, data) in entries {
-                    if let Ok(pack) = commands::StationCommandsPack::decode(data.as_ref()) {
-                        for cmd in &pack.commands {
-                            if cmd.r#type() != drivers::StationCommandType::StcDogzillaCommand {
+                    let Ok(pack) = commands::StationCommandsPack::decode(data.as_ref()) else {
+                        continue;
+                    };
+
+                    for cmd in &pack.commands {
+                        if cmd.r#type() != drivers::StationCommandType::StcDogzillaCommand {
+                            continue;
+                        }
+
+                        let command = match Command::decode(cmd.body.clone()) {
+                            Ok(c) => c,
+                            Err(e) => {
+                                error!("Failed to decode DOGZILLA command: {}", e);
                                 continue;
                             }
+                        };
 
-                            let command = match Command::decode(Bytes::from(cmd.body.clone())) {
-                                Ok(c) => c,
-                                Err(e) => {
-                                    error!("Failed to decode DOGZILLA command: {}", e);
-                                    continue;
-                                }
-                            };
+                        let envelope = TxEnvelope {
+                            command_id: cmd.command_id.to_vec(),
+                            monotonic_stamp_ns: systime::get_monotonic_stamp_ns(),
+                            local_stamp_ns: systime::get_local_stamp_ns(),
+                            app_start_id: systime::get_app_start_id(),
+                            target_device_serial: command.target_device_serial.clone(),
+                            command: Some(command),
+                        };
 
-                            let envelope = TxEnvelope {
-                                command_id: cmd.command_id.to_vec(),
-                                monotonic_stamp_ns: systime::get_monotonic_stamp_ns(),
-                                local_stamp_ns: systime::get_local_stamp_ns(),
-                                app_start_id: systime::get_app_start_id(),
-                                target_device_serial: command.target_device_serial.clone(),
-                                command: Some(command),
-                            };
-
-                            if let Err(e) = com_for_commands.send_tx(&envelope) {
-                                error!("Failed to send DOGZILLA command to tx queue: {}", e);
-                            }
+                        if let Err(e) = com_for_commands.send_tx(&envelope) {
+                            error!("Failed to send DOGZILLA command to tx queue: {}", e);
                         }
                     }
                 }
@@ -120,7 +118,7 @@ impl DogzillaDriver {
         if simulation {
             Self::start_simulation(&com, &connected_port).await;
         } else {
-            let rpi_serial = protocol::read_rpi_cpu_serial().unwrap_or_default();
+            let rpi_serial = read_rpi_cpu_serial().unwrap_or_default();
             info!(
                 "DOGZILLA detection watchdog started: port={} retry_interval={}s cpu_serial={}",
                 RPI_UART_PORT,
@@ -190,12 +188,11 @@ impl DogzillaDriver {
         });
     }
 
-    /// Start a simulated Dogzilla device.
     async fn start_simulation(
         com: &Arc<DogzillaCommunicator>,
         connected_port: &Arc<RwLock<Option<String>>>,
     ) {
-        let rpi_serial = protocol::read_rpi_cpu_serial().unwrap_or_default();
+        let rpi_serial = read_rpi_cpu_serial().unwrap_or_default();
         let mut device_info = Self::create_device_info(SIM_PORT_NAME, &rpi_serial);
         device_info.firmware_version = "L-SIM".to_string();
         device_info.model = DogzillaModel::DogzillaLite as i32;
@@ -220,22 +217,19 @@ impl DogzillaDriver {
         });
     }
 
-    /// Detect dogzilla on Raspberry Pi UART port only
     async fn scan_and_connect(
         com: &Arc<DogzillaCommunicator>,
         connected_port: &Arc<RwLock<Option<String>>>,
         rpi_serial: &str,
     ) -> ConnectionAttempt {
-        // Only check for Raspberry Pi UART port
         if !Path::new(RPI_UART_PORT).exists() {
             return ConnectionAttempt::PortMissing;
         }
 
-        let mut device_info = Self::create_device_info(RPI_UART_PORT, &rpi_serial);
+        let mut device_info = Self::create_device_info(RPI_UART_PORT, rpi_serial);
         let mut port =
             DogzillaPort::new(RPI_UART_PORT.to_string(), device_info.clone(), com.clone());
 
-        // Detect dogzilla by reading firmware version
         if let Some(firmware_version) = port.detect_dogzilla().await {
             let model = Self::detect_model_from_firmware(&firmware_version);
             device_info.firmware_version = firmware_version;
@@ -282,12 +276,6 @@ impl DogzillaDriver {
         }
     }
 
-    /// Determine the dogzilla model from firmware version.
-    /// The first letter of the firmware version indicates the model:
-    /// - L: Dogzilla Lite
-    /// - M: Dogzilla Mini
-    /// - R: Dogzilla Rider
-    /// - Other: Unknown
     fn detect_model_from_firmware(firmware_version: &str) -> DogzillaModel {
         match firmware_version.chars().next() {
             Some('L') => DogzillaModel::DogzillaLite,
@@ -335,4 +323,14 @@ pub async fn start_dogzilla_driver<T: StationEngine>(
 ) -> Result<Arc<DogzillaDriver>, Box<dyn std::error::Error>> {
     let driver = DogzillaDriver::new(normfs, station_engine, simulation).await?;
     Ok(Arc::new(driver))
+}
+
+fn read_rpi_cpu_serial() -> Option<String> {
+    fs::read_to_string("/proc/cpuinfo")
+        .ok()?
+        .lines()
+        .find_map(|line| {
+            let (key, value) = line.split_once(':')?;
+            (key.trim() == "Serial").then(|| value.trim().to_string())
+        })
 }

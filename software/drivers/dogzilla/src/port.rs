@@ -3,12 +3,14 @@ use crate::dogzilla_proto::{
 };
 use crate::errors::DogzillaError;
 use crate::protocol::{self, FeedbackPacket, Frame};
-use crate::shared::{compute_command_effect, send_status_update};
+use crate::shared::{
+    ServoWrite, command_byte, compute_command_effect, send_status_update, target_matches,
+};
 use crate::state::DogzillaCommunicator;
 use log::{error, info, warn};
 use prost::Message;
 use std::sync::Arc;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::sync::mpsc;
 use tokio::time::timeout;
@@ -16,8 +18,9 @@ use tokio_serial::SerialStream;
 
 const WRITE_TIMEOUT: Duration = Duration::from_millis(100);
 const DETECTION_TIMEOUT: Duration = Duration::from_secs(3);
+const DEFAULT_SERVO_SPEED: u8 = 127;
 
-pub struct DogzillaPort {
+pub(crate) struct DogzillaPort {
     port_name: String,
     device_info: DogzillaDevice,
     leg_servo_speed: u32,
@@ -26,7 +29,7 @@ pub struct DogzillaPort {
 }
 
 impl DogzillaPort {
-    pub fn new(
+    pub(crate) fn new(
         port_name: String,
         device_info: DogzillaDevice,
         com: Arc<DogzillaCommunicator>,
@@ -34,16 +37,13 @@ impl DogzillaPort {
         Self {
             port_name,
             device_info,
-            leg_servo_speed: 127,
-            arm_servo_speed: 127,
+            leg_servo_speed: DEFAULT_SERVO_SPEED as u32,
+            arm_servo_speed: DEFAULT_SERVO_SPEED as u32,
             com,
         }
     }
 
-    /// Detect dogzilla device by trying to read firmware version
-    /// Flow: disable feedback mode -> read firmware version
-    /// Returns firmware version if successful, None otherwise
-    pub async fn detect_dogzilla(&mut self) -> Option<String> {
+    pub(crate) async fn detect_dogzilla(&mut self) -> Option<String> {
         let mut serial =
             match SerialStream::open(&tokio_serial::new(&self.port_name, protocol::BAUD_RATE)) {
                 Ok(s) => s,
@@ -53,9 +53,8 @@ impl DogzillaPort {
                 }
             };
 
-        // Disable feedback mode before reading registers
         let disable_feedback = Frame::write(protocol::REG_ENABLE_FEEDBACK, vec![0x00]);
-        if let Err(e) = self.write_frame_to(&mut serial, &disable_feedback).await {
+        if let Err(e) = Self::write_frame(&mut serial, &disable_feedback).await {
             warn!(
                 "Failed to disable feedback mode on {}: {}",
                 self.port_name, e
@@ -63,7 +62,6 @@ impl DogzillaPort {
             return None;
         }
 
-        // Read firmware version with timeout (10 bytes ASCII string)
         let firmware = self
             .read_register_with_timeout(
                 &mut serial,
@@ -84,100 +82,13 @@ impl DogzillaPort {
         Some(version)
     }
 
-    /// Read a register with a specific timeout
-    async fn read_register_with_timeout(
-        &mut self,
-        serial: &mut SerialStream,
-        reg: u8,
-        len: u8,
-        read_timeout: Duration,
-    ) -> Option<Vec<u8>> {
-        let frame = Frame::read(reg, len);
-        let data = frame.encode();
-
-        if timeout(WRITE_TIMEOUT, serial.write_all(&data))
-            .await
-            .is_err()
-        {
-            return None;
-        }
-
-        let mut buffer = Vec::with_capacity(256);
-        let mut temp = [0u8; 64];
-        let read_deadline = std::time::Instant::now() + read_timeout;
-
-        loop {
-            let remaining = read_deadline.saturating_duration_since(std::time::Instant::now());
-            if remaining.is_zero() {
-                return None;
-            }
-
-            match timeout(remaining, serial.read(&mut temp)).await {
-                Ok(Ok(n)) if n > 0 => {
-                    buffer.extend_from_slice(&temp[..n]);
-                    if buffer.len() >= 2
-                        && buffer[buffer.len() - 2] == 0x00
-                        && buffer[buffer.len() - 1] == 0xAA
-                    {
-                        break;
-                    }
-                }
-                Ok(Ok(_)) => continue,
-                Ok(Err(_)) | Err(_) => return None,
-            }
-        }
-
-        if let Ok(response) = Frame::decode(&buffer) {
-            if response.address == reg {
-                return Some(response.data);
-            }
-        }
-
-        None
-    }
-
-    /// Write a frame to a specific serial port (used during detection)
-    async fn write_frame_to(
-        &mut self,
-        serial: &mut SerialStream,
-        frame: &Frame,
-    ) -> Result<(), DogzillaError> {
-        let data = frame.encode();
-
-        match timeout(WRITE_TIMEOUT, serial.write_all(&data)).await {
-            Ok(Ok(_)) => Ok(()),
-            Ok(Err(e)) => Err(DogzillaError::SerialError(e.to_string())),
-            Err(_) => Err(DogzillaError::Timeout),
-        }
-    }
-
-    /// Run the main communication loop using polling (no feedback mode)
-    pub async fn run(&mut self) -> Result<(), Box<dyn std::error::Error>> {
+    pub(crate) async fn run(&mut self) -> Result<(), Box<dyn std::error::Error>> {
         let mut serial =
             SerialStream::open(&tokio_serial::new(&self.port_name, protocol::BAUD_RATE))?;
 
-        // Startup: Disable stabilization mode
-        let disable_stabilization = Frame::write(protocol::REG_IMU_STABILIZATION, vec![0x00]);
-        if let Err(e) = self.write_frame(&mut serial, &disable_stabilization).await {
-            warn!("Failed to disable stabilization mode: {}", e);
-        }
+        self.write_startup_frames(&mut serial).await;
 
-        // Write default servo speeds (127) at startup
-        let default_speed: u8 = 127;
-        let leg_speed_frame = Frame::write(protocol::REG_SERVO_SPEED, vec![default_speed]);
-        if let Err(e) = self.write_frame(&mut serial, &leg_speed_frame).await {
-            warn!("Failed to set leg servo speed: {}", e);
-        }
-        let arm_speed_frame = Frame::write(protocol::REG_SERVO_ARM_SPEED, vec![default_speed]);
-        if let Err(e) = self.write_frame(&mut serial, &arm_speed_frame).await {
-            warn!("Failed to set arm servo speed: {}", e);
-        }
-
-        // Create a channel for TX commands
         let (tx_sender, tx_receiver) = mpsc::unbounded_channel::<Command>();
-
-        // Subscribe to TX queue and forward commands to the channel
-        let tx_sender_clone = tx_sender.clone();
         let device_serial = self.device_info.serial_number.clone();
         let normfs = self.com.normfs.clone();
         let tx_queue_id = self.com.tx_queue_id.clone();
@@ -188,20 +99,19 @@ impl DogzillaPort {
                     for (_id, data) in entries {
                         match TxEnvelope::decode(data.as_ref()) {
                             Ok(envelope) => {
-                                // Filter by target device serial (empty string matches all)
-                                if envelope.target_device_serial.is_empty()
-                                    || envelope.target_device_serial == device_serial
-                                {
-                                    if let Some(command) = envelope.command {
-                                        if let Err(e) = tx_sender_clone.send(command) {
-                                            warn!("Failed to forward TX command: {}", e);
-                                        }
-                                    }
+                                if !target_matches(&envelope.target_device_serial, &device_serial) {
+                                    continue;
+                                }
+
+                                let Some(command) = envelope.command else {
+                                    continue;
+                                };
+
+                                if let Err(e) = tx_sender.send(command) {
+                                    warn!("Failed to forward TX command: {}", e);
                                 }
                             }
-                            Err(e) => {
-                                warn!("Failed to decode TX envelope: {}", e);
-                            }
+                            Err(e) => warn!("Failed to decode TX envelope: {}", e),
                         }
                     }
                     true
@@ -209,22 +119,72 @@ impl DogzillaPort {
             )
             .map_err(|e| -> Box<dyn std::error::Error> { Box::new(e) })?;
 
-        // Enable feedback mode for continuous status packets
         let enable_feedback = Frame::write(protocol::REG_ENABLE_FEEDBACK, vec![0x01]);
-        if let Err(e) = self.write_frame(&mut serial, &enable_feedback).await {
+        if let Err(e) = Self::write_frame(&mut serial, &enable_feedback).await {
             warn!("Failed to enable feedback mode: {}", e);
         }
 
-        // Main loop: feedback stream + TX commands
         let result = self.feedback_loop(&mut serial, tx_receiver).await;
-
-        // Cleanup subscription
         normfs.unsubscribe(&tx_queue_id, subscription_id);
-
         result
     }
 
-    /// Main loop that streams feedback packets and handles TX commands
+    async fn read_register_with_timeout(
+        &mut self,
+        serial: &mut SerialStream,
+        reg: u8,
+        len: u8,
+        read_timeout: Duration,
+    ) -> Option<Vec<u8>> {
+        let frame = Frame::read(reg, len);
+        Self::write_frame(serial, &frame).await.ok()?;
+
+        let mut buffer = Vec::with_capacity(256);
+        let mut temp = [0u8; 64];
+        let read_deadline = Instant::now() + read_timeout;
+
+        loop {
+            let remaining = read_deadline.saturating_duration_since(Instant::now());
+            if remaining.is_zero() {
+                return None;
+            }
+
+            match timeout(remaining, serial.read(&mut temp)).await {
+                Ok(Ok(n)) if n > 0 => {
+                    buffer.extend_from_slice(&temp[..n]);
+                    if buffer.ends_with(&protocol::PACKET_TAIL) {
+                        break;
+                    }
+                }
+                Ok(Ok(_)) => continue,
+                Ok(Err(_)) | Err(_) => return None,
+            }
+        }
+
+        match Frame::decode(&buffer) {
+            Ok(response) if response.address == reg => Some(response.data),
+            _ => None,
+        }
+    }
+
+    async fn write_startup_frames(&mut self, serial: &mut SerialStream) {
+        let disable_stabilization = Frame::write(protocol::REG_IMU_STABILIZATION, vec![0x00]);
+        if let Err(e) = Self::write_frame(serial, &disable_stabilization).await {
+            warn!("Failed to disable stabilization mode: {}", e);
+        }
+
+        let leg_speed_frame = Frame::write(protocol::REG_SERVO_SPEED, vec![DEFAULT_SERVO_SPEED]);
+        if let Err(e) = Self::write_frame(serial, &leg_speed_frame).await {
+            warn!("Failed to set leg servo speed: {}", e);
+        }
+
+        let arm_speed_frame =
+            Frame::write(protocol::REG_SERVO_ARM_SPEED, vec![DEFAULT_SERVO_SPEED]);
+        if let Err(e) = Self::write_frame(serial, &arm_speed_frame).await {
+            warn!("Failed to set arm servo speed: {}", e);
+        }
+    }
+
     async fn feedback_loop(
         &mut self,
         serial: &mut SerialStream,
@@ -236,11 +196,9 @@ impl DogzillaPort {
         loop {
             tokio::select! {
                 biased;
-                // Handle TX commands with priority
                 Some(command) = tx_receiver.recv() => {
                     self.process_command(serial, &command).await;
                 }
-
                 result = serial.read(&mut temp) => {
                     match result {
                         Ok(n) if n > 0 => {
@@ -261,19 +219,16 @@ impl DogzillaPort {
     }
 
     fn try_parse_feedback_packet(&self, buffer: &mut Vec<u8>) -> Option<DogzillaStatus> {
-        let header = [
-            protocol::FEEDBACK_HEADER_BYTE_1,
-            protocol::FEEDBACK_HEADER_BYTE_2,
-        ];
-        let tail = [
-            protocol::FEEDBACK_TAIL_BYTE_1,
-            protocol::FEEDBACK_TAIL_BYTE_2,
-        ];
-
-        let start = match buffer.windows(2).position(|window| window == header) {
+        let start = match buffer
+            .windows(2)
+            .position(|window| window == protocol::PACKET_HEADER)
+        {
             Some(index) => index,
             None => {
-                let keep = buffer.last().copied().filter(|&b| b == header[0]);
+                let keep = buffer
+                    .last()
+                    .copied()
+                    .filter(|&byte| byte == protocol::PACKET_HEADER[0]);
                 buffer.clear();
                 if let Some(byte) = keep {
                     buffer.push(byte);
@@ -281,6 +236,7 @@ impl DogzillaPort {
                 return None;
             }
         };
+
         if start > 0 {
             buffer.drain(0..start);
         }
@@ -290,10 +246,7 @@ impl DogzillaPort {
         }
 
         let packet = &buffer[..protocol::FEEDBACK_PACKET_SIZE];
-        let tail_ok = packet[protocol::FEEDBACK_PACKET_SIZE - 2] == tail[0]
-            && packet[protocol::FEEDBACK_PACKET_SIZE - 1] == tail[1];
-
-        if !tail_ok {
+        if packet[protocol::FEEDBACK_PACKET_SIZE - 2..] != protocol::PACKET_TAIL {
             warn!(
                 "Broken feedback packet tail: 0x{:02X} 0x{:02X}",
                 packet[protocol::FEEDBACK_PACKET_SIZE - 2],
@@ -317,8 +270,8 @@ impl DogzillaPort {
     }
 
     fn feedback_packet_to_status(&self, packet: &FeedbackPacket) -> DogzillaStatus {
-        let servo_positions: Vec<u32> = packet.servo_positions.iter().map(|&b| b as u32).collect();
-        let servo_angles: Vec<f32> = packet
+        let servo_positions = packet.servo_positions.iter().map(|&b| b as u32).collect();
+        let servo_angles = packet
             .servo_positions
             .iter()
             .enumerate()
@@ -349,111 +302,120 @@ impl DogzillaPort {
         }
     }
 
-    /// Process a command received from the dashboard
     async fn process_command(&mut self, serial: &mut SerialStream, command: &Command) {
         let effect = compute_command_effect(command);
 
         for write in effect.servo_writes {
-            let frame = Frame::write(write.register, vec![write.position]);
-
-            info!(
-                "Sending servo command: id={} reg=0x{:02X} pos={}",
-                write.servo_id, write.register, write.position
-            );
-
-            if let Err(e) = self.write_frame(serial, &frame).await {
-                error!("Failed to write servo command: {}", e);
-            }
+            self.write_servo_position(serial, write).await;
         }
 
-        if let Some(body_speed) = effect.leg_servo_speed {
-            let body_speed_u8 = body_speed as u8;
-            let frame = Frame::write(protocol::REG_SERVO_SPEED, vec![body_speed_u8]);
-
-            info!("Sending leg servo speed: {}", body_speed_u8);
-            if let Err(e) = self.write_frame(serial, &frame).await {
-                error!("Failed to write leg servo speed: {}", e);
-            } else {
-                self.leg_servo_speed = body_speed;
-            }
+        if let Some(speed) = effect.leg_servo_speed {
+            self.write_leg_speed(serial, speed).await;
         }
 
-        if let Some(arm_speed) = effect.arm_servo_speed {
-            let arm_speed_u8 = arm_speed as u8;
-            let frame = Frame::write(protocol::REG_SERVO_ARM_SPEED, vec![arm_speed_u8]);
-
-            info!("Sending arm servo speed: {}", arm_speed_u8);
-            if let Err(e) = self.write_frame(serial, &frame).await {
-                error!("Failed to write arm servo speed: {}", e);
-            } else {
-                self.arm_servo_speed = arm_speed;
-            }
+        if let Some(speed) = effect.arm_servo_speed {
+            self.write_arm_speed(serial, speed).await;
         }
 
-        // Handle action command
-        if let Some(action_cmd) = &command.action {
-            let action_value = action_cmd.action as u8;
-            if action_value > 0 {
-                let frame = Frame::write(protocol::REG_ACTION, vec![action_value]);
-
-                info!("Sending action command: action={}", action_value);
-                if let Err(e) = self.write_frame(serial, &frame).await {
-                    error!("Failed to write action command: {}", e);
-                }
-            }
+        if let Some(action) = &command.action {
+            self.write_action(serial, action.action).await;
         }
 
         if let Some(movement) = &command.movement {
-            let move_x = (movement.move_x as u8).clamp(0, 255);
-            let move_y = (movement.move_y as u8).clamp(0, 255);
-            let move_yaw = (movement.move_yaw as u8).clamp(0, 255);
-
-            let frame_x = Frame::write(protocol::REG_MOVE_X, vec![move_x]);
-            if let Err(e) = self.write_frame(serial, &frame_x).await {
-                error!("Failed to write move_x: {}", e);
-            }
-
-            let frame_y = Frame::write(protocol::REG_MOVE_Y, vec![move_y]);
-            if let Err(e) = self.write_frame(serial, &frame_y).await {
-                error!("Failed to write move_y: {}", e);
-            }
-
-            let frame_yaw = Frame::write(protocol::REG_MOVE_YAW, vec![move_yaw]);
-            if let Err(e) = self.write_frame(serial, &frame_yaw).await {
-                error!("Failed to write move_yaw: {}", e);
-            }
-
-            info!("Movement: x={} y={} yaw={}", move_x, move_y, move_yaw);
+            self.write_movement(serial, movement.move_x, movement.move_y, movement.move_yaw)
+                .await;
         }
     }
 
-    /// Send status update via RX envelope (state update handled internally by communicator)
+    async fn write_servo_position(&mut self, serial: &mut SerialStream, write: ServoWrite) {
+        let frame = Frame::write(write.register, vec![write.position]);
+        info!(
+            "Sending servo command: id={} reg=0x{:02X} pos={}",
+            write.servo_id, write.register, write.position
+        );
+
+        if let Err(e) = Self::write_frame(serial, &frame).await {
+            error!("Failed to write servo command: {}", e);
+        }
+    }
+
+    async fn write_leg_speed(&mut self, serial: &mut SerialStream, speed: u32) {
+        let speed_byte = command_byte(speed);
+        let frame = Frame::write(protocol::REG_SERVO_SPEED, vec![speed_byte]);
+        info!("Sending leg servo speed: {}", speed_byte);
+
+        if let Err(e) = Self::write_frame(serial, &frame).await {
+            error!("Failed to write leg servo speed: {}", e);
+        } else {
+            self.leg_servo_speed = speed;
+        }
+    }
+
+    async fn write_arm_speed(&mut self, serial: &mut SerialStream, speed: u32) {
+        let speed_byte = command_byte(speed);
+        let frame = Frame::write(protocol::REG_SERVO_ARM_SPEED, vec![speed_byte]);
+        info!("Sending arm servo speed: {}", speed_byte);
+
+        if let Err(e) = Self::write_frame(serial, &frame).await {
+            error!("Failed to write arm servo speed: {}", e);
+        } else {
+            self.arm_servo_speed = speed;
+        }
+    }
+
+    async fn write_action(&mut self, serial: &mut SerialStream, action: i32) {
+        let action_value = action.clamp(0, 255) as u8;
+        if action_value == 0 {
+            return;
+        }
+
+        let frame = Frame::write(protocol::REG_ACTION, vec![action_value]);
+        info!("Sending action command: action={}", action_value);
+
+        if let Err(e) = Self::write_frame(serial, &frame).await {
+            error!("Failed to write action command: {}", e);
+        }
+    }
+
+    async fn write_movement(&mut self, serial: &mut SerialStream, x: u32, y: u32, yaw: u32) {
+        let move_x = command_byte(x);
+        let move_y = command_byte(y);
+        let move_yaw = command_byte(yaw);
+
+        self.write_register(serial, protocol::REG_MOVE_X, move_x, "move_x")
+            .await;
+        self.write_register(serial, protocol::REG_MOVE_Y, move_y, "move_y")
+            .await;
+        self.write_register(serial, protocol::REG_MOVE_YAW, move_yaw, "move_yaw")
+            .await;
+
+        info!("Movement: x={} y={} yaw={}", move_x, move_y, move_yaw);
+    }
+
+    async fn write_register(
+        &mut self,
+        serial: &mut SerialStream,
+        register: u8,
+        value: u8,
+        name: &str,
+    ) {
+        let frame = Frame::write(register, vec![value]);
+        if let Err(e) = Self::write_frame(serial, &frame).await {
+            error!("Failed to write {}: {}", name, e);
+        }
+    }
+
     fn update_and_send_status(&self, status: DogzillaStatus) {
         send_status_update(&self.com, &self.device_info, status);
     }
 
-    pub async fn write_frame(
-        &mut self,
-        serial: &mut SerialStream,
-        frame: &Frame,
-    ) -> Result<(), DogzillaError> {
+    async fn write_frame(serial: &mut SerialStream, frame: &Frame) -> Result<(), DogzillaError> {
         let data = frame.encode();
 
-        match timeout(
-            WRITE_TIMEOUT,
-            tokio::io::AsyncWriteExt::write_all(serial, &data),
-        )
-        .await
-        {
+        match timeout(WRITE_TIMEOUT, serial.write_all(&data)).await {
             Ok(Ok(_)) => Ok(()),
-            Ok(Err(e)) => {
-                error!("Serial write error: {}", e);
-                Err(DogzillaError::SerialError(e.to_string()))
-            }
-            Err(_) => {
-                error!("Serial write timeout");
-                Err(DogzillaError::Timeout)
-            }
+            Ok(Err(e)) => Err(DogzillaError::SerialError(e.to_string())),
+            Err(_) => Err(DogzillaError::Timeout),
         }
     }
 }
