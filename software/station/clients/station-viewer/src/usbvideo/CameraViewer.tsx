@@ -85,7 +85,7 @@ const CameraViewer = memo(function CameraViewer({ inferenceState }: CameraViewer
             className="h-full object-contain"
           />
         )}
-        <div className="absolute top-0 right-0 p-2 text-right bg-surface-secondary/50 rounded-bl-lg">
+        <div className="absolute right-0 top-0 z-20 rounded-bl-lg bg-surface-secondary/50 p-2 text-right">
           <span className="text-xs text-text-label">FPS: </span>
           <span className="text-xs font-mono text-accent-data">{fps.toFixed(1)}</span>
         </div>

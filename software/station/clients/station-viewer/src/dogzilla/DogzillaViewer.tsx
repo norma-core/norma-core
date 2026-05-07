@@ -41,6 +41,7 @@ interface DogzillaViewerProps {
   servoAngles?: number[] | null;
   cameraPreset?: CameraPreset;
   refreshToken?: number;
+  className?: string;
 }
 
 class DogzillaRobot {
@@ -395,7 +396,14 @@ class DogzillaRobot {
   }
 }
 
-export default function DogzillaViewer({ status, servoPositions, servoAngles, cameraPreset = 'iso', refreshToken }: DogzillaViewerProps) {
+export default function DogzillaViewer({
+  status,
+  servoPositions,
+  servoAngles,
+  cameraPreset = 'iso',
+  refreshToken,
+  className = 'h-full min-h-[280px] w-full overflow-hidden'
+}: DogzillaViewerProps) {
   const { theme } = useTheme();
   const containerRef = useRef<HTMLDivElement>(null);
   const robotRef = useRef<DogzillaRobot | null>(null);
@@ -635,7 +643,5 @@ export default function DogzillaViewer({ status, servoPositions, servoAngles, ca
     renderer.setSize(containerRef.current.clientWidth, containerRef.current.clientHeight);
   }, [refreshToken, cameraPreset]);
 
-  return (
-    <div ref={containerRef} className="h-full min-h-[280px] w-full overflow-hidden" />
-  );
+  return <div ref={containerRef} className={className} />;
 }

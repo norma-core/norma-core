@@ -523,6 +523,16 @@ const DogzillaDesktopDashboard = memo(function DogzillaDesktopDashboard({
       : <Ov5647CameraViewer inferenceState={selectedVideoSource.source} />;
   };
 
+  const renderRobotContent = (className?: string) => (
+    <DogzillaViewer
+      status={status}
+      servoPositions={displayPositions}
+      servoAngles={liveAngles}
+      refreshToken={refreshToken}
+      className={className}
+    />
+  );
+
   return (
     <div className="flex h-full min-h-[44rem] flex-col gap-4 overflow-hidden rounded-b-lg bg-surface-secondary/30 p-4 text-text-primary">
       <div className="grid min-h-0 flex-1 gap-4 lg:grid-cols-[17rem_minmax(0,1fr)_20rem]">
@@ -538,17 +548,15 @@ const DogzillaDesktopDashboard = memo(function DogzillaDesktopDashboard({
               <div className="h-full w-full">
                 {renderCameraContent()}
               </div>
-            ) : (
-              <DogzillaViewer
-                status={status}
-                servoPositions={displayPositions}
-                servoAngles={liveAngles}
-                refreshToken={refreshToken}
-              />
-            )}
+            ) : renderRobotContent()}
             {mainViewMode === '3d' && selectedVideoSource && (
               <div className="pointer-events-auto absolute right-4 top-4 z-10 h-[200px] w-[320px] max-w-[calc(100%-2rem)] overflow-hidden rounded-lg border border-border-default bg-surface-primary shadow-lg">
                 {renderCameraContent()}
+              </div>
+            )}
+            {mainViewMode === 'photo' && selectedVideoSource && (
+              <div className="pointer-events-auto absolute right-4 top-4 z-10 h-[200px] w-[320px] max-w-[calc(100%-2rem)] overflow-hidden rounded-lg border border-border-default bg-surface-primary shadow-lg">
+                {renderRobotContent('h-full w-full overflow-hidden')}
               </div>
             )}
             <div className="pointer-events-none absolute inset-x-4 bottom-4 z-10">
