@@ -3,6 +3,7 @@ use normfs::NormFS;
 use normfs::UintN;
 
 mod normvla;
+#[cfg(feature = "dogzilla")]
 mod dogzilla;
 
 pub fn queue_data_type_for_format(
@@ -24,7 +25,11 @@ pub async fn process_inference_entry(
     // Route to appropriate format generator based on config.format
     match config.format.as_str() {
         "dogzilla" => {
+            #[cfg(feature = "dogzilla")]
             dogzilla::mirror_state(normfs, inference_rx, config, shm_writer).await?;
+
+            #[cfg(not(feature = "dogzilla"))]
+            log::warn!("Dogzilla inference requested but not compiled (missing 'dogzilla' feature)");
         }
         "normvla" => {
             normvla::generate_frame(normfs, id, inference_rx, config, shm_writer).await?;

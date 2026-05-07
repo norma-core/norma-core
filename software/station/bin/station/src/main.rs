@@ -262,6 +262,7 @@ impl Station {
             log::info!("No USB video configuration found");
         }
 
+        #[cfg(feature = "dogzilla")]
         if let Some(dogzilla_config) = &self.config.drivers.dogzilla {
             if dogzilla_config.enabled {
                 let simulation = matches!(dogzilla_config.mode, station_iface::config::DogzillaMode::Simulation);
@@ -283,6 +284,11 @@ impl Station {
             }
         } else {
             log::info!("DOGZILLA driver disabled by configuration");
+        }
+
+        #[cfg(not(feature = "dogzilla"))]
+        if self.config.drivers.dogzilla.as_ref().is_some_and(|config| config.enabled) {
+            log::warn!("DOGZILLA driver requested but not compiled (missing 'dogzilla' feature)");
         }
 
         #[cfg(feature = "ov5647")]
@@ -372,7 +378,7 @@ impl Station {
 
     fn with_default_dogzilla_inference(
         &self,
-        mut configs: Vec<station_iface::config::Inference>,
+        configs: Vec<station_iface::config::Inference>,
     ) -> Vec<station_iface::config::Inference> {
         let dogzilla_enabled = self
             .config
@@ -384,16 +390,25 @@ impl Station {
             return configs;
         }
 
-        let has_dogzilla_config = configs
-            .iter()
-            .any(|config| config.format == "dogzilla" || config.queue_id == "inference/dogzilla");
-        if has_dogzilla_config {
+        #[cfg(not(feature = "dogzilla"))]
+        {
             return configs;
         }
 
-        log::info!("Dogzilla enabled; adding default dogzilla inference mirror");
-        configs.push(station_iface::config::Inference::default_dogzilla());
-        configs
+        #[cfg(feature = "dogzilla")]
+        {
+            let mut configs = configs;
+            let has_dogzilla_config = configs
+                .iter()
+                .any(|config| config.format == "dogzilla" || config.queue_id == "inference/dogzilla");
+            if has_dogzilla_config {
+                return configs;
+            }
+
+            log::info!("Dogzilla enabled; adding default dogzilla inference mirror");
+            configs.push(station_iface::config::Inference::default_dogzilla());
+            configs
+        }
     }
 
     async fn start_server(
