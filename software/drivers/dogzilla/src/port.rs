@@ -1,11 +1,13 @@
 use crate::command_inbox::{CommandReceiver, command_inbox};
 use crate::dogzilla_proto::{
-    Acceleration, Command, DogzillaDevice, DogzillaStatus, ImuOrientation, TxEnvelope,
+    Acceleration, Command, DogzillaDevice, DogzillaSignalType, DogzillaStatus, ImuOrientation,
+    TxEnvelope,
 };
 use crate::errors::DogzillaError;
 use crate::protocol::{self, FeedbackPacket, Frame};
 use crate::shared::{
-    ServoWrite, command_byte, compute_command_effect, send_status_update, target_matches,
+    ServoWrite, command_byte, compute_command_effect, send_command_result, send_status_update,
+    should_report_command_success, target_matches, unsupported_command_message,
 };
 use crate::state::DogzillaCommunicator;
 use log::{error, info, warn};
@@ -90,6 +92,8 @@ impl DogzillaPort {
 
         let (tx_sender, tx_receiver) = command_inbox();
         let device_serial = self.device_info.serial_number.clone();
+        let result_com = self.com.clone();
+        let result_device = self.device_info.clone();
         let normfs = self.com.normfs.clone();
         let tx_queue_id = self.com.tx_queue_id.clone();
         let subscription_id = normfs
@@ -103,12 +107,20 @@ impl DogzillaPort {
                                     continue;
                                 }
 
-                                let Some(command) = envelope.command else {
+                                if envelope.command.is_none() {
                                     continue;
-                                };
+                                }
 
-                                if let Err(e) = tx_sender.push(command) {
+                                let failed_envelope = envelope.clone();
+                                if let Err(e) = tx_sender.push(envelope) {
                                     warn!("Failed to queue TX command: {}", e);
+                                    send_command_result(
+                                        &result_com,
+                                        &result_device,
+                                        &failed_envelope,
+                                        DogzillaSignalType::DogzillaCommandFailed,
+                                        Some(e.to_string()),
+                                    );
                                 }
                             }
                             Err(e) => warn!("Failed to decode TX envelope: {}", e),
@@ -197,7 +209,7 @@ impl DogzillaPort {
             tokio::select! {
                 command = tx_receiver.recv() => {
                     match command {
-                        Some(command) => self.process_command(serial, &command).await,
+                        Some(envelope) => self.process_envelope(serial, &envelope).await,
                         None => {
                             warn!("DOGZILLA command channel closed");
                             return Ok(());
@@ -307,94 +319,169 @@ impl DogzillaPort {
         }
     }
 
-    async fn process_command(&mut self, serial: &mut SerialStream, command: &Command) {
+    async fn process_envelope(&mut self, serial: &mut SerialStream, envelope: &TxEnvelope) {
+        let Some(command) = envelope.command.as_ref() else {
+            return;
+        };
+
+        let report_success = should_report_command_success(command);
+        match self.apply_command(serial, command).await {
+            Ok(()) => {
+                if report_success {
+                    self.send_command_result(
+                        envelope,
+                        DogzillaSignalType::DogzillaCommandSuccess,
+                        None,
+                    );
+                }
+            }
+            Err(e) => {
+                error!("Failed to process DOGZILLA command: {}", e);
+                self.send_command_result(
+                    envelope,
+                    DogzillaSignalType::DogzillaCommandFailed,
+                    Some(e.to_string()),
+                );
+            }
+        }
+    }
+
+    async fn apply_command(
+        &mut self,
+        serial: &mut SerialStream,
+        command: &Command,
+    ) -> Result<(), DogzillaError> {
+        if let Some(message) = unsupported_command_message(command) {
+            return Err(DogzillaError::UnsupportedCommand(message));
+        }
+
+        let mut applied = false;
         let effect = compute_command_effect(command);
+        if command.servo.is_some() && effect.servo_writes.is_empty() {
+            let servo_id = command
+                .servo
+                .as_ref()
+                .map(|servo| servo.servo_id)
+                .unwrap_or(0);
+            return Err(DogzillaError::UnsupportedCommand(format!(
+                "unknown servo ID {}",
+                servo_id
+            )));
+        }
 
         for write in effect.servo_writes {
-            self.write_servo_position(serial, write).await;
+            self.write_servo_position(serial, write).await?;
+            applied = true;
         }
 
         if let Some(speed) = effect.leg_servo_speed {
-            self.write_leg_speed(serial, speed).await;
+            self.write_leg_speed(serial, speed).await?;
+            applied = true;
         }
 
         if let Some(speed) = effect.arm_servo_speed {
-            self.write_arm_speed(serial, speed).await;
+            self.write_arm_speed(serial, speed).await?;
+            applied = true;
         }
 
         if let Some(action) = &command.action {
-            self.write_action(serial, action.action).await;
+            applied |= self.write_action(serial, action.action).await?;
         }
 
         if let Some(movement) = &command.movement {
             self.write_movement(serial, movement.move_x, movement.move_y, movement.move_yaw)
-                .await;
+                .await?;
+            applied = true;
+        }
+
+        if applied {
+            Ok(())
+        } else {
+            Err(DogzillaError::UnsupportedCommand(
+                "empty DOGZILLA command".to_string(),
+            ))
         }
     }
 
-    async fn write_servo_position(&mut self, serial: &mut SerialStream, write: ServoWrite) {
+    async fn write_servo_position(
+        &mut self,
+        serial: &mut SerialStream,
+        write: ServoWrite,
+    ) -> Result<(), DogzillaError> {
         let frame = Frame::write(write.register, vec![write.position]);
         info!(
             "Sending servo command: id={} reg=0x{:02X} pos={}",
             write.servo_id, write.register, write.position
         );
 
-        if let Err(e) = Self::write_frame(serial, &frame).await {
-            error!("Failed to write servo command: {}", e);
-        }
+        Self::write_frame(serial, &frame).await
     }
 
-    async fn write_leg_speed(&mut self, serial: &mut SerialStream, speed: u32) {
+    async fn write_leg_speed(
+        &mut self,
+        serial: &mut SerialStream,
+        speed: u32,
+    ) -> Result<(), DogzillaError> {
         let speed_byte = command_byte(speed);
         let frame = Frame::write(protocol::REG_SERVO_SPEED, vec![speed_byte]);
         info!("Sending leg servo speed: {}", speed_byte);
 
-        if let Err(e) = Self::write_frame(serial, &frame).await {
-            error!("Failed to write leg servo speed: {}", e);
-        } else {
-            self.leg_servo_speed = speed;
-        }
+        Self::write_frame(serial, &frame).await?;
+        self.leg_servo_speed = speed;
+        Ok(())
     }
 
-    async fn write_arm_speed(&mut self, serial: &mut SerialStream, speed: u32) {
+    async fn write_arm_speed(
+        &mut self,
+        serial: &mut SerialStream,
+        speed: u32,
+    ) -> Result<(), DogzillaError> {
         let speed_byte = command_byte(speed);
         let frame = Frame::write(protocol::REG_SERVO_ARM_SPEED, vec![speed_byte]);
         info!("Sending arm servo speed: {}", speed_byte);
 
-        if let Err(e) = Self::write_frame(serial, &frame).await {
-            error!("Failed to write arm servo speed: {}", e);
-        } else {
-            self.arm_servo_speed = speed;
-        }
+        Self::write_frame(serial, &frame).await?;
+        self.arm_servo_speed = speed;
+        Ok(())
     }
 
-    async fn write_action(&mut self, serial: &mut SerialStream, action: i32) {
+    async fn write_action(
+        &mut self,
+        serial: &mut SerialStream,
+        action: i32,
+    ) -> Result<bool, DogzillaError> {
         let action_value = action.clamp(0, 255) as u8;
         if action_value == 0 {
-            return;
+            return Ok(false);
         }
 
         let frame = Frame::write(protocol::REG_ACTION, vec![action_value]);
         info!("Sending action command: action={}", action_value);
 
-        if let Err(e) = Self::write_frame(serial, &frame).await {
-            error!("Failed to write action command: {}", e);
-        }
+        Self::write_frame(serial, &frame).await?;
+        Ok(true)
     }
 
-    async fn write_movement(&mut self, serial: &mut SerialStream, x: u32, y: u32, yaw: u32) {
+    async fn write_movement(
+        &mut self,
+        serial: &mut SerialStream,
+        x: u32,
+        y: u32,
+        yaw: u32,
+    ) -> Result<(), DogzillaError> {
         let move_x = command_byte(x);
         let move_y = command_byte(y);
         let move_yaw = command_byte(yaw);
 
         self.write_register(serial, protocol::REG_MOVE_X, move_x, "move_x")
-            .await;
+            .await?;
         self.write_register(serial, protocol::REG_MOVE_Y, move_y, "move_y")
-            .await;
+            .await?;
         self.write_register(serial, protocol::REG_MOVE_YAW, move_yaw, "move_yaw")
-            .await;
+            .await?;
 
         info!("Movement: x={} y={} yaw={}", move_x, move_y, move_yaw);
+        Ok(())
     }
 
     async fn write_register(
@@ -403,15 +490,31 @@ impl DogzillaPort {
         register: u8,
         value: u8,
         name: &str,
-    ) {
+    ) -> Result<(), DogzillaError> {
         let frame = Frame::write(register, vec![value]);
-        if let Err(e) = Self::write_frame(serial, &frame).await {
+        Self::write_frame(serial, &frame).await.map_err(|e| {
             error!("Failed to write {}: {}", name, e);
-        }
+            e
+        })
     }
 
     fn update_and_send_status(&self, status: DogzillaStatus) {
         send_status_update(&self.com, &self.device_info, status);
+    }
+
+    fn send_command_result(
+        &self,
+        envelope: &TxEnvelope,
+        signal_type: DogzillaSignalType,
+        error_message: Option<String>,
+    ) {
+        send_command_result(
+            &self.com,
+            &self.device_info,
+            envelope,
+            signal_type,
+            error_message,
+        );
     }
 
     async fn write_frame(serial: &mut SerialStream, frame: &Frame) -> Result<(), DogzillaError> {

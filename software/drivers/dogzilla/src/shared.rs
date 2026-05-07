@@ -1,6 +1,6 @@
 use crate::dogzilla_proto::{
     Command, DogzillaDevice, DogzillaSignalType, DogzillaStatus, ImuOrientation, RxEnvelope,
-    servo_speed_command,
+    TxEnvelope, servo_speed_command,
 };
 use crate::protocol;
 use crate::state::DogzillaCommunicator;
@@ -114,6 +114,37 @@ pub(crate) fn target_matches(target_serial: &str, device_serial: &str) -> bool {
     target_serial.is_empty() || target_serial == device_serial
 }
 
+pub(crate) fn unsupported_command_message(command: &Command) -> Option<String> {
+    let mut fields = Vec::new();
+    if command.calibration.is_some() {
+        fields.push("calibration");
+    }
+    if command.arm.is_some() {
+        fields.push("arm");
+    }
+    if command.io.is_some() {
+        fields.push("io");
+    }
+    if command.config.is_some() {
+        fields.push("config");
+    }
+    if command.led.is_some() {
+        fields.push("led");
+    }
+
+    (!fields.is_empty())
+        .then(|| format!("Unsupported DOGZILLA command fields: {}", fields.join(", ")))
+}
+
+pub(crate) fn should_report_command_success(command: &Command) -> bool {
+    command.action.is_some()
+        || command.calibration.is_some()
+        || command.arm.is_some()
+        || command.io.is_some()
+        || command.config.is_some()
+        || command.led.is_some()
+}
+
 pub(crate) fn send_status_update(
     comm: &DogzillaCommunicator,
     device_info: &DogzillaDevice,
@@ -131,6 +162,29 @@ pub(crate) fn send_status_update(
 
     if let Err(e) = comm.send_rx(&envelope) {
         warn!("Failed to send status: {}", e);
+    }
+}
+
+pub(crate) fn send_command_result(
+    comm: &DogzillaCommunicator,
+    device_info: &DogzillaDevice,
+    command: &TxEnvelope,
+    signal_type: DogzillaSignalType,
+    error_message: Option<String>,
+) {
+    let envelope = RxEnvelope {
+        monotonic_stamp_ns: systime::get_monotonic_stamp_ns(),
+        local_stamp_ns: systime::get_local_stamp_ns(),
+        app_start_id: systime::get_app_start_id(),
+        signal_type: signal_type as i32,
+        device: Some(device_info.clone()),
+        command: Some(command.clone()),
+        error_message: error_message.unwrap_or_default(),
+        ..Default::default()
+    };
+
+    if let Err(e) = comm.send_rx(&envelope) {
+        warn!("Failed to send command result: {}", e);
     }
 }
 

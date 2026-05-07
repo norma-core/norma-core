@@ -1,8 +1,9 @@
 use crate::command_inbox::{CommandReceiver, command_inbox};
-use crate::dogzilla_proto::{DogzillaDevice, ImuOrientation, TxEnvelope};
+use crate::dogzilla_proto::{DogzillaDevice, DogzillaSignalType, ImuOrientation, TxEnvelope};
 use crate::shared::{
     CommandEffect, DEFAULT_SERVO_POSITIONS, build_status, compute_command_effect,
-    send_status_update, target_matches,
+    send_command_result, send_status_update, should_report_command_success, target_matches,
+    unsupported_command_message,
 };
 use crate::state::DogzillaCommunicator;
 use log::warn;
@@ -74,6 +75,8 @@ impl DogzillaSimulator {
         let (tx_sender, tx_receiver) = command_inbox();
 
         let device_serial = self.device_info.serial_number.clone();
+        let result_com = self.com.clone();
+        let result_device = self.device_info.clone();
         let normfs = self.com.normfs.clone();
         let tx_queue_id = self.com.tx_queue_id.clone();
         let subscription_id = normfs.subscribe(
@@ -86,12 +89,20 @@ impl DogzillaSimulator {
                                 continue;
                             }
 
-                            let Some(command) = envelope.command else {
+                            if envelope.command.is_none() {
                                 continue;
-                            };
+                            }
 
-                            if let Err(e) = tx_sender.push(command) {
+                            let failed_envelope = envelope.clone();
+                            if let Err(e) = tx_sender.push(envelope) {
                                 warn!("Failed to queue TX command: {}", e);
+                                send_command_result(
+                                    &result_com,
+                                    &result_device,
+                                    &failed_envelope,
+                                    DogzillaSignalType::DogzillaCommandFailed,
+                                    Some(e.to_string()),
+                                );
                             }
                         }
                         Err(e) => {
@@ -118,13 +129,7 @@ impl DogzillaSimulator {
             tokio::select! {
                 command = tx_receiver.recv() => {
                     match command {
-                        Some(command) => {
-                            let effect = compute_command_effect(&command);
-                            self.apply_command_effect(effect);
-                            if let Some(movement) = command.movement {
-                                self.apply_movement_command(movement.move_x, movement.move_y, movement.move_yaw);
-                            }
-                        }
+                        Some(envelope) => self.process_envelope(&envelope),
                         None => return Ok(()),
                     }
                 }
@@ -132,6 +137,48 @@ impl DogzillaSimulator {
                     self.tick();
                 }
             }
+        }
+    }
+
+    fn process_envelope(&mut self, envelope: &TxEnvelope) {
+        let Some(command) = envelope.command.as_ref() else {
+            return;
+        };
+
+        if let Some(message) = unsupported_command_message(command) {
+            self.send_command_result(
+                envelope,
+                DogzillaSignalType::DogzillaCommandFailed,
+                Some(message),
+            );
+            return;
+        }
+
+        let effect = compute_command_effect(command);
+        if command.servo.is_some() && effect.servo_writes.is_empty() {
+            let servo_id = command
+                .servo
+                .as_ref()
+                .map(|servo| servo.servo_id)
+                .unwrap_or(0);
+            self.send_command_result(
+                envelope,
+                DogzillaSignalType::DogzillaCommandFailed,
+                Some(format!(
+                    "Unsupported command: unknown servo ID {}",
+                    servo_id
+                )),
+            );
+            return;
+        }
+
+        self.apply_command_effect(effect);
+        if let Some(movement) = &command.movement {
+            self.apply_movement_command(movement.move_x, movement.move_y, movement.move_yaw);
+        }
+
+        if should_report_command_success(command) {
+            self.send_command_result(envelope, DogzillaSignalType::DogzillaCommandSuccess, None);
         }
     }
 
@@ -179,6 +226,21 @@ impl DogzillaSimulator {
         );
 
         send_status_update(&self.com, &self.device_info, status);
+    }
+
+    fn send_command_result(
+        &self,
+        envelope: &TxEnvelope,
+        signal_type: DogzillaSignalType,
+        error_message: Option<String>,
+    ) {
+        send_command_result(
+            &self.com,
+            &self.device_info,
+            envelope,
+            signal_type,
+            error_message,
+        );
     }
 
     fn current_battery_level(&mut self) -> u32 {

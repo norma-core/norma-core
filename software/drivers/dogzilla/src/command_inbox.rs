@@ -1,6 +1,4 @@
-use crate::dogzilla_proto::{
-    Command, MovementCommand, ServoCommand, ServoSpeedCommand, servo_speed_command,
-};
+use crate::dogzilla_proto::{Command, ServoSpeedCommand, TxEnvelope, servo_speed_command};
 use parking_lot::Mutex;
 use std::collections::BTreeMap;
 use std::sync::Arc;
@@ -10,23 +8,23 @@ const DISCRETE_QUEUE_CAPACITY: usize = 64;
 const WAKE_QUEUE_CAPACITY: usize = 1;
 
 pub(crate) struct CommandInbox {
-    discrete_tx: mpsc::Sender<Command>,
+    discrete_tx: mpsc::Sender<TxEnvelope>,
     wake_tx: mpsc::Sender<()>,
     pending: Arc<Mutex<PendingCommands>>,
 }
 
 pub(crate) struct CommandReceiver {
-    discrete_rx: mpsc::Receiver<Command>,
+    discrete_rx: mpsc::Receiver<TxEnvelope>,
     wake_rx: mpsc::Receiver<()>,
     pending: Arc<Mutex<PendingCommands>>,
 }
 
 #[derive(Default)]
 struct PendingCommands {
-    servos: BTreeMap<u32, ServoCommand>,
-    leg_speed: Option<u32>,
-    arm_speed: Option<u32>,
-    movement: Option<MovementCommand>,
+    servos: BTreeMap<u32, TxEnvelope>,
+    leg_speed: Option<TxEnvelope>,
+    arm_speed: Option<TxEnvelope>,
+    movement: Option<TxEnvelope>,
 }
 
 pub(crate) fn command_inbox() -> (CommandInbox, CommandReceiver) {
@@ -49,15 +47,15 @@ pub(crate) fn command_inbox() -> (CommandInbox, CommandReceiver) {
 }
 
 impl CommandInbox {
-    pub(crate) fn push(&self, command: Command) -> Result<(), &'static str> {
-        if is_coalesced_command(&command) {
-            self.pending.lock().merge(command);
+    pub(crate) fn push(&self, envelope: TxEnvelope) -> Result<(), &'static str> {
+        if is_coalesced_envelope(&envelope) {
+            self.pending.lock().merge(envelope);
             match self.wake_tx.try_send(()) {
                 Ok(()) | Err(mpsc::error::TrySendError::Full(_)) => Ok(()),
                 Err(mpsc::error::TrySendError::Closed(_)) => Err("command receiver closed"),
             }
         } else {
-            match self.discrete_tx.try_send(command) {
+            match self.discrete_tx.try_send(envelope) {
                 Ok(()) => Ok(()),
                 Err(mpsc::error::TrySendError::Full(_)) => Err("discrete command queue full"),
                 Err(mpsc::error::TrySendError::Closed(_)) => Err("command receiver closed"),
@@ -67,16 +65,16 @@ impl CommandInbox {
 }
 
 impl CommandReceiver {
-    pub(crate) async fn recv(&mut self) -> Option<Command> {
+    pub(crate) async fn recv(&mut self) -> Option<TxEnvelope> {
         loop {
-            if let Some(command) = self.pending.lock().pop_next() {
-                return Some(command);
+            if let Some(envelope) = self.pending.lock().pop_next() {
+                return Some(envelope);
             }
 
             tokio::select! {
-                command = self.discrete_rx.recv() => {
-                    if command.is_some() {
-                        return command;
+                envelope = self.discrete_rx.recv() => {
+                    if envelope.is_some() {
+                        return envelope;
                     }
                     if self.wake_rx.is_closed() {
                         return None;
@@ -93,54 +91,91 @@ impl CommandReceiver {
 }
 
 impl PendingCommands {
-    fn merge(&mut self, command: Command) {
-        if let Some(servo) = command.servo {
-            self.servos.insert(servo.servo_id, servo);
+    fn merge(&mut self, envelope: TxEnvelope) {
+        let Some(command) = envelope.command.as_ref() else {
+            return;
+        };
+
+        if let Some(servo) = command.servo.clone() {
+            self.servos.insert(
+                servo.servo_id,
+                envelope_with_command(
+                    &envelope,
+                    Command {
+                        target_device_serial: command.target_device_serial.clone(),
+                        servo: Some(servo),
+                        ..Default::default()
+                    },
+                ),
+            );
         }
 
-        if let Some(speed) = command.servo_speed {
+        if let Some(speed) = command.servo_speed.clone() {
             if let Some(servo_speed_command::BodySpeed::BodyServoSpeed(value)) = speed.body_speed {
-                self.leg_speed = Some(value);
+                self.leg_speed = Some(envelope_with_command(
+                    &envelope,
+                    Command {
+                        target_device_serial: command.target_device_serial.clone(),
+                        servo_speed: Some(ServoSpeedCommand {
+                            body_speed: Some(servo_speed_command::BodySpeed::BodyServoSpeed(value)),
+                            arm_speed: None,
+                        }),
+                        ..Default::default()
+                    },
+                ));
             }
             if let Some(servo_speed_command::ArmSpeed::ArmServoSpeed(value)) = speed.arm_speed {
-                self.arm_speed = Some(value);
+                self.arm_speed = Some(envelope_with_command(
+                    &envelope,
+                    Command {
+                        target_device_serial: command.target_device_serial.clone(),
+                        servo_speed: Some(ServoSpeedCommand {
+                            body_speed: None,
+                            arm_speed: Some(servo_speed_command::ArmSpeed::ArmServoSpeed(value)),
+                        }),
+                        ..Default::default()
+                    },
+                ));
             }
         }
 
-        if let Some(movement) = command.movement {
-            self.movement = Some(movement);
+        if let Some(movement) = command.movement.clone() {
+            self.movement = Some(envelope_with_command(
+                &envelope,
+                Command {
+                    target_device_serial: command.target_device_serial.clone(),
+                    movement: Some(movement),
+                    ..Default::default()
+                },
+            ));
         }
     }
 
-    fn pop_next(&mut self) -> Option<Command> {
-        if let Some((_, servo)) = self.servos.pop_first() {
-            return Some(Command {
-                servo: Some(servo),
-                ..Default::default()
-            });
+    fn pop_next(&mut self) -> Option<TxEnvelope> {
+        if let Some(envelope) = self.movement.take() {
+            return Some(envelope);
         }
 
-        if self.leg_speed.is_some() || self.arm_speed.is_some() {
-            return Some(Command {
-                servo_speed: Some(ServoSpeedCommand {
-                    body_speed: self
-                        .leg_speed
-                        .take()
-                        .map(servo_speed_command::BodySpeed::BodyServoSpeed),
-                    arm_speed: self
-                        .arm_speed
-                        .take()
-                        .map(servo_speed_command::ArmSpeed::ArmServoSpeed),
-                }),
-                ..Default::default()
-            });
+        if let Some(envelope) = self.leg_speed.take() {
+            return Some(envelope);
         }
 
-        self.movement.take().map(|movement| Command {
-            movement: Some(movement),
-            ..Default::default()
-        })
+        if let Some(envelope) = self.arm_speed.take() {
+            return Some(envelope);
+        }
+
+        self.servos.pop_first().map(|(_, envelope)| envelope)
     }
+}
+
+fn envelope_with_command(envelope: &TxEnvelope, command: Command) -> TxEnvelope {
+    let mut next = envelope.clone();
+    next.command = Some(command);
+    next
+}
+
+fn is_coalesced_envelope(envelope: &TxEnvelope) -> bool {
+    envelope.command.as_ref().is_some_and(is_coalesced_command)
 }
 
 fn is_coalesced_command(command: &Command) -> bool {

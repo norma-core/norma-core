@@ -7,6 +7,7 @@ pub(crate) enum DogzillaError {
     InvalidFrame,
     Timeout,
     SerialError(String),
+    UnsupportedCommand(String),
 }
 
 impl fmt::Display for DogzillaError {
@@ -17,6 +18,7 @@ impl fmt::Display for DogzillaError {
             DogzillaError::InvalidFrame => write!(f, "Invalid frame"),
             DogzillaError::Timeout => write!(f, "Operation timeout"),
             DogzillaError::SerialError(s) => write!(f, "Serial error: {}", s),
+            DogzillaError::UnsupportedCommand(s) => write!(f, "Unsupported command: {}", s),
         }
     }
 }
