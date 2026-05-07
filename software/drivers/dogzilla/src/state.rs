@@ -14,6 +14,7 @@ pub(crate) struct DogzillaCommunicator {
     pub(crate) rx_queue_id: normfs::QueueId,
     pub(crate) tx_queue_id: normfs::QueueId,
     pub(crate) inference_queue_id: normfs::QueueId,
+    inference_states_queue_id: normfs::QueueId,
     state: Arc<parking_lot::RwLock<InferenceState>>,
 }
 
@@ -24,11 +25,13 @@ impl DogzillaCommunicator {
         tx_queue_id: normfs::QueueId,
         inference_queue_id: normfs::QueueId,
     ) -> Self {
+        let inference_states_queue_id = normfs.resolve("inference-states");
         Self {
             normfs,
             rx_queue_id,
             tx_queue_id,
             inference_queue_id,
+            inference_states_queue_id,
             state: Arc::new(parking_lot::RwLock::new(InferenceState::default())),
         }
     }
@@ -135,7 +138,7 @@ impl DogzillaCommunicator {
     }
 
     fn get_last_inference_id_bytes(&self) -> Bytes {
-        match self.normfs.get_last_id(&self.inference_queue_id) {
+        match self.normfs.get_last_id(&self.inference_states_queue_id) {
             Ok(id) => {
                 let mut ptr_data = BytesMut::new();
                 id.write_value_to_buffer(&mut ptr_data);
@@ -143,8 +146,8 @@ impl DogzillaCommunicator {
             }
             Err(e) => {
                 warn!(
-                    "Failed to get last inference ID from queue dogzilla/inference: {}",
-                    e
+                    "Failed to get last inference ID from queue inference-states: {}",
+                    e,
                 );
                 Bytes::new()
             }
