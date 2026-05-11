@@ -10,8 +10,8 @@ interface UseElementFullscreenResult {
   exitFullscreen: () => Promise<void>;
 }
 
-export function useElementFullscreen(
-  elementRef: RefObject<HTMLElement>,
+export function useElementFullscreen<T extends HTMLElement>(
+  elementRef: RefObject<T | null>,
   options: UseElementFullscreenOptions = {},
 ): UseElementFullscreenResult {
   const { closeOnEscape = true } = options;
