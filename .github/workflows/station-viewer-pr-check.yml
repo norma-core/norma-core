@@ -1,0 +1,36 @@
+name: Station Viewer PR Check
+
+env:
+  NODE_VERSION: "22"
+
+on:
+  pull_request:
+    paths:
+      - "software/station/clients/station-viewer/**"
+
+jobs:
+  typecheck-and-build:
+    name: Typecheck and Build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: software/station/clients/station-viewer
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "yarn"
+          cache-dependency-path: software/station/clients/station-viewer/yarn.lock
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Typecheck
+        run: yarn type-check
+
+      - name: Build
+        run: yarn build
