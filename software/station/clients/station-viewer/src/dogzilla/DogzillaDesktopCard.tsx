@@ -18,6 +18,12 @@ interface LatencyStats {
   max: number;
 }
 
+const exitFullscreen = () => {
+  if (document.fullscreenElement) {
+    void document.exitFullscreen().catch(() => undefined);
+  }
+};
+
 interface DogzillaDesktopCardProps {
   deviceState: dogzilla.InferenceState.IDeviceState;
   deviceIndex: number;
@@ -33,6 +39,7 @@ const DogzillaDesktopCard = memo(function DogzillaDesktopCard({
 }: DogzillaDesktopCardProps) {
   const [selectedVideoSourceId, setSelectedVideoSourceId] = useState('');
   const [mainViewMode, setMainViewMode] = useState<DogzillaViewMode>('3d');
+  const previousMainViewModeRef = useRef<Exclude<DogzillaViewMode, 'fullscreenVideo'>>('3d');
   const latencyHistoryRef = useRef<Map<string, LatencyReading[]>>(new Map());
 
   const now = Date.now();
@@ -111,10 +118,62 @@ const DogzillaDesktopCard = memo(function DogzillaDesktopCard({
   }, [ov5647Sources, selectedVideoSourceId, usbVideoSources]);
 
   useEffect(() => {
-    if (!selectedVideoSource && mainViewMode === 'photo') {
+    if (!selectedVideoSource && (mainViewMode === 'photo' || mainViewMode === 'fullscreenVideo')) {
+      exitFullscreen();
+      previousMainViewModeRef.current = '3d';
       setMainViewMode('3d');
     }
   }, [mainViewMode, selectedVideoSource]);
+
+  useEffect(() => {
+    if (mainViewMode !== 'fullscreenVideo') {
+      previousMainViewModeRef.current = mainViewMode;
+      return;
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') {
+        return;
+      }
+
+      event.preventDefault();
+      exitFullscreen();
+      setMainViewMode(previousMainViewModeRef.current);
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [mainViewMode]);
+
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      if (!document.fullscreenElement && mainViewMode === 'fullscreenVideo') {
+        setMainViewMode(previousMainViewModeRef.current);
+      }
+    };
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  }, [mainViewMode]);
+
+  const handleMainViewModeChange = (value: DogzillaViewMode) => {
+    if (value === 'fullscreenVideo') {
+      if (document.activeElement instanceof HTMLElement) {
+        document.activeElement.blur();
+      }
+      if (!document.fullscreenElement) {
+        void document.documentElement.requestFullscreen().catch(() => {
+          setMainViewMode(previousMainViewModeRef.current);
+        });
+      }
+      setMainViewMode(value);
+      return;
+    }
+
+    previousMainViewModeRef.current = value;
+    exitFullscreen();
+    setMainViewMode(value);
+  };
 
   return (
     <div className="mx-auto flex h-[min(86vh,58rem)] min-h-[46rem] w-full min-w-[300px] max-w-[1536px] flex-col overflow-hidden rounded-lg border border-border-default bg-surface-primary/50 lg:col-span-2">
@@ -125,7 +184,7 @@ const DogzillaDesktopCard = memo(function DogzillaDesktopCard({
           </span>
           <DogzillaViewModeSwitch
             value={mainViewMode}
-            onChange={setMainViewMode}
+            onChange={handleMainViewModeChange}
             photoDisabled={!selectedVideoSource}
           />
           <select

@@ -1,6 +1,6 @@
-import { Camera } from 'lucide-react';
+import { Camera, Maximize2 } from 'lucide-react';
 
-export type DogzillaViewMode = '3d' | 'photo';
+export type DogzillaViewMode = '3d' | 'photo' | 'fullscreenVideo';
 
 interface DogzillaViewModeSwitchProps {
   value: DogzillaViewMode;
@@ -41,6 +41,16 @@ export default function DogzillaViewModeSwitch({
         aria-label="Photo"
       >
         <Camera className="h-3.5 w-3.5" strokeWidth={2.5} />
+      </button>
+      <button
+        type="button"
+        disabled={photoDisabled}
+        onClick={() => onChange('fullscreenVideo')}
+        className={`${buttonClassName('fullscreenVideo')} disabled:cursor-not-allowed disabled:opacity-40`}
+        title="Fullscreen video"
+        aria-label="Fullscreen video"
+      >
+        <Maximize2 className="h-3.5 w-3.5" strokeWidth={2.5} />
       </button>
     </div>
   );

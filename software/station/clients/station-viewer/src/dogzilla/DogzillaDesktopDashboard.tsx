@@ -261,6 +261,7 @@ const DogzillaDesktopDashboard = memo(function DogzillaDesktopDashboard({
   selectedVideoSource,
   mainViewMode = '3d'
 }: DogzillaDesktopDashboardProps) {
+  const fullscreenRootRef = useRef<HTMLDivElement | null>(null);
   const manualServoEditAtRef = useRef(DEFAULT_SERVO_POSITIONS.map(() => 0));
   const manualLegsSpeedEditAtRef = useRef(0);
   const manualArmSpeedEditAtRef = useRef(0);
@@ -340,6 +341,12 @@ const DogzillaDesktopDashboard = memo(function DogzillaDesktopDashboard({
       });
     }
   }, [livePositions, status?.armServoSpeed, status?.legServoSpeed]);
+
+  useEffect(() => {
+    if (mainViewMode === 'fullscreenVideo') {
+      fullscreenRootRef.current?.focus({ preventScroll: true });
+    }
+  }, [mainViewMode]);
 
   const updateServo = (index: number, value: number) => {
     const servoId = Number(SERVO_IDS[index]);
@@ -533,6 +540,33 @@ const DogzillaDesktopDashboard = memo(function DogzillaDesktopDashboard({
     />
   );
 
+  const renderRobotInset = () => (
+    <div className="pointer-events-auto absolute right-4 top-4 z-10 h-[200px] w-[320px] max-w-[calc(100%-2rem)] overflow-hidden rounded-lg border border-border-default bg-surface-primary shadow-lg">
+      {renderRobotContent('h-full w-full overflow-hidden')}
+    </div>
+  );
+
+  if (mainViewMode === 'fullscreenVideo' && selectedVideoSource) {
+    return (
+      <div
+        ref={fullscreenRootRef}
+        tabIndex={-1}
+        className="fixed inset-0 z-50 overflow-hidden bg-surface-primary text-text-primary outline-none"
+      >
+        <div className="h-full w-full">
+          {renderCameraContent()}
+        </div>
+        {renderRobotInset()}
+        <div hidden>
+          <DogzillaDesktopMovementPanel
+            deviceSerial={device?.serialNumber ?? ''}
+            showHints={false}
+          />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex h-full min-h-[44rem] flex-col gap-4 overflow-hidden rounded-b-lg bg-surface-secondary/30 p-4 text-text-primary">
       <div className="grid min-h-0 flex-1 gap-4 lg:grid-cols-[17rem_minmax(0,1fr)_20rem]">
@@ -555,9 +589,7 @@ const DogzillaDesktopDashboard = memo(function DogzillaDesktopDashboard({
               </div>
             )}
             {mainViewMode === 'photo' && selectedVideoSource && (
-              <div className="pointer-events-auto absolute right-4 top-4 z-10 h-[200px] w-[320px] max-w-[calc(100%-2rem)] overflow-hidden rounded-lg border border-border-default bg-surface-primary shadow-lg">
-                {renderRobotContent('h-full w-full overflow-hidden')}
-              </div>
+              renderRobotInset()
             )}
             <div className="pointer-events-none absolute inset-x-4 bottom-4 z-10">
               <DogzillaDesktopMovementPanel deviceSerial={device?.serialNumber ?? ''} />
