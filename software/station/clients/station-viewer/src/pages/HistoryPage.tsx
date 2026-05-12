@@ -178,17 +178,6 @@ function HistoryPage() {
                             </div>
                           </div>
                         ))}
-                        {parsedFrame.ov5647Queues?.map((camera) => (
-                          <div key={camera.queueId} className="flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                              <span className="text-accent-warning font-mono">{camera.queueId}</span>
-                              <span className="text-accent-warning text-xs px-1 py-0.5 bg-accent-warning/10 rounded">OV5647</span>
-                            </div>
-                            <div className="text-text-label font-mono">
-                              {formatPtrBytes(camera.ptr)}
-                            </div>
-                          </div>
-                        ))}
                         {parsedFrame.mirroring && (
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3">
@@ -290,22 +279,6 @@ function HistoryPage() {
                       index={idx + 1}
                       dataQueueType="usbvideo"
                       dataQueueId={video.queueId}
-                    />
-                  ))}
-                  {parsedFrame.ov5647Queues?.map((camera, idx) => (
-                    <HistoryElement
-                      key={camera.queueId}
-                      element={{
-                        queueId: camera.queueId,
-                        entryId: camera.ptr,
-                        data: camera.data,
-                        rawData: camera.rawData ?? null,
-                        type: getQueueType(camera.queueType),
-                        queueType: camera.queueType,
-                      }}
-                      index={videoQueueCount + idx + 1}
-                      dataQueueType="ov5647"
-                      dataQueueId={camera.queueId}
                     />
                   ))}
                   {parsedFrame.mirroring && (

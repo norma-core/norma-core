@@ -60,7 +60,7 @@ export function createJpegBlobUrl(frameData: Uint8Array): string | null {
   }
 }
 
-export function createCroppedJson(data: usbvideo.RxEnvelope | ov5647.RxEnvelope): string {
+export function createCroppedJson(data: usbvideo.RxEnvelope): string {
   try {
     const plainObject = usbvideo.RxEnvelope.toObject(data, {
         longs: String,

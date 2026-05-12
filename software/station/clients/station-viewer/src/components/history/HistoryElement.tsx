@@ -43,7 +43,6 @@ function HistoryElement({ element, index, dataQueueType, dataQueueId }: HistoryE
   const displayQueueId = formatQueueIdForDisplay(element.queueId);
 
   const usbVideoData = element.type === 'usbvideo' && element.data ? parseUsbVideoData(element.data) : null;
-  const ov5647Data = element.type === 'ov5647' && element.data ? parseOv5647Data(element.data) : null;
   const mirroringData = element.type === 'mirroring' && element.data ? parseMirroringData(element.data) : null;
   const sysinfoData = element.type === 'sysinfo' && element.data ? parseSysinfoData(element.data) : null;
   const yahboom_dogzilla_liteData = element.type === 'yahboom_dogzilla_lite' && element.data ? parseYahboomDogzillaLiteData(element.data) : null;
@@ -131,16 +130,6 @@ function HistoryElement({ element, index, dataQueueType, dataQueueId }: HistoryE
               {usbVideoData.frames && usbVideoData.frames.stamps && usbVideoData.frames.stamps.length > 0 && (
                 <div className="text-xs text-accent-data">
                   Frames: {usbVideoData.frames.stamps.length}
-                </div>
-              )}
-            </div>
-          )}
-
-          {ov5647Data && (
-            <div className="space-y-1">
-              {ov5647Data.frames?.stamps && ov5647Data.frames.stamps.length > 0 && (
-                <div className="text-xs text-accent-warning">
-                  Frames: {ov5647Data.frames.stamps.length}
                 </div>
               )}
             </div>

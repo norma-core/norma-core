@@ -30,7 +30,6 @@ function tryDecodeProtobuf(rawData: Uint8Array): { decoded: unknown; typeName: s
     { name: 'st3215.RxEnvelope', decode: () => st3215.RxEnvelope.decode(rawData) },
     { name: 'st3215.TxEnvelope', decode: () => st3215.TxEnvelope.decode(rawData) },
     { name: 'usbvideo.RxEnvelope', decode: () => usbvideo.RxEnvelope.decode(rawData) },
-    { name: 'ov5647.RxEnvelope', decode: () => ov5647.RxEnvelope.decode(rawData) },
     { name: 'motors_mirroring.RxEnvelope', decode: () => motors_mirroring.RxEnvelope.decode(rawData) },
     { name: 'sysinfo.Envelope', decode: () => sysinfo.Envelope.decode(rawData) },
     { name: 'yahboom_dogzilla_lite.InferenceState', decode: () => yahboom_dogzilla_lite.InferenceState.decode(rawData) },
@@ -64,7 +63,6 @@ function getAvailableTabs(
   }
 
   const isUsbVideo = type === 'usbvideo' && data instanceof usbvideo.RxEnvelope;
-  const isOv5647 = type === 'ov5647' && data instanceof ov5647.RxEnvelope;
   const isSt3215 = type === 'st3215' && data instanceof st3215.InferenceState;
   const isSt3215Tx = type === 'st3215tx' && data instanceof st3215.TxEnvelope;
   const isMirroring = type === 'mirroring' && data instanceof motors_mirroring.RxEnvelope;
