@@ -37,7 +37,7 @@ build-amd64: client
 # Build the client
 client:
 	@echo "Building client..."
-	cd ../../clients/station-viewer && yarn && yarn build
+	cd ../../clients/station-viewer && npm ci && npm run build
 
 # Clean build artifacts
 clean:

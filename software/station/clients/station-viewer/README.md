@@ -15,19 +15,19 @@ Web interface for NormaCore.Dev station - physical operations platform.
 
 ```bash
 # Install dependencies
-yarn install
+npm ci
 
 # Start development server
-yarn dev
+npm run dev
 
 # Build for production
-yarn build
+npm run build
 
 # Type checking
-yarn type-check
+npm run type-check
 
 # Lint
-yarn lint
+npm run lint
 ```
 
 ## Tech Stack
