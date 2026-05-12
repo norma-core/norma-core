@@ -1,18 +1,16 @@
 import { memo } from 'react';
 import type { FrameEntry } from '@/api/frame-parser';
-import { yahboom_dogzilla_lite, ov5647, usbvideo } from '@/api/proto.js';
+import { yahboom_dogzilla_lite, usbvideo } from '@/api/proto.js';
 import YahboomDogzillaLiteCard from '@/yahboom_dogzilla_lite/YahboomDogzillaLiteCard';
 
 interface YahboomDogzillaLiteDeviceViewerProps {
   inferenceState: yahboom_dogzilla_lite.IInferenceState;
   videoSources?: FrameEntry<usbvideo.IRxEnvelope>[];
-  ov5647Sources?: FrameEntry<ov5647.IRxEnvelope>[];
 }
 
 const YahboomDogzillaLiteDeviceViewer = memo(function YahboomDogzillaLiteDeviceViewer({
   inferenceState,
-  videoSources,
-  ov5647Sources
+  videoSources
 }: YahboomDogzillaLiteDeviceViewerProps) {
   const devices = inferenceState.devices ?? [];
 
@@ -28,7 +26,6 @@ const YahboomDogzillaLiteDeviceViewer = memo(function YahboomDogzillaLiteDeviceV
           deviceState={deviceState}
           deviceIndex={deviceIndex}
           videoSources={videoSources}
-          ov5647Sources={ov5647Sources}
         />
       ))}
     </>

@@ -23,7 +23,6 @@ enum QueueDataType {
     QDT_YAHBOOM_DOGZILLA_LITE_SERIAL_TX = 40; // yahboom_dogzilla_lite.TxEnvelope
     QDT_YAHBOOM_DOGZILLA_LITE_SERIAL_RX = 41; // yahboom_dogzilla_lite.RxEnvelope
     QDT_YAHBOOM_DOGZILLA_LITE_INFERENCE = 42; // yahboom_dogzilla_lite.InferenceState
-    QDT_OV5647_FRAMES    = 43; // ov5647.FramesPack
 }
 
 enum StationCommandType {

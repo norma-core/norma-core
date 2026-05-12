@@ -4,9 +4,10 @@ use std::sync::Arc;
 
 use normfs::{NormFS, UintN};
 use station_iface::{StationEngine, iface_proto::drivers::QueueDataType};
-
-use crate::proto::frame::{FrameFormat, FrameFormatKind, FrameStamp, FramesPack};
-use crate::proto::{Camera, CameraFormat, RxEnvelope, RxEnvelopeType};
+use usbvideo::usbvideo_proto::{
+    frame::{FrameFormat, FrameFormatKind, FrameStamp, FramesPack},
+    usbvideo::{Camera, CameraFormat, RxEnvelope, RxEnvelopeType},
+};
 
 pub(crate) struct StateTracker<K: StationEngine> {
     engine: Arc<K>,
@@ -43,7 +44,7 @@ impl<K: StationEngine> StateTracker<K> {
             .ensure_queue_exists_for_write(&self.queue_id)
             .await;
         self.engine
-            .register_queue(&self.queue_id, QueueDataType::QdtOv5647Frames, vec![]);
+            .register_queue(&self.queue_id, QueueDataType::QdtUsbVideoFrames, vec![]);
     }
 
     pub(crate) fn enqueue_frame(
@@ -63,13 +64,13 @@ impl<K: StationEngine> StateTracker<K> {
                     height,
                     kind: FrameFormatKind::FfJpeg as i32,
                 }),
-                linear_data: vec![],
-                frames_data: vec![jpeg_data.to_vec()],
+                linear_data: Bytes::new(),
+                frames_data: vec![jpeg_data],
                 stamps: vec![stamp.clone()],
             }),
             stamp: Some(stamp),
             formats: vec![],
-            last_inference_queue_ptr: self.get_last_inference_id_bytes().to_vec(),
+            last_inference_queue_ptr: self.get_last_inference_id_bytes(),
             error: String::new(),
         };
 

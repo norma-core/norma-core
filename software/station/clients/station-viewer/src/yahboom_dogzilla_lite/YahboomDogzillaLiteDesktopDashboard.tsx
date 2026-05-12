@@ -1,11 +1,10 @@
 import { memo, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { commandManager } from '@/api/commands.js';
-import { yahboom_dogzilla_lite, ov5647, usbvideo } from '@/api/proto.js';
+import { yahboom_dogzilla_lite, usbvideo } from '@/api/proto.js';
 import YahboomDogzillaLiteDesktopActionPanel from '@/yahboom_dogzilla_lite/YahboomDogzillaLiteDesktopActionPanel';
 import YahboomDogzillaLiteDesktopMovementPanel from '@/yahboom_dogzilla_lite/YahboomDogzillaLiteDesktopMovementPanel';
 import type { YahboomDogzillaLiteViewMode } from '@/yahboom_dogzilla_lite/YahboomDogzillaLiteViewModeSwitch';
 import YahboomDogzillaLiteViewer from '@/yahboom_dogzilla_lite/YahboomDogzillaLiteViewer';
-import Ov5647CameraViewer from '@/ov5647/CameraViewer';
 import UsbCameraViewer from '@/usbvideo/CameraViewer';
 import { getGradientClass } from '@/utils/color-utils';
 
@@ -58,8 +57,7 @@ const formatAcceleration = (value: number | null | undefined) => {
 };
 
 type SelectedVideoSource =
-  | { kind: 'usbvideo'; source: usbvideo.IRxEnvelope; sourceId: string }
-  | { kind: 'ov5647'; source: ov5647.IRxEnvelope };
+  | { kind: 'usbvideo'; source: usbvideo.IRxEnvelope; sourceId: string };
 
 interface YahboomDogzillaLiteDesktopDashboardProps {
   deviceState: yahboom_dogzilla_lite.InferenceState.IDeviceState | null;
@@ -525,9 +523,7 @@ const YahboomDogzillaLiteDesktopDashboard = memo(function YahboomDogzillaLiteDes
       return null;
     }
 
-    return selectedVideoSource.kind === 'usbvideo'
-      ? <UsbCameraViewer sourceId={selectedVideoSource.sourceId} />
-      : <Ov5647CameraViewer inferenceState={selectedVideoSource.source} />;
+    return <UsbCameraViewer sourceId={selectedVideoSource.sourceId} />;
   };
 
   const renderRobotContent = (className?: string) => (

@@ -2,10 +2,10 @@ import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import Long from 'long';
 import type { FrameEntry } from '@/api/frame-parser';
 import { serverToLocal } from '@/api/timestamp-utils';
-import { yahboom_dogzilla_lite, ov5647, usbvideo } from '@/api/proto.js';
+import { yahboom_dogzilla_lite, usbvideo } from '@/api/proto.js';
 import YahboomDogzillaLiteDesktopDashboard from '@/yahboom_dogzilla_lite/YahboomDogzillaLiteDesktopDashboard';
 import YahboomDogzillaLiteViewModeSwitch, { type YahboomDogzillaLiteViewMode } from '@/yahboom_dogzilla_lite/YahboomDogzillaLiteViewModeSwitch';
-import { getVideoSourceId } from '@/usbvideo/camera-source';
+import { getVideoSourceId, getVideoSourceLabel } from '@/usbvideo/camera-source';
 import { getLatencyBgColor, getLatencyTextColor } from '@/utils/color-utils';
 
 interface LatencyReading {
@@ -29,14 +29,12 @@ interface YahboomDogzillaLiteDesktopCardProps {
   deviceState: yahboom_dogzilla_lite.InferenceState.IDeviceState;
   deviceIndex: number;
   videoSources?: FrameEntry<usbvideo.IRxEnvelope>[];
-  ov5647Sources?: FrameEntry<ov5647.IRxEnvelope>[];
 }
 
 const YahboomDogzillaLiteDesktopCard = memo(function YahboomDogzillaLiteDesktopCard({
   deviceState,
   deviceIndex,
-  videoSources,
-  ov5647Sources
+  videoSources
 }: YahboomDogzillaLiteDesktopCardProps) {
   const [selectedVideoSourceId, setSelectedVideoSourceId] = useState('');
   const [mainViewMode, setMainViewMode] = useState<YahboomDogzillaLiteViewMode>('3d');
@@ -85,15 +83,6 @@ const YahboomDogzillaLiteDesktopCard = memo(function YahboomDogzillaLiteDesktopC
         : undefined;
     }
 
-    if (selectedVideoSourceId.startsWith('ov5647:')) {
-      const id = selectedVideoSourceId.replace('ov5647:', '');
-      const source = ov5647Sources?.find((entry) => {
-        const cameraId = entry.data.camera?.uniqueId || entry.data.camera?.id;
-        return cameraId === id;
-      })?.data;
-      return source ? { kind: 'ov5647' as const, source } : undefined;
-    }
-
     return undefined;
   })();
 
@@ -108,17 +97,11 @@ const YahboomDogzillaLiteDesktopCard = memo(function YahboomDogzillaLiteDesktopC
         options.push(`usbvideo:${entry.data.camera.uniqueId}`);
       }
     });
-    ov5647Sources?.forEach((entry) => {
-      const cameraId = entry.data.camera?.uniqueId || entry.data.camera?.id;
-      if (cameraId) {
-        options.push(`ov5647:${cameraId}`);
-      }
-    });
 
     if (options.length === 1) {
       setSelectedVideoSourceId(options[0]);
     }
-  }, [ov5647Sources, selectedVideoSourceId, usbVideoSources]);
+  }, [selectedVideoSourceId, usbVideoSources]);
 
   useEffect(() => {
     if (!selectedVideoSource && (mainViewMode === 'photo' || mainViewMode === 'fullscreenVideo')) {
@@ -202,18 +185,7 @@ const YahboomDogzillaLiteDesktopCard = memo(function YahboomDogzillaLiteDesktopC
               }
               return (
                 <option key={`usbvideo-${entry.data.camera.uniqueId}`} value={`usbvideo:${entry.data.camera.uniqueId}`}>
-                  USB {entry.data.camera.deviceNumber ?? 'N/A'} ({entry.data.camera.uniqueId})
-                </option>
-              );
-            })}
-            {ov5647Sources?.map((entry) => {
-              const cameraId = entry.data.camera?.uniqueId || entry.data.camera?.id;
-              if (!cameraId) {
-                return null;
-              }
-              return (
-                <option key={`ov5647-${cameraId}`} value={`ov5647:${cameraId}`}>
-                  OV5647 {entry.data.camera?.name || entry.data.camera?.id || 'camera'} ({cameraId})
+                  {getVideoSourceLabel(entry)}
                 </option>
               );
             })}

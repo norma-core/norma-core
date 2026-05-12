@@ -1616,13 +1616,13 @@ dependencies = [
  "normfs",
  "parking_lot",
  "prost",
- "prost-build",
  "station_iface",
  "systime",
  "thiserror 2.0.16",
  "tokio",
  "tracing",
  "turbojpeg",
+ "usbvideo",
 ]
 
 [[package]]

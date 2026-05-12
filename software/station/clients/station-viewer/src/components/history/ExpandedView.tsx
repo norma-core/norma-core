@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { usbvideo, st3215, motors_mirroring, sysinfo, ov5647, yahboom_dogzilla_lite, normvla } from '@/api/proto.js';
+import { usbvideo, st3215, motors_mirroring, sysinfo, yahboom_dogzilla_lite, normvla } from '@/api/proto.js';
 import { createCroppedJson } from '@/components/history/history-utils';
 import RawBytesExpanded from '@/components/history/RawBytesExpanded';
 import MirroringExpanded from '@/components/history/MirroringExpanded';
@@ -7,7 +7,6 @@ import St3215Expanded from '@/components/history/St3215Expanded';
 import St3215JsonView from '@/components/history/St3215JsonView';
 import SysinfoGrid from '@/components/history/SysinfoGrid';
 import UsbVideoExpanded from '@/components/history/UsbVideoExpanded';
-import Ov5647Expanded from '@/components/history/Ov5647Expanded';
 import YahboomDogzillaLiteExpanded from '@/components/history/YahboomDogzillaLiteExpanded';
 import NormvlaRobotRenderer from '@/st3215/NormvlaRobotRenderer';
 import FullscreenImageViewer from '@/components/FullscreenImageViewer';
@@ -15,7 +14,7 @@ import FullscreenImageViewer from '@/components/FullscreenImageViewer';
 type DataTab = 'visual' | 'json' | 'raw';
 
 interface ExpandedViewProps {
-  data: usbvideo.IRxEnvelope | ov5647.IRxEnvelope | st3215.IInferenceState | st3215.ITxEnvelope | motors_mirroring.IRxEnvelope | sysinfo.IEnvelope | yahboom_dogzilla_lite.IInferenceState | normvla.IFrame | Uint8Array;
+  data: usbvideo.IRxEnvelope | st3215.IInferenceState | st3215.ITxEnvelope | motors_mirroring.IRxEnvelope | sysinfo.IEnvelope | yahboom_dogzilla_lite.IInferenceState | normvla.IFrame | Uint8Array;
   type: string | undefined;
   rawData?: Uint8Array | null;
 }
@@ -31,7 +30,6 @@ function tryDecodeProtobuf(rawData: Uint8Array): { decoded: unknown; typeName: s
     { name: 'st3215.RxEnvelope', decode: () => st3215.RxEnvelope.decode(rawData) },
     { name: 'st3215.TxEnvelope', decode: () => st3215.TxEnvelope.decode(rawData) },
     { name: 'usbvideo.RxEnvelope', decode: () => usbvideo.RxEnvelope.decode(rawData) },
-    { name: 'ov5647.RxEnvelope', decode: () => ov5647.RxEnvelope.decode(rawData) },
     { name: 'motors_mirroring.RxEnvelope', decode: () => motors_mirroring.RxEnvelope.decode(rawData) },
     { name: 'sysinfo.Envelope', decode: () => sysinfo.Envelope.decode(rawData) },
     { name: 'yahboom_dogzilla_lite.InferenceState', decode: () => yahboom_dogzilla_lite.InferenceState.decode(rawData) },
@@ -65,7 +63,6 @@ function getAvailableTabs(
   }
 
   const isUsbVideo = type === 'usbvideo' && data instanceof usbvideo.RxEnvelope;
-  const isOv5647 = type === 'ov5647' && data instanceof ov5647.RxEnvelope;
   const isSt3215 = type === 'st3215' && data instanceof st3215.InferenceState;
   const isSt3215Tx = type === 'st3215tx' && data instanceof st3215.TxEnvelope;
   const isMirroring = type === 'mirroring' && data instanceof motors_mirroring.RxEnvelope;
@@ -73,7 +70,7 @@ function getAvailableTabs(
   const isYahboomDogzillaLite = type === 'yahboom_dogzilla_lite' && data instanceof yahboom_dogzilla_lite.InferenceState;
   const isNormvla = type === 'normvla' && data instanceof normvla.Frame;
 
-  if (isUsbVideo || isOv5647 || isSt3215 || isSt3215Tx || isMirroring || isSysinfo || isYahboomDogzillaLite || isNormvla) {
+  if (isUsbVideo || isSt3215 || isSt3215Tx || isMirroring || isSysinfo || isYahboomDogzillaLite || isNormvla) {
     return ['visual', 'json', 'raw'];
   }
 
@@ -129,9 +126,6 @@ export default function ExpandedView({ data, type, rawData }: ExpandedViewProps)
   const renderVisual = () => {
     if (type === 'usbvideo' && data instanceof usbvideo.RxEnvelope) {
       return <UsbVideoExpanded data={data} onImageClick={(src, alt) => setFullscreenImage({ src, alt })} />;
-    }
-    if (type === 'ov5647' && data instanceof ov5647.RxEnvelope) {
-      return <Ov5647Expanded data={data} />;
     }
     if (type === 'yahboom_dogzilla_lite' && data instanceof yahboom_dogzilla_lite.InferenceState) {
       return <YahboomDogzillaLiteExpanded data={data} />;
@@ -221,16 +215,6 @@ export default function ExpandedView({ data, type, rawData }: ExpandedViewProps)
       return (
         <div>
           <div className="text-xs text-text-label mb-1">USB Video RxEnvelope JSON (cropped data):</div>
-          <div className="bg-surface-primary p-2 rounded text-xs font-mono text-accent-warning overflow-x-auto max-h-64 overflow-y-auto">
-            <pre>{createCroppedJson(data)}</pre>
-          </div>
-        </div>
-      );
-    }
-    if (type === 'ov5647' && data instanceof ov5647.RxEnvelope) {
-      return (
-        <div>
-          <div className="text-xs text-text-label mb-1">OV5647 RxEnvelope JSON (cropped data):</div>
           <div className="bg-surface-primary p-2 rounded text-xs font-mono text-accent-warning overflow-x-auto max-h-64 overflow-y-auto">
             <pre>{createCroppedJson(data)}</pre>
           </div>

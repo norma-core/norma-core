@@ -139,7 +139,6 @@ function HomePage() {
             <YahboomDogzillaLiteDeviceViewer
               inferenceState={inferenceState.yahboom_dogzilla_lite.data}
               videoSources={inferenceState.videoQueues}
-              ov5647Sources={inferenceState.ov5647Queues}
             />
           )}
           {hasRobotData && inferenceState?.st3215?.data && (

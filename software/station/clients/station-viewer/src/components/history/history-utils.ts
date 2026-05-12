@@ -1,9 +1,8 @@
-import { usbvideo, frame, st3215, motors_mirroring, sysinfo, ov5647, yahboom_dogzilla_lite, normvla } from '@/api/proto.js';
+import { usbvideo, frame, st3215, motors_mirroring, sysinfo, yahboom_dogzilla_lite, normvla } from '@/api/proto.js';
 import { serverToLocal } from '@/api/timestamp-utils';
 
 type ParsedHistoryData =
   | usbvideo.IRxEnvelope
-  | ov5647.IRxEnvelope
   | st3215.IInferenceState
   | motors_mirroring.IRxEnvelope
   | sysinfo.IEnvelope
@@ -61,16 +60,9 @@ export function createJpegBlobUrl(frameData: Uint8Array): string | null {
   }
 }
 
-export function createCroppedJson(data: usbvideo.RxEnvelope | ov5647.RxEnvelope): string {
+export function createCroppedJson(data: usbvideo.RxEnvelope): string {
   try {
-    const plainObject = data instanceof ov5647.RxEnvelope
-      ? ov5647.RxEnvelope.toObject(data, {
-        longs: String,
-        enums: String,
-        bytes: String,
-        defaults: true
-      })
-      : usbvideo.RxEnvelope.toObject(data, {
+    const plainObject = usbvideo.RxEnvelope.toObject(data, {
         longs: String,
         enums: String,
         bytes: String,
@@ -142,18 +134,6 @@ export function parseUsbVideoData(data: Uint8Array | ParsedHistoryData): usbvide
     return usbvideo.RxEnvelope.decode(data);
   } catch (error) {
     console.error('Failed to parse usbvideo.RxEnvelope:', error);
-    return null;
-  }
-}
-
-export function parseOv5647Data(data: Uint8Array | ParsedHistoryData): ov5647.RxEnvelope | null {
-  if (!(data instanceof Uint8Array)) {
-    return data as ov5647.RxEnvelope;
-  }
-  try {
-    return ov5647.RxEnvelope.decode(data);
-  } catch (error) {
-    console.error('Failed to parse ov5647.RxEnvelope:', error);
     return null;
   }
 }

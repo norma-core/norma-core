@@ -28,18 +28,6 @@ use normfs::NormFS;
 use station_iface::StationEngine;
 use std::sync::Arc;
 
-pub mod proto {
-    pub mod frame {
-        include!(concat!(env!("OUT_DIR"), "/ov5647.frame.rs"));
-    }
-
-    include!(concat!(env!("OUT_DIR"), "/ov5647.rs"));
-
-    pub mod drivers {
-        include!(concat!(env!("OUT_DIR"), "/drivers.rs"));
-    }
-}
-
 #[cfg(target_os = "linux")]
 pub async fn start_ov5647<K: StationEngine + Send + Sync + 'static>(
     normfs: Arc<NormFS>,

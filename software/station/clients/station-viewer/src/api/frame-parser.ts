@@ -1,5 +1,5 @@
 import Long from 'long';
-import { yahboom_dogzilla_lite, drivers, inference, motors_mirroring, normvla, ov5647, st3215, sysinfo, usbvideo } from '@/api/proto.js';
+import { yahboom_dogzilla_lite, drivers, inference, motors_mirroring, normvla, st3215, sysinfo, usbvideo } from '@/api/proto.js';
 import { NormFsClient } from "./normfs.js";
 import { getGlobalTimeAdjustmentNs, isTimeSyncActive } from '@/api/time-sync.js';
 import {
@@ -20,7 +20,6 @@ export interface Frame {
   st3215?: FrameEntry<st3215.IInferenceState>;
   st3215Tx?: FrameEntry<st3215.ITxEnvelope>;
   videoQueues?: FrameEntry<usbvideo.IRxEnvelope>[];
-  ov5647Queues?: FrameEntry<ov5647.IRxEnvelope>[];
   mirroring?: FrameEntry<motors_mirroring.IRxEnvelope>;
   sysinfo?: FrameEntry<sysinfo.IEnvelope>;
   yahboom_dogzilla_lite?: FrameEntry<yahboom_dogzilla_lite.IInferenceState>;
@@ -42,7 +41,7 @@ export interface Frame {
 }
 
 // Find entry in previous frame with matching queue and pointer
-type DecodedEntry = st3215.IInferenceState | st3215.ITxEnvelope | usbvideo.IRxEnvelope | ov5647.IRxEnvelope | motors_mirroring.IRxEnvelope | sysinfo.IEnvelope | yahboom_dogzilla_lite.IInferenceState | normvla.IFrame | null;
+type DecodedEntry = st3215.IInferenceState | st3215.ITxEnvelope | usbvideo.IRxEnvelope | motors_mirroring.IRxEnvelope | sysinfo.IEnvelope | yahboom_dogzilla_lite.IInferenceState | normvla.IFrame | null;
 
 interface ParseFrameOptions {
   retainRawData?: boolean;
@@ -67,17 +66,6 @@ function findPreviousEntry(
   // Check videoQueues
   if (previousFrame.videoQueues) {
     const match = previousFrame.videoQueues.find(v => v.queueId === queue);
-    if (match) {
-      const prevPtr = match.ptr;
-      if (prevPtr.length === ptr.length && prevPtr.every((b, i) => b === ptr[i])) {
-        return { decoded: match.data, rawData: match.rawData ?? null };
-      }
-    }
-  }
-
-  // Check ov5647Queues
-  if (previousFrame.ov5647Queues) {
-    const match = previousFrame.ov5647Queues.find(v => v.queueId === queue);
     if (match) {
       const prevPtr = match.ptr;
       if (prevPtr.length === ptr.length && prevPtr.every((b, i) => b === ptr[i])) {
@@ -150,7 +138,6 @@ export async function parseFrame(
   const frame: Frame = {
     stateId: new Uint8Array(Array.from(entryIdBytes)),
     videoQueues: [],
-    ov5647Queues: [],
     otherEntries: retainRawData ? {} : undefined
   };
 
@@ -220,13 +207,6 @@ export async function parseFrame(
                 decoded = usbvideo.RxEnvelope.decode(streamEntry.data);
               } catch (error) {
                 console.error("Failed to decode usbvideo.RxEnvelope:", error);
-              }
-              break;
-            case drivers.QueueDataType.QDT_OV5647_FRAMES:
-              try {
-                decoded = ov5647.RxEnvelope.decode(streamEntry.data);
-              } catch (error) {
-                console.error("Failed to decode ov5647.RxEnvelope:", error);
               }
               break;
             case drivers.QueueDataType.QDT_MOTOR_MIRRORING_RX:
@@ -313,15 +293,6 @@ export async function parseFrame(
                 ? createLiveCameraMetadataEnvelope(result.decoded as usbvideo.IRxEnvelope)
                 : result.decoded as usbvideo.IRxEnvelope,
               rawData: retainRawData ? result.rawData ?? null : null,
-              queueType: result.type
-            });
-            break;
-          case drivers.QueueDataType.QDT_OV5647_FRAMES:
-            frame.ov5647Queues!.push({
-              queueId: result.queue,
-              ptr: result.ptr,
-              data: result.decoded as ov5647.IRxEnvelope,
-              rawData: result.rawData ?? null,
               queueType: result.type
             });
             break;

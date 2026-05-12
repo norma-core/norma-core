@@ -1,6 +1,6 @@
 import { memo, useEffect, useState } from 'react';
 import type { FrameEntry } from '@/api/frame-parser';
-import { yahboom_dogzilla_lite, ov5647, usbvideo } from '@/api/proto.js';
+import { yahboom_dogzilla_lite, usbvideo } from '@/api/proto.js';
 import YahboomDogzillaLiteDashboard from '@/yahboom_dogzilla_lite/YahboomDogzillaLiteDashboard';
 import YahboomDogzillaLiteDesktopCard from '@/yahboom_dogzilla_lite/YahboomDogzillaLiteDesktopCard';
 
@@ -8,7 +8,6 @@ interface YahboomDogzillaLiteCardProps {
   deviceState: yahboom_dogzilla_lite.InferenceState.IDeviceState;
   deviceIndex: number;
   videoSources?: FrameEntry<usbvideo.IRxEnvelope>[];
-  ov5647Sources?: FrameEntry<ov5647.IRxEnvelope>[];
 }
 
 const DESKTOP_MEDIA_QUERY = '(min-width: 1024px)';
@@ -16,8 +15,7 @@ const DESKTOP_MEDIA_QUERY = '(min-width: 1024px)';
 const YahboomDogzillaLiteCard = memo(function YahboomDogzillaLiteCard({
   deviceState,
   deviceIndex,
-  videoSources,
-  ov5647Sources
+  videoSources
 }: YahboomDogzillaLiteCardProps) {
   const [isDesktop, setIsDesktop] = useState(() => {
     if (typeof window === 'undefined') {
@@ -50,7 +48,6 @@ const YahboomDogzillaLiteCard = memo(function YahboomDogzillaLiteCard({
         deviceState={deviceState}
         deviceIndex={deviceIndex}
         videoSources={videoSources}
-        ov5647Sources={ov5647Sources}
       />
     );
   }
