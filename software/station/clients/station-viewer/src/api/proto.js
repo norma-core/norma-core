@@ -15651,7 +15651,7 @@ export const yahboom_dogzilla_lite = $root.yahboom_dogzilla_lite = (() => {
      * @enum {number}
      * @property {number} YAHBOOM_DOGZILLA_LITE_MODEL_UNKNOWN=0 YAHBOOM_DOGZILLA_LITE_MODEL_UNKNOWN value
      * @property {number} YAHBOOM_DOGZILLA_LITE_MINI=1 YAHBOOM_DOGZILLA_LITE_MINI value
-     * @property {number} YAHBOOM_DOGZILLA_LITE_LITE=2 YAHBOOM_DOGZILLA_LITE_LITE value
+     * @property {number} YAHBOOM_DOGZILLA_LITE=2 YAHBOOM_DOGZILLA_LITE value
      * @property {number} YAHBOOM_DOGZILLA_LITE_PRO=3 YAHBOOM_DOGZILLA_LITE_PRO value
      * @property {number} YAHBOOM_DOGZILLA_LITE_RIDER=4 YAHBOOM_DOGZILLA_LITE_RIDER value
      */
@@ -15659,7 +15659,7 @@ export const yahboom_dogzilla_lite = $root.yahboom_dogzilla_lite = (() => {
         const valuesById = {}, values = Object.create(valuesById);
         values[valuesById[0] = "YAHBOOM_DOGZILLA_LITE_MODEL_UNKNOWN"] = 0;
         values[valuesById[1] = "YAHBOOM_DOGZILLA_LITE_MINI"] = 1;
-        values[valuesById[2] = "YAHBOOM_DOGZILLA_LITE_LITE"] = 2;
+        values[valuesById[2] = "YAHBOOM_DOGZILLA_LITE"] = 2;
         values[valuesById[3] = "YAHBOOM_DOGZILLA_LITE_PRO"] = 3;
         values[valuesById[4] = "YAHBOOM_DOGZILLA_LITE_RIDER"] = 4;
         return values;
@@ -16111,7 +16111,7 @@ export const yahboom_dogzilla_lite = $root.yahboom_dogzilla_lite = (() => {
             case 1:
                 message.model = 1;
                 break;
-            case "YAHBOOM_DOGZILLA_LITE_LITE":
+            case "YAHBOOM_DOGZILLA_LITE":
             case 2:
                 message.model = 2;
                 break;
@@ -17105,7 +17105,7 @@ export const yahboom_dogzilla_lite = $root.yahboom_dogzilla_lite = (() => {
             case 1:
                 message.model = 1;
                 break;
-            case "YAHBOOM_DOGZILLA_LITE_LITE":
+            case "YAHBOOM_DOGZILLA_LITE":
             case 2:
                 message.model = 2;
                 break;

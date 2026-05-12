@@ -195,7 +195,7 @@ impl YahboomDogzillaLiteDriver {
         let rpi_serial = read_rpi_cpu_serial().unwrap_or_default();
         let mut device_info = Self::create_device_info(SIM_PORT_NAME, &rpi_serial);
         device_info.firmware_version = "L-SIM".to_string();
-        device_info.model = YahboomDogzillaLiteModel::YahboomDogzillaLiteLite as i32;
+        device_info.model = YahboomDogzillaLiteModel::YahboomDogzillaLite as i32;
 
         *connected_port.write().await = Some(SIM_PORT_NAME.to_string());
         Self::send_device_connect_signal(com, &device_info);
@@ -278,7 +278,7 @@ impl YahboomDogzillaLiteDriver {
 
     fn detect_model_from_firmware(firmware_version: &str) -> YahboomDogzillaLiteModel {
         match firmware_version.chars().next() {
-            Some('L') => YahboomDogzillaLiteModel::YahboomDogzillaLiteLite,
+            Some('L') => YahboomDogzillaLiteModel::YahboomDogzillaLite,
             Some('M') => YahboomDogzillaLiteModel::YahboomDogzillaLiteMini,
             Some('R') => YahboomDogzillaLiteModel::YahboomDogzillaLiteRider,
             _ => YahboomDogzillaLiteModel::Unknown,

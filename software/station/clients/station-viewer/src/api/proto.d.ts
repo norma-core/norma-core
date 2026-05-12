@@ -5485,7 +5485,7 @@ export namespace yahboom_dogzilla_lite {
     enum YahboomDogzillaLiteModel {
         YAHBOOM_DOGZILLA_LITE_MODEL_UNKNOWN = 0,
         YAHBOOM_DOGZILLA_LITE_MINI = 1,
-        YAHBOOM_DOGZILLA_LITE_LITE = 2,
+        YAHBOOM_DOGZILLA_LITE = 2,
         YAHBOOM_DOGZILLA_LITE_PRO = 3,
         YAHBOOM_DOGZILLA_LITE_RIDER = 4
     }

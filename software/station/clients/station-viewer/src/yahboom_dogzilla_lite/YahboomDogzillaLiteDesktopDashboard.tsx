@@ -5,6 +5,7 @@ import YahboomDogzillaLiteDesktopActionPanel from '@/yahboom_dogzilla_lite/Yahbo
 import YahboomDogzillaLiteDesktopMovementPanel from '@/yahboom_dogzilla_lite/YahboomDogzillaLiteDesktopMovementPanel';
 import type { YahboomDogzillaLiteViewMode } from '@/yahboom_dogzilla_lite/YahboomDogzillaLiteViewModeSwitch';
 import YahboomDogzillaLiteViewer from '@/yahboom_dogzilla_lite/YahboomDogzillaLiteViewer';
+import { getYahboomDogzillaLiteModelLabel } from '@/yahboom_dogzilla_lite/model-labels';
 import UsbCameraViewer from '@/usbvideo/CameraViewer';
 import { getGradientClass } from '@/utils/color-utils';
 
@@ -270,12 +271,7 @@ const YahboomDogzillaLiteDesktopDashboard = memo(function YahboomDogzillaLiteDes
   const status = deviceState?.status ?? null;
   const device = deviceState?.device ?? null;
 
-  const modelLabel = useMemo(() => {
-    if (device?.model === null || device?.model === undefined) {
-      return 'Unknown';
-    }
-    return yahboom_dogzilla_lite.YahboomDogzillaLiteModel[device.model] ?? 'YAHBOOM_DOGZILLA_LITE_MODEL_UNKNOWN';
-  }, [device?.model]);
+  const modelLabel = useMemo(() => getYahboomDogzillaLiteModelLabel(device?.model), [device?.model]);
 
   const livePositions = useMemo(() => {
     if (!status?.servoPositions || status.servoPositions.length < 15) {

@@ -18,6 +18,7 @@ import { yahboom_dogzilla_lite } from '@/api/proto.js';
 import ActionPanel, { QUICK_ACTIONS, type ActionDefinition } from '@/yahboom_dogzilla_lite/ActionPanel';
 import YahboomDogzillaLiteViewer from '@/yahboom_dogzilla_lite/YahboomDogzillaLiteViewer';
 import MovementPanel, { type MovementPanelRef } from '@/yahboom_dogzilla_lite/MovementPanel';
+import { getYahboomDogzillaLiteModelLabel } from '@/yahboom_dogzilla_lite/model-labels';
 import { useConnectionStatsWithUptime } from '@/hooks';
 
 const DEFAULT_SERVO_POSITIONS = [
@@ -306,12 +307,7 @@ const YahboomDogzillaLiteDashboard = memo(function YahboomDogzillaLiteDashboard(
   const device = deviceState?.device ?? null;
   const isConnected = deviceState?.isConnected ?? false;
 
-  const modelLabel = useMemo(() => {
-    if (device?.model === null || device?.model === undefined) {
-      return 'Unknown';
-    }
-    return yahboom_dogzilla_lite.YahboomDogzillaLiteModel[device.model] ?? 'YAHBOOM_DOGZILLA_LITE_MODEL_UNKNOWN';
-  }, [device?.model]);
+  const modelLabel = useMemo(() => getYahboomDogzillaLiteModelLabel(device?.model), [device?.model]);
 
   const livePositions = useMemo(() => {
     if (!status?.servoPositions || status.servoPositions.length < 15) {
