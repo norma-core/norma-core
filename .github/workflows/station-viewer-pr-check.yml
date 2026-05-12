@@ -2,10 +2,12 @@ name: Station Viewer PR Check
 
 env:
   NODE_VERSION: "22"
+  NPM_VERSION: "11"
 
 on:
   pull_request:
     paths:
+      - ".github/workflows/station-viewer-pr-check.yml"
       - "software/station/clients/station-viewer/**"
 
 jobs:
@@ -23,17 +25,26 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: "yarn"
-          cache-dependency-path: software/station/clients/station-viewer/yarn.lock
+          cache: "npm"
+          cache-dependency-path: software/station/clients/station-viewer/package-lock.json
+
+      - name: Install npm
+        run: npm install -g npm@${{ env.NPM_VERSION }}
 
       - name: Install dependencies
-        run: yarn install --frozen-lockfile
+        run: npm ci
+
+      - name: Verify dependency signatures
+        run: npm audit signatures
+
+      - name: Audit dependencies
+        run: npm audit --audit-level=moderate
 
       - name: Lint
         run: yarn lint
 
       - name: Typecheck
-        run: yarn type-check
+        run: npm run type-check
 
       - name: Build
-        run: yarn build
+        run: npm run build
