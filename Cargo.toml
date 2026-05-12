@@ -6,6 +6,8 @@ members = [
   "software/drivers/st3215",
   "software/drivers/sysinfod",
   "software/drivers/usbvideo",
+  "software/drivers/dogzilla",
+  "software/drivers/ov5647",
   "software/station/bin/station",
   "software/station/shared/station-iface",
   "software/station/shared/systime-rs",

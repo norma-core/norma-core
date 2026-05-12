@@ -78,6 +78,9 @@ struct Station {
     usbvideo_instances: parking_lot::Mutex<Vec<Arc<usbvideo::pipeline::USBVideoManager<usbvideo::osx::CameraMacDriver>>>>,
     #[cfg(target_os = "linux")]
     usbvideo_instances: parking_lot::Mutex<Vec<Arc<usbvideo::pipeline::USBVideoManager<usbvideo::linux::CameraLinuxDriver>>>>,
+
+    #[cfg(feature = "ov5647")]
+    ov5647_handle: Mutex<Option<ov5647::Ov5647Handle>>,
 }
 
 struct Engine {
@@ -125,8 +128,10 @@ impl Station {
             engine: Arc::new(Engine {
                 main_queue: None,
                 inference: Mutex::new(None),
-             }),
+            }),
             usbvideo_instances: parking_lot::Mutex::new(Vec::new()),
+            #[cfg(feature = "ov5647")]
+            ov5647_handle: Mutex::new(None),
         })
     }
 
@@ -257,25 +262,103 @@ impl Station {
             log::info!("No USB video configuration found");
         }
 
-        // Start inference drivers
+        #[cfg(feature = "dogzilla")]
+        if let Some(dogzilla_config) = &self.config.drivers.dogzilla {
+            if dogzilla_config.enabled {
+                let simulation = matches!(dogzilla_config.mode, station_iface::config::DogzillaMode::Simulation);
+                match dogzilla::start_dogzilla_driver(
+                    self.normfs.clone(),
+                    self.engine.clone(),
+                    simulation,
+                )
+                .await
+                {
+                    Ok(_) => {
+                        let mode = if simulation { "simulation" } else { "real" };
+                        log::info!("DOGZILLA driver started (mode: {})", mode);
+                    },
+                    Err(e) => log::warn!("Failed to start DOGZILLA driver: {}", e),
+                }
+            } else {
+                log::info!("DOGZILLA driver disabled by configuration");
+            }
+        } else {
+            log::info!("DOGZILLA driver disabled by configuration");
+        }
+
+        #[cfg(not(feature = "dogzilla"))]
+        if self.config.drivers.dogzilla.as_ref().is_some_and(|config| config.enabled) {
+            log::warn!("DOGZILLA driver requested but not compiled (missing 'dogzilla' feature)");
+        }
+
+        #[cfg(feature = "ov5647")]
+        if let Some(ov5647_config) = &self.config.drivers.ov5647 {
+            if ov5647_config.enabled {
+                let (width, height) =
+                    match station_iface::config::parse_ov5647_dimension(&ov5647_config.dimension) {
+                        Some((w, h)) => (w, h),
+                        None => {
+                            if !ov5647_config.dimension.trim().is_empty() {
+                                log::warn!(
+                                    "Invalid OV5647 dimension '{}', using default {}x{}",
+                                    ov5647_config.dimension,
+                                    ov5647::DEFAULT_WIDTH,
+                                    ov5647::DEFAULT_HEIGHT,
+                                );
+                            }
+                            (ov5647::DEFAULT_WIDTH, ov5647::DEFAULT_HEIGHT)
+                        }
+                    };
+
+                match ov5647::start_ov5647(
+                    self.normfs.clone(),
+                    self.engine.clone(),
+                    width,
+                    height,
+                    ov5647_config.frames_per_second as u32,
+                    "video/ov5647",
+                )
+                .await
+                {
+                    Ok(handle) => {
+                        *self.ov5647_handle.lock() = Some(handle);
+                        log::info!("OV5647 driver started");
+                    }
+                    Err(e) => log::warn!("Failed to start OV5647 driver: {}", e),
+                }
+            } else {
+                log::info!("OV5647 driver disabled by configuration");
+            }
+        } else {
+            log::info!("No OV5647 configuration found");
+        }
+
+        #[cfg(not(feature = "ov5647"))]
+        if self.config.drivers.ov5647.as_ref().map_or(false, |c| c.enabled) {
+            log::warn!("OV5647 driver requested but not compiled (missing 'ov5647' feature)");
+        }
+
         match &self.config.inference {
             Some(inference_configs) => {
-                // User specified inference config (might be empty to disable)
                 if !inference_configs.is_empty() {
+                    let inference_configs =
+                        self.with_default_dogzilla_inference(inference_configs.clone());
                     log::info!("Starting inference driver with {} configurations", inference_configs.len());
                     inferences::start(
                         self.normfs.clone(),
                         self.engine.clone(),
-                        inference_configs.clone(),
+                        inference_configs,
                     ).await?;
                 } else {
                     log::info!("Inference explicitly disabled (empty config)");
                 }
             }
             None => {
-                // User did not specify inference config, use default normvla
-                log::info!("No inference configuration found, using default normvla config");
-                let default_config = vec![station_iface::config::Inference::default_normvla()];
+                let default_config = self.default_inference_configs();
+                log::info!(
+                    "No inference configuration found, using {} default inference configuration(s)",
+                    default_config.len()
+                );
                 inferences::start(
                     self.normfs.clone(),
                     self.engine.clone(),
@@ -285,6 +368,47 @@ impl Station {
         }
 
         Ok(())
+    }
+
+    fn default_inference_configs(&self) -> Vec<station_iface::config::Inference> {
+        self.with_default_dogzilla_inference(vec![
+            station_iface::config::Inference::default_normvla(),
+        ])
+    }
+
+    fn with_default_dogzilla_inference(
+        &self,
+        configs: Vec<station_iface::config::Inference>,
+    ) -> Vec<station_iface::config::Inference> {
+        let dogzilla_enabled = self
+            .config
+            .drivers
+            .dogzilla
+            .as_ref()
+            .is_some_and(|config| config.enabled);
+        if !dogzilla_enabled {
+            return configs;
+        }
+
+        #[cfg(not(feature = "dogzilla"))]
+        {
+            return configs;
+        }
+
+        #[cfg(feature = "dogzilla")]
+        {
+            let mut configs = configs;
+            let has_dogzilla_config = configs
+                .iter()
+                .any(|config| config.format == "dogzilla" || config.queue_id == "inference/dogzilla");
+            if has_dogzilla_config {
+                return configs;
+            }
+
+            log::info!("Dogzilla enabled; adding default dogzilla inference mirror");
+            configs.push(station_iface::config::Inference::default_dogzilla());
+            configs
+        }
     }
 
     async fn start_server(
@@ -311,6 +435,13 @@ impl Station {
             instance.stop().await;
         }
         log::info!("USB video instances stopped");
+
+        #[cfg(feature = "ov5647")]
+        if let Some(handle) = self.ov5647_handle.lock().take() {
+            log::info!("Stopping OV5647 driver...");
+            handle.stop().await;
+            log::info!("OV5647 driver stopped");
+        }
 
         log::info!("Closing NormFS (writing WAL)...");
 

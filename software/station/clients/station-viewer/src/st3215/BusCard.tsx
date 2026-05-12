@@ -9,7 +9,6 @@ import { useElementFullscreen } from '@/hooks/useElementFullscreen';
 import { motors_mirroring, st3215, usbvideo } from '@/api/proto.js';
 import { serverToLocal } from '@/api/timestamp-utils';
 import { getLatencyBgColor, getLatencyTextColor } from '@/utils/color-utils';
-import { getVideoSourceId, getVideoSourceLabel } from '@/usbvideo/camera-source';
 import CameraViewer from '@/usbvideo/CameraViewer';
 import RobotCameraView from '@/usbvideo/RobotCameraView';
 import BusWebGLRenderer from '@/st3215/BusWebGLRenderer';
@@ -38,11 +37,13 @@ type RobotViewMode = 'model' | 'camera';
 type CameraLayoutMode = 'pip' | 'side-by-side' | 'stacked';
 type CameraFitMode = 'contain' | 'cover';
 
-function getVideoSourceShortLabel(entry: FrameEntry<usbvideo.IRxEnvelope>): string {
-  return entry.data.camera?.deviceNumber !== undefined
-    ? String(entry.data.camera.deviceNumber)
-    : 'Camera';
-}
+type ActiveVideoSource = {
+  id: string;
+  label: string;
+  shortLabel: string;
+  data: usbvideo.IRxEnvelope;
+  queueId: string;
+};
 
 interface BusCardProps {
   bus: st3215.InferenceState.IBusState;
@@ -83,13 +84,9 @@ const BusCard: React.FC<BusCardProps> = ({
     : null;
 
   const activeVideoSources = useMemo(() => {
-    if (!videoSources) {
-      return [];
-    }
-
     const nowMs = Date.now();
 
-    return videoSources.filter((entry) => {
+    const isFresh = (entry: FrameEntry<usbvideo.IRxEnvelope>) => {
       const monotonicStampNs = entry.data.stamp?.monotonicStampNs;
       if (!monotonicStampNs) {
         return true;
@@ -99,11 +96,26 @@ const BusCard: React.FC<BusCardProps> = ({
       const ageMs = nowMs - localStampNs.toNumber() / 1e6;
 
       return ageMs <= STALE_CAMERA_MAX_AGE_MS;
-    });
+    };
+
+    const sources: ActiveVideoSource[] = [
+      ...(videoSources ?? []).filter(isFresh).map((entry) => ({
+        id: entry.data.camera?.uniqueId ? `usbvideo:${entry.data.camera.uniqueId}` : '',
+        label: `${entry.data.camera?.deviceNumber ?? 'USB'} (${entry.data.camera?.uniqueId ?? 'unknown'})`,
+        shortLabel: entry.data.camera?.deviceNumber !== undefined
+          ? String(entry.data.camera.deviceNumber)
+          : 'Camera',
+        kind: 'usbvideo' as const,
+        data: entry.data,
+        queueId: entry.queueId,
+      })),
+    ].filter((entry) => entry.id);
+
+    return sources;
   }, [videoSources]);
 
   const activeVideoSourceIds = useMemo(
-    () => activeVideoSources.map(getVideoSourceId),
+    () => activeVideoSources.map((entry) => entry.id),
     [activeVideoSources],
   );
   const firstActiveVideoSourceId = activeVideoSourceIds[0] ?? null;
@@ -402,7 +414,7 @@ const BusCard: React.FC<BusCardProps> = ({
   const primaryVideoSourceOptions = useMemo(
     () =>
       viewMode === "camera"
-        ? activeVideoSources.filter((entry) => getVideoSourceId(entry) !== secondaryVideoSourceId)
+        ? activeVideoSources.filter((entry) => entry.id !== secondaryVideoSourceId)
         : activeVideoSources,
     [activeVideoSources, secondaryVideoSourceId, viewMode],
   );
@@ -481,9 +493,9 @@ const BusCard: React.FC<BusCardProps> = ({
               aria-label="Camera selection"
             >
               {activeVideoSources.map((entry) => {
-                const sourceId = getVideoSourceId(entry);
-                const label = getVideoSourceLabel(entry);
-                const shortLabel = getVideoSourceShortLabel(entry);
+                const sourceId = entry.id;
+                const label = entry.label;
+                const shortLabel = entry.shortLabel;
                 const role =
                   sourceId === primaryVideoSourceId
                     ? "MAIN"
@@ -533,8 +545,8 @@ const BusCard: React.FC<BusCardProps> = ({
             >
               <option value="">None</option>
               {primaryVideoSourceOptions.map((entry) => {
-                const sourceId = getVideoSourceId(entry);
-                const label = getVideoSourceLabel(entry);
+                const sourceId = entry.id;
+                const label = entry.label;
                 return (
                   <option
                     key={`${entry.queueId}-${sourceId}`}

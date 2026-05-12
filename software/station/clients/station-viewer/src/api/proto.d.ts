@@ -245,14 +245,19 @@ export namespace drivers {
         QDT_USB_VIDEO_FRAMES = 21,
         QDT_INFERENCE_FRAMES = 22,
         QDT_MOTOR_MIRRORING_MODES = 30,
-        QDT_MOTOR_MIRRORING_RX = 32
+        QDT_MOTOR_MIRRORING_RX = 32,
+        QDT_DOGZILLA_SERIAL_TX = 40,
+        QDT_DOGZILLA_SERIAL_RX = 41,
+        QDT_DOGZILLA_INFERENCE = 42,
+        QDT_OV5647_FRAMES = 43
     }
 
     /** StationCommandType enum. */
     enum StationCommandType {
         STC_ST3215_COMMAND = 0,
         STC_MOTOR_MIRRORING_COMMAND = 1,
-        STC_INFERENCE_TAG_COMMAND = 2
+        STC_INFERENCE_TAG_COMMAND = 2,
+        STC_DOGZILLA_COMMAND = 3
     }
 }
 
@@ -4559,6 +4564,738 @@ export namespace frame {
     }
 }
 
+/** Namespace ov5647. */
+export namespace ov5647 {
+
+    /** RxEnvelopeType enum. */
+    enum RxEnvelopeType {
+        ET_FRAMES = 0,
+        ET_DEVICE_CONNECTED = 1,
+        ET_DEVICE_RECORDING_START = 3,
+        ET_DEVICE_RECORDING_END = 4,
+        ET_DEVICE_DISCONNECTED = 5,
+        ET_ERROR = 6
+    }
+
+    /** Properties of a RxEnvelope. */
+    interface IRxEnvelope {
+
+        /** RxEnvelope type */
+        type?: (ov5647.RxEnvelopeType|null);
+
+        /** RxEnvelope stamp */
+        stamp?: (frame.IFrameStamp|null);
+
+        /** RxEnvelope camera */
+        camera?: (ov5647.ICamera|null);
+
+        /** RxEnvelope formats */
+        formats?: (ov5647.ICameraFormat[]|null);
+
+        /** RxEnvelope error */
+        error?: (string|null);
+
+        /** RxEnvelope lastInferenceQueuePtr */
+        lastInferenceQueuePtr?: (Uint8Array|null);
+
+        /** RxEnvelope frames */
+        frames?: (frame.IFramesPack|null);
+    }
+
+    /** Represents a RxEnvelope. */
+    class RxEnvelope implements IRxEnvelope {
+
+        /**
+         * Constructs a new RxEnvelope.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: ov5647.IRxEnvelope);
+
+        /** RxEnvelope type. */
+        public type: ov5647.RxEnvelopeType;
+
+        /** RxEnvelope stamp. */
+        public stamp?: (frame.IFrameStamp|null);
+
+        /** RxEnvelope camera. */
+        public camera?: (ov5647.ICamera|null);
+
+        /** RxEnvelope formats. */
+        public formats: ov5647.ICameraFormat[];
+
+        /** RxEnvelope error. */
+        public error: string;
+
+        /** RxEnvelope lastInferenceQueuePtr. */
+        public lastInferenceQueuePtr: Uint8Array;
+
+        /** RxEnvelope frames. */
+        public frames?: (frame.IFramesPack|null);
+
+        /**
+         * Creates a new RxEnvelope instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns RxEnvelope instance
+         */
+        public static create(properties?: ov5647.IRxEnvelope): ov5647.RxEnvelope;
+
+        /**
+         * Encodes the specified RxEnvelope message. Does not implicitly {@link ov5647.RxEnvelope.verify|verify} messages.
+         * @param message RxEnvelope message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: ov5647.IRxEnvelope, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified RxEnvelope message, length delimited. Does not implicitly {@link ov5647.RxEnvelope.verify|verify} messages.
+         * @param message RxEnvelope message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: ov5647.IRxEnvelope, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes a RxEnvelope message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns RxEnvelope
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): ov5647.RxEnvelope;
+
+        /**
+         * Decodes a RxEnvelope message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns RxEnvelope
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): ov5647.RxEnvelope;
+
+        /**
+         * Verifies a RxEnvelope message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates a RxEnvelope message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns RxEnvelope
+         */
+        public static fromObject(object: { [k: string]: any }): ov5647.RxEnvelope;
+
+        /**
+         * Creates a plain object from a RxEnvelope message. Also converts values to other types if specified.
+         * @param message RxEnvelope
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: ov5647.RxEnvelope, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this RxEnvelope to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for RxEnvelope
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
+    /** Properties of a Camera. */
+    interface ICamera {
+
+        /** Camera id */
+        id?: (string|null);
+
+        /** Camera name */
+        name?: (string|null);
+
+        /** Camera width */
+        width?: (number|null);
+
+        /** Camera height */
+        height?: (number|null);
+
+        /** Camera uniqueId */
+        uniqueId?: (string|null);
+    }
+
+    /** Represents a Camera. */
+    class Camera implements ICamera {
+
+        /**
+         * Constructs a new Camera.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: ov5647.ICamera);
+
+        /** Camera id. */
+        public id: string;
+
+        /** Camera name. */
+        public name: string;
+
+        /** Camera width. */
+        public width: number;
+
+        /** Camera height. */
+        public height: number;
+
+        /** Camera uniqueId. */
+        public uniqueId: string;
+
+        /**
+         * Creates a new Camera instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns Camera instance
+         */
+        public static create(properties?: ov5647.ICamera): ov5647.Camera;
+
+        /**
+         * Encodes the specified Camera message. Does not implicitly {@link ov5647.Camera.verify|verify} messages.
+         * @param message Camera message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: ov5647.ICamera, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified Camera message, length delimited. Does not implicitly {@link ov5647.Camera.verify|verify} messages.
+         * @param message Camera message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: ov5647.ICamera, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes a Camera message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns Camera
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): ov5647.Camera;
+
+        /**
+         * Decodes a Camera message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns Camera
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): ov5647.Camera;
+
+        /**
+         * Verifies a Camera message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates a Camera message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns Camera
+         */
+        public static fromObject(object: { [k: string]: any }): ov5647.Camera;
+
+        /**
+         * Creates a plain object from a Camera message. Also converts values to other types if specified.
+         * @param message Camera
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: ov5647.Camera, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this Camera to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for Camera
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
+    /** Properties of a CameraFormat. */
+    interface ICameraFormat {
+
+        /** CameraFormat width */
+        width?: (number|null);
+
+        /** CameraFormat height */
+        height?: (number|null);
+
+        /** CameraFormat fps */
+        fps?: (number|null);
+
+        /** CameraFormat fourcc */
+        fourcc?: (string|null);
+    }
+
+    /** Represents a CameraFormat. */
+    class CameraFormat implements ICameraFormat {
+
+        /**
+         * Constructs a new CameraFormat.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: ov5647.ICameraFormat);
+
+        /** CameraFormat width. */
+        public width: number;
+
+        /** CameraFormat height. */
+        public height: number;
+
+        /** CameraFormat fps. */
+        public fps: number;
+
+        /** CameraFormat fourcc. */
+        public fourcc: string;
+
+        /**
+         * Creates a new CameraFormat instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns CameraFormat instance
+         */
+        public static create(properties?: ov5647.ICameraFormat): ov5647.CameraFormat;
+
+        /**
+         * Encodes the specified CameraFormat message. Does not implicitly {@link ov5647.CameraFormat.verify|verify} messages.
+         * @param message CameraFormat message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: ov5647.ICameraFormat, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified CameraFormat message, length delimited. Does not implicitly {@link ov5647.CameraFormat.verify|verify} messages.
+         * @param message CameraFormat message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: ov5647.ICameraFormat, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes a CameraFormat message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns CameraFormat
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): ov5647.CameraFormat;
+
+        /**
+         * Decodes a CameraFormat message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns CameraFormat
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): ov5647.CameraFormat;
+
+        /**
+         * Verifies a CameraFormat message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates a CameraFormat message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns CameraFormat
+         */
+        public static fromObject(object: { [k: string]: any }): ov5647.CameraFormat;
+
+        /**
+         * Creates a plain object from a CameraFormat message. Also converts values to other types if specified.
+         * @param message CameraFormat
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: ov5647.CameraFormat, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this CameraFormat to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for CameraFormat
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
+    /** Namespace frame. */
+    namespace frame {
+
+        /** Properties of a FramesPack. */
+        interface IFramesPack {
+
+            /** FramesPack format */
+            format?: (ov5647.frame.IFrameFormat|null);
+
+            /** FramesPack stamps */
+            stamps?: (ov5647.frame.IFrameStamp[]|null);
+
+            /** FramesPack linearData */
+            linearData?: (Uint8Array|null);
+
+            /** FramesPack framesData */
+            framesData?: (Uint8Array[]|null);
+        }
+
+        /** Represents a FramesPack. */
+        class FramesPack implements IFramesPack {
+
+            /**
+             * Constructs a new FramesPack.
+             * @param [properties] Properties to set
+             */
+            constructor(properties?: ov5647.frame.IFramesPack);
+
+            /** FramesPack format. */
+            public format?: (ov5647.frame.IFrameFormat|null);
+
+            /** FramesPack stamps. */
+            public stamps: ov5647.frame.IFrameStamp[];
+
+            /** FramesPack linearData. */
+            public linearData: Uint8Array;
+
+            /** FramesPack framesData. */
+            public framesData: Uint8Array[];
+
+            /**
+             * Creates a new FramesPack instance using the specified properties.
+             * @param [properties] Properties to set
+             * @returns FramesPack instance
+             */
+            public static create(properties?: ov5647.frame.IFramesPack): ov5647.frame.FramesPack;
+
+            /**
+             * Encodes the specified FramesPack message. Does not implicitly {@link ov5647.frame.FramesPack.verify|verify} messages.
+             * @param message FramesPack message or plain object to encode
+             * @param [writer] Writer to encode to
+             * @returns Writer
+             */
+            public static encode(message: ov5647.frame.IFramesPack, writer?: $protobuf.Writer): $protobuf.Writer;
+
+            /**
+             * Encodes the specified FramesPack message, length delimited. Does not implicitly {@link ov5647.frame.FramesPack.verify|verify} messages.
+             * @param message FramesPack message or plain object to encode
+             * @param [writer] Writer to encode to
+             * @returns Writer
+             */
+            public static encodeDelimited(message: ov5647.frame.IFramesPack, writer?: $protobuf.Writer): $protobuf.Writer;
+
+            /**
+             * Decodes a FramesPack message from the specified reader or buffer.
+             * @param reader Reader or buffer to decode from
+             * @param [length] Message length if known beforehand
+             * @returns FramesPack
+             * @throws {Error} If the payload is not a reader or valid buffer
+             * @throws {$protobuf.util.ProtocolError} If required fields are missing
+             */
+            public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): ov5647.frame.FramesPack;
+
+            /**
+             * Decodes a FramesPack message from the specified reader or buffer, length delimited.
+             * @param reader Reader or buffer to decode from
+             * @returns FramesPack
+             * @throws {Error} If the payload is not a reader or valid buffer
+             * @throws {$protobuf.util.ProtocolError} If required fields are missing
+             */
+            public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): ov5647.frame.FramesPack;
+
+            /**
+             * Verifies a FramesPack message.
+             * @param message Plain object to verify
+             * @returns `null` if valid, otherwise the reason why it is not
+             */
+            public static verify(message: { [k: string]: any }): (string|null);
+
+            /**
+             * Creates a FramesPack message from a plain object. Also converts values to their respective internal types.
+             * @param object Plain object
+             * @returns FramesPack
+             */
+            public static fromObject(object: { [k: string]: any }): ov5647.frame.FramesPack;
+
+            /**
+             * Creates a plain object from a FramesPack message. Also converts values to other types if specified.
+             * @param message FramesPack
+             * @param [options] Conversion options
+             * @returns Plain object
+             */
+            public static toObject(message: ov5647.frame.FramesPack, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+            /**
+             * Converts this FramesPack to JSON.
+             * @returns JSON object
+             */
+            public toJSON(): { [k: string]: any };
+
+            /**
+             * Gets the default type url for FramesPack
+             * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+             * @returns The default type url
+             */
+            public static getTypeUrl(typeUrlPrefix?: string): string;
+        }
+
+        /** Properties of a FrameStamp. */
+        interface IFrameStamp {
+
+            /** FrameStamp monotonicStampNs */
+            monotonicStampNs?: (Long|null);
+
+            /** FrameStamp localStampNs */
+            localStampNs?: (Long|null);
+
+            /** FrameStamp appStartId */
+            appStartId?: (Long|null);
+
+            /** FrameStamp index */
+            index?: (Long|null);
+        }
+
+        /** Represents a FrameStamp. */
+        class FrameStamp implements IFrameStamp {
+
+            /**
+             * Constructs a new FrameStamp.
+             * @param [properties] Properties to set
+             */
+            constructor(properties?: ov5647.frame.IFrameStamp);
+
+            /** FrameStamp monotonicStampNs. */
+            public monotonicStampNs: Long;
+
+            /** FrameStamp localStampNs. */
+            public localStampNs: Long;
+
+            /** FrameStamp appStartId. */
+            public appStartId: Long;
+
+            /** FrameStamp index. */
+            public index: Long;
+
+            /**
+             * Creates a new FrameStamp instance using the specified properties.
+             * @param [properties] Properties to set
+             * @returns FrameStamp instance
+             */
+            public static create(properties?: ov5647.frame.IFrameStamp): ov5647.frame.FrameStamp;
+
+            /**
+             * Encodes the specified FrameStamp message. Does not implicitly {@link ov5647.frame.FrameStamp.verify|verify} messages.
+             * @param message FrameStamp message or plain object to encode
+             * @param [writer] Writer to encode to
+             * @returns Writer
+             */
+            public static encode(message: ov5647.frame.IFrameStamp, writer?: $protobuf.Writer): $protobuf.Writer;
+
+            /**
+             * Encodes the specified FrameStamp message, length delimited. Does not implicitly {@link ov5647.frame.FrameStamp.verify|verify} messages.
+             * @param message FrameStamp message or plain object to encode
+             * @param [writer] Writer to encode to
+             * @returns Writer
+             */
+            public static encodeDelimited(message: ov5647.frame.IFrameStamp, writer?: $protobuf.Writer): $protobuf.Writer;
+
+            /**
+             * Decodes a FrameStamp message from the specified reader or buffer.
+             * @param reader Reader or buffer to decode from
+             * @param [length] Message length if known beforehand
+             * @returns FrameStamp
+             * @throws {Error} If the payload is not a reader or valid buffer
+             * @throws {$protobuf.util.ProtocolError} If required fields are missing
+             */
+            public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): ov5647.frame.FrameStamp;
+
+            /**
+             * Decodes a FrameStamp message from the specified reader or buffer, length delimited.
+             * @param reader Reader or buffer to decode from
+             * @returns FrameStamp
+             * @throws {Error} If the payload is not a reader or valid buffer
+             * @throws {$protobuf.util.ProtocolError} If required fields are missing
+             */
+            public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): ov5647.frame.FrameStamp;
+
+            /**
+             * Verifies a FrameStamp message.
+             * @param message Plain object to verify
+             * @returns `null` if valid, otherwise the reason why it is not
+             */
+            public static verify(message: { [k: string]: any }): (string|null);
+
+            /**
+             * Creates a FrameStamp message from a plain object. Also converts values to their respective internal types.
+             * @param object Plain object
+             * @returns FrameStamp
+             */
+            public static fromObject(object: { [k: string]: any }): ov5647.frame.FrameStamp;
+
+            /**
+             * Creates a plain object from a FrameStamp message. Also converts values to other types if specified.
+             * @param message FrameStamp
+             * @param [options] Conversion options
+             * @returns Plain object
+             */
+            public static toObject(message: ov5647.frame.FrameStamp, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+            /**
+             * Converts this FrameStamp to JSON.
+             * @returns JSON object
+             */
+            public toJSON(): { [k: string]: any };
+
+            /**
+             * Gets the default type url for FrameStamp
+             * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+             * @returns The default type url
+             */
+            public static getTypeUrl(typeUrlPrefix?: string): string;
+        }
+
+        /** FrameFormatKind enum. */
+        enum FrameFormatKind {
+            FF_NCHW = 0,
+            FF_JPEG = 1
+        }
+
+        /** Properties of a FrameFormat. */
+        interface IFrameFormat {
+
+            /** FrameFormat width */
+            width?: (number|null);
+
+            /** FrameFormat height */
+            height?: (number|null);
+
+            /** FrameFormat kind */
+            kind?: (ov5647.frame.FrameFormatKind|null);
+        }
+
+        /** Represents a FrameFormat. */
+        class FrameFormat implements IFrameFormat {
+
+            /**
+             * Constructs a new FrameFormat.
+             * @param [properties] Properties to set
+             */
+            constructor(properties?: ov5647.frame.IFrameFormat);
+
+            /** FrameFormat width. */
+            public width: number;
+
+            /** FrameFormat height. */
+            public height: number;
+
+            /** FrameFormat kind. */
+            public kind: ov5647.frame.FrameFormatKind;
+
+            /**
+             * Creates a new FrameFormat instance using the specified properties.
+             * @param [properties] Properties to set
+             * @returns FrameFormat instance
+             */
+            public static create(properties?: ov5647.frame.IFrameFormat): ov5647.frame.FrameFormat;
+
+            /**
+             * Encodes the specified FrameFormat message. Does not implicitly {@link ov5647.frame.FrameFormat.verify|verify} messages.
+             * @param message FrameFormat message or plain object to encode
+             * @param [writer] Writer to encode to
+             * @returns Writer
+             */
+            public static encode(message: ov5647.frame.IFrameFormat, writer?: $protobuf.Writer): $protobuf.Writer;
+
+            /**
+             * Encodes the specified FrameFormat message, length delimited. Does not implicitly {@link ov5647.frame.FrameFormat.verify|verify} messages.
+             * @param message FrameFormat message or plain object to encode
+             * @param [writer] Writer to encode to
+             * @returns Writer
+             */
+            public static encodeDelimited(message: ov5647.frame.IFrameFormat, writer?: $protobuf.Writer): $protobuf.Writer;
+
+            /**
+             * Decodes a FrameFormat message from the specified reader or buffer.
+             * @param reader Reader or buffer to decode from
+             * @param [length] Message length if known beforehand
+             * @returns FrameFormat
+             * @throws {Error} If the payload is not a reader or valid buffer
+             * @throws {$protobuf.util.ProtocolError} If required fields are missing
+             */
+            public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): ov5647.frame.FrameFormat;
+
+            /**
+             * Decodes a FrameFormat message from the specified reader or buffer, length delimited.
+             * @param reader Reader or buffer to decode from
+             * @returns FrameFormat
+             * @throws {Error} If the payload is not a reader or valid buffer
+             * @throws {$protobuf.util.ProtocolError} If required fields are missing
+             */
+            public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): ov5647.frame.FrameFormat;
+
+            /**
+             * Verifies a FrameFormat message.
+             * @param message Plain object to verify
+             * @returns `null` if valid, otherwise the reason why it is not
+             */
+            public static verify(message: { [k: string]: any }): (string|null);
+
+            /**
+             * Creates a FrameFormat message from a plain object. Also converts values to their respective internal types.
+             * @param object Plain object
+             * @returns FrameFormat
+             */
+            public static fromObject(object: { [k: string]: any }): ov5647.frame.FrameFormat;
+
+            /**
+             * Creates a plain object from a FrameFormat message. Also converts values to other types if specified.
+             * @param message FrameFormat
+             * @param [options] Conversion options
+             * @returns Plain object
+             */
+            public static toObject(message: ov5647.frame.FrameFormat, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+            /**
+             * Converts this FrameFormat to JSON.
+             * @returns JSON object
+             */
+            public toJSON(): { [k: string]: any };
+
+            /**
+             * Gets the default type url for FrameFormat
+             * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+             * @returns The default type url
+             */
+            public static getTypeUrl(typeUrlPrefix?: string): string;
+        }
+    }
+}
+
 /** Namespace motors_mirroring. */
 export namespace motors_mirroring {
 
@@ -5459,6 +6196,2233 @@ export namespace motors_mirroring {
              */
             public static getTypeUrl(typeUrlPrefix?: string): string;
         }
+    }
+}
+
+/** Namespace dogzilla. */
+export namespace dogzilla {
+
+    /** DogzillaSignalType enum. */
+    enum DogzillaSignalType {
+        DOGZILLA_SIGNAL_TYPE_UNSPECIFIED = 0,
+        DOGZILLA_CONNECTED = 1,
+        DOGZILLA_DISCONNECTED = 2,
+        DOGZILLA_STATUS_UPDATE = 3,
+        DOGZILLA_COMMAND = 4,
+        DOGZILLA_COMMAND_SUCCESS = 5,
+        DOGZILLA_COMMAND_FAILED = 6,
+        DOGZILLA_ERROR = 7
+    }
+
+    /** DogzillaModel enum. */
+    enum DogzillaModel {
+        DOGZILLA_MODEL_UNKNOWN = 0,
+        DOGZILLA_MINI = 1,
+        DOGZILLA_LITE = 2,
+        DOGZILLA_PRO = 3,
+        DOGZILLA_RIDER = 4
+    }
+
+    /** GaitType enum. */
+    enum GaitType {
+        GAIT_TROT = 0,
+        GAIT_WALK = 1,
+        GAIT_HIGH_WALK = 2,
+        GAIT_MICRO_TROT = 3
+    }
+
+    /** PerformanceMode enum. */
+    enum PerformanceMode {
+        PERFORMANCE_NORMAL_CONTROL = 0,
+        PERFORMANCE_CYCLE_ACTION = 1
+    }
+
+    /** ImuMode enum. */
+    enum ImuMode {
+        IMU_DISABLED = 0,
+        IMU_SELF_STABILIZE = 1
+    }
+
+    /** ActionType enum. */
+    enum ActionType {
+        ACTION_UNSPECIFIED = 0,
+        ACTION_LIE_DOWN = 1,
+        ACTION_STAND_UP = 2,
+        ACTION_CRAWL_FORWARD = 3,
+        ACTION_TURN_AROUND = 4,
+        ACTION_MARCH_IN_PLACE = 5,
+        ACTION_SQUAT = 6,
+        ACTION_ROLL = 7,
+        ACTION_PITCH = 8,
+        ACTION_YAW = 9,
+        ACTION_THREE_AXIS_ROTATION = 10,
+        ACTION_PEE = 11,
+        ACTION_SIT_DOWN = 12,
+        ACTION_WAVE = 13,
+        ACTION_STRETCH = 14,
+        ACTION_WAVE2 = 15,
+        ACTION_SWAY = 16,
+        ACTION_BEG_FOR_FOOD = 17,
+        ACTION_FIND_FOOD = 18,
+        ACTION_HANDSHAKE = 19,
+        ACTION_ARM_DEMO = 20,
+        ACTION_PUSHUPS = 21,
+        ACTION_PITCH_YAW_ROTATION = 22,
+        ACTION_UP_DOWN_ROTATION = 23,
+        ACTION_FORWARD_BACKWARD_ROTATION = 24,
+        ACTION_RESTORE_DEFAULT = 255
+    }
+
+    /** Properties of a DogzillaDevice. */
+    interface IDogzillaDevice {
+
+        /** DogzillaDevice portName */
+        portName?: (string|null);
+
+        /** DogzillaDevice baudRate */
+        baudRate?: (number|null);
+
+        /** DogzillaDevice serialNumber */
+        serialNumber?: (string|null);
+
+        /** DogzillaDevice firmwareVersion */
+        firmwareVersion?: (string|null);
+
+        /** DogzillaDevice model */
+        model?: (dogzilla.DogzillaModel|null);
+
+        /** DogzillaDevice vid */
+        vid?: (number|null);
+
+        /** DogzillaDevice pid */
+        pid?: (number|null);
+
+        /** DogzillaDevice manufacturer */
+        manufacturer?: (string|null);
+
+        /** DogzillaDevice product */
+        product?: (string|null);
+    }
+
+    /** Represents a DogzillaDevice. */
+    class DogzillaDevice implements IDogzillaDevice {
+
+        /**
+         * Constructs a new DogzillaDevice.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: dogzilla.IDogzillaDevice);
+
+        /** DogzillaDevice portName. */
+        public portName: string;
+
+        /** DogzillaDevice baudRate. */
+        public baudRate: number;
+
+        /** DogzillaDevice serialNumber. */
+        public serialNumber: string;
+
+        /** DogzillaDevice firmwareVersion. */
+        public firmwareVersion: string;
+
+        /** DogzillaDevice model. */
+        public model: dogzilla.DogzillaModel;
+
+        /** DogzillaDevice vid. */
+        public vid: number;
+
+        /** DogzillaDevice pid. */
+        public pid: number;
+
+        /** DogzillaDevice manufacturer. */
+        public manufacturer: string;
+
+        /** DogzillaDevice product. */
+        public product: string;
+
+        /**
+         * Creates a new DogzillaDevice instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns DogzillaDevice instance
+         */
+        public static create(properties?: dogzilla.IDogzillaDevice): dogzilla.DogzillaDevice;
+
+        /**
+         * Encodes the specified DogzillaDevice message. Does not implicitly {@link dogzilla.DogzillaDevice.verify|verify} messages.
+         * @param message DogzillaDevice message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: dogzilla.IDogzillaDevice, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified DogzillaDevice message, length delimited. Does not implicitly {@link dogzilla.DogzillaDevice.verify|verify} messages.
+         * @param message DogzillaDevice message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: dogzilla.IDogzillaDevice, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes a DogzillaDevice message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns DogzillaDevice
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): dogzilla.DogzillaDevice;
+
+        /**
+         * Decodes a DogzillaDevice message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns DogzillaDevice
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): dogzilla.DogzillaDevice;
+
+        /**
+         * Verifies a DogzillaDevice message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates a DogzillaDevice message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns DogzillaDevice
+         */
+        public static fromObject(object: { [k: string]: any }): dogzilla.DogzillaDevice;
+
+        /**
+         * Creates a plain object from a DogzillaDevice message. Also converts values to other types if specified.
+         * @param message DogzillaDevice
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: dogzilla.DogzillaDevice, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this DogzillaDevice to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for DogzillaDevice
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
+    /** Properties of an ImuOrientation. */
+    interface IImuOrientation {
+
+        /** ImuOrientation roll */
+        roll?: (number|null);
+
+        /** ImuOrientation pitch */
+        pitch?: (number|null);
+
+        /** ImuOrientation yaw */
+        yaw?: (number|null);
+    }
+
+    /** Represents an ImuOrientation. */
+    class ImuOrientation implements IImuOrientation {
+
+        /**
+         * Constructs a new ImuOrientation.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: dogzilla.IImuOrientation);
+
+        /** ImuOrientation roll. */
+        public roll: number;
+
+        /** ImuOrientation pitch. */
+        public pitch: number;
+
+        /** ImuOrientation yaw. */
+        public yaw: number;
+
+        /**
+         * Creates a new ImuOrientation instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns ImuOrientation instance
+         */
+        public static create(properties?: dogzilla.IImuOrientation): dogzilla.ImuOrientation;
+
+        /**
+         * Encodes the specified ImuOrientation message. Does not implicitly {@link dogzilla.ImuOrientation.verify|verify} messages.
+         * @param message ImuOrientation message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: dogzilla.IImuOrientation, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified ImuOrientation message, length delimited. Does not implicitly {@link dogzilla.ImuOrientation.verify|verify} messages.
+         * @param message ImuOrientation message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: dogzilla.IImuOrientation, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes an ImuOrientation message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns ImuOrientation
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): dogzilla.ImuOrientation;
+
+        /**
+         * Decodes an ImuOrientation message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns ImuOrientation
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): dogzilla.ImuOrientation;
+
+        /**
+         * Verifies an ImuOrientation message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates an ImuOrientation message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns ImuOrientation
+         */
+        public static fromObject(object: { [k: string]: any }): dogzilla.ImuOrientation;
+
+        /**
+         * Creates a plain object from an ImuOrientation message. Also converts values to other types if specified.
+         * @param message ImuOrientation
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: dogzilla.ImuOrientation, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this ImuOrientation to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for ImuOrientation
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
+    /** Properties of an Acceleration. */
+    interface IAcceleration {
+
+        /** Acceleration x */
+        x?: (number|null);
+
+        /** Acceleration y */
+        y?: (number|null);
+
+        /** Acceleration z */
+        z?: (number|null);
+    }
+
+    /** Represents an Acceleration. */
+    class Acceleration implements IAcceleration {
+
+        /**
+         * Constructs a new Acceleration.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: dogzilla.IAcceleration);
+
+        /** Acceleration x. */
+        public x: number;
+
+        /** Acceleration y. */
+        public y: number;
+
+        /** Acceleration z. */
+        public z: number;
+
+        /**
+         * Creates a new Acceleration instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns Acceleration instance
+         */
+        public static create(properties?: dogzilla.IAcceleration): dogzilla.Acceleration;
+
+        /**
+         * Encodes the specified Acceleration message. Does not implicitly {@link dogzilla.Acceleration.verify|verify} messages.
+         * @param message Acceleration message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: dogzilla.IAcceleration, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified Acceleration message, length delimited. Does not implicitly {@link dogzilla.Acceleration.verify|verify} messages.
+         * @param message Acceleration message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: dogzilla.IAcceleration, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes an Acceleration message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns Acceleration
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): dogzilla.Acceleration;
+
+        /**
+         * Decodes an Acceleration message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns Acceleration
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): dogzilla.Acceleration;
+
+        /**
+         * Verifies an Acceleration message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates an Acceleration message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns Acceleration
+         */
+        public static fromObject(object: { [k: string]: any }): dogzilla.Acceleration;
+
+        /**
+         * Creates a plain object from an Acceleration message. Also converts values to other types if specified.
+         * @param message Acceleration
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: dogzilla.Acceleration, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this Acceleration to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for Acceleration
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
+    /** Properties of a DogzillaStatus. */
+    interface IDogzillaStatus {
+
+        /** DogzillaStatus batteryLevel */
+        batteryLevel?: (number|null);
+
+        /** DogzillaStatus model */
+        model?: (dogzilla.DogzillaModel|null);
+
+        /** DogzillaStatus firmwareVersion */
+        firmwareVersion?: (string|null);
+
+        /** DogzillaStatus servoPositions */
+        servoPositions?: (number[]|null);
+
+        /** DogzillaStatus orientation */
+        orientation?: (dogzilla.IImuOrientation|null);
+
+        /** DogzillaStatus acceleration */
+        acceleration?: (dogzilla.IAcceleration|null);
+
+        /** DogzillaStatus legServoSpeed */
+        legServoSpeed?: (number|null);
+
+        /** DogzillaStatus armServoSpeed */
+        armServoSpeed?: (number|null);
+
+        /** DogzillaStatus servoAngles */
+        servoAngles?: (number[]|null);
+    }
+
+    /** Represents a DogzillaStatus. */
+    class DogzillaStatus implements IDogzillaStatus {
+
+        /**
+         * Constructs a new DogzillaStatus.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: dogzilla.IDogzillaStatus);
+
+        /** DogzillaStatus batteryLevel. */
+        public batteryLevel: number;
+
+        /** DogzillaStatus model. */
+        public model: dogzilla.DogzillaModel;
+
+        /** DogzillaStatus firmwareVersion. */
+        public firmwareVersion: string;
+
+        /** DogzillaStatus servoPositions. */
+        public servoPositions: number[];
+
+        /** DogzillaStatus orientation. */
+        public orientation?: (dogzilla.IImuOrientation|null);
+
+        /** DogzillaStatus acceleration. */
+        public acceleration?: (dogzilla.IAcceleration|null);
+
+        /** DogzillaStatus legServoSpeed. */
+        public legServoSpeed: number;
+
+        /** DogzillaStatus armServoSpeed. */
+        public armServoSpeed: number;
+
+        /** DogzillaStatus servoAngles. */
+        public servoAngles: number[];
+
+        /**
+         * Creates a new DogzillaStatus instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns DogzillaStatus instance
+         */
+        public static create(properties?: dogzilla.IDogzillaStatus): dogzilla.DogzillaStatus;
+
+        /**
+         * Encodes the specified DogzillaStatus message. Does not implicitly {@link dogzilla.DogzillaStatus.verify|verify} messages.
+         * @param message DogzillaStatus message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: dogzilla.IDogzillaStatus, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified DogzillaStatus message, length delimited. Does not implicitly {@link dogzilla.DogzillaStatus.verify|verify} messages.
+         * @param message DogzillaStatus message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: dogzilla.IDogzillaStatus, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes a DogzillaStatus message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns DogzillaStatus
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): dogzilla.DogzillaStatus;
+
+        /**
+         * Decodes a DogzillaStatus message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns DogzillaStatus
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): dogzilla.DogzillaStatus;
+
+        /**
+         * Verifies a DogzillaStatus message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates a DogzillaStatus message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns DogzillaStatus
+         */
+        public static fromObject(object: { [k: string]: any }): dogzilla.DogzillaStatus;
+
+        /**
+         * Creates a plain object from a DogzillaStatus message. Also converts values to other types if specified.
+         * @param message DogzillaStatus
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: dogzilla.DogzillaStatus, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this DogzillaStatus to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for DogzillaStatus
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
+    /** Properties of a ServoCommand. */
+    interface IServoCommand {
+
+        /** ServoCommand servoId */
+        servoId?: (number|null);
+
+        /** ServoCommand position */
+        position?: (number|null);
+    }
+
+    /** Represents a ServoCommand. */
+    class ServoCommand implements IServoCommand {
+
+        /**
+         * Constructs a new ServoCommand.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: dogzilla.IServoCommand);
+
+        /** ServoCommand servoId. */
+        public servoId: number;
+
+        /** ServoCommand position. */
+        public position: number;
+
+        /**
+         * Creates a new ServoCommand instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns ServoCommand instance
+         */
+        public static create(properties?: dogzilla.IServoCommand): dogzilla.ServoCommand;
+
+        /**
+         * Encodes the specified ServoCommand message. Does not implicitly {@link dogzilla.ServoCommand.verify|verify} messages.
+         * @param message ServoCommand message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: dogzilla.IServoCommand, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified ServoCommand message, length delimited. Does not implicitly {@link dogzilla.ServoCommand.verify|verify} messages.
+         * @param message ServoCommand message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: dogzilla.IServoCommand, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes a ServoCommand message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns ServoCommand
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): dogzilla.ServoCommand;
+
+        /**
+         * Decodes a ServoCommand message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns ServoCommand
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): dogzilla.ServoCommand;
+
+        /**
+         * Verifies a ServoCommand message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates a ServoCommand message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns ServoCommand
+         */
+        public static fromObject(object: { [k: string]: any }): dogzilla.ServoCommand;
+
+        /**
+         * Creates a plain object from a ServoCommand message. Also converts values to other types if specified.
+         * @param message ServoCommand
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: dogzilla.ServoCommand, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this ServoCommand to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for ServoCommand
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
+    /** Properties of a ServoSpeedCommand. */
+    interface IServoSpeedCommand {
+
+        /** ServoSpeedCommand bodyServoSpeed */
+        bodyServoSpeed?: (number|null);
+
+        /** ServoSpeedCommand armServoSpeed */
+        armServoSpeed?: (number|null);
+    }
+
+    /** Represents a ServoSpeedCommand. */
+    class ServoSpeedCommand implements IServoSpeedCommand {
+
+        /**
+         * Constructs a new ServoSpeedCommand.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: dogzilla.IServoSpeedCommand);
+
+        /** ServoSpeedCommand bodyServoSpeed. */
+        public bodyServoSpeed?: (number|null);
+
+        /** ServoSpeedCommand armServoSpeed. */
+        public armServoSpeed?: (number|null);
+
+        /** ServoSpeedCommand bodySpeed. */
+        public bodySpeed?: "bodyServoSpeed";
+
+        /** ServoSpeedCommand armSpeed. */
+        public armSpeed?: "armServoSpeed";
+
+        /**
+         * Creates a new ServoSpeedCommand instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns ServoSpeedCommand instance
+         */
+        public static create(properties?: dogzilla.IServoSpeedCommand): dogzilla.ServoSpeedCommand;
+
+        /**
+         * Encodes the specified ServoSpeedCommand message. Does not implicitly {@link dogzilla.ServoSpeedCommand.verify|verify} messages.
+         * @param message ServoSpeedCommand message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: dogzilla.IServoSpeedCommand, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified ServoSpeedCommand message, length delimited. Does not implicitly {@link dogzilla.ServoSpeedCommand.verify|verify} messages.
+         * @param message ServoSpeedCommand message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: dogzilla.IServoSpeedCommand, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes a ServoSpeedCommand message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns ServoSpeedCommand
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): dogzilla.ServoSpeedCommand;
+
+        /**
+         * Decodes a ServoSpeedCommand message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns ServoSpeedCommand
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): dogzilla.ServoSpeedCommand;
+
+        /**
+         * Verifies a ServoSpeedCommand message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates a ServoSpeedCommand message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns ServoSpeedCommand
+         */
+        public static fromObject(object: { [k: string]: any }): dogzilla.ServoSpeedCommand;
+
+        /**
+         * Creates a plain object from a ServoSpeedCommand message. Also converts values to other types if specified.
+         * @param message ServoSpeedCommand
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: dogzilla.ServoSpeedCommand, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this ServoSpeedCommand to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for ServoSpeedCommand
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
+    /** Properties of a CalibrationCommand. */
+    interface ICalibrationCommand {
+
+        /** CalibrationCommand enterCalibrationMode */
+        enterCalibrationMode?: (boolean|null);
+
+        /** CalibrationCommand setOrigin */
+        setOrigin?: (boolean|null);
+
+        /** CalibrationCommand servoCentering */
+        servoCentering?: (boolean|null);
+
+        /** CalibrationCommand gyroCalibration */
+        gyroCalibration?: (boolean|null);
+    }
+
+    /** Represents a CalibrationCommand. */
+    class CalibrationCommand implements ICalibrationCommand {
+
+        /**
+         * Constructs a new CalibrationCommand.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: dogzilla.ICalibrationCommand);
+
+        /** CalibrationCommand enterCalibrationMode. */
+        public enterCalibrationMode: boolean;
+
+        /** CalibrationCommand setOrigin. */
+        public setOrigin: boolean;
+
+        /** CalibrationCommand servoCentering. */
+        public servoCentering: boolean;
+
+        /** CalibrationCommand gyroCalibration. */
+        public gyroCalibration: boolean;
+
+        /**
+         * Creates a new CalibrationCommand instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns CalibrationCommand instance
+         */
+        public static create(properties?: dogzilla.ICalibrationCommand): dogzilla.CalibrationCommand;
+
+        /**
+         * Encodes the specified CalibrationCommand message. Does not implicitly {@link dogzilla.CalibrationCommand.verify|verify} messages.
+         * @param message CalibrationCommand message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: dogzilla.ICalibrationCommand, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified CalibrationCommand message, length delimited. Does not implicitly {@link dogzilla.CalibrationCommand.verify|verify} messages.
+         * @param message CalibrationCommand message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: dogzilla.ICalibrationCommand, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes a CalibrationCommand message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns CalibrationCommand
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): dogzilla.CalibrationCommand;
+
+        /**
+         * Decodes a CalibrationCommand message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns CalibrationCommand
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): dogzilla.CalibrationCommand;
+
+        /**
+         * Verifies a CalibrationCommand message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates a CalibrationCommand message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns CalibrationCommand
+         */
+        public static fromObject(object: { [k: string]: any }): dogzilla.CalibrationCommand;
+
+        /**
+         * Creates a plain object from a CalibrationCommand message. Also converts values to other types if specified.
+         * @param message CalibrationCommand
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: dogzilla.CalibrationCommand, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this CalibrationCommand to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for CalibrationCommand
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
+    /** Properties of an ArmCommand. */
+    interface IArmCommand {
+
+        /** ArmCommand gripperStatus */
+        gripperStatus?: (number|null);
+
+        /** ArmCommand gripperX */
+        gripperX?: (number|null);
+
+        /** ArmCommand gripperZ */
+        gripperZ?: (number|null);
+
+        /** ArmCommand polarAngle */
+        polarAngle?: (number|null);
+
+        /** ArmCommand polarRadius */
+        polarRadius?: (number|null);
+
+        /** ArmCommand stabilityMode */
+        stabilityMode?: (boolean|null);
+    }
+
+    /** Represents an ArmCommand. */
+    class ArmCommand implements IArmCommand {
+
+        /**
+         * Constructs a new ArmCommand.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: dogzilla.IArmCommand);
+
+        /** ArmCommand gripperStatus. */
+        public gripperStatus: number;
+
+        /** ArmCommand gripperX. */
+        public gripperX: number;
+
+        /** ArmCommand gripperZ. */
+        public gripperZ: number;
+
+        /** ArmCommand polarAngle. */
+        public polarAngle: number;
+
+        /** ArmCommand polarRadius. */
+        public polarRadius: number;
+
+        /** ArmCommand stabilityMode. */
+        public stabilityMode: boolean;
+
+        /**
+         * Creates a new ArmCommand instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns ArmCommand instance
+         */
+        public static create(properties?: dogzilla.IArmCommand): dogzilla.ArmCommand;
+
+        /**
+         * Encodes the specified ArmCommand message. Does not implicitly {@link dogzilla.ArmCommand.verify|verify} messages.
+         * @param message ArmCommand message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: dogzilla.IArmCommand, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified ArmCommand message, length delimited. Does not implicitly {@link dogzilla.ArmCommand.verify|verify} messages.
+         * @param message ArmCommand message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: dogzilla.IArmCommand, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes an ArmCommand message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns ArmCommand
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): dogzilla.ArmCommand;
+
+        /**
+         * Decodes an ArmCommand message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns ArmCommand
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): dogzilla.ArmCommand;
+
+        /**
+         * Verifies an ArmCommand message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates an ArmCommand message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns ArmCommand
+         */
+        public static fromObject(object: { [k: string]: any }): dogzilla.ArmCommand;
+
+        /**
+         * Creates a plain object from an ArmCommand message. Also converts values to other types if specified.
+         * @param message ArmCommand
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: dogzilla.ArmCommand, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this ArmCommand to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for ArmCommand
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
+    /** Properties of an IoCommand. */
+    interface IIoCommand {
+
+        /** IoCommand power_5vOutput */
+        power_5vOutput?: (boolean|null);
+
+        /** IoCommand digitalIo */
+        digitalIo?: (boolean|null);
+    }
+
+    /** Represents an IoCommand. */
+    class IoCommand implements IIoCommand {
+
+        /**
+         * Constructs a new IoCommand.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: dogzilla.IIoCommand);
+
+        /** IoCommand power_5vOutput. */
+        public power_5vOutput: boolean;
+
+        /** IoCommand digitalIo. */
+        public digitalIo: boolean;
+
+        /**
+         * Creates a new IoCommand instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns IoCommand instance
+         */
+        public static create(properties?: dogzilla.IIoCommand): dogzilla.IoCommand;
+
+        /**
+         * Encodes the specified IoCommand message. Does not implicitly {@link dogzilla.IoCommand.verify|verify} messages.
+         * @param message IoCommand message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: dogzilla.IIoCommand, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified IoCommand message, length delimited. Does not implicitly {@link dogzilla.IoCommand.verify|verify} messages.
+         * @param message IoCommand message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: dogzilla.IIoCommand, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes an IoCommand message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns IoCommand
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): dogzilla.IoCommand;
+
+        /**
+         * Decodes an IoCommand message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns IoCommand
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): dogzilla.IoCommand;
+
+        /**
+         * Verifies an IoCommand message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates an IoCommand message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns IoCommand
+         */
+        public static fromObject(object: { [k: string]: any }): dogzilla.IoCommand;
+
+        /**
+         * Creates a plain object from an IoCommand message. Also converts values to other types if specified.
+         * @param message IoCommand
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: dogzilla.IoCommand, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this IoCommand to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for IoCommand
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
+    /** Properties of a LedCommand. */
+    interface ILedCommand {
+
+        /** LedCommand ledIndex */
+        ledIndex?: (number|null);
+
+        /** LedCommand rgbBytes */
+        rgbBytes?: (Uint8Array|null);
+    }
+
+    /** Represents a LedCommand. */
+    class LedCommand implements ILedCommand {
+
+        /**
+         * Constructs a new LedCommand.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: dogzilla.ILedCommand);
+
+        /** LedCommand ledIndex. */
+        public ledIndex: number;
+
+        /** LedCommand rgbBytes. */
+        public rgbBytes: Uint8Array;
+
+        /**
+         * Creates a new LedCommand instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns LedCommand instance
+         */
+        public static create(properties?: dogzilla.ILedCommand): dogzilla.LedCommand;
+
+        /**
+         * Encodes the specified LedCommand message. Does not implicitly {@link dogzilla.LedCommand.verify|verify} messages.
+         * @param message LedCommand message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: dogzilla.ILedCommand, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified LedCommand message, length delimited. Does not implicitly {@link dogzilla.LedCommand.verify|verify} messages.
+         * @param message LedCommand message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: dogzilla.ILedCommand, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes a LedCommand message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns LedCommand
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): dogzilla.LedCommand;
+
+        /**
+         * Decodes a LedCommand message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns LedCommand
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): dogzilla.LedCommand;
+
+        /**
+         * Verifies a LedCommand message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates a LedCommand message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns LedCommand
+         */
+        public static fromObject(object: { [k: string]: any }): dogzilla.LedCommand;
+
+        /**
+         * Creates a plain object from a LedCommand message. Also converts values to other types if specified.
+         * @param message LedCommand
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: dogzilla.LedCommand, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this LedCommand to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for LedCommand
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
+    /** Properties of an ActionCommand. */
+    interface IActionCommand {
+
+        /** ActionCommand action */
+        action?: (dogzilla.ActionType|null);
+    }
+
+    /** Represents an ActionCommand. */
+    class ActionCommand implements IActionCommand {
+
+        /**
+         * Constructs a new ActionCommand.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: dogzilla.IActionCommand);
+
+        /** ActionCommand action. */
+        public action: dogzilla.ActionType;
+
+        /**
+         * Creates a new ActionCommand instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns ActionCommand instance
+         */
+        public static create(properties?: dogzilla.IActionCommand): dogzilla.ActionCommand;
+
+        /**
+         * Encodes the specified ActionCommand message. Does not implicitly {@link dogzilla.ActionCommand.verify|verify} messages.
+         * @param message ActionCommand message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: dogzilla.IActionCommand, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified ActionCommand message, length delimited. Does not implicitly {@link dogzilla.ActionCommand.verify|verify} messages.
+         * @param message ActionCommand message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: dogzilla.IActionCommand, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes an ActionCommand message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns ActionCommand
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): dogzilla.ActionCommand;
+
+        /**
+         * Decodes an ActionCommand message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns ActionCommand
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): dogzilla.ActionCommand;
+
+        /**
+         * Verifies an ActionCommand message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates an ActionCommand message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns ActionCommand
+         */
+        public static fromObject(object: { [k: string]: any }): dogzilla.ActionCommand;
+
+        /**
+         * Creates a plain object from an ActionCommand message. Also converts values to other types if specified.
+         * @param message ActionCommand
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: dogzilla.ActionCommand, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this ActionCommand to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for ActionCommand
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
+    /** Properties of a MovementCommand. */
+    interface IMovementCommand {
+
+        /** MovementCommand moveX */
+        moveX?: (number|null);
+
+        /** MovementCommand moveY */
+        moveY?: (number|null);
+
+        /** MovementCommand moveYaw */
+        moveYaw?: (number|null);
+    }
+
+    /** Represents a MovementCommand. */
+    class MovementCommand implements IMovementCommand {
+
+        /**
+         * Constructs a new MovementCommand.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: dogzilla.IMovementCommand);
+
+        /** MovementCommand moveX. */
+        public moveX: number;
+
+        /** MovementCommand moveY. */
+        public moveY: number;
+
+        /** MovementCommand moveYaw. */
+        public moveYaw: number;
+
+        /**
+         * Creates a new MovementCommand instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns MovementCommand instance
+         */
+        public static create(properties?: dogzilla.IMovementCommand): dogzilla.MovementCommand;
+
+        /**
+         * Encodes the specified MovementCommand message. Does not implicitly {@link dogzilla.MovementCommand.verify|verify} messages.
+         * @param message MovementCommand message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: dogzilla.IMovementCommand, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified MovementCommand message, length delimited. Does not implicitly {@link dogzilla.MovementCommand.verify|verify} messages.
+         * @param message MovementCommand message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: dogzilla.IMovementCommand, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes a MovementCommand message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns MovementCommand
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): dogzilla.MovementCommand;
+
+        /**
+         * Decodes a MovementCommand message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns MovementCommand
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): dogzilla.MovementCommand;
+
+        /**
+         * Verifies a MovementCommand message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates a MovementCommand message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns MovementCommand
+         */
+        public static fromObject(object: { [k: string]: any }): dogzilla.MovementCommand;
+
+        /**
+         * Creates a plain object from a MovementCommand message. Also converts values to other types if specified.
+         * @param message MovementCommand
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: dogzilla.MovementCommand, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this MovementCommand to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for MovementCommand
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
+    /** Properties of a ConfigCommand. */
+    interface IConfigCommand {
+
+        /** ConfigCommand performanceMode */
+        performanceMode?: (dogzilla.PerformanceMode|null);
+
+        /** ConfigCommand gait */
+        gait?: (dogzilla.GaitType|null);
+
+        /** ConfigCommand imuMode */
+        imuMode?: (dogzilla.ImuMode|null);
+
+        /** ConfigCommand enableFeedback */
+        enableFeedback?: (boolean|null);
+
+        /** ConfigCommand bluetoothName */
+        bluetoothName?: (string|null);
+    }
+
+    /** Represents a ConfigCommand. */
+    class ConfigCommand implements IConfigCommand {
+
+        /**
+         * Constructs a new ConfigCommand.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: dogzilla.IConfigCommand);
+
+        /** ConfigCommand performanceMode. */
+        public performanceMode: dogzilla.PerformanceMode;
+
+        /** ConfigCommand gait. */
+        public gait: dogzilla.GaitType;
+
+        /** ConfigCommand imuMode. */
+        public imuMode: dogzilla.ImuMode;
+
+        /** ConfigCommand enableFeedback. */
+        public enableFeedback: boolean;
+
+        /** ConfigCommand bluetoothName. */
+        public bluetoothName: string;
+
+        /**
+         * Creates a new ConfigCommand instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns ConfigCommand instance
+         */
+        public static create(properties?: dogzilla.IConfigCommand): dogzilla.ConfigCommand;
+
+        /**
+         * Encodes the specified ConfigCommand message. Does not implicitly {@link dogzilla.ConfigCommand.verify|verify} messages.
+         * @param message ConfigCommand message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: dogzilla.IConfigCommand, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified ConfigCommand message, length delimited. Does not implicitly {@link dogzilla.ConfigCommand.verify|verify} messages.
+         * @param message ConfigCommand message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: dogzilla.IConfigCommand, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes a ConfigCommand message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns ConfigCommand
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): dogzilla.ConfigCommand;
+
+        /**
+         * Decodes a ConfigCommand message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns ConfigCommand
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): dogzilla.ConfigCommand;
+
+        /**
+         * Verifies a ConfigCommand message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates a ConfigCommand message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns ConfigCommand
+         */
+        public static fromObject(object: { [k: string]: any }): dogzilla.ConfigCommand;
+
+        /**
+         * Creates a plain object from a ConfigCommand message. Also converts values to other types if specified.
+         * @param message ConfigCommand
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: dogzilla.ConfigCommand, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this ConfigCommand to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for ConfigCommand
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
+    /** Properties of a Command. */
+    interface ICommand {
+
+        /** Command targetDeviceSerial */
+        targetDeviceSerial?: (string|null);
+
+        /** Command servo */
+        servo?: (dogzilla.IServoCommand|null);
+
+        /** Command servoSpeed */
+        servoSpeed?: (dogzilla.IServoSpeedCommand|null);
+
+        /** Command calibration */
+        calibration?: (dogzilla.ICalibrationCommand|null);
+
+        /** Command arm */
+        arm?: (dogzilla.IArmCommand|null);
+
+        /** Command io */
+        io?: (dogzilla.IIoCommand|null);
+
+        /** Command config */
+        config?: (dogzilla.IConfigCommand|null);
+
+        /** Command led */
+        led?: (dogzilla.ILedCommand|null);
+
+        /** Command action */
+        action?: (dogzilla.IActionCommand|null);
+
+        /** Command movement */
+        movement?: (dogzilla.IMovementCommand|null);
+    }
+
+    /** Represents a Command. */
+    class Command implements ICommand {
+
+        /**
+         * Constructs a new Command.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: dogzilla.ICommand);
+
+        /** Command targetDeviceSerial. */
+        public targetDeviceSerial: string;
+
+        /** Command servo. */
+        public servo?: (dogzilla.IServoCommand|null);
+
+        /** Command servoSpeed. */
+        public servoSpeed?: (dogzilla.IServoSpeedCommand|null);
+
+        /** Command calibration. */
+        public calibration?: (dogzilla.ICalibrationCommand|null);
+
+        /** Command arm. */
+        public arm?: (dogzilla.IArmCommand|null);
+
+        /** Command io. */
+        public io?: (dogzilla.IIoCommand|null);
+
+        /** Command config. */
+        public config?: (dogzilla.IConfigCommand|null);
+
+        /** Command led. */
+        public led?: (dogzilla.ILedCommand|null);
+
+        /** Command action. */
+        public action?: (dogzilla.IActionCommand|null);
+
+        /** Command movement. */
+        public movement?: (dogzilla.IMovementCommand|null);
+
+        /**
+         * Creates a new Command instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns Command instance
+         */
+        public static create(properties?: dogzilla.ICommand): dogzilla.Command;
+
+        /**
+         * Encodes the specified Command message. Does not implicitly {@link dogzilla.Command.verify|verify} messages.
+         * @param message Command message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: dogzilla.ICommand, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified Command message, length delimited. Does not implicitly {@link dogzilla.Command.verify|verify} messages.
+         * @param message Command message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: dogzilla.ICommand, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes a Command message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns Command
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): dogzilla.Command;
+
+        /**
+         * Decodes a Command message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns Command
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): dogzilla.Command;
+
+        /**
+         * Verifies a Command message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates a Command message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns Command
+         */
+        public static fromObject(object: { [k: string]: any }): dogzilla.Command;
+
+        /**
+         * Creates a plain object from a Command message. Also converts values to other types if specified.
+         * @param message Command
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: dogzilla.Command, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this Command to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for Command
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
+    /** Properties of a TxEnvelope. */
+    interface ITxEnvelope {
+
+        /** TxEnvelope monotonicStampNs */
+        monotonicStampNs?: (Long|null);
+
+        /** TxEnvelope localStampNs */
+        localStampNs?: (Long|null);
+
+        /** TxEnvelope appStartId */
+        appStartId?: (Long|null);
+
+        /** TxEnvelope commandId */
+        commandId?: (Uint8Array|null);
+
+        /** TxEnvelope targetDeviceSerial */
+        targetDeviceSerial?: (string|null);
+
+        /** TxEnvelope command */
+        command?: (dogzilla.ICommand|null);
+    }
+
+    /** Represents a TxEnvelope. */
+    class TxEnvelope implements ITxEnvelope {
+
+        /**
+         * Constructs a new TxEnvelope.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: dogzilla.ITxEnvelope);
+
+        /** TxEnvelope monotonicStampNs. */
+        public monotonicStampNs: Long;
+
+        /** TxEnvelope localStampNs. */
+        public localStampNs: Long;
+
+        /** TxEnvelope appStartId. */
+        public appStartId: Long;
+
+        /** TxEnvelope commandId. */
+        public commandId: Uint8Array;
+
+        /** TxEnvelope targetDeviceSerial. */
+        public targetDeviceSerial: string;
+
+        /** TxEnvelope command. */
+        public command?: (dogzilla.ICommand|null);
+
+        /**
+         * Creates a new TxEnvelope instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns TxEnvelope instance
+         */
+        public static create(properties?: dogzilla.ITxEnvelope): dogzilla.TxEnvelope;
+
+        /**
+         * Encodes the specified TxEnvelope message. Does not implicitly {@link dogzilla.TxEnvelope.verify|verify} messages.
+         * @param message TxEnvelope message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: dogzilla.ITxEnvelope, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified TxEnvelope message, length delimited. Does not implicitly {@link dogzilla.TxEnvelope.verify|verify} messages.
+         * @param message TxEnvelope message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: dogzilla.ITxEnvelope, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes a TxEnvelope message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns TxEnvelope
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): dogzilla.TxEnvelope;
+
+        /**
+         * Decodes a TxEnvelope message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns TxEnvelope
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): dogzilla.TxEnvelope;
+
+        /**
+         * Verifies a TxEnvelope message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates a TxEnvelope message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns TxEnvelope
+         */
+        public static fromObject(object: { [k: string]: any }): dogzilla.TxEnvelope;
+
+        /**
+         * Creates a plain object from a TxEnvelope message. Also converts values to other types if specified.
+         * @param message TxEnvelope
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: dogzilla.TxEnvelope, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this TxEnvelope to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for TxEnvelope
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
+    /** Properties of a RxEnvelope. */
+    interface IRxEnvelope {
+
+        /** RxEnvelope monotonicStampNs */
+        monotonicStampNs?: (Long|null);
+
+        /** RxEnvelope localStampNs */
+        localStampNs?: (Long|null);
+
+        /** RxEnvelope appStartId */
+        appStartId?: (Long|null);
+
+        /** RxEnvelope signalType */
+        signalType?: (dogzilla.DogzillaSignalType|null);
+
+        /** RxEnvelope device */
+        device?: (dogzilla.IDogzillaDevice|null);
+
+        /** RxEnvelope status */
+        status?: (dogzilla.IDogzillaStatus|null);
+
+        /** RxEnvelope data */
+        data?: (Uint8Array|null);
+
+        /** RxEnvelope command */
+        command?: (dogzilla.ITxEnvelope|null);
+
+        /** RxEnvelope errorMessage */
+        errorMessage?: (string|null);
+    }
+
+    /** Represents a RxEnvelope. */
+    class RxEnvelope implements IRxEnvelope {
+
+        /**
+         * Constructs a new RxEnvelope.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: dogzilla.IRxEnvelope);
+
+        /** RxEnvelope monotonicStampNs. */
+        public monotonicStampNs: Long;
+
+        /** RxEnvelope localStampNs. */
+        public localStampNs: Long;
+
+        /** RxEnvelope appStartId. */
+        public appStartId: Long;
+
+        /** RxEnvelope signalType. */
+        public signalType: dogzilla.DogzillaSignalType;
+
+        /** RxEnvelope device. */
+        public device?: (dogzilla.IDogzillaDevice|null);
+
+        /** RxEnvelope status. */
+        public status?: (dogzilla.IDogzillaStatus|null);
+
+        /** RxEnvelope data. */
+        public data: Uint8Array;
+
+        /** RxEnvelope command. */
+        public command?: (dogzilla.ITxEnvelope|null);
+
+        /** RxEnvelope errorMessage. */
+        public errorMessage: string;
+
+        /**
+         * Creates a new RxEnvelope instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns RxEnvelope instance
+         */
+        public static create(properties?: dogzilla.IRxEnvelope): dogzilla.RxEnvelope;
+
+        /**
+         * Encodes the specified RxEnvelope message. Does not implicitly {@link dogzilla.RxEnvelope.verify|verify} messages.
+         * @param message RxEnvelope message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: dogzilla.IRxEnvelope, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified RxEnvelope message, length delimited. Does not implicitly {@link dogzilla.RxEnvelope.verify|verify} messages.
+         * @param message RxEnvelope message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: dogzilla.IRxEnvelope, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes a RxEnvelope message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns RxEnvelope
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): dogzilla.RxEnvelope;
+
+        /**
+         * Decodes a RxEnvelope message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns RxEnvelope
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): dogzilla.RxEnvelope;
+
+        /**
+         * Verifies a RxEnvelope message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates a RxEnvelope message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns RxEnvelope
+         */
+        public static fromObject(object: { [k: string]: any }): dogzilla.RxEnvelope;
+
+        /**
+         * Creates a plain object from a RxEnvelope message. Also converts values to other types if specified.
+         * @param message RxEnvelope
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: dogzilla.RxEnvelope, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this RxEnvelope to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for RxEnvelope
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
+    /** Properties of an InferenceState. */
+    interface IInferenceState {
+
+        /** InferenceState lastInferenceQueuePtr */
+        lastInferenceQueuePtr?: (Uint8Array|null);
+
+        /** InferenceState devices */
+        devices?: (dogzilla.InferenceState.IDeviceState[]|null);
+    }
+
+    /** Represents an InferenceState. */
+    class InferenceState implements IInferenceState {
+
+        /**
+         * Constructs a new InferenceState.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: dogzilla.IInferenceState);
+
+        /** InferenceState lastInferenceQueuePtr. */
+        public lastInferenceQueuePtr: Uint8Array;
+
+        /** InferenceState devices. */
+        public devices: dogzilla.InferenceState.IDeviceState[];
+
+        /**
+         * Creates a new InferenceState instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns InferenceState instance
+         */
+        public static create(properties?: dogzilla.IInferenceState): dogzilla.InferenceState;
+
+        /**
+         * Encodes the specified InferenceState message. Does not implicitly {@link dogzilla.InferenceState.verify|verify} messages.
+         * @param message InferenceState message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: dogzilla.IInferenceState, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified InferenceState message, length delimited. Does not implicitly {@link dogzilla.InferenceState.verify|verify} messages.
+         * @param message InferenceState message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: dogzilla.IInferenceState, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes an InferenceState message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns InferenceState
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): dogzilla.InferenceState;
+
+        /**
+         * Decodes an InferenceState message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns InferenceState
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): dogzilla.InferenceState;
+
+        /**
+         * Verifies an InferenceState message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates an InferenceState message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns InferenceState
+         */
+        public static fromObject(object: { [k: string]: any }): dogzilla.InferenceState;
+
+        /**
+         * Creates a plain object from an InferenceState message. Also converts values to other types if specified.
+         * @param message InferenceState
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: dogzilla.InferenceState, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this InferenceState to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for InferenceState
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
+    namespace InferenceState {
+
+        /** Properties of a DeviceState. */
+        interface IDeviceState {
+
+            /** DeviceState device */
+            device?: (dogzilla.IDogzillaDevice|null);
+
+            /** DeviceState status */
+            status?: (dogzilla.IDogzillaStatus|null);
+
+            /** DeviceState monotonicStampNs */
+            monotonicStampNs?: (Long|null);
+
+            /** DeviceState systemStampNs */
+            systemStampNs?: (Long|null);
+
+            /** DeviceState isConnected */
+            isConnected?: (boolean|null);
+        }
+
+        /** Represents a DeviceState. */
+        class DeviceState implements IDeviceState {
+
+            /**
+             * Constructs a new DeviceState.
+             * @param [properties] Properties to set
+             */
+            constructor(properties?: dogzilla.InferenceState.IDeviceState);
+
+            /** DeviceState device. */
+            public device?: (dogzilla.IDogzillaDevice|null);
+
+            /** DeviceState status. */
+            public status?: (dogzilla.IDogzillaStatus|null);
+
+            /** DeviceState monotonicStampNs. */
+            public monotonicStampNs: Long;
+
+            /** DeviceState systemStampNs. */
+            public systemStampNs: Long;
+
+            /** DeviceState isConnected. */
+            public isConnected: boolean;
+
+            /**
+             * Creates a new DeviceState instance using the specified properties.
+             * @param [properties] Properties to set
+             * @returns DeviceState instance
+             */
+            public static create(properties?: dogzilla.InferenceState.IDeviceState): dogzilla.InferenceState.DeviceState;
+
+            /**
+             * Encodes the specified DeviceState message. Does not implicitly {@link dogzilla.InferenceState.DeviceState.verify|verify} messages.
+             * @param message DeviceState message or plain object to encode
+             * @param [writer] Writer to encode to
+             * @returns Writer
+             */
+            public static encode(message: dogzilla.InferenceState.IDeviceState, writer?: $protobuf.Writer): $protobuf.Writer;
+
+            /**
+             * Encodes the specified DeviceState message, length delimited. Does not implicitly {@link dogzilla.InferenceState.DeviceState.verify|verify} messages.
+             * @param message DeviceState message or plain object to encode
+             * @param [writer] Writer to encode to
+             * @returns Writer
+             */
+            public static encodeDelimited(message: dogzilla.InferenceState.IDeviceState, writer?: $protobuf.Writer): $protobuf.Writer;
+
+            /**
+             * Decodes a DeviceState message from the specified reader or buffer.
+             * @param reader Reader or buffer to decode from
+             * @param [length] Message length if known beforehand
+             * @returns DeviceState
+             * @throws {Error} If the payload is not a reader or valid buffer
+             * @throws {$protobuf.util.ProtocolError} If required fields are missing
+             */
+            public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): dogzilla.InferenceState.DeviceState;
+
+            /**
+             * Decodes a DeviceState message from the specified reader or buffer, length delimited.
+             * @param reader Reader or buffer to decode from
+             * @returns DeviceState
+             * @throws {Error} If the payload is not a reader or valid buffer
+             * @throws {$protobuf.util.ProtocolError} If required fields are missing
+             */
+            public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): dogzilla.InferenceState.DeviceState;
+
+            /**
+             * Verifies a DeviceState message.
+             * @param message Plain object to verify
+             * @returns `null` if valid, otherwise the reason why it is not
+             */
+            public static verify(message: { [k: string]: any }): (string|null);
+
+            /**
+             * Creates a DeviceState message from a plain object. Also converts values to their respective internal types.
+             * @param object Plain object
+             * @returns DeviceState
+             */
+            public static fromObject(object: { [k: string]: any }): dogzilla.InferenceState.DeviceState;
+
+            /**
+             * Creates a plain object from a DeviceState message. Also converts values to other types if specified.
+             * @param message DeviceState
+             * @param [options] Conversion options
+             * @returns Plain object
+             */
+            public static toObject(message: dogzilla.InferenceState.DeviceState, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+            /**
+             * Converts this DeviceState to JSON.
+             * @returns JSON object
+             */
+            public toJSON(): { [k: string]: any };
+
+            /**
+             * Gets the default type url for DeviceState
+             * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+             * @returns The default type url
+             */
+            public static getTypeUrl(typeUrlPrefix?: string): string;
+        }
+    }
+
+    /** CommandResult enum. */
+    enum CommandResult {
+        CR_PROCESSING = 0,
+        CR_SUCCESS = 1,
+        CR_FAILED = 2
     }
 }
 

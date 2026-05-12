@@ -103,6 +103,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a23eb6b1614318a8071c9b2521f36b424b2c83db5eb3a0fead4a6c0809af6e61"
 
 [[package]]
+name = "arc-swap"
+version = "1.9.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6a3a1fd6f75306b68087b831f025c712524bcb19aad54e557b1129cfa0a2b207"
+dependencies = [
+ "rustversion",
+]
+
+[[package]]
 name = "atomic-waker"
 version = "1.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -470,6 +479,22 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn",
+]
+
+[[package]]
+name = "dogzilla"
+version = "0.1.0"
+dependencies = [
+ "bytes",
+ "log",
+ "normfs",
+ "parking_lot",
+ "prost",
+ "prost-build",
+ "station_iface",
+ "systime",
+ "tokio",
+ "tokio-serial",
 ]
 
 [[package]]
@@ -1069,6 +1094,7 @@ name = "inferences"
 version = "0.1.0-beta.7"
 dependencies = [
  "bytes",
+ "dogzilla",
  "lazy_static",
  "log",
  "memmap2",
@@ -1180,6 +1206,16 @@ name = "libc"
 version = "0.2.176"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "58f929b4d672ea937a23a1ab494143d968337a5f47e56d0815df1e0890ddf174"
+
+[[package]]
+name = "libcamera-sys-static"
+version = "0.1.0"
+dependencies = [
+ "bindgen",
+ "cc",
+ "libc",
+ "pkg-config",
+]
 
 [[package]]
 name = "libloading"
@@ -1583,6 +1619,27 @@ name = "opaque-debug"
 version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c08d65885ee38876c4f86fa503fb49d7b507c2b62552df7c70b2fce627e06381"
+
+[[package]]
+name = "ov5647"
+version = "0.1.0"
+dependencies = [
+ "arc-swap",
+ "bytes",
+ "libc",
+ "libcamera-sys-static",
+ "log",
+ "normfs",
+ "parking_lot",
+ "prost",
+ "prost-build",
+ "station_iface",
+ "systime",
+ "thiserror 2.0.16",
+ "tokio",
+ "tracing",
+ "turbojpeg",
+]
 
 [[package]]
 name = "parking_lot"
@@ -2373,6 +2430,7 @@ dependencies = [
  "bytes",
  "clap",
  "dashmap",
+ "dogzilla",
  "env_logger",
  "fastwebsockets",
  "http-body-util",
@@ -2384,6 +2442,7 @@ dependencies = [
  "motors-mirroring",
  "normfs",
  "normfs-types",
+ "ov5647",
  "parking_lot",
  "prost",
  "prost-build",
@@ -2745,7 +2804,19 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "784e0ac535deb450455cbfa28a6f0df145ea1bb7ae51b821cf5e7927fdcfbdd0"
 dependencies = [
  "pin-project-lite",
+ "tracing-attributes",
  "tracing-core",
+]
+
+[[package]]
+name = "tracing-attributes"
+version = "0.1.31"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7490cfa5ec963746568740651ac6781f701c9c5ea257c58e057f3ba8cf69e8da"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
 ]
 
 [[package]]

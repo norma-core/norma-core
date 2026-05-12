@@ -3,10 +3,15 @@ name = "inferences"
 version.workspace = true
 edition = "2024"
 
+[features]
+default = []
+dogzilla = ["dep:dogzilla"]
+
 [dependencies]
 tokio = { workspace = true }
 normfs = { workspace = true }
 station_iface = { path = "../../station/shared/station-iface" }
+dogzilla = { path = "../dogzilla", optional = true }
 st3215 = { path = "../st3215" }
 usbvideo = { path = "../usbvideo" }
 prost = { workspace = true }

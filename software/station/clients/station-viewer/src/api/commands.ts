@@ -1,4 +1,4 @@
-import { st3215, drivers, commands, motors_mirroring, inference_tags } from "./proto.js";
+import { st3215, drivers, commands, motors_mirroring, inference_tags, dogzilla } from "./proto.js";
 import webSocketManager from "./websocket.js";
 
 function commandIdToBytes(id: number): Uint8Array {
@@ -12,8 +12,6 @@ let nextCommandId = 1;
 
 export class CommandManager {
     private readonly COMMANDS_QUEUE = "commands";
-
-    constructor() {}
 
     private async sendCommand(commandType: drivers.StationCommandType, body: Uint8Array): Promise<void> {
         const commandId = nextCommandId++;
@@ -61,6 +59,11 @@ export class CommandManager {
     public async sendInferenceTagCommand(command: inference_tags.ICommand): Promise<void> {
         const body = inference_tags.Command.encode(command).finish();
         await this.sendCommand(drivers.StationCommandType.STC_INFERENCE_TAG_COMMAND, body);
+    }
+
+    public async sendDogzillaCommand(command: dogzilla.ICommand): Promise<void> {
+        const body = dogzilla.Command.encode(command).finish();
+        await this.sendCommand(drivers.StationCommandType.STC_DOGZILLA_COMMAND, body);
     }
 }
 

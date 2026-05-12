@@ -1,5 +1,14 @@
-import { usbvideo, frame, st3215, motors_mirroring, sysinfo, normvla } from '@/api/proto.js';
+import { usbvideo, frame, st3215, motors_mirroring, sysinfo, ov5647, dogzilla, normvla } from '@/api/proto.js';
 import { serverToLocal } from '@/api/timestamp-utils';
+
+type ParsedHistoryData =
+  | usbvideo.IRxEnvelope
+  | ov5647.IRxEnvelope
+  | st3215.IInferenceState
+  | motors_mirroring.IRxEnvelope
+  | sysinfo.IEnvelope
+  | dogzilla.IInferenceState
+  | normvla.IFrame;
 
 export function formatBytes(bytes: Uint8Array, maxBytes: number = 256): string {
   if (!bytes) return '';
@@ -52,14 +61,21 @@ export function createJpegBlobUrl(frameData: Uint8Array): string | null {
   }
 }
 
-export function createCroppedJson(data: usbvideo.RxEnvelope): string {
+export function createCroppedJson(data: usbvideo.RxEnvelope | ov5647.RxEnvelope): string {
   try {
-    const plainObject = usbvideo.RxEnvelope.toObject(data, {
-      longs: String,
-      enums: String,
-      bytes: String,
-      defaults: true
-    });
+    const plainObject = data instanceof ov5647.RxEnvelope
+      ? ov5647.RxEnvelope.toObject(data, {
+        longs: String,
+        enums: String,
+        bytes: String,
+        defaults: true
+      })
+      : usbvideo.RxEnvelope.toObject(data, {
+        longs: String,
+        enums: String,
+        bytes: String,
+        defaults: true
+      });
 
     const croppedObject = { ...plainObject };
 
@@ -118,7 +134,7 @@ export function getSt3215JsonData(data: st3215.InferenceState): St3215HexdumpRes
   return { jsonString: JSON.stringify(plainObject, null, 2), hexdumps };
 }
 
-export function parseUsbVideoData(data: Uint8Array | usbvideo.IRxEnvelope | st3215.IInferenceState | motors_mirroring.IRxEnvelope | sysinfo.IEnvelope): usbvideo.RxEnvelope | null {
+export function parseUsbVideoData(data: Uint8Array | ParsedHistoryData): usbvideo.RxEnvelope | null {
   if (!(data instanceof Uint8Array)) {
     return data as usbvideo.RxEnvelope;
   }
@@ -130,7 +146,19 @@ export function parseUsbVideoData(data: Uint8Array | usbvideo.IRxEnvelope | st32
   }
 }
 
-export function parseSt3215Data(data: Uint8Array | usbvideo.IRxEnvelope | st3215.IInferenceState | motors_mirroring.IRxEnvelope | sysinfo.IEnvelope): st3215.InferenceState | null {
+export function parseOv5647Data(data: Uint8Array | ParsedHistoryData): ov5647.RxEnvelope | null {
+  if (!(data instanceof Uint8Array)) {
+    return data as ov5647.RxEnvelope;
+  }
+  try {
+    return ov5647.RxEnvelope.decode(data);
+  } catch (error) {
+    console.error('Failed to parse ov5647.RxEnvelope:', error);
+    return null;
+  }
+}
+
+export function parseSt3215Data(data: Uint8Array | ParsedHistoryData): st3215.InferenceState | null {
   if (!(data instanceof Uint8Array)) {
     return data as st3215.InferenceState;
   }
@@ -142,7 +170,7 @@ export function parseSt3215Data(data: Uint8Array | usbvideo.IRxEnvelope | st3215
   }
 }
 
-export function parseMirroringData(data: Uint8Array | usbvideo.IRxEnvelope | st3215.IInferenceState | motors_mirroring.IRxEnvelope | sysinfo.IEnvelope): motors_mirroring.RxEnvelope | null {
+export function parseMirroringData(data: Uint8Array | ParsedHistoryData): motors_mirroring.RxEnvelope | null {
   if (!(data instanceof Uint8Array)) {
     return data as motors_mirroring.RxEnvelope;
   }
@@ -154,7 +182,7 @@ export function parseMirroringData(data: Uint8Array | usbvideo.IRxEnvelope | st3
   }
 }
 
-export function parseSysinfoData(data: Uint8Array | usbvideo.IRxEnvelope | st3215.IInferenceState | motors_mirroring.IRxEnvelope | sysinfo.IEnvelope): sysinfo.Envelope | null {
+export function parseSysinfoData(data: Uint8Array | ParsedHistoryData): sysinfo.Envelope | null {
   if (!(data instanceof Uint8Array)) {
     return data as sysinfo.Envelope;
   }
@@ -162,6 +190,18 @@ export function parseSysinfoData(data: Uint8Array | usbvideo.IRxEnvelope | st321
     return sysinfo.Envelope.decode(data);
   } catch (error) {
     console.error('Failed to parse sysinfo.Envelope:', error);
+    return null;
+  }
+}
+
+export function parseDogzillaData(data: Uint8Array | ParsedHistoryData): dogzilla.InferenceState | null {
+  if (!(data instanceof Uint8Array)) {
+    return data as dogzilla.InferenceState;
+  }
+  try {
+    return dogzilla.InferenceState.decode(data);
+  } catch (error) {
+    console.error('Failed to parse dogzilla.InferenceState:', error);
     return null;
   }
 }
