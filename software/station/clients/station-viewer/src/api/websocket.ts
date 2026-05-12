@@ -102,7 +102,10 @@ class WebSocketManager extends EventTarget {
 
         // Decode as InferenceRx and parse frame
         const inferenceRx = inference.InferenceRx.decode(entry.data);
-        const frame = await parseFrame(inferenceRx, entry.id, this.normFs, this.currentFrame || undefined);
+        const frame = await parseFrame(inferenceRx, entry.id, this.normFs, this.currentFrame || undefined, {
+          retainRawData: false,
+          publishVideoFrames: true,
+        });
 
         // Update and dispatch
         this.currentFrame = frame;

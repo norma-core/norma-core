@@ -4,9 +4,9 @@ Physical operations platform for robotics - real-time data collection, inference
 
 ## 📥 Download
 
-**Latest Release: [v0.1.0-beta.6](https://github.com/norma-core/norma-core/releases/tag/v0.1.0-beta.6)**
+**Latest Release: [v0.1.0-beta.7](https://github.com/norma-core/norma-core/releases/tag/v0.1.0-beta.7)**
 
-Download pre-built binaries from the [releases page](https://github.com/norma-core/norma-core/releases/tag/v0.1.0-beta.6):
+Download pre-built binaries from the [releases page](https://github.com/norma-core/norma-core/releases/tag/v0.1.0-beta.7):
 
 - **Linux ARM64** (Raspberry Pi): `station-linux-aarch64.tar.gz`
 - **Linux AMD64** (Intel/AMD): `station-linux-x86_64.tar.gz`
@@ -110,10 +110,12 @@ async def main():
 asyncio.run(main())
 ```
 
-**See full examples:**
-- [SO101 Auto-Calibration](../../examples/so101-autocalibration-py/) - Complete motor control workflow demonstrating state subscription and command sending
-- [station_py/example_follow.py](../../shared/station_py/example_follow.py) - Basic state subscription
-- [station_py/example_commands.py](../../shared/station_py/example_commands.py) - Basic command sending
+## 📚 Complete Examples
+
+- **[SO101 Auto-Calibration (Python)](../../examples/so101-autocalibration-py/)** - Motor control workflow with state subscription and command sending
+- **[SO101/ElRobot Remote Teleop (Python)](../../examples/st3215-remote-teleop-py/)** - Mirror motor positions from leader arm to follower arm across stations
+- **[SmolVLA Fine-tune (Python)](../../../ai/smolvla_py/)** - Train and deploy vision-language-action policy on SO101 arm
+- **[Dataset Export Guide](../../../docs/datasets/export-parquet/)** - Export Parquet datasets from station history for ML training
 
 ## ✨ Features
 

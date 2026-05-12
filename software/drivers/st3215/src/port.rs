@@ -15,6 +15,7 @@ use std::collections::{HashMap, HashSet};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
+use tokio::io::AsyncReadExt;
 use tokio::sync::mpsc;
 use tokio_serial::SerialPortBuilderExt;
 use tokio_serial::SerialPortInfo;
@@ -140,6 +141,7 @@ impl St3215Port {
         eeprom_cache: Arc<Mutex<HashMap<u8, Bytes>>>,
     ) {
         let mut last_seen_motors = HashSet::new();
+        let mut missing_since: HashMap<u8, Instant> = HashMap::new();
         let mut interval = tokio::time::interval(Duration::from_millis(20));
         interval.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
 
@@ -206,6 +208,10 @@ impl St3215Port {
                                 break;
                             }
 
+                            // Drain any stale bytes left in the serial buffer by the failed
+                            // request so the next command starts on a clean boundary.
+                            Self::drain_serial(&mut port).await;
+
                             match e {
                                 protocol::Error::Servo { ref errors, .. } => {
                                     error!("Servo error during command processing: {:?}", errors);
@@ -246,7 +252,7 @@ impl St3215Port {
                         last_search_time = Instant::now();
                     }
 
-                    if !Self::scan_motors(&mut port, &com, &bus_info, &mut last_seen_motors, &command_waiting, search_for_new, &eeprom_cache).await {
+                    if !Self::scan_motors(&mut port, &com, &bus_info, &mut last_seen_motors, &mut missing_since, &command_waiting, search_for_new, &eeprom_cache).await {
                         log::warn!("ST3215 port disconnected: {}", bus_info.port_name);
                         break;
                     }
@@ -267,6 +273,7 @@ impl St3215Port {
         com: &Arc<ST3215BusCommunicator>,
         bus_info: &St3215BusProto,
         last_seen_motors: &mut HashSet<u8>,
+        missing_since: &mut HashMap<u8, Instant>,
         command_waiting: &Arc<AtomicBool>,
         search_for_new: bool,
         eeprom_cache: &Arc<Mutex<HashMap<u8, Bytes>>>,
@@ -357,11 +364,31 @@ impl St3215Port {
             }
         }
 
-        for &motor_id in last_seen_motors.difference(&currently_seen_motors) {
-            eeprom_cache.lock().remove(&motor_id);
-            if Self::send_drive_disconnect_envelope(com, bus_info, motor_id).is_err() {
-                return false;
+        // Hysteresis: only disconnect a motor after a 100ms grace window of consecutive
+        // failures, so a single transient Timeout (e.g. during another motor's reset) does
+        // not evict a known-good motor.
+        const DISCONNECT_GRACE_MS: u128 = 100;
+        let now = Instant::now();
+        let missing: Vec<u8> = last_seen_motors
+            .difference(&currently_seen_motors)
+            .copied()
+            .collect();
+        for motor_id in missing {
+            let first_missed = *missing_since.entry(motor_id).or_insert(now);
+            if now.duration_since(first_missed).as_millis() >= DISCONNECT_GRACE_MS {
+                eeprom_cache.lock().remove(&motor_id);
+                missing_since.remove(&motor_id);
+                if Self::send_drive_disconnect_envelope(com, bus_info, motor_id).is_err() {
+                    return false;
+                }
+            } else {
+                // Still within grace — keep the motor in last_seen so we retry next tick.
+                currently_seen_motors.insert(motor_id);
             }
+        }
+        // Clear grace tracker for motors that are responding again.
+        for motor_id in &currently_seen_motors {
+            missing_since.remove(motor_id);
         }
 
         if !search_for_new {
@@ -732,23 +759,52 @@ impl St3215Port {
                 reset_cmd.motor_id
             );
 
-            let request = protocol::ST3215Request::Reset {
-                motor: reset_cmd.motor_id as u8,
-            };
+            let motor_id = reset_cmd.motor_id as u8;
+            let request = protocol::ST3215Request::Reset { motor: motor_id };
 
-            // Use async_write with built-in timeout
-            request.async_write(port, ST3215_COMMAND_TIMEOUT_MS).await?;
-
-            tokio::time::sleep(Duration::from_millis(20)).await;
-
-            // Read response
-            let response =
-                protocol::ST3215Response::async_read(&request, port, ST3215_COMMAND_TIMEOUT_MS)
-                    .await?;
+            // Write Reset and read its ack in a single round-trip — sharing the timeout
+            // window keeps the request/response pairing intact.
+            let response = request
+                .async_readwrite(port, ST3215_COMMAND_TIMEOUT_MS)
+                .await?;
             info!(
                 "ST3215 Reset command completed - Motor: {}, Response: {:?}",
-                reset_cmd.motor_id, response
+                motor_id, response
             );
+
+            // Block the worker until the servo finishes rebooting so the next scan
+            // tick doesn't read a still-rebooting motor and evict it. Settle first so
+            // the ping doesn't land before the motor has actually begun resetting,
+            // then poll up to RESET_REBOOT_TIMEOUT_MS for a fast path.
+            const RESET_SETTLE_MS: u64 = 100;
+            const RESET_REBOOT_TIMEOUT_MS: u64 = 200;
+            const RESET_POLL_INTERVAL_MS: u64 = 20;
+            tokio::time::sleep(Duration::from_millis(RESET_SETTLE_MS)).await;
+            let reboot_start = Instant::now();
+            let mut online = false;
+            while reboot_start.elapsed() < Duration::from_millis(RESET_REBOOT_TIMEOUT_MS) {
+                let ping_req = protocol::ST3215Request::Ping { motor: motor_id };
+                if ping_req
+                    .async_readwrite(port, ST3215_COMMAND_TIMEOUT_MS)
+                    .await
+                    .is_ok()
+                {
+                    info!(
+                        "Motor {} back online {}ms after reset settle",
+                        motor_id,
+                        reboot_start.elapsed().as_millis()
+                    );
+                    online = true;
+                    break;
+                }
+                tokio::time::sleep(Duration::from_millis(RESET_POLL_INTERVAL_MS)).await;
+            }
+            if !online {
+                warn!(
+                    "Motor {} did not respond within {}ms after reset settle",
+                    motor_id, RESET_REBOOT_TIMEOUT_MS
+                );
+            }
         } else if command
             .reset_calibration
             .as_ref()
@@ -812,7 +868,15 @@ impl St3215Port {
                 
                 let provided_midpoint = midpoints.get(&motor_id).copied();
                 match Self::freeze_calibration(port, motor_id, meta, bus_info, provided_midpoint, max_motors_cnt).await {
-                    Ok(verified) => { all_ok &= verified; }
+                    Ok(verified) => {
+                        if !verified {
+                            warn!(
+                                "Motor {} freeze_calibration completed but not all writes verified, marking command as rejected",
+                                motor_id
+                            );
+                        }
+                        all_ok &= verified;
+                    }
                     Err(e) => {
                         warn!("Failed to freeze calibration for motor {}: {}", motor_id, e);
                         all_ok = false;
@@ -843,7 +907,29 @@ impl St3215Port {
         Ok(true)
     }
 
-    /// Helper: RegWrite + Action pattern for EEPROM writes with read-back verification and retries
+    /// Drain any leftover bytes from the serial port. Used after a failed request to
+    /// clear stale/late response bytes that would otherwise desync the next request.
+    /// Bounded by a short read timeout so the drain itself can't hang.
+    async fn drain_serial(port: &mut tokio_serial::SerialStream) {
+        let mut buf = [0u8; 256];
+        let mut total = 0usize;
+        loop {
+            match tokio::time::timeout(Duration::from_millis(5), port.read(&mut buf)).await {
+                Ok(Ok(n)) if n > 0 => {
+                    total += n;
+                    continue;
+                }
+                _ => break,
+            }
+        }
+        if total > 0 {
+            warn!("Drained {} stale bytes from serial port", total);
+        }
+    }
+
+    /// Helper: RegWrite + Action pattern for EEPROM writes with read-back verification and retries.
+    /// On any error the serial port is drained (to clear stale bytes from a partial / late
+    /// response) and the attempt is retried.
     pub async fn reg_write_with_action(
         port: &mut tokio_serial::SerialStream,
         motor_id: u8,
@@ -863,14 +949,30 @@ impl St3215Port {
                 address: register.address(),
                 data: data.clone(),
             };
-            reg_write_req
+            if let Err(e) = reg_write_req
                 .async_readwrite(port, ST3215_COMMAND_TIMEOUT_MS)
-                .await?;
+                .await
+            {
+                warn!(
+                    "EEPROM RegWrite failed motor {}: 0x{:02X}: {} (attempt {}/{})",
+                    motor_id, register.address(), e, attempt, MAX_RETRIES
+                );
+                Self::drain_serial(port).await;
+                continue;
+            }
 
             let action_req = protocol::ST3215Request::Action { motor: motor_id };
-            action_req
+            if let Err(e) = action_req
                 .async_readwrite(port, ST3215_COMMAND_TIMEOUT_MS)
-                .await?;
+                .await
+            {
+                warn!(
+                    "EEPROM Action failed motor {}: 0x{:02X}: {} (attempt {}/{})",
+                    motor_id, register.address(), e, attempt, MAX_RETRIES
+                );
+                Self::drain_serial(port).await;
+                continue;
+            }
 
             // Read back and verify
             let read_req = protocol::ST3215Request::Read {
@@ -903,12 +1005,101 @@ impl St3215Port {
                         "EEPROM verify read failed motor {}: 0x{:02X}: {} (attempt {}/{})",
                         motor_id, register.address(), e, attempt, MAX_RETRIES
                     );
+                    Self::drain_serial(port).await;
                 }
             }
         }
 
         error!(
             "EEPROM write failed after {} retries motor {}: 0x{:02X} = {:02x?}",
+            MAX_RETRIES, motor_id, register.address(), data.as_ref()
+        );
+        Ok(false)
+    }
+
+    /// Helper: Write + Action pattern for RAM registers with read-back verification and retries.
+    /// On any error the serial port is drained and the attempt is retried.
+    pub async fn ram_write_with_action(
+        port: &mut tokio_serial::SerialStream,
+        motor_id: u8,
+        register: protocol::RamRegister,
+        data: Bytes,
+    ) -> Result<bool, protocol::Error> {
+        const MAX_RETRIES: u8 = 5;
+
+        for attempt in 1..=MAX_RETRIES {
+            info!(
+                "RAM write motor {}: 0x{:02X} = {:02x?} (attempt {}/{})",
+                motor_id, register.address(), data.as_ref(), attempt, MAX_RETRIES
+            );
+
+            let write_req = protocol::ST3215Request::Write {
+                motor: motor_id,
+                address: register.address(),
+                data: data.clone(),
+            };
+            if let Err(e) = write_req
+                .async_readwrite(port, ST3215_COMMAND_TIMEOUT_MS)
+                .await
+            {
+                warn!(
+                    "RAM Write failed motor {}: 0x{:02X}: {} (attempt {}/{})",
+                    motor_id, register.address(), e, attempt, MAX_RETRIES
+                );
+                Self::drain_serial(port).await;
+                continue;
+            }
+
+            let action_req = protocol::ST3215Request::Action { motor: motor_id };
+            if let Err(e) = action_req
+                .async_readwrite(port, ST3215_COMMAND_TIMEOUT_MS)
+                .await
+            {
+                warn!(
+                    "RAM Action failed motor {}: 0x{:02X}: {} (attempt {}/{})",
+                    motor_id, register.address(), e, attempt, MAX_RETRIES
+                );
+                Self::drain_serial(port).await;
+                continue;
+            }
+
+            let read_req = protocol::ST3215Request::Read {
+                motor: motor_id,
+                address: register.address(),
+                length: register.size(),
+            };
+            match read_req.async_readwrite(port, ST3215_COMMAND_TIMEOUT_MS).await {
+                Ok(protocol::ST3215Response::Read { data: readback, .. }) => {
+                    if readback.as_ref() == data.as_ref() {
+                        info!(
+                            "RAM write verified motor {}: 0x{:02X} = {:02x?}",
+                            motor_id, register.address(), data.as_ref()
+                        );
+                        return Ok(true);
+                    }
+                    warn!(
+                        "RAM verify mismatch motor {}: 0x{:02X} expected {:02x?} got {:02x?} (attempt {}/{})",
+                        motor_id, register.address(), data.as_ref(), readback.as_ref(), attempt, MAX_RETRIES
+                    );
+                }
+                Ok(_) => {
+                    warn!(
+                        "RAM verify unexpected response motor {}: 0x{:02X} (attempt {}/{})",
+                        motor_id, register.address(), attempt, MAX_RETRIES
+                    );
+                }
+                Err(e) => {
+                    warn!(
+                        "RAM verify read failed motor {}: 0x{:02X}: {} (attempt {}/{})",
+                        motor_id, register.address(), e, attempt, MAX_RETRIES
+                    );
+                    Self::drain_serial(port).await;
+                }
+            }
+        }
+
+        error!(
+            "RAM write failed after {} retries motor {}: 0x{:02X} = {:02x?}",
             MAX_RETRIES, motor_id, register.address(), data.as_ref()
         );
         Ok(false)
@@ -1046,28 +1237,20 @@ impl St3215Port {
 
         // 2. Unlock EPROM
         info!("FreezeCalibration: Unlocking EEPROM for motor {}", motor_id);
-        let unlock_req = protocol::ST3215Request::Write {
-            motor: motor_id,
-            address: protocol::RamRegister::Lock.address(),
-            data: Bytes::from_static(&[0x00]),
-        };
-        unlock_req
-            .async_readwrite(port, ST3215_COMMAND_TIMEOUT_MS)
-            .await?;
+        let mut all_verified = Self::ram_write_with_action(
+            port,
+            motor_id,
+            protocol::RamRegister::Lock,
+            Bytes::from_static(&[0x00]),
+        )
+        .await?;
         info!("FreezeCalibration: EEPROM unlocked for motor {}", motor_id);
-
-        // action
-        let action_req = protocol::ST3215Request::Action { motor: motor_id };
-        action_req
-            .async_readwrite(port, ST3215_COMMAND_TIMEOUT_MS)
-            .await?;
 
         let pid = pid_config_for_motor_count(max_motors_cnt);
         info!(
             "Applying custom calibration settings for motor {} (PID: p={}, i={}, d={})",
             motor_id, pid.p, pid.i, pid.d
         );
-        let mut all_verified = true;
         // Set operating mode to position control
         all_verified &= Self::reg_write_with_action(
             port,
@@ -1133,19 +1316,15 @@ impl St3215Port {
         )
         .await?;
 
-        // Set Acceleration in RAM
-        let acc_req = protocol::ST3215Request::Write {
-            motor: motor_id,
-            address: protocol::RamRegister::Acc.address(),
-            data: Bytes::from_static(&[DEFAULT_ACCEL]),
-        };
-        acc_req
-            .async_readwrite(port, ST3215_COMMAND_TIMEOUT_MS)
-            .await?;
-        let action_req_acc = protocol::ST3215Request::Action { motor: motor_id };
-        action_req_acc
-            .async_readwrite(port, ST3215_COMMAND_TIMEOUT_MS)
-            .await?;
+        // Set Acceleration in RAM (best-effort: some motor firmware clamps this register,
+        // so verify mismatches must not fail the whole freeze).
+        let _ = Self::ram_write_with_action(
+            port,
+            motor_id,
+            protocol::RamRegister::Acc,
+            Bytes::from_static(&[DEFAULT_ACCEL]),
+        )
+        .await?;
 
         // 3. Position correction write
         all_verified &= Self::reg_write_with_action(
@@ -1162,14 +1341,13 @@ impl St3215Port {
 
         // 4. Lock EPROM
         info!("FreezeCalibration: Locking EEPROM for motor {}", motor_id);
-        let lock_req = protocol::ST3215Request::Write {
-            motor: motor_id,
-            address: protocol::RamRegister::Lock.address(),
-            data: Bytes::from_static(&[0x01]),
-        };
-        lock_req
-            .async_readwrite(port, ST3215_COMMAND_TIMEOUT_MS)
-            .await?;
+        all_verified &= Self::ram_write_with_action(
+            port,
+            motor_id,
+            protocol::RamRegister::Lock,
+            Bytes::from_static(&[0x01]),
+        )
+        .await?;
         info!("FreezeCalibration: EEPROM locked for motor {}", motor_id);
 
         // 5. Action command to trigger the writes

@@ -17,25 +17,18 @@ const BusViewer = memo(function BusViewer({ inferenceState, videoSources, ov5647
   }
 
   return (
-    <div className="font-mono text-accent-success">
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {inferenceState.buses.map((bus, busIndex) => {
-          const busKey = bus.bus?.serialNumber
-            || bus.bus?.portName
-            || `${bus.bus?.vid ?? 'unknown'}:${bus.bus?.pid ?? 'unknown'}:${bus.bus?.portBaudRate ?? 'unknown'}`;
-
-          return (
-            <BusCard
-              key={busKey}
-              bus={bus}
-              busIndex={busIndex}
-              videoSources={videoSources}
-              ov5647Sources={ov5647Sources}
-              allBuses={inferenceState.buses}
-              mirroringState={mirroringState}
-            />
-          );
-        })}
+    <div className="w-full font-mono text-accent-success">
+      <div className="grid w-full grid-cols-1 gap-4 md:grid-cols-2">
+        {inferenceState.buses.map((bus, busIndex) => (
+          <BusCard
+            key={busIndex}
+            bus={bus}
+            busIndex={busIndex}
+            videoSources={videoSources}
+            allBuses={inferenceState.buses}
+            mirroringState={mirroringState}
+          />
+        ))}
       </div>
     </div>
   );

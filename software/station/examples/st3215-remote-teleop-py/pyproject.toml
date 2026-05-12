@@ -1,0 +1,6 @@
+[project]
+name = "st3215-remote-teleop"
+version = "0.1.0"
+description = "Mirror ST3215 leader bus motor positions onto a follower bus, across stations"
+requires-python = ">=3.10"
+dependencies = []

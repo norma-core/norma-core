@@ -2,6 +2,10 @@ import Long from 'long';
 import { dogzilla, drivers, inference, motors_mirroring, normvla, ov5647, st3215, sysinfo, usbvideo } from '@/api/proto.js';
 import { NormFsClient } from "./normfs.js";
 import { getGlobalTimeAdjustmentNs, isTimeSyncActive } from '@/api/time-sync.js';
+import {
+  createLiveCameraMetadataEnvelope,
+  publishLiveCameraFrame,
+} from '@/usbvideo/live-camera-store';
 
 export interface FrameEntry<T> {
   queueId: string;
@@ -39,6 +43,11 @@ export interface Frame {
 
 // Find entry in previous frame with matching queue and pointer
 type DecodedEntry = st3215.IInferenceState | st3215.ITxEnvelope | usbvideo.IRxEnvelope | ov5647.IRxEnvelope | motors_mirroring.IRxEnvelope | sysinfo.IEnvelope | dogzilla.IInferenceState | normvla.IFrame | null;
+
+interface ParseFrameOptions {
+  retainRawData?: boolean;
+  publishVideoFrames?: boolean;
+}
 
 function findPreviousEntry(
   previousFrame: Frame | undefined,
@@ -133,13 +142,16 @@ export async function parseFrame(
   inferenceRx: inference.IInferenceRx,
   entryIdBytes: Uint8Array,
   normFs: NormFsClient,
-  previousFrame?: Frame
+  previousFrame?: Frame,
+  options: ParseFrameOptions = {},
 ): Promise<Frame> {
+  const retainRawData = options.retainRawData ?? true;
+  const publishVideoFrames = options.publishVideoFrames ?? false;
   const frame: Frame = {
     stateId: new Uint8Array(Array.from(entryIdBytes)),
     videoQueues: [],
     ov5647Queues: [],
-    otherEntries: {}
+    otherEntries: retainRawData ? {} : undefined
   };
 
   // Add timestamps from InferenceRx
@@ -286,16 +298,21 @@ export async function parseFrame(
               queueId: result.queue,
               ptr: result.ptr,
               data: result.decoded as st3215.IInferenceState,
-              rawData: result.rawData ?? null,
+              rawData: retainRawData ? result.rawData ?? null : null,
               queueType: result.type
             };
             break;
           case drivers.QueueDataType.QDT_USB_VIDEO_FRAMES:
+            if (publishVideoFrames) {
+              publishLiveCameraFrame(result.queue, result.decoded as usbvideo.IRxEnvelope);
+            }
             frame.videoQueues!.push({
               queueId: result.queue,
               ptr: result.ptr,
-              data: result.decoded as usbvideo.IRxEnvelope,
-              rawData: result.rawData ?? null,
+              data: publishVideoFrames
+                ? createLiveCameraMetadataEnvelope(result.decoded as usbvideo.IRxEnvelope)
+                : result.decoded as usbvideo.IRxEnvelope,
+              rawData: retainRawData ? result.rawData ?? null : null,
               queueType: result.type
             });
             break;
@@ -313,7 +330,7 @@ export async function parseFrame(
               queueId: result.queue,
               ptr: result.ptr,
               data: result.decoded as motors_mirroring.IRxEnvelope,
-              rawData: result.rawData ?? null,
+              rawData: retainRawData ? result.rawData ?? null : null,
               queueType: result.type
             };
             break;
@@ -322,7 +339,7 @@ export async function parseFrame(
               queueId: result.queue,
               ptr: result.ptr,
               data: result.decoded as sysinfo.IEnvelope,
-              rawData: result.rawData ?? null,
+              rawData: retainRawData ? result.rawData ?? null : null,
               queueType: result.type
             };
             break;
@@ -340,7 +357,7 @@ export async function parseFrame(
               queueId: result.queue,
               ptr: result.ptr,
               data: result.decoded as st3215.ITxEnvelope,
-              rawData: result.rawData ?? null,
+              rawData: retainRawData ? result.rawData ?? null : null,
               queueType: result.type
             };
             break;
@@ -350,11 +367,11 @@ export async function parseFrame(
             queueId: result.queue,
             ptr: result.ptr,
             data: result.decoded as normvla.IFrame,
-            rawData: result.rawData ?? null,
+            rawData: retainRawData ? result.rawData ?? null : null,
             queueType: result.type ?? drivers.QueueDataType.QDT_SYSTEM
           };
         }
-      } else if (result.rawData) {
+      } else if (retainRawData && result.rawData) {
         // Store unknown entries as raw bytes with pointers
         frame.otherEntries![result.queue] = {
           ptr: result.ptr,

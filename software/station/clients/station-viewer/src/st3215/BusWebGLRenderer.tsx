@@ -1,10 +1,9 @@
 import { forwardRef, useImperativeHandle, useRef } from 'react';
-import { st3215, usbvideo, ov5647 } from '../api/proto';
-import SO101Renderer from './SO101Renderer';
-import ElRobotRenderer from './ElRobotRenderer';
-import { BaseRobotRendererRef } from './BaseRobotRenderer';
-import MotorDataTable from './MotorDataTable';
 import { Link } from 'react-router-dom';
+import { st3215 } from '../api/proto';
+import RobotRendererHost from './robot-rendering/RobotRendererHost';
+import type { BaseRobotRendererRef } from './robot-rendering/types';
+import MotorDataTable from './MotorDataTable';
 import CameraViewer from '../usbvideo/CameraViewer';
 import Ov5647CameraViewer from '../ov5647/CameraViewer';
 
@@ -18,6 +17,7 @@ interface BusWebGLRendererProps {
   selectedVideoSource?:
     | { kind: 'usbvideo'; data: usbvideo.IRxEnvelope }
     | { kind: 'ov5647'; data: ov5647.IRxEnvelope };
+  selectedVideoSourceId?: string | null;
   isLeader?: boolean;
   inCalibrationView?: boolean;
   isWebControlled?: boolean;
@@ -36,28 +36,20 @@ const BusWebGLRendererComponent = forwardRef<BusWebGLRendererRef, BusWebGLRender
     },
   }));
 
-  const { bus, showMotorData, busIndex, isWebControlled, selectedVideoSource, showCalibrateButton, needsCalibration, inCalibrationView } = props;
+  const { bus, showMotorData, busIndex, isWebControlled, selectedVideoSourceId, showCalibrateButton, needsCalibration, inCalibrationView } = props;
 
   return (
     <div className="relative w-full h-full">
-        {
-            (bus.motors?.length || 0) >= 8 ? 
-            <ElRobotRenderer {...props} ref={childRef} /> : 
-            <SO101Renderer {...props} ref={childRef} />
-        }
+      <RobotRendererHost {...props} ref={childRef} />
       <div className="absolute inset-0 w-full h-full z-20 pointer-events-none">
         {showMotorData &&
           <div className="pointer-events-auto">
             <MotorDataTable bus={bus} busIndex={busIndex} isWebControlled={isWebControlled} />
           </div>
         }
-        {selectedVideoSource && (
-          <div className="absolute top-4 lg:top-auto lg:bottom-4 right-4 w-2/5 h-[200px] pointer-events-auto">
-            {selectedVideoSource.kind === 'usbvideo' ? (
-              <CameraViewer inferenceState={selectedVideoSource.data} />
-            ) : (
-              <Ov5647CameraViewer inferenceState={selectedVideoSource.data} />
-            )}
+        {selectedVideoSourceId && (
+          <div className="absolute top-4 right-4 h-[200px] w-2/5 max-w-[520px] overflow-hidden rounded-lg border border-border-default bg-black shadow-lg pointer-events-auto">
+            <CameraViewer sourceId={selectedVideoSourceId} className="h-full w-full" />
           </div>
         )}
         {showCalibrateButton && !inCalibrationView && needsCalibration && (

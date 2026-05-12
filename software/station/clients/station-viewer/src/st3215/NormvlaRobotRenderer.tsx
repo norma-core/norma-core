@@ -4,26 +4,18 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { STLLoader } from 'three/examples/jsm/loaders/STLLoader.js';
 import URDFLoader from 'urdf-loader';
 import { normvla } from '@/api/proto';
+import {
+  defaultSt3215DeviceKinematicConfig,
+  findSt3215DeviceKinematicConfig,
+} from '@/devices/registry';
 import { appendHash } from '@/utils/asset-hashes';
 import { useTheme } from '@/hooks/useTheme';
 import { getRendererThemeColors } from '@/utils/theme-colors';
+import type { JointValueResolver, RobotJointNames } from './robot-rendering/types';
 
 interface NormvlaRobotRendererProps {
   joints: normvla.IJoint[];
 }
-
-const SO101_JOINT_NAMES = ['1', '2', '3', '4', '5', '6'];
-
-const ELROBOT_JOINT_NAMES: (string | string[])[] = [
-  'rev_motor_01',
-  'rev_motor_02',
-  'rev_motor_03',
-  'rev_motor_04',
-  'rev_motor_05',
-  'rev_motor_06',
-  'rev_motor_07',
-  ['rev_motor_08', 'rev_motor_08_1', 'rev_motor_08_2'],
-];
 
 function disposeObject3D(object: THREE.Object3D | null): void {
   if (!object) return;
@@ -53,12 +45,19 @@ class NormvlaArm {
     maxLimit: number;
   }>;
   motorCount: number;
-  jointNames: (string | string[])[];
+  jointNames: RobotJointNames;
+  resolveJointValue?: JointValueResolver;
 
-  constructor(robot: any, motorCount: number, jointNames: (string | string[])[]) {
+  constructor(
+    robot: any,
+    motorCount: number,
+    jointNames: RobotJointNames,
+    resolveJointValue?: JointValueResolver,
+  ) {
     this.robot = robot;
     this.motorCount = motorCount;
     this.jointNames = jointNames;
+    this.resolveJointValue = resolveJointValue;
     this.motors = [];
     for (let i = 0; i < this.motorCount; i++) {
       const jointNameOrNames = jointNames[i];
@@ -100,12 +99,15 @@ class NormvlaArm {
         jointNameOrNames.forEach(name => {
           if (this.robot.joints[name]) {
             const limit = this.robot.joints[name].limit;
-            const position = limit.lower + motor.position * (limit.upper - limit.lower);
-            if (name.endsWith('_1')) {
-              this.robot.joints[name].setJointValue(position);
-            } else {
-              this.robot.joints[name].setJointValue(limit.upper - position);
-            }
+            const position = this.resolveJointValue
+              ? this.resolveJointValue({
+                jointName: name,
+                position: motor.position,
+                lowerLimit: limit.lower,
+                upperLimit: limit.upper,
+              })
+              : limit.lower + motor.position * (limit.upper - limit.lower);
+            this.robot.joints[name].setJointValue(position);
           }
         });
       } else {
@@ -217,21 +219,13 @@ const NormvlaRobotRenderer = ({ joints }: NormvlaRobotRendererProps) => {
 
     applySceneTheme();
 
-    const jointCount = jointsRef.current?.length ?? 6;
-    const isElrobot = jointCount === 8;
-    
-    const urdfPath = isElrobot 
-      ? 'elrobot/elrobot_follower.urdf' 
-      : 'so101/so101_robot_follower.urdf';
-    const basePos: [number, number, number] = isElrobot 
-      ? [0, 0, 0] 
-      : [0.125, -0.03, -0.17];
-    const baseRpy: [number, number, number] = isElrobot 
-      ? [-Math.PI/2, 0, -Math.PI/2] 
-      : [-Math.PI / 2, 0, 0];
-    const jointNames = isElrobot 
-      ? ELROBOT_JOINT_NAMES.slice(0, jointCount) 
-      : SO101_JOINT_NAMES.slice(0, jointCount);
+    const jointCount = jointsRef.current?.length ?? defaultSt3215DeviceKinematicConfig.motorCount;
+    const deviceConfig =
+      findSt3215DeviceKinematicConfig(jointCount) ?? defaultSt3215DeviceKinematicConfig;
+    const urdfPath = deviceConfig.urdfPath;
+    const basePos = deviceConfig.basePos;
+    const baseRpy = deviceConfig.baseRpy;
+    const jointNames = deviceConfig.jointNames.slice(0, jointCount);
 
     const loader = new URDFLoader();
     loader.loadMeshCb = function (path: string, manager: THREE.LoadingManager, onComplete: (mesh: THREE.Mesh) => void) {
@@ -272,8 +266,16 @@ const NormvlaRobotRenderer = ({ joints }: NormvlaRobotRendererProps) => {
         robot.rotation.y = baseRpy[1];
         robot.rotation.z = baseRpy[2];
 
-        const motorCount = Math.min(jointsRef.current?.length ?? 6, jointCount);
-        sceneRef.current!.arm = new NormvlaArm(robot, motorCount, jointNames);
+        const motorCount = Math.min(
+          jointsRef.current?.length ?? deviceConfig.motorCount,
+          jointNames.length,
+        );
+        sceneRef.current!.arm = new NormvlaArm(
+          robot,
+          motorCount,
+          jointNames,
+          deviceConfig.resolveJointValue,
+        );
 
         if (jointsRef.current && jointsRef.current.length > 0) {
           const positions = jointsRef.current.map((joint) => {

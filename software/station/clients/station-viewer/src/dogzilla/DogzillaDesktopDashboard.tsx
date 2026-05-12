@@ -58,7 +58,7 @@ const formatAcceleration = (value: number | null | undefined) => {
 };
 
 type SelectedVideoSource =
-  | { kind: 'usbvideo'; source: usbvideo.IRxEnvelope }
+  | { kind: 'usbvideo'; source: usbvideo.IRxEnvelope; sourceId: string }
   | { kind: 'ov5647'; source: ov5647.IRxEnvelope };
 
 interface DogzillaDesktopDashboardProps {
@@ -526,7 +526,7 @@ const DogzillaDesktopDashboard = memo(function DogzillaDesktopDashboard({
     }
 
     return selectedVideoSource.kind === 'usbvideo'
-      ? <UsbCameraViewer inferenceState={selectedVideoSource.source} />
+      ? <UsbCameraViewer sourceId={selectedVideoSource.sourceId} />
       : <Ov5647CameraViewer inferenceState={selectedVideoSource.source} />;
   };
 

@@ -3,6 +3,7 @@ version: 2
 updates:
   - package-ecosystem: "npm"
     directory: "/software/station/clients/station-viewer"
+    target-branch: "dev"
     schedule:
       interval: "weekly"
       timezone: "Europe/Madrid"

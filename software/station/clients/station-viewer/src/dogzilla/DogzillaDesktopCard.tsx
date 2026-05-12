@@ -5,6 +5,7 @@ import { serverToLocal } from '@/api/timestamp-utils';
 import { dogzilla, ov5647, usbvideo } from '@/api/proto.js';
 import DogzillaDesktopDashboard from '@/dogzilla/DogzillaDesktopDashboard';
 import DogzillaViewModeSwitch, { type DogzillaViewMode } from '@/dogzilla/DogzillaViewModeSwitch';
+import { getVideoSourceId } from '@/usbvideo/camera-source';
 import { getLatencyBgColor, getLatencyTextColor } from '@/utils/color-utils';
 
 interface LatencyReading {
@@ -78,8 +79,10 @@ const DogzillaDesktopCard = memo(function DogzillaDesktopCard({
   const selectedVideoSource = (() => {
     if (selectedVideoSourceId.startsWith('usbvideo:')) {
       const id = selectedVideoSourceId.replace('usbvideo:', '');
-      const source = usbVideoSources.find((entry) => entry.data.camera?.uniqueId === id)?.data;
-      return source ? { kind: 'usbvideo' as const, source } : undefined;
+      const entry = usbVideoSources.find((videoEntry) => videoEntry.data.camera?.uniqueId === id);
+      return entry
+        ? { kind: 'usbvideo' as const, source: entry.data, sourceId: getVideoSourceId(entry) }
+        : undefined;
     }
 
     if (selectedVideoSourceId.startsWith('ov5647:')) {

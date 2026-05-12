@@ -36,15 +36,55 @@ src/
   api/            # WebSocket, protobuf, time sync, queue, normfs, commands, clipboard, frame parsing
   components/     # Shared UI components
     history/      # History page detail views (ExpandedView, HistoryElement, etc.)
+  devices/        # Concrete device modules loaded through bundled dynamic imports
   hooks/          # Custom React hooks (re-exported from index.ts)
   pages/          # Route components (suffixed with Page)
   st3215/         # Motor driver components, utilities, and robot renderers
+    robot-rendering/ # Shared ST3215 URDF/Three.js rendering host and base renderer
   usbvideo/       # Camera/video stream components
   utils/          # Shared utilities (asset-hashes, format-bytes, tag-phrases)
 public/
-  so101/          # SO101 robot URDF models and STL assets
-  elrobot/        # ElRobot URDF models and STL assets
+  devices/        # Device URDF models and STL assets, keyed by device id
 ```
+
+## Device Modules
+
+Concrete devices live under `src/devices/<device-id>/`. Put device-specific code there, including:
+
+- React wrappers/views that are only valid for that device
+- URDF paths and device asset paths
+- joint name mappings
+- base position / rotation transforms
+- material-to-motor status mapping
+- device-specific kinematics, visual behavior, or small business rules
+
+Shared ST3215 code stays under `src/st3215/`. Keep this layer about the bus/protocol and reusable UI/rendering shell:
+
+- motor parsing and ST3215 command helpers
+- bus cards, bus viewer, calibration page, mirroring controls
+- generic motor tables and camera overlays
+- generic robot rendering host/base renderer in `src/st3215/robot-rendering/`
+
+Do not import concrete device modules directly from `src/st3215/` components. Add devices to `src/devices/registry.ts` and load them through bundled dynamic imports:
+
+```typescript
+{
+  id: 'new-device',
+  label: 'New Device',
+  protocol: 'st3215',
+  matches: (bus) => (bus.motors?.length ?? 0) === 10,
+  load: () => import('./new-device'),
+}
+```
+
+When adding a new physical device:
+
+1. Create `src/devices/<device-id>/index.tsx` and `config.ts`.
+2. Put URDF/STL files in `public/devices/<device-id>/`.
+3. Register the device in `src/devices/registry.ts`.
+4. Run `node scripts/generate-asset-hashes.mjs` from this package so `src/assets-manifest.json` includes the new asset paths.
+
+Avoid hard-coding concrete device names, motor counts, URDF paths, or joint mappings in shared ST3215 components. Use the registry or device module config instead.
 
 ## Code Style
 

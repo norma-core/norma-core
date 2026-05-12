@@ -369,12 +369,18 @@ impl St3215PortMeta {
                     }
                     let status_bits = envelope.data[status_addr];
                     if let Some(errors) = ServoError::from_bits(status_bits) {
-                        log::warn!(
-                            "Motor {} has errors: {:?}, skip calibration data",
-                            envelope.motor_id,
-                            errors
-                        );
-                        continue;
+                        let errors: Vec<ServoError> = errors
+                            .into_iter()
+                            .filter(|e| *e != ServoError::Voltage)
+                            .collect();
+                        if !errors.is_empty() {
+                            log::warn!(
+                                "Motor {} has errors: {:?}, skip calibration data",
+                                envelope.motor_id,
+                                errors
+                            );
+                            continue;
+                        }
                     }
 
                     let position_addr = RamRegister::PresentPosition.address() as usize;

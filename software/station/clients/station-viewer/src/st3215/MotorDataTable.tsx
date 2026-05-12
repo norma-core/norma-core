@@ -1,6 +1,6 @@
-import React, { useRef, useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import {st3215} from '../api/proto';
-import { getMotorPosition, getMotorCurrent, getMotorTemperature } from './motor-parser';
+import { ADDR_GOAL_POSITION, getMotorPosition, getMotorCurrent, getMotorTemperature } from './motor-parser';
 import { serverToLocal } from '../api/timestamp-utils';
 import Long from 'long';
 import { commandManager } from '../api/commands';
@@ -21,6 +21,7 @@ interface MotorDataTableProps {
   bus: st3215.InferenceState.IBusState;
   busIndex: number;
   isWebControlled?: boolean;
+  layout?: 'overlay' | 'panel';
 }
 
 interface MotorControlState {
@@ -29,11 +30,12 @@ interface MotorControlState {
   originalPosition: number | null;
 }
 
-const MotorDataTable: React.FC<MotorDataTableProps> = ({ bus, busIndex, isWebControlled = false }) => {
-  if (!bus.motors?.length) {
-    return null;
-  }
-
+const MotorDataTable: React.FC<MotorDataTableProps> = ({
+  bus,
+  busIndex,
+  isWebControlled = false,
+  layout = 'overlay',
+}) => {
   const now = Date.now();
   const latencyHistoryRef = useRef<Map<string, LatencyReading[]>>(new Map());
   const [motorControlStates, setMotorControlStates] = useState<Map<number, MotorControlState>>(new Map());
@@ -90,88 +92,94 @@ const MotorDataTable: React.FC<MotorDataTableProps> = ({ bus, busIndex, isWebCon
     return "OK";
   };
 
-  const handleMouseDown = (motor: st3215.InferenceState.IMotorState, event: React.MouseEvent<HTMLDivElement>) => {
-    if (!isWebControlled || !motor.id) return;
-    event.preventDefault();
-    
-    const position = motor.state ? getMotorPosition(motor.state) : 0;
-    setMotorControlStates(prev => {
-      const newMap = new Map(prev);
-      newMap.set(motor.id!, {
-        isDragging: true,
-        targetPosition: position,
-        originalPosition: position
-      });
-      return newMap;
-    });
-  };
-
-    const moveMotorToPosition = async (motorId: number, targetPosition: number) => {
+  const moveMotorToPosition = useCallback(async (motorId: number, targetPosition: number) => {
         if (!bus.bus?.serialNumber) return;
 
         const command = st3215.Command.create({
             targetBusSerial: bus.bus.serialNumber,
             write: {
                 motorId: motorId,
-                address: 0x2A,
+                address: ADDR_GOAL_POSITION,
                 value: new Uint8Array([targetPosition & 0xFF, (targetPosition >> 8) & 0xFF]),
             }
         });
 
         // Send command to move motor
         await commandManager.sendSt3215Command(command);
-    };
+  }, [bus.bus?.serialNumber]);
 
-  const handleMouseMove = (motor: st3215.InferenceState.IMotorState, event: React.MouseEvent<HTMLDivElement>) => {
-    if (!isWebControlled || !motor.id) return;
-    
-    const controlState = motorControlStates.get(motor.id);
-    if (!controlState?.isDragging) return;
-    
-    const rect = event.currentTarget.getBoundingClientRect();
-    const x = event.clientX - rect.left;
-    // Add padding to make edge positions easier to reach
-    const paddingPercent = 2; // 2% padding on each side
-    const effectiveWidth = rect.width * (1 - 2 * paddingPercent / 100);
-    const effectiveX = x - rect.width * paddingPercent / 100;
-    const percentage = Math.max(0, Math.min(100, (effectiveX / effectiveWidth) * 100));
-    
-    // Calculate the target position based on percentage and range
+  const calculateTargetPosition = (motor: st3215.InferenceState.IMotorState, percentage: number) => {
     const rangeMin = motor.rangeMin || 0;
     const rangeMax = motor.rangeMax || 4095;
     const MAX_ANGLE_STEP = 4095;
-    
-    let targetPosition: number;
-    if (rangeMin > rangeMax) { // Counter-arc
+
+    if (rangeMin > rangeMax) {
       const totalRange = (MAX_ANGLE_STEP - rangeMin) + rangeMax;
       const offset = (percentage / 100) * totalRange;
       if (offset <= (MAX_ANGLE_STEP - rangeMin)) {
-        targetPosition = Math.round(rangeMin + offset);
-      } else {
-        targetPosition = Math.round(offset - (MAX_ANGLE_STEP - rangeMin));
+        return Math.round(rangeMin + offset);
       }
-    } else {
-      targetPosition = Math.round(rangeMin + (percentage / 100) * (rangeMax - rangeMin));
+      return Math.round(offset - (MAX_ANGLE_STEP - rangeMin));
     }
 
-    // Update the state and send command immediately
+    return Math.round(rangeMin + (percentage / 100) * (rangeMax - rangeMin));
+  };
+
+  const calculatePointerPercentage = (element: HTMLElement, clientX: number) => {
+    const rect = element.getBoundingClientRect();
+    const x = clientX - rect.left;
+    const paddingPercent = 2;
+    const effectiveWidth = rect.width * (1 - 2 * paddingPercent / 100);
+    const effectiveX = x - rect.width * paddingPercent / 100;
+    return Math.max(0, Math.min(100, (effectiveX / effectiveWidth) * 100));
+  };
+
+  const setMotorTargetPosition = (
+    motor: st3215.InferenceState.IMotorState,
+    targetPosition: number,
+    isDragging: boolean,
+  ) => {
+    if (!motor.id) return;
+
+    const currentPosition = motor.state ? getMotorPosition(motor.state) : 0;
     setMotorControlStates(prev => {
       const newMap = new Map(prev);
-      const state = newMap.get(motor.id!);
-      if (state) {
-        state.targetPosition = targetPosition;
-      }
+      newMap.set(motor.id!, {
+        isDragging,
+        targetPosition,
+        originalPosition: prev.get(motor.id!)?.originalPosition ?? currentPosition,
+      });
       return newMap;
     });
-    
-    // Send command immediately for real-time control
+
     moveMotorToPosition(motor.id, targetPosition);
   };
 
-  const handleMouseUp = (motor: st3215.InferenceState.IMotorState) => {
+  const handlePointerDown = (motor: st3215.InferenceState.IMotorState, event: React.PointerEvent<HTMLDivElement>) => {
+    if (!isWebControlled || !motor.id) return;
+    event.preventDefault();
+    event.currentTarget.setPointerCapture(event.pointerId);
+
+    const percentage = calculatePointerPercentage(event.currentTarget, event.clientX);
+    setMotorTargetPosition(motor, calculateTargetPosition(motor, percentage), true);
+  };
+
+  const handlePointerMove = (motor: st3215.InferenceState.IMotorState, event: React.PointerEvent<HTMLDivElement>) => {
+    if (!isWebControlled || !motor.id) return;
+
+    const controlState = motorControlStates.get(motor.id);
+    if (!controlState?.isDragging) return;
+
+    const percentage = calculatePointerPercentage(event.currentTarget, event.clientX);
+    setMotorTargetPosition(motor, calculateTargetPosition(motor, percentage), true);
+  };
+
+  const endPointerDrag = (motor: st3215.InferenceState.IMotorState, event: React.PointerEvent<HTMLDivElement>) => {
     if (!motor.id) return;
-    
-    // Just clear the control state since we're sending commands in real-time
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+
     setMotorControlStates(prev => {
       const newMap = new Map(prev);
       newMap.delete(motor.id!);
@@ -179,9 +187,8 @@ const MotorDataTable: React.FC<MotorDataTableProps> = ({ bus, busIndex, isWebCon
     });
   };
 
-  const handleMouseLeave = (_motorId: number) => {
+  const handlePointerLeave = (_motorId: number) => {
     setHoveredMotor(null);
-    // Don't cancel drag when leaving the control area - let global handlers manage it
   };
 
   const handleButtonMouseDown = (motor: st3215.InferenceState.IMotorState, increment: boolean) => {
@@ -267,100 +274,33 @@ const MotorDataTable: React.FC<MotorDataTableProps> = ({ bus, busIndex, isWebCon
     }
   };
 
-  // Add global mouse event listeners for drag handling
   React.useEffect(() => {
-    const handleGlobalMouseMove = (event: MouseEvent) => {
-      // Check if any motor is being dragged
-      motorControlStates.forEach((state, motorId) => {
-        if (!state.isDragging) return;
-        
-        // Find the motor data
-        const motor = bus.motors?.find(m => m.id === motorId);
-        if (!motor) return;
-        
-        // Find the control element for this motor
-        const controlElement = document.querySelector(`[data-motor-control="${motorId}"]`);
-        if (!controlElement) return;
-        
-        const rect = controlElement.getBoundingClientRect();
-        const x = event.clientX - rect.left;
-        
-        // Add padding to make edge positions easier to reach
-        const paddingPercent = 2; // 2% padding on each side
-        const effectiveWidth = rect.width * (1 - 2 * paddingPercent / 100);
-        const effectiveX = x - rect.width * paddingPercent / 100;
-        const percentage = Math.max(0, Math.min(100, (effectiveX / effectiveWidth) * 100));
-        
-        // Calculate the target position based on percentage and range
-        const rangeMin = motor.rangeMin || 0;
-        const rangeMax = motor.rangeMax || 4095;
-        const MAX_ANGLE_STEP = 4095;
-        
-        let targetPosition: number;
-        if (rangeMin > rangeMax) { // Counter-arc
-          const totalRange = (MAX_ANGLE_STEP - rangeMin) + rangeMax;
-          const offset = (percentage / 100) * totalRange;
-          if (offset <= (MAX_ANGLE_STEP - rangeMin)) {
-            targetPosition = Math.round(rangeMin + offset);
-          } else {
-            targetPosition = Math.round(offset - (MAX_ANGLE_STEP - rangeMin));
-          }
-        } else {
-          targetPosition = Math.round(rangeMin + (percentage / 100) * (rangeMax - rangeMin));
-        }
-
-        // Update the state and send command immediately
-        setMotorControlStates(prev => {
-          const newMap = new Map(prev);
-          const state = newMap.get(motorId);
-          if (state) {
-            state.targetPosition = targetPosition;
-          }
-          return newMap;
-        });
-        
-        // Send command immediately for real-time control
-        moveMotorToPosition(motorId, targetPosition);
-      });
-    };
-
-    const handleGlobalMouseUp = () => {
-      setMotorControlStates(prev => {
-        const newMap = new Map();
-        prev.forEach((state, id) => {
-          if (!state.isDragging) {
-            newMap.set(id, state);
-          }
-        });
-        return newMap;
-      });
-      
-      // Also clear all button intervals
-      Object.keys(buttonIntervalRef.current).forEach(key => {
-        if (buttonIntervalRef.current[key]) {
-          clearInterval(buttonIntervalRef.current[key]!);
-          buttonIntervalRef.current[key] = null;
-        }
-      });
-    };
-    
-    document.addEventListener('mousemove', handleGlobalMouseMove);
-    document.addEventListener('mouseup', handleGlobalMouseUp);
+    const buttonIntervals = buttonIntervalRef.current;
     return () => {
-      document.removeEventListener('mousemove', handleGlobalMouseMove);
-      document.removeEventListener('mouseup', handleGlobalMouseUp);
-      // Clean up any remaining intervals
-      Object.keys(buttonIntervalRef.current).forEach(key => {
-        if (buttonIntervalRef.current[key]) {
-          clearInterval(buttonIntervalRef.current[key]!);
+      Object.keys(buttonIntervals).forEach(key => {
+        if (buttonIntervals[key]) {
+          clearInterval(buttonIntervals[key]!);
+          buttonIntervals[key] = null;
         }
       });
     };
-  }, [motorControlStates, bus.motors]);
+  }, []);
+
+  if (!bus.motors?.length) {
+    return null;
+  }
+
+  const tableShellClassName =
+    layout === 'panel'
+      ? 'absolute bottom-2 left-2 max-h-[calc(100%-1rem)] max-w-[calc(100%-1rem)] overflow-hidden rounded-lg border border-border-default/50 bg-surface-base/80 backdrop-blur-sm'
+      : 'absolute bottom-2 left-2 bg-surface-base/80 backdrop-blur-sm rounded-lg overflow-hidden border border-border-default/50 max-w-[calc(100%-1rem)]';
+
+  const tableScrollClassName =
+    layout === 'panel' ? 'max-h-full overflow-auto' : 'overflow-x-auto';
 
   return (
-    <div className="absolute bottom-2 left-2 bg-surface-base/80 backdrop-blur-sm rounded-lg overflow-hidden border border-border-default/50 max-w-[calc(100%-1rem)]">
-      <div className="overflow-x-auto">
+    <div className={tableShellClassName}>
+      <div className={tableScrollClassName}>
         <table className="text-xs text-text-label min-w-full">
         <thead className="bg-surface-secondary/80 text-text-label font-bold sticky top-0">
           <tr>
@@ -388,7 +328,7 @@ const MotorDataTable: React.FC<MotorDataTableProps> = ({ bus, busIndex, isWebCon
             const hasError = !!motor.error;
 
             return (
-              <tr key={motorIndex} className={`hover:bg-surface-primary/50 transition-colors border-b border-border-default/50 ${hasError ? 'bg-accent-critical/10' : ''}`}>
+              <tr key={motor.id} className={`hover:bg-surface-primary/50 transition-colors border-b border-border-default/50 ${hasError ? 'bg-accent-critical/10' : ''}`}>
                 {/* Motor ID */}
                 <td className={`px-2 py-1.5 font-bold ${getMotorStatusColor(latency, hasError)}`}>
                   M{motor.id?.toString()}
@@ -424,12 +364,13 @@ const MotorDataTable: React.FC<MotorDataTableProps> = ({ bus, busIndex, isWebCon
                       className={`bg-surface-secondary rounded-full overflow-hidden relative flex-1 ${
                         isWebControlled ? 'cursor-move hover:bg-surface-tertiary h-5' : 'h-3'
                       } ${controlState?.isDragging ? 'ring-2 ring-accent-info-deep' : ''}`}
-                      data-motor-control={motor.id}
-                      onMouseDown={(e) => handleMouseDown(motor, e)}
-                      onMouseMove={(e) => handleMouseMove(motor, e)}
-                      onMouseUp={() => handleMouseUp(motor)}
+                      style={{ touchAction: 'none' }}
+                      onPointerDown={(e) => handlePointerDown(motor, e)}
+                      onPointerMove={(e) => handlePointerMove(motor, e)}
+                      onPointerUp={(e) => endPointerDrag(motor, e)}
+                      onPointerCancel={(e) => endPointerDrag(motor, e)}
                       onMouseEnter={() => setHoveredMotor(motor.id || null)}
-                      onMouseLeave={() => handleMouseLeave(motor.id || 0)}
+                      onMouseLeave={() => handlePointerLeave(motor.id || 0)}
                     >
                       {/* Current position bar */}
                       <div 
