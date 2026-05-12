@@ -11,16 +11,17 @@
   "main": "dist/main.js",
   "scripts": {
     "generate:version": "node scripts/generate-version.mjs",
+    "install:electron": "node node_modules/electron/install.js",
     "dev": "node scripts/generate-version.mjs && tsc && electron .",
     "dev:tools": "node scripts/generate-version.mjs && tsc && electron . --devtools",
     "build": "node scripts/generate-version.mjs && tsc",
-    "build:viewer": "cd ../station-viewer && yarn build",
+    "build:viewer": "cd ../station-viewer && npm run build",
     "build:station": "cd ../../../.. && cargo build --release --package=station",
     "clean:release": "rm -rf release",
-    "start": "yarn build:viewer && yarn build:station && yarn build && electron . --load-dist",
-    "package": "yarn clean:release && yarn build:viewer && yarn build:station && yarn build && electron-builder --config electron-builder.yml",
-    "package:mac": "yarn clean:release && yarn build:viewer && yarn build:station && yarn build && electron-builder --mac --config electron-builder.yml",
-    "package:linux": "yarn clean:release && yarn build:viewer && yarn build:station && yarn build && electron-builder --linux --config electron-builder.yml",
+    "start": "npm run build:viewer && npm run build:station && npm run build && electron . --load-dist",
+    "package": "npm run clean:release && npm run build:viewer && npm run build:station && npm run build && electron-builder --config electron-builder.yml",
+    "package:mac": "npm run clean:release && npm run build:viewer && npm run build:station && npm run build && electron-builder --mac --config electron-builder.yml",
+    "package:linux": "npm run clean:release && npm run build:viewer && npm run build:station && npm run build && electron-builder --linux --config electron-builder.yml",
     "lint": "oxlint src/",
     "type-check": "node scripts/generate-version.mjs && tsc --noEmit"
   },
@@ -35,5 +36,6 @@
   },
   "engines": {
     "node": ">=22.0.0"
-  }
+  },
+  "packageManager": "npm@11"
 }
