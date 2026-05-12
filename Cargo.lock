@@ -482,22 +482,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "dogzilla"
-version = "0.1.0"
-dependencies = [
- "bytes",
- "log",
- "normfs",
- "parking_lot",
- "prost",
- "prost-build",
- "station_iface",
- "systime",
- "tokio",
- "tokio-serial",
-]
-
-[[package]]
 name = "ed25519"
 version = "2.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1094,7 +1078,6 @@ name = "inferences"
 version = "0.1.0-beta.7"
 dependencies = [
  "bytes",
- "dogzilla",
  "lazy_static",
  "log",
  "memmap2",
@@ -1106,6 +1089,7 @@ dependencies = [
  "station_iface",
  "tokio",
  "usbvideo",
+ "yahboom-dogzilla-lite",
 ]
 
 [[package]]
@@ -1632,13 +1616,13 @@ dependencies = [
  "normfs",
  "parking_lot",
  "prost",
- "prost-build",
  "station_iface",
  "systime",
  "thiserror 2.0.16",
  "tokio",
  "tracing",
  "turbojpeg",
+ "usbvideo",
 ]
 
 [[package]]
@@ -2430,7 +2414,6 @@ dependencies = [
  "bytes",
  "clap",
  "dashmap",
- "dogzilla",
  "env_logger",
  "fastwebsockets",
  "http-body-util",
@@ -2453,6 +2436,7 @@ dependencies = [
  "systime",
  "tokio",
  "usbvideo",
+ "yahboom-dogzilla-lite",
 ]
 
 [[package]]
@@ -3483,6 +3467,22 @@ name = "xxhash-rust"
 version = "0.8.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fdd20c5420375476fbd4394763288da7eb0cc0b8c11deed431a91562af7335d3"
+
+[[package]]
+name = "yahboom-dogzilla-lite"
+version = "0.1.0"
+dependencies = [
+ "bytes",
+ "log",
+ "normfs",
+ "parking_lot",
+ "prost",
+ "prost-build",
+ "station_iface",
+ "systime",
+ "tokio",
+ "tokio-serial",
+]
 
 [[package]]
 name = "yoke"

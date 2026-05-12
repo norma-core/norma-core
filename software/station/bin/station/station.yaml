@@ -7,6 +7,9 @@ drivers:
   usb-video:
     enabled: true
     resize_target: 224
+  yahboom-dogzilla-lite:
+    enabled: true
+    mode: simulation
 inference:
 - queue-id: inference/normvla
   shm: /tmp/normvla

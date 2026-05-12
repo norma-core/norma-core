@@ -6,7 +6,7 @@ members = [
   "software/drivers/st3215",
   "software/drivers/sysinfod",
   "software/drivers/usbvideo",
-  "software/drivers/dogzilla",
+  "software/drivers/yahboom-dogzilla-lite",
   "software/drivers/ov5647",
   "software/station/bin/station",
   "software/station/shared/station-iface",
@@ -25,4 +25,3 @@ bytes = "1.11"
 log = "0.4.28"
 parking_lot = "0.12"
 lazy_static = "1.5"
-

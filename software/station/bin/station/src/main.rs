@@ -262,11 +262,11 @@ impl Station {
             log::info!("No USB video configuration found");
         }
 
-        #[cfg(feature = "dogzilla")]
-        if let Some(dogzilla_config) = &self.config.drivers.dogzilla {
-            if dogzilla_config.enabled {
-                let simulation = matches!(dogzilla_config.mode, station_iface::config::DogzillaMode::Simulation);
-                match dogzilla::start_dogzilla_driver(
+        #[cfg(feature = "yahboom-dogzilla-lite")]
+        if let Some(yahboom_dogzilla_lite_config) = &self.config.drivers.yahboom_dogzilla_lite {
+            if yahboom_dogzilla_lite_config.enabled {
+                let simulation = matches!(yahboom_dogzilla_lite_config.mode, station_iface::config::YahboomDogzillaLiteMode::Simulation);
+                match yahboom_dogzilla_lite::start_yahboom_dogzilla_lite_driver(
                     self.normfs.clone(),
                     self.engine.clone(),
                     simulation,
@@ -275,20 +275,20 @@ impl Station {
                 {
                     Ok(_) => {
                         let mode = if simulation { "simulation" } else { "real" };
-                        log::info!("DOGZILLA driver started (mode: {})", mode);
+                        log::info!("Yahboom Dogzilla Lite driver started (mode: {})", mode);
                     },
-                    Err(e) => log::warn!("Failed to start DOGZILLA driver: {}", e),
+                    Err(e) => log::warn!("Failed to start Yahboom Dogzilla Lite driver: {}", e),
                 }
             } else {
-                log::info!("DOGZILLA driver disabled by configuration");
+                log::info!("Yahboom Dogzilla Lite driver disabled by configuration");
             }
         } else {
-            log::info!("DOGZILLA driver disabled by configuration");
+            log::info!("Yahboom Dogzilla Lite driver disabled by configuration");
         }
 
-        #[cfg(not(feature = "dogzilla"))]
-        if self.config.drivers.dogzilla.as_ref().is_some_and(|config| config.enabled) {
-            log::warn!("DOGZILLA driver requested but not compiled (missing 'dogzilla' feature)");
+        #[cfg(not(feature = "yahboom-dogzilla-lite"))]
+        if self.config.drivers.yahboom_dogzilla_lite.as_ref().is_some_and(|config| config.enabled) {
+            log::warn!("Yahboom Dogzilla Lite driver requested but not compiled (missing 'yahboom-dogzilla-lite' feature)");
         }
 
         #[cfg(feature = "ov5647")]
@@ -342,7 +342,7 @@ impl Station {
             Some(inference_configs) => {
                 if !inference_configs.is_empty() {
                     let inference_configs =
-                        self.with_default_dogzilla_inference(inference_configs.clone());
+                        self.with_default_yahboom_dogzilla_lite_inference(inference_configs.clone());
                     log::info!("Starting inference driver with {} configurations", inference_configs.len());
                     inferences::start(
                         self.normfs.clone(),
@@ -371,42 +371,42 @@ impl Station {
     }
 
     fn default_inference_configs(&self) -> Vec<station_iface::config::Inference> {
-        self.with_default_dogzilla_inference(vec![
+        self.with_default_yahboom_dogzilla_lite_inference(vec![
             station_iface::config::Inference::default_normvla(),
         ])
     }
 
-    fn with_default_dogzilla_inference(
+    fn with_default_yahboom_dogzilla_lite_inference(
         &self,
         configs: Vec<station_iface::config::Inference>,
     ) -> Vec<station_iface::config::Inference> {
-        let dogzilla_enabled = self
+        let yahboom_dogzilla_lite_enabled = self
             .config
             .drivers
-            .dogzilla
+            .yahboom_dogzilla_lite
             .as_ref()
             .is_some_and(|config| config.enabled);
-        if !dogzilla_enabled {
+        if !yahboom_dogzilla_lite_enabled {
             return configs;
         }
 
-        #[cfg(not(feature = "dogzilla"))]
+        #[cfg(not(feature = "yahboom-dogzilla-lite"))]
         {
             return configs;
         }
 
-        #[cfg(feature = "dogzilla")]
+        #[cfg(feature = "yahboom-dogzilla-lite")]
         {
             let mut configs = configs;
-            let has_dogzilla_config = configs
+            let has_yahboom_dogzilla_lite_config = configs
                 .iter()
-                .any(|config| config.format == "dogzilla" || config.queue_id == "inference/dogzilla");
-            if has_dogzilla_config {
+                .any(|config| config.format == "yahboom-dogzilla-lite" || config.queue_id == "inference/yahboom-dogzilla-lite");
+            if has_yahboom_dogzilla_lite_config {
                 return configs;
             }
 
-            log::info!("Dogzilla enabled; adding default dogzilla inference mirror");
-            configs.push(station_iface::config::Inference::default_dogzilla());
+            log::info!("Yahboom Dogzilla Lite enabled; adding default inference mirror");
+            configs.push(station_iface::config::Inference::default_yahboom_dogzilla_lite());
             configs
         }
     }

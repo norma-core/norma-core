@@ -8,6 +8,7 @@ edition = "2024"
 station_iface = { path = "../../station/shared/station-iface" }
 normfs = { workspace = true }
 systime = { path = "../../station/shared/systime-rs" }
+usbvideo = { path = "../usbvideo" }
 
 # Async runtime
 tokio = { version = "1", features = ["io-util", "time", "sync", "rt"] }
@@ -36,9 +37,6 @@ thiserror = "2"
 # Linux-only: libcamera FFI
 [target.'cfg(target_os = "linux")'.dependencies]
 libcamera-sys-static = { path = "../../../shared/libcamera-sys-static" }
-
-[build-dependencies]
-prost-build = "0.12"
 
 [lib]
 path = "src/lib.rs"

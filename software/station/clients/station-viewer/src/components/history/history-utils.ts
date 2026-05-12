@@ -1,13 +1,12 @@
-import { usbvideo, frame, st3215, motors_mirroring, sysinfo, ov5647, dogzilla, normvla } from '@/api/proto.js';
+import { usbvideo, frame, st3215, motors_mirroring, sysinfo, yahboom_dogzilla_lite, normvla } from '@/api/proto.js';
 import { serverToLocal } from '@/api/timestamp-utils';
 
 type ParsedHistoryData =
   | usbvideo.IRxEnvelope
-  | ov5647.IRxEnvelope
   | st3215.IInferenceState
   | motors_mirroring.IRxEnvelope
   | sysinfo.IEnvelope
-  | dogzilla.IInferenceState
+  | yahboom_dogzilla_lite.IInferenceState
   | normvla.IFrame;
 
 export function formatBytes(bytes: Uint8Array, maxBytes: number = 256): string {
@@ -63,14 +62,7 @@ export function createJpegBlobUrl(frameData: Uint8Array): string | null {
 
 export function createCroppedJson(data: usbvideo.RxEnvelope | ov5647.RxEnvelope): string {
   try {
-    const plainObject = data instanceof ov5647.RxEnvelope
-      ? ov5647.RxEnvelope.toObject(data, {
-        longs: String,
-        enums: String,
-        bytes: String,
-        defaults: true
-      })
-      : usbvideo.RxEnvelope.toObject(data, {
+    const plainObject = usbvideo.RxEnvelope.toObject(data, {
         longs: String,
         enums: String,
         bytes: String,
@@ -146,18 +138,6 @@ export function parseUsbVideoData(data: Uint8Array | ParsedHistoryData): usbvide
   }
 }
 
-export function parseOv5647Data(data: Uint8Array | ParsedHistoryData): ov5647.RxEnvelope | null {
-  if (!(data instanceof Uint8Array)) {
-    return data as ov5647.RxEnvelope;
-  }
-  try {
-    return ov5647.RxEnvelope.decode(data);
-  } catch (error) {
-    console.error('Failed to parse ov5647.RxEnvelope:', error);
-    return null;
-  }
-}
-
 export function parseSt3215Data(data: Uint8Array | ParsedHistoryData): st3215.InferenceState | null {
   if (!(data instanceof Uint8Array)) {
     return data as st3215.InferenceState;
@@ -194,14 +174,14 @@ export function parseSysinfoData(data: Uint8Array | ParsedHistoryData): sysinfo.
   }
 }
 
-export function parseDogzillaData(data: Uint8Array | ParsedHistoryData): dogzilla.InferenceState | null {
+export function parseYahboomDogzillaLiteData(data: Uint8Array | ParsedHistoryData): yahboom_dogzilla_lite.InferenceState | null {
   if (!(data instanceof Uint8Array)) {
-    return data as dogzilla.InferenceState;
+    return data as yahboom_dogzilla_lite.InferenceState;
   }
   try {
-    return dogzilla.InferenceState.decode(data);
+    return yahboom_dogzilla_lite.InferenceState.decode(data);
   } catch (error) {
-    console.error('Failed to parse dogzilla.InferenceState:', error);
+    console.error('Failed to parse yahboom_dogzilla_lite.InferenceState:', error);
     return null;
   }
 }

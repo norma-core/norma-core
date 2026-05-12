@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import Long from 'long';
 import { useInferenceState, useConnectionStatsWithUptime, useLatestEntryId, useWakeLock, invalidateTagsCache } from "@/hooks";
 import BusViewer from "@/st3215/BusViewer";
-import DogzillaDeviceViewer from "@/dogzilla/DogzillaDeviceViewer";
+import YahboomDogzillaLiteDeviceViewer from "@/yahboom_dogzilla_lite/YahboomDogzillaLiteDeviceViewer";
 import AsciiRobot from "@/components/AsciiRobot";
 import { copyToClipboard } from "@/api/clipboard-utils";
 import { commandManager } from "@/api/commands";
@@ -34,7 +34,7 @@ function HomePage() {
   const connectionStats = useConnectionStatsWithUptime();
   const [copied, setCopied] = useState(false);
   const hasRobotData = Boolean(inferenceState?.st3215?.data?.buses?.length);
-  const hasDogzillaData = Boolean(inferenceState?.dogzilla?.data?.devices?.length);
+  const hasYahboomDogzillaLiteData = Boolean(inferenceState?.yahboom_dogzilla_lite?.data?.devices?.length);
 
   useEffect(() => {
     if (copied) {
@@ -135,11 +135,10 @@ function HomePage() {
       </div>
       <div className="flex-1 min-h-0 overflow-auto p-4">
         <div className="flex min-h-full w-full flex-col gap-4">
-          {hasDogzillaData && inferenceState?.dogzilla?.data && (
-            <DogzillaDeviceViewer
-              inferenceState={inferenceState.dogzilla.data}
+          {hasYahboomDogzillaLiteData && inferenceState?.yahboom_dogzilla_lite?.data && (
+            <YahboomDogzillaLiteDeviceViewer
+              inferenceState={inferenceState.yahboom_dogzilla_lite.data}
               videoSources={inferenceState.videoQueues}
-              ov5647Sources={inferenceState.ov5647Queues}
             />
           )}
           {hasRobotData && inferenceState?.st3215?.data && (
@@ -149,7 +148,7 @@ function HomePage() {
               mirroringState={inferenceState.mirroring?.data.state || undefined}
             />
           )}
-          {!hasDogzillaData && !hasRobotData && (
+          {!hasYahboomDogzillaLiteData && !hasRobotData && (
           <div className="flex flex-1 min-h-full w-full items-center justify-center rounded-lg border border-dashed border-border-default bg-surface-primary/40 px-6">
             <AsciiRobot />
           </div>

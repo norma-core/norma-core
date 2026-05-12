@@ -1,0 +1,262 @@
+syntax = "proto3";
+
+package yahboom_dogzilla_lite;
+
+// Signal types for the Yahboom Dogzilla Lite robot dog.
+enum YahboomDogzillaLiteSignalType {
+    YAHBOOM_DOGZILLA_LITE_SIGNAL_TYPE_UNSPECIFIED = 0;
+    YAHBOOM_DOGZILLA_LITE_CONNECTED                = 1;
+    YAHBOOM_DOGZILLA_LITE_DISCONNECTED             = 2;
+    YAHBOOM_DOGZILLA_LITE_STATUS_UPDATE            = 3;
+    YAHBOOM_DOGZILLA_LITE_COMMAND                  = 4;
+    YAHBOOM_DOGZILLA_LITE_COMMAND_SUCCESS          = 5;
+    YAHBOOM_DOGZILLA_LITE_COMMAND_FAILED           = 6;
+    YAHBOOM_DOGZILLA_LITE_ERROR                    = 7;
+}
+
+// Models of Yahboom Dogzilla Lite robots.
+enum YahboomDogzillaLiteModel {
+    YAHBOOM_DOGZILLA_LITE_MODEL_UNKNOWN = 0;
+    YAHBOOM_DOGZILLA_LITE_MINI          = 1;
+    YAHBOOM_DOGZILLA_LITE               = 2;
+    YAHBOOM_DOGZILLA_LITE_PRO           = 3;
+    YAHBOOM_DOGZILLA_LITE_RIDER         = 4;
+}
+
+// Gait types
+enum GaitType {
+    GAIT_TROT       = 0;
+    GAIT_WALK       = 1;
+    GAIT_HIGH_WALK  = 2;
+    GAIT_MICRO_TROT = 3;
+}
+
+// Performance modes
+enum PerformanceMode {
+    PERFORMANCE_NORMAL_CONTROL = 0;
+    PERFORMANCE_CYCLE_ACTION   = 1;
+}
+
+// IMU modes
+enum ImuMode {
+    IMU_DISABLED       = 0;
+    IMU_SELF_STABILIZE = 1;
+}
+
+enum ActionType {
+    ACTION_UNSPECIFIED           = 0;
+    ACTION_LIE_DOWN              = 1;
+    ACTION_STAND_UP              = 2;
+    ACTION_CRAWL_FORWARD         = 3;
+    ACTION_TURN_AROUND           = 4;
+    ACTION_MARCH_IN_PLACE        = 5;
+    ACTION_SQUAT                 = 6;
+    ACTION_ROLL                  = 7;
+    ACTION_PITCH                 = 8;
+    ACTION_YAW                   = 9;
+    ACTION_THREE_AXIS_ROTATION   = 10;
+    ACTION_PEE                   = 11;
+    ACTION_SIT_DOWN              = 12;
+    ACTION_WAVE                  = 13;
+    ACTION_STRETCH               = 14;
+    ACTION_WAVE2                 = 15;
+    ACTION_SWAY                  = 16;
+    ACTION_BEG_FOR_FOOD          = 17;
+    ACTION_FIND_FOOD             = 18;
+    ACTION_HANDSHAKE             = 19;
+    ACTION_ARM_DEMO              = 20;
+    ACTION_PUSHUPS               = 21;
+    ACTION_PITCH_YAW_ROTATION    = 22;
+    ACTION_UP_DOWN_ROTATION      = 23;
+    ACTION_FORWARD_BACKWARD_ROTATION = 24;
+    ACTION_RESTORE_DEFAULT       = 255;
+}
+
+// Device information
+message YahboomDogzillaLiteDevice {
+    string        port_name        = 1;
+    uint32        baud_rate        = 2;
+    string        serial_number    = 3;
+    string        firmware_version = 4;
+    YahboomDogzillaLiteModel model            = 5;
+
+    // USB device info (for USB-connected devices)
+    uint32 vid          = 10;
+    uint32 pid          = 11;
+    string manufacturer = 12;
+    string product      = 13;
+}
+
+// IMU orientation data
+message ImuOrientation {
+    float roll  = 1;  // Roll angle in degrees
+    float pitch = 2;  // Pitch angle in degrees
+    float yaw   = 3;  // Yaw angle in degrees
+}
+
+// IMU acceleration data
+message Acceleration {
+    float x = 1;  // Acceleration X (m/s²)
+    float y = 2;  // Acceleration Y (m/s²)
+    float z = 3;  // Acceleration Z (m/s²)
+}
+
+// Status information
+message YahboomDogzillaLiteStatus {
+    uint32        battery_level    = 1;  // 0-100
+    YahboomDogzillaLiteModel model            = 2;
+    string        firmware_version = 3;
+
+    // Servo positions (15 bytes: 12 leg servos + 3 arm servos)
+    // Order: 11,12,13, 21,22,23, 31,32,33, 41,42,43, 51,52,53
+    repeated uint32 servo_positions = 10;
+
+    // IMU orientation in degrees
+    ImuOrientation orientation = 11;
+
+    // IMU acceleration (TODO)
+    Acceleration acceleration = 12;
+
+    // Servo speeds read from registers
+    uint32 leg_servo_speed = 13;  // 0x5C
+    uint32 arm_servo_speed = 14;  // 0x75
+
+    // Servo angles in degrees (converted from raw positions using SERVO_LIMIT)
+    // Order: 11,12,13, 21,22,23, 31,32,33, 41,42,43, 51,52,53
+    repeated float servo_angles = 15;
+}
+
+// Servo control command (0x50-0x5F range)
+message ServoCommand {
+    uint32 servo_id  = 1;  // 11-13, 21-23, 31-33, 41-43, 52-53
+    uint32 position  = 2;  // 0x00-0xFF, 0x80 is neutral
+}
+
+message ServoSpeedCommand {
+    oneof body_speed {
+        uint32 body_servo_speed = 1;  // 0x00-0xFF
+    }
+    oneof arm_speed {
+        uint32 arm_servo_speed  = 2;  // 0x00-0xFF
+    }
+}
+
+// Calibration command (0x04, 0x06 in 0x00-0x13 range)
+message CalibrationCommand {
+    bool enter_calibration_mode = 1;
+    bool set_origin             = 2;
+    bool servo_centering        = 3;
+    bool gyro_calibration       = 4;
+}
+
+// Robotic arm/gripper control (0x71-0x77 range)
+message ArmCommand {
+    uint32 gripper_status = 1;  // 0x71: 0x00-0xFF (0x00 fully open, 0xFF fully closed)
+    uint32 gripper_x      = 2;  // 0x73: 0x00-0xFF, corresponding to [-80mm, 155mm]
+    uint32 gripper_z      = 3;  // 0x74: 0x00-0xFF, corresponding to [-95mm, 155mm]
+    uint32 polar_angle    = 4;  // 0x76: 0x00-0xFF
+    uint32 polar_radius   = 5;  // 0x77: 0x00-0xFF
+    bool   stability_mode = 6;  // 0x72: Enable arm stability mode
+}
+
+// IO control (0x90-0x93 range)
+message IoCommand {
+    bool power_5v_output = 1;  // 0x90: digital output
+    bool digital_io      = 2;  // 0x91: digital output
+}
+
+// LED control (0x80-0x83 range)
+message LedCommand {
+    uint32 led_index = 1;  // LED index (0-3)
+    bytes  rgb_bytes = 2;  // RGB bytes (0-255)
+}
+
+message ActionCommand {
+    ActionType action = 1;
+}
+
+// Movement control (registers 0x30-0x32 range)
+// 0x80 (128) is neutral/stop for each value.
+message MovementCommand {
+    uint32 move_x   = 1;  // 0x30: forward/backward
+    uint32 move_y   = 2;  // 0x31: strafe left/right
+    uint32 move_yaw = 3;  // 0x32: rotation
+}
+
+// Configuration commands (0x00-0x13 range)
+message ConfigCommand {
+    PerformanceMode performance_mode = 1;  // 0x03
+    GaitType        gait             = 2;  // 0x09
+    ImuMode         imu_mode         = 3;  // IMU mode
+    bool            enable_feedback  = 4;  // 0x08: Enable 20Hz status feedback
+    string          bluetooth_name   = 5;  // 0x13: 20 bytes max
+}
+
+// Main command message
+message Command {
+    string target_device_serial = 1;
+
+    // Only commands in ranges 0x00-0x13, 0x30-0x32, 0x50-0x5F, 0x71-0x77, 0x80-0x83, 0x90-0x93
+    ServoCommand       servo       = 10;
+    ServoSpeedCommand  servo_speed = 11;
+    CalibrationCommand calibration = 12;
+    ArmCommand         arm         = 13;
+    IoCommand          io          = 14;
+    ConfigCommand      config      = 15;
+    LedCommand         led         = 16;
+    ActionCommand      action      = 17;
+    MovementCommand    movement    = 18;
+}
+
+// TX envelope (commands sent to the robot)
+message TxEnvelope {
+    uint64 monotonic_stamp_ns = 1;
+    uint64 local_stamp_ns     = 2;
+    uint64 app_start_id       = 3;
+
+    bytes  command_id           = 4;
+    string target_device_serial = 5;
+
+    Command command = 10;
+}
+
+// RX envelope (data received from the robot)
+message RxEnvelope {
+    uint64 monotonic_stamp_ns = 1;
+    uint64 local_stamp_ns     = 2;
+    uint64 app_start_id       = 3;
+
+    YahboomDogzillaLiteSignalType signal_type = 10;
+    YahboomDogzillaLiteDevice     device      = 11;
+    YahboomDogzillaLiteStatus     status      = 12;
+
+    bytes data = 20;
+
+    TxEnvelope command = 30;
+
+    string error_message = 50;
+}
+
+// Inference state (queryable state)
+message InferenceState {
+    message DeviceState {
+        YahboomDogzillaLiteDevice device = 1;
+        YahboomDogzillaLiteStatus status = 2;
+
+        uint64 monotonic_stamp_ns = 3;
+        uint64 system_stamp_ns    = 4;
+
+        bool is_connected = 5;
+    }
+
+    bytes last_inference_queue_ptr = 1;
+
+    repeated DeviceState devices = 10;
+}
+
+// Command result
+enum CommandResult {
+    CR_PROCESSING = 0;
+    CR_SUCCESS    = 1;
+    CR_FAILED     = 2;
+}

@@ -1,4 +1,4 @@
-import { st3215, drivers, commands, motors_mirroring, inference_tags, dogzilla } from "./proto.js";
+import { st3215, drivers, commands, motors_mirroring, inference_tags, yahboom_dogzilla_lite } from "./proto.js";
 import webSocketManager from "./websocket.js";
 
 function commandIdToBytes(id: number): Uint8Array {
@@ -61,9 +61,9 @@ export class CommandManager {
         await this.sendCommand(drivers.StationCommandType.STC_INFERENCE_TAG_COMMAND, body);
     }
 
-    public async sendDogzillaCommand(command: dogzilla.ICommand): Promise<void> {
-        const body = dogzilla.Command.encode(command).finish();
-        await this.sendCommand(drivers.StationCommandType.STC_DOGZILLA_COMMAND, body);
+    public async sendYahboomDogzillaLiteCommand(command: yahboom_dogzilla_lite.ICommand): Promise<void> {
+        const body = yahboom_dogzilla_lite.Command.encode(command).finish();
+        await this.sendCommand(drivers.StationCommandType.STC_YAHBOOM_DOGZILLA_LITE_COMMAND, body);
     }
 }
 

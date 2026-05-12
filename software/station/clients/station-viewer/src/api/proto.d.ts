@@ -246,10 +246,9 @@ export namespace drivers {
         QDT_INFERENCE_FRAMES = 22,
         QDT_MOTOR_MIRRORING_MODES = 30,
         QDT_MOTOR_MIRRORING_RX = 32,
-        QDT_DOGZILLA_SERIAL_TX = 40,
-        QDT_DOGZILLA_SERIAL_RX = 41,
-        QDT_DOGZILLA_INFERENCE = 42,
-        QDT_OV5647_FRAMES = 43
+        QDT_YAHBOOM_DOGZILLA_LITE_SERIAL_TX = 40,
+        QDT_YAHBOOM_DOGZILLA_LITE_SERIAL_RX = 41,
+        QDT_YAHBOOM_DOGZILLA_LITE_INFERENCE = 42
     }
 
     /** StationCommandType enum. */
@@ -257,7 +256,7 @@ export namespace drivers {
         STC_ST3215_COMMAND = 0,
         STC_MOTOR_MIRRORING_COMMAND = 1,
         STC_INFERENCE_TAG_COMMAND = 2,
-        STC_DOGZILLA_COMMAND = 3
+        STC_YAHBOOM_DOGZILLA_LITE_COMMAND = 3
     }
 }
 
@@ -6199,28 +6198,28 @@ export namespace motors_mirroring {
     }
 }
 
-/** Namespace dogzilla. */
-export namespace dogzilla {
+/** Namespace yahboom_dogzilla_lite. */
+export namespace yahboom_dogzilla_lite {
 
-    /** DogzillaSignalType enum. */
-    enum DogzillaSignalType {
-        DOGZILLA_SIGNAL_TYPE_UNSPECIFIED = 0,
-        DOGZILLA_CONNECTED = 1,
-        DOGZILLA_DISCONNECTED = 2,
-        DOGZILLA_STATUS_UPDATE = 3,
-        DOGZILLA_COMMAND = 4,
-        DOGZILLA_COMMAND_SUCCESS = 5,
-        DOGZILLA_COMMAND_FAILED = 6,
-        DOGZILLA_ERROR = 7
+    /** YahboomDogzillaLiteSignalType enum. */
+    enum YahboomDogzillaLiteSignalType {
+        YAHBOOM_DOGZILLA_LITE_SIGNAL_TYPE_UNSPECIFIED = 0,
+        YAHBOOM_DOGZILLA_LITE_CONNECTED = 1,
+        YAHBOOM_DOGZILLA_LITE_DISCONNECTED = 2,
+        YAHBOOM_DOGZILLA_LITE_STATUS_UPDATE = 3,
+        YAHBOOM_DOGZILLA_LITE_COMMAND = 4,
+        YAHBOOM_DOGZILLA_LITE_COMMAND_SUCCESS = 5,
+        YAHBOOM_DOGZILLA_LITE_COMMAND_FAILED = 6,
+        YAHBOOM_DOGZILLA_LITE_ERROR = 7
     }
 
-    /** DogzillaModel enum. */
-    enum DogzillaModel {
-        DOGZILLA_MODEL_UNKNOWN = 0,
-        DOGZILLA_MINI = 1,
-        DOGZILLA_LITE = 2,
-        DOGZILLA_PRO = 3,
-        DOGZILLA_RIDER = 4
+    /** YahboomDogzillaLiteModel enum. */
+    enum YahboomDogzillaLiteModel {
+        YAHBOOM_DOGZILLA_LITE_MODEL_UNKNOWN = 0,
+        YAHBOOM_DOGZILLA_LITE_MINI = 1,
+        YAHBOOM_DOGZILLA_LITE = 2,
+        YAHBOOM_DOGZILLA_LITE_PRO = 3,
+        YAHBOOM_DOGZILLA_LITE_RIDER = 4
     }
 
     /** GaitType enum. */
@@ -6273,145 +6272,145 @@ export namespace dogzilla {
         ACTION_RESTORE_DEFAULT = 255
     }
 
-    /** Properties of a DogzillaDevice. */
-    interface IDogzillaDevice {
+    /** Properties of a YahboomDogzillaLiteDevice. */
+    interface IYahboomDogzillaLiteDevice {
 
-        /** DogzillaDevice portName */
+        /** YahboomDogzillaLiteDevice portName */
         portName?: (string|null);
 
-        /** DogzillaDevice baudRate */
+        /** YahboomDogzillaLiteDevice baudRate */
         baudRate?: (number|null);
 
-        /** DogzillaDevice serialNumber */
+        /** YahboomDogzillaLiteDevice serialNumber */
         serialNumber?: (string|null);
 
-        /** DogzillaDevice firmwareVersion */
+        /** YahboomDogzillaLiteDevice firmwareVersion */
         firmwareVersion?: (string|null);
 
-        /** DogzillaDevice model */
-        model?: (dogzilla.DogzillaModel|null);
+        /** YahboomDogzillaLiteDevice model */
+        model?: (yahboom_dogzilla_lite.YahboomDogzillaLiteModel|null);
 
-        /** DogzillaDevice vid */
+        /** YahboomDogzillaLiteDevice vid */
         vid?: (number|null);
 
-        /** DogzillaDevice pid */
+        /** YahboomDogzillaLiteDevice pid */
         pid?: (number|null);
 
-        /** DogzillaDevice manufacturer */
+        /** YahboomDogzillaLiteDevice manufacturer */
         manufacturer?: (string|null);
 
-        /** DogzillaDevice product */
+        /** YahboomDogzillaLiteDevice product */
         product?: (string|null);
     }
 
-    /** Represents a DogzillaDevice. */
-    class DogzillaDevice implements IDogzillaDevice {
+    /** Represents a YahboomDogzillaLiteDevice. */
+    class YahboomDogzillaLiteDevice implements IYahboomDogzillaLiteDevice {
 
         /**
-         * Constructs a new DogzillaDevice.
+         * Constructs a new YahboomDogzillaLiteDevice.
          * @param [properties] Properties to set
          */
-        constructor(properties?: dogzilla.IDogzillaDevice);
+        constructor(properties?: yahboom_dogzilla_lite.IYahboomDogzillaLiteDevice);
 
-        /** DogzillaDevice portName. */
+        /** YahboomDogzillaLiteDevice portName. */
         public portName: string;
 
-        /** DogzillaDevice baudRate. */
+        /** YahboomDogzillaLiteDevice baudRate. */
         public baudRate: number;
 
-        /** DogzillaDevice serialNumber. */
+        /** YahboomDogzillaLiteDevice serialNumber. */
         public serialNumber: string;
 
-        /** DogzillaDevice firmwareVersion. */
+        /** YahboomDogzillaLiteDevice firmwareVersion. */
         public firmwareVersion: string;
 
-        /** DogzillaDevice model. */
-        public model: dogzilla.DogzillaModel;
+        /** YahboomDogzillaLiteDevice model. */
+        public model: yahboom_dogzilla_lite.YahboomDogzillaLiteModel;
 
-        /** DogzillaDevice vid. */
+        /** YahboomDogzillaLiteDevice vid. */
         public vid: number;
 
-        /** DogzillaDevice pid. */
+        /** YahboomDogzillaLiteDevice pid. */
         public pid: number;
 
-        /** DogzillaDevice manufacturer. */
+        /** YahboomDogzillaLiteDevice manufacturer. */
         public manufacturer: string;
 
-        /** DogzillaDevice product. */
+        /** YahboomDogzillaLiteDevice product. */
         public product: string;
 
         /**
-         * Creates a new DogzillaDevice instance using the specified properties.
+         * Creates a new YahboomDogzillaLiteDevice instance using the specified properties.
          * @param [properties] Properties to set
-         * @returns DogzillaDevice instance
+         * @returns YahboomDogzillaLiteDevice instance
          */
-        public static create(properties?: dogzilla.IDogzillaDevice): dogzilla.DogzillaDevice;
+        public static create(properties?: yahboom_dogzilla_lite.IYahboomDogzillaLiteDevice): yahboom_dogzilla_lite.YahboomDogzillaLiteDevice;
 
         /**
-         * Encodes the specified DogzillaDevice message. Does not implicitly {@link dogzilla.DogzillaDevice.verify|verify} messages.
-         * @param message DogzillaDevice message or plain object to encode
+         * Encodes the specified YahboomDogzillaLiteDevice message. Does not implicitly {@link yahboom_dogzilla_lite.YahboomDogzillaLiteDevice.verify|verify} messages.
+         * @param message YahboomDogzillaLiteDevice message or plain object to encode
          * @param [writer] Writer to encode to
          * @returns Writer
          */
-        public static encode(message: dogzilla.IDogzillaDevice, writer?: $protobuf.Writer): $protobuf.Writer;
+        public static encode(message: yahboom_dogzilla_lite.IYahboomDogzillaLiteDevice, writer?: $protobuf.Writer): $protobuf.Writer;
 
         /**
-         * Encodes the specified DogzillaDevice message, length delimited. Does not implicitly {@link dogzilla.DogzillaDevice.verify|verify} messages.
-         * @param message DogzillaDevice message or plain object to encode
+         * Encodes the specified YahboomDogzillaLiteDevice message, length delimited. Does not implicitly {@link yahboom_dogzilla_lite.YahboomDogzillaLiteDevice.verify|verify} messages.
+         * @param message YahboomDogzillaLiteDevice message or plain object to encode
          * @param [writer] Writer to encode to
          * @returns Writer
          */
-        public static encodeDelimited(message: dogzilla.IDogzillaDevice, writer?: $protobuf.Writer): $protobuf.Writer;
+        public static encodeDelimited(message: yahboom_dogzilla_lite.IYahboomDogzillaLiteDevice, writer?: $protobuf.Writer): $protobuf.Writer;
 
         /**
-         * Decodes a DogzillaDevice message from the specified reader or buffer.
+         * Decodes a YahboomDogzillaLiteDevice message from the specified reader or buffer.
          * @param reader Reader or buffer to decode from
          * @param [length] Message length if known beforehand
-         * @returns DogzillaDevice
+         * @returns YahboomDogzillaLiteDevice
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): dogzilla.DogzillaDevice;
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): yahboom_dogzilla_lite.YahboomDogzillaLiteDevice;
 
         /**
-         * Decodes a DogzillaDevice message from the specified reader or buffer, length delimited.
+         * Decodes a YahboomDogzillaLiteDevice message from the specified reader or buffer, length delimited.
          * @param reader Reader or buffer to decode from
-         * @returns DogzillaDevice
+         * @returns YahboomDogzillaLiteDevice
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): dogzilla.DogzillaDevice;
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): yahboom_dogzilla_lite.YahboomDogzillaLiteDevice;
 
         /**
-         * Verifies a DogzillaDevice message.
+         * Verifies a YahboomDogzillaLiteDevice message.
          * @param message Plain object to verify
          * @returns `null` if valid, otherwise the reason why it is not
          */
         public static verify(message: { [k: string]: any }): (string|null);
 
         /**
-         * Creates a DogzillaDevice message from a plain object. Also converts values to their respective internal types.
+         * Creates a YahboomDogzillaLiteDevice message from a plain object. Also converts values to their respective internal types.
          * @param object Plain object
-         * @returns DogzillaDevice
+         * @returns YahboomDogzillaLiteDevice
          */
-        public static fromObject(object: { [k: string]: any }): dogzilla.DogzillaDevice;
+        public static fromObject(object: { [k: string]: any }): yahboom_dogzilla_lite.YahboomDogzillaLiteDevice;
 
         /**
-         * Creates a plain object from a DogzillaDevice message. Also converts values to other types if specified.
-         * @param message DogzillaDevice
+         * Creates a plain object from a YahboomDogzillaLiteDevice message. Also converts values to other types if specified.
+         * @param message YahboomDogzillaLiteDevice
          * @param [options] Conversion options
          * @returns Plain object
          */
-        public static toObject(message: dogzilla.DogzillaDevice, options?: $protobuf.IConversionOptions): { [k: string]: any };
+        public static toObject(message: yahboom_dogzilla_lite.YahboomDogzillaLiteDevice, options?: $protobuf.IConversionOptions): { [k: string]: any };
 
         /**
-         * Converts this DogzillaDevice to JSON.
+         * Converts this YahboomDogzillaLiteDevice to JSON.
          * @returns JSON object
          */
         public toJSON(): { [k: string]: any };
 
         /**
-         * Gets the default type url for DogzillaDevice
+         * Gets the default type url for YahboomDogzillaLiteDevice
          * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
          * @returns The default type url
          */
@@ -6438,7 +6437,7 @@ export namespace dogzilla {
          * Constructs a new ImuOrientation.
          * @param [properties] Properties to set
          */
-        constructor(properties?: dogzilla.IImuOrientation);
+        constructor(properties?: yahboom_dogzilla_lite.IImuOrientation);
 
         /** ImuOrientation roll. */
         public roll: number;
@@ -6454,23 +6453,23 @@ export namespace dogzilla {
          * @param [properties] Properties to set
          * @returns ImuOrientation instance
          */
-        public static create(properties?: dogzilla.IImuOrientation): dogzilla.ImuOrientation;
+        public static create(properties?: yahboom_dogzilla_lite.IImuOrientation): yahboom_dogzilla_lite.ImuOrientation;
 
         /**
-         * Encodes the specified ImuOrientation message. Does not implicitly {@link dogzilla.ImuOrientation.verify|verify} messages.
+         * Encodes the specified ImuOrientation message. Does not implicitly {@link yahboom_dogzilla_lite.ImuOrientation.verify|verify} messages.
          * @param message ImuOrientation message or plain object to encode
          * @param [writer] Writer to encode to
          * @returns Writer
          */
-        public static encode(message: dogzilla.IImuOrientation, writer?: $protobuf.Writer): $protobuf.Writer;
+        public static encode(message: yahboom_dogzilla_lite.IImuOrientation, writer?: $protobuf.Writer): $protobuf.Writer;
 
         /**
-         * Encodes the specified ImuOrientation message, length delimited. Does not implicitly {@link dogzilla.ImuOrientation.verify|verify} messages.
+         * Encodes the specified ImuOrientation message, length delimited. Does not implicitly {@link yahboom_dogzilla_lite.ImuOrientation.verify|verify} messages.
          * @param message ImuOrientation message or plain object to encode
          * @param [writer] Writer to encode to
          * @returns Writer
          */
-        public static encodeDelimited(message: dogzilla.IImuOrientation, writer?: $protobuf.Writer): $protobuf.Writer;
+        public static encodeDelimited(message: yahboom_dogzilla_lite.IImuOrientation, writer?: $protobuf.Writer): $protobuf.Writer;
 
         /**
          * Decodes an ImuOrientation message from the specified reader or buffer.
@@ -6480,7 +6479,7 @@ export namespace dogzilla {
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): dogzilla.ImuOrientation;
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): yahboom_dogzilla_lite.ImuOrientation;
 
         /**
          * Decodes an ImuOrientation message from the specified reader or buffer, length delimited.
@@ -6489,7 +6488,7 @@ export namespace dogzilla {
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): dogzilla.ImuOrientation;
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): yahboom_dogzilla_lite.ImuOrientation;
 
         /**
          * Verifies an ImuOrientation message.
@@ -6503,7 +6502,7 @@ export namespace dogzilla {
          * @param object Plain object
          * @returns ImuOrientation
          */
-        public static fromObject(object: { [k: string]: any }): dogzilla.ImuOrientation;
+        public static fromObject(object: { [k: string]: any }): yahboom_dogzilla_lite.ImuOrientation;
 
         /**
          * Creates a plain object from an ImuOrientation message. Also converts values to other types if specified.
@@ -6511,7 +6510,7 @@ export namespace dogzilla {
          * @param [options] Conversion options
          * @returns Plain object
          */
-        public static toObject(message: dogzilla.ImuOrientation, options?: $protobuf.IConversionOptions): { [k: string]: any };
+        public static toObject(message: yahboom_dogzilla_lite.ImuOrientation, options?: $protobuf.IConversionOptions): { [k: string]: any };
 
         /**
          * Converts this ImuOrientation to JSON.
@@ -6547,7 +6546,7 @@ export namespace dogzilla {
          * Constructs a new Acceleration.
          * @param [properties] Properties to set
          */
-        constructor(properties?: dogzilla.IAcceleration);
+        constructor(properties?: yahboom_dogzilla_lite.IAcceleration);
 
         /** Acceleration x. */
         public x: number;
@@ -6563,23 +6562,23 @@ export namespace dogzilla {
          * @param [properties] Properties to set
          * @returns Acceleration instance
          */
-        public static create(properties?: dogzilla.IAcceleration): dogzilla.Acceleration;
+        public static create(properties?: yahboom_dogzilla_lite.IAcceleration): yahboom_dogzilla_lite.Acceleration;
 
         /**
-         * Encodes the specified Acceleration message. Does not implicitly {@link dogzilla.Acceleration.verify|verify} messages.
+         * Encodes the specified Acceleration message. Does not implicitly {@link yahboom_dogzilla_lite.Acceleration.verify|verify} messages.
          * @param message Acceleration message or plain object to encode
          * @param [writer] Writer to encode to
          * @returns Writer
          */
-        public static encode(message: dogzilla.IAcceleration, writer?: $protobuf.Writer): $protobuf.Writer;
+        public static encode(message: yahboom_dogzilla_lite.IAcceleration, writer?: $protobuf.Writer): $protobuf.Writer;
 
         /**
-         * Encodes the specified Acceleration message, length delimited. Does not implicitly {@link dogzilla.Acceleration.verify|verify} messages.
+         * Encodes the specified Acceleration message, length delimited. Does not implicitly {@link yahboom_dogzilla_lite.Acceleration.verify|verify} messages.
          * @param message Acceleration message or plain object to encode
          * @param [writer] Writer to encode to
          * @returns Writer
          */
-        public static encodeDelimited(message: dogzilla.IAcceleration, writer?: $protobuf.Writer): $protobuf.Writer;
+        public static encodeDelimited(message: yahboom_dogzilla_lite.IAcceleration, writer?: $protobuf.Writer): $protobuf.Writer;
 
         /**
          * Decodes an Acceleration message from the specified reader or buffer.
@@ -6589,7 +6588,7 @@ export namespace dogzilla {
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): dogzilla.Acceleration;
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): yahboom_dogzilla_lite.Acceleration;
 
         /**
          * Decodes an Acceleration message from the specified reader or buffer, length delimited.
@@ -6598,7 +6597,7 @@ export namespace dogzilla {
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): dogzilla.Acceleration;
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): yahboom_dogzilla_lite.Acceleration;
 
         /**
          * Verifies an Acceleration message.
@@ -6612,7 +6611,7 @@ export namespace dogzilla {
          * @param object Plain object
          * @returns Acceleration
          */
-        public static fromObject(object: { [k: string]: any }): dogzilla.Acceleration;
+        public static fromObject(object: { [k: string]: any }): yahboom_dogzilla_lite.Acceleration;
 
         /**
          * Creates a plain object from an Acceleration message. Also converts values to other types if specified.
@@ -6620,7 +6619,7 @@ export namespace dogzilla {
          * @param [options] Conversion options
          * @returns Plain object
          */
-        public static toObject(message: dogzilla.Acceleration, options?: $protobuf.IConversionOptions): { [k: string]: any };
+        public static toObject(message: yahboom_dogzilla_lite.Acceleration, options?: $protobuf.IConversionOptions): { [k: string]: any };
 
         /**
          * Converts this Acceleration to JSON.
@@ -6636,145 +6635,145 @@ export namespace dogzilla {
         public static getTypeUrl(typeUrlPrefix?: string): string;
     }
 
-    /** Properties of a DogzillaStatus. */
-    interface IDogzillaStatus {
+    /** Properties of a YahboomDogzillaLiteStatus. */
+    interface IYahboomDogzillaLiteStatus {
 
-        /** DogzillaStatus batteryLevel */
+        /** YahboomDogzillaLiteStatus batteryLevel */
         batteryLevel?: (number|null);
 
-        /** DogzillaStatus model */
-        model?: (dogzilla.DogzillaModel|null);
+        /** YahboomDogzillaLiteStatus model */
+        model?: (yahboom_dogzilla_lite.YahboomDogzillaLiteModel|null);
 
-        /** DogzillaStatus firmwareVersion */
+        /** YahboomDogzillaLiteStatus firmwareVersion */
         firmwareVersion?: (string|null);
 
-        /** DogzillaStatus servoPositions */
+        /** YahboomDogzillaLiteStatus servoPositions */
         servoPositions?: (number[]|null);
 
-        /** DogzillaStatus orientation */
-        orientation?: (dogzilla.IImuOrientation|null);
+        /** YahboomDogzillaLiteStatus orientation */
+        orientation?: (yahboom_dogzilla_lite.IImuOrientation|null);
 
-        /** DogzillaStatus acceleration */
-        acceleration?: (dogzilla.IAcceleration|null);
+        /** YahboomDogzillaLiteStatus acceleration */
+        acceleration?: (yahboom_dogzilla_lite.IAcceleration|null);
 
-        /** DogzillaStatus legServoSpeed */
+        /** YahboomDogzillaLiteStatus legServoSpeed */
         legServoSpeed?: (number|null);
 
-        /** DogzillaStatus armServoSpeed */
+        /** YahboomDogzillaLiteStatus armServoSpeed */
         armServoSpeed?: (number|null);
 
-        /** DogzillaStatus servoAngles */
+        /** YahboomDogzillaLiteStatus servoAngles */
         servoAngles?: (number[]|null);
     }
 
-    /** Represents a DogzillaStatus. */
-    class DogzillaStatus implements IDogzillaStatus {
+    /** Represents a YahboomDogzillaLiteStatus. */
+    class YahboomDogzillaLiteStatus implements IYahboomDogzillaLiteStatus {
 
         /**
-         * Constructs a new DogzillaStatus.
+         * Constructs a new YahboomDogzillaLiteStatus.
          * @param [properties] Properties to set
          */
-        constructor(properties?: dogzilla.IDogzillaStatus);
+        constructor(properties?: yahboom_dogzilla_lite.IYahboomDogzillaLiteStatus);
 
-        /** DogzillaStatus batteryLevel. */
+        /** YahboomDogzillaLiteStatus batteryLevel. */
         public batteryLevel: number;
 
-        /** DogzillaStatus model. */
-        public model: dogzilla.DogzillaModel;
+        /** YahboomDogzillaLiteStatus model. */
+        public model: yahboom_dogzilla_lite.YahboomDogzillaLiteModel;
 
-        /** DogzillaStatus firmwareVersion. */
+        /** YahboomDogzillaLiteStatus firmwareVersion. */
         public firmwareVersion: string;
 
-        /** DogzillaStatus servoPositions. */
+        /** YahboomDogzillaLiteStatus servoPositions. */
         public servoPositions: number[];
 
-        /** DogzillaStatus orientation. */
-        public orientation?: (dogzilla.IImuOrientation|null);
+        /** YahboomDogzillaLiteStatus orientation. */
+        public orientation?: (yahboom_dogzilla_lite.IImuOrientation|null);
 
-        /** DogzillaStatus acceleration. */
-        public acceleration?: (dogzilla.IAcceleration|null);
+        /** YahboomDogzillaLiteStatus acceleration. */
+        public acceleration?: (yahboom_dogzilla_lite.IAcceleration|null);
 
-        /** DogzillaStatus legServoSpeed. */
+        /** YahboomDogzillaLiteStatus legServoSpeed. */
         public legServoSpeed: number;
 
-        /** DogzillaStatus armServoSpeed. */
+        /** YahboomDogzillaLiteStatus armServoSpeed. */
         public armServoSpeed: number;
 
-        /** DogzillaStatus servoAngles. */
+        /** YahboomDogzillaLiteStatus servoAngles. */
         public servoAngles: number[];
 
         /**
-         * Creates a new DogzillaStatus instance using the specified properties.
+         * Creates a new YahboomDogzillaLiteStatus instance using the specified properties.
          * @param [properties] Properties to set
-         * @returns DogzillaStatus instance
+         * @returns YahboomDogzillaLiteStatus instance
          */
-        public static create(properties?: dogzilla.IDogzillaStatus): dogzilla.DogzillaStatus;
+        public static create(properties?: yahboom_dogzilla_lite.IYahboomDogzillaLiteStatus): yahboom_dogzilla_lite.YahboomDogzillaLiteStatus;
 
         /**
-         * Encodes the specified DogzillaStatus message. Does not implicitly {@link dogzilla.DogzillaStatus.verify|verify} messages.
-         * @param message DogzillaStatus message or plain object to encode
+         * Encodes the specified YahboomDogzillaLiteStatus message. Does not implicitly {@link yahboom_dogzilla_lite.YahboomDogzillaLiteStatus.verify|verify} messages.
+         * @param message YahboomDogzillaLiteStatus message or plain object to encode
          * @param [writer] Writer to encode to
          * @returns Writer
          */
-        public static encode(message: dogzilla.IDogzillaStatus, writer?: $protobuf.Writer): $protobuf.Writer;
+        public static encode(message: yahboom_dogzilla_lite.IYahboomDogzillaLiteStatus, writer?: $protobuf.Writer): $protobuf.Writer;
 
         /**
-         * Encodes the specified DogzillaStatus message, length delimited. Does not implicitly {@link dogzilla.DogzillaStatus.verify|verify} messages.
-         * @param message DogzillaStatus message or plain object to encode
+         * Encodes the specified YahboomDogzillaLiteStatus message, length delimited. Does not implicitly {@link yahboom_dogzilla_lite.YahboomDogzillaLiteStatus.verify|verify} messages.
+         * @param message YahboomDogzillaLiteStatus message or plain object to encode
          * @param [writer] Writer to encode to
          * @returns Writer
          */
-        public static encodeDelimited(message: dogzilla.IDogzillaStatus, writer?: $protobuf.Writer): $protobuf.Writer;
+        public static encodeDelimited(message: yahboom_dogzilla_lite.IYahboomDogzillaLiteStatus, writer?: $protobuf.Writer): $protobuf.Writer;
 
         /**
-         * Decodes a DogzillaStatus message from the specified reader or buffer.
+         * Decodes a YahboomDogzillaLiteStatus message from the specified reader or buffer.
          * @param reader Reader or buffer to decode from
          * @param [length] Message length if known beforehand
-         * @returns DogzillaStatus
+         * @returns YahboomDogzillaLiteStatus
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): dogzilla.DogzillaStatus;
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): yahboom_dogzilla_lite.YahboomDogzillaLiteStatus;
 
         /**
-         * Decodes a DogzillaStatus message from the specified reader or buffer, length delimited.
+         * Decodes a YahboomDogzillaLiteStatus message from the specified reader or buffer, length delimited.
          * @param reader Reader or buffer to decode from
-         * @returns DogzillaStatus
+         * @returns YahboomDogzillaLiteStatus
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): dogzilla.DogzillaStatus;
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): yahboom_dogzilla_lite.YahboomDogzillaLiteStatus;
 
         /**
-         * Verifies a DogzillaStatus message.
+         * Verifies a YahboomDogzillaLiteStatus message.
          * @param message Plain object to verify
          * @returns `null` if valid, otherwise the reason why it is not
          */
         public static verify(message: { [k: string]: any }): (string|null);
 
         /**
-         * Creates a DogzillaStatus message from a plain object. Also converts values to their respective internal types.
+         * Creates a YahboomDogzillaLiteStatus message from a plain object. Also converts values to their respective internal types.
          * @param object Plain object
-         * @returns DogzillaStatus
+         * @returns YahboomDogzillaLiteStatus
          */
-        public static fromObject(object: { [k: string]: any }): dogzilla.DogzillaStatus;
+        public static fromObject(object: { [k: string]: any }): yahboom_dogzilla_lite.YahboomDogzillaLiteStatus;
 
         /**
-         * Creates a plain object from a DogzillaStatus message. Also converts values to other types if specified.
-         * @param message DogzillaStatus
+         * Creates a plain object from a YahboomDogzillaLiteStatus message. Also converts values to other types if specified.
+         * @param message YahboomDogzillaLiteStatus
          * @param [options] Conversion options
          * @returns Plain object
          */
-        public static toObject(message: dogzilla.DogzillaStatus, options?: $protobuf.IConversionOptions): { [k: string]: any };
+        public static toObject(message: yahboom_dogzilla_lite.YahboomDogzillaLiteStatus, options?: $protobuf.IConversionOptions): { [k: string]: any };
 
         /**
-         * Converts this DogzillaStatus to JSON.
+         * Converts this YahboomDogzillaLiteStatus to JSON.
          * @returns JSON object
          */
         public toJSON(): { [k: string]: any };
 
         /**
-         * Gets the default type url for DogzillaStatus
+         * Gets the default type url for YahboomDogzillaLiteStatus
          * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
          * @returns The default type url
          */
@@ -6798,7 +6797,7 @@ export namespace dogzilla {
          * Constructs a new ServoCommand.
          * @param [properties] Properties to set
          */
-        constructor(properties?: dogzilla.IServoCommand);
+        constructor(properties?: yahboom_dogzilla_lite.IServoCommand);
 
         /** ServoCommand servoId. */
         public servoId: number;
@@ -6811,23 +6810,23 @@ export namespace dogzilla {
          * @param [properties] Properties to set
          * @returns ServoCommand instance
          */
-        public static create(properties?: dogzilla.IServoCommand): dogzilla.ServoCommand;
+        public static create(properties?: yahboom_dogzilla_lite.IServoCommand): yahboom_dogzilla_lite.ServoCommand;
 
         /**
-         * Encodes the specified ServoCommand message. Does not implicitly {@link dogzilla.ServoCommand.verify|verify} messages.
+         * Encodes the specified ServoCommand message. Does not implicitly {@link yahboom_dogzilla_lite.ServoCommand.verify|verify} messages.
          * @param message ServoCommand message or plain object to encode
          * @param [writer] Writer to encode to
          * @returns Writer
          */
-        public static encode(message: dogzilla.IServoCommand, writer?: $protobuf.Writer): $protobuf.Writer;
+        public static encode(message: yahboom_dogzilla_lite.IServoCommand, writer?: $protobuf.Writer): $protobuf.Writer;
 
         /**
-         * Encodes the specified ServoCommand message, length delimited. Does not implicitly {@link dogzilla.ServoCommand.verify|verify} messages.
+         * Encodes the specified ServoCommand message, length delimited. Does not implicitly {@link yahboom_dogzilla_lite.ServoCommand.verify|verify} messages.
          * @param message ServoCommand message or plain object to encode
          * @param [writer] Writer to encode to
          * @returns Writer
          */
-        public static encodeDelimited(message: dogzilla.IServoCommand, writer?: $protobuf.Writer): $protobuf.Writer;
+        public static encodeDelimited(message: yahboom_dogzilla_lite.IServoCommand, writer?: $protobuf.Writer): $protobuf.Writer;
 
         /**
          * Decodes a ServoCommand message from the specified reader or buffer.
@@ -6837,7 +6836,7 @@ export namespace dogzilla {
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): dogzilla.ServoCommand;
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): yahboom_dogzilla_lite.ServoCommand;
 
         /**
          * Decodes a ServoCommand message from the specified reader or buffer, length delimited.
@@ -6846,7 +6845,7 @@ export namespace dogzilla {
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): dogzilla.ServoCommand;
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): yahboom_dogzilla_lite.ServoCommand;
 
         /**
          * Verifies a ServoCommand message.
@@ -6860,7 +6859,7 @@ export namespace dogzilla {
          * @param object Plain object
          * @returns ServoCommand
          */
-        public static fromObject(object: { [k: string]: any }): dogzilla.ServoCommand;
+        public static fromObject(object: { [k: string]: any }): yahboom_dogzilla_lite.ServoCommand;
 
         /**
          * Creates a plain object from a ServoCommand message. Also converts values to other types if specified.
@@ -6868,7 +6867,7 @@ export namespace dogzilla {
          * @param [options] Conversion options
          * @returns Plain object
          */
-        public static toObject(message: dogzilla.ServoCommand, options?: $protobuf.IConversionOptions): { [k: string]: any };
+        public static toObject(message: yahboom_dogzilla_lite.ServoCommand, options?: $protobuf.IConversionOptions): { [k: string]: any };
 
         /**
          * Converts this ServoCommand to JSON.
@@ -6901,7 +6900,7 @@ export namespace dogzilla {
          * Constructs a new ServoSpeedCommand.
          * @param [properties] Properties to set
          */
-        constructor(properties?: dogzilla.IServoSpeedCommand);
+        constructor(properties?: yahboom_dogzilla_lite.IServoSpeedCommand);
 
         /** ServoSpeedCommand bodyServoSpeed. */
         public bodyServoSpeed?: (number|null);
@@ -6920,23 +6919,23 @@ export namespace dogzilla {
          * @param [properties] Properties to set
          * @returns ServoSpeedCommand instance
          */
-        public static create(properties?: dogzilla.IServoSpeedCommand): dogzilla.ServoSpeedCommand;
+        public static create(properties?: yahboom_dogzilla_lite.IServoSpeedCommand): yahboom_dogzilla_lite.ServoSpeedCommand;
 
         /**
-         * Encodes the specified ServoSpeedCommand message. Does not implicitly {@link dogzilla.ServoSpeedCommand.verify|verify} messages.
+         * Encodes the specified ServoSpeedCommand message. Does not implicitly {@link yahboom_dogzilla_lite.ServoSpeedCommand.verify|verify} messages.
          * @param message ServoSpeedCommand message or plain object to encode
          * @param [writer] Writer to encode to
          * @returns Writer
          */
-        public static encode(message: dogzilla.IServoSpeedCommand, writer?: $protobuf.Writer): $protobuf.Writer;
+        public static encode(message: yahboom_dogzilla_lite.IServoSpeedCommand, writer?: $protobuf.Writer): $protobuf.Writer;
 
         /**
-         * Encodes the specified ServoSpeedCommand message, length delimited. Does not implicitly {@link dogzilla.ServoSpeedCommand.verify|verify} messages.
+         * Encodes the specified ServoSpeedCommand message, length delimited. Does not implicitly {@link yahboom_dogzilla_lite.ServoSpeedCommand.verify|verify} messages.
          * @param message ServoSpeedCommand message or plain object to encode
          * @param [writer] Writer to encode to
          * @returns Writer
          */
-        public static encodeDelimited(message: dogzilla.IServoSpeedCommand, writer?: $protobuf.Writer): $protobuf.Writer;
+        public static encodeDelimited(message: yahboom_dogzilla_lite.IServoSpeedCommand, writer?: $protobuf.Writer): $protobuf.Writer;
 
         /**
          * Decodes a ServoSpeedCommand message from the specified reader or buffer.
@@ -6946,7 +6945,7 @@ export namespace dogzilla {
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): dogzilla.ServoSpeedCommand;
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): yahboom_dogzilla_lite.ServoSpeedCommand;
 
         /**
          * Decodes a ServoSpeedCommand message from the specified reader or buffer, length delimited.
@@ -6955,7 +6954,7 @@ export namespace dogzilla {
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): dogzilla.ServoSpeedCommand;
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): yahboom_dogzilla_lite.ServoSpeedCommand;
 
         /**
          * Verifies a ServoSpeedCommand message.
@@ -6969,7 +6968,7 @@ export namespace dogzilla {
          * @param object Plain object
          * @returns ServoSpeedCommand
          */
-        public static fromObject(object: { [k: string]: any }): dogzilla.ServoSpeedCommand;
+        public static fromObject(object: { [k: string]: any }): yahboom_dogzilla_lite.ServoSpeedCommand;
 
         /**
          * Creates a plain object from a ServoSpeedCommand message. Also converts values to other types if specified.
@@ -6977,7 +6976,7 @@ export namespace dogzilla {
          * @param [options] Conversion options
          * @returns Plain object
          */
-        public static toObject(message: dogzilla.ServoSpeedCommand, options?: $protobuf.IConversionOptions): { [k: string]: any };
+        public static toObject(message: yahboom_dogzilla_lite.ServoSpeedCommand, options?: $protobuf.IConversionOptions): { [k: string]: any };
 
         /**
          * Converts this ServoSpeedCommand to JSON.
@@ -7016,7 +7015,7 @@ export namespace dogzilla {
          * Constructs a new CalibrationCommand.
          * @param [properties] Properties to set
          */
-        constructor(properties?: dogzilla.ICalibrationCommand);
+        constructor(properties?: yahboom_dogzilla_lite.ICalibrationCommand);
 
         /** CalibrationCommand enterCalibrationMode. */
         public enterCalibrationMode: boolean;
@@ -7035,23 +7034,23 @@ export namespace dogzilla {
          * @param [properties] Properties to set
          * @returns CalibrationCommand instance
          */
-        public static create(properties?: dogzilla.ICalibrationCommand): dogzilla.CalibrationCommand;
+        public static create(properties?: yahboom_dogzilla_lite.ICalibrationCommand): yahboom_dogzilla_lite.CalibrationCommand;
 
         /**
-         * Encodes the specified CalibrationCommand message. Does not implicitly {@link dogzilla.CalibrationCommand.verify|verify} messages.
+         * Encodes the specified CalibrationCommand message. Does not implicitly {@link yahboom_dogzilla_lite.CalibrationCommand.verify|verify} messages.
          * @param message CalibrationCommand message or plain object to encode
          * @param [writer] Writer to encode to
          * @returns Writer
          */
-        public static encode(message: dogzilla.ICalibrationCommand, writer?: $protobuf.Writer): $protobuf.Writer;
+        public static encode(message: yahboom_dogzilla_lite.ICalibrationCommand, writer?: $protobuf.Writer): $protobuf.Writer;
 
         /**
-         * Encodes the specified CalibrationCommand message, length delimited. Does not implicitly {@link dogzilla.CalibrationCommand.verify|verify} messages.
+         * Encodes the specified CalibrationCommand message, length delimited. Does not implicitly {@link yahboom_dogzilla_lite.CalibrationCommand.verify|verify} messages.
          * @param message CalibrationCommand message or plain object to encode
          * @param [writer] Writer to encode to
          * @returns Writer
          */
-        public static encodeDelimited(message: dogzilla.ICalibrationCommand, writer?: $protobuf.Writer): $protobuf.Writer;
+        public static encodeDelimited(message: yahboom_dogzilla_lite.ICalibrationCommand, writer?: $protobuf.Writer): $protobuf.Writer;
 
         /**
          * Decodes a CalibrationCommand message from the specified reader or buffer.
@@ -7061,7 +7060,7 @@ export namespace dogzilla {
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): dogzilla.CalibrationCommand;
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): yahboom_dogzilla_lite.CalibrationCommand;
 
         /**
          * Decodes a CalibrationCommand message from the specified reader or buffer, length delimited.
@@ -7070,7 +7069,7 @@ export namespace dogzilla {
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): dogzilla.CalibrationCommand;
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): yahboom_dogzilla_lite.CalibrationCommand;
 
         /**
          * Verifies a CalibrationCommand message.
@@ -7084,7 +7083,7 @@ export namespace dogzilla {
          * @param object Plain object
          * @returns CalibrationCommand
          */
-        public static fromObject(object: { [k: string]: any }): dogzilla.CalibrationCommand;
+        public static fromObject(object: { [k: string]: any }): yahboom_dogzilla_lite.CalibrationCommand;
 
         /**
          * Creates a plain object from a CalibrationCommand message. Also converts values to other types if specified.
@@ -7092,7 +7091,7 @@ export namespace dogzilla {
          * @param [options] Conversion options
          * @returns Plain object
          */
-        public static toObject(message: dogzilla.CalibrationCommand, options?: $protobuf.IConversionOptions): { [k: string]: any };
+        public static toObject(message: yahboom_dogzilla_lite.CalibrationCommand, options?: $protobuf.IConversionOptions): { [k: string]: any };
 
         /**
          * Converts this CalibrationCommand to JSON.
@@ -7137,7 +7136,7 @@ export namespace dogzilla {
          * Constructs a new ArmCommand.
          * @param [properties] Properties to set
          */
-        constructor(properties?: dogzilla.IArmCommand);
+        constructor(properties?: yahboom_dogzilla_lite.IArmCommand);
 
         /** ArmCommand gripperStatus. */
         public gripperStatus: number;
@@ -7162,23 +7161,23 @@ export namespace dogzilla {
          * @param [properties] Properties to set
          * @returns ArmCommand instance
          */
-        public static create(properties?: dogzilla.IArmCommand): dogzilla.ArmCommand;
+        public static create(properties?: yahboom_dogzilla_lite.IArmCommand): yahboom_dogzilla_lite.ArmCommand;
 
         /**
-         * Encodes the specified ArmCommand message. Does not implicitly {@link dogzilla.ArmCommand.verify|verify} messages.
+         * Encodes the specified ArmCommand message. Does not implicitly {@link yahboom_dogzilla_lite.ArmCommand.verify|verify} messages.
          * @param message ArmCommand message or plain object to encode
          * @param [writer] Writer to encode to
          * @returns Writer
          */
-        public static encode(message: dogzilla.IArmCommand, writer?: $protobuf.Writer): $protobuf.Writer;
+        public static encode(message: yahboom_dogzilla_lite.IArmCommand, writer?: $protobuf.Writer): $protobuf.Writer;
 
         /**
-         * Encodes the specified ArmCommand message, length delimited. Does not implicitly {@link dogzilla.ArmCommand.verify|verify} messages.
+         * Encodes the specified ArmCommand message, length delimited. Does not implicitly {@link yahboom_dogzilla_lite.ArmCommand.verify|verify} messages.
          * @param message ArmCommand message or plain object to encode
          * @param [writer] Writer to encode to
          * @returns Writer
          */
-        public static encodeDelimited(message: dogzilla.IArmCommand, writer?: $protobuf.Writer): $protobuf.Writer;
+        public static encodeDelimited(message: yahboom_dogzilla_lite.IArmCommand, writer?: $protobuf.Writer): $protobuf.Writer;
 
         /**
          * Decodes an ArmCommand message from the specified reader or buffer.
@@ -7188,7 +7187,7 @@ export namespace dogzilla {
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): dogzilla.ArmCommand;
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): yahboom_dogzilla_lite.ArmCommand;
 
         /**
          * Decodes an ArmCommand message from the specified reader or buffer, length delimited.
@@ -7197,7 +7196,7 @@ export namespace dogzilla {
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): dogzilla.ArmCommand;
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): yahboom_dogzilla_lite.ArmCommand;
 
         /**
          * Verifies an ArmCommand message.
@@ -7211,7 +7210,7 @@ export namespace dogzilla {
          * @param object Plain object
          * @returns ArmCommand
          */
-        public static fromObject(object: { [k: string]: any }): dogzilla.ArmCommand;
+        public static fromObject(object: { [k: string]: any }): yahboom_dogzilla_lite.ArmCommand;
 
         /**
          * Creates a plain object from an ArmCommand message. Also converts values to other types if specified.
@@ -7219,7 +7218,7 @@ export namespace dogzilla {
          * @param [options] Conversion options
          * @returns Plain object
          */
-        public static toObject(message: dogzilla.ArmCommand, options?: $protobuf.IConversionOptions): { [k: string]: any };
+        public static toObject(message: yahboom_dogzilla_lite.ArmCommand, options?: $protobuf.IConversionOptions): { [k: string]: any };
 
         /**
          * Converts this ArmCommand to JSON.
@@ -7252,7 +7251,7 @@ export namespace dogzilla {
          * Constructs a new IoCommand.
          * @param [properties] Properties to set
          */
-        constructor(properties?: dogzilla.IIoCommand);
+        constructor(properties?: yahboom_dogzilla_lite.IIoCommand);
 
         /** IoCommand power_5vOutput. */
         public power_5vOutput: boolean;
@@ -7265,23 +7264,23 @@ export namespace dogzilla {
          * @param [properties] Properties to set
          * @returns IoCommand instance
          */
-        public static create(properties?: dogzilla.IIoCommand): dogzilla.IoCommand;
+        public static create(properties?: yahboom_dogzilla_lite.IIoCommand): yahboom_dogzilla_lite.IoCommand;
 
         /**
-         * Encodes the specified IoCommand message. Does not implicitly {@link dogzilla.IoCommand.verify|verify} messages.
+         * Encodes the specified IoCommand message. Does not implicitly {@link yahboom_dogzilla_lite.IoCommand.verify|verify} messages.
          * @param message IoCommand message or plain object to encode
          * @param [writer] Writer to encode to
          * @returns Writer
          */
-        public static encode(message: dogzilla.IIoCommand, writer?: $protobuf.Writer): $protobuf.Writer;
+        public static encode(message: yahboom_dogzilla_lite.IIoCommand, writer?: $protobuf.Writer): $protobuf.Writer;
 
         /**
-         * Encodes the specified IoCommand message, length delimited. Does not implicitly {@link dogzilla.IoCommand.verify|verify} messages.
+         * Encodes the specified IoCommand message, length delimited. Does not implicitly {@link yahboom_dogzilla_lite.IoCommand.verify|verify} messages.
          * @param message IoCommand message or plain object to encode
          * @param [writer] Writer to encode to
          * @returns Writer
          */
-        public static encodeDelimited(message: dogzilla.IIoCommand, writer?: $protobuf.Writer): $protobuf.Writer;
+        public static encodeDelimited(message: yahboom_dogzilla_lite.IIoCommand, writer?: $protobuf.Writer): $protobuf.Writer;
 
         /**
          * Decodes an IoCommand message from the specified reader or buffer.
@@ -7291,7 +7290,7 @@ export namespace dogzilla {
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): dogzilla.IoCommand;
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): yahboom_dogzilla_lite.IoCommand;
 
         /**
          * Decodes an IoCommand message from the specified reader or buffer, length delimited.
@@ -7300,7 +7299,7 @@ export namespace dogzilla {
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): dogzilla.IoCommand;
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): yahboom_dogzilla_lite.IoCommand;
 
         /**
          * Verifies an IoCommand message.
@@ -7314,7 +7313,7 @@ export namespace dogzilla {
          * @param object Plain object
          * @returns IoCommand
          */
-        public static fromObject(object: { [k: string]: any }): dogzilla.IoCommand;
+        public static fromObject(object: { [k: string]: any }): yahboom_dogzilla_lite.IoCommand;
 
         /**
          * Creates a plain object from an IoCommand message. Also converts values to other types if specified.
@@ -7322,7 +7321,7 @@ export namespace dogzilla {
          * @param [options] Conversion options
          * @returns Plain object
          */
-        public static toObject(message: dogzilla.IoCommand, options?: $protobuf.IConversionOptions): { [k: string]: any };
+        public static toObject(message: yahboom_dogzilla_lite.IoCommand, options?: $protobuf.IConversionOptions): { [k: string]: any };
 
         /**
          * Converts this IoCommand to JSON.
@@ -7355,7 +7354,7 @@ export namespace dogzilla {
          * Constructs a new LedCommand.
          * @param [properties] Properties to set
          */
-        constructor(properties?: dogzilla.ILedCommand);
+        constructor(properties?: yahboom_dogzilla_lite.ILedCommand);
 
         /** LedCommand ledIndex. */
         public ledIndex: number;
@@ -7368,23 +7367,23 @@ export namespace dogzilla {
          * @param [properties] Properties to set
          * @returns LedCommand instance
          */
-        public static create(properties?: dogzilla.ILedCommand): dogzilla.LedCommand;
+        public static create(properties?: yahboom_dogzilla_lite.ILedCommand): yahboom_dogzilla_lite.LedCommand;
 
         /**
-         * Encodes the specified LedCommand message. Does not implicitly {@link dogzilla.LedCommand.verify|verify} messages.
+         * Encodes the specified LedCommand message. Does not implicitly {@link yahboom_dogzilla_lite.LedCommand.verify|verify} messages.
          * @param message LedCommand message or plain object to encode
          * @param [writer] Writer to encode to
          * @returns Writer
          */
-        public static encode(message: dogzilla.ILedCommand, writer?: $protobuf.Writer): $protobuf.Writer;
+        public static encode(message: yahboom_dogzilla_lite.ILedCommand, writer?: $protobuf.Writer): $protobuf.Writer;
 
         /**
-         * Encodes the specified LedCommand message, length delimited. Does not implicitly {@link dogzilla.LedCommand.verify|verify} messages.
+         * Encodes the specified LedCommand message, length delimited. Does not implicitly {@link yahboom_dogzilla_lite.LedCommand.verify|verify} messages.
          * @param message LedCommand message or plain object to encode
          * @param [writer] Writer to encode to
          * @returns Writer
          */
-        public static encodeDelimited(message: dogzilla.ILedCommand, writer?: $protobuf.Writer): $protobuf.Writer;
+        public static encodeDelimited(message: yahboom_dogzilla_lite.ILedCommand, writer?: $protobuf.Writer): $protobuf.Writer;
 
         /**
          * Decodes a LedCommand message from the specified reader or buffer.
@@ -7394,7 +7393,7 @@ export namespace dogzilla {
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): dogzilla.LedCommand;
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): yahboom_dogzilla_lite.LedCommand;
 
         /**
          * Decodes a LedCommand message from the specified reader or buffer, length delimited.
@@ -7403,7 +7402,7 @@ export namespace dogzilla {
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): dogzilla.LedCommand;
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): yahboom_dogzilla_lite.LedCommand;
 
         /**
          * Verifies a LedCommand message.
@@ -7417,7 +7416,7 @@ export namespace dogzilla {
          * @param object Plain object
          * @returns LedCommand
          */
-        public static fromObject(object: { [k: string]: any }): dogzilla.LedCommand;
+        public static fromObject(object: { [k: string]: any }): yahboom_dogzilla_lite.LedCommand;
 
         /**
          * Creates a plain object from a LedCommand message. Also converts values to other types if specified.
@@ -7425,7 +7424,7 @@ export namespace dogzilla {
          * @param [options] Conversion options
          * @returns Plain object
          */
-        public static toObject(message: dogzilla.LedCommand, options?: $protobuf.IConversionOptions): { [k: string]: any };
+        public static toObject(message: yahboom_dogzilla_lite.LedCommand, options?: $protobuf.IConversionOptions): { [k: string]: any };
 
         /**
          * Converts this LedCommand to JSON.
@@ -7445,7 +7444,7 @@ export namespace dogzilla {
     interface IActionCommand {
 
         /** ActionCommand action */
-        action?: (dogzilla.ActionType|null);
+        action?: (yahboom_dogzilla_lite.ActionType|null);
     }
 
     /** Represents an ActionCommand. */
@@ -7455,33 +7454,33 @@ export namespace dogzilla {
          * Constructs a new ActionCommand.
          * @param [properties] Properties to set
          */
-        constructor(properties?: dogzilla.IActionCommand);
+        constructor(properties?: yahboom_dogzilla_lite.IActionCommand);
 
         /** ActionCommand action. */
-        public action: dogzilla.ActionType;
+        public action: yahboom_dogzilla_lite.ActionType;
 
         /**
          * Creates a new ActionCommand instance using the specified properties.
          * @param [properties] Properties to set
          * @returns ActionCommand instance
          */
-        public static create(properties?: dogzilla.IActionCommand): dogzilla.ActionCommand;
+        public static create(properties?: yahboom_dogzilla_lite.IActionCommand): yahboom_dogzilla_lite.ActionCommand;
 
         /**
-         * Encodes the specified ActionCommand message. Does not implicitly {@link dogzilla.ActionCommand.verify|verify} messages.
+         * Encodes the specified ActionCommand message. Does not implicitly {@link yahboom_dogzilla_lite.ActionCommand.verify|verify} messages.
          * @param message ActionCommand message or plain object to encode
          * @param [writer] Writer to encode to
          * @returns Writer
          */
-        public static encode(message: dogzilla.IActionCommand, writer?: $protobuf.Writer): $protobuf.Writer;
+        public static encode(message: yahboom_dogzilla_lite.IActionCommand, writer?: $protobuf.Writer): $protobuf.Writer;
 
         /**
-         * Encodes the specified ActionCommand message, length delimited. Does not implicitly {@link dogzilla.ActionCommand.verify|verify} messages.
+         * Encodes the specified ActionCommand message, length delimited. Does not implicitly {@link yahboom_dogzilla_lite.ActionCommand.verify|verify} messages.
          * @param message ActionCommand message or plain object to encode
          * @param [writer] Writer to encode to
          * @returns Writer
          */
-        public static encodeDelimited(message: dogzilla.IActionCommand, writer?: $protobuf.Writer): $protobuf.Writer;
+        public static encodeDelimited(message: yahboom_dogzilla_lite.IActionCommand, writer?: $protobuf.Writer): $protobuf.Writer;
 
         /**
          * Decodes an ActionCommand message from the specified reader or buffer.
@@ -7491,7 +7490,7 @@ export namespace dogzilla {
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): dogzilla.ActionCommand;
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): yahboom_dogzilla_lite.ActionCommand;
 
         /**
          * Decodes an ActionCommand message from the specified reader or buffer, length delimited.
@@ -7500,7 +7499,7 @@ export namespace dogzilla {
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): dogzilla.ActionCommand;
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): yahboom_dogzilla_lite.ActionCommand;
 
         /**
          * Verifies an ActionCommand message.
@@ -7514,7 +7513,7 @@ export namespace dogzilla {
          * @param object Plain object
          * @returns ActionCommand
          */
-        public static fromObject(object: { [k: string]: any }): dogzilla.ActionCommand;
+        public static fromObject(object: { [k: string]: any }): yahboom_dogzilla_lite.ActionCommand;
 
         /**
          * Creates a plain object from an ActionCommand message. Also converts values to other types if specified.
@@ -7522,7 +7521,7 @@ export namespace dogzilla {
          * @param [options] Conversion options
          * @returns Plain object
          */
-        public static toObject(message: dogzilla.ActionCommand, options?: $protobuf.IConversionOptions): { [k: string]: any };
+        public static toObject(message: yahboom_dogzilla_lite.ActionCommand, options?: $protobuf.IConversionOptions): { [k: string]: any };
 
         /**
          * Converts this ActionCommand to JSON.
@@ -7558,7 +7557,7 @@ export namespace dogzilla {
          * Constructs a new MovementCommand.
          * @param [properties] Properties to set
          */
-        constructor(properties?: dogzilla.IMovementCommand);
+        constructor(properties?: yahboom_dogzilla_lite.IMovementCommand);
 
         /** MovementCommand moveX. */
         public moveX: number;
@@ -7574,23 +7573,23 @@ export namespace dogzilla {
          * @param [properties] Properties to set
          * @returns MovementCommand instance
          */
-        public static create(properties?: dogzilla.IMovementCommand): dogzilla.MovementCommand;
+        public static create(properties?: yahboom_dogzilla_lite.IMovementCommand): yahboom_dogzilla_lite.MovementCommand;
 
         /**
-         * Encodes the specified MovementCommand message. Does not implicitly {@link dogzilla.MovementCommand.verify|verify} messages.
+         * Encodes the specified MovementCommand message. Does not implicitly {@link yahboom_dogzilla_lite.MovementCommand.verify|verify} messages.
          * @param message MovementCommand message or plain object to encode
          * @param [writer] Writer to encode to
          * @returns Writer
          */
-        public static encode(message: dogzilla.IMovementCommand, writer?: $protobuf.Writer): $protobuf.Writer;
+        public static encode(message: yahboom_dogzilla_lite.IMovementCommand, writer?: $protobuf.Writer): $protobuf.Writer;
 
         /**
-         * Encodes the specified MovementCommand message, length delimited. Does not implicitly {@link dogzilla.MovementCommand.verify|verify} messages.
+         * Encodes the specified MovementCommand message, length delimited. Does not implicitly {@link yahboom_dogzilla_lite.MovementCommand.verify|verify} messages.
          * @param message MovementCommand message or plain object to encode
          * @param [writer] Writer to encode to
          * @returns Writer
          */
-        public static encodeDelimited(message: dogzilla.IMovementCommand, writer?: $protobuf.Writer): $protobuf.Writer;
+        public static encodeDelimited(message: yahboom_dogzilla_lite.IMovementCommand, writer?: $protobuf.Writer): $protobuf.Writer;
 
         /**
          * Decodes a MovementCommand message from the specified reader or buffer.
@@ -7600,7 +7599,7 @@ export namespace dogzilla {
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): dogzilla.MovementCommand;
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): yahboom_dogzilla_lite.MovementCommand;
 
         /**
          * Decodes a MovementCommand message from the specified reader or buffer, length delimited.
@@ -7609,7 +7608,7 @@ export namespace dogzilla {
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): dogzilla.MovementCommand;
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): yahboom_dogzilla_lite.MovementCommand;
 
         /**
          * Verifies a MovementCommand message.
@@ -7623,7 +7622,7 @@ export namespace dogzilla {
          * @param object Plain object
          * @returns MovementCommand
          */
-        public static fromObject(object: { [k: string]: any }): dogzilla.MovementCommand;
+        public static fromObject(object: { [k: string]: any }): yahboom_dogzilla_lite.MovementCommand;
 
         /**
          * Creates a plain object from a MovementCommand message. Also converts values to other types if specified.
@@ -7631,7 +7630,7 @@ export namespace dogzilla {
          * @param [options] Conversion options
          * @returns Plain object
          */
-        public static toObject(message: dogzilla.MovementCommand, options?: $protobuf.IConversionOptions): { [k: string]: any };
+        public static toObject(message: yahboom_dogzilla_lite.MovementCommand, options?: $protobuf.IConversionOptions): { [k: string]: any };
 
         /**
          * Converts this MovementCommand to JSON.
@@ -7651,13 +7650,13 @@ export namespace dogzilla {
     interface IConfigCommand {
 
         /** ConfigCommand performanceMode */
-        performanceMode?: (dogzilla.PerformanceMode|null);
+        performanceMode?: (yahboom_dogzilla_lite.PerformanceMode|null);
 
         /** ConfigCommand gait */
-        gait?: (dogzilla.GaitType|null);
+        gait?: (yahboom_dogzilla_lite.GaitType|null);
 
         /** ConfigCommand imuMode */
-        imuMode?: (dogzilla.ImuMode|null);
+        imuMode?: (yahboom_dogzilla_lite.ImuMode|null);
 
         /** ConfigCommand enableFeedback */
         enableFeedback?: (boolean|null);
@@ -7673,16 +7672,16 @@ export namespace dogzilla {
          * Constructs a new ConfigCommand.
          * @param [properties] Properties to set
          */
-        constructor(properties?: dogzilla.IConfigCommand);
+        constructor(properties?: yahboom_dogzilla_lite.IConfigCommand);
 
         /** ConfigCommand performanceMode. */
-        public performanceMode: dogzilla.PerformanceMode;
+        public performanceMode: yahboom_dogzilla_lite.PerformanceMode;
 
         /** ConfigCommand gait. */
-        public gait: dogzilla.GaitType;
+        public gait: yahboom_dogzilla_lite.GaitType;
 
         /** ConfigCommand imuMode. */
-        public imuMode: dogzilla.ImuMode;
+        public imuMode: yahboom_dogzilla_lite.ImuMode;
 
         /** ConfigCommand enableFeedback. */
         public enableFeedback: boolean;
@@ -7695,23 +7694,23 @@ export namespace dogzilla {
          * @param [properties] Properties to set
          * @returns ConfigCommand instance
          */
-        public static create(properties?: dogzilla.IConfigCommand): dogzilla.ConfigCommand;
+        public static create(properties?: yahboom_dogzilla_lite.IConfigCommand): yahboom_dogzilla_lite.ConfigCommand;
 
         /**
-         * Encodes the specified ConfigCommand message. Does not implicitly {@link dogzilla.ConfigCommand.verify|verify} messages.
+         * Encodes the specified ConfigCommand message. Does not implicitly {@link yahboom_dogzilla_lite.ConfigCommand.verify|verify} messages.
          * @param message ConfigCommand message or plain object to encode
          * @param [writer] Writer to encode to
          * @returns Writer
          */
-        public static encode(message: dogzilla.IConfigCommand, writer?: $protobuf.Writer): $protobuf.Writer;
+        public static encode(message: yahboom_dogzilla_lite.IConfigCommand, writer?: $protobuf.Writer): $protobuf.Writer;
 
         /**
-         * Encodes the specified ConfigCommand message, length delimited. Does not implicitly {@link dogzilla.ConfigCommand.verify|verify} messages.
+         * Encodes the specified ConfigCommand message, length delimited. Does not implicitly {@link yahboom_dogzilla_lite.ConfigCommand.verify|verify} messages.
          * @param message ConfigCommand message or plain object to encode
          * @param [writer] Writer to encode to
          * @returns Writer
          */
-        public static encodeDelimited(message: dogzilla.IConfigCommand, writer?: $protobuf.Writer): $protobuf.Writer;
+        public static encodeDelimited(message: yahboom_dogzilla_lite.IConfigCommand, writer?: $protobuf.Writer): $protobuf.Writer;
 
         /**
          * Decodes a ConfigCommand message from the specified reader or buffer.
@@ -7721,7 +7720,7 @@ export namespace dogzilla {
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): dogzilla.ConfigCommand;
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): yahboom_dogzilla_lite.ConfigCommand;
 
         /**
          * Decodes a ConfigCommand message from the specified reader or buffer, length delimited.
@@ -7730,7 +7729,7 @@ export namespace dogzilla {
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): dogzilla.ConfigCommand;
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): yahboom_dogzilla_lite.ConfigCommand;
 
         /**
          * Verifies a ConfigCommand message.
@@ -7744,7 +7743,7 @@ export namespace dogzilla {
          * @param object Plain object
          * @returns ConfigCommand
          */
-        public static fromObject(object: { [k: string]: any }): dogzilla.ConfigCommand;
+        public static fromObject(object: { [k: string]: any }): yahboom_dogzilla_lite.ConfigCommand;
 
         /**
          * Creates a plain object from a ConfigCommand message. Also converts values to other types if specified.
@@ -7752,7 +7751,7 @@ export namespace dogzilla {
          * @param [options] Conversion options
          * @returns Plain object
          */
-        public static toObject(message: dogzilla.ConfigCommand, options?: $protobuf.IConversionOptions): { [k: string]: any };
+        public static toObject(message: yahboom_dogzilla_lite.ConfigCommand, options?: $protobuf.IConversionOptions): { [k: string]: any };
 
         /**
          * Converts this ConfigCommand to JSON.
@@ -7775,31 +7774,31 @@ export namespace dogzilla {
         targetDeviceSerial?: (string|null);
 
         /** Command servo */
-        servo?: (dogzilla.IServoCommand|null);
+        servo?: (yahboom_dogzilla_lite.IServoCommand|null);
 
         /** Command servoSpeed */
-        servoSpeed?: (dogzilla.IServoSpeedCommand|null);
+        servoSpeed?: (yahboom_dogzilla_lite.IServoSpeedCommand|null);
 
         /** Command calibration */
-        calibration?: (dogzilla.ICalibrationCommand|null);
+        calibration?: (yahboom_dogzilla_lite.ICalibrationCommand|null);
 
         /** Command arm */
-        arm?: (dogzilla.IArmCommand|null);
+        arm?: (yahboom_dogzilla_lite.IArmCommand|null);
 
         /** Command io */
-        io?: (dogzilla.IIoCommand|null);
+        io?: (yahboom_dogzilla_lite.IIoCommand|null);
 
         /** Command config */
-        config?: (dogzilla.IConfigCommand|null);
+        config?: (yahboom_dogzilla_lite.IConfigCommand|null);
 
         /** Command led */
-        led?: (dogzilla.ILedCommand|null);
+        led?: (yahboom_dogzilla_lite.ILedCommand|null);
 
         /** Command action */
-        action?: (dogzilla.IActionCommand|null);
+        action?: (yahboom_dogzilla_lite.IActionCommand|null);
 
         /** Command movement */
-        movement?: (dogzilla.IMovementCommand|null);
+        movement?: (yahboom_dogzilla_lite.IMovementCommand|null);
     }
 
     /** Represents a Command. */
@@ -7809,60 +7808,60 @@ export namespace dogzilla {
          * Constructs a new Command.
          * @param [properties] Properties to set
          */
-        constructor(properties?: dogzilla.ICommand);
+        constructor(properties?: yahboom_dogzilla_lite.ICommand);
 
         /** Command targetDeviceSerial. */
         public targetDeviceSerial: string;
 
         /** Command servo. */
-        public servo?: (dogzilla.IServoCommand|null);
+        public servo?: (yahboom_dogzilla_lite.IServoCommand|null);
 
         /** Command servoSpeed. */
-        public servoSpeed?: (dogzilla.IServoSpeedCommand|null);
+        public servoSpeed?: (yahboom_dogzilla_lite.IServoSpeedCommand|null);
 
         /** Command calibration. */
-        public calibration?: (dogzilla.ICalibrationCommand|null);
+        public calibration?: (yahboom_dogzilla_lite.ICalibrationCommand|null);
 
         /** Command arm. */
-        public arm?: (dogzilla.IArmCommand|null);
+        public arm?: (yahboom_dogzilla_lite.IArmCommand|null);
 
         /** Command io. */
-        public io?: (dogzilla.IIoCommand|null);
+        public io?: (yahboom_dogzilla_lite.IIoCommand|null);
 
         /** Command config. */
-        public config?: (dogzilla.IConfigCommand|null);
+        public config?: (yahboom_dogzilla_lite.IConfigCommand|null);
 
         /** Command led. */
-        public led?: (dogzilla.ILedCommand|null);
+        public led?: (yahboom_dogzilla_lite.ILedCommand|null);
 
         /** Command action. */
-        public action?: (dogzilla.IActionCommand|null);
+        public action?: (yahboom_dogzilla_lite.IActionCommand|null);
 
         /** Command movement. */
-        public movement?: (dogzilla.IMovementCommand|null);
+        public movement?: (yahboom_dogzilla_lite.IMovementCommand|null);
 
         /**
          * Creates a new Command instance using the specified properties.
          * @param [properties] Properties to set
          * @returns Command instance
          */
-        public static create(properties?: dogzilla.ICommand): dogzilla.Command;
+        public static create(properties?: yahboom_dogzilla_lite.ICommand): yahboom_dogzilla_lite.Command;
 
         /**
-         * Encodes the specified Command message. Does not implicitly {@link dogzilla.Command.verify|verify} messages.
+         * Encodes the specified Command message. Does not implicitly {@link yahboom_dogzilla_lite.Command.verify|verify} messages.
          * @param message Command message or plain object to encode
          * @param [writer] Writer to encode to
          * @returns Writer
          */
-        public static encode(message: dogzilla.ICommand, writer?: $protobuf.Writer): $protobuf.Writer;
+        public static encode(message: yahboom_dogzilla_lite.ICommand, writer?: $protobuf.Writer): $protobuf.Writer;
 
         /**
-         * Encodes the specified Command message, length delimited. Does not implicitly {@link dogzilla.Command.verify|verify} messages.
+         * Encodes the specified Command message, length delimited. Does not implicitly {@link yahboom_dogzilla_lite.Command.verify|verify} messages.
          * @param message Command message or plain object to encode
          * @param [writer] Writer to encode to
          * @returns Writer
          */
-        public static encodeDelimited(message: dogzilla.ICommand, writer?: $protobuf.Writer): $protobuf.Writer;
+        public static encodeDelimited(message: yahboom_dogzilla_lite.ICommand, writer?: $protobuf.Writer): $protobuf.Writer;
 
         /**
          * Decodes a Command message from the specified reader or buffer.
@@ -7872,7 +7871,7 @@ export namespace dogzilla {
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): dogzilla.Command;
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): yahboom_dogzilla_lite.Command;
 
         /**
          * Decodes a Command message from the specified reader or buffer, length delimited.
@@ -7881,7 +7880,7 @@ export namespace dogzilla {
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): dogzilla.Command;
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): yahboom_dogzilla_lite.Command;
 
         /**
          * Verifies a Command message.
@@ -7895,7 +7894,7 @@ export namespace dogzilla {
          * @param object Plain object
          * @returns Command
          */
-        public static fromObject(object: { [k: string]: any }): dogzilla.Command;
+        public static fromObject(object: { [k: string]: any }): yahboom_dogzilla_lite.Command;
 
         /**
          * Creates a plain object from a Command message. Also converts values to other types if specified.
@@ -7903,7 +7902,7 @@ export namespace dogzilla {
          * @param [options] Conversion options
          * @returns Plain object
          */
-        public static toObject(message: dogzilla.Command, options?: $protobuf.IConversionOptions): { [k: string]: any };
+        public static toObject(message: yahboom_dogzilla_lite.Command, options?: $protobuf.IConversionOptions): { [k: string]: any };
 
         /**
          * Converts this Command to JSON.
@@ -7938,7 +7937,7 @@ export namespace dogzilla {
         targetDeviceSerial?: (string|null);
 
         /** TxEnvelope command */
-        command?: (dogzilla.ICommand|null);
+        command?: (yahboom_dogzilla_lite.ICommand|null);
     }
 
     /** Represents a TxEnvelope. */
@@ -7948,7 +7947,7 @@ export namespace dogzilla {
          * Constructs a new TxEnvelope.
          * @param [properties] Properties to set
          */
-        constructor(properties?: dogzilla.ITxEnvelope);
+        constructor(properties?: yahboom_dogzilla_lite.ITxEnvelope);
 
         /** TxEnvelope monotonicStampNs. */
         public monotonicStampNs: Long;
@@ -7966,30 +7965,30 @@ export namespace dogzilla {
         public targetDeviceSerial: string;
 
         /** TxEnvelope command. */
-        public command?: (dogzilla.ICommand|null);
+        public command?: (yahboom_dogzilla_lite.ICommand|null);
 
         /**
          * Creates a new TxEnvelope instance using the specified properties.
          * @param [properties] Properties to set
          * @returns TxEnvelope instance
          */
-        public static create(properties?: dogzilla.ITxEnvelope): dogzilla.TxEnvelope;
+        public static create(properties?: yahboom_dogzilla_lite.ITxEnvelope): yahboom_dogzilla_lite.TxEnvelope;
 
         /**
-         * Encodes the specified TxEnvelope message. Does not implicitly {@link dogzilla.TxEnvelope.verify|verify} messages.
+         * Encodes the specified TxEnvelope message. Does not implicitly {@link yahboom_dogzilla_lite.TxEnvelope.verify|verify} messages.
          * @param message TxEnvelope message or plain object to encode
          * @param [writer] Writer to encode to
          * @returns Writer
          */
-        public static encode(message: dogzilla.ITxEnvelope, writer?: $protobuf.Writer): $protobuf.Writer;
+        public static encode(message: yahboom_dogzilla_lite.ITxEnvelope, writer?: $protobuf.Writer): $protobuf.Writer;
 
         /**
-         * Encodes the specified TxEnvelope message, length delimited. Does not implicitly {@link dogzilla.TxEnvelope.verify|verify} messages.
+         * Encodes the specified TxEnvelope message, length delimited. Does not implicitly {@link yahboom_dogzilla_lite.TxEnvelope.verify|verify} messages.
          * @param message TxEnvelope message or plain object to encode
          * @param [writer] Writer to encode to
          * @returns Writer
          */
-        public static encodeDelimited(message: dogzilla.ITxEnvelope, writer?: $protobuf.Writer): $protobuf.Writer;
+        public static encodeDelimited(message: yahboom_dogzilla_lite.ITxEnvelope, writer?: $protobuf.Writer): $protobuf.Writer;
 
         /**
          * Decodes a TxEnvelope message from the specified reader or buffer.
@@ -7999,7 +7998,7 @@ export namespace dogzilla {
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): dogzilla.TxEnvelope;
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): yahboom_dogzilla_lite.TxEnvelope;
 
         /**
          * Decodes a TxEnvelope message from the specified reader or buffer, length delimited.
@@ -8008,7 +8007,7 @@ export namespace dogzilla {
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): dogzilla.TxEnvelope;
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): yahboom_dogzilla_lite.TxEnvelope;
 
         /**
          * Verifies a TxEnvelope message.
@@ -8022,7 +8021,7 @@ export namespace dogzilla {
          * @param object Plain object
          * @returns TxEnvelope
          */
-        public static fromObject(object: { [k: string]: any }): dogzilla.TxEnvelope;
+        public static fromObject(object: { [k: string]: any }): yahboom_dogzilla_lite.TxEnvelope;
 
         /**
          * Creates a plain object from a TxEnvelope message. Also converts values to other types if specified.
@@ -8030,7 +8029,7 @@ export namespace dogzilla {
          * @param [options] Conversion options
          * @returns Plain object
          */
-        public static toObject(message: dogzilla.TxEnvelope, options?: $protobuf.IConversionOptions): { [k: string]: any };
+        public static toObject(message: yahboom_dogzilla_lite.TxEnvelope, options?: $protobuf.IConversionOptions): { [k: string]: any };
 
         /**
          * Converts this TxEnvelope to JSON.
@@ -8059,19 +8058,19 @@ export namespace dogzilla {
         appStartId?: (Long|null);
 
         /** RxEnvelope signalType */
-        signalType?: (dogzilla.DogzillaSignalType|null);
+        signalType?: (yahboom_dogzilla_lite.YahboomDogzillaLiteSignalType|null);
 
         /** RxEnvelope device */
-        device?: (dogzilla.IDogzillaDevice|null);
+        device?: (yahboom_dogzilla_lite.IYahboomDogzillaLiteDevice|null);
 
         /** RxEnvelope status */
-        status?: (dogzilla.IDogzillaStatus|null);
+        status?: (yahboom_dogzilla_lite.IYahboomDogzillaLiteStatus|null);
 
         /** RxEnvelope data */
         data?: (Uint8Array|null);
 
         /** RxEnvelope command */
-        command?: (dogzilla.ITxEnvelope|null);
+        command?: (yahboom_dogzilla_lite.ITxEnvelope|null);
 
         /** RxEnvelope errorMessage */
         errorMessage?: (string|null);
@@ -8084,7 +8083,7 @@ export namespace dogzilla {
          * Constructs a new RxEnvelope.
          * @param [properties] Properties to set
          */
-        constructor(properties?: dogzilla.IRxEnvelope);
+        constructor(properties?: yahboom_dogzilla_lite.IRxEnvelope);
 
         /** RxEnvelope monotonicStampNs. */
         public monotonicStampNs: Long;
@@ -8096,19 +8095,19 @@ export namespace dogzilla {
         public appStartId: Long;
 
         /** RxEnvelope signalType. */
-        public signalType: dogzilla.DogzillaSignalType;
+        public signalType: yahboom_dogzilla_lite.YahboomDogzillaLiteSignalType;
 
         /** RxEnvelope device. */
-        public device?: (dogzilla.IDogzillaDevice|null);
+        public device?: (yahboom_dogzilla_lite.IYahboomDogzillaLiteDevice|null);
 
         /** RxEnvelope status. */
-        public status?: (dogzilla.IDogzillaStatus|null);
+        public status?: (yahboom_dogzilla_lite.IYahboomDogzillaLiteStatus|null);
 
         /** RxEnvelope data. */
         public data: Uint8Array;
 
         /** RxEnvelope command. */
-        public command?: (dogzilla.ITxEnvelope|null);
+        public command?: (yahboom_dogzilla_lite.ITxEnvelope|null);
 
         /** RxEnvelope errorMessage. */
         public errorMessage: string;
@@ -8118,23 +8117,23 @@ export namespace dogzilla {
          * @param [properties] Properties to set
          * @returns RxEnvelope instance
          */
-        public static create(properties?: dogzilla.IRxEnvelope): dogzilla.RxEnvelope;
+        public static create(properties?: yahboom_dogzilla_lite.IRxEnvelope): yahboom_dogzilla_lite.RxEnvelope;
 
         /**
-         * Encodes the specified RxEnvelope message. Does not implicitly {@link dogzilla.RxEnvelope.verify|verify} messages.
+         * Encodes the specified RxEnvelope message. Does not implicitly {@link yahboom_dogzilla_lite.RxEnvelope.verify|verify} messages.
          * @param message RxEnvelope message or plain object to encode
          * @param [writer] Writer to encode to
          * @returns Writer
          */
-        public static encode(message: dogzilla.IRxEnvelope, writer?: $protobuf.Writer): $protobuf.Writer;
+        public static encode(message: yahboom_dogzilla_lite.IRxEnvelope, writer?: $protobuf.Writer): $protobuf.Writer;
 
         /**
-         * Encodes the specified RxEnvelope message, length delimited. Does not implicitly {@link dogzilla.RxEnvelope.verify|verify} messages.
+         * Encodes the specified RxEnvelope message, length delimited. Does not implicitly {@link yahboom_dogzilla_lite.RxEnvelope.verify|verify} messages.
          * @param message RxEnvelope message or plain object to encode
          * @param [writer] Writer to encode to
          * @returns Writer
          */
-        public static encodeDelimited(message: dogzilla.IRxEnvelope, writer?: $protobuf.Writer): $protobuf.Writer;
+        public static encodeDelimited(message: yahboom_dogzilla_lite.IRxEnvelope, writer?: $protobuf.Writer): $protobuf.Writer;
 
         /**
          * Decodes a RxEnvelope message from the specified reader or buffer.
@@ -8144,7 +8143,7 @@ export namespace dogzilla {
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): dogzilla.RxEnvelope;
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): yahboom_dogzilla_lite.RxEnvelope;
 
         /**
          * Decodes a RxEnvelope message from the specified reader or buffer, length delimited.
@@ -8153,7 +8152,7 @@ export namespace dogzilla {
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): dogzilla.RxEnvelope;
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): yahboom_dogzilla_lite.RxEnvelope;
 
         /**
          * Verifies a RxEnvelope message.
@@ -8167,7 +8166,7 @@ export namespace dogzilla {
          * @param object Plain object
          * @returns RxEnvelope
          */
-        public static fromObject(object: { [k: string]: any }): dogzilla.RxEnvelope;
+        public static fromObject(object: { [k: string]: any }): yahboom_dogzilla_lite.RxEnvelope;
 
         /**
          * Creates a plain object from a RxEnvelope message. Also converts values to other types if specified.
@@ -8175,7 +8174,7 @@ export namespace dogzilla {
          * @param [options] Conversion options
          * @returns Plain object
          */
-        public static toObject(message: dogzilla.RxEnvelope, options?: $protobuf.IConversionOptions): { [k: string]: any };
+        public static toObject(message: yahboom_dogzilla_lite.RxEnvelope, options?: $protobuf.IConversionOptions): { [k: string]: any };
 
         /**
          * Converts this RxEnvelope to JSON.
@@ -8198,7 +8197,7 @@ export namespace dogzilla {
         lastInferenceQueuePtr?: (Uint8Array|null);
 
         /** InferenceState devices */
-        devices?: (dogzilla.InferenceState.IDeviceState[]|null);
+        devices?: (yahboom_dogzilla_lite.InferenceState.IDeviceState[]|null);
     }
 
     /** Represents an InferenceState. */
@@ -8208,36 +8207,36 @@ export namespace dogzilla {
          * Constructs a new InferenceState.
          * @param [properties] Properties to set
          */
-        constructor(properties?: dogzilla.IInferenceState);
+        constructor(properties?: yahboom_dogzilla_lite.IInferenceState);
 
         /** InferenceState lastInferenceQueuePtr. */
         public lastInferenceQueuePtr: Uint8Array;
 
         /** InferenceState devices. */
-        public devices: dogzilla.InferenceState.IDeviceState[];
+        public devices: yahboom_dogzilla_lite.InferenceState.IDeviceState[];
 
         /**
          * Creates a new InferenceState instance using the specified properties.
          * @param [properties] Properties to set
          * @returns InferenceState instance
          */
-        public static create(properties?: dogzilla.IInferenceState): dogzilla.InferenceState;
+        public static create(properties?: yahboom_dogzilla_lite.IInferenceState): yahboom_dogzilla_lite.InferenceState;
 
         /**
-         * Encodes the specified InferenceState message. Does not implicitly {@link dogzilla.InferenceState.verify|verify} messages.
+         * Encodes the specified InferenceState message. Does not implicitly {@link yahboom_dogzilla_lite.InferenceState.verify|verify} messages.
          * @param message InferenceState message or plain object to encode
          * @param [writer] Writer to encode to
          * @returns Writer
          */
-        public static encode(message: dogzilla.IInferenceState, writer?: $protobuf.Writer): $protobuf.Writer;
+        public static encode(message: yahboom_dogzilla_lite.IInferenceState, writer?: $protobuf.Writer): $protobuf.Writer;
 
         /**
-         * Encodes the specified InferenceState message, length delimited. Does not implicitly {@link dogzilla.InferenceState.verify|verify} messages.
+         * Encodes the specified InferenceState message, length delimited. Does not implicitly {@link yahboom_dogzilla_lite.InferenceState.verify|verify} messages.
          * @param message InferenceState message or plain object to encode
          * @param [writer] Writer to encode to
          * @returns Writer
          */
-        public static encodeDelimited(message: dogzilla.IInferenceState, writer?: $protobuf.Writer): $protobuf.Writer;
+        public static encodeDelimited(message: yahboom_dogzilla_lite.IInferenceState, writer?: $protobuf.Writer): $protobuf.Writer;
 
         /**
          * Decodes an InferenceState message from the specified reader or buffer.
@@ -8247,7 +8246,7 @@ export namespace dogzilla {
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): dogzilla.InferenceState;
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): yahboom_dogzilla_lite.InferenceState;
 
         /**
          * Decodes an InferenceState message from the specified reader or buffer, length delimited.
@@ -8256,7 +8255,7 @@ export namespace dogzilla {
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): dogzilla.InferenceState;
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): yahboom_dogzilla_lite.InferenceState;
 
         /**
          * Verifies an InferenceState message.
@@ -8270,7 +8269,7 @@ export namespace dogzilla {
          * @param object Plain object
          * @returns InferenceState
          */
-        public static fromObject(object: { [k: string]: any }): dogzilla.InferenceState;
+        public static fromObject(object: { [k: string]: any }): yahboom_dogzilla_lite.InferenceState;
 
         /**
          * Creates a plain object from an InferenceState message. Also converts values to other types if specified.
@@ -8278,7 +8277,7 @@ export namespace dogzilla {
          * @param [options] Conversion options
          * @returns Plain object
          */
-        public static toObject(message: dogzilla.InferenceState, options?: $protobuf.IConversionOptions): { [k: string]: any };
+        public static toObject(message: yahboom_dogzilla_lite.InferenceState, options?: $protobuf.IConversionOptions): { [k: string]: any };
 
         /**
          * Converts this InferenceState to JSON.
@@ -8300,10 +8299,10 @@ export namespace dogzilla {
         interface IDeviceState {
 
             /** DeviceState device */
-            device?: (dogzilla.IDogzillaDevice|null);
+            device?: (yahboom_dogzilla_lite.IYahboomDogzillaLiteDevice|null);
 
             /** DeviceState status */
-            status?: (dogzilla.IDogzillaStatus|null);
+            status?: (yahboom_dogzilla_lite.IYahboomDogzillaLiteStatus|null);
 
             /** DeviceState monotonicStampNs */
             monotonicStampNs?: (Long|null);
@@ -8322,13 +8321,13 @@ export namespace dogzilla {
              * Constructs a new DeviceState.
              * @param [properties] Properties to set
              */
-            constructor(properties?: dogzilla.InferenceState.IDeviceState);
+            constructor(properties?: yahboom_dogzilla_lite.InferenceState.IDeviceState);
 
             /** DeviceState device. */
-            public device?: (dogzilla.IDogzillaDevice|null);
+            public device?: (yahboom_dogzilla_lite.IYahboomDogzillaLiteDevice|null);
 
             /** DeviceState status. */
-            public status?: (dogzilla.IDogzillaStatus|null);
+            public status?: (yahboom_dogzilla_lite.IYahboomDogzillaLiteStatus|null);
 
             /** DeviceState monotonicStampNs. */
             public monotonicStampNs: Long;
@@ -8344,23 +8343,23 @@ export namespace dogzilla {
              * @param [properties] Properties to set
              * @returns DeviceState instance
              */
-            public static create(properties?: dogzilla.InferenceState.IDeviceState): dogzilla.InferenceState.DeviceState;
+            public static create(properties?: yahboom_dogzilla_lite.InferenceState.IDeviceState): yahboom_dogzilla_lite.InferenceState.DeviceState;
 
             /**
-             * Encodes the specified DeviceState message. Does not implicitly {@link dogzilla.InferenceState.DeviceState.verify|verify} messages.
+             * Encodes the specified DeviceState message. Does not implicitly {@link yahboom_dogzilla_lite.InferenceState.DeviceState.verify|verify} messages.
              * @param message DeviceState message or plain object to encode
              * @param [writer] Writer to encode to
              * @returns Writer
              */
-            public static encode(message: dogzilla.InferenceState.IDeviceState, writer?: $protobuf.Writer): $protobuf.Writer;
+            public static encode(message: yahboom_dogzilla_lite.InferenceState.IDeviceState, writer?: $protobuf.Writer): $protobuf.Writer;
 
             /**
-             * Encodes the specified DeviceState message, length delimited. Does not implicitly {@link dogzilla.InferenceState.DeviceState.verify|verify} messages.
+             * Encodes the specified DeviceState message, length delimited. Does not implicitly {@link yahboom_dogzilla_lite.InferenceState.DeviceState.verify|verify} messages.
              * @param message DeviceState message or plain object to encode
              * @param [writer] Writer to encode to
              * @returns Writer
              */
-            public static encodeDelimited(message: dogzilla.InferenceState.IDeviceState, writer?: $protobuf.Writer): $protobuf.Writer;
+            public static encodeDelimited(message: yahboom_dogzilla_lite.InferenceState.IDeviceState, writer?: $protobuf.Writer): $protobuf.Writer;
 
             /**
              * Decodes a DeviceState message from the specified reader or buffer.
@@ -8370,7 +8369,7 @@ export namespace dogzilla {
              * @throws {Error} If the payload is not a reader or valid buffer
              * @throws {$protobuf.util.ProtocolError} If required fields are missing
              */
-            public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): dogzilla.InferenceState.DeviceState;
+            public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): yahboom_dogzilla_lite.InferenceState.DeviceState;
 
             /**
              * Decodes a DeviceState message from the specified reader or buffer, length delimited.
@@ -8379,7 +8378,7 @@ export namespace dogzilla {
              * @throws {Error} If the payload is not a reader or valid buffer
              * @throws {$protobuf.util.ProtocolError} If required fields are missing
              */
-            public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): dogzilla.InferenceState.DeviceState;
+            public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): yahboom_dogzilla_lite.InferenceState.DeviceState;
 
             /**
              * Verifies a DeviceState message.
@@ -8393,7 +8392,7 @@ export namespace dogzilla {
              * @param object Plain object
              * @returns DeviceState
              */
-            public static fromObject(object: { [k: string]: any }): dogzilla.InferenceState.DeviceState;
+            public static fromObject(object: { [k: string]: any }): yahboom_dogzilla_lite.InferenceState.DeviceState;
 
             /**
              * Creates a plain object from a DeviceState message. Also converts values to other types if specified.
@@ -8401,7 +8400,7 @@ export namespace dogzilla {
              * @param [options] Conversion options
              * @returns Plain object
              */
-            public static toObject(message: dogzilla.InferenceState.DeviceState, options?: $protobuf.IConversionOptions): { [k: string]: any };
+            public static toObject(message: yahboom_dogzilla_lite.InferenceState.DeviceState, options?: $protobuf.IConversionOptions): { [k: string]: any };
 
             /**
              * Converts this DeviceState to JSON.

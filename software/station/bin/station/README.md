@@ -143,7 +143,7 @@ asyncio.run(main())
 |  | [SO101](../../../drivers/st3215) | ✅ Done |
 |  | [ElRobot](../../../drivers/st3215) | ✅ Done |
 |  | OpenArm | 🚧 Work in Progress |
-|  | Yahboom Dogzilla | 🚧 Work in Progress |
+|  | Yahboom Dogzilla Lite | 🚧 Work in Progress |
 |  | IP Cameras | 🚧 Work in Progress |
 |  | Waveshare RoArm-M2 | 📋 Planned |
 |  | Yahboom ROSMASTER X3 | 📋 Planned |

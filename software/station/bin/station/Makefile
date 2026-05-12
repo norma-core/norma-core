@@ -24,21 +24,21 @@ empty :=
 space := $(empty) $(empty)
 comma := ,
 FEATURE_WORDS := $(strip $(subst $(comma),$(space),$(FEATURES)))
-FEATURES_EXPANDED := $(strip $(FEATURE_WORDS) $(if $(filter dogzilla,$(FEATURE_WORDS)),ov5647,))
+FEATURES_EXPANDED := $(strip $(FEATURE_WORDS) $(if $(filter yahboom-dogzilla-lite,$(FEATURE_WORDS)),ov5647,))
 FEATURES_UNIQUE := $(subst $(space),$(comma),$(sort $(FEATURES_EXPANDED)))
 CARGO_FEATURES := $(if $(FEATURES_UNIQUE),--features $(FEATURES_UNIQUE),)
 CARGO_FLAGS := --release --package=$(PACKAGE) $(CARGO_FEATURES)
 
 HAS_LIBCAMERA := $(filter ov5647,$(FEATURES_EXPANDED))
-HAS_DOGZILLA := $(filter dogzilla,$(FEATURES_EXPANDED))
+HAS_YAHBOOM_DOGZILLA_LITE := $(filter yahboom-dogzilla-lite,$(FEATURES_EXPANDED))
 LIBCAMERA_ENV := \
 	PKG_CONFIG_PATH=$(LIBCAMERA_PKG_CONFIG_PATH) \
 	PKG_CONFIG_ALLOW_CROSS=1 \
 	LIBCAMERA_LIB_DIR=$(LIBCAMERA_LIB_DIR)
 BUILD_ENV := $(if $(HAS_LIBCAMERA),$(LIBCAMERA_ENV),)
 
-# Target glibc 2.36 (Raspberry Pi OS 5 / Debian Bookworm) only for dogzilla.
-TARGET_ARM64 := $(if $(HAS_DOGZILLA),$(TARGET_ARM64_GLIBC_236),$(TARGET_ARM64_BASE))
+# Target glibc 2.36 (Raspberry Pi OS 5 / Debian Bookworm) only for Yahboom Dogzilla Lite.
+TARGET_ARM64 := $(if $(HAS_YAHBOOM_DOGZILLA_LITE),$(TARGET_ARM64_GLIBC_236),$(TARGET_ARM64_BASE))
 
 .PHONY: all build client build-macos build-arm64 build-amd64 clean help
 
@@ -94,6 +94,6 @@ help:
 	@echo "  make                    # Build both architectures"
 	@echo "  make build-arm64        # Build only ARM64"
 	@echo "  make FEATURES=ov5647 build-arm64  # Build ARM64 with libcamera/ov5647 support"
-	@echo "  make FEATURES=dogzilla build-arm64  # Build ARM64 with dogzilla and ov5647 support"
+	@echo "  make FEATURES=yahboom-dogzilla-lite build-arm64  # Build ARM64 with Yahboom Dogzilla Lite and ov5647 support"
 	@echo "  make build-amd64        # Build only AMD64"
 	@echo "  make clean              # Clean everything"

@@ -35,8 +35,8 @@ export function getQueueType(queueType: drivers.QueueDataType): string | undefin
       return 'mirroring';
     case drivers.QueueDataType.QDT_SYSTEM:
       return 'sysinfo';
-    case drivers.QueueDataType.QDT_DOGZILLA_INFERENCE:
-      return 'dogzilla';
+    case drivers.QueueDataType.QDT_YAHBOOM_DOGZILLA_LITE_INFERENCE:
+      return 'yahboom-dogzilla-lite';
     default:
       return undefined;
   }

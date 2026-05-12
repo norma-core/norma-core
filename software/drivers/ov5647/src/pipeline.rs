@@ -11,9 +11,11 @@ use crate::camera::Ov5647Camera;
 use crate::config::{CaptureConfig, Quality};
 use crate::error::Ov5647Error;
 use crate::frame2tensor;
-use crate::proto::frame::FrameStamp;
-use crate::proto::{Camera, CameraFormat};
 use crate::state::StateTracker;
+use usbvideo::usbvideo_proto::{
+    frame::FrameStamp,
+    usbvideo::{Camera, CameraFormat},
+};
 
 pub struct Ov5647Handle {
     stopped: Arc<AtomicBool>,
@@ -103,11 +105,11 @@ async fn watch_camera<K: StationEngine + Send + Sync + 'static>(
                 log::info!("OV5647 camera connected (id={})", camera_id);
 
                 let camera_info = Camera {
-                    id: camera_id.clone(),
-                    name: "OV5647".to_string(),
-                    width,
-                    height,
-                    unique_id: camera_id.clone(),
+                    manufacturer: "Raspberry Pi".to_string(),
+                    product: "OV5647".to_string(),
+                    serial_number: camera_id.clone(),
+                    unique_id: format!("ov5647:{}", camera_id),
+                    ..Default::default()
                 };
 
                 let session_camera_info = run_capture_session(
@@ -123,7 +125,7 @@ async fn watch_camera<K: StationEngine + Send + Sync + 'static>(
 
                 tracker.enqueue_device_disconnected(&session_camera_info);
 
-                log::info!("OV5647 camera disconnected (id={})", camera_info.id);
+                log::info!("OV5647 camera disconnected (id={})", camera_id);
             }
             Err(e) => {
                 log::debug!("OV5647 not available: {}", e);
@@ -166,27 +168,28 @@ async fn run_capture_session<K: StationEngine + Send + Sync + 'static>(
     let actual_height = session.height();
     let actual_format = session.pixel_format();
     let actual_fourcc = pixel_format_to_fourcc(actual_format);
-    let actual_camera_info = Camera {
-        width: actual_width,
-        height: actual_height,
-        ..camera_info.clone()
-    };
+    let actual_camera_info = camera_info.clone();
 
     let active_format = CameraFormat {
+        fourcc: fourcc_to_u32(actual_fourcc),
+        index: 0,
         width: actual_width,
         height: actual_height,
-        fps,
-        fourcc: actual_fourcc.to_string(),
+        frames_per_second: fps as f32,
+        ..Default::default()
     };
 
     let available_formats = session.available_formats();
     let mut supported_formats: Vec<CameraFormat> = available_formats
         .iter()
-        .map(|fmt| CameraFormat {
+        .enumerate()
+        .map(|(index, fmt)| CameraFormat {
+            fourcc: fourcc_to_u32(&fmt.fourcc),
+            index: index as u32,
             width: fmt.width,
             height: fmt.height,
-            fps: fmt.estimated_fps,
-            fourcc: fmt.fourcc.clone(),
+            frames_per_second: fmt.estimated_fps as f32,
+            ..Default::default()
         })
         .collect();
 
@@ -205,7 +208,7 @@ async fn run_capture_session<K: StationEngine + Send + Sync + 'static>(
 
     log::info!(
         "OV5647 capture session started (id={}, width={}, height={}, fps={}, format={})",
-        actual_camera_info.id,
+        actual_camera_info.unique_id,
         actual_width,
         actual_height,
         fps,
@@ -297,12 +300,21 @@ async fn run_capture_session<K: StationEngine + Send + Sync + 'static>(
 
     log::info!(
         "OV5647 capture session ended (id={}, reason={}, frames={})",
-        actual_camera_info.id,
+        actual_camera_info.unique_id,
         end_reason,
         frame_index
     );
 
     actual_camera_info
+}
+
+fn fourcc_to_u32(value: &str) -> u32 {
+    let bytes = value.as_bytes();
+    if bytes.len() != 4 {
+        return 0;
+    }
+
+    u32::from_be_bytes([bytes[0], bytes[1], bytes[2], bytes[3]])
 }
 
 fn pixel_format_to_fourcc(format: PixelFormat) -> &'static str {
