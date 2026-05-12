@@ -2,9 +2,9 @@ import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import Long from 'long';
 import type { FrameEntry } from '@/api/frame-parser';
 import { serverToLocal } from '@/api/timestamp-utils';
-import { dogzilla, ov5647, usbvideo } from '@/api/proto.js';
-import DogzillaDesktopDashboard from '@/dogzilla/DogzillaDesktopDashboard';
-import DogzillaViewModeSwitch, { type DogzillaViewMode } from '@/dogzilla/DogzillaViewModeSwitch';
+import { yahboom_dogzilla_lite, ov5647, usbvideo } from '@/api/proto.js';
+import YahboomDogzillaLiteDesktopDashboard from '@/yahboom_dogzilla_lite/YahboomDogzillaLiteDesktopDashboard';
+import YahboomDogzillaLiteViewModeSwitch, { type YahboomDogzillaLiteViewMode } from '@/yahboom_dogzilla_lite/YahboomDogzillaLiteViewModeSwitch';
 import { getVideoSourceId } from '@/usbvideo/camera-source';
 import { getLatencyBgColor, getLatencyTextColor } from '@/utils/color-utils';
 
@@ -25,22 +25,22 @@ const exitFullscreen = () => {
   }
 };
 
-interface DogzillaDesktopCardProps {
-  deviceState: dogzilla.InferenceState.IDeviceState;
+interface YahboomDogzillaLiteDesktopCardProps {
+  deviceState: yahboom_dogzilla_lite.InferenceState.IDeviceState;
   deviceIndex: number;
   videoSources?: FrameEntry<usbvideo.IRxEnvelope>[];
   ov5647Sources?: FrameEntry<ov5647.IRxEnvelope>[];
 }
 
-const DogzillaDesktopCard = memo(function DogzillaDesktopCard({
+const YahboomDogzillaLiteDesktopCard = memo(function YahboomDogzillaLiteDesktopCard({
   deviceState,
   deviceIndex,
   videoSources,
   ov5647Sources
-}: DogzillaDesktopCardProps) {
+}: YahboomDogzillaLiteDesktopCardProps) {
   const [selectedVideoSourceId, setSelectedVideoSourceId] = useState('');
-  const [mainViewMode, setMainViewMode] = useState<DogzillaViewMode>('3d');
-  const previousMainViewModeRef = useRef<Exclude<DogzillaViewMode, 'fullscreenVideo'>>('3d');
+  const [mainViewMode, setMainViewMode] = useState<YahboomDogzillaLiteViewMode>('3d');
+  const previousMainViewModeRef = useRef<Exclude<YahboomDogzillaLiteViewMode, 'fullscreenVideo'>>('3d');
   const latencyHistoryRef = useRef<Map<string, LatencyReading[]>>(new Map());
 
   const now = Date.now();
@@ -74,7 +74,7 @@ const DogzillaDesktopCard = memo(function DogzillaDesktopCard({
     ? serverToLocal(Long.fromValue(deviceState.monotonicStampNs))
     : null;
   const latency = adjustedStamp ? now - adjustedStamp.toNumber() / 1e6 : 0;
-  const latencyAvg = getMovingAverageLatency(`dogzilla-${deviceIndex}`, latency);
+  const latencyAvg = getMovingAverageLatency(`yahboom_dogzilla_lite-${deviceIndex}`, latency);
 
   const selectedVideoSource = (() => {
     if (selectedVideoSourceId.startsWith('usbvideo:')) {
@@ -159,7 +159,7 @@ const DogzillaDesktopCard = memo(function DogzillaDesktopCard({
     return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
   }, [mainViewMode]);
 
-  const handleMainViewModeChange = (value: DogzillaViewMode) => {
+  const handleMainViewModeChange = (value: YahboomDogzillaLiteViewMode) => {
     if (value === 'fullscreenVideo') {
       if (document.activeElement instanceof HTMLElement) {
         document.activeElement.blur();
@@ -183,9 +183,9 @@ const DogzillaDesktopCard = memo(function DogzillaDesktopCard({
       <div className="flex flex-wrap items-start gap-x-6 gap-y-2 rounded-t-lg border-b border-border-default bg-surface-secondary/50 px-4 py-2 sm:items-center">
         <div className="flex flex-wrap items-center gap-2 sm:flex-nowrap">
           <span className="text-lg font-bold text-accent-data">
-            {device?.serialNumber ? `#${device.serialNumber}` : 'Dogzilla'}
+            {device?.serialNumber ? `#${device.serialNumber}` : 'YahboomDogzillaLite'}
           </span>
-          <DogzillaViewModeSwitch
+          <YahboomDogzillaLiteViewModeSwitch
             value={mainViewMode}
             onChange={handleMainViewModeChange}
             photoDisabled={!selectedVideoSource}
@@ -238,7 +238,7 @@ const DogzillaDesktopCard = memo(function DogzillaDesktopCard({
       </div>
 
       <div className="min-h-0 flex-1">
-        <DogzillaDesktopDashboard
+        <YahboomDogzillaLiteDesktopDashboard
           deviceState={deviceState}
           refreshToken={deviceIndex}
           selectedVideoSource={selectedVideoSource}
@@ -249,4 +249,4 @@ const DogzillaDesktopCard = memo(function DogzillaDesktopCard({
   );
 });
 
-export default DogzillaDesktopCard;
+export default YahboomDogzillaLiteDesktopCard;

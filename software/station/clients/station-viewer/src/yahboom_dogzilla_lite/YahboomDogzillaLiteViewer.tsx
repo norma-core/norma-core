@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { dogzilla } from '../api/proto.js';
+import { yahboom_dogzilla_lite } from '../api/proto.js';
 import { useTheme } from '@/hooks/useTheme';
 import { getRendererThemeColors } from '@/utils/theme-colors';
 
@@ -35,8 +35,8 @@ const DEFAULT_SERVO_POSITIONS = [
 
 type CameraPreset = 'top' | 'front' | 'side' | 'iso';
 
-interface DogzillaViewerProps {
-  status?: dogzilla.IDogzillaStatus | null;
+interface YahboomDogzillaLiteViewerProps {
+  status?: yahboom_dogzilla_lite.IYahboomDogzillaLiteStatus | null;
   servoPositions?: number[] | null;
   servoAngles?: number[] | null;
   cameraPreset?: CameraPreset;
@@ -44,7 +44,7 @@ interface DogzillaViewerProps {
   className?: string;
 }
 
-class DogzillaRobot {
+class YahboomDogzillaLiteRobot {
   group: THREE.Group;
   body: THREE.Group;
   joints: Record<string, THREE.Group>;
@@ -396,17 +396,17 @@ class DogzillaRobot {
   }
 }
 
-export default function DogzillaViewer({
+export default function YahboomDogzillaLiteViewer({
   status,
   servoPositions,
   servoAngles,
   cameraPreset = 'iso',
   refreshToken,
   className = 'h-full min-h-[280px] w-full overflow-hidden'
-}: DogzillaViewerProps) {
+}: YahboomDogzillaLiteViewerProps) {
   const { theme } = useTheme();
   const containerRef = useRef<HTMLDivElement>(null);
-  const robotRef = useRef<DogzillaRobot | null>(null);
+  const robotRef = useRef<YahboomDogzillaLiteRobot | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
   const gridRef = useRef<THREE.GridHelper | null>(null);
@@ -471,7 +471,7 @@ export default function DogzillaViewer({
     scene.add(directionalLight);
 
     // Robot
-    const robot = new DogzillaRobot();
+    const robot = new YahboomDogzillaLiteRobot();
     scene.add(robot.group);
     robotRef.current = robot;
 

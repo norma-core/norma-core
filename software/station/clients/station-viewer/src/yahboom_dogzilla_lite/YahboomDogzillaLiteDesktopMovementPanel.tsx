@@ -1,8 +1,8 @@
 import { memo, useCallback, useEffect, useRef, useState, type PointerEvent } from 'react';
 import { commandManager } from '@/api/commands.js';
-import { dogzilla } from '@/api/proto.js';
+import { yahboom_dogzilla_lite } from '@/api/proto.js';
 
-interface DogzillaDesktopMovementPanelProps {
+interface YahboomDogzillaLiteDesktopMovementPanelProps {
   deviceSerial: string;
   reverseOrder?: boolean;
   showHints?: boolean;
@@ -57,11 +57,11 @@ const isEditableTarget = (target: EventTarget | null) => {
   );
 };
 
-const DogzillaDesktopMovementPanel = memo(function DogzillaDesktopMovementPanel({
+const YahboomDogzillaLiteDesktopMovementPanel = memo(function YahboomDogzillaLiteDesktopMovementPanel({
   deviceSerial,
   reverseOrder = false,
   showHints = true
-}: DogzillaDesktopMovementPanelProps) {
+}: YahboomDogzillaLiteDesktopMovementPanelProps) {
   const padRef = useRef<HTMLDivElement | null>(null);
   const rotationRef = useRef<HTMLDivElement | null>(null);
   const lastSentRef = useRef(0);
@@ -79,7 +79,7 @@ const DogzillaDesktopMovementPanel = memo(function DogzillaDesktopMovementPanel(
 
   const sendMovementCommand = useCallback(
     (values: { moveX: number; moveY: number; moveYaw: number }) => {
-      commandManager.sendDogzillaCommand({
+      commandManager.sendYahboomDogzillaLiteCommand({
         targetDeviceSerial: deviceSerial,
         movement: {
           moveX: values.moveX,
@@ -92,9 +92,9 @@ const DogzillaDesktopMovementPanel = memo(function DogzillaDesktopMovementPanel(
   );
 
   const sendSitAction = useCallback(() => {
-    commandManager.sendDogzillaCommand({
+    commandManager.sendYahboomDogzillaLiteCommand({
       targetDeviceSerial: deviceSerial,
-      action: { action: dogzilla.ActionType.ACTION_SIT_DOWN }
+      action: { action: yahboom_dogzilla_lite.ActionType.ACTION_SIT_DOWN }
     });
   }, [deviceSerial]);
 
@@ -524,4 +524,4 @@ const DogzillaDesktopMovementPanel = memo(function DogzillaDesktopMovementPanel(
   );
 });
 
-export default DogzillaDesktopMovementPanel;
+export default YahboomDogzillaLiteDesktopMovementPanel;

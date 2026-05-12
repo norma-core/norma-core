@@ -1,11 +1,11 @@
 use crate::command_inbox::{CommandReceiver, command_inbox};
-use crate::dogzilla_proto::{DogzillaDevice, DogzillaSignalType, ImuOrientation, TxEnvelope};
+use crate::yahboom_dogzilla_lite_proto::{YahboomDogzillaLiteDevice, YahboomDogzillaLiteSignalType, ImuOrientation, TxEnvelope};
 use crate::shared::{
     CommandEffect, DEFAULT_SERVO_POSITIONS, build_status, compute_command_effect,
     send_command_result, send_status_update, should_report_command_success, target_matches,
     unsupported_command_message,
 };
-use crate::state::DogzillaCommunicator;
+use crate::state::YahboomDogzillaLiteCommunicator;
 use log::warn;
 use prost::Message;
 use std::sync::Arc;
@@ -28,9 +28,9 @@ const GAIT_YAW_RATE_DEG: f32 = 70.0;
 const LEG_SERVO_GROUPS: [(usize, usize, usize); 4] = [(0, 1, 2), (3, 4, 5), (6, 7, 8), (9, 10, 11)];
 const LEG_PHASE_OFFSETS: [f32; 4] = [0.0, std::f32::consts::PI, 0.0, std::f32::consts::PI];
 
-pub(crate) struct DogzillaSimulator {
-    device_info: DogzillaDevice,
-    com: Arc<DogzillaCommunicator>,
+pub(crate) struct YahboomDogzillaLiteSimulator {
+    device_info: YahboomDogzillaLiteDevice,
+    com: Arc<YahboomDogzillaLiteCommunicator>,
     leg_servo_speed: u32,
     arm_servo_speed: u32,
     servo_positions: Vec<f32>,
@@ -46,8 +46,8 @@ pub(crate) struct DogzillaSimulator {
     last_tick: Instant,
 }
 
-impl DogzillaSimulator {
-    pub(crate) fn new(device_info: DogzillaDevice, com: Arc<DogzillaCommunicator>) -> Self {
+impl YahboomDogzillaLiteSimulator {
+    pub(crate) fn new(device_info: YahboomDogzillaLiteDevice, com: Arc<YahboomDogzillaLiteCommunicator>) -> Self {
         Self {
             device_info,
             com,
@@ -100,7 +100,7 @@ impl DogzillaSimulator {
                                     &result_com,
                                     &result_device,
                                     &failed_envelope,
-                                    DogzillaSignalType::DogzillaCommandFailed,
+                                    YahboomDogzillaLiteSignalType::YahboomDogzillaLiteCommandFailed,
                                     Some(e.to_string()),
                                 );
                             }
@@ -148,7 +148,7 @@ impl DogzillaSimulator {
         if let Some(message) = unsupported_command_message(command) {
             self.send_command_result(
                 envelope,
-                DogzillaSignalType::DogzillaCommandFailed,
+                YahboomDogzillaLiteSignalType::YahboomDogzillaLiteCommandFailed,
                 Some(message),
             );
             return;
@@ -163,7 +163,7 @@ impl DogzillaSimulator {
                 .unwrap_or(0);
             self.send_command_result(
                 envelope,
-                DogzillaSignalType::DogzillaCommandFailed,
+                YahboomDogzillaLiteSignalType::YahboomDogzillaLiteCommandFailed,
                 Some(format!(
                     "Unsupported command: unknown servo ID {}",
                     servo_id
@@ -178,7 +178,7 @@ impl DogzillaSimulator {
         }
 
         if should_report_command_success(command) {
-            self.send_command_result(envelope, DogzillaSignalType::DogzillaCommandSuccess, None);
+            self.send_command_result(envelope, YahboomDogzillaLiteSignalType::YahboomDogzillaLiteCommandSuccess, None);
         }
     }
 
@@ -231,7 +231,7 @@ impl DogzillaSimulator {
     fn send_command_result(
         &self,
         envelope: &TxEnvelope,
-        signal_type: DogzillaSignalType,
+        signal_type: YahboomDogzillaLiteSignalType,
         error_message: Option<String>,
     ) {
         send_command_result(

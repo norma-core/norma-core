@@ -1,15 +1,15 @@
 use crate::command_inbox::{CommandReceiver, command_inbox};
-use crate::dogzilla_proto::{
-    Acceleration, Command, DogzillaDevice, DogzillaSignalType, DogzillaStatus, ImuOrientation,
+use crate::yahboom_dogzilla_lite_proto::{
+    Acceleration, Command, YahboomDogzillaLiteDevice, YahboomDogzillaLiteSignalType, YahboomDogzillaLiteStatus, ImuOrientation,
     TxEnvelope,
 };
-use crate::errors::DogzillaError;
+use crate::errors::YahboomDogzillaLiteError;
 use crate::protocol::{self, FeedbackPacket, Frame};
 use crate::shared::{
     ServoWrite, command_byte, compute_command_effect, send_command_result, send_status_update,
     should_report_command_success, target_matches, unsupported_command_message,
 };
-use crate::state::DogzillaCommunicator;
+use crate::state::YahboomDogzillaLiteCommunicator;
 use log::{error, info, warn};
 use prost::Message;
 use std::sync::Arc;
@@ -22,19 +22,19 @@ const WRITE_TIMEOUT: Duration = Duration::from_millis(100);
 const DETECTION_TIMEOUT: Duration = Duration::from_secs(3);
 const DEFAULT_SERVO_SPEED: u8 = 127;
 
-pub(crate) struct DogzillaPort {
+pub(crate) struct YahboomDogzillaLitePort {
     port_name: String,
-    device_info: DogzillaDevice,
+    device_info: YahboomDogzillaLiteDevice,
     leg_servo_speed: u32,
     arm_servo_speed: u32,
-    com: Arc<DogzillaCommunicator>,
+    com: Arc<YahboomDogzillaLiteCommunicator>,
 }
 
-impl DogzillaPort {
+impl YahboomDogzillaLitePort {
     pub(crate) fn new(
         port_name: String,
-        device_info: DogzillaDevice,
-        com: Arc<DogzillaCommunicator>,
+        device_info: YahboomDogzillaLiteDevice,
+        com: Arc<YahboomDogzillaLiteCommunicator>,
     ) -> Self {
         Self {
             port_name,
@@ -45,7 +45,7 @@ impl DogzillaPort {
         }
     }
 
-    pub(crate) async fn detect_dogzilla(&mut self) -> Option<String> {
+    pub(crate) async fn detect_yahboom_dogzilla_lite(&mut self) -> Option<String> {
         let mut serial =
             match SerialStream::open(&tokio_serial::new(&self.port_name, protocol::BAUD_RATE)) {
                 Ok(s) => s,
@@ -77,7 +77,7 @@ impl DogzillaPort {
             .trim_matches('\0')
             .to_string();
         info!(
-            "Detected dogzilla on {}: firmware v{}",
+            "Detected Yahboom Dogzilla Lite on {}: firmware v{}",
             self.port_name, version
         );
 
@@ -118,7 +118,7 @@ impl DogzillaPort {
                                         &result_com,
                                         &result_device,
                                         &failed_envelope,
-                                        DogzillaSignalType::DogzillaCommandFailed,
+                                        YahboomDogzillaLiteSignalType::YahboomDogzillaLiteCommandFailed,
                                         Some(e.to_string()),
                                     );
                                 }
@@ -211,7 +211,7 @@ impl DogzillaPort {
                     match command {
                         Some(envelope) => self.process_envelope(serial, &envelope).await,
                         None => {
-                            warn!("DOGZILLA command channel closed");
+                            warn!("YAHBOOM_DOGZILLA_LITE command channel closed");
                             return Ok(());
                         }
                     }
@@ -235,7 +235,7 @@ impl DogzillaPort {
         }
     }
 
-    fn try_parse_feedback_packet(&self, buffer: &mut Vec<u8>) -> Option<DogzillaStatus> {
+    fn try_parse_feedback_packet(&self, buffer: &mut Vec<u8>) -> Option<YahboomDogzillaLiteStatus> {
         let start = match buffer
             .windows(2)
             .position(|window| window == protocol::PACKET_HEADER)
@@ -286,7 +286,7 @@ impl DogzillaPort {
         }
     }
 
-    fn feedback_packet_to_status(&self, packet: &FeedbackPacket) -> DogzillaStatus {
+    fn feedback_packet_to_status(&self, packet: &FeedbackPacket) -> YahboomDogzillaLiteStatus {
         let servo_positions = packet.servo_positions.iter().map(|&b| b as u32).collect();
         let servo_angles = packet
             .servo_positions
@@ -298,7 +298,7 @@ impl DogzillaPort {
             })
             .collect();
 
-        DogzillaStatus {
+        YahboomDogzillaLiteStatus {
             battery_level: packet.battery as u32,
             model: self.device_info.model,
             firmware_version: self.device_info.firmware_version.clone(),
@@ -330,16 +330,16 @@ impl DogzillaPort {
                 if report_success {
                     self.send_command_result(
                         envelope,
-                        DogzillaSignalType::DogzillaCommandSuccess,
+                        YahboomDogzillaLiteSignalType::YahboomDogzillaLiteCommandSuccess,
                         None,
                     );
                 }
             }
             Err(e) => {
-                error!("Failed to process DOGZILLA command: {}", e);
+                error!("Failed to process YAHBOOM_DOGZILLA_LITE command: {}", e);
                 self.send_command_result(
                     envelope,
-                    DogzillaSignalType::DogzillaCommandFailed,
+                    YahboomDogzillaLiteSignalType::YahboomDogzillaLiteCommandFailed,
                     Some(e.to_string()),
                 );
             }
@@ -350,9 +350,9 @@ impl DogzillaPort {
         &mut self,
         serial: &mut SerialStream,
         command: &Command,
-    ) -> Result<(), DogzillaError> {
+    ) -> Result<(), YahboomDogzillaLiteError> {
         if let Some(message) = unsupported_command_message(command) {
-            return Err(DogzillaError::UnsupportedCommand(message));
+            return Err(YahboomDogzillaLiteError::UnsupportedCommand(message));
         }
 
         let mut applied = false;
@@ -363,7 +363,7 @@ impl DogzillaPort {
                 .as_ref()
                 .map(|servo| servo.servo_id)
                 .unwrap_or(0);
-            return Err(DogzillaError::UnsupportedCommand(format!(
+            return Err(YahboomDogzillaLiteError::UnsupportedCommand(format!(
                 "unknown servo ID {}",
                 servo_id
             )));
@@ -397,8 +397,8 @@ impl DogzillaPort {
         if applied {
             Ok(())
         } else {
-            Err(DogzillaError::UnsupportedCommand(
-                "empty DOGZILLA command".to_string(),
+            Err(YahboomDogzillaLiteError::UnsupportedCommand(
+                "empty YAHBOOM_DOGZILLA_LITE command".to_string(),
             ))
         }
     }
@@ -407,7 +407,7 @@ impl DogzillaPort {
         &mut self,
         serial: &mut SerialStream,
         write: ServoWrite,
-    ) -> Result<(), DogzillaError> {
+    ) -> Result<(), YahboomDogzillaLiteError> {
         let frame = Frame::write(write.register, vec![write.position]);
         info!(
             "Sending servo command: id={} reg=0x{:02X} pos={}",
@@ -421,7 +421,7 @@ impl DogzillaPort {
         &mut self,
         serial: &mut SerialStream,
         speed: u32,
-    ) -> Result<(), DogzillaError> {
+    ) -> Result<(), YahboomDogzillaLiteError> {
         let speed_byte = command_byte(speed);
         let frame = Frame::write(protocol::REG_SERVO_SPEED, vec![speed_byte]);
         info!("Sending leg servo speed: {}", speed_byte);
@@ -435,7 +435,7 @@ impl DogzillaPort {
         &mut self,
         serial: &mut SerialStream,
         speed: u32,
-    ) -> Result<(), DogzillaError> {
+    ) -> Result<(), YahboomDogzillaLiteError> {
         let speed_byte = command_byte(speed);
         let frame = Frame::write(protocol::REG_SERVO_ARM_SPEED, vec![speed_byte]);
         info!("Sending arm servo speed: {}", speed_byte);
@@ -449,7 +449,7 @@ impl DogzillaPort {
         &mut self,
         serial: &mut SerialStream,
         action: i32,
-    ) -> Result<bool, DogzillaError> {
+    ) -> Result<bool, YahboomDogzillaLiteError> {
         let action_value = action.clamp(0, 255) as u8;
         if action_value == 0 {
             return Ok(false);
@@ -468,7 +468,7 @@ impl DogzillaPort {
         x: u32,
         y: u32,
         yaw: u32,
-    ) -> Result<(), DogzillaError> {
+    ) -> Result<(), YahboomDogzillaLiteError> {
         let move_x = command_byte(x);
         let move_y = command_byte(y);
         let move_yaw = command_byte(yaw);
@@ -490,7 +490,7 @@ impl DogzillaPort {
         register: u8,
         value: u8,
         name: &str,
-    ) -> Result<(), DogzillaError> {
+    ) -> Result<(), YahboomDogzillaLiteError> {
         let frame = Frame::write(register, vec![value]);
         Self::write_frame(serial, &frame).await.map_err(|e| {
             error!("Failed to write {}: {}", name, e);
@@ -498,14 +498,14 @@ impl DogzillaPort {
         })
     }
 
-    fn update_and_send_status(&self, status: DogzillaStatus) {
+    fn update_and_send_status(&self, status: YahboomDogzillaLiteStatus) {
         send_status_update(&self.com, &self.device_info, status);
     }
 
     fn send_command_result(
         &self,
         envelope: &TxEnvelope,
-        signal_type: DogzillaSignalType,
+        signal_type: YahboomDogzillaLiteSignalType,
         error_message: Option<String>,
     ) {
         send_command_result(
@@ -517,13 +517,13 @@ impl DogzillaPort {
         );
     }
 
-    async fn write_frame(serial: &mut SerialStream, frame: &Frame) -> Result<(), DogzillaError> {
+    async fn write_frame(serial: &mut SerialStream, frame: &Frame) -> Result<(), YahboomDogzillaLiteError> {
         let data = frame.encode();
 
         match timeout(WRITE_TIMEOUT, serial.write_all(&data)).await {
             Ok(Ok(_)) => Ok(()),
-            Ok(Err(e)) => Err(DogzillaError::SerialError(e.to_string())),
-            Err(_) => Err(DogzillaError::Timeout),
+            Ok(Err(e)) => Err(YahboomDogzillaLiteError::SerialError(e.to_string())),
+            Err(_) => Err(YahboomDogzillaLiteError::Timeout),
         }
     }
 }

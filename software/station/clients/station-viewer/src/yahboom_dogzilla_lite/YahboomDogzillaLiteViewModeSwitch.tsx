@@ -1,21 +1,21 @@
 import { Camera, Maximize2 } from 'lucide-react';
 
-export type DogzillaViewMode = '3d' | 'photo' | 'fullscreenVideo';
+export type YahboomDogzillaLiteViewMode = '3d' | 'photo' | 'fullscreenVideo';
 
-interface DogzillaViewModeSwitchProps {
-  value: DogzillaViewMode;
-  onChange: (value: DogzillaViewMode) => void;
+interface YahboomDogzillaLiteViewModeSwitchProps {
+  value: YahboomDogzillaLiteViewMode;
+  onChange: (value: YahboomDogzillaLiteViewMode) => void;
   photoDisabled?: boolean;
 }
 
 const BUTTON_CLASS_NAME = 'inline-flex h-6 min-w-8 items-center justify-center rounded px-2 text-xs font-bold transition-colors';
 
-export default function DogzillaViewModeSwitch({
+export default function YahboomDogzillaLiteViewModeSwitch({
   value,
   onChange,
   photoDisabled = false
-}: DogzillaViewModeSwitchProps) {
-  const buttonClassName = (mode: DogzillaViewMode) => (
+}: YahboomDogzillaLiteViewModeSwitchProps) {
+  const buttonClassName = (mode: YahboomDogzillaLiteViewMode) => (
     `${BUTTON_CLASS_NAME} ${
       value === mode
         ? 'bg-accent-success-deep text-text-primary'

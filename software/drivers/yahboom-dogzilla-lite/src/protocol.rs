@@ -1,4 +1,4 @@
-use crate::errors::DogzillaError;
+use crate::errors::YahboomDogzillaLiteError;
 
 pub(crate) const PACKET_HEADER: [u8; 2] = [0x55, 0x00];
 pub(crate) const PACKET_TAIL: [u8; 2] = [0x00, 0xAA];
@@ -137,24 +137,24 @@ impl Frame {
         frame
     }
 
-    pub(crate) fn decode(bytes: &[u8]) -> Result<Self, DogzillaError> {
+    pub(crate) fn decode(bytes: &[u8]) -> Result<Self, YahboomDogzillaLiteError> {
         let start = bytes
             .windows(2)
             .position(|window| window == PACKET_HEADER)
-            .ok_or(DogzillaError::InvalidHeader)?;
+            .ok_or(YahboomDogzillaLiteError::InvalidHeader)?;
         let bytes = &bytes[start..];
 
         if bytes.len() < 9 {
-            return Err(DogzillaError::InvalidFrame);
+            return Err(YahboomDogzillaLiteError::InvalidFrame);
         }
 
         let length = bytes[2] as usize;
         if length < 8 || bytes.len() < length {
-            return Err(DogzillaError::InvalidFrame);
+            return Err(YahboomDogzillaLiteError::InvalidFrame);
         }
 
         if bytes[length - 2..length] != PACKET_TAIL {
-            return Err(DogzillaError::InvalidFrame);
+            return Err(YahboomDogzillaLiteError::InvalidFrame);
         }
 
         let command = bytes[3];
@@ -163,7 +163,7 @@ impl Frame {
         let expected_checksum = checksum(length as u8, command, address, &data);
 
         if expected_checksum != bytes[length - 3] {
-            return Err(DogzillaError::InvalidChecksum);
+            return Err(YahboomDogzillaLiteError::InvalidChecksum);
         }
 
         Ok(Self {

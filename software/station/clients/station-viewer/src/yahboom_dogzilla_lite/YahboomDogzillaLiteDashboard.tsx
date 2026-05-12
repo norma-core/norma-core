@@ -14,10 +14,10 @@ import {
 } from 'lucide-react';
 import { commandManager } from '@/api/commands.js';
 import { serverToLocal } from '@/api/timestamp-utils';
-import { dogzilla } from '@/api/proto.js';
-import ActionPanel, { QUICK_ACTIONS, type ActionDefinition } from '@/dogzilla/ActionPanel';
-import DogzillaViewer from '@/dogzilla/DogzillaViewer';
-import MovementPanel, { type MovementPanelRef } from '@/dogzilla/MovementPanel';
+import { yahboom_dogzilla_lite } from '@/api/proto.js';
+import ActionPanel, { QUICK_ACTIONS, type ActionDefinition } from '@/yahboom_dogzilla_lite/ActionPanel';
+import YahboomDogzillaLiteViewer from '@/yahboom_dogzilla_lite/YahboomDogzillaLiteViewer';
+import MovementPanel, { type MovementPanelRef } from '@/yahboom_dogzilla_lite/MovementPanel';
 import { useConnectionStatsWithUptime } from '@/hooks';
 
 const DEFAULT_SERVO_POSITIONS = [
@@ -88,8 +88,8 @@ interface DashboardLogEntry {
   timestamp: number;
 }
 
-interface DogzillaDashboardProps {
-  deviceState: dogzilla.InferenceState.IDeviceState | null;
+interface YahboomDogzillaLiteDashboardProps {
+  deviceState: yahboom_dogzilla_lite.InferenceState.IDeviceState | null;
   refreshToken?: number;
 }
 
@@ -281,10 +281,10 @@ function StatusSection({
   );
 }
 
-const DogzillaDashboard = memo(function DogzillaDashboard({
+const YahboomDogzillaLiteDashboard = memo(function YahboomDogzillaLiteDashboard({
   deviceState,
   refreshToken
-}: DogzillaDashboardProps) {
+}: YahboomDogzillaLiteDashboardProps) {
   const movementPanelRef = useRef<MovementPanelRef | null>(null);
   const latencyHistoryRef = useRef<Array<{ timestamp: number; latency: number }>>([]);
   const logIdRef = useRef(0);
@@ -296,7 +296,7 @@ const DogzillaDashboard = memo(function DogzillaDashboard({
   const [armStepMode, setArmStepMode] = useState<'coarse' | 'fine'>('coarse');
   const [legsSpeed, setLegsSpeed] = useState(128);
   const [armSpeed, setArmSpeed] = useState(128);
-  const [activeAction, setActiveAction] = useState<dogzilla.ActionType | null>(null);
+  const [activeAction, setActiveAction] = useState<yahboom_dogzilla_lite.ActionType | null>(null);
   const [lastActionLabel, setLastActionLabel] = useState('Ready');
   const [commandLog, setCommandLog] = useState<DashboardLogEntry[]>([]);
 
@@ -310,7 +310,7 @@ const DogzillaDashboard = memo(function DogzillaDashboard({
     if (device?.model === null || device?.model === undefined) {
       return 'Unknown';
     }
-    return dogzilla.DogzillaModel[device.model] ?? 'DOGZILLA_MODEL_UNKNOWN';
+    return yahboom_dogzilla_lite.YahboomDogzillaLiteModel[device.model] ?? 'YAHBOOM_DOGZILLA_LITE_MODEL_UNKNOWN';
   }, [device?.model]);
 
   const livePositions = useMemo(() => {
@@ -396,7 +396,7 @@ const DogzillaDashboard = memo(function DogzillaDashboard({
   };
 
   const sendServoCommand = (servoId: number, position: number) => {
-    commandManager.sendDogzillaCommand({
+    commandManager.sendYahboomDogzillaLiteCommand({
       targetDeviceSerial: device?.serialNumber ?? '',
       servo: {
         servoId,
@@ -406,7 +406,7 @@ const DogzillaDashboard = memo(function DogzillaDashboard({
   };
 
   const sendAction = (action: ActionDefinition) => {
-    commandManager.sendDogzillaCommand({
+    commandManager.sendYahboomDogzillaLiteCommand({
       targetDeviceSerial: device?.serialNumber ?? '',
       action: { action: action.value }
     });
@@ -416,7 +416,7 @@ const DogzillaDashboard = memo(function DogzillaDashboard({
   };
 
   const commitLegsSpeedChange = () => {
-    commandManager.sendDogzillaCommand({
+    commandManager.sendYahboomDogzillaLiteCommand({
       targetDeviceSerial: device?.serialNumber ?? '',
       servoSpeed: { bodyServoSpeed: legsSpeed }
     });
@@ -424,7 +424,7 @@ const DogzillaDashboard = memo(function DogzillaDashboard({
   };
 
   const commitArmSpeedChange = () => {
-    commandManager.sendDogzillaCommand({
+    commandManager.sendYahboomDogzillaLiteCommand({
       targetDeviceSerial: device?.serialNumber ?? '',
       servoSpeed: { armServoSpeed: armSpeed }
     });
@@ -695,7 +695,7 @@ const DogzillaDashboard = memo(function DogzillaDashboard({
     <div className="relative overflow-hidden rounded-lg border border-gray-700 bg-gray-900/50 text-gray-100">
       <div className="relative flex h-[calc(100svh-7rem)] min-h-[46rem] max-h-[900px] flex-col lg:grid lg:h-[min(84vh,58rem)] lg:min-h-[44rem] lg:max-h-none lg:grid-cols-[minmax(0,1.18fr)_minmax(24rem,0.92fr)]">
         <section className="relative basis-[40%] overflow-hidden border-b border-gray-700 lg:basis-auto lg:border-b-0 lg:border-r lg:border-gray-700">
-          <DogzillaViewer
+          <YahboomDogzillaLiteViewer
             status={status}
             servoPositions={displayPositions}
             servoAngles={liveAngles}
@@ -707,7 +707,7 @@ const DogzillaDashboard = memo(function DogzillaDashboard({
               <div className="min-w-0 max-w-[calc(100%-7.5rem)] rounded-md border border-gray-700 bg-gray-900/85 px-3 py-2">
                 <div className="text-[10px] font-medium uppercase tracking-wide text-gray-500">Robot</div>
                 <div className="mt-1 truncate font-mono text-sm font-semibold text-gray-100">
-                  {device?.serialNumber ? `Dogzilla #${device.serialNumber}` : 'Dogzilla'} • <span className={connectionTone === 'good' ? 'text-emerald-300' : 'text-red-300'}>{connectionLabel}</span>
+                  {device?.serialNumber ? `YahboomDogzillaLite #${device.serialNumber}` : 'YahboomDogzillaLite'} • <span className={connectionTone === 'good' ? 'text-emerald-300' : 'text-red-300'}>{connectionLabel}</span>
                 </div>
               </div>
               <button
@@ -749,7 +749,7 @@ const DogzillaDashboard = memo(function DogzillaDashboard({
                 <QuickActionButton
                   key={action.value}
                   label={action.label}
-                  isDanger={action.value === dogzilla.ActionType.ACTION_RESTORE_DEFAULT}
+                  isDanger={action.value === yahboom_dogzilla_lite.ActionType.ACTION_RESTORE_DEFAULT}
                   onClick={() => sendAction(action)}
                 />
               ))}
@@ -768,4 +768,4 @@ const DogzillaDashboard = memo(function DogzillaDashboard({
   );
 });
 
-export default DogzillaDashboard;
+export default YahboomDogzillaLiteDashboard;

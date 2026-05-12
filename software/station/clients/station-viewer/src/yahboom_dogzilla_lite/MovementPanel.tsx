@@ -60,7 +60,7 @@ const MovementPanelComponent = forwardRef<MovementPanelRef, MovementPanelProps>(
 
   const sendMovementCommand = useCallback(
     (values: { moveX: number; moveY: number; moveYaw: number }) => {
-      commandManager.sendDogzillaCommand({
+      commandManager.sendYahboomDogzillaLiteCommand({
         targetDeviceSerial: deviceSerial,
         movement: {
           moveX: values.moveX,

@@ -1,4 +1,4 @@
-use crate::dogzilla_proto::{Command, ServoSpeedCommand, TxEnvelope, servo_speed_command};
+use crate::yahboom_dogzilla_lite_proto::{Command, ServoSpeedCommand, TxEnvelope, servo_speed_command};
 use parking_lot::Mutex;
 use std::collections::BTreeMap;
 use std::sync::Arc;

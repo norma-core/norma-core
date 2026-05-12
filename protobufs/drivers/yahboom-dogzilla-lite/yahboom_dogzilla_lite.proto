@@ -1,26 +1,26 @@
 syntax = "proto3";
 
-package dogzilla;
+package yahboom_dogzilla_lite;
 
-// Signal types for the DOGZILLA-Lite robot dog
-enum DogzillaSignalType {
-    DOGZILLA_SIGNAL_TYPE_UNSPECIFIED = 0;
-    DOGZILLA_CONNECTED                = 1;
-    DOGZILLA_DISCONNECTED             = 2;
-    DOGZILLA_STATUS_UPDATE            = 3;
-    DOGZILLA_COMMAND                  = 4;
-    DOGZILLA_COMMAND_SUCCESS          = 5;
-    DOGZILLA_COMMAND_FAILED           = 6;
-    DOGZILLA_ERROR                    = 7;
+// Signal types for the Yahboom Dogzilla Lite robot dog.
+enum YahboomDogzillaLiteSignalType {
+    YAHBOOM_DOGZILLA_LITE_SIGNAL_TYPE_UNSPECIFIED = 0;
+    YAHBOOM_DOGZILLA_LITE_CONNECTED                = 1;
+    YAHBOOM_DOGZILLA_LITE_DISCONNECTED             = 2;
+    YAHBOOM_DOGZILLA_LITE_STATUS_UPDATE            = 3;
+    YAHBOOM_DOGZILLA_LITE_COMMAND                  = 4;
+    YAHBOOM_DOGZILLA_LITE_COMMAND_SUCCESS          = 5;
+    YAHBOOM_DOGZILLA_LITE_COMMAND_FAILED           = 6;
+    YAHBOOM_DOGZILLA_LITE_ERROR                    = 7;
 }
 
-// Models of DOGZILLA robots
-enum DogzillaModel {
-    DOGZILLA_MODEL_UNKNOWN = 0;
-    DOGZILLA_MINI          = 1;
-    DOGZILLA_LITE          = 2;
-    DOGZILLA_PRO           = 3;
-    DOGZILLA_RIDER         = 4;
+// Models of Yahboom Dogzilla Lite robots.
+enum YahboomDogzillaLiteModel {
+    YAHBOOM_DOGZILLA_LITE_MODEL_UNKNOWN = 0;
+    YAHBOOM_DOGZILLA_LITE_MINI          = 1;
+    YAHBOOM_DOGZILLA_LITE_LITE          = 2;
+    YAHBOOM_DOGZILLA_LITE_PRO           = 3;
+    YAHBOOM_DOGZILLA_LITE_RIDER         = 4;
 }
 
 // Gait types
@@ -73,12 +73,12 @@ enum ActionType {
 }
 
 // Device information
-message DogzillaDevice {
+message YahboomDogzillaLiteDevice {
     string        port_name        = 1;
     uint32        baud_rate        = 2;
     string        serial_number    = 3;
     string        firmware_version = 4;
-    DogzillaModel model            = 5;
+    YahboomDogzillaLiteModel model            = 5;
 
     // USB device info (for USB-connected devices)
     uint32 vid          = 10;
@@ -102,9 +102,9 @@ message Acceleration {
 }
 
 // Status information
-message DogzillaStatus {
+message YahboomDogzillaLiteStatus {
     uint32        battery_level    = 1;  // 0-100
-    DogzillaModel model            = 2;
+    YahboomDogzillaLiteModel model            = 2;
     string        firmware_version = 3;
 
     // Servo positions (15 bytes: 12 leg servos + 3 arm servos)
@@ -226,9 +226,9 @@ message RxEnvelope {
     uint64 local_stamp_ns     = 2;
     uint64 app_start_id       = 3;
 
-    DogzillaSignalType signal_type = 10;
-    DogzillaDevice     device      = 11;
-    DogzillaStatus     status      = 12;
+    YahboomDogzillaLiteSignalType signal_type = 10;
+    YahboomDogzillaLiteDevice     device      = 11;
+    YahboomDogzillaLiteStatus     status      = 12;
 
     bytes data = 20;
 
@@ -240,8 +240,8 @@ message RxEnvelope {
 // Inference state (queryable state)
 message InferenceState {
     message DeviceState {
-        DogzillaDevice device = 1;
-        DogzillaStatus status = 2;
+        YahboomDogzillaLiteDevice device = 1;
+        YahboomDogzillaLiteStatus status = 2;
 
         uint64 monotonic_stamp_ns = 3;
         uint64 system_stamp_ns    = 4;

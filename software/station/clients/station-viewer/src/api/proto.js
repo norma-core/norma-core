@@ -246,7 +246,7 @@ export const commands = $root.commands = (() => {
             case 2:
                 message.type = 2;
                 break;
-            case "STC_DOGZILLA_COMMAND":
+            case "STC_YAHBOOM_DOGZILLA_LITE_COMMAND":
             case 3:
                 message.type = 3;
                 break;
@@ -700,9 +700,9 @@ export const drivers = $root.drivers = (() => {
      * @property {number} QDT_INFERENCE_FRAMES=22 QDT_INFERENCE_FRAMES value
      * @property {number} QDT_MOTOR_MIRRORING_MODES=30 QDT_MOTOR_MIRRORING_MODES value
      * @property {number} QDT_MOTOR_MIRRORING_RX=32 QDT_MOTOR_MIRRORING_RX value
-     * @property {number} QDT_DOGZILLA_SERIAL_TX=40 QDT_DOGZILLA_SERIAL_TX value
-     * @property {number} QDT_DOGZILLA_SERIAL_RX=41 QDT_DOGZILLA_SERIAL_RX value
-     * @property {number} QDT_DOGZILLA_INFERENCE=42 QDT_DOGZILLA_INFERENCE value
+     * @property {number} QDT_YAHBOOM_DOGZILLA_LITE_SERIAL_TX=40 QDT_YAHBOOM_DOGZILLA_LITE_SERIAL_TX value
+     * @property {number} QDT_YAHBOOM_DOGZILLA_LITE_SERIAL_RX=41 QDT_YAHBOOM_DOGZILLA_LITE_SERIAL_RX value
+     * @property {number} QDT_YAHBOOM_DOGZILLA_LITE_INFERENCE=42 QDT_YAHBOOM_DOGZILLA_LITE_INFERENCE value
      * @property {number} QDT_OV5647_FRAMES=43 QDT_OV5647_FRAMES value
      */
     drivers.QueueDataType = (function() {
@@ -720,9 +720,9 @@ export const drivers = $root.drivers = (() => {
         values[valuesById[22] = "QDT_INFERENCE_FRAMES"] = 22;
         values[valuesById[30] = "QDT_MOTOR_MIRRORING_MODES"] = 30;
         values[valuesById[32] = "QDT_MOTOR_MIRRORING_RX"] = 32;
-        values[valuesById[40] = "QDT_DOGZILLA_SERIAL_TX"] = 40;
-        values[valuesById[41] = "QDT_DOGZILLA_SERIAL_RX"] = 41;
-        values[valuesById[42] = "QDT_DOGZILLA_INFERENCE"] = 42;
+        values[valuesById[40] = "QDT_YAHBOOM_DOGZILLA_LITE_SERIAL_TX"] = 40;
+        values[valuesById[41] = "QDT_YAHBOOM_DOGZILLA_LITE_SERIAL_RX"] = 41;
+        values[valuesById[42] = "QDT_YAHBOOM_DOGZILLA_LITE_INFERENCE"] = 42;
         values[valuesById[43] = "QDT_OV5647_FRAMES"] = 43;
         return values;
     })();
@@ -734,14 +734,14 @@ export const drivers = $root.drivers = (() => {
      * @property {number} STC_ST3215_COMMAND=0 STC_ST3215_COMMAND value
      * @property {number} STC_MOTOR_MIRRORING_COMMAND=1 STC_MOTOR_MIRRORING_COMMAND value
      * @property {number} STC_INFERENCE_TAG_COMMAND=2 STC_INFERENCE_TAG_COMMAND value
-     * @property {number} STC_DOGZILLA_COMMAND=3 STC_DOGZILLA_COMMAND value
+     * @property {number} STC_YAHBOOM_DOGZILLA_LITE_COMMAND=3 STC_YAHBOOM_DOGZILLA_LITE_COMMAND value
      */
     drivers.StationCommandType = (function() {
         const valuesById = {}, values = Object.create(valuesById);
         values[valuesById[0] = "STC_ST3215_COMMAND"] = 0;
         values[valuesById[1] = "STC_MOTOR_MIRRORING_COMMAND"] = 1;
         values[valuesById[2] = "STC_INFERENCE_TAG_COMMAND"] = 2;
-        values[valuesById[3] = "STC_DOGZILLA_COMMAND"] = 3;
+        values[valuesById[3] = "STC_YAHBOOM_DOGZILLA_LITE_COMMAND"] = 3;
         return values;
     })();
 
@@ -1390,15 +1390,15 @@ export const inference = $root.inference = (() => {
                 case 32:
                     message.type = 32;
                     break;
-                case "QDT_DOGZILLA_SERIAL_TX":
+                case "QDT_YAHBOOM_DOGZILLA_LITE_SERIAL_TX":
                 case 40:
                     message.type = 40;
                     break;
-                case "QDT_DOGZILLA_SERIAL_RX":
+                case "QDT_YAHBOOM_DOGZILLA_LITE_SERIAL_RX":
                 case 41:
                     message.type = 41;
                     break;
-                case "QDT_DOGZILLA_INFERENCE":
+                case "QDT_YAHBOOM_DOGZILLA_LITE_INFERENCE":
                 case 42:
                     message.type = 42;
                     break;
@@ -17684,71 +17684,71 @@ export const motors_mirroring = $root.motors_mirroring = (() => {
     return motors_mirroring;
 })();
 
-export const dogzilla = $root.dogzilla = (() => {
+export const yahboom_dogzilla_lite = $root.yahboom_dogzilla_lite = (() => {
 
     /**
-     * Namespace dogzilla.
-     * @exports dogzilla
+     * Namespace yahboom_dogzilla_lite.
+     * @exports yahboom_dogzilla_lite
      * @namespace
      */
-    const dogzilla = {};
+    const yahboom_dogzilla_lite = {};
 
     /**
-     * DogzillaSignalType enum.
-     * @name dogzilla.DogzillaSignalType
+     * YahboomDogzillaLiteSignalType enum.
+     * @name yahboom_dogzilla_lite.YahboomDogzillaLiteSignalType
      * @enum {number}
-     * @property {number} DOGZILLA_SIGNAL_TYPE_UNSPECIFIED=0 DOGZILLA_SIGNAL_TYPE_UNSPECIFIED value
-     * @property {number} DOGZILLA_CONNECTED=1 DOGZILLA_CONNECTED value
-     * @property {number} DOGZILLA_DISCONNECTED=2 DOGZILLA_DISCONNECTED value
-     * @property {number} DOGZILLA_STATUS_UPDATE=3 DOGZILLA_STATUS_UPDATE value
-     * @property {number} DOGZILLA_COMMAND=4 DOGZILLA_COMMAND value
-     * @property {number} DOGZILLA_COMMAND_SUCCESS=5 DOGZILLA_COMMAND_SUCCESS value
-     * @property {number} DOGZILLA_COMMAND_FAILED=6 DOGZILLA_COMMAND_FAILED value
-     * @property {number} DOGZILLA_ERROR=7 DOGZILLA_ERROR value
+     * @property {number} YAHBOOM_DOGZILLA_LITE_SIGNAL_TYPE_UNSPECIFIED=0 YAHBOOM_DOGZILLA_LITE_SIGNAL_TYPE_UNSPECIFIED value
+     * @property {number} YAHBOOM_DOGZILLA_LITE_CONNECTED=1 YAHBOOM_DOGZILLA_LITE_CONNECTED value
+     * @property {number} YAHBOOM_DOGZILLA_LITE_DISCONNECTED=2 YAHBOOM_DOGZILLA_LITE_DISCONNECTED value
+     * @property {number} YAHBOOM_DOGZILLA_LITE_STATUS_UPDATE=3 YAHBOOM_DOGZILLA_LITE_STATUS_UPDATE value
+     * @property {number} YAHBOOM_DOGZILLA_LITE_COMMAND=4 YAHBOOM_DOGZILLA_LITE_COMMAND value
+     * @property {number} YAHBOOM_DOGZILLA_LITE_COMMAND_SUCCESS=5 YAHBOOM_DOGZILLA_LITE_COMMAND_SUCCESS value
+     * @property {number} YAHBOOM_DOGZILLA_LITE_COMMAND_FAILED=6 YAHBOOM_DOGZILLA_LITE_COMMAND_FAILED value
+     * @property {number} YAHBOOM_DOGZILLA_LITE_ERROR=7 YAHBOOM_DOGZILLA_LITE_ERROR value
      */
-    dogzilla.DogzillaSignalType = (function() {
+    yahboom_dogzilla_lite.YahboomDogzillaLiteSignalType = (function() {
         const valuesById = {}, values = Object.create(valuesById);
-        values[valuesById[0] = "DOGZILLA_SIGNAL_TYPE_UNSPECIFIED"] = 0;
-        values[valuesById[1] = "DOGZILLA_CONNECTED"] = 1;
-        values[valuesById[2] = "DOGZILLA_DISCONNECTED"] = 2;
-        values[valuesById[3] = "DOGZILLA_STATUS_UPDATE"] = 3;
-        values[valuesById[4] = "DOGZILLA_COMMAND"] = 4;
-        values[valuesById[5] = "DOGZILLA_COMMAND_SUCCESS"] = 5;
-        values[valuesById[6] = "DOGZILLA_COMMAND_FAILED"] = 6;
-        values[valuesById[7] = "DOGZILLA_ERROR"] = 7;
+        values[valuesById[0] = "YAHBOOM_DOGZILLA_LITE_SIGNAL_TYPE_UNSPECIFIED"] = 0;
+        values[valuesById[1] = "YAHBOOM_DOGZILLA_LITE_CONNECTED"] = 1;
+        values[valuesById[2] = "YAHBOOM_DOGZILLA_LITE_DISCONNECTED"] = 2;
+        values[valuesById[3] = "YAHBOOM_DOGZILLA_LITE_STATUS_UPDATE"] = 3;
+        values[valuesById[4] = "YAHBOOM_DOGZILLA_LITE_COMMAND"] = 4;
+        values[valuesById[5] = "YAHBOOM_DOGZILLA_LITE_COMMAND_SUCCESS"] = 5;
+        values[valuesById[6] = "YAHBOOM_DOGZILLA_LITE_COMMAND_FAILED"] = 6;
+        values[valuesById[7] = "YAHBOOM_DOGZILLA_LITE_ERROR"] = 7;
         return values;
     })();
 
     /**
-     * DogzillaModel enum.
-     * @name dogzilla.DogzillaModel
+     * YahboomDogzillaLiteModel enum.
+     * @name yahboom_dogzilla_lite.YahboomDogzillaLiteModel
      * @enum {number}
-     * @property {number} DOGZILLA_MODEL_UNKNOWN=0 DOGZILLA_MODEL_UNKNOWN value
-     * @property {number} DOGZILLA_MINI=1 DOGZILLA_MINI value
-     * @property {number} DOGZILLA_LITE=2 DOGZILLA_LITE value
-     * @property {number} DOGZILLA_PRO=3 DOGZILLA_PRO value
-     * @property {number} DOGZILLA_RIDER=4 DOGZILLA_RIDER value
+     * @property {number} YAHBOOM_DOGZILLA_LITE_MODEL_UNKNOWN=0 YAHBOOM_DOGZILLA_LITE_MODEL_UNKNOWN value
+     * @property {number} YAHBOOM_DOGZILLA_LITE_MINI=1 YAHBOOM_DOGZILLA_LITE_MINI value
+     * @property {number} YAHBOOM_DOGZILLA_LITE_LITE=2 YAHBOOM_DOGZILLA_LITE_LITE value
+     * @property {number} YAHBOOM_DOGZILLA_LITE_PRO=3 YAHBOOM_DOGZILLA_LITE_PRO value
+     * @property {number} YAHBOOM_DOGZILLA_LITE_RIDER=4 YAHBOOM_DOGZILLA_LITE_RIDER value
      */
-    dogzilla.DogzillaModel = (function() {
+    yahboom_dogzilla_lite.YahboomDogzillaLiteModel = (function() {
         const valuesById = {}, values = Object.create(valuesById);
-        values[valuesById[0] = "DOGZILLA_MODEL_UNKNOWN"] = 0;
-        values[valuesById[1] = "DOGZILLA_MINI"] = 1;
-        values[valuesById[2] = "DOGZILLA_LITE"] = 2;
-        values[valuesById[3] = "DOGZILLA_PRO"] = 3;
-        values[valuesById[4] = "DOGZILLA_RIDER"] = 4;
+        values[valuesById[0] = "YAHBOOM_DOGZILLA_LITE_MODEL_UNKNOWN"] = 0;
+        values[valuesById[1] = "YAHBOOM_DOGZILLA_LITE_MINI"] = 1;
+        values[valuesById[2] = "YAHBOOM_DOGZILLA_LITE_LITE"] = 2;
+        values[valuesById[3] = "YAHBOOM_DOGZILLA_LITE_PRO"] = 3;
+        values[valuesById[4] = "YAHBOOM_DOGZILLA_LITE_RIDER"] = 4;
         return values;
     })();
 
     /**
      * GaitType enum.
-     * @name dogzilla.GaitType
+     * @name yahboom_dogzilla_lite.GaitType
      * @enum {number}
      * @property {number} GAIT_TROT=0 GAIT_TROT value
      * @property {number} GAIT_WALK=1 GAIT_WALK value
      * @property {number} GAIT_HIGH_WALK=2 GAIT_HIGH_WALK value
      * @property {number} GAIT_MICRO_TROT=3 GAIT_MICRO_TROT value
      */
-    dogzilla.GaitType = (function() {
+    yahboom_dogzilla_lite.GaitType = (function() {
         const valuesById = {}, values = Object.create(valuesById);
         values[valuesById[0] = "GAIT_TROT"] = 0;
         values[valuesById[1] = "GAIT_WALK"] = 1;
@@ -17759,12 +17759,12 @@ export const dogzilla = $root.dogzilla = (() => {
 
     /**
      * PerformanceMode enum.
-     * @name dogzilla.PerformanceMode
+     * @name yahboom_dogzilla_lite.PerformanceMode
      * @enum {number}
      * @property {number} PERFORMANCE_NORMAL_CONTROL=0 PERFORMANCE_NORMAL_CONTROL value
      * @property {number} PERFORMANCE_CYCLE_ACTION=1 PERFORMANCE_CYCLE_ACTION value
      */
-    dogzilla.PerformanceMode = (function() {
+    yahboom_dogzilla_lite.PerformanceMode = (function() {
         const valuesById = {}, values = Object.create(valuesById);
         values[valuesById[0] = "PERFORMANCE_NORMAL_CONTROL"] = 0;
         values[valuesById[1] = "PERFORMANCE_CYCLE_ACTION"] = 1;
@@ -17773,12 +17773,12 @@ export const dogzilla = $root.dogzilla = (() => {
 
     /**
      * ImuMode enum.
-     * @name dogzilla.ImuMode
+     * @name yahboom_dogzilla_lite.ImuMode
      * @enum {number}
      * @property {number} IMU_DISABLED=0 IMU_DISABLED value
      * @property {number} IMU_SELF_STABILIZE=1 IMU_SELF_STABILIZE value
      */
-    dogzilla.ImuMode = (function() {
+    yahboom_dogzilla_lite.ImuMode = (function() {
         const valuesById = {}, values = Object.create(valuesById);
         values[valuesById[0] = "IMU_DISABLED"] = 0;
         values[valuesById[1] = "IMU_SELF_STABILIZE"] = 1;
@@ -17787,7 +17787,7 @@ export const dogzilla = $root.dogzilla = (() => {
 
     /**
      * ActionType enum.
-     * @name dogzilla.ActionType
+     * @name yahboom_dogzilla_lite.ActionType
      * @enum {number}
      * @property {number} ACTION_UNSPECIFIED=0 ACTION_UNSPECIFIED value
      * @property {number} ACTION_LIE_DOWN=1 ACTION_LIE_DOWN value
@@ -17816,7 +17816,7 @@ export const dogzilla = $root.dogzilla = (() => {
      * @property {number} ACTION_FORWARD_BACKWARD_ROTATION=24 ACTION_FORWARD_BACKWARD_ROTATION value
      * @property {number} ACTION_RESTORE_DEFAULT=255 ACTION_RESTORE_DEFAULT value
      */
-    dogzilla.ActionType = (function() {
+    yahboom_dogzilla_lite.ActionType = (function() {
         const valuesById = {}, values = Object.create(valuesById);
         values[valuesById[0] = "ACTION_UNSPECIFIED"] = 0;
         values[valuesById[1] = "ACTION_LIE_DOWN"] = 1;
@@ -17847,32 +17847,32 @@ export const dogzilla = $root.dogzilla = (() => {
         return values;
     })();
 
-    dogzilla.DogzillaDevice = (function() {
+    yahboom_dogzilla_lite.YahboomDogzillaLiteDevice = (function() {
 
         /**
-         * Properties of a DogzillaDevice.
-         * @memberof dogzilla
-         * @interface IDogzillaDevice
-         * @property {string|null} [portName] DogzillaDevice portName
-         * @property {number|null} [baudRate] DogzillaDevice baudRate
-         * @property {string|null} [serialNumber] DogzillaDevice serialNumber
-         * @property {string|null} [firmwareVersion] DogzillaDevice firmwareVersion
-         * @property {dogzilla.DogzillaModel|null} [model] DogzillaDevice model
-         * @property {number|null} [vid] DogzillaDevice vid
-         * @property {number|null} [pid] DogzillaDevice pid
-         * @property {string|null} [manufacturer] DogzillaDevice manufacturer
-         * @property {string|null} [product] DogzillaDevice product
+         * Properties of a YahboomDogzillaLiteDevice.
+         * @memberof yahboom_dogzilla_lite
+         * @interface IYahboomDogzillaLiteDevice
+         * @property {string|null} [portName] YahboomDogzillaLiteDevice portName
+         * @property {number|null} [baudRate] YahboomDogzillaLiteDevice baudRate
+         * @property {string|null} [serialNumber] YahboomDogzillaLiteDevice serialNumber
+         * @property {string|null} [firmwareVersion] YahboomDogzillaLiteDevice firmwareVersion
+         * @property {yahboom_dogzilla_lite.YahboomDogzillaLiteModel|null} [model] YahboomDogzillaLiteDevice model
+         * @property {number|null} [vid] YahboomDogzillaLiteDevice vid
+         * @property {number|null} [pid] YahboomDogzillaLiteDevice pid
+         * @property {string|null} [manufacturer] YahboomDogzillaLiteDevice manufacturer
+         * @property {string|null} [product] YahboomDogzillaLiteDevice product
          */
 
         /**
-         * Constructs a new DogzillaDevice.
-         * @memberof dogzilla
-         * @classdesc Represents a DogzillaDevice.
-         * @implements IDogzillaDevice
+         * Constructs a new YahboomDogzillaLiteDevice.
+         * @memberof yahboom_dogzilla_lite
+         * @classdesc Represents a YahboomDogzillaLiteDevice.
+         * @implements IYahboomDogzillaLiteDevice
          * @constructor
-         * @param {dogzilla.IDogzillaDevice=} [properties] Properties to set
+         * @param {yahboom_dogzilla_lite.IYahboomDogzillaLiteDevice=} [properties] Properties to set
          */
-        function DogzillaDevice(properties) {
+        function YahboomDogzillaLiteDevice(properties) {
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
                     if (properties[keys[i]] != null && keys[i] !== "__proto__")
@@ -17880,99 +17880,99 @@ export const dogzilla = $root.dogzilla = (() => {
         }
 
         /**
-         * DogzillaDevice portName.
+         * YahboomDogzillaLiteDevice portName.
          * @member {string} portName
-         * @memberof dogzilla.DogzillaDevice
+         * @memberof yahboom_dogzilla_lite.YahboomDogzillaLiteDevice
          * @instance
          */
-        DogzillaDevice.prototype.portName = "";
+        YahboomDogzillaLiteDevice.prototype.portName = "";
 
         /**
-         * DogzillaDevice baudRate.
+         * YahboomDogzillaLiteDevice baudRate.
          * @member {number} baudRate
-         * @memberof dogzilla.DogzillaDevice
+         * @memberof yahboom_dogzilla_lite.YahboomDogzillaLiteDevice
          * @instance
          */
-        DogzillaDevice.prototype.baudRate = 0;
+        YahboomDogzillaLiteDevice.prototype.baudRate = 0;
 
         /**
-         * DogzillaDevice serialNumber.
+         * YahboomDogzillaLiteDevice serialNumber.
          * @member {string} serialNumber
-         * @memberof dogzilla.DogzillaDevice
+         * @memberof yahboom_dogzilla_lite.YahboomDogzillaLiteDevice
          * @instance
          */
-        DogzillaDevice.prototype.serialNumber = "";
+        YahboomDogzillaLiteDevice.prototype.serialNumber = "";
 
         /**
-         * DogzillaDevice firmwareVersion.
+         * YahboomDogzillaLiteDevice firmwareVersion.
          * @member {string} firmwareVersion
-         * @memberof dogzilla.DogzillaDevice
+         * @memberof yahboom_dogzilla_lite.YahboomDogzillaLiteDevice
          * @instance
          */
-        DogzillaDevice.prototype.firmwareVersion = "";
+        YahboomDogzillaLiteDevice.prototype.firmwareVersion = "";
 
         /**
-         * DogzillaDevice model.
-         * @member {dogzilla.DogzillaModel} model
-         * @memberof dogzilla.DogzillaDevice
+         * YahboomDogzillaLiteDevice model.
+         * @member {yahboom_dogzilla_lite.YahboomDogzillaLiteModel} model
+         * @memberof yahboom_dogzilla_lite.YahboomDogzillaLiteDevice
          * @instance
          */
-        DogzillaDevice.prototype.model = 0;
+        YahboomDogzillaLiteDevice.prototype.model = 0;
 
         /**
-         * DogzillaDevice vid.
+         * YahboomDogzillaLiteDevice vid.
          * @member {number} vid
-         * @memberof dogzilla.DogzillaDevice
+         * @memberof yahboom_dogzilla_lite.YahboomDogzillaLiteDevice
          * @instance
          */
-        DogzillaDevice.prototype.vid = 0;
+        YahboomDogzillaLiteDevice.prototype.vid = 0;
 
         /**
-         * DogzillaDevice pid.
+         * YahboomDogzillaLiteDevice pid.
          * @member {number} pid
-         * @memberof dogzilla.DogzillaDevice
+         * @memberof yahboom_dogzilla_lite.YahboomDogzillaLiteDevice
          * @instance
          */
-        DogzillaDevice.prototype.pid = 0;
+        YahboomDogzillaLiteDevice.prototype.pid = 0;
 
         /**
-         * DogzillaDevice manufacturer.
+         * YahboomDogzillaLiteDevice manufacturer.
          * @member {string} manufacturer
-         * @memberof dogzilla.DogzillaDevice
+         * @memberof yahboom_dogzilla_lite.YahboomDogzillaLiteDevice
          * @instance
          */
-        DogzillaDevice.prototype.manufacturer = "";
+        YahboomDogzillaLiteDevice.prototype.manufacturer = "";
 
         /**
-         * DogzillaDevice product.
+         * YahboomDogzillaLiteDevice product.
          * @member {string} product
-         * @memberof dogzilla.DogzillaDevice
+         * @memberof yahboom_dogzilla_lite.YahboomDogzillaLiteDevice
          * @instance
          */
-        DogzillaDevice.prototype.product = "";
+        YahboomDogzillaLiteDevice.prototype.product = "";
 
         /**
-         * Creates a new DogzillaDevice instance using the specified properties.
+         * Creates a new YahboomDogzillaLiteDevice instance using the specified properties.
          * @function create
-         * @memberof dogzilla.DogzillaDevice
+         * @memberof yahboom_dogzilla_lite.YahboomDogzillaLiteDevice
          * @static
-         * @param {dogzilla.IDogzillaDevice=} [properties] Properties to set
-         * @returns {dogzilla.DogzillaDevice} DogzillaDevice instance
+         * @param {yahboom_dogzilla_lite.IYahboomDogzillaLiteDevice=} [properties] Properties to set
+         * @returns {yahboom_dogzilla_lite.YahboomDogzillaLiteDevice} YahboomDogzillaLiteDevice instance
          */
-        DogzillaDevice.create = function create(properties) {
-            return new DogzillaDevice(properties);
+        YahboomDogzillaLiteDevice.create = function create(properties) {
+            return new YahboomDogzillaLiteDevice(properties);
         };
 
         /**
-         * Encodes the specified DogzillaDevice message. Does not implicitly {@link dogzilla.DogzillaDevice.verify|verify} messages.
+         * Encodes the specified YahboomDogzillaLiteDevice message. Does not implicitly {@link yahboom_dogzilla_lite.YahboomDogzillaLiteDevice.verify|verify} messages.
          * @function encode
-         * @memberof dogzilla.DogzillaDevice
+         * @memberof yahboom_dogzilla_lite.YahboomDogzillaLiteDevice
          * @static
-         * @param {dogzilla.IDogzillaDevice} message DogzillaDevice message or plain object to encode
+         * @param {yahboom_dogzilla_lite.IYahboomDogzillaLiteDevice} message YahboomDogzillaLiteDevice message or plain object to encode
          * @param {$protobuf.Writer} [writer] Writer to encode to
          * @returns {$protobuf.Writer} Writer
          */
-        DogzillaDevice.encode = function encode(message, writer) {
+        YahboomDogzillaLiteDevice.encode = function encode(message, writer) {
             if (!writer)
                 writer = $Writer.create();
             if (message.portName != null && Object.hasOwnProperty.call(message, "portName"))
@@ -17997,37 +17997,37 @@ export const dogzilla = $root.dogzilla = (() => {
         };
 
         /**
-         * Encodes the specified DogzillaDevice message, length delimited. Does not implicitly {@link dogzilla.DogzillaDevice.verify|verify} messages.
+         * Encodes the specified YahboomDogzillaLiteDevice message, length delimited. Does not implicitly {@link yahboom_dogzilla_lite.YahboomDogzillaLiteDevice.verify|verify} messages.
          * @function encodeDelimited
-         * @memberof dogzilla.DogzillaDevice
+         * @memberof yahboom_dogzilla_lite.YahboomDogzillaLiteDevice
          * @static
-         * @param {dogzilla.IDogzillaDevice} message DogzillaDevice message or plain object to encode
+         * @param {yahboom_dogzilla_lite.IYahboomDogzillaLiteDevice} message YahboomDogzillaLiteDevice message or plain object to encode
          * @param {$protobuf.Writer} [writer] Writer to encode to
          * @returns {$protobuf.Writer} Writer
          */
-        DogzillaDevice.encodeDelimited = function encodeDelimited(message, writer) {
+        YahboomDogzillaLiteDevice.encodeDelimited = function encodeDelimited(message, writer) {
             return this.encode(message, writer).ldelim();
         };
 
         /**
-         * Decodes a DogzillaDevice message from the specified reader or buffer.
+         * Decodes a YahboomDogzillaLiteDevice message from the specified reader or buffer.
          * @function decode
-         * @memberof dogzilla.DogzillaDevice
+         * @memberof yahboom_dogzilla_lite.YahboomDogzillaLiteDevice
          * @static
          * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
          * @param {number} [length] Message length if known beforehand
-         * @returns {dogzilla.DogzillaDevice} DogzillaDevice
+         * @returns {yahboom_dogzilla_lite.YahboomDogzillaLiteDevice} YahboomDogzillaLiteDevice
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        DogzillaDevice.decode = function decode(reader, length, error, long) {
+        YahboomDogzillaLiteDevice.decode = function decode(reader, length, error, long) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
             if (long === undefined)
                 long = 0;
             if (long > $Reader.recursionLimit)
                 throw Error("maximum nesting depth exceeded");
-            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.dogzilla.DogzillaDevice();
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.yahboom_dogzilla_lite.YahboomDogzillaLiteDevice();
             while (reader.pos < end) {
                 let tag = reader.uint32();
                 if (tag === error)
@@ -18078,30 +18078,30 @@ export const dogzilla = $root.dogzilla = (() => {
         };
 
         /**
-         * Decodes a DogzillaDevice message from the specified reader or buffer, length delimited.
+         * Decodes a YahboomDogzillaLiteDevice message from the specified reader or buffer, length delimited.
          * @function decodeDelimited
-         * @memberof dogzilla.DogzillaDevice
+         * @memberof yahboom_dogzilla_lite.YahboomDogzillaLiteDevice
          * @static
          * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
-         * @returns {dogzilla.DogzillaDevice} DogzillaDevice
+         * @returns {yahboom_dogzilla_lite.YahboomDogzillaLiteDevice} YahboomDogzillaLiteDevice
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        DogzillaDevice.decodeDelimited = function decodeDelimited(reader) {
+        YahboomDogzillaLiteDevice.decodeDelimited = function decodeDelimited(reader) {
             if (!(reader instanceof $Reader))
                 reader = new $Reader(reader);
             return this.decode(reader, reader.uint32());
         };
 
         /**
-         * Verifies a DogzillaDevice message.
+         * Verifies a YahboomDogzillaLiteDevice message.
          * @function verify
-         * @memberof dogzilla.DogzillaDevice
+         * @memberof yahboom_dogzilla_lite.YahboomDogzillaLiteDevice
          * @static
          * @param {Object.<string,*>} message Plain object to verify
          * @returns {string|null} `null` if valid, otherwise the reason why it is not
          */
-        DogzillaDevice.verify = function verify(message, long) {
+        YahboomDogzillaLiteDevice.verify = function verify(message, long) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
             if (long === undefined)
@@ -18147,21 +18147,21 @@ export const dogzilla = $root.dogzilla = (() => {
         };
 
         /**
-         * Creates a DogzillaDevice message from a plain object. Also converts values to their respective internal types.
+         * Creates a YahboomDogzillaLiteDevice message from a plain object. Also converts values to their respective internal types.
          * @function fromObject
-         * @memberof dogzilla.DogzillaDevice
+         * @memberof yahboom_dogzilla_lite.YahboomDogzillaLiteDevice
          * @static
          * @param {Object.<string,*>} object Plain object
-         * @returns {dogzilla.DogzillaDevice} DogzillaDevice
+         * @returns {yahboom_dogzilla_lite.YahboomDogzillaLiteDevice} YahboomDogzillaLiteDevice
          */
-        DogzillaDevice.fromObject = function fromObject(object, long) {
-            if (object instanceof $root.dogzilla.DogzillaDevice)
+        YahboomDogzillaLiteDevice.fromObject = function fromObject(object, long) {
+            if (object instanceof $root.yahboom_dogzilla_lite.YahboomDogzillaLiteDevice)
                 return object;
             if (long === undefined)
                 long = 0;
             if (long > $util.recursionLimit)
                 throw Error("maximum nesting depth exceeded");
-            let message = new $root.dogzilla.DogzillaDevice();
+            let message = new $root.yahboom_dogzilla_lite.YahboomDogzillaLiteDevice();
             if (object.portName != null)
                 message.portName = String(object.portName);
             if (object.baudRate != null)
@@ -18177,23 +18177,23 @@ export const dogzilla = $root.dogzilla = (() => {
                     break;
                 }
                 break;
-            case "DOGZILLA_MODEL_UNKNOWN":
+            case "YAHBOOM_DOGZILLA_LITE_MODEL_UNKNOWN":
             case 0:
                 message.model = 0;
                 break;
-            case "DOGZILLA_MINI":
+            case "YAHBOOM_DOGZILLA_LITE_MINI":
             case 1:
                 message.model = 1;
                 break;
-            case "DOGZILLA_LITE":
+            case "YAHBOOM_DOGZILLA_LITE_LITE":
             case 2:
                 message.model = 2;
                 break;
-            case "DOGZILLA_PRO":
+            case "YAHBOOM_DOGZILLA_LITE_PRO":
             case 3:
                 message.model = 3;
                 break;
-            case "DOGZILLA_RIDER":
+            case "YAHBOOM_DOGZILLA_LITE_RIDER":
             case 4:
                 message.model = 4;
                 break;
@@ -18210,15 +18210,15 @@ export const dogzilla = $root.dogzilla = (() => {
         };
 
         /**
-         * Creates a plain object from a DogzillaDevice message. Also converts values to other types if specified.
+         * Creates a plain object from a YahboomDogzillaLiteDevice message. Also converts values to other types if specified.
          * @function toObject
-         * @memberof dogzilla.DogzillaDevice
+         * @memberof yahboom_dogzilla_lite.YahboomDogzillaLiteDevice
          * @static
-         * @param {dogzilla.DogzillaDevice} message DogzillaDevice
+         * @param {yahboom_dogzilla_lite.YahboomDogzillaLiteDevice} message YahboomDogzillaLiteDevice
          * @param {$protobuf.IConversionOptions} [options] Conversion options
          * @returns {Object.<string,*>} Plain object
          */
-        DogzillaDevice.toObject = function toObject(message, options) {
+        YahboomDogzillaLiteDevice.toObject = function toObject(message, options) {
             if (!options)
                 options = {};
             let object = {};
@@ -18227,7 +18227,7 @@ export const dogzilla = $root.dogzilla = (() => {
                 object.baudRate = 0;
                 object.serialNumber = "";
                 object.firmwareVersion = "";
-                object.model = options.enums === String ? "DOGZILLA_MODEL_UNKNOWN" : 0;
+                object.model = options.enums === String ? "YAHBOOM_DOGZILLA_LITE_MODEL_UNKNOWN" : 0;
                 object.vid = 0;
                 object.pid = 0;
                 object.manufacturer = "";
@@ -18242,7 +18242,7 @@ export const dogzilla = $root.dogzilla = (() => {
             if (message.firmwareVersion != null && message.hasOwnProperty("firmwareVersion"))
                 object.firmwareVersion = message.firmwareVersion;
             if (message.model != null && message.hasOwnProperty("model"))
-                object.model = options.enums === String ? $root.dogzilla.DogzillaModel[message.model] === undefined ? message.model : $root.dogzilla.DogzillaModel[message.model] : message.model;
+                object.model = options.enums === String ? $root.yahboom_dogzilla_lite.YahboomDogzillaLiteModel[message.model] === undefined ? message.model : $root.yahboom_dogzilla_lite.YahboomDogzillaLiteModel[message.model] : message.model;
             if (message.vid != null && message.hasOwnProperty("vid"))
                 object.vid = message.vid;
             if (message.pid != null && message.hasOwnProperty("pid"))
@@ -18255,39 +18255,39 @@ export const dogzilla = $root.dogzilla = (() => {
         };
 
         /**
-         * Converts this DogzillaDevice to JSON.
+         * Converts this YahboomDogzillaLiteDevice to JSON.
          * @function toJSON
-         * @memberof dogzilla.DogzillaDevice
+         * @memberof yahboom_dogzilla_lite.YahboomDogzillaLiteDevice
          * @instance
          * @returns {Object.<string,*>} JSON object
          */
-        DogzillaDevice.prototype.toJSON = function toJSON() {
+        YahboomDogzillaLiteDevice.prototype.toJSON = function toJSON() {
             return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
         };
 
         /**
-         * Gets the default type url for DogzillaDevice
+         * Gets the default type url for YahboomDogzillaLiteDevice
          * @function getTypeUrl
-         * @memberof dogzilla.DogzillaDevice
+         * @memberof yahboom_dogzilla_lite.YahboomDogzillaLiteDevice
          * @static
          * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
          * @returns {string} The default type url
          */
-        DogzillaDevice.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+        YahboomDogzillaLiteDevice.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
             if (typeUrlPrefix === undefined) {
                 typeUrlPrefix = "type.googleapis.com";
             }
-            return typeUrlPrefix + "/dogzilla.DogzillaDevice";
+            return typeUrlPrefix + "/yahboom_dogzilla_lite.YahboomDogzillaLiteDevice";
         };
 
-        return DogzillaDevice;
+        return YahboomDogzillaLiteDevice;
     })();
 
-    dogzilla.ImuOrientation = (function() {
+    yahboom_dogzilla_lite.ImuOrientation = (function() {
 
         /**
          * Properties of an ImuOrientation.
-         * @memberof dogzilla
+         * @memberof yahboom_dogzilla_lite
          * @interface IImuOrientation
          * @property {number|null} [roll] ImuOrientation roll
          * @property {number|null} [pitch] ImuOrientation pitch
@@ -18296,11 +18296,11 @@ export const dogzilla = $root.dogzilla = (() => {
 
         /**
          * Constructs a new ImuOrientation.
-         * @memberof dogzilla
+         * @memberof yahboom_dogzilla_lite
          * @classdesc Represents an ImuOrientation.
          * @implements IImuOrientation
          * @constructor
-         * @param {dogzilla.IImuOrientation=} [properties] Properties to set
+         * @param {yahboom_dogzilla_lite.IImuOrientation=} [properties] Properties to set
          */
         function ImuOrientation(properties) {
             if (properties)
@@ -18312,7 +18312,7 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * ImuOrientation roll.
          * @member {number} roll
-         * @memberof dogzilla.ImuOrientation
+         * @memberof yahboom_dogzilla_lite.ImuOrientation
          * @instance
          */
         ImuOrientation.prototype.roll = 0;
@@ -18320,7 +18320,7 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * ImuOrientation pitch.
          * @member {number} pitch
-         * @memberof dogzilla.ImuOrientation
+         * @memberof yahboom_dogzilla_lite.ImuOrientation
          * @instance
          */
         ImuOrientation.prototype.pitch = 0;
@@ -18328,7 +18328,7 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * ImuOrientation yaw.
          * @member {number} yaw
-         * @memberof dogzilla.ImuOrientation
+         * @memberof yahboom_dogzilla_lite.ImuOrientation
          * @instance
          */
         ImuOrientation.prototype.yaw = 0;
@@ -18336,21 +18336,21 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * Creates a new ImuOrientation instance using the specified properties.
          * @function create
-         * @memberof dogzilla.ImuOrientation
+         * @memberof yahboom_dogzilla_lite.ImuOrientation
          * @static
-         * @param {dogzilla.IImuOrientation=} [properties] Properties to set
-         * @returns {dogzilla.ImuOrientation} ImuOrientation instance
+         * @param {yahboom_dogzilla_lite.IImuOrientation=} [properties] Properties to set
+         * @returns {yahboom_dogzilla_lite.ImuOrientation} ImuOrientation instance
          */
         ImuOrientation.create = function create(properties) {
             return new ImuOrientation(properties);
         };
 
         /**
-         * Encodes the specified ImuOrientation message. Does not implicitly {@link dogzilla.ImuOrientation.verify|verify} messages.
+         * Encodes the specified ImuOrientation message. Does not implicitly {@link yahboom_dogzilla_lite.ImuOrientation.verify|verify} messages.
          * @function encode
-         * @memberof dogzilla.ImuOrientation
+         * @memberof yahboom_dogzilla_lite.ImuOrientation
          * @static
-         * @param {dogzilla.IImuOrientation} message ImuOrientation message or plain object to encode
+         * @param {yahboom_dogzilla_lite.IImuOrientation} message ImuOrientation message or plain object to encode
          * @param {$protobuf.Writer} [writer] Writer to encode to
          * @returns {$protobuf.Writer} Writer
          */
@@ -18367,11 +18367,11 @@ export const dogzilla = $root.dogzilla = (() => {
         };
 
         /**
-         * Encodes the specified ImuOrientation message, length delimited. Does not implicitly {@link dogzilla.ImuOrientation.verify|verify} messages.
+         * Encodes the specified ImuOrientation message, length delimited. Does not implicitly {@link yahboom_dogzilla_lite.ImuOrientation.verify|verify} messages.
          * @function encodeDelimited
-         * @memberof dogzilla.ImuOrientation
+         * @memberof yahboom_dogzilla_lite.ImuOrientation
          * @static
-         * @param {dogzilla.IImuOrientation} message ImuOrientation message or plain object to encode
+         * @param {yahboom_dogzilla_lite.IImuOrientation} message ImuOrientation message or plain object to encode
          * @param {$protobuf.Writer} [writer] Writer to encode to
          * @returns {$protobuf.Writer} Writer
          */
@@ -18382,11 +18382,11 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * Decodes an ImuOrientation message from the specified reader or buffer.
          * @function decode
-         * @memberof dogzilla.ImuOrientation
+         * @memberof yahboom_dogzilla_lite.ImuOrientation
          * @static
          * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
          * @param {number} [length] Message length if known beforehand
-         * @returns {dogzilla.ImuOrientation} ImuOrientation
+         * @returns {yahboom_dogzilla_lite.ImuOrientation} ImuOrientation
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
@@ -18397,7 +18397,7 @@ export const dogzilla = $root.dogzilla = (() => {
                 long = 0;
             if (long > $Reader.recursionLimit)
                 throw Error("maximum nesting depth exceeded");
-            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.dogzilla.ImuOrientation();
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.yahboom_dogzilla_lite.ImuOrientation();
             while (reader.pos < end) {
                 let tag = reader.uint32();
                 if (tag === error)
@@ -18426,10 +18426,10 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * Decodes an ImuOrientation message from the specified reader or buffer, length delimited.
          * @function decodeDelimited
-         * @memberof dogzilla.ImuOrientation
+         * @memberof yahboom_dogzilla_lite.ImuOrientation
          * @static
          * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
-         * @returns {dogzilla.ImuOrientation} ImuOrientation
+         * @returns {yahboom_dogzilla_lite.ImuOrientation} ImuOrientation
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
@@ -18442,7 +18442,7 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * Verifies an ImuOrientation message.
          * @function verify
-         * @memberof dogzilla.ImuOrientation
+         * @memberof yahboom_dogzilla_lite.ImuOrientation
          * @static
          * @param {Object.<string,*>} message Plain object to verify
          * @returns {string|null} `null` if valid, otherwise the reason why it is not
@@ -18469,19 +18469,19 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * Creates an ImuOrientation message from a plain object. Also converts values to their respective internal types.
          * @function fromObject
-         * @memberof dogzilla.ImuOrientation
+         * @memberof yahboom_dogzilla_lite.ImuOrientation
          * @static
          * @param {Object.<string,*>} object Plain object
-         * @returns {dogzilla.ImuOrientation} ImuOrientation
+         * @returns {yahboom_dogzilla_lite.ImuOrientation} ImuOrientation
          */
         ImuOrientation.fromObject = function fromObject(object, long) {
-            if (object instanceof $root.dogzilla.ImuOrientation)
+            if (object instanceof $root.yahboom_dogzilla_lite.ImuOrientation)
                 return object;
             if (long === undefined)
                 long = 0;
             if (long > $util.recursionLimit)
                 throw Error("maximum nesting depth exceeded");
-            let message = new $root.dogzilla.ImuOrientation();
+            let message = new $root.yahboom_dogzilla_lite.ImuOrientation();
             if (object.roll != null)
                 message.roll = Number(object.roll);
             if (object.pitch != null)
@@ -18494,9 +18494,9 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * Creates a plain object from an ImuOrientation message. Also converts values to other types if specified.
          * @function toObject
-         * @memberof dogzilla.ImuOrientation
+         * @memberof yahboom_dogzilla_lite.ImuOrientation
          * @static
-         * @param {dogzilla.ImuOrientation} message ImuOrientation
+         * @param {yahboom_dogzilla_lite.ImuOrientation} message ImuOrientation
          * @param {$protobuf.IConversionOptions} [options] Conversion options
          * @returns {Object.<string,*>} Plain object
          */
@@ -18521,7 +18521,7 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * Converts this ImuOrientation to JSON.
          * @function toJSON
-         * @memberof dogzilla.ImuOrientation
+         * @memberof yahboom_dogzilla_lite.ImuOrientation
          * @instance
          * @returns {Object.<string,*>} JSON object
          */
@@ -18532,7 +18532,7 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * Gets the default type url for ImuOrientation
          * @function getTypeUrl
-         * @memberof dogzilla.ImuOrientation
+         * @memberof yahboom_dogzilla_lite.ImuOrientation
          * @static
          * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
          * @returns {string} The default type url
@@ -18541,17 +18541,17 @@ export const dogzilla = $root.dogzilla = (() => {
             if (typeUrlPrefix === undefined) {
                 typeUrlPrefix = "type.googleapis.com";
             }
-            return typeUrlPrefix + "/dogzilla.ImuOrientation";
+            return typeUrlPrefix + "/yahboom_dogzilla_lite.ImuOrientation";
         };
 
         return ImuOrientation;
     })();
 
-    dogzilla.Acceleration = (function() {
+    yahboom_dogzilla_lite.Acceleration = (function() {
 
         /**
          * Properties of an Acceleration.
-         * @memberof dogzilla
+         * @memberof yahboom_dogzilla_lite
          * @interface IAcceleration
          * @property {number|null} [x] Acceleration x
          * @property {number|null} [y] Acceleration y
@@ -18560,11 +18560,11 @@ export const dogzilla = $root.dogzilla = (() => {
 
         /**
          * Constructs a new Acceleration.
-         * @memberof dogzilla
+         * @memberof yahboom_dogzilla_lite
          * @classdesc Represents an Acceleration.
          * @implements IAcceleration
          * @constructor
-         * @param {dogzilla.IAcceleration=} [properties] Properties to set
+         * @param {yahboom_dogzilla_lite.IAcceleration=} [properties] Properties to set
          */
         function Acceleration(properties) {
             if (properties)
@@ -18576,7 +18576,7 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * Acceleration x.
          * @member {number} x
-         * @memberof dogzilla.Acceleration
+         * @memberof yahboom_dogzilla_lite.Acceleration
          * @instance
          */
         Acceleration.prototype.x = 0;
@@ -18584,7 +18584,7 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * Acceleration y.
          * @member {number} y
-         * @memberof dogzilla.Acceleration
+         * @memberof yahboom_dogzilla_lite.Acceleration
          * @instance
          */
         Acceleration.prototype.y = 0;
@@ -18592,7 +18592,7 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * Acceleration z.
          * @member {number} z
-         * @memberof dogzilla.Acceleration
+         * @memberof yahboom_dogzilla_lite.Acceleration
          * @instance
          */
         Acceleration.prototype.z = 0;
@@ -18600,21 +18600,21 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * Creates a new Acceleration instance using the specified properties.
          * @function create
-         * @memberof dogzilla.Acceleration
+         * @memberof yahboom_dogzilla_lite.Acceleration
          * @static
-         * @param {dogzilla.IAcceleration=} [properties] Properties to set
-         * @returns {dogzilla.Acceleration} Acceleration instance
+         * @param {yahboom_dogzilla_lite.IAcceleration=} [properties] Properties to set
+         * @returns {yahboom_dogzilla_lite.Acceleration} Acceleration instance
          */
         Acceleration.create = function create(properties) {
             return new Acceleration(properties);
         };
 
         /**
-         * Encodes the specified Acceleration message. Does not implicitly {@link dogzilla.Acceleration.verify|verify} messages.
+         * Encodes the specified Acceleration message. Does not implicitly {@link yahboom_dogzilla_lite.Acceleration.verify|verify} messages.
          * @function encode
-         * @memberof dogzilla.Acceleration
+         * @memberof yahboom_dogzilla_lite.Acceleration
          * @static
-         * @param {dogzilla.IAcceleration} message Acceleration message or plain object to encode
+         * @param {yahboom_dogzilla_lite.IAcceleration} message Acceleration message or plain object to encode
          * @param {$protobuf.Writer} [writer] Writer to encode to
          * @returns {$protobuf.Writer} Writer
          */
@@ -18631,11 +18631,11 @@ export const dogzilla = $root.dogzilla = (() => {
         };
 
         /**
-         * Encodes the specified Acceleration message, length delimited. Does not implicitly {@link dogzilla.Acceleration.verify|verify} messages.
+         * Encodes the specified Acceleration message, length delimited. Does not implicitly {@link yahboom_dogzilla_lite.Acceleration.verify|verify} messages.
          * @function encodeDelimited
-         * @memberof dogzilla.Acceleration
+         * @memberof yahboom_dogzilla_lite.Acceleration
          * @static
-         * @param {dogzilla.IAcceleration} message Acceleration message or plain object to encode
+         * @param {yahboom_dogzilla_lite.IAcceleration} message Acceleration message or plain object to encode
          * @param {$protobuf.Writer} [writer] Writer to encode to
          * @returns {$protobuf.Writer} Writer
          */
@@ -18646,11 +18646,11 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * Decodes an Acceleration message from the specified reader or buffer.
          * @function decode
-         * @memberof dogzilla.Acceleration
+         * @memberof yahboom_dogzilla_lite.Acceleration
          * @static
          * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
          * @param {number} [length] Message length if known beforehand
-         * @returns {dogzilla.Acceleration} Acceleration
+         * @returns {yahboom_dogzilla_lite.Acceleration} Acceleration
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
@@ -18661,7 +18661,7 @@ export const dogzilla = $root.dogzilla = (() => {
                 long = 0;
             if (long > $Reader.recursionLimit)
                 throw Error("maximum nesting depth exceeded");
-            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.dogzilla.Acceleration();
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.yahboom_dogzilla_lite.Acceleration();
             while (reader.pos < end) {
                 let tag = reader.uint32();
                 if (tag === error)
@@ -18690,10 +18690,10 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * Decodes an Acceleration message from the specified reader or buffer, length delimited.
          * @function decodeDelimited
-         * @memberof dogzilla.Acceleration
+         * @memberof yahboom_dogzilla_lite.Acceleration
          * @static
          * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
-         * @returns {dogzilla.Acceleration} Acceleration
+         * @returns {yahboom_dogzilla_lite.Acceleration} Acceleration
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
@@ -18706,7 +18706,7 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * Verifies an Acceleration message.
          * @function verify
-         * @memberof dogzilla.Acceleration
+         * @memberof yahboom_dogzilla_lite.Acceleration
          * @static
          * @param {Object.<string,*>} message Plain object to verify
          * @returns {string|null} `null` if valid, otherwise the reason why it is not
@@ -18733,19 +18733,19 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * Creates an Acceleration message from a plain object. Also converts values to their respective internal types.
          * @function fromObject
-         * @memberof dogzilla.Acceleration
+         * @memberof yahboom_dogzilla_lite.Acceleration
          * @static
          * @param {Object.<string,*>} object Plain object
-         * @returns {dogzilla.Acceleration} Acceleration
+         * @returns {yahboom_dogzilla_lite.Acceleration} Acceleration
          */
         Acceleration.fromObject = function fromObject(object, long) {
-            if (object instanceof $root.dogzilla.Acceleration)
+            if (object instanceof $root.yahboom_dogzilla_lite.Acceleration)
                 return object;
             if (long === undefined)
                 long = 0;
             if (long > $util.recursionLimit)
                 throw Error("maximum nesting depth exceeded");
-            let message = new $root.dogzilla.Acceleration();
+            let message = new $root.yahboom_dogzilla_lite.Acceleration();
             if (object.x != null)
                 message.x = Number(object.x);
             if (object.y != null)
@@ -18758,9 +18758,9 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * Creates a plain object from an Acceleration message. Also converts values to other types if specified.
          * @function toObject
-         * @memberof dogzilla.Acceleration
+         * @memberof yahboom_dogzilla_lite.Acceleration
          * @static
-         * @param {dogzilla.Acceleration} message Acceleration
+         * @param {yahboom_dogzilla_lite.Acceleration} message Acceleration
          * @param {$protobuf.IConversionOptions} [options] Conversion options
          * @returns {Object.<string,*>} Plain object
          */
@@ -18785,7 +18785,7 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * Converts this Acceleration to JSON.
          * @function toJSON
-         * @memberof dogzilla.Acceleration
+         * @memberof yahboom_dogzilla_lite.Acceleration
          * @instance
          * @returns {Object.<string,*>} JSON object
          */
@@ -18796,7 +18796,7 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * Gets the default type url for Acceleration
          * @function getTypeUrl
-         * @memberof dogzilla.Acceleration
+         * @memberof yahboom_dogzilla_lite.Acceleration
          * @static
          * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
          * @returns {string} The default type url
@@ -18805,38 +18805,38 @@ export const dogzilla = $root.dogzilla = (() => {
             if (typeUrlPrefix === undefined) {
                 typeUrlPrefix = "type.googleapis.com";
             }
-            return typeUrlPrefix + "/dogzilla.Acceleration";
+            return typeUrlPrefix + "/yahboom_dogzilla_lite.Acceleration";
         };
 
         return Acceleration;
     })();
 
-    dogzilla.DogzillaStatus = (function() {
+    yahboom_dogzilla_lite.YahboomDogzillaLiteStatus = (function() {
 
         /**
-         * Properties of a DogzillaStatus.
-         * @memberof dogzilla
-         * @interface IDogzillaStatus
-         * @property {number|null} [batteryLevel] DogzillaStatus batteryLevel
-         * @property {dogzilla.DogzillaModel|null} [model] DogzillaStatus model
-         * @property {string|null} [firmwareVersion] DogzillaStatus firmwareVersion
-         * @property {Array.<number>|null} [servoPositions] DogzillaStatus servoPositions
-         * @property {dogzilla.IImuOrientation|null} [orientation] DogzillaStatus orientation
-         * @property {dogzilla.IAcceleration|null} [acceleration] DogzillaStatus acceleration
-         * @property {number|null} [legServoSpeed] DogzillaStatus legServoSpeed
-         * @property {number|null} [armServoSpeed] DogzillaStatus armServoSpeed
-         * @property {Array.<number>|null} [servoAngles] DogzillaStatus servoAngles
+         * Properties of a YahboomDogzillaLiteStatus.
+         * @memberof yahboom_dogzilla_lite
+         * @interface IYahboomDogzillaLiteStatus
+         * @property {number|null} [batteryLevel] YahboomDogzillaLiteStatus batteryLevel
+         * @property {yahboom_dogzilla_lite.YahboomDogzillaLiteModel|null} [model] YahboomDogzillaLiteStatus model
+         * @property {string|null} [firmwareVersion] YahboomDogzillaLiteStatus firmwareVersion
+         * @property {Array.<number>|null} [servoPositions] YahboomDogzillaLiteStatus servoPositions
+         * @property {yahboom_dogzilla_lite.IImuOrientation|null} [orientation] YahboomDogzillaLiteStatus orientation
+         * @property {yahboom_dogzilla_lite.IAcceleration|null} [acceleration] YahboomDogzillaLiteStatus acceleration
+         * @property {number|null} [legServoSpeed] YahboomDogzillaLiteStatus legServoSpeed
+         * @property {number|null} [armServoSpeed] YahboomDogzillaLiteStatus armServoSpeed
+         * @property {Array.<number>|null} [servoAngles] YahboomDogzillaLiteStatus servoAngles
          */
 
         /**
-         * Constructs a new DogzillaStatus.
-         * @memberof dogzilla
-         * @classdesc Represents a DogzillaStatus.
-         * @implements IDogzillaStatus
+         * Constructs a new YahboomDogzillaLiteStatus.
+         * @memberof yahboom_dogzilla_lite
+         * @classdesc Represents a YahboomDogzillaLiteStatus.
+         * @implements IYahboomDogzillaLiteStatus
          * @constructor
-         * @param {dogzilla.IDogzillaStatus=} [properties] Properties to set
+         * @param {yahboom_dogzilla_lite.IYahboomDogzillaLiteStatus=} [properties] Properties to set
          */
-        function DogzillaStatus(properties) {
+        function YahboomDogzillaLiteStatus(properties) {
             this.servoPositions = [];
             this.servoAngles = [];
             if (properties)
@@ -18846,99 +18846,99 @@ export const dogzilla = $root.dogzilla = (() => {
         }
 
         /**
-         * DogzillaStatus batteryLevel.
+         * YahboomDogzillaLiteStatus batteryLevel.
          * @member {number} batteryLevel
-         * @memberof dogzilla.DogzillaStatus
+         * @memberof yahboom_dogzilla_lite.YahboomDogzillaLiteStatus
          * @instance
          */
-        DogzillaStatus.prototype.batteryLevel = 0;
+        YahboomDogzillaLiteStatus.prototype.batteryLevel = 0;
 
         /**
-         * DogzillaStatus model.
-         * @member {dogzilla.DogzillaModel} model
-         * @memberof dogzilla.DogzillaStatus
+         * YahboomDogzillaLiteStatus model.
+         * @member {yahboom_dogzilla_lite.YahboomDogzillaLiteModel} model
+         * @memberof yahboom_dogzilla_lite.YahboomDogzillaLiteStatus
          * @instance
          */
-        DogzillaStatus.prototype.model = 0;
+        YahboomDogzillaLiteStatus.prototype.model = 0;
 
         /**
-         * DogzillaStatus firmwareVersion.
+         * YahboomDogzillaLiteStatus firmwareVersion.
          * @member {string} firmwareVersion
-         * @memberof dogzilla.DogzillaStatus
+         * @memberof yahboom_dogzilla_lite.YahboomDogzillaLiteStatus
          * @instance
          */
-        DogzillaStatus.prototype.firmwareVersion = "";
+        YahboomDogzillaLiteStatus.prototype.firmwareVersion = "";
 
         /**
-         * DogzillaStatus servoPositions.
+         * YahboomDogzillaLiteStatus servoPositions.
          * @member {Array.<number>} servoPositions
-         * @memberof dogzilla.DogzillaStatus
+         * @memberof yahboom_dogzilla_lite.YahboomDogzillaLiteStatus
          * @instance
          */
-        DogzillaStatus.prototype.servoPositions = $util.emptyArray;
+        YahboomDogzillaLiteStatus.prototype.servoPositions = $util.emptyArray;
 
         /**
-         * DogzillaStatus orientation.
-         * @member {dogzilla.IImuOrientation|null|undefined} orientation
-         * @memberof dogzilla.DogzillaStatus
+         * YahboomDogzillaLiteStatus orientation.
+         * @member {yahboom_dogzilla_lite.IImuOrientation|null|undefined} orientation
+         * @memberof yahboom_dogzilla_lite.YahboomDogzillaLiteStatus
          * @instance
          */
-        DogzillaStatus.prototype.orientation = null;
+        YahboomDogzillaLiteStatus.prototype.orientation = null;
 
         /**
-         * DogzillaStatus acceleration.
-         * @member {dogzilla.IAcceleration|null|undefined} acceleration
-         * @memberof dogzilla.DogzillaStatus
+         * YahboomDogzillaLiteStatus acceleration.
+         * @member {yahboom_dogzilla_lite.IAcceleration|null|undefined} acceleration
+         * @memberof yahboom_dogzilla_lite.YahboomDogzillaLiteStatus
          * @instance
          */
-        DogzillaStatus.prototype.acceleration = null;
+        YahboomDogzillaLiteStatus.prototype.acceleration = null;
 
         /**
-         * DogzillaStatus legServoSpeed.
+         * YahboomDogzillaLiteStatus legServoSpeed.
          * @member {number} legServoSpeed
-         * @memberof dogzilla.DogzillaStatus
+         * @memberof yahboom_dogzilla_lite.YahboomDogzillaLiteStatus
          * @instance
          */
-        DogzillaStatus.prototype.legServoSpeed = 0;
+        YahboomDogzillaLiteStatus.prototype.legServoSpeed = 0;
 
         /**
-         * DogzillaStatus armServoSpeed.
+         * YahboomDogzillaLiteStatus armServoSpeed.
          * @member {number} armServoSpeed
-         * @memberof dogzilla.DogzillaStatus
+         * @memberof yahboom_dogzilla_lite.YahboomDogzillaLiteStatus
          * @instance
          */
-        DogzillaStatus.prototype.armServoSpeed = 0;
+        YahboomDogzillaLiteStatus.prototype.armServoSpeed = 0;
 
         /**
-         * DogzillaStatus servoAngles.
+         * YahboomDogzillaLiteStatus servoAngles.
          * @member {Array.<number>} servoAngles
-         * @memberof dogzilla.DogzillaStatus
+         * @memberof yahboom_dogzilla_lite.YahboomDogzillaLiteStatus
          * @instance
          */
-        DogzillaStatus.prototype.servoAngles = $util.emptyArray;
+        YahboomDogzillaLiteStatus.prototype.servoAngles = $util.emptyArray;
 
         /**
-         * Creates a new DogzillaStatus instance using the specified properties.
+         * Creates a new YahboomDogzillaLiteStatus instance using the specified properties.
          * @function create
-         * @memberof dogzilla.DogzillaStatus
+         * @memberof yahboom_dogzilla_lite.YahboomDogzillaLiteStatus
          * @static
-         * @param {dogzilla.IDogzillaStatus=} [properties] Properties to set
-         * @returns {dogzilla.DogzillaStatus} DogzillaStatus instance
+         * @param {yahboom_dogzilla_lite.IYahboomDogzillaLiteStatus=} [properties] Properties to set
+         * @returns {yahboom_dogzilla_lite.YahboomDogzillaLiteStatus} YahboomDogzillaLiteStatus instance
          */
-        DogzillaStatus.create = function create(properties) {
-            return new DogzillaStatus(properties);
+        YahboomDogzillaLiteStatus.create = function create(properties) {
+            return new YahboomDogzillaLiteStatus(properties);
         };
 
         /**
-         * Encodes the specified DogzillaStatus message. Does not implicitly {@link dogzilla.DogzillaStatus.verify|verify} messages.
+         * Encodes the specified YahboomDogzillaLiteStatus message. Does not implicitly {@link yahboom_dogzilla_lite.YahboomDogzillaLiteStatus.verify|verify} messages.
          * @function encode
-         * @memberof dogzilla.DogzillaStatus
+         * @memberof yahboom_dogzilla_lite.YahboomDogzillaLiteStatus
          * @static
-         * @param {dogzilla.IDogzillaStatus} message DogzillaStatus message or plain object to encode
+         * @param {yahboom_dogzilla_lite.IYahboomDogzillaLiteStatus} message YahboomDogzillaLiteStatus message or plain object to encode
          * @param {$protobuf.Writer} [writer] Writer to encode to
          * @returns {$protobuf.Writer} Writer
          */
-        DogzillaStatus.encode = function encode(message, writer) {
+        YahboomDogzillaLiteStatus.encode = function encode(message, writer) {
             if (!writer)
                 writer = $Writer.create();
             if (message.batteryLevel != null && Object.hasOwnProperty.call(message, "batteryLevel"))
@@ -18954,9 +18954,9 @@ export const dogzilla = $root.dogzilla = (() => {
                 writer.ldelim();
             }
             if (message.orientation != null && Object.hasOwnProperty.call(message, "orientation"))
-                $root.dogzilla.ImuOrientation.encode(message.orientation, writer.uint32(/* id 11, wireType 2 =*/90).fork()).ldelim();
+                $root.yahboom_dogzilla_lite.ImuOrientation.encode(message.orientation, writer.uint32(/* id 11, wireType 2 =*/90).fork()).ldelim();
             if (message.acceleration != null && Object.hasOwnProperty.call(message, "acceleration"))
-                $root.dogzilla.Acceleration.encode(message.acceleration, writer.uint32(/* id 12, wireType 2 =*/98).fork()).ldelim();
+                $root.yahboom_dogzilla_lite.Acceleration.encode(message.acceleration, writer.uint32(/* id 12, wireType 2 =*/98).fork()).ldelim();
             if (message.legServoSpeed != null && Object.hasOwnProperty.call(message, "legServoSpeed"))
                 writer.uint32(/* id 13, wireType 0 =*/104).uint32(message.legServoSpeed);
             if (message.armServoSpeed != null && Object.hasOwnProperty.call(message, "armServoSpeed"))
@@ -18971,37 +18971,37 @@ export const dogzilla = $root.dogzilla = (() => {
         };
 
         /**
-         * Encodes the specified DogzillaStatus message, length delimited. Does not implicitly {@link dogzilla.DogzillaStatus.verify|verify} messages.
+         * Encodes the specified YahboomDogzillaLiteStatus message, length delimited. Does not implicitly {@link yahboom_dogzilla_lite.YahboomDogzillaLiteStatus.verify|verify} messages.
          * @function encodeDelimited
-         * @memberof dogzilla.DogzillaStatus
+         * @memberof yahboom_dogzilla_lite.YahboomDogzillaLiteStatus
          * @static
-         * @param {dogzilla.IDogzillaStatus} message DogzillaStatus message or plain object to encode
+         * @param {yahboom_dogzilla_lite.IYahboomDogzillaLiteStatus} message YahboomDogzillaLiteStatus message or plain object to encode
          * @param {$protobuf.Writer} [writer] Writer to encode to
          * @returns {$protobuf.Writer} Writer
          */
-        DogzillaStatus.encodeDelimited = function encodeDelimited(message, writer) {
+        YahboomDogzillaLiteStatus.encodeDelimited = function encodeDelimited(message, writer) {
             return this.encode(message, writer).ldelim();
         };
 
         /**
-         * Decodes a DogzillaStatus message from the specified reader or buffer.
+         * Decodes a YahboomDogzillaLiteStatus message from the specified reader or buffer.
          * @function decode
-         * @memberof dogzilla.DogzillaStatus
+         * @memberof yahboom_dogzilla_lite.YahboomDogzillaLiteStatus
          * @static
          * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
          * @param {number} [length] Message length if known beforehand
-         * @returns {dogzilla.DogzillaStatus} DogzillaStatus
+         * @returns {yahboom_dogzilla_lite.YahboomDogzillaLiteStatus} YahboomDogzillaLiteStatus
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        DogzillaStatus.decode = function decode(reader, length, error, long) {
+        YahboomDogzillaLiteStatus.decode = function decode(reader, length, error, long) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
             if (long === undefined)
                 long = 0;
             if (long > $Reader.recursionLimit)
                 throw Error("maximum nesting depth exceeded");
-            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.dogzilla.DogzillaStatus();
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.yahboom_dogzilla_lite.YahboomDogzillaLiteStatus();
             while (reader.pos < end) {
                 let tag = reader.uint32();
                 if (tag === error)
@@ -19031,11 +19031,11 @@ export const dogzilla = $root.dogzilla = (() => {
                         break;
                     }
                 case 11: {
-                        message.orientation = $root.dogzilla.ImuOrientation.decode(reader, reader.uint32(), undefined, long + 1);
+                        message.orientation = $root.yahboom_dogzilla_lite.ImuOrientation.decode(reader, reader.uint32(), undefined, long + 1);
                         break;
                     }
                 case 12: {
-                        message.acceleration = $root.dogzilla.Acceleration.decode(reader, reader.uint32(), undefined, long + 1);
+                        message.acceleration = $root.yahboom_dogzilla_lite.Acceleration.decode(reader, reader.uint32(), undefined, long + 1);
                         break;
                     }
                 case 13: {
@@ -19066,30 +19066,30 @@ export const dogzilla = $root.dogzilla = (() => {
         };
 
         /**
-         * Decodes a DogzillaStatus message from the specified reader or buffer, length delimited.
+         * Decodes a YahboomDogzillaLiteStatus message from the specified reader or buffer, length delimited.
          * @function decodeDelimited
-         * @memberof dogzilla.DogzillaStatus
+         * @memberof yahboom_dogzilla_lite.YahboomDogzillaLiteStatus
          * @static
          * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
-         * @returns {dogzilla.DogzillaStatus} DogzillaStatus
+         * @returns {yahboom_dogzilla_lite.YahboomDogzillaLiteStatus} YahboomDogzillaLiteStatus
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        DogzillaStatus.decodeDelimited = function decodeDelimited(reader) {
+        YahboomDogzillaLiteStatus.decodeDelimited = function decodeDelimited(reader) {
             if (!(reader instanceof $Reader))
                 reader = new $Reader(reader);
             return this.decode(reader, reader.uint32());
         };
 
         /**
-         * Verifies a DogzillaStatus message.
+         * Verifies a YahboomDogzillaLiteStatus message.
          * @function verify
-         * @memberof dogzilla.DogzillaStatus
+         * @memberof yahboom_dogzilla_lite.YahboomDogzillaLiteStatus
          * @static
          * @param {Object.<string,*>} message Plain object to verify
          * @returns {string|null} `null` if valid, otherwise the reason why it is not
          */
-        DogzillaStatus.verify = function verify(message, long) {
+        YahboomDogzillaLiteStatus.verify = function verify(message, long) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
             if (long === undefined)
@@ -19121,12 +19121,12 @@ export const dogzilla = $root.dogzilla = (() => {
                         return "servoPositions: integer[] expected";
             }
             if (message.orientation != null && message.hasOwnProperty("orientation")) {
-                let error = $root.dogzilla.ImuOrientation.verify(message.orientation, long + 1);
+                let error = $root.yahboom_dogzilla_lite.ImuOrientation.verify(message.orientation, long + 1);
                 if (error)
                     return "orientation." + error;
             }
             if (message.acceleration != null && message.hasOwnProperty("acceleration")) {
-                let error = $root.dogzilla.Acceleration.verify(message.acceleration, long + 1);
+                let error = $root.yahboom_dogzilla_lite.Acceleration.verify(message.acceleration, long + 1);
                 if (error)
                     return "acceleration." + error;
             }
@@ -19147,21 +19147,21 @@ export const dogzilla = $root.dogzilla = (() => {
         };
 
         /**
-         * Creates a DogzillaStatus message from a plain object. Also converts values to their respective internal types.
+         * Creates a YahboomDogzillaLiteStatus message from a plain object. Also converts values to their respective internal types.
          * @function fromObject
-         * @memberof dogzilla.DogzillaStatus
+         * @memberof yahboom_dogzilla_lite.YahboomDogzillaLiteStatus
          * @static
          * @param {Object.<string,*>} object Plain object
-         * @returns {dogzilla.DogzillaStatus} DogzillaStatus
+         * @returns {yahboom_dogzilla_lite.YahboomDogzillaLiteStatus} YahboomDogzillaLiteStatus
          */
-        DogzillaStatus.fromObject = function fromObject(object, long) {
-            if (object instanceof $root.dogzilla.DogzillaStatus)
+        YahboomDogzillaLiteStatus.fromObject = function fromObject(object, long) {
+            if (object instanceof $root.yahboom_dogzilla_lite.YahboomDogzillaLiteStatus)
                 return object;
             if (long === undefined)
                 long = 0;
             if (long > $util.recursionLimit)
                 throw Error("maximum nesting depth exceeded");
-            let message = new $root.dogzilla.DogzillaStatus();
+            let message = new $root.yahboom_dogzilla_lite.YahboomDogzillaLiteStatus();
             if (object.batteryLevel != null)
                 message.batteryLevel = object.batteryLevel >>> 0;
             switch (object.model) {
@@ -19171,23 +19171,23 @@ export const dogzilla = $root.dogzilla = (() => {
                     break;
                 }
                 break;
-            case "DOGZILLA_MODEL_UNKNOWN":
+            case "YAHBOOM_DOGZILLA_LITE_MODEL_UNKNOWN":
             case 0:
                 message.model = 0;
                 break;
-            case "DOGZILLA_MINI":
+            case "YAHBOOM_DOGZILLA_LITE_MINI":
             case 1:
                 message.model = 1;
                 break;
-            case "DOGZILLA_LITE":
+            case "YAHBOOM_DOGZILLA_LITE_LITE":
             case 2:
                 message.model = 2;
                 break;
-            case "DOGZILLA_PRO":
+            case "YAHBOOM_DOGZILLA_LITE_PRO":
             case 3:
                 message.model = 3;
                 break;
-            case "DOGZILLA_RIDER":
+            case "YAHBOOM_DOGZILLA_LITE_RIDER":
             case 4:
                 message.model = 4;
                 break;
@@ -19196,20 +19196,20 @@ export const dogzilla = $root.dogzilla = (() => {
                 message.firmwareVersion = String(object.firmwareVersion);
             if (object.servoPositions) {
                 if (!Array.isArray(object.servoPositions))
-                    throw TypeError(".dogzilla.DogzillaStatus.servoPositions: array expected");
+                    throw TypeError(".yahboom_dogzilla_lite.YahboomDogzillaLiteStatus.servoPositions: array expected");
                 message.servoPositions = [];
                 for (let i = 0; i < object.servoPositions.length; ++i)
                     message.servoPositions[i] = object.servoPositions[i] >>> 0;
             }
             if (object.orientation != null) {
                 if (typeof object.orientation !== "object")
-                    throw TypeError(".dogzilla.DogzillaStatus.orientation: object expected");
-                message.orientation = $root.dogzilla.ImuOrientation.fromObject(object.orientation, long + 1);
+                    throw TypeError(".yahboom_dogzilla_lite.YahboomDogzillaLiteStatus.orientation: object expected");
+                message.orientation = $root.yahboom_dogzilla_lite.ImuOrientation.fromObject(object.orientation, long + 1);
             }
             if (object.acceleration != null) {
                 if (typeof object.acceleration !== "object")
-                    throw TypeError(".dogzilla.DogzillaStatus.acceleration: object expected");
-                message.acceleration = $root.dogzilla.Acceleration.fromObject(object.acceleration, long + 1);
+                    throw TypeError(".yahboom_dogzilla_lite.YahboomDogzillaLiteStatus.acceleration: object expected");
+                message.acceleration = $root.yahboom_dogzilla_lite.Acceleration.fromObject(object.acceleration, long + 1);
             }
             if (object.legServoSpeed != null)
                 message.legServoSpeed = object.legServoSpeed >>> 0;
@@ -19217,7 +19217,7 @@ export const dogzilla = $root.dogzilla = (() => {
                 message.armServoSpeed = object.armServoSpeed >>> 0;
             if (object.servoAngles) {
                 if (!Array.isArray(object.servoAngles))
-                    throw TypeError(".dogzilla.DogzillaStatus.servoAngles: array expected");
+                    throw TypeError(".yahboom_dogzilla_lite.YahboomDogzillaLiteStatus.servoAngles: array expected");
                 message.servoAngles = [];
                 for (let i = 0; i < object.servoAngles.length; ++i)
                     message.servoAngles[i] = Number(object.servoAngles[i]);
@@ -19226,15 +19226,15 @@ export const dogzilla = $root.dogzilla = (() => {
         };
 
         /**
-         * Creates a plain object from a DogzillaStatus message. Also converts values to other types if specified.
+         * Creates a plain object from a YahboomDogzillaLiteStatus message. Also converts values to other types if specified.
          * @function toObject
-         * @memberof dogzilla.DogzillaStatus
+         * @memberof yahboom_dogzilla_lite.YahboomDogzillaLiteStatus
          * @static
-         * @param {dogzilla.DogzillaStatus} message DogzillaStatus
+         * @param {yahboom_dogzilla_lite.YahboomDogzillaLiteStatus} message YahboomDogzillaLiteStatus
          * @param {$protobuf.IConversionOptions} [options] Conversion options
          * @returns {Object.<string,*>} Plain object
          */
-        DogzillaStatus.toObject = function toObject(message, options) {
+        YahboomDogzillaLiteStatus.toObject = function toObject(message, options) {
             if (!options)
                 options = {};
             let object = {};
@@ -19244,7 +19244,7 @@ export const dogzilla = $root.dogzilla = (() => {
             }
             if (options.defaults) {
                 object.batteryLevel = 0;
-                object.model = options.enums === String ? "DOGZILLA_MODEL_UNKNOWN" : 0;
+                object.model = options.enums === String ? "YAHBOOM_DOGZILLA_LITE_MODEL_UNKNOWN" : 0;
                 object.firmwareVersion = "";
                 object.orientation = null;
                 object.acceleration = null;
@@ -19254,7 +19254,7 @@ export const dogzilla = $root.dogzilla = (() => {
             if (message.batteryLevel != null && message.hasOwnProperty("batteryLevel"))
                 object.batteryLevel = message.batteryLevel;
             if (message.model != null && message.hasOwnProperty("model"))
-                object.model = options.enums === String ? $root.dogzilla.DogzillaModel[message.model] === undefined ? message.model : $root.dogzilla.DogzillaModel[message.model] : message.model;
+                object.model = options.enums === String ? $root.yahboom_dogzilla_lite.YahboomDogzillaLiteModel[message.model] === undefined ? message.model : $root.yahboom_dogzilla_lite.YahboomDogzillaLiteModel[message.model] : message.model;
             if (message.firmwareVersion != null && message.hasOwnProperty("firmwareVersion"))
                 object.firmwareVersion = message.firmwareVersion;
             if (message.servoPositions && message.servoPositions.length) {
@@ -19263,9 +19263,9 @@ export const dogzilla = $root.dogzilla = (() => {
                     object.servoPositions[j] = message.servoPositions[j];
             }
             if (message.orientation != null && message.hasOwnProperty("orientation"))
-                object.orientation = $root.dogzilla.ImuOrientation.toObject(message.orientation, options);
+                object.orientation = $root.yahboom_dogzilla_lite.ImuOrientation.toObject(message.orientation, options);
             if (message.acceleration != null && message.hasOwnProperty("acceleration"))
-                object.acceleration = $root.dogzilla.Acceleration.toObject(message.acceleration, options);
+                object.acceleration = $root.yahboom_dogzilla_lite.Acceleration.toObject(message.acceleration, options);
             if (message.legServoSpeed != null && message.hasOwnProperty("legServoSpeed"))
                 object.legServoSpeed = message.legServoSpeed;
             if (message.armServoSpeed != null && message.hasOwnProperty("armServoSpeed"))
@@ -19279,39 +19279,39 @@ export const dogzilla = $root.dogzilla = (() => {
         };
 
         /**
-         * Converts this DogzillaStatus to JSON.
+         * Converts this YahboomDogzillaLiteStatus to JSON.
          * @function toJSON
-         * @memberof dogzilla.DogzillaStatus
+         * @memberof yahboom_dogzilla_lite.YahboomDogzillaLiteStatus
          * @instance
          * @returns {Object.<string,*>} JSON object
          */
-        DogzillaStatus.prototype.toJSON = function toJSON() {
+        YahboomDogzillaLiteStatus.prototype.toJSON = function toJSON() {
             return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
         };
 
         /**
-         * Gets the default type url for DogzillaStatus
+         * Gets the default type url for YahboomDogzillaLiteStatus
          * @function getTypeUrl
-         * @memberof dogzilla.DogzillaStatus
+         * @memberof yahboom_dogzilla_lite.YahboomDogzillaLiteStatus
          * @static
          * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
          * @returns {string} The default type url
          */
-        DogzillaStatus.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+        YahboomDogzillaLiteStatus.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
             if (typeUrlPrefix === undefined) {
                 typeUrlPrefix = "type.googleapis.com";
             }
-            return typeUrlPrefix + "/dogzilla.DogzillaStatus";
+            return typeUrlPrefix + "/yahboom_dogzilla_lite.YahboomDogzillaLiteStatus";
         };
 
-        return DogzillaStatus;
+        return YahboomDogzillaLiteStatus;
     })();
 
-    dogzilla.ServoCommand = (function() {
+    yahboom_dogzilla_lite.ServoCommand = (function() {
 
         /**
          * Properties of a ServoCommand.
-         * @memberof dogzilla
+         * @memberof yahboom_dogzilla_lite
          * @interface IServoCommand
          * @property {number|null} [servoId] ServoCommand servoId
          * @property {number|null} [position] ServoCommand position
@@ -19319,11 +19319,11 @@ export const dogzilla = $root.dogzilla = (() => {
 
         /**
          * Constructs a new ServoCommand.
-         * @memberof dogzilla
+         * @memberof yahboom_dogzilla_lite
          * @classdesc Represents a ServoCommand.
          * @implements IServoCommand
          * @constructor
-         * @param {dogzilla.IServoCommand=} [properties] Properties to set
+         * @param {yahboom_dogzilla_lite.IServoCommand=} [properties] Properties to set
          */
         function ServoCommand(properties) {
             if (properties)
@@ -19335,7 +19335,7 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * ServoCommand servoId.
          * @member {number} servoId
-         * @memberof dogzilla.ServoCommand
+         * @memberof yahboom_dogzilla_lite.ServoCommand
          * @instance
          */
         ServoCommand.prototype.servoId = 0;
@@ -19343,7 +19343,7 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * ServoCommand position.
          * @member {number} position
-         * @memberof dogzilla.ServoCommand
+         * @memberof yahboom_dogzilla_lite.ServoCommand
          * @instance
          */
         ServoCommand.prototype.position = 0;
@@ -19351,21 +19351,21 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * Creates a new ServoCommand instance using the specified properties.
          * @function create
-         * @memberof dogzilla.ServoCommand
+         * @memberof yahboom_dogzilla_lite.ServoCommand
          * @static
-         * @param {dogzilla.IServoCommand=} [properties] Properties to set
-         * @returns {dogzilla.ServoCommand} ServoCommand instance
+         * @param {yahboom_dogzilla_lite.IServoCommand=} [properties] Properties to set
+         * @returns {yahboom_dogzilla_lite.ServoCommand} ServoCommand instance
          */
         ServoCommand.create = function create(properties) {
             return new ServoCommand(properties);
         };
 
         /**
-         * Encodes the specified ServoCommand message. Does not implicitly {@link dogzilla.ServoCommand.verify|verify} messages.
+         * Encodes the specified ServoCommand message. Does not implicitly {@link yahboom_dogzilla_lite.ServoCommand.verify|verify} messages.
          * @function encode
-         * @memberof dogzilla.ServoCommand
+         * @memberof yahboom_dogzilla_lite.ServoCommand
          * @static
-         * @param {dogzilla.IServoCommand} message ServoCommand message or plain object to encode
+         * @param {yahboom_dogzilla_lite.IServoCommand} message ServoCommand message or plain object to encode
          * @param {$protobuf.Writer} [writer] Writer to encode to
          * @returns {$protobuf.Writer} Writer
          */
@@ -19380,11 +19380,11 @@ export const dogzilla = $root.dogzilla = (() => {
         };
 
         /**
-         * Encodes the specified ServoCommand message, length delimited. Does not implicitly {@link dogzilla.ServoCommand.verify|verify} messages.
+         * Encodes the specified ServoCommand message, length delimited. Does not implicitly {@link yahboom_dogzilla_lite.ServoCommand.verify|verify} messages.
          * @function encodeDelimited
-         * @memberof dogzilla.ServoCommand
+         * @memberof yahboom_dogzilla_lite.ServoCommand
          * @static
-         * @param {dogzilla.IServoCommand} message ServoCommand message or plain object to encode
+         * @param {yahboom_dogzilla_lite.IServoCommand} message ServoCommand message or plain object to encode
          * @param {$protobuf.Writer} [writer] Writer to encode to
          * @returns {$protobuf.Writer} Writer
          */
@@ -19395,11 +19395,11 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * Decodes a ServoCommand message from the specified reader or buffer.
          * @function decode
-         * @memberof dogzilla.ServoCommand
+         * @memberof yahboom_dogzilla_lite.ServoCommand
          * @static
          * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
          * @param {number} [length] Message length if known beforehand
-         * @returns {dogzilla.ServoCommand} ServoCommand
+         * @returns {yahboom_dogzilla_lite.ServoCommand} ServoCommand
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
@@ -19410,7 +19410,7 @@ export const dogzilla = $root.dogzilla = (() => {
                 long = 0;
             if (long > $Reader.recursionLimit)
                 throw Error("maximum nesting depth exceeded");
-            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.dogzilla.ServoCommand();
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.yahboom_dogzilla_lite.ServoCommand();
             while (reader.pos < end) {
                 let tag = reader.uint32();
                 if (tag === error)
@@ -19435,10 +19435,10 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * Decodes a ServoCommand message from the specified reader or buffer, length delimited.
          * @function decodeDelimited
-         * @memberof dogzilla.ServoCommand
+         * @memberof yahboom_dogzilla_lite.ServoCommand
          * @static
          * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
-         * @returns {dogzilla.ServoCommand} ServoCommand
+         * @returns {yahboom_dogzilla_lite.ServoCommand} ServoCommand
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
@@ -19451,7 +19451,7 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * Verifies a ServoCommand message.
          * @function verify
-         * @memberof dogzilla.ServoCommand
+         * @memberof yahboom_dogzilla_lite.ServoCommand
          * @static
          * @param {Object.<string,*>} message Plain object to verify
          * @returns {string|null} `null` if valid, otherwise the reason why it is not
@@ -19475,19 +19475,19 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * Creates a ServoCommand message from a plain object. Also converts values to their respective internal types.
          * @function fromObject
-         * @memberof dogzilla.ServoCommand
+         * @memberof yahboom_dogzilla_lite.ServoCommand
          * @static
          * @param {Object.<string,*>} object Plain object
-         * @returns {dogzilla.ServoCommand} ServoCommand
+         * @returns {yahboom_dogzilla_lite.ServoCommand} ServoCommand
          */
         ServoCommand.fromObject = function fromObject(object, long) {
-            if (object instanceof $root.dogzilla.ServoCommand)
+            if (object instanceof $root.yahboom_dogzilla_lite.ServoCommand)
                 return object;
             if (long === undefined)
                 long = 0;
             if (long > $util.recursionLimit)
                 throw Error("maximum nesting depth exceeded");
-            let message = new $root.dogzilla.ServoCommand();
+            let message = new $root.yahboom_dogzilla_lite.ServoCommand();
             if (object.servoId != null)
                 message.servoId = object.servoId >>> 0;
             if (object.position != null)
@@ -19498,9 +19498,9 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * Creates a plain object from a ServoCommand message. Also converts values to other types if specified.
          * @function toObject
-         * @memberof dogzilla.ServoCommand
+         * @memberof yahboom_dogzilla_lite.ServoCommand
          * @static
-         * @param {dogzilla.ServoCommand} message ServoCommand
+         * @param {yahboom_dogzilla_lite.ServoCommand} message ServoCommand
          * @param {$protobuf.IConversionOptions} [options] Conversion options
          * @returns {Object.<string,*>} Plain object
          */
@@ -19522,7 +19522,7 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * Converts this ServoCommand to JSON.
          * @function toJSON
-         * @memberof dogzilla.ServoCommand
+         * @memberof yahboom_dogzilla_lite.ServoCommand
          * @instance
          * @returns {Object.<string,*>} JSON object
          */
@@ -19533,7 +19533,7 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * Gets the default type url for ServoCommand
          * @function getTypeUrl
-         * @memberof dogzilla.ServoCommand
+         * @memberof yahboom_dogzilla_lite.ServoCommand
          * @static
          * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
          * @returns {string} The default type url
@@ -19542,17 +19542,17 @@ export const dogzilla = $root.dogzilla = (() => {
             if (typeUrlPrefix === undefined) {
                 typeUrlPrefix = "type.googleapis.com";
             }
-            return typeUrlPrefix + "/dogzilla.ServoCommand";
+            return typeUrlPrefix + "/yahboom_dogzilla_lite.ServoCommand";
         };
 
         return ServoCommand;
     })();
 
-    dogzilla.ServoSpeedCommand = (function() {
+    yahboom_dogzilla_lite.ServoSpeedCommand = (function() {
 
         /**
          * Properties of a ServoSpeedCommand.
-         * @memberof dogzilla
+         * @memberof yahboom_dogzilla_lite
          * @interface IServoSpeedCommand
          * @property {number|null} [bodyServoSpeed] ServoSpeedCommand bodyServoSpeed
          * @property {number|null} [armServoSpeed] ServoSpeedCommand armServoSpeed
@@ -19560,11 +19560,11 @@ export const dogzilla = $root.dogzilla = (() => {
 
         /**
          * Constructs a new ServoSpeedCommand.
-         * @memberof dogzilla
+         * @memberof yahboom_dogzilla_lite
          * @classdesc Represents a ServoSpeedCommand.
          * @implements IServoSpeedCommand
          * @constructor
-         * @param {dogzilla.IServoSpeedCommand=} [properties] Properties to set
+         * @param {yahboom_dogzilla_lite.IServoSpeedCommand=} [properties] Properties to set
          */
         function ServoSpeedCommand(properties) {
             if (properties)
@@ -19576,7 +19576,7 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * ServoSpeedCommand bodyServoSpeed.
          * @member {number|null|undefined} bodyServoSpeed
-         * @memberof dogzilla.ServoSpeedCommand
+         * @memberof yahboom_dogzilla_lite.ServoSpeedCommand
          * @instance
          */
         ServoSpeedCommand.prototype.bodyServoSpeed = null;
@@ -19584,7 +19584,7 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * ServoSpeedCommand armServoSpeed.
          * @member {number|null|undefined} armServoSpeed
-         * @memberof dogzilla.ServoSpeedCommand
+         * @memberof yahboom_dogzilla_lite.ServoSpeedCommand
          * @instance
          */
         ServoSpeedCommand.prototype.armServoSpeed = null;
@@ -19595,7 +19595,7 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * ServoSpeedCommand bodySpeed.
          * @member {"bodyServoSpeed"|undefined} bodySpeed
-         * @memberof dogzilla.ServoSpeedCommand
+         * @memberof yahboom_dogzilla_lite.ServoSpeedCommand
          * @instance
          */
         Object.defineProperty(ServoSpeedCommand.prototype, "bodySpeed", {
@@ -19606,7 +19606,7 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * ServoSpeedCommand armSpeed.
          * @member {"armServoSpeed"|undefined} armSpeed
-         * @memberof dogzilla.ServoSpeedCommand
+         * @memberof yahboom_dogzilla_lite.ServoSpeedCommand
          * @instance
          */
         Object.defineProperty(ServoSpeedCommand.prototype, "armSpeed", {
@@ -19617,21 +19617,21 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * Creates a new ServoSpeedCommand instance using the specified properties.
          * @function create
-         * @memberof dogzilla.ServoSpeedCommand
+         * @memberof yahboom_dogzilla_lite.ServoSpeedCommand
          * @static
-         * @param {dogzilla.IServoSpeedCommand=} [properties] Properties to set
-         * @returns {dogzilla.ServoSpeedCommand} ServoSpeedCommand instance
+         * @param {yahboom_dogzilla_lite.IServoSpeedCommand=} [properties] Properties to set
+         * @returns {yahboom_dogzilla_lite.ServoSpeedCommand} ServoSpeedCommand instance
          */
         ServoSpeedCommand.create = function create(properties) {
             return new ServoSpeedCommand(properties);
         };
 
         /**
-         * Encodes the specified ServoSpeedCommand message. Does not implicitly {@link dogzilla.ServoSpeedCommand.verify|verify} messages.
+         * Encodes the specified ServoSpeedCommand message. Does not implicitly {@link yahboom_dogzilla_lite.ServoSpeedCommand.verify|verify} messages.
          * @function encode
-         * @memberof dogzilla.ServoSpeedCommand
+         * @memberof yahboom_dogzilla_lite.ServoSpeedCommand
          * @static
-         * @param {dogzilla.IServoSpeedCommand} message ServoSpeedCommand message or plain object to encode
+         * @param {yahboom_dogzilla_lite.IServoSpeedCommand} message ServoSpeedCommand message or plain object to encode
          * @param {$protobuf.Writer} [writer] Writer to encode to
          * @returns {$protobuf.Writer} Writer
          */
@@ -19646,11 +19646,11 @@ export const dogzilla = $root.dogzilla = (() => {
         };
 
         /**
-         * Encodes the specified ServoSpeedCommand message, length delimited. Does not implicitly {@link dogzilla.ServoSpeedCommand.verify|verify} messages.
+         * Encodes the specified ServoSpeedCommand message, length delimited. Does not implicitly {@link yahboom_dogzilla_lite.ServoSpeedCommand.verify|verify} messages.
          * @function encodeDelimited
-         * @memberof dogzilla.ServoSpeedCommand
+         * @memberof yahboom_dogzilla_lite.ServoSpeedCommand
          * @static
-         * @param {dogzilla.IServoSpeedCommand} message ServoSpeedCommand message or plain object to encode
+         * @param {yahboom_dogzilla_lite.IServoSpeedCommand} message ServoSpeedCommand message or plain object to encode
          * @param {$protobuf.Writer} [writer] Writer to encode to
          * @returns {$protobuf.Writer} Writer
          */
@@ -19661,11 +19661,11 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * Decodes a ServoSpeedCommand message from the specified reader or buffer.
          * @function decode
-         * @memberof dogzilla.ServoSpeedCommand
+         * @memberof yahboom_dogzilla_lite.ServoSpeedCommand
          * @static
          * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
          * @param {number} [length] Message length if known beforehand
-         * @returns {dogzilla.ServoSpeedCommand} ServoSpeedCommand
+         * @returns {yahboom_dogzilla_lite.ServoSpeedCommand} ServoSpeedCommand
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
@@ -19676,7 +19676,7 @@ export const dogzilla = $root.dogzilla = (() => {
                 long = 0;
             if (long > $Reader.recursionLimit)
                 throw Error("maximum nesting depth exceeded");
-            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.dogzilla.ServoSpeedCommand();
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.yahboom_dogzilla_lite.ServoSpeedCommand();
             while (reader.pos < end) {
                 let tag = reader.uint32();
                 if (tag === error)
@@ -19701,10 +19701,10 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * Decodes a ServoSpeedCommand message from the specified reader or buffer, length delimited.
          * @function decodeDelimited
-         * @memberof dogzilla.ServoSpeedCommand
+         * @memberof yahboom_dogzilla_lite.ServoSpeedCommand
          * @static
          * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
-         * @returns {dogzilla.ServoSpeedCommand} ServoSpeedCommand
+         * @returns {yahboom_dogzilla_lite.ServoSpeedCommand} ServoSpeedCommand
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
@@ -19717,7 +19717,7 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * Verifies a ServoSpeedCommand message.
          * @function verify
-         * @memberof dogzilla.ServoSpeedCommand
+         * @memberof yahboom_dogzilla_lite.ServoSpeedCommand
          * @static
          * @param {Object.<string,*>} message Plain object to verify
          * @returns {string|null} `null` if valid, otherwise the reason why it is not
@@ -19746,19 +19746,19 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * Creates a ServoSpeedCommand message from a plain object. Also converts values to their respective internal types.
          * @function fromObject
-         * @memberof dogzilla.ServoSpeedCommand
+         * @memberof yahboom_dogzilla_lite.ServoSpeedCommand
          * @static
          * @param {Object.<string,*>} object Plain object
-         * @returns {dogzilla.ServoSpeedCommand} ServoSpeedCommand
+         * @returns {yahboom_dogzilla_lite.ServoSpeedCommand} ServoSpeedCommand
          */
         ServoSpeedCommand.fromObject = function fromObject(object, long) {
-            if (object instanceof $root.dogzilla.ServoSpeedCommand)
+            if (object instanceof $root.yahboom_dogzilla_lite.ServoSpeedCommand)
                 return object;
             if (long === undefined)
                 long = 0;
             if (long > $util.recursionLimit)
                 throw Error("maximum nesting depth exceeded");
-            let message = new $root.dogzilla.ServoSpeedCommand();
+            let message = new $root.yahboom_dogzilla_lite.ServoSpeedCommand();
             if (object.bodyServoSpeed != null)
                 message.bodyServoSpeed = object.bodyServoSpeed >>> 0;
             if (object.armServoSpeed != null)
@@ -19769,9 +19769,9 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * Creates a plain object from a ServoSpeedCommand message. Also converts values to other types if specified.
          * @function toObject
-         * @memberof dogzilla.ServoSpeedCommand
+         * @memberof yahboom_dogzilla_lite.ServoSpeedCommand
          * @static
-         * @param {dogzilla.ServoSpeedCommand} message ServoSpeedCommand
+         * @param {yahboom_dogzilla_lite.ServoSpeedCommand} message ServoSpeedCommand
          * @param {$protobuf.IConversionOptions} [options] Conversion options
          * @returns {Object.<string,*>} Plain object
          */
@@ -19795,7 +19795,7 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * Converts this ServoSpeedCommand to JSON.
          * @function toJSON
-         * @memberof dogzilla.ServoSpeedCommand
+         * @memberof yahboom_dogzilla_lite.ServoSpeedCommand
          * @instance
          * @returns {Object.<string,*>} JSON object
          */
@@ -19806,7 +19806,7 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * Gets the default type url for ServoSpeedCommand
          * @function getTypeUrl
-         * @memberof dogzilla.ServoSpeedCommand
+         * @memberof yahboom_dogzilla_lite.ServoSpeedCommand
          * @static
          * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
          * @returns {string} The default type url
@@ -19815,17 +19815,17 @@ export const dogzilla = $root.dogzilla = (() => {
             if (typeUrlPrefix === undefined) {
                 typeUrlPrefix = "type.googleapis.com";
             }
-            return typeUrlPrefix + "/dogzilla.ServoSpeedCommand";
+            return typeUrlPrefix + "/yahboom_dogzilla_lite.ServoSpeedCommand";
         };
 
         return ServoSpeedCommand;
     })();
 
-    dogzilla.CalibrationCommand = (function() {
+    yahboom_dogzilla_lite.CalibrationCommand = (function() {
 
         /**
          * Properties of a CalibrationCommand.
-         * @memberof dogzilla
+         * @memberof yahboom_dogzilla_lite
          * @interface ICalibrationCommand
          * @property {boolean|null} [enterCalibrationMode] CalibrationCommand enterCalibrationMode
          * @property {boolean|null} [setOrigin] CalibrationCommand setOrigin
@@ -19835,11 +19835,11 @@ export const dogzilla = $root.dogzilla = (() => {
 
         /**
          * Constructs a new CalibrationCommand.
-         * @memberof dogzilla
+         * @memberof yahboom_dogzilla_lite
          * @classdesc Represents a CalibrationCommand.
          * @implements ICalibrationCommand
          * @constructor
-         * @param {dogzilla.ICalibrationCommand=} [properties] Properties to set
+         * @param {yahboom_dogzilla_lite.ICalibrationCommand=} [properties] Properties to set
          */
         function CalibrationCommand(properties) {
             if (properties)
@@ -19851,7 +19851,7 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * CalibrationCommand enterCalibrationMode.
          * @member {boolean} enterCalibrationMode
-         * @memberof dogzilla.CalibrationCommand
+         * @memberof yahboom_dogzilla_lite.CalibrationCommand
          * @instance
          */
         CalibrationCommand.prototype.enterCalibrationMode = false;
@@ -19859,7 +19859,7 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * CalibrationCommand setOrigin.
          * @member {boolean} setOrigin
-         * @memberof dogzilla.CalibrationCommand
+         * @memberof yahboom_dogzilla_lite.CalibrationCommand
          * @instance
          */
         CalibrationCommand.prototype.setOrigin = false;
@@ -19867,7 +19867,7 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * CalibrationCommand servoCentering.
          * @member {boolean} servoCentering
-         * @memberof dogzilla.CalibrationCommand
+         * @memberof yahboom_dogzilla_lite.CalibrationCommand
          * @instance
          */
         CalibrationCommand.prototype.servoCentering = false;
@@ -19875,7 +19875,7 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * CalibrationCommand gyroCalibration.
          * @member {boolean} gyroCalibration
-         * @memberof dogzilla.CalibrationCommand
+         * @memberof yahboom_dogzilla_lite.CalibrationCommand
          * @instance
          */
         CalibrationCommand.prototype.gyroCalibration = false;
@@ -19883,21 +19883,21 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * Creates a new CalibrationCommand instance using the specified properties.
          * @function create
-         * @memberof dogzilla.CalibrationCommand
+         * @memberof yahboom_dogzilla_lite.CalibrationCommand
          * @static
-         * @param {dogzilla.ICalibrationCommand=} [properties] Properties to set
-         * @returns {dogzilla.CalibrationCommand} CalibrationCommand instance
+         * @param {yahboom_dogzilla_lite.ICalibrationCommand=} [properties] Properties to set
+         * @returns {yahboom_dogzilla_lite.CalibrationCommand} CalibrationCommand instance
          */
         CalibrationCommand.create = function create(properties) {
             return new CalibrationCommand(properties);
         };
 
         /**
-         * Encodes the specified CalibrationCommand message. Does not implicitly {@link dogzilla.CalibrationCommand.verify|verify} messages.
+         * Encodes the specified CalibrationCommand message. Does not implicitly {@link yahboom_dogzilla_lite.CalibrationCommand.verify|verify} messages.
          * @function encode
-         * @memberof dogzilla.CalibrationCommand
+         * @memberof yahboom_dogzilla_lite.CalibrationCommand
          * @static
-         * @param {dogzilla.ICalibrationCommand} message CalibrationCommand message or plain object to encode
+         * @param {yahboom_dogzilla_lite.ICalibrationCommand} message CalibrationCommand message or plain object to encode
          * @param {$protobuf.Writer} [writer] Writer to encode to
          * @returns {$protobuf.Writer} Writer
          */
@@ -19916,11 +19916,11 @@ export const dogzilla = $root.dogzilla = (() => {
         };
 
         /**
-         * Encodes the specified CalibrationCommand message, length delimited. Does not implicitly {@link dogzilla.CalibrationCommand.verify|verify} messages.
+         * Encodes the specified CalibrationCommand message, length delimited. Does not implicitly {@link yahboom_dogzilla_lite.CalibrationCommand.verify|verify} messages.
          * @function encodeDelimited
-         * @memberof dogzilla.CalibrationCommand
+         * @memberof yahboom_dogzilla_lite.CalibrationCommand
          * @static
-         * @param {dogzilla.ICalibrationCommand} message CalibrationCommand message or plain object to encode
+         * @param {yahboom_dogzilla_lite.ICalibrationCommand} message CalibrationCommand message or plain object to encode
          * @param {$protobuf.Writer} [writer] Writer to encode to
          * @returns {$protobuf.Writer} Writer
          */
@@ -19931,11 +19931,11 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * Decodes a CalibrationCommand message from the specified reader or buffer.
          * @function decode
-         * @memberof dogzilla.CalibrationCommand
+         * @memberof yahboom_dogzilla_lite.CalibrationCommand
          * @static
          * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
          * @param {number} [length] Message length if known beforehand
-         * @returns {dogzilla.CalibrationCommand} CalibrationCommand
+         * @returns {yahboom_dogzilla_lite.CalibrationCommand} CalibrationCommand
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
@@ -19946,7 +19946,7 @@ export const dogzilla = $root.dogzilla = (() => {
                 long = 0;
             if (long > $Reader.recursionLimit)
                 throw Error("maximum nesting depth exceeded");
-            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.dogzilla.CalibrationCommand();
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.yahboom_dogzilla_lite.CalibrationCommand();
             while (reader.pos < end) {
                 let tag = reader.uint32();
                 if (tag === error)
@@ -19979,10 +19979,10 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * Decodes a CalibrationCommand message from the specified reader or buffer, length delimited.
          * @function decodeDelimited
-         * @memberof dogzilla.CalibrationCommand
+         * @memberof yahboom_dogzilla_lite.CalibrationCommand
          * @static
          * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
-         * @returns {dogzilla.CalibrationCommand} CalibrationCommand
+         * @returns {yahboom_dogzilla_lite.CalibrationCommand} CalibrationCommand
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
@@ -19995,7 +19995,7 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * Verifies a CalibrationCommand message.
          * @function verify
-         * @memberof dogzilla.CalibrationCommand
+         * @memberof yahboom_dogzilla_lite.CalibrationCommand
          * @static
          * @param {Object.<string,*>} message Plain object to verify
          * @returns {string|null} `null` if valid, otherwise the reason why it is not
@@ -20025,19 +20025,19 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * Creates a CalibrationCommand message from a plain object. Also converts values to their respective internal types.
          * @function fromObject
-         * @memberof dogzilla.CalibrationCommand
+         * @memberof yahboom_dogzilla_lite.CalibrationCommand
          * @static
          * @param {Object.<string,*>} object Plain object
-         * @returns {dogzilla.CalibrationCommand} CalibrationCommand
+         * @returns {yahboom_dogzilla_lite.CalibrationCommand} CalibrationCommand
          */
         CalibrationCommand.fromObject = function fromObject(object, long) {
-            if (object instanceof $root.dogzilla.CalibrationCommand)
+            if (object instanceof $root.yahboom_dogzilla_lite.CalibrationCommand)
                 return object;
             if (long === undefined)
                 long = 0;
             if (long > $util.recursionLimit)
                 throw Error("maximum nesting depth exceeded");
-            let message = new $root.dogzilla.CalibrationCommand();
+            let message = new $root.yahboom_dogzilla_lite.CalibrationCommand();
             if (object.enterCalibrationMode != null)
                 message.enterCalibrationMode = Boolean(object.enterCalibrationMode);
             if (object.setOrigin != null)
@@ -20052,9 +20052,9 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * Creates a plain object from a CalibrationCommand message. Also converts values to other types if specified.
          * @function toObject
-         * @memberof dogzilla.CalibrationCommand
+         * @memberof yahboom_dogzilla_lite.CalibrationCommand
          * @static
-         * @param {dogzilla.CalibrationCommand} message CalibrationCommand
+         * @param {yahboom_dogzilla_lite.CalibrationCommand} message CalibrationCommand
          * @param {$protobuf.IConversionOptions} [options] Conversion options
          * @returns {Object.<string,*>} Plain object
          */
@@ -20082,7 +20082,7 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * Converts this CalibrationCommand to JSON.
          * @function toJSON
-         * @memberof dogzilla.CalibrationCommand
+         * @memberof yahboom_dogzilla_lite.CalibrationCommand
          * @instance
          * @returns {Object.<string,*>} JSON object
          */
@@ -20093,7 +20093,7 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * Gets the default type url for CalibrationCommand
          * @function getTypeUrl
-         * @memberof dogzilla.CalibrationCommand
+         * @memberof yahboom_dogzilla_lite.CalibrationCommand
          * @static
          * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
          * @returns {string} The default type url
@@ -20102,17 +20102,17 @@ export const dogzilla = $root.dogzilla = (() => {
             if (typeUrlPrefix === undefined) {
                 typeUrlPrefix = "type.googleapis.com";
             }
-            return typeUrlPrefix + "/dogzilla.CalibrationCommand";
+            return typeUrlPrefix + "/yahboom_dogzilla_lite.CalibrationCommand";
         };
 
         return CalibrationCommand;
     })();
 
-    dogzilla.ArmCommand = (function() {
+    yahboom_dogzilla_lite.ArmCommand = (function() {
 
         /**
          * Properties of an ArmCommand.
-         * @memberof dogzilla
+         * @memberof yahboom_dogzilla_lite
          * @interface IArmCommand
          * @property {number|null} [gripperStatus] ArmCommand gripperStatus
          * @property {number|null} [gripperX] ArmCommand gripperX
@@ -20124,11 +20124,11 @@ export const dogzilla = $root.dogzilla = (() => {
 
         /**
          * Constructs a new ArmCommand.
-         * @memberof dogzilla
+         * @memberof yahboom_dogzilla_lite
          * @classdesc Represents an ArmCommand.
          * @implements IArmCommand
          * @constructor
-         * @param {dogzilla.IArmCommand=} [properties] Properties to set
+         * @param {yahboom_dogzilla_lite.IArmCommand=} [properties] Properties to set
          */
         function ArmCommand(properties) {
             if (properties)
@@ -20140,7 +20140,7 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * ArmCommand gripperStatus.
          * @member {number} gripperStatus
-         * @memberof dogzilla.ArmCommand
+         * @memberof yahboom_dogzilla_lite.ArmCommand
          * @instance
          */
         ArmCommand.prototype.gripperStatus = 0;
@@ -20148,7 +20148,7 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * ArmCommand gripperX.
          * @member {number} gripperX
-         * @memberof dogzilla.ArmCommand
+         * @memberof yahboom_dogzilla_lite.ArmCommand
          * @instance
          */
         ArmCommand.prototype.gripperX = 0;
@@ -20156,7 +20156,7 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * ArmCommand gripperZ.
          * @member {number} gripperZ
-         * @memberof dogzilla.ArmCommand
+         * @memberof yahboom_dogzilla_lite.ArmCommand
          * @instance
          */
         ArmCommand.prototype.gripperZ = 0;
@@ -20164,7 +20164,7 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * ArmCommand polarAngle.
          * @member {number} polarAngle
-         * @memberof dogzilla.ArmCommand
+         * @memberof yahboom_dogzilla_lite.ArmCommand
          * @instance
          */
         ArmCommand.prototype.polarAngle = 0;
@@ -20172,7 +20172,7 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * ArmCommand polarRadius.
          * @member {number} polarRadius
-         * @memberof dogzilla.ArmCommand
+         * @memberof yahboom_dogzilla_lite.ArmCommand
          * @instance
          */
         ArmCommand.prototype.polarRadius = 0;
@@ -20180,7 +20180,7 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * ArmCommand stabilityMode.
          * @member {boolean} stabilityMode
-         * @memberof dogzilla.ArmCommand
+         * @memberof yahboom_dogzilla_lite.ArmCommand
          * @instance
          */
         ArmCommand.prototype.stabilityMode = false;
@@ -20188,21 +20188,21 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * Creates a new ArmCommand instance using the specified properties.
          * @function create
-         * @memberof dogzilla.ArmCommand
+         * @memberof yahboom_dogzilla_lite.ArmCommand
          * @static
-         * @param {dogzilla.IArmCommand=} [properties] Properties to set
-         * @returns {dogzilla.ArmCommand} ArmCommand instance
+         * @param {yahboom_dogzilla_lite.IArmCommand=} [properties] Properties to set
+         * @returns {yahboom_dogzilla_lite.ArmCommand} ArmCommand instance
          */
         ArmCommand.create = function create(properties) {
             return new ArmCommand(properties);
         };
 
         /**
-         * Encodes the specified ArmCommand message. Does not implicitly {@link dogzilla.ArmCommand.verify|verify} messages.
+         * Encodes the specified ArmCommand message. Does not implicitly {@link yahboom_dogzilla_lite.ArmCommand.verify|verify} messages.
          * @function encode
-         * @memberof dogzilla.ArmCommand
+         * @memberof yahboom_dogzilla_lite.ArmCommand
          * @static
-         * @param {dogzilla.IArmCommand} message ArmCommand message or plain object to encode
+         * @param {yahboom_dogzilla_lite.IArmCommand} message ArmCommand message or plain object to encode
          * @param {$protobuf.Writer} [writer] Writer to encode to
          * @returns {$protobuf.Writer} Writer
          */
@@ -20225,11 +20225,11 @@ export const dogzilla = $root.dogzilla = (() => {
         };
 
         /**
-         * Encodes the specified ArmCommand message, length delimited. Does not implicitly {@link dogzilla.ArmCommand.verify|verify} messages.
+         * Encodes the specified ArmCommand message, length delimited. Does not implicitly {@link yahboom_dogzilla_lite.ArmCommand.verify|verify} messages.
          * @function encodeDelimited
-         * @memberof dogzilla.ArmCommand
+         * @memberof yahboom_dogzilla_lite.ArmCommand
          * @static
-         * @param {dogzilla.IArmCommand} message ArmCommand message or plain object to encode
+         * @param {yahboom_dogzilla_lite.IArmCommand} message ArmCommand message or plain object to encode
          * @param {$protobuf.Writer} [writer] Writer to encode to
          * @returns {$protobuf.Writer} Writer
          */
@@ -20240,11 +20240,11 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * Decodes an ArmCommand message from the specified reader or buffer.
          * @function decode
-         * @memberof dogzilla.ArmCommand
+         * @memberof yahboom_dogzilla_lite.ArmCommand
          * @static
          * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
          * @param {number} [length] Message length if known beforehand
-         * @returns {dogzilla.ArmCommand} ArmCommand
+         * @returns {yahboom_dogzilla_lite.ArmCommand} ArmCommand
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
@@ -20255,7 +20255,7 @@ export const dogzilla = $root.dogzilla = (() => {
                 long = 0;
             if (long > $Reader.recursionLimit)
                 throw Error("maximum nesting depth exceeded");
-            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.dogzilla.ArmCommand();
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.yahboom_dogzilla_lite.ArmCommand();
             while (reader.pos < end) {
                 let tag = reader.uint32();
                 if (tag === error)
@@ -20296,10 +20296,10 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * Decodes an ArmCommand message from the specified reader or buffer, length delimited.
          * @function decodeDelimited
-         * @memberof dogzilla.ArmCommand
+         * @memberof yahboom_dogzilla_lite.ArmCommand
          * @static
          * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
-         * @returns {dogzilla.ArmCommand} ArmCommand
+         * @returns {yahboom_dogzilla_lite.ArmCommand} ArmCommand
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
@@ -20312,7 +20312,7 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * Verifies an ArmCommand message.
          * @function verify
-         * @memberof dogzilla.ArmCommand
+         * @memberof yahboom_dogzilla_lite.ArmCommand
          * @static
          * @param {Object.<string,*>} message Plain object to verify
          * @returns {string|null} `null` if valid, otherwise the reason why it is not
@@ -20348,19 +20348,19 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * Creates an ArmCommand message from a plain object. Also converts values to their respective internal types.
          * @function fromObject
-         * @memberof dogzilla.ArmCommand
+         * @memberof yahboom_dogzilla_lite.ArmCommand
          * @static
          * @param {Object.<string,*>} object Plain object
-         * @returns {dogzilla.ArmCommand} ArmCommand
+         * @returns {yahboom_dogzilla_lite.ArmCommand} ArmCommand
          */
         ArmCommand.fromObject = function fromObject(object, long) {
-            if (object instanceof $root.dogzilla.ArmCommand)
+            if (object instanceof $root.yahboom_dogzilla_lite.ArmCommand)
                 return object;
             if (long === undefined)
                 long = 0;
             if (long > $util.recursionLimit)
                 throw Error("maximum nesting depth exceeded");
-            let message = new $root.dogzilla.ArmCommand();
+            let message = new $root.yahboom_dogzilla_lite.ArmCommand();
             if (object.gripperStatus != null)
                 message.gripperStatus = object.gripperStatus >>> 0;
             if (object.gripperX != null)
@@ -20379,9 +20379,9 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * Creates a plain object from an ArmCommand message. Also converts values to other types if specified.
          * @function toObject
-         * @memberof dogzilla.ArmCommand
+         * @memberof yahboom_dogzilla_lite.ArmCommand
          * @static
-         * @param {dogzilla.ArmCommand} message ArmCommand
+         * @param {yahboom_dogzilla_lite.ArmCommand} message ArmCommand
          * @param {$protobuf.IConversionOptions} [options] Conversion options
          * @returns {Object.<string,*>} Plain object
          */
@@ -20415,7 +20415,7 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * Converts this ArmCommand to JSON.
          * @function toJSON
-         * @memberof dogzilla.ArmCommand
+         * @memberof yahboom_dogzilla_lite.ArmCommand
          * @instance
          * @returns {Object.<string,*>} JSON object
          */
@@ -20426,7 +20426,7 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * Gets the default type url for ArmCommand
          * @function getTypeUrl
-         * @memberof dogzilla.ArmCommand
+         * @memberof yahboom_dogzilla_lite.ArmCommand
          * @static
          * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
          * @returns {string} The default type url
@@ -20435,17 +20435,17 @@ export const dogzilla = $root.dogzilla = (() => {
             if (typeUrlPrefix === undefined) {
                 typeUrlPrefix = "type.googleapis.com";
             }
-            return typeUrlPrefix + "/dogzilla.ArmCommand";
+            return typeUrlPrefix + "/yahboom_dogzilla_lite.ArmCommand";
         };
 
         return ArmCommand;
     })();
 
-    dogzilla.IoCommand = (function() {
+    yahboom_dogzilla_lite.IoCommand = (function() {
 
         /**
          * Properties of an IoCommand.
-         * @memberof dogzilla
+         * @memberof yahboom_dogzilla_lite
          * @interface IIoCommand
          * @property {boolean|null} [power_5vOutput] IoCommand power_5vOutput
          * @property {boolean|null} [digitalIo] IoCommand digitalIo
@@ -20453,11 +20453,11 @@ export const dogzilla = $root.dogzilla = (() => {
 
         /**
          * Constructs a new IoCommand.
-         * @memberof dogzilla
+         * @memberof yahboom_dogzilla_lite
          * @classdesc Represents an IoCommand.
          * @implements IIoCommand
          * @constructor
-         * @param {dogzilla.IIoCommand=} [properties] Properties to set
+         * @param {yahboom_dogzilla_lite.IIoCommand=} [properties] Properties to set
          */
         function IoCommand(properties) {
             if (properties)
@@ -20469,7 +20469,7 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * IoCommand power_5vOutput.
          * @member {boolean} power_5vOutput
-         * @memberof dogzilla.IoCommand
+         * @memberof yahboom_dogzilla_lite.IoCommand
          * @instance
          */
         IoCommand.prototype.power_5vOutput = false;
@@ -20477,7 +20477,7 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * IoCommand digitalIo.
          * @member {boolean} digitalIo
-         * @memberof dogzilla.IoCommand
+         * @memberof yahboom_dogzilla_lite.IoCommand
          * @instance
          */
         IoCommand.prototype.digitalIo = false;
@@ -20485,21 +20485,21 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * Creates a new IoCommand instance using the specified properties.
          * @function create
-         * @memberof dogzilla.IoCommand
+         * @memberof yahboom_dogzilla_lite.IoCommand
          * @static
-         * @param {dogzilla.IIoCommand=} [properties] Properties to set
-         * @returns {dogzilla.IoCommand} IoCommand instance
+         * @param {yahboom_dogzilla_lite.IIoCommand=} [properties] Properties to set
+         * @returns {yahboom_dogzilla_lite.IoCommand} IoCommand instance
          */
         IoCommand.create = function create(properties) {
             return new IoCommand(properties);
         };
 
         /**
-         * Encodes the specified IoCommand message. Does not implicitly {@link dogzilla.IoCommand.verify|verify} messages.
+         * Encodes the specified IoCommand message. Does not implicitly {@link yahboom_dogzilla_lite.IoCommand.verify|verify} messages.
          * @function encode
-         * @memberof dogzilla.IoCommand
+         * @memberof yahboom_dogzilla_lite.IoCommand
          * @static
-         * @param {dogzilla.IIoCommand} message IoCommand message or plain object to encode
+         * @param {yahboom_dogzilla_lite.IIoCommand} message IoCommand message or plain object to encode
          * @param {$protobuf.Writer} [writer] Writer to encode to
          * @returns {$protobuf.Writer} Writer
          */
@@ -20514,11 +20514,11 @@ export const dogzilla = $root.dogzilla = (() => {
         };
 
         /**
-         * Encodes the specified IoCommand message, length delimited. Does not implicitly {@link dogzilla.IoCommand.verify|verify} messages.
+         * Encodes the specified IoCommand message, length delimited. Does not implicitly {@link yahboom_dogzilla_lite.IoCommand.verify|verify} messages.
          * @function encodeDelimited
-         * @memberof dogzilla.IoCommand
+         * @memberof yahboom_dogzilla_lite.IoCommand
          * @static
-         * @param {dogzilla.IIoCommand} message IoCommand message or plain object to encode
+         * @param {yahboom_dogzilla_lite.IIoCommand} message IoCommand message or plain object to encode
          * @param {$protobuf.Writer} [writer] Writer to encode to
          * @returns {$protobuf.Writer} Writer
          */
@@ -20529,11 +20529,11 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * Decodes an IoCommand message from the specified reader or buffer.
          * @function decode
-         * @memberof dogzilla.IoCommand
+         * @memberof yahboom_dogzilla_lite.IoCommand
          * @static
          * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
          * @param {number} [length] Message length if known beforehand
-         * @returns {dogzilla.IoCommand} IoCommand
+         * @returns {yahboom_dogzilla_lite.IoCommand} IoCommand
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
@@ -20544,7 +20544,7 @@ export const dogzilla = $root.dogzilla = (() => {
                 long = 0;
             if (long > $Reader.recursionLimit)
                 throw Error("maximum nesting depth exceeded");
-            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.dogzilla.IoCommand();
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.yahboom_dogzilla_lite.IoCommand();
             while (reader.pos < end) {
                 let tag = reader.uint32();
                 if (tag === error)
@@ -20569,10 +20569,10 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * Decodes an IoCommand message from the specified reader or buffer, length delimited.
          * @function decodeDelimited
-         * @memberof dogzilla.IoCommand
+         * @memberof yahboom_dogzilla_lite.IoCommand
          * @static
          * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
-         * @returns {dogzilla.IoCommand} IoCommand
+         * @returns {yahboom_dogzilla_lite.IoCommand} IoCommand
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
@@ -20585,7 +20585,7 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * Verifies an IoCommand message.
          * @function verify
-         * @memberof dogzilla.IoCommand
+         * @memberof yahboom_dogzilla_lite.IoCommand
          * @static
          * @param {Object.<string,*>} message Plain object to verify
          * @returns {string|null} `null` if valid, otherwise the reason why it is not
@@ -20609,19 +20609,19 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * Creates an IoCommand message from a plain object. Also converts values to their respective internal types.
          * @function fromObject
-         * @memberof dogzilla.IoCommand
+         * @memberof yahboom_dogzilla_lite.IoCommand
          * @static
          * @param {Object.<string,*>} object Plain object
-         * @returns {dogzilla.IoCommand} IoCommand
+         * @returns {yahboom_dogzilla_lite.IoCommand} IoCommand
          */
         IoCommand.fromObject = function fromObject(object, long) {
-            if (object instanceof $root.dogzilla.IoCommand)
+            if (object instanceof $root.yahboom_dogzilla_lite.IoCommand)
                 return object;
             if (long === undefined)
                 long = 0;
             if (long > $util.recursionLimit)
                 throw Error("maximum nesting depth exceeded");
-            let message = new $root.dogzilla.IoCommand();
+            let message = new $root.yahboom_dogzilla_lite.IoCommand();
             if (object.power_5vOutput != null)
                 message.power_5vOutput = Boolean(object.power_5vOutput);
             if (object.digitalIo != null)
@@ -20632,9 +20632,9 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * Creates a plain object from an IoCommand message. Also converts values to other types if specified.
          * @function toObject
-         * @memberof dogzilla.IoCommand
+         * @memberof yahboom_dogzilla_lite.IoCommand
          * @static
-         * @param {dogzilla.IoCommand} message IoCommand
+         * @param {yahboom_dogzilla_lite.IoCommand} message IoCommand
          * @param {$protobuf.IConversionOptions} [options] Conversion options
          * @returns {Object.<string,*>} Plain object
          */
@@ -20656,7 +20656,7 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * Converts this IoCommand to JSON.
          * @function toJSON
-         * @memberof dogzilla.IoCommand
+         * @memberof yahboom_dogzilla_lite.IoCommand
          * @instance
          * @returns {Object.<string,*>} JSON object
          */
@@ -20667,7 +20667,7 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * Gets the default type url for IoCommand
          * @function getTypeUrl
-         * @memberof dogzilla.IoCommand
+         * @memberof yahboom_dogzilla_lite.IoCommand
          * @static
          * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
          * @returns {string} The default type url
@@ -20676,17 +20676,17 @@ export const dogzilla = $root.dogzilla = (() => {
             if (typeUrlPrefix === undefined) {
                 typeUrlPrefix = "type.googleapis.com";
             }
-            return typeUrlPrefix + "/dogzilla.IoCommand";
+            return typeUrlPrefix + "/yahboom_dogzilla_lite.IoCommand";
         };
 
         return IoCommand;
     })();
 
-    dogzilla.LedCommand = (function() {
+    yahboom_dogzilla_lite.LedCommand = (function() {
 
         /**
          * Properties of a LedCommand.
-         * @memberof dogzilla
+         * @memberof yahboom_dogzilla_lite
          * @interface ILedCommand
          * @property {number|null} [ledIndex] LedCommand ledIndex
          * @property {Uint8Array|null} [rgbBytes] LedCommand rgbBytes
@@ -20694,11 +20694,11 @@ export const dogzilla = $root.dogzilla = (() => {
 
         /**
          * Constructs a new LedCommand.
-         * @memberof dogzilla
+         * @memberof yahboom_dogzilla_lite
          * @classdesc Represents a LedCommand.
          * @implements ILedCommand
          * @constructor
-         * @param {dogzilla.ILedCommand=} [properties] Properties to set
+         * @param {yahboom_dogzilla_lite.ILedCommand=} [properties] Properties to set
          */
         function LedCommand(properties) {
             if (properties)
@@ -20710,7 +20710,7 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * LedCommand ledIndex.
          * @member {number} ledIndex
-         * @memberof dogzilla.LedCommand
+         * @memberof yahboom_dogzilla_lite.LedCommand
          * @instance
          */
         LedCommand.prototype.ledIndex = 0;
@@ -20718,7 +20718,7 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * LedCommand rgbBytes.
          * @member {Uint8Array} rgbBytes
-         * @memberof dogzilla.LedCommand
+         * @memberof yahboom_dogzilla_lite.LedCommand
          * @instance
          */
         LedCommand.prototype.rgbBytes = $util.newBuffer([]);
@@ -20726,21 +20726,21 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * Creates a new LedCommand instance using the specified properties.
          * @function create
-         * @memberof dogzilla.LedCommand
+         * @memberof yahboom_dogzilla_lite.LedCommand
          * @static
-         * @param {dogzilla.ILedCommand=} [properties] Properties to set
-         * @returns {dogzilla.LedCommand} LedCommand instance
+         * @param {yahboom_dogzilla_lite.ILedCommand=} [properties] Properties to set
+         * @returns {yahboom_dogzilla_lite.LedCommand} LedCommand instance
          */
         LedCommand.create = function create(properties) {
             return new LedCommand(properties);
         };
 
         /**
-         * Encodes the specified LedCommand message. Does not implicitly {@link dogzilla.LedCommand.verify|verify} messages.
+         * Encodes the specified LedCommand message. Does not implicitly {@link yahboom_dogzilla_lite.LedCommand.verify|verify} messages.
          * @function encode
-         * @memberof dogzilla.LedCommand
+         * @memberof yahboom_dogzilla_lite.LedCommand
          * @static
-         * @param {dogzilla.ILedCommand} message LedCommand message or plain object to encode
+         * @param {yahboom_dogzilla_lite.ILedCommand} message LedCommand message or plain object to encode
          * @param {$protobuf.Writer} [writer] Writer to encode to
          * @returns {$protobuf.Writer} Writer
          */
@@ -20755,11 +20755,11 @@ export const dogzilla = $root.dogzilla = (() => {
         };
 
         /**
-         * Encodes the specified LedCommand message, length delimited. Does not implicitly {@link dogzilla.LedCommand.verify|verify} messages.
+         * Encodes the specified LedCommand message, length delimited. Does not implicitly {@link yahboom_dogzilla_lite.LedCommand.verify|verify} messages.
          * @function encodeDelimited
-         * @memberof dogzilla.LedCommand
+         * @memberof yahboom_dogzilla_lite.LedCommand
          * @static
-         * @param {dogzilla.ILedCommand} message LedCommand message or plain object to encode
+         * @param {yahboom_dogzilla_lite.ILedCommand} message LedCommand message or plain object to encode
          * @param {$protobuf.Writer} [writer] Writer to encode to
          * @returns {$protobuf.Writer} Writer
          */
@@ -20770,11 +20770,11 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * Decodes a LedCommand message from the specified reader or buffer.
          * @function decode
-         * @memberof dogzilla.LedCommand
+         * @memberof yahboom_dogzilla_lite.LedCommand
          * @static
          * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
          * @param {number} [length] Message length if known beforehand
-         * @returns {dogzilla.LedCommand} LedCommand
+         * @returns {yahboom_dogzilla_lite.LedCommand} LedCommand
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
@@ -20785,7 +20785,7 @@ export const dogzilla = $root.dogzilla = (() => {
                 long = 0;
             if (long > $Reader.recursionLimit)
                 throw Error("maximum nesting depth exceeded");
-            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.dogzilla.LedCommand();
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.yahboom_dogzilla_lite.LedCommand();
             while (reader.pos < end) {
                 let tag = reader.uint32();
                 if (tag === error)
@@ -20810,10 +20810,10 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * Decodes a LedCommand message from the specified reader or buffer, length delimited.
          * @function decodeDelimited
-         * @memberof dogzilla.LedCommand
+         * @memberof yahboom_dogzilla_lite.LedCommand
          * @static
          * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
-         * @returns {dogzilla.LedCommand} LedCommand
+         * @returns {yahboom_dogzilla_lite.LedCommand} LedCommand
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
@@ -20826,7 +20826,7 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * Verifies a LedCommand message.
          * @function verify
-         * @memberof dogzilla.LedCommand
+         * @memberof yahboom_dogzilla_lite.LedCommand
          * @static
          * @param {Object.<string,*>} message Plain object to verify
          * @returns {string|null} `null` if valid, otherwise the reason why it is not
@@ -20850,19 +20850,19 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * Creates a LedCommand message from a plain object. Also converts values to their respective internal types.
          * @function fromObject
-         * @memberof dogzilla.LedCommand
+         * @memberof yahboom_dogzilla_lite.LedCommand
          * @static
          * @param {Object.<string,*>} object Plain object
-         * @returns {dogzilla.LedCommand} LedCommand
+         * @returns {yahboom_dogzilla_lite.LedCommand} LedCommand
          */
         LedCommand.fromObject = function fromObject(object, long) {
-            if (object instanceof $root.dogzilla.LedCommand)
+            if (object instanceof $root.yahboom_dogzilla_lite.LedCommand)
                 return object;
             if (long === undefined)
                 long = 0;
             if (long > $util.recursionLimit)
                 throw Error("maximum nesting depth exceeded");
-            let message = new $root.dogzilla.LedCommand();
+            let message = new $root.yahboom_dogzilla_lite.LedCommand();
             if (object.ledIndex != null)
                 message.ledIndex = object.ledIndex >>> 0;
             if (object.rgbBytes != null)
@@ -20876,9 +20876,9 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * Creates a plain object from a LedCommand message. Also converts values to other types if specified.
          * @function toObject
-         * @memberof dogzilla.LedCommand
+         * @memberof yahboom_dogzilla_lite.LedCommand
          * @static
-         * @param {dogzilla.LedCommand} message LedCommand
+         * @param {yahboom_dogzilla_lite.LedCommand} message LedCommand
          * @param {$protobuf.IConversionOptions} [options] Conversion options
          * @returns {Object.<string,*>} Plain object
          */
@@ -20906,7 +20906,7 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * Converts this LedCommand to JSON.
          * @function toJSON
-         * @memberof dogzilla.LedCommand
+         * @memberof yahboom_dogzilla_lite.LedCommand
          * @instance
          * @returns {Object.<string,*>} JSON object
          */
@@ -20917,7 +20917,7 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * Gets the default type url for LedCommand
          * @function getTypeUrl
-         * @memberof dogzilla.LedCommand
+         * @memberof yahboom_dogzilla_lite.LedCommand
          * @static
          * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
          * @returns {string} The default type url
@@ -20926,28 +20926,28 @@ export const dogzilla = $root.dogzilla = (() => {
             if (typeUrlPrefix === undefined) {
                 typeUrlPrefix = "type.googleapis.com";
             }
-            return typeUrlPrefix + "/dogzilla.LedCommand";
+            return typeUrlPrefix + "/yahboom_dogzilla_lite.LedCommand";
         };
 
         return LedCommand;
     })();
 
-    dogzilla.ActionCommand = (function() {
+    yahboom_dogzilla_lite.ActionCommand = (function() {
 
         /**
          * Properties of an ActionCommand.
-         * @memberof dogzilla
+         * @memberof yahboom_dogzilla_lite
          * @interface IActionCommand
-         * @property {dogzilla.ActionType|null} [action] ActionCommand action
+         * @property {yahboom_dogzilla_lite.ActionType|null} [action] ActionCommand action
          */
 
         /**
          * Constructs a new ActionCommand.
-         * @memberof dogzilla
+         * @memberof yahboom_dogzilla_lite
          * @classdesc Represents an ActionCommand.
          * @implements IActionCommand
          * @constructor
-         * @param {dogzilla.IActionCommand=} [properties] Properties to set
+         * @param {yahboom_dogzilla_lite.IActionCommand=} [properties] Properties to set
          */
         function ActionCommand(properties) {
             if (properties)
@@ -20958,8 +20958,8 @@ export const dogzilla = $root.dogzilla = (() => {
 
         /**
          * ActionCommand action.
-         * @member {dogzilla.ActionType} action
-         * @memberof dogzilla.ActionCommand
+         * @member {yahboom_dogzilla_lite.ActionType} action
+         * @memberof yahboom_dogzilla_lite.ActionCommand
          * @instance
          */
         ActionCommand.prototype.action = 0;
@@ -20967,21 +20967,21 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * Creates a new ActionCommand instance using the specified properties.
          * @function create
-         * @memberof dogzilla.ActionCommand
+         * @memberof yahboom_dogzilla_lite.ActionCommand
          * @static
-         * @param {dogzilla.IActionCommand=} [properties] Properties to set
-         * @returns {dogzilla.ActionCommand} ActionCommand instance
+         * @param {yahboom_dogzilla_lite.IActionCommand=} [properties] Properties to set
+         * @returns {yahboom_dogzilla_lite.ActionCommand} ActionCommand instance
          */
         ActionCommand.create = function create(properties) {
             return new ActionCommand(properties);
         };
 
         /**
-         * Encodes the specified ActionCommand message. Does not implicitly {@link dogzilla.ActionCommand.verify|verify} messages.
+         * Encodes the specified ActionCommand message. Does not implicitly {@link yahboom_dogzilla_lite.ActionCommand.verify|verify} messages.
          * @function encode
-         * @memberof dogzilla.ActionCommand
+         * @memberof yahboom_dogzilla_lite.ActionCommand
          * @static
-         * @param {dogzilla.IActionCommand} message ActionCommand message or plain object to encode
+         * @param {yahboom_dogzilla_lite.IActionCommand} message ActionCommand message or plain object to encode
          * @param {$protobuf.Writer} [writer] Writer to encode to
          * @returns {$protobuf.Writer} Writer
          */
@@ -20994,11 +20994,11 @@ export const dogzilla = $root.dogzilla = (() => {
         };
 
         /**
-         * Encodes the specified ActionCommand message, length delimited. Does not implicitly {@link dogzilla.ActionCommand.verify|verify} messages.
+         * Encodes the specified ActionCommand message, length delimited. Does not implicitly {@link yahboom_dogzilla_lite.ActionCommand.verify|verify} messages.
          * @function encodeDelimited
-         * @memberof dogzilla.ActionCommand
+         * @memberof yahboom_dogzilla_lite.ActionCommand
          * @static
-         * @param {dogzilla.IActionCommand} message ActionCommand message or plain object to encode
+         * @param {yahboom_dogzilla_lite.IActionCommand} message ActionCommand message or plain object to encode
          * @param {$protobuf.Writer} [writer] Writer to encode to
          * @returns {$protobuf.Writer} Writer
          */
@@ -21009,11 +21009,11 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * Decodes an ActionCommand message from the specified reader or buffer.
          * @function decode
-         * @memberof dogzilla.ActionCommand
+         * @memberof yahboom_dogzilla_lite.ActionCommand
          * @static
          * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
          * @param {number} [length] Message length if known beforehand
-         * @returns {dogzilla.ActionCommand} ActionCommand
+         * @returns {yahboom_dogzilla_lite.ActionCommand} ActionCommand
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
@@ -21024,7 +21024,7 @@ export const dogzilla = $root.dogzilla = (() => {
                 long = 0;
             if (long > $Reader.recursionLimit)
                 throw Error("maximum nesting depth exceeded");
-            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.dogzilla.ActionCommand();
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.yahboom_dogzilla_lite.ActionCommand();
             while (reader.pos < end) {
                 let tag = reader.uint32();
                 if (tag === error)
@@ -21045,10 +21045,10 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * Decodes an ActionCommand message from the specified reader or buffer, length delimited.
          * @function decodeDelimited
-         * @memberof dogzilla.ActionCommand
+         * @memberof yahboom_dogzilla_lite.ActionCommand
          * @static
          * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
-         * @returns {dogzilla.ActionCommand} ActionCommand
+         * @returns {yahboom_dogzilla_lite.ActionCommand} ActionCommand
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
@@ -21061,7 +21061,7 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * Verifies an ActionCommand message.
          * @function verify
-         * @memberof dogzilla.ActionCommand
+         * @memberof yahboom_dogzilla_lite.ActionCommand
          * @static
          * @param {Object.<string,*>} message Plain object to verify
          * @returns {string|null} `null` if valid, otherwise the reason why it is not
@@ -21111,19 +21111,19 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * Creates an ActionCommand message from a plain object. Also converts values to their respective internal types.
          * @function fromObject
-         * @memberof dogzilla.ActionCommand
+         * @memberof yahboom_dogzilla_lite.ActionCommand
          * @static
          * @param {Object.<string,*>} object Plain object
-         * @returns {dogzilla.ActionCommand} ActionCommand
+         * @returns {yahboom_dogzilla_lite.ActionCommand} ActionCommand
          */
         ActionCommand.fromObject = function fromObject(object, long) {
-            if (object instanceof $root.dogzilla.ActionCommand)
+            if (object instanceof $root.yahboom_dogzilla_lite.ActionCommand)
                 return object;
             if (long === undefined)
                 long = 0;
             if (long > $util.recursionLimit)
                 throw Error("maximum nesting depth exceeded");
-            let message = new $root.dogzilla.ActionCommand();
+            let message = new $root.yahboom_dogzilla_lite.ActionCommand();
             switch (object.action) {
             default:
                 if (typeof object.action === "number") {
@@ -21242,9 +21242,9 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * Creates a plain object from an ActionCommand message. Also converts values to other types if specified.
          * @function toObject
-         * @memberof dogzilla.ActionCommand
+         * @memberof yahboom_dogzilla_lite.ActionCommand
          * @static
-         * @param {dogzilla.ActionCommand} message ActionCommand
+         * @param {yahboom_dogzilla_lite.ActionCommand} message ActionCommand
          * @param {$protobuf.IConversionOptions} [options] Conversion options
          * @returns {Object.<string,*>} Plain object
          */
@@ -21255,14 +21255,14 @@ export const dogzilla = $root.dogzilla = (() => {
             if (options.defaults)
                 object.action = options.enums === String ? "ACTION_UNSPECIFIED" : 0;
             if (message.action != null && message.hasOwnProperty("action"))
-                object.action = options.enums === String ? $root.dogzilla.ActionType[message.action] === undefined ? message.action : $root.dogzilla.ActionType[message.action] : message.action;
+                object.action = options.enums === String ? $root.yahboom_dogzilla_lite.ActionType[message.action] === undefined ? message.action : $root.yahboom_dogzilla_lite.ActionType[message.action] : message.action;
             return object;
         };
 
         /**
          * Converts this ActionCommand to JSON.
          * @function toJSON
-         * @memberof dogzilla.ActionCommand
+         * @memberof yahboom_dogzilla_lite.ActionCommand
          * @instance
          * @returns {Object.<string,*>} JSON object
          */
@@ -21273,7 +21273,7 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * Gets the default type url for ActionCommand
          * @function getTypeUrl
-         * @memberof dogzilla.ActionCommand
+         * @memberof yahboom_dogzilla_lite.ActionCommand
          * @static
          * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
          * @returns {string} The default type url
@@ -21282,17 +21282,17 @@ export const dogzilla = $root.dogzilla = (() => {
             if (typeUrlPrefix === undefined) {
                 typeUrlPrefix = "type.googleapis.com";
             }
-            return typeUrlPrefix + "/dogzilla.ActionCommand";
+            return typeUrlPrefix + "/yahboom_dogzilla_lite.ActionCommand";
         };
 
         return ActionCommand;
     })();
 
-    dogzilla.MovementCommand = (function() {
+    yahboom_dogzilla_lite.MovementCommand = (function() {
 
         /**
          * Properties of a MovementCommand.
-         * @memberof dogzilla
+         * @memberof yahboom_dogzilla_lite
          * @interface IMovementCommand
          * @property {number|null} [moveX] MovementCommand moveX
          * @property {number|null} [moveY] MovementCommand moveY
@@ -21301,11 +21301,11 @@ export const dogzilla = $root.dogzilla = (() => {
 
         /**
          * Constructs a new MovementCommand.
-         * @memberof dogzilla
+         * @memberof yahboom_dogzilla_lite
          * @classdesc Represents a MovementCommand.
          * @implements IMovementCommand
          * @constructor
-         * @param {dogzilla.IMovementCommand=} [properties] Properties to set
+         * @param {yahboom_dogzilla_lite.IMovementCommand=} [properties] Properties to set
          */
         function MovementCommand(properties) {
             if (properties)
@@ -21317,7 +21317,7 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * MovementCommand moveX.
          * @member {number} moveX
-         * @memberof dogzilla.MovementCommand
+         * @memberof yahboom_dogzilla_lite.MovementCommand
          * @instance
          */
         MovementCommand.prototype.moveX = 0;
@@ -21325,7 +21325,7 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * MovementCommand moveY.
          * @member {number} moveY
-         * @memberof dogzilla.MovementCommand
+         * @memberof yahboom_dogzilla_lite.MovementCommand
          * @instance
          */
         MovementCommand.prototype.moveY = 0;
@@ -21333,7 +21333,7 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * MovementCommand moveYaw.
          * @member {number} moveYaw
-         * @memberof dogzilla.MovementCommand
+         * @memberof yahboom_dogzilla_lite.MovementCommand
          * @instance
          */
         MovementCommand.prototype.moveYaw = 0;
@@ -21341,21 +21341,21 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * Creates a new MovementCommand instance using the specified properties.
          * @function create
-         * @memberof dogzilla.MovementCommand
+         * @memberof yahboom_dogzilla_lite.MovementCommand
          * @static
-         * @param {dogzilla.IMovementCommand=} [properties] Properties to set
-         * @returns {dogzilla.MovementCommand} MovementCommand instance
+         * @param {yahboom_dogzilla_lite.IMovementCommand=} [properties] Properties to set
+         * @returns {yahboom_dogzilla_lite.MovementCommand} MovementCommand instance
          */
         MovementCommand.create = function create(properties) {
             return new MovementCommand(properties);
         };
 
         /**
-         * Encodes the specified MovementCommand message. Does not implicitly {@link dogzilla.MovementCommand.verify|verify} messages.
+         * Encodes the specified MovementCommand message. Does not implicitly {@link yahboom_dogzilla_lite.MovementCommand.verify|verify} messages.
          * @function encode
-         * @memberof dogzilla.MovementCommand
+         * @memberof yahboom_dogzilla_lite.MovementCommand
          * @static
-         * @param {dogzilla.IMovementCommand} message MovementCommand message or plain object to encode
+         * @param {yahboom_dogzilla_lite.IMovementCommand} message MovementCommand message or plain object to encode
          * @param {$protobuf.Writer} [writer] Writer to encode to
          * @returns {$protobuf.Writer} Writer
          */
@@ -21372,11 +21372,11 @@ export const dogzilla = $root.dogzilla = (() => {
         };
 
         /**
-         * Encodes the specified MovementCommand message, length delimited. Does not implicitly {@link dogzilla.MovementCommand.verify|verify} messages.
+         * Encodes the specified MovementCommand message, length delimited. Does not implicitly {@link yahboom_dogzilla_lite.MovementCommand.verify|verify} messages.
          * @function encodeDelimited
-         * @memberof dogzilla.MovementCommand
+         * @memberof yahboom_dogzilla_lite.MovementCommand
          * @static
-         * @param {dogzilla.IMovementCommand} message MovementCommand message or plain object to encode
+         * @param {yahboom_dogzilla_lite.IMovementCommand} message MovementCommand message or plain object to encode
          * @param {$protobuf.Writer} [writer] Writer to encode to
          * @returns {$protobuf.Writer} Writer
          */
@@ -21387,11 +21387,11 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * Decodes a MovementCommand message from the specified reader or buffer.
          * @function decode
-         * @memberof dogzilla.MovementCommand
+         * @memberof yahboom_dogzilla_lite.MovementCommand
          * @static
          * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
          * @param {number} [length] Message length if known beforehand
-         * @returns {dogzilla.MovementCommand} MovementCommand
+         * @returns {yahboom_dogzilla_lite.MovementCommand} MovementCommand
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
@@ -21402,7 +21402,7 @@ export const dogzilla = $root.dogzilla = (() => {
                 long = 0;
             if (long > $Reader.recursionLimit)
                 throw Error("maximum nesting depth exceeded");
-            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.dogzilla.MovementCommand();
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.yahboom_dogzilla_lite.MovementCommand();
             while (reader.pos < end) {
                 let tag = reader.uint32();
                 if (tag === error)
@@ -21431,10 +21431,10 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * Decodes a MovementCommand message from the specified reader or buffer, length delimited.
          * @function decodeDelimited
-         * @memberof dogzilla.MovementCommand
+         * @memberof yahboom_dogzilla_lite.MovementCommand
          * @static
          * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
-         * @returns {dogzilla.MovementCommand} MovementCommand
+         * @returns {yahboom_dogzilla_lite.MovementCommand} MovementCommand
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
@@ -21447,7 +21447,7 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * Verifies a MovementCommand message.
          * @function verify
-         * @memberof dogzilla.MovementCommand
+         * @memberof yahboom_dogzilla_lite.MovementCommand
          * @static
          * @param {Object.<string,*>} message Plain object to verify
          * @returns {string|null} `null` if valid, otherwise the reason why it is not
@@ -21474,19 +21474,19 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * Creates a MovementCommand message from a plain object. Also converts values to their respective internal types.
          * @function fromObject
-         * @memberof dogzilla.MovementCommand
+         * @memberof yahboom_dogzilla_lite.MovementCommand
          * @static
          * @param {Object.<string,*>} object Plain object
-         * @returns {dogzilla.MovementCommand} MovementCommand
+         * @returns {yahboom_dogzilla_lite.MovementCommand} MovementCommand
          */
         MovementCommand.fromObject = function fromObject(object, long) {
-            if (object instanceof $root.dogzilla.MovementCommand)
+            if (object instanceof $root.yahboom_dogzilla_lite.MovementCommand)
                 return object;
             if (long === undefined)
                 long = 0;
             if (long > $util.recursionLimit)
                 throw Error("maximum nesting depth exceeded");
-            let message = new $root.dogzilla.MovementCommand();
+            let message = new $root.yahboom_dogzilla_lite.MovementCommand();
             if (object.moveX != null)
                 message.moveX = object.moveX >>> 0;
             if (object.moveY != null)
@@ -21499,9 +21499,9 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * Creates a plain object from a MovementCommand message. Also converts values to other types if specified.
          * @function toObject
-         * @memberof dogzilla.MovementCommand
+         * @memberof yahboom_dogzilla_lite.MovementCommand
          * @static
-         * @param {dogzilla.MovementCommand} message MovementCommand
+         * @param {yahboom_dogzilla_lite.MovementCommand} message MovementCommand
          * @param {$protobuf.IConversionOptions} [options] Conversion options
          * @returns {Object.<string,*>} Plain object
          */
@@ -21526,7 +21526,7 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * Converts this MovementCommand to JSON.
          * @function toJSON
-         * @memberof dogzilla.MovementCommand
+         * @memberof yahboom_dogzilla_lite.MovementCommand
          * @instance
          * @returns {Object.<string,*>} JSON object
          */
@@ -21537,7 +21537,7 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * Gets the default type url for MovementCommand
          * @function getTypeUrl
-         * @memberof dogzilla.MovementCommand
+         * @memberof yahboom_dogzilla_lite.MovementCommand
          * @static
          * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
          * @returns {string} The default type url
@@ -21546,32 +21546,32 @@ export const dogzilla = $root.dogzilla = (() => {
             if (typeUrlPrefix === undefined) {
                 typeUrlPrefix = "type.googleapis.com";
             }
-            return typeUrlPrefix + "/dogzilla.MovementCommand";
+            return typeUrlPrefix + "/yahboom_dogzilla_lite.MovementCommand";
         };
 
         return MovementCommand;
     })();
 
-    dogzilla.ConfigCommand = (function() {
+    yahboom_dogzilla_lite.ConfigCommand = (function() {
 
         /**
          * Properties of a ConfigCommand.
-         * @memberof dogzilla
+         * @memberof yahboom_dogzilla_lite
          * @interface IConfigCommand
-         * @property {dogzilla.PerformanceMode|null} [performanceMode] ConfigCommand performanceMode
-         * @property {dogzilla.GaitType|null} [gait] ConfigCommand gait
-         * @property {dogzilla.ImuMode|null} [imuMode] ConfigCommand imuMode
+         * @property {yahboom_dogzilla_lite.PerformanceMode|null} [performanceMode] ConfigCommand performanceMode
+         * @property {yahboom_dogzilla_lite.GaitType|null} [gait] ConfigCommand gait
+         * @property {yahboom_dogzilla_lite.ImuMode|null} [imuMode] ConfigCommand imuMode
          * @property {boolean|null} [enableFeedback] ConfigCommand enableFeedback
          * @property {string|null} [bluetoothName] ConfigCommand bluetoothName
          */
 
         /**
          * Constructs a new ConfigCommand.
-         * @memberof dogzilla
+         * @memberof yahboom_dogzilla_lite
          * @classdesc Represents a ConfigCommand.
          * @implements IConfigCommand
          * @constructor
-         * @param {dogzilla.IConfigCommand=} [properties] Properties to set
+         * @param {yahboom_dogzilla_lite.IConfigCommand=} [properties] Properties to set
          */
         function ConfigCommand(properties) {
             if (properties)
@@ -21582,24 +21582,24 @@ export const dogzilla = $root.dogzilla = (() => {
 
         /**
          * ConfigCommand performanceMode.
-         * @member {dogzilla.PerformanceMode} performanceMode
-         * @memberof dogzilla.ConfigCommand
+         * @member {yahboom_dogzilla_lite.PerformanceMode} performanceMode
+         * @memberof yahboom_dogzilla_lite.ConfigCommand
          * @instance
          */
         ConfigCommand.prototype.performanceMode = 0;
 
         /**
          * ConfigCommand gait.
-         * @member {dogzilla.GaitType} gait
-         * @memberof dogzilla.ConfigCommand
+         * @member {yahboom_dogzilla_lite.GaitType} gait
+         * @memberof yahboom_dogzilla_lite.ConfigCommand
          * @instance
          */
         ConfigCommand.prototype.gait = 0;
 
         /**
          * ConfigCommand imuMode.
-         * @member {dogzilla.ImuMode} imuMode
-         * @memberof dogzilla.ConfigCommand
+         * @member {yahboom_dogzilla_lite.ImuMode} imuMode
+         * @memberof yahboom_dogzilla_lite.ConfigCommand
          * @instance
          */
         ConfigCommand.prototype.imuMode = 0;
@@ -21607,7 +21607,7 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * ConfigCommand enableFeedback.
          * @member {boolean} enableFeedback
-         * @memberof dogzilla.ConfigCommand
+         * @memberof yahboom_dogzilla_lite.ConfigCommand
          * @instance
          */
         ConfigCommand.prototype.enableFeedback = false;
@@ -21615,7 +21615,7 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * ConfigCommand bluetoothName.
          * @member {string} bluetoothName
-         * @memberof dogzilla.ConfigCommand
+         * @memberof yahboom_dogzilla_lite.ConfigCommand
          * @instance
          */
         ConfigCommand.prototype.bluetoothName = "";
@@ -21623,21 +21623,21 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * Creates a new ConfigCommand instance using the specified properties.
          * @function create
-         * @memberof dogzilla.ConfigCommand
+         * @memberof yahboom_dogzilla_lite.ConfigCommand
          * @static
-         * @param {dogzilla.IConfigCommand=} [properties] Properties to set
-         * @returns {dogzilla.ConfigCommand} ConfigCommand instance
+         * @param {yahboom_dogzilla_lite.IConfigCommand=} [properties] Properties to set
+         * @returns {yahboom_dogzilla_lite.ConfigCommand} ConfigCommand instance
          */
         ConfigCommand.create = function create(properties) {
             return new ConfigCommand(properties);
         };
 
         /**
-         * Encodes the specified ConfigCommand message. Does not implicitly {@link dogzilla.ConfigCommand.verify|verify} messages.
+         * Encodes the specified ConfigCommand message. Does not implicitly {@link yahboom_dogzilla_lite.ConfigCommand.verify|verify} messages.
          * @function encode
-         * @memberof dogzilla.ConfigCommand
+         * @memberof yahboom_dogzilla_lite.ConfigCommand
          * @static
-         * @param {dogzilla.IConfigCommand} message ConfigCommand message or plain object to encode
+         * @param {yahboom_dogzilla_lite.IConfigCommand} message ConfigCommand message or plain object to encode
          * @param {$protobuf.Writer} [writer] Writer to encode to
          * @returns {$protobuf.Writer} Writer
          */
@@ -21658,11 +21658,11 @@ export const dogzilla = $root.dogzilla = (() => {
         };
 
         /**
-         * Encodes the specified ConfigCommand message, length delimited. Does not implicitly {@link dogzilla.ConfigCommand.verify|verify} messages.
+         * Encodes the specified ConfigCommand message, length delimited. Does not implicitly {@link yahboom_dogzilla_lite.ConfigCommand.verify|verify} messages.
          * @function encodeDelimited
-         * @memberof dogzilla.ConfigCommand
+         * @memberof yahboom_dogzilla_lite.ConfigCommand
          * @static
-         * @param {dogzilla.IConfigCommand} message ConfigCommand message or plain object to encode
+         * @param {yahboom_dogzilla_lite.IConfigCommand} message ConfigCommand message or plain object to encode
          * @param {$protobuf.Writer} [writer] Writer to encode to
          * @returns {$protobuf.Writer} Writer
          */
@@ -21673,11 +21673,11 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * Decodes a ConfigCommand message from the specified reader or buffer.
          * @function decode
-         * @memberof dogzilla.ConfigCommand
+         * @memberof yahboom_dogzilla_lite.ConfigCommand
          * @static
          * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
          * @param {number} [length] Message length if known beforehand
-         * @returns {dogzilla.ConfigCommand} ConfigCommand
+         * @returns {yahboom_dogzilla_lite.ConfigCommand} ConfigCommand
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
@@ -21688,7 +21688,7 @@ export const dogzilla = $root.dogzilla = (() => {
                 long = 0;
             if (long > $Reader.recursionLimit)
                 throw Error("maximum nesting depth exceeded");
-            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.dogzilla.ConfigCommand();
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.yahboom_dogzilla_lite.ConfigCommand();
             while (reader.pos < end) {
                 let tag = reader.uint32();
                 if (tag === error)
@@ -21725,10 +21725,10 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * Decodes a ConfigCommand message from the specified reader or buffer, length delimited.
          * @function decodeDelimited
-         * @memberof dogzilla.ConfigCommand
+         * @memberof yahboom_dogzilla_lite.ConfigCommand
          * @static
          * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
-         * @returns {dogzilla.ConfigCommand} ConfigCommand
+         * @returns {yahboom_dogzilla_lite.ConfigCommand} ConfigCommand
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
@@ -21741,7 +21741,7 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * Verifies a ConfigCommand message.
          * @function verify
-         * @memberof dogzilla.ConfigCommand
+         * @memberof yahboom_dogzilla_lite.ConfigCommand
          * @static
          * @param {Object.<string,*>} message Plain object to verify
          * @returns {string|null} `null` if valid, otherwise the reason why it is not
@@ -21791,19 +21791,19 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * Creates a ConfigCommand message from a plain object. Also converts values to their respective internal types.
          * @function fromObject
-         * @memberof dogzilla.ConfigCommand
+         * @memberof yahboom_dogzilla_lite.ConfigCommand
          * @static
          * @param {Object.<string,*>} object Plain object
-         * @returns {dogzilla.ConfigCommand} ConfigCommand
+         * @returns {yahboom_dogzilla_lite.ConfigCommand} ConfigCommand
          */
         ConfigCommand.fromObject = function fromObject(object, long) {
-            if (object instanceof $root.dogzilla.ConfigCommand)
+            if (object instanceof $root.yahboom_dogzilla_lite.ConfigCommand)
                 return object;
             if (long === undefined)
                 long = 0;
             if (long > $util.recursionLimit)
                 throw Error("maximum nesting depth exceeded");
-            let message = new $root.dogzilla.ConfigCommand();
+            let message = new $root.yahboom_dogzilla_lite.ConfigCommand();
             switch (object.performanceMode) {
             default:
                 if (typeof object.performanceMode === "number") {
@@ -21870,9 +21870,9 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * Creates a plain object from a ConfigCommand message. Also converts values to other types if specified.
          * @function toObject
-         * @memberof dogzilla.ConfigCommand
+         * @memberof yahboom_dogzilla_lite.ConfigCommand
          * @static
-         * @param {dogzilla.ConfigCommand} message ConfigCommand
+         * @param {yahboom_dogzilla_lite.ConfigCommand} message ConfigCommand
          * @param {$protobuf.IConversionOptions} [options] Conversion options
          * @returns {Object.<string,*>} Plain object
          */
@@ -21888,11 +21888,11 @@ export const dogzilla = $root.dogzilla = (() => {
                 object.bluetoothName = "";
             }
             if (message.performanceMode != null && message.hasOwnProperty("performanceMode"))
-                object.performanceMode = options.enums === String ? $root.dogzilla.PerformanceMode[message.performanceMode] === undefined ? message.performanceMode : $root.dogzilla.PerformanceMode[message.performanceMode] : message.performanceMode;
+                object.performanceMode = options.enums === String ? $root.yahboom_dogzilla_lite.PerformanceMode[message.performanceMode] === undefined ? message.performanceMode : $root.yahboom_dogzilla_lite.PerformanceMode[message.performanceMode] : message.performanceMode;
             if (message.gait != null && message.hasOwnProperty("gait"))
-                object.gait = options.enums === String ? $root.dogzilla.GaitType[message.gait] === undefined ? message.gait : $root.dogzilla.GaitType[message.gait] : message.gait;
+                object.gait = options.enums === String ? $root.yahboom_dogzilla_lite.GaitType[message.gait] === undefined ? message.gait : $root.yahboom_dogzilla_lite.GaitType[message.gait] : message.gait;
             if (message.imuMode != null && message.hasOwnProperty("imuMode"))
-                object.imuMode = options.enums === String ? $root.dogzilla.ImuMode[message.imuMode] === undefined ? message.imuMode : $root.dogzilla.ImuMode[message.imuMode] : message.imuMode;
+                object.imuMode = options.enums === String ? $root.yahboom_dogzilla_lite.ImuMode[message.imuMode] === undefined ? message.imuMode : $root.yahboom_dogzilla_lite.ImuMode[message.imuMode] : message.imuMode;
             if (message.enableFeedback != null && message.hasOwnProperty("enableFeedback"))
                 object.enableFeedback = message.enableFeedback;
             if (message.bluetoothName != null && message.hasOwnProperty("bluetoothName"))
@@ -21903,7 +21903,7 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * Converts this ConfigCommand to JSON.
          * @function toJSON
-         * @memberof dogzilla.ConfigCommand
+         * @memberof yahboom_dogzilla_lite.ConfigCommand
          * @instance
          * @returns {Object.<string,*>} JSON object
          */
@@ -21914,7 +21914,7 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * Gets the default type url for ConfigCommand
          * @function getTypeUrl
-         * @memberof dogzilla.ConfigCommand
+         * @memberof yahboom_dogzilla_lite.ConfigCommand
          * @static
          * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
          * @returns {string} The default type url
@@ -21923,37 +21923,37 @@ export const dogzilla = $root.dogzilla = (() => {
             if (typeUrlPrefix === undefined) {
                 typeUrlPrefix = "type.googleapis.com";
             }
-            return typeUrlPrefix + "/dogzilla.ConfigCommand";
+            return typeUrlPrefix + "/yahboom_dogzilla_lite.ConfigCommand";
         };
 
         return ConfigCommand;
     })();
 
-    dogzilla.Command = (function() {
+    yahboom_dogzilla_lite.Command = (function() {
 
         /**
          * Properties of a Command.
-         * @memberof dogzilla
+         * @memberof yahboom_dogzilla_lite
          * @interface ICommand
          * @property {string|null} [targetDeviceSerial] Command targetDeviceSerial
-         * @property {dogzilla.IServoCommand|null} [servo] Command servo
-         * @property {dogzilla.IServoSpeedCommand|null} [servoSpeed] Command servoSpeed
-         * @property {dogzilla.ICalibrationCommand|null} [calibration] Command calibration
-         * @property {dogzilla.IArmCommand|null} [arm] Command arm
-         * @property {dogzilla.IIoCommand|null} [io] Command io
-         * @property {dogzilla.IConfigCommand|null} [config] Command config
-         * @property {dogzilla.ILedCommand|null} [led] Command led
-         * @property {dogzilla.IActionCommand|null} [action] Command action
-         * @property {dogzilla.IMovementCommand|null} [movement] Command movement
+         * @property {yahboom_dogzilla_lite.IServoCommand|null} [servo] Command servo
+         * @property {yahboom_dogzilla_lite.IServoSpeedCommand|null} [servoSpeed] Command servoSpeed
+         * @property {yahboom_dogzilla_lite.ICalibrationCommand|null} [calibration] Command calibration
+         * @property {yahboom_dogzilla_lite.IArmCommand|null} [arm] Command arm
+         * @property {yahboom_dogzilla_lite.IIoCommand|null} [io] Command io
+         * @property {yahboom_dogzilla_lite.IConfigCommand|null} [config] Command config
+         * @property {yahboom_dogzilla_lite.ILedCommand|null} [led] Command led
+         * @property {yahboom_dogzilla_lite.IActionCommand|null} [action] Command action
+         * @property {yahboom_dogzilla_lite.IMovementCommand|null} [movement] Command movement
          */
 
         /**
          * Constructs a new Command.
-         * @memberof dogzilla
+         * @memberof yahboom_dogzilla_lite
          * @classdesc Represents a Command.
          * @implements ICommand
          * @constructor
-         * @param {dogzilla.ICommand=} [properties] Properties to set
+         * @param {yahboom_dogzilla_lite.ICommand=} [properties] Properties to set
          */
         function Command(properties) {
             if (properties)
@@ -21965,79 +21965,79 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * Command targetDeviceSerial.
          * @member {string} targetDeviceSerial
-         * @memberof dogzilla.Command
+         * @memberof yahboom_dogzilla_lite.Command
          * @instance
          */
         Command.prototype.targetDeviceSerial = "";
 
         /**
          * Command servo.
-         * @member {dogzilla.IServoCommand|null|undefined} servo
-         * @memberof dogzilla.Command
+         * @member {yahboom_dogzilla_lite.IServoCommand|null|undefined} servo
+         * @memberof yahboom_dogzilla_lite.Command
          * @instance
          */
         Command.prototype.servo = null;
 
         /**
          * Command servoSpeed.
-         * @member {dogzilla.IServoSpeedCommand|null|undefined} servoSpeed
-         * @memberof dogzilla.Command
+         * @member {yahboom_dogzilla_lite.IServoSpeedCommand|null|undefined} servoSpeed
+         * @memberof yahboom_dogzilla_lite.Command
          * @instance
          */
         Command.prototype.servoSpeed = null;
 
         /**
          * Command calibration.
-         * @member {dogzilla.ICalibrationCommand|null|undefined} calibration
-         * @memberof dogzilla.Command
+         * @member {yahboom_dogzilla_lite.ICalibrationCommand|null|undefined} calibration
+         * @memberof yahboom_dogzilla_lite.Command
          * @instance
          */
         Command.prototype.calibration = null;
 
         /**
          * Command arm.
-         * @member {dogzilla.IArmCommand|null|undefined} arm
-         * @memberof dogzilla.Command
+         * @member {yahboom_dogzilla_lite.IArmCommand|null|undefined} arm
+         * @memberof yahboom_dogzilla_lite.Command
          * @instance
          */
         Command.prototype.arm = null;
 
         /**
          * Command io.
-         * @member {dogzilla.IIoCommand|null|undefined} io
-         * @memberof dogzilla.Command
+         * @member {yahboom_dogzilla_lite.IIoCommand|null|undefined} io
+         * @memberof yahboom_dogzilla_lite.Command
          * @instance
          */
         Command.prototype.io = null;
 
         /**
          * Command config.
-         * @member {dogzilla.IConfigCommand|null|undefined} config
-         * @memberof dogzilla.Command
+         * @member {yahboom_dogzilla_lite.IConfigCommand|null|undefined} config
+         * @memberof yahboom_dogzilla_lite.Command
          * @instance
          */
         Command.prototype.config = null;
 
         /**
          * Command led.
-         * @member {dogzilla.ILedCommand|null|undefined} led
-         * @memberof dogzilla.Command
+         * @member {yahboom_dogzilla_lite.ILedCommand|null|undefined} led
+         * @memberof yahboom_dogzilla_lite.Command
          * @instance
          */
         Command.prototype.led = null;
 
         /**
          * Command action.
-         * @member {dogzilla.IActionCommand|null|undefined} action
-         * @memberof dogzilla.Command
+         * @member {yahboom_dogzilla_lite.IActionCommand|null|undefined} action
+         * @memberof yahboom_dogzilla_lite.Command
          * @instance
          */
         Command.prototype.action = null;
 
         /**
          * Command movement.
-         * @member {dogzilla.IMovementCommand|null|undefined} movement
-         * @memberof dogzilla.Command
+         * @member {yahboom_dogzilla_lite.IMovementCommand|null|undefined} movement
+         * @memberof yahboom_dogzilla_lite.Command
          * @instance
          */
         Command.prototype.movement = null;
@@ -22045,21 +22045,21 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * Creates a new Command instance using the specified properties.
          * @function create
-         * @memberof dogzilla.Command
+         * @memberof yahboom_dogzilla_lite.Command
          * @static
-         * @param {dogzilla.ICommand=} [properties] Properties to set
-         * @returns {dogzilla.Command} Command instance
+         * @param {yahboom_dogzilla_lite.ICommand=} [properties] Properties to set
+         * @returns {yahboom_dogzilla_lite.Command} Command instance
          */
         Command.create = function create(properties) {
             return new Command(properties);
         };
 
         /**
-         * Encodes the specified Command message. Does not implicitly {@link dogzilla.Command.verify|verify} messages.
+         * Encodes the specified Command message. Does not implicitly {@link yahboom_dogzilla_lite.Command.verify|verify} messages.
          * @function encode
-         * @memberof dogzilla.Command
+         * @memberof yahboom_dogzilla_lite.Command
          * @static
-         * @param {dogzilla.ICommand} message Command message or plain object to encode
+         * @param {yahboom_dogzilla_lite.ICommand} message Command message or plain object to encode
          * @param {$protobuf.Writer} [writer] Writer to encode to
          * @returns {$protobuf.Writer} Writer
          */
@@ -22069,32 +22069,32 @@ export const dogzilla = $root.dogzilla = (() => {
             if (message.targetDeviceSerial != null && Object.hasOwnProperty.call(message, "targetDeviceSerial"))
                 writer.uint32(/* id 1, wireType 2 =*/10).string(message.targetDeviceSerial);
             if (message.servo != null && Object.hasOwnProperty.call(message, "servo"))
-                $root.dogzilla.ServoCommand.encode(message.servo, writer.uint32(/* id 10, wireType 2 =*/82).fork()).ldelim();
+                $root.yahboom_dogzilla_lite.ServoCommand.encode(message.servo, writer.uint32(/* id 10, wireType 2 =*/82).fork()).ldelim();
             if (message.servoSpeed != null && Object.hasOwnProperty.call(message, "servoSpeed"))
-                $root.dogzilla.ServoSpeedCommand.encode(message.servoSpeed, writer.uint32(/* id 11, wireType 2 =*/90).fork()).ldelim();
+                $root.yahboom_dogzilla_lite.ServoSpeedCommand.encode(message.servoSpeed, writer.uint32(/* id 11, wireType 2 =*/90).fork()).ldelim();
             if (message.calibration != null && Object.hasOwnProperty.call(message, "calibration"))
-                $root.dogzilla.CalibrationCommand.encode(message.calibration, writer.uint32(/* id 12, wireType 2 =*/98).fork()).ldelim();
+                $root.yahboom_dogzilla_lite.CalibrationCommand.encode(message.calibration, writer.uint32(/* id 12, wireType 2 =*/98).fork()).ldelim();
             if (message.arm != null && Object.hasOwnProperty.call(message, "arm"))
-                $root.dogzilla.ArmCommand.encode(message.arm, writer.uint32(/* id 13, wireType 2 =*/106).fork()).ldelim();
+                $root.yahboom_dogzilla_lite.ArmCommand.encode(message.arm, writer.uint32(/* id 13, wireType 2 =*/106).fork()).ldelim();
             if (message.io != null && Object.hasOwnProperty.call(message, "io"))
-                $root.dogzilla.IoCommand.encode(message.io, writer.uint32(/* id 14, wireType 2 =*/114).fork()).ldelim();
+                $root.yahboom_dogzilla_lite.IoCommand.encode(message.io, writer.uint32(/* id 14, wireType 2 =*/114).fork()).ldelim();
             if (message.config != null && Object.hasOwnProperty.call(message, "config"))
-                $root.dogzilla.ConfigCommand.encode(message.config, writer.uint32(/* id 15, wireType 2 =*/122).fork()).ldelim();
+                $root.yahboom_dogzilla_lite.ConfigCommand.encode(message.config, writer.uint32(/* id 15, wireType 2 =*/122).fork()).ldelim();
             if (message.led != null && Object.hasOwnProperty.call(message, "led"))
-                $root.dogzilla.LedCommand.encode(message.led, writer.uint32(/* id 16, wireType 2 =*/130).fork()).ldelim();
+                $root.yahboom_dogzilla_lite.LedCommand.encode(message.led, writer.uint32(/* id 16, wireType 2 =*/130).fork()).ldelim();
             if (message.action != null && Object.hasOwnProperty.call(message, "action"))
-                $root.dogzilla.ActionCommand.encode(message.action, writer.uint32(/* id 17, wireType 2 =*/138).fork()).ldelim();
+                $root.yahboom_dogzilla_lite.ActionCommand.encode(message.action, writer.uint32(/* id 17, wireType 2 =*/138).fork()).ldelim();
             if (message.movement != null && Object.hasOwnProperty.call(message, "movement"))
-                $root.dogzilla.MovementCommand.encode(message.movement, writer.uint32(/* id 18, wireType 2 =*/146).fork()).ldelim();
+                $root.yahboom_dogzilla_lite.MovementCommand.encode(message.movement, writer.uint32(/* id 18, wireType 2 =*/146).fork()).ldelim();
             return writer;
         };
 
         /**
-         * Encodes the specified Command message, length delimited. Does not implicitly {@link dogzilla.Command.verify|verify} messages.
+         * Encodes the specified Command message, length delimited. Does not implicitly {@link yahboom_dogzilla_lite.Command.verify|verify} messages.
          * @function encodeDelimited
-         * @memberof dogzilla.Command
+         * @memberof yahboom_dogzilla_lite.Command
          * @static
-         * @param {dogzilla.ICommand} message Command message or plain object to encode
+         * @param {yahboom_dogzilla_lite.ICommand} message Command message or plain object to encode
          * @param {$protobuf.Writer} [writer] Writer to encode to
          * @returns {$protobuf.Writer} Writer
          */
@@ -22105,11 +22105,11 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * Decodes a Command message from the specified reader or buffer.
          * @function decode
-         * @memberof dogzilla.Command
+         * @memberof yahboom_dogzilla_lite.Command
          * @static
          * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
          * @param {number} [length] Message length if known beforehand
-         * @returns {dogzilla.Command} Command
+         * @returns {yahboom_dogzilla_lite.Command} Command
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
@@ -22120,7 +22120,7 @@ export const dogzilla = $root.dogzilla = (() => {
                 long = 0;
             if (long > $Reader.recursionLimit)
                 throw Error("maximum nesting depth exceeded");
-            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.dogzilla.Command();
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.yahboom_dogzilla_lite.Command();
             while (reader.pos < end) {
                 let tag = reader.uint32();
                 if (tag === error)
@@ -22131,39 +22131,39 @@ export const dogzilla = $root.dogzilla = (() => {
                         break;
                     }
                 case 10: {
-                        message.servo = $root.dogzilla.ServoCommand.decode(reader, reader.uint32(), undefined, long + 1);
+                        message.servo = $root.yahboom_dogzilla_lite.ServoCommand.decode(reader, reader.uint32(), undefined, long + 1);
                         break;
                     }
                 case 11: {
-                        message.servoSpeed = $root.dogzilla.ServoSpeedCommand.decode(reader, reader.uint32(), undefined, long + 1);
+                        message.servoSpeed = $root.yahboom_dogzilla_lite.ServoSpeedCommand.decode(reader, reader.uint32(), undefined, long + 1);
                         break;
                     }
                 case 12: {
-                        message.calibration = $root.dogzilla.CalibrationCommand.decode(reader, reader.uint32(), undefined, long + 1);
+                        message.calibration = $root.yahboom_dogzilla_lite.CalibrationCommand.decode(reader, reader.uint32(), undefined, long + 1);
                         break;
                     }
                 case 13: {
-                        message.arm = $root.dogzilla.ArmCommand.decode(reader, reader.uint32(), undefined, long + 1);
+                        message.arm = $root.yahboom_dogzilla_lite.ArmCommand.decode(reader, reader.uint32(), undefined, long + 1);
                         break;
                     }
                 case 14: {
-                        message.io = $root.dogzilla.IoCommand.decode(reader, reader.uint32(), undefined, long + 1);
+                        message.io = $root.yahboom_dogzilla_lite.IoCommand.decode(reader, reader.uint32(), undefined, long + 1);
                         break;
                     }
                 case 15: {
-                        message.config = $root.dogzilla.ConfigCommand.decode(reader, reader.uint32(), undefined, long + 1);
+                        message.config = $root.yahboom_dogzilla_lite.ConfigCommand.decode(reader, reader.uint32(), undefined, long + 1);
                         break;
                     }
                 case 16: {
-                        message.led = $root.dogzilla.LedCommand.decode(reader, reader.uint32(), undefined, long + 1);
+                        message.led = $root.yahboom_dogzilla_lite.LedCommand.decode(reader, reader.uint32(), undefined, long + 1);
                         break;
                     }
                 case 17: {
-                        message.action = $root.dogzilla.ActionCommand.decode(reader, reader.uint32(), undefined, long + 1);
+                        message.action = $root.yahboom_dogzilla_lite.ActionCommand.decode(reader, reader.uint32(), undefined, long + 1);
                         break;
                     }
                 case 18: {
-                        message.movement = $root.dogzilla.MovementCommand.decode(reader, reader.uint32(), undefined, long + 1);
+                        message.movement = $root.yahboom_dogzilla_lite.MovementCommand.decode(reader, reader.uint32(), undefined, long + 1);
                         break;
                     }
                 default:
@@ -22177,10 +22177,10 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * Decodes a Command message from the specified reader or buffer, length delimited.
          * @function decodeDelimited
-         * @memberof dogzilla.Command
+         * @memberof yahboom_dogzilla_lite.Command
          * @static
          * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
-         * @returns {dogzilla.Command} Command
+         * @returns {yahboom_dogzilla_lite.Command} Command
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
@@ -22193,7 +22193,7 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * Verifies a Command message.
          * @function verify
-         * @memberof dogzilla.Command
+         * @memberof yahboom_dogzilla_lite.Command
          * @static
          * @param {Object.<string,*>} message Plain object to verify
          * @returns {string|null} `null` if valid, otherwise the reason why it is not
@@ -22209,47 +22209,47 @@ export const dogzilla = $root.dogzilla = (() => {
                 if (!$util.isString(message.targetDeviceSerial))
                     return "targetDeviceSerial: string expected";
             if (message.servo != null && message.hasOwnProperty("servo")) {
-                let error = $root.dogzilla.ServoCommand.verify(message.servo, long + 1);
+                let error = $root.yahboom_dogzilla_lite.ServoCommand.verify(message.servo, long + 1);
                 if (error)
                     return "servo." + error;
             }
             if (message.servoSpeed != null && message.hasOwnProperty("servoSpeed")) {
-                let error = $root.dogzilla.ServoSpeedCommand.verify(message.servoSpeed, long + 1);
+                let error = $root.yahboom_dogzilla_lite.ServoSpeedCommand.verify(message.servoSpeed, long + 1);
                 if (error)
                     return "servoSpeed." + error;
             }
             if (message.calibration != null && message.hasOwnProperty("calibration")) {
-                let error = $root.dogzilla.CalibrationCommand.verify(message.calibration, long + 1);
+                let error = $root.yahboom_dogzilla_lite.CalibrationCommand.verify(message.calibration, long + 1);
                 if (error)
                     return "calibration." + error;
             }
             if (message.arm != null && message.hasOwnProperty("arm")) {
-                let error = $root.dogzilla.ArmCommand.verify(message.arm, long + 1);
+                let error = $root.yahboom_dogzilla_lite.ArmCommand.verify(message.arm, long + 1);
                 if (error)
                     return "arm." + error;
             }
             if (message.io != null && message.hasOwnProperty("io")) {
-                let error = $root.dogzilla.IoCommand.verify(message.io, long + 1);
+                let error = $root.yahboom_dogzilla_lite.IoCommand.verify(message.io, long + 1);
                 if (error)
                     return "io." + error;
             }
             if (message.config != null && message.hasOwnProperty("config")) {
-                let error = $root.dogzilla.ConfigCommand.verify(message.config, long + 1);
+                let error = $root.yahboom_dogzilla_lite.ConfigCommand.verify(message.config, long + 1);
                 if (error)
                     return "config." + error;
             }
             if (message.led != null && message.hasOwnProperty("led")) {
-                let error = $root.dogzilla.LedCommand.verify(message.led, long + 1);
+                let error = $root.yahboom_dogzilla_lite.LedCommand.verify(message.led, long + 1);
                 if (error)
                     return "led." + error;
             }
             if (message.action != null && message.hasOwnProperty("action")) {
-                let error = $root.dogzilla.ActionCommand.verify(message.action, long + 1);
+                let error = $root.yahboom_dogzilla_lite.ActionCommand.verify(message.action, long + 1);
                 if (error)
                     return "action." + error;
             }
             if (message.movement != null && message.hasOwnProperty("movement")) {
-                let error = $root.dogzilla.MovementCommand.verify(message.movement, long + 1);
+                let error = $root.yahboom_dogzilla_lite.MovementCommand.verify(message.movement, long + 1);
                 if (error)
                     return "movement." + error;
             }
@@ -22259,65 +22259,65 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * Creates a Command message from a plain object. Also converts values to their respective internal types.
          * @function fromObject
-         * @memberof dogzilla.Command
+         * @memberof yahboom_dogzilla_lite.Command
          * @static
          * @param {Object.<string,*>} object Plain object
-         * @returns {dogzilla.Command} Command
+         * @returns {yahboom_dogzilla_lite.Command} Command
          */
         Command.fromObject = function fromObject(object, long) {
-            if (object instanceof $root.dogzilla.Command)
+            if (object instanceof $root.yahboom_dogzilla_lite.Command)
                 return object;
             if (long === undefined)
                 long = 0;
             if (long > $util.recursionLimit)
                 throw Error("maximum nesting depth exceeded");
-            let message = new $root.dogzilla.Command();
+            let message = new $root.yahboom_dogzilla_lite.Command();
             if (object.targetDeviceSerial != null)
                 message.targetDeviceSerial = String(object.targetDeviceSerial);
             if (object.servo != null) {
                 if (typeof object.servo !== "object")
-                    throw TypeError(".dogzilla.Command.servo: object expected");
-                message.servo = $root.dogzilla.ServoCommand.fromObject(object.servo, long + 1);
+                    throw TypeError(".yahboom_dogzilla_lite.Command.servo: object expected");
+                message.servo = $root.yahboom_dogzilla_lite.ServoCommand.fromObject(object.servo, long + 1);
             }
             if (object.servoSpeed != null) {
                 if (typeof object.servoSpeed !== "object")
-                    throw TypeError(".dogzilla.Command.servoSpeed: object expected");
-                message.servoSpeed = $root.dogzilla.ServoSpeedCommand.fromObject(object.servoSpeed, long + 1);
+                    throw TypeError(".yahboom_dogzilla_lite.Command.servoSpeed: object expected");
+                message.servoSpeed = $root.yahboom_dogzilla_lite.ServoSpeedCommand.fromObject(object.servoSpeed, long + 1);
             }
             if (object.calibration != null) {
                 if (typeof object.calibration !== "object")
-                    throw TypeError(".dogzilla.Command.calibration: object expected");
-                message.calibration = $root.dogzilla.CalibrationCommand.fromObject(object.calibration, long + 1);
+                    throw TypeError(".yahboom_dogzilla_lite.Command.calibration: object expected");
+                message.calibration = $root.yahboom_dogzilla_lite.CalibrationCommand.fromObject(object.calibration, long + 1);
             }
             if (object.arm != null) {
                 if (typeof object.arm !== "object")
-                    throw TypeError(".dogzilla.Command.arm: object expected");
-                message.arm = $root.dogzilla.ArmCommand.fromObject(object.arm, long + 1);
+                    throw TypeError(".yahboom_dogzilla_lite.Command.arm: object expected");
+                message.arm = $root.yahboom_dogzilla_lite.ArmCommand.fromObject(object.arm, long + 1);
             }
             if (object.io != null) {
                 if (typeof object.io !== "object")
-                    throw TypeError(".dogzilla.Command.io: object expected");
-                message.io = $root.dogzilla.IoCommand.fromObject(object.io, long + 1);
+                    throw TypeError(".yahboom_dogzilla_lite.Command.io: object expected");
+                message.io = $root.yahboom_dogzilla_lite.IoCommand.fromObject(object.io, long + 1);
             }
             if (object.config != null) {
                 if (typeof object.config !== "object")
-                    throw TypeError(".dogzilla.Command.config: object expected");
-                message.config = $root.dogzilla.ConfigCommand.fromObject(object.config, long + 1);
+                    throw TypeError(".yahboom_dogzilla_lite.Command.config: object expected");
+                message.config = $root.yahboom_dogzilla_lite.ConfigCommand.fromObject(object.config, long + 1);
             }
             if (object.led != null) {
                 if (typeof object.led !== "object")
-                    throw TypeError(".dogzilla.Command.led: object expected");
-                message.led = $root.dogzilla.LedCommand.fromObject(object.led, long + 1);
+                    throw TypeError(".yahboom_dogzilla_lite.Command.led: object expected");
+                message.led = $root.yahboom_dogzilla_lite.LedCommand.fromObject(object.led, long + 1);
             }
             if (object.action != null) {
                 if (typeof object.action !== "object")
-                    throw TypeError(".dogzilla.Command.action: object expected");
-                message.action = $root.dogzilla.ActionCommand.fromObject(object.action, long + 1);
+                    throw TypeError(".yahboom_dogzilla_lite.Command.action: object expected");
+                message.action = $root.yahboom_dogzilla_lite.ActionCommand.fromObject(object.action, long + 1);
             }
             if (object.movement != null) {
                 if (typeof object.movement !== "object")
-                    throw TypeError(".dogzilla.Command.movement: object expected");
-                message.movement = $root.dogzilla.MovementCommand.fromObject(object.movement, long + 1);
+                    throw TypeError(".yahboom_dogzilla_lite.Command.movement: object expected");
+                message.movement = $root.yahboom_dogzilla_lite.MovementCommand.fromObject(object.movement, long + 1);
             }
             return message;
         };
@@ -22325,9 +22325,9 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * Creates a plain object from a Command message. Also converts values to other types if specified.
          * @function toObject
-         * @memberof dogzilla.Command
+         * @memberof yahboom_dogzilla_lite.Command
          * @static
-         * @param {dogzilla.Command} message Command
+         * @param {yahboom_dogzilla_lite.Command} message Command
          * @param {$protobuf.IConversionOptions} [options] Conversion options
          * @returns {Object.<string,*>} Plain object
          */
@@ -22350,30 +22350,30 @@ export const dogzilla = $root.dogzilla = (() => {
             if (message.targetDeviceSerial != null && message.hasOwnProperty("targetDeviceSerial"))
                 object.targetDeviceSerial = message.targetDeviceSerial;
             if (message.servo != null && message.hasOwnProperty("servo"))
-                object.servo = $root.dogzilla.ServoCommand.toObject(message.servo, options);
+                object.servo = $root.yahboom_dogzilla_lite.ServoCommand.toObject(message.servo, options);
             if (message.servoSpeed != null && message.hasOwnProperty("servoSpeed"))
-                object.servoSpeed = $root.dogzilla.ServoSpeedCommand.toObject(message.servoSpeed, options);
+                object.servoSpeed = $root.yahboom_dogzilla_lite.ServoSpeedCommand.toObject(message.servoSpeed, options);
             if (message.calibration != null && message.hasOwnProperty("calibration"))
-                object.calibration = $root.dogzilla.CalibrationCommand.toObject(message.calibration, options);
+                object.calibration = $root.yahboom_dogzilla_lite.CalibrationCommand.toObject(message.calibration, options);
             if (message.arm != null && message.hasOwnProperty("arm"))
-                object.arm = $root.dogzilla.ArmCommand.toObject(message.arm, options);
+                object.arm = $root.yahboom_dogzilla_lite.ArmCommand.toObject(message.arm, options);
             if (message.io != null && message.hasOwnProperty("io"))
-                object.io = $root.dogzilla.IoCommand.toObject(message.io, options);
+                object.io = $root.yahboom_dogzilla_lite.IoCommand.toObject(message.io, options);
             if (message.config != null && message.hasOwnProperty("config"))
-                object.config = $root.dogzilla.ConfigCommand.toObject(message.config, options);
+                object.config = $root.yahboom_dogzilla_lite.ConfigCommand.toObject(message.config, options);
             if (message.led != null && message.hasOwnProperty("led"))
-                object.led = $root.dogzilla.LedCommand.toObject(message.led, options);
+                object.led = $root.yahboom_dogzilla_lite.LedCommand.toObject(message.led, options);
             if (message.action != null && message.hasOwnProperty("action"))
-                object.action = $root.dogzilla.ActionCommand.toObject(message.action, options);
+                object.action = $root.yahboom_dogzilla_lite.ActionCommand.toObject(message.action, options);
             if (message.movement != null && message.hasOwnProperty("movement"))
-                object.movement = $root.dogzilla.MovementCommand.toObject(message.movement, options);
+                object.movement = $root.yahboom_dogzilla_lite.MovementCommand.toObject(message.movement, options);
             return object;
         };
 
         /**
          * Converts this Command to JSON.
          * @function toJSON
-         * @memberof dogzilla.Command
+         * @memberof yahboom_dogzilla_lite.Command
          * @instance
          * @returns {Object.<string,*>} JSON object
          */
@@ -22384,7 +22384,7 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * Gets the default type url for Command
          * @function getTypeUrl
-         * @memberof dogzilla.Command
+         * @memberof yahboom_dogzilla_lite.Command
          * @static
          * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
          * @returns {string} The default type url
@@ -22393,33 +22393,33 @@ export const dogzilla = $root.dogzilla = (() => {
             if (typeUrlPrefix === undefined) {
                 typeUrlPrefix = "type.googleapis.com";
             }
-            return typeUrlPrefix + "/dogzilla.Command";
+            return typeUrlPrefix + "/yahboom_dogzilla_lite.Command";
         };
 
         return Command;
     })();
 
-    dogzilla.TxEnvelope = (function() {
+    yahboom_dogzilla_lite.TxEnvelope = (function() {
 
         /**
          * Properties of a TxEnvelope.
-         * @memberof dogzilla
+         * @memberof yahboom_dogzilla_lite
          * @interface ITxEnvelope
          * @property {Long|null} [monotonicStampNs] TxEnvelope monotonicStampNs
          * @property {Long|null} [localStampNs] TxEnvelope localStampNs
          * @property {Long|null} [appStartId] TxEnvelope appStartId
          * @property {Uint8Array|null} [commandId] TxEnvelope commandId
          * @property {string|null} [targetDeviceSerial] TxEnvelope targetDeviceSerial
-         * @property {dogzilla.ICommand|null} [command] TxEnvelope command
+         * @property {yahboom_dogzilla_lite.ICommand|null} [command] TxEnvelope command
          */
 
         /**
          * Constructs a new TxEnvelope.
-         * @memberof dogzilla
+         * @memberof yahboom_dogzilla_lite
          * @classdesc Represents a TxEnvelope.
          * @implements ITxEnvelope
          * @constructor
-         * @param {dogzilla.ITxEnvelope=} [properties] Properties to set
+         * @param {yahboom_dogzilla_lite.ITxEnvelope=} [properties] Properties to set
          */
         function TxEnvelope(properties) {
             if (properties)
@@ -22431,7 +22431,7 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * TxEnvelope monotonicStampNs.
          * @member {Long} monotonicStampNs
-         * @memberof dogzilla.TxEnvelope
+         * @memberof yahboom_dogzilla_lite.TxEnvelope
          * @instance
          */
         TxEnvelope.prototype.monotonicStampNs = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
@@ -22439,7 +22439,7 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * TxEnvelope localStampNs.
          * @member {Long} localStampNs
-         * @memberof dogzilla.TxEnvelope
+         * @memberof yahboom_dogzilla_lite.TxEnvelope
          * @instance
          */
         TxEnvelope.prototype.localStampNs = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
@@ -22447,7 +22447,7 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * TxEnvelope appStartId.
          * @member {Long} appStartId
-         * @memberof dogzilla.TxEnvelope
+         * @memberof yahboom_dogzilla_lite.TxEnvelope
          * @instance
          */
         TxEnvelope.prototype.appStartId = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
@@ -22455,7 +22455,7 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * TxEnvelope commandId.
          * @member {Uint8Array} commandId
-         * @memberof dogzilla.TxEnvelope
+         * @memberof yahboom_dogzilla_lite.TxEnvelope
          * @instance
          */
         TxEnvelope.prototype.commandId = $util.newBuffer([]);
@@ -22463,15 +22463,15 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * TxEnvelope targetDeviceSerial.
          * @member {string} targetDeviceSerial
-         * @memberof dogzilla.TxEnvelope
+         * @memberof yahboom_dogzilla_lite.TxEnvelope
          * @instance
          */
         TxEnvelope.prototype.targetDeviceSerial = "";
 
         /**
          * TxEnvelope command.
-         * @member {dogzilla.ICommand|null|undefined} command
-         * @memberof dogzilla.TxEnvelope
+         * @member {yahboom_dogzilla_lite.ICommand|null|undefined} command
+         * @memberof yahboom_dogzilla_lite.TxEnvelope
          * @instance
          */
         TxEnvelope.prototype.command = null;
@@ -22479,21 +22479,21 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * Creates a new TxEnvelope instance using the specified properties.
          * @function create
-         * @memberof dogzilla.TxEnvelope
+         * @memberof yahboom_dogzilla_lite.TxEnvelope
          * @static
-         * @param {dogzilla.ITxEnvelope=} [properties] Properties to set
-         * @returns {dogzilla.TxEnvelope} TxEnvelope instance
+         * @param {yahboom_dogzilla_lite.ITxEnvelope=} [properties] Properties to set
+         * @returns {yahboom_dogzilla_lite.TxEnvelope} TxEnvelope instance
          */
         TxEnvelope.create = function create(properties) {
             return new TxEnvelope(properties);
         };
 
         /**
-         * Encodes the specified TxEnvelope message. Does not implicitly {@link dogzilla.TxEnvelope.verify|verify} messages.
+         * Encodes the specified TxEnvelope message. Does not implicitly {@link yahboom_dogzilla_lite.TxEnvelope.verify|verify} messages.
          * @function encode
-         * @memberof dogzilla.TxEnvelope
+         * @memberof yahboom_dogzilla_lite.TxEnvelope
          * @static
-         * @param {dogzilla.ITxEnvelope} message TxEnvelope message or plain object to encode
+         * @param {yahboom_dogzilla_lite.ITxEnvelope} message TxEnvelope message or plain object to encode
          * @param {$protobuf.Writer} [writer] Writer to encode to
          * @returns {$protobuf.Writer} Writer
          */
@@ -22511,16 +22511,16 @@ export const dogzilla = $root.dogzilla = (() => {
             if (message.targetDeviceSerial != null && Object.hasOwnProperty.call(message, "targetDeviceSerial"))
                 writer.uint32(/* id 5, wireType 2 =*/42).string(message.targetDeviceSerial);
             if (message.command != null && Object.hasOwnProperty.call(message, "command"))
-                $root.dogzilla.Command.encode(message.command, writer.uint32(/* id 10, wireType 2 =*/82).fork()).ldelim();
+                $root.yahboom_dogzilla_lite.Command.encode(message.command, writer.uint32(/* id 10, wireType 2 =*/82).fork()).ldelim();
             return writer;
         };
 
         /**
-         * Encodes the specified TxEnvelope message, length delimited. Does not implicitly {@link dogzilla.TxEnvelope.verify|verify} messages.
+         * Encodes the specified TxEnvelope message, length delimited. Does not implicitly {@link yahboom_dogzilla_lite.TxEnvelope.verify|verify} messages.
          * @function encodeDelimited
-         * @memberof dogzilla.TxEnvelope
+         * @memberof yahboom_dogzilla_lite.TxEnvelope
          * @static
-         * @param {dogzilla.ITxEnvelope} message TxEnvelope message or plain object to encode
+         * @param {yahboom_dogzilla_lite.ITxEnvelope} message TxEnvelope message or plain object to encode
          * @param {$protobuf.Writer} [writer] Writer to encode to
          * @returns {$protobuf.Writer} Writer
          */
@@ -22531,11 +22531,11 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * Decodes a TxEnvelope message from the specified reader or buffer.
          * @function decode
-         * @memberof dogzilla.TxEnvelope
+         * @memberof yahboom_dogzilla_lite.TxEnvelope
          * @static
          * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
          * @param {number} [length] Message length if known beforehand
-         * @returns {dogzilla.TxEnvelope} TxEnvelope
+         * @returns {yahboom_dogzilla_lite.TxEnvelope} TxEnvelope
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
@@ -22546,7 +22546,7 @@ export const dogzilla = $root.dogzilla = (() => {
                 long = 0;
             if (long > $Reader.recursionLimit)
                 throw Error("maximum nesting depth exceeded");
-            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.dogzilla.TxEnvelope();
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.yahboom_dogzilla_lite.TxEnvelope();
             while (reader.pos < end) {
                 let tag = reader.uint32();
                 if (tag === error)
@@ -22573,7 +22573,7 @@ export const dogzilla = $root.dogzilla = (() => {
                         break;
                     }
                 case 10: {
-                        message.command = $root.dogzilla.Command.decode(reader, reader.uint32(), undefined, long + 1);
+                        message.command = $root.yahboom_dogzilla_lite.Command.decode(reader, reader.uint32(), undefined, long + 1);
                         break;
                     }
                 default:
@@ -22587,10 +22587,10 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * Decodes a TxEnvelope message from the specified reader or buffer, length delimited.
          * @function decodeDelimited
-         * @memberof dogzilla.TxEnvelope
+         * @memberof yahboom_dogzilla_lite.TxEnvelope
          * @static
          * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
-         * @returns {dogzilla.TxEnvelope} TxEnvelope
+         * @returns {yahboom_dogzilla_lite.TxEnvelope} TxEnvelope
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
@@ -22603,7 +22603,7 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * Verifies a TxEnvelope message.
          * @function verify
-         * @memberof dogzilla.TxEnvelope
+         * @memberof yahboom_dogzilla_lite.TxEnvelope
          * @static
          * @param {Object.<string,*>} message Plain object to verify
          * @returns {string|null} `null` if valid, otherwise the reason why it is not
@@ -22631,7 +22631,7 @@ export const dogzilla = $root.dogzilla = (() => {
                 if (!$util.isString(message.targetDeviceSerial))
                     return "targetDeviceSerial: string expected";
             if (message.command != null && message.hasOwnProperty("command")) {
-                let error = $root.dogzilla.Command.verify(message.command, long + 1);
+                let error = $root.yahboom_dogzilla_lite.Command.verify(message.command, long + 1);
                 if (error)
                     return "command." + error;
             }
@@ -22641,19 +22641,19 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * Creates a TxEnvelope message from a plain object. Also converts values to their respective internal types.
          * @function fromObject
-         * @memberof dogzilla.TxEnvelope
+         * @memberof yahboom_dogzilla_lite.TxEnvelope
          * @static
          * @param {Object.<string,*>} object Plain object
-         * @returns {dogzilla.TxEnvelope} TxEnvelope
+         * @returns {yahboom_dogzilla_lite.TxEnvelope} TxEnvelope
          */
         TxEnvelope.fromObject = function fromObject(object, long) {
-            if (object instanceof $root.dogzilla.TxEnvelope)
+            if (object instanceof $root.yahboom_dogzilla_lite.TxEnvelope)
                 return object;
             if (long === undefined)
                 long = 0;
             if (long > $util.recursionLimit)
                 throw Error("maximum nesting depth exceeded");
-            let message = new $root.dogzilla.TxEnvelope();
+            let message = new $root.yahboom_dogzilla_lite.TxEnvelope();
             if (object.monotonicStampNs != null)
                 if ($util.Long)
                     (message.monotonicStampNs = $util.Long.fromValue(object.monotonicStampNs)).unsigned = true;
@@ -22690,8 +22690,8 @@ export const dogzilla = $root.dogzilla = (() => {
                 message.targetDeviceSerial = String(object.targetDeviceSerial);
             if (object.command != null) {
                 if (typeof object.command !== "object")
-                    throw TypeError(".dogzilla.TxEnvelope.command: object expected");
-                message.command = $root.dogzilla.Command.fromObject(object.command, long + 1);
+                    throw TypeError(".yahboom_dogzilla_lite.TxEnvelope.command: object expected");
+                message.command = $root.yahboom_dogzilla_lite.Command.fromObject(object.command, long + 1);
             }
             return message;
         };
@@ -22699,9 +22699,9 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * Creates a plain object from a TxEnvelope message. Also converts values to other types if specified.
          * @function toObject
-         * @memberof dogzilla.TxEnvelope
+         * @memberof yahboom_dogzilla_lite.TxEnvelope
          * @static
-         * @param {dogzilla.TxEnvelope} message TxEnvelope
+         * @param {yahboom_dogzilla_lite.TxEnvelope} message TxEnvelope
          * @param {$protobuf.IConversionOptions} [options] Conversion options
          * @returns {Object.<string,*>} Plain object
          */
@@ -22755,14 +22755,14 @@ export const dogzilla = $root.dogzilla = (() => {
             if (message.targetDeviceSerial != null && message.hasOwnProperty("targetDeviceSerial"))
                 object.targetDeviceSerial = message.targetDeviceSerial;
             if (message.command != null && message.hasOwnProperty("command"))
-                object.command = $root.dogzilla.Command.toObject(message.command, options);
+                object.command = $root.yahboom_dogzilla_lite.Command.toObject(message.command, options);
             return object;
         };
 
         /**
          * Converts this TxEnvelope to JSON.
          * @function toJSON
-         * @memberof dogzilla.TxEnvelope
+         * @memberof yahboom_dogzilla_lite.TxEnvelope
          * @instance
          * @returns {Object.<string,*>} JSON object
          */
@@ -22773,7 +22773,7 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * Gets the default type url for TxEnvelope
          * @function getTypeUrl
-         * @memberof dogzilla.TxEnvelope
+         * @memberof yahboom_dogzilla_lite.TxEnvelope
          * @static
          * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
          * @returns {string} The default type url
@@ -22782,36 +22782,36 @@ export const dogzilla = $root.dogzilla = (() => {
             if (typeUrlPrefix === undefined) {
                 typeUrlPrefix = "type.googleapis.com";
             }
-            return typeUrlPrefix + "/dogzilla.TxEnvelope";
+            return typeUrlPrefix + "/yahboom_dogzilla_lite.TxEnvelope";
         };
 
         return TxEnvelope;
     })();
 
-    dogzilla.RxEnvelope = (function() {
+    yahboom_dogzilla_lite.RxEnvelope = (function() {
 
         /**
          * Properties of a RxEnvelope.
-         * @memberof dogzilla
+         * @memberof yahboom_dogzilla_lite
          * @interface IRxEnvelope
          * @property {Long|null} [monotonicStampNs] RxEnvelope monotonicStampNs
          * @property {Long|null} [localStampNs] RxEnvelope localStampNs
          * @property {Long|null} [appStartId] RxEnvelope appStartId
-         * @property {dogzilla.DogzillaSignalType|null} [signalType] RxEnvelope signalType
-         * @property {dogzilla.IDogzillaDevice|null} [device] RxEnvelope device
-         * @property {dogzilla.IDogzillaStatus|null} [status] RxEnvelope status
+         * @property {yahboom_dogzilla_lite.YahboomDogzillaLiteSignalType|null} [signalType] RxEnvelope signalType
+         * @property {yahboom_dogzilla_lite.IYahboomDogzillaLiteDevice|null} [device] RxEnvelope device
+         * @property {yahboom_dogzilla_lite.IYahboomDogzillaLiteStatus|null} [status] RxEnvelope status
          * @property {Uint8Array|null} [data] RxEnvelope data
-         * @property {dogzilla.ITxEnvelope|null} [command] RxEnvelope command
+         * @property {yahboom_dogzilla_lite.ITxEnvelope|null} [command] RxEnvelope command
          * @property {string|null} [errorMessage] RxEnvelope errorMessage
          */
 
         /**
          * Constructs a new RxEnvelope.
-         * @memberof dogzilla
+         * @memberof yahboom_dogzilla_lite
          * @classdesc Represents a RxEnvelope.
          * @implements IRxEnvelope
          * @constructor
-         * @param {dogzilla.IRxEnvelope=} [properties] Properties to set
+         * @param {yahboom_dogzilla_lite.IRxEnvelope=} [properties] Properties to set
          */
         function RxEnvelope(properties) {
             if (properties)
@@ -22823,7 +22823,7 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * RxEnvelope monotonicStampNs.
          * @member {Long} monotonicStampNs
-         * @memberof dogzilla.RxEnvelope
+         * @memberof yahboom_dogzilla_lite.RxEnvelope
          * @instance
          */
         RxEnvelope.prototype.monotonicStampNs = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
@@ -22831,7 +22831,7 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * RxEnvelope localStampNs.
          * @member {Long} localStampNs
-         * @memberof dogzilla.RxEnvelope
+         * @memberof yahboom_dogzilla_lite.RxEnvelope
          * @instance
          */
         RxEnvelope.prototype.localStampNs = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
@@ -22839,31 +22839,31 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * RxEnvelope appStartId.
          * @member {Long} appStartId
-         * @memberof dogzilla.RxEnvelope
+         * @memberof yahboom_dogzilla_lite.RxEnvelope
          * @instance
          */
         RxEnvelope.prototype.appStartId = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
 
         /**
          * RxEnvelope signalType.
-         * @member {dogzilla.DogzillaSignalType} signalType
-         * @memberof dogzilla.RxEnvelope
+         * @member {yahboom_dogzilla_lite.YahboomDogzillaLiteSignalType} signalType
+         * @memberof yahboom_dogzilla_lite.RxEnvelope
          * @instance
          */
         RxEnvelope.prototype.signalType = 0;
 
         /**
          * RxEnvelope device.
-         * @member {dogzilla.IDogzillaDevice|null|undefined} device
-         * @memberof dogzilla.RxEnvelope
+         * @member {yahboom_dogzilla_lite.IYahboomDogzillaLiteDevice|null|undefined} device
+         * @memberof yahboom_dogzilla_lite.RxEnvelope
          * @instance
          */
         RxEnvelope.prototype.device = null;
 
         /**
          * RxEnvelope status.
-         * @member {dogzilla.IDogzillaStatus|null|undefined} status
-         * @memberof dogzilla.RxEnvelope
+         * @member {yahboom_dogzilla_lite.IYahboomDogzillaLiteStatus|null|undefined} status
+         * @memberof yahboom_dogzilla_lite.RxEnvelope
          * @instance
          */
         RxEnvelope.prototype.status = null;
@@ -22871,15 +22871,15 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * RxEnvelope data.
          * @member {Uint8Array} data
-         * @memberof dogzilla.RxEnvelope
+         * @memberof yahboom_dogzilla_lite.RxEnvelope
          * @instance
          */
         RxEnvelope.prototype.data = $util.newBuffer([]);
 
         /**
          * RxEnvelope command.
-         * @member {dogzilla.ITxEnvelope|null|undefined} command
-         * @memberof dogzilla.RxEnvelope
+         * @member {yahboom_dogzilla_lite.ITxEnvelope|null|undefined} command
+         * @memberof yahboom_dogzilla_lite.RxEnvelope
          * @instance
          */
         RxEnvelope.prototype.command = null;
@@ -22887,7 +22887,7 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * RxEnvelope errorMessage.
          * @member {string} errorMessage
-         * @memberof dogzilla.RxEnvelope
+         * @memberof yahboom_dogzilla_lite.RxEnvelope
          * @instance
          */
         RxEnvelope.prototype.errorMessage = "";
@@ -22895,21 +22895,21 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * Creates a new RxEnvelope instance using the specified properties.
          * @function create
-         * @memberof dogzilla.RxEnvelope
+         * @memberof yahboom_dogzilla_lite.RxEnvelope
          * @static
-         * @param {dogzilla.IRxEnvelope=} [properties] Properties to set
-         * @returns {dogzilla.RxEnvelope} RxEnvelope instance
+         * @param {yahboom_dogzilla_lite.IRxEnvelope=} [properties] Properties to set
+         * @returns {yahboom_dogzilla_lite.RxEnvelope} RxEnvelope instance
          */
         RxEnvelope.create = function create(properties) {
             return new RxEnvelope(properties);
         };
 
         /**
-         * Encodes the specified RxEnvelope message. Does not implicitly {@link dogzilla.RxEnvelope.verify|verify} messages.
+         * Encodes the specified RxEnvelope message. Does not implicitly {@link yahboom_dogzilla_lite.RxEnvelope.verify|verify} messages.
          * @function encode
-         * @memberof dogzilla.RxEnvelope
+         * @memberof yahboom_dogzilla_lite.RxEnvelope
          * @static
-         * @param {dogzilla.IRxEnvelope} message RxEnvelope message or plain object to encode
+         * @param {yahboom_dogzilla_lite.IRxEnvelope} message RxEnvelope message or plain object to encode
          * @param {$protobuf.Writer} [writer] Writer to encode to
          * @returns {$protobuf.Writer} Writer
          */
@@ -22925,24 +22925,24 @@ export const dogzilla = $root.dogzilla = (() => {
             if (message.signalType != null && Object.hasOwnProperty.call(message, "signalType"))
                 writer.uint32(/* id 10, wireType 0 =*/80).int32(message.signalType);
             if (message.device != null && Object.hasOwnProperty.call(message, "device"))
-                $root.dogzilla.DogzillaDevice.encode(message.device, writer.uint32(/* id 11, wireType 2 =*/90).fork()).ldelim();
+                $root.yahboom_dogzilla_lite.YahboomDogzillaLiteDevice.encode(message.device, writer.uint32(/* id 11, wireType 2 =*/90).fork()).ldelim();
             if (message.status != null && Object.hasOwnProperty.call(message, "status"))
-                $root.dogzilla.DogzillaStatus.encode(message.status, writer.uint32(/* id 12, wireType 2 =*/98).fork()).ldelim();
+                $root.yahboom_dogzilla_lite.YahboomDogzillaLiteStatus.encode(message.status, writer.uint32(/* id 12, wireType 2 =*/98).fork()).ldelim();
             if (message.data != null && Object.hasOwnProperty.call(message, "data"))
                 writer.uint32(/* id 20, wireType 2 =*/162).bytes(message.data);
             if (message.command != null && Object.hasOwnProperty.call(message, "command"))
-                $root.dogzilla.TxEnvelope.encode(message.command, writer.uint32(/* id 30, wireType 2 =*/242).fork()).ldelim();
+                $root.yahboom_dogzilla_lite.TxEnvelope.encode(message.command, writer.uint32(/* id 30, wireType 2 =*/242).fork()).ldelim();
             if (message.errorMessage != null && Object.hasOwnProperty.call(message, "errorMessage"))
                 writer.uint32(/* id 50, wireType 2 =*/402).string(message.errorMessage);
             return writer;
         };
 
         /**
-         * Encodes the specified RxEnvelope message, length delimited. Does not implicitly {@link dogzilla.RxEnvelope.verify|verify} messages.
+         * Encodes the specified RxEnvelope message, length delimited. Does not implicitly {@link yahboom_dogzilla_lite.RxEnvelope.verify|verify} messages.
          * @function encodeDelimited
-         * @memberof dogzilla.RxEnvelope
+         * @memberof yahboom_dogzilla_lite.RxEnvelope
          * @static
-         * @param {dogzilla.IRxEnvelope} message RxEnvelope message or plain object to encode
+         * @param {yahboom_dogzilla_lite.IRxEnvelope} message RxEnvelope message or plain object to encode
          * @param {$protobuf.Writer} [writer] Writer to encode to
          * @returns {$protobuf.Writer} Writer
          */
@@ -22953,11 +22953,11 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * Decodes a RxEnvelope message from the specified reader or buffer.
          * @function decode
-         * @memberof dogzilla.RxEnvelope
+         * @memberof yahboom_dogzilla_lite.RxEnvelope
          * @static
          * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
          * @param {number} [length] Message length if known beforehand
-         * @returns {dogzilla.RxEnvelope} RxEnvelope
+         * @returns {yahboom_dogzilla_lite.RxEnvelope} RxEnvelope
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
@@ -22968,7 +22968,7 @@ export const dogzilla = $root.dogzilla = (() => {
                 long = 0;
             if (long > $Reader.recursionLimit)
                 throw Error("maximum nesting depth exceeded");
-            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.dogzilla.RxEnvelope();
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.yahboom_dogzilla_lite.RxEnvelope();
             while (reader.pos < end) {
                 let tag = reader.uint32();
                 if (tag === error)
@@ -22991,11 +22991,11 @@ export const dogzilla = $root.dogzilla = (() => {
                         break;
                     }
                 case 11: {
-                        message.device = $root.dogzilla.DogzillaDevice.decode(reader, reader.uint32(), undefined, long + 1);
+                        message.device = $root.yahboom_dogzilla_lite.YahboomDogzillaLiteDevice.decode(reader, reader.uint32(), undefined, long + 1);
                         break;
                     }
                 case 12: {
-                        message.status = $root.dogzilla.DogzillaStatus.decode(reader, reader.uint32(), undefined, long + 1);
+                        message.status = $root.yahboom_dogzilla_lite.YahboomDogzillaLiteStatus.decode(reader, reader.uint32(), undefined, long + 1);
                         break;
                     }
                 case 20: {
@@ -23003,7 +23003,7 @@ export const dogzilla = $root.dogzilla = (() => {
                         break;
                     }
                 case 30: {
-                        message.command = $root.dogzilla.TxEnvelope.decode(reader, reader.uint32(), undefined, long + 1);
+                        message.command = $root.yahboom_dogzilla_lite.TxEnvelope.decode(reader, reader.uint32(), undefined, long + 1);
                         break;
                     }
                 case 50: {
@@ -23021,10 +23021,10 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * Decodes a RxEnvelope message from the specified reader or buffer, length delimited.
          * @function decodeDelimited
-         * @memberof dogzilla.RxEnvelope
+         * @memberof yahboom_dogzilla_lite.RxEnvelope
          * @static
          * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
-         * @returns {dogzilla.RxEnvelope} RxEnvelope
+         * @returns {yahboom_dogzilla_lite.RxEnvelope} RxEnvelope
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
@@ -23037,7 +23037,7 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * Verifies a RxEnvelope message.
          * @function verify
-         * @memberof dogzilla.RxEnvelope
+         * @memberof yahboom_dogzilla_lite.RxEnvelope
          * @static
          * @param {Object.<string,*>} message Plain object to verify
          * @returns {string|null} `null` if valid, otherwise the reason why it is not
@@ -23073,12 +23073,12 @@ export const dogzilla = $root.dogzilla = (() => {
                     break;
                 }
             if (message.device != null && message.hasOwnProperty("device")) {
-                let error = $root.dogzilla.DogzillaDevice.verify(message.device, long + 1);
+                let error = $root.yahboom_dogzilla_lite.YahboomDogzillaLiteDevice.verify(message.device, long + 1);
                 if (error)
                     return "device." + error;
             }
             if (message.status != null && message.hasOwnProperty("status")) {
-                let error = $root.dogzilla.DogzillaStatus.verify(message.status, long + 1);
+                let error = $root.yahboom_dogzilla_lite.YahboomDogzillaLiteStatus.verify(message.status, long + 1);
                 if (error)
                     return "status." + error;
             }
@@ -23086,7 +23086,7 @@ export const dogzilla = $root.dogzilla = (() => {
                 if (!(message.data && typeof message.data.length === "number" || $util.isString(message.data)))
                     return "data: buffer expected";
             if (message.command != null && message.hasOwnProperty("command")) {
-                let error = $root.dogzilla.TxEnvelope.verify(message.command, long + 1);
+                let error = $root.yahboom_dogzilla_lite.TxEnvelope.verify(message.command, long + 1);
                 if (error)
                     return "command." + error;
             }
@@ -23099,19 +23099,19 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * Creates a RxEnvelope message from a plain object. Also converts values to their respective internal types.
          * @function fromObject
-         * @memberof dogzilla.RxEnvelope
+         * @memberof yahboom_dogzilla_lite.RxEnvelope
          * @static
          * @param {Object.<string,*>} object Plain object
-         * @returns {dogzilla.RxEnvelope} RxEnvelope
+         * @returns {yahboom_dogzilla_lite.RxEnvelope} RxEnvelope
          */
         RxEnvelope.fromObject = function fromObject(object, long) {
-            if (object instanceof $root.dogzilla.RxEnvelope)
+            if (object instanceof $root.yahboom_dogzilla_lite.RxEnvelope)
                 return object;
             if (long === undefined)
                 long = 0;
             if (long > $util.recursionLimit)
                 throw Error("maximum nesting depth exceeded");
-            let message = new $root.dogzilla.RxEnvelope();
+            let message = new $root.yahboom_dogzilla_lite.RxEnvelope();
             if (object.monotonicStampNs != null)
                 if ($util.Long)
                     (message.monotonicStampNs = $util.Long.fromValue(object.monotonicStampNs)).unsigned = true;
@@ -23146,48 +23146,48 @@ export const dogzilla = $root.dogzilla = (() => {
                     break;
                 }
                 break;
-            case "DOGZILLA_SIGNAL_TYPE_UNSPECIFIED":
+            case "YAHBOOM_DOGZILLA_LITE_SIGNAL_TYPE_UNSPECIFIED":
             case 0:
                 message.signalType = 0;
                 break;
-            case "DOGZILLA_CONNECTED":
+            case "YAHBOOM_DOGZILLA_LITE_CONNECTED":
             case 1:
                 message.signalType = 1;
                 break;
-            case "DOGZILLA_DISCONNECTED":
+            case "YAHBOOM_DOGZILLA_LITE_DISCONNECTED":
             case 2:
                 message.signalType = 2;
                 break;
-            case "DOGZILLA_STATUS_UPDATE":
+            case "YAHBOOM_DOGZILLA_LITE_STATUS_UPDATE":
             case 3:
                 message.signalType = 3;
                 break;
-            case "DOGZILLA_COMMAND":
+            case "YAHBOOM_DOGZILLA_LITE_COMMAND":
             case 4:
                 message.signalType = 4;
                 break;
-            case "DOGZILLA_COMMAND_SUCCESS":
+            case "YAHBOOM_DOGZILLA_LITE_COMMAND_SUCCESS":
             case 5:
                 message.signalType = 5;
                 break;
-            case "DOGZILLA_COMMAND_FAILED":
+            case "YAHBOOM_DOGZILLA_LITE_COMMAND_FAILED":
             case 6:
                 message.signalType = 6;
                 break;
-            case "DOGZILLA_ERROR":
+            case "YAHBOOM_DOGZILLA_LITE_ERROR":
             case 7:
                 message.signalType = 7;
                 break;
             }
             if (object.device != null) {
                 if (typeof object.device !== "object")
-                    throw TypeError(".dogzilla.RxEnvelope.device: object expected");
-                message.device = $root.dogzilla.DogzillaDevice.fromObject(object.device, long + 1);
+                    throw TypeError(".yahboom_dogzilla_lite.RxEnvelope.device: object expected");
+                message.device = $root.yahboom_dogzilla_lite.YahboomDogzillaLiteDevice.fromObject(object.device, long + 1);
             }
             if (object.status != null) {
                 if (typeof object.status !== "object")
-                    throw TypeError(".dogzilla.RxEnvelope.status: object expected");
-                message.status = $root.dogzilla.DogzillaStatus.fromObject(object.status, long + 1);
+                    throw TypeError(".yahboom_dogzilla_lite.RxEnvelope.status: object expected");
+                message.status = $root.yahboom_dogzilla_lite.YahboomDogzillaLiteStatus.fromObject(object.status, long + 1);
             }
             if (object.data != null)
                 if (typeof object.data === "string")
@@ -23196,8 +23196,8 @@ export const dogzilla = $root.dogzilla = (() => {
                     message.data = object.data;
             if (object.command != null) {
                 if (typeof object.command !== "object")
-                    throw TypeError(".dogzilla.RxEnvelope.command: object expected");
-                message.command = $root.dogzilla.TxEnvelope.fromObject(object.command, long + 1);
+                    throw TypeError(".yahboom_dogzilla_lite.RxEnvelope.command: object expected");
+                message.command = $root.yahboom_dogzilla_lite.TxEnvelope.fromObject(object.command, long + 1);
             }
             if (object.errorMessage != null)
                 message.errorMessage = String(object.errorMessage);
@@ -23207,9 +23207,9 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * Creates a plain object from a RxEnvelope message. Also converts values to other types if specified.
          * @function toObject
-         * @memberof dogzilla.RxEnvelope
+         * @memberof yahboom_dogzilla_lite.RxEnvelope
          * @static
-         * @param {dogzilla.RxEnvelope} message RxEnvelope
+         * @param {yahboom_dogzilla_lite.RxEnvelope} message RxEnvelope
          * @param {$protobuf.IConversionOptions} [options] Conversion options
          * @returns {Object.<string,*>} Plain object
          */
@@ -23233,7 +23233,7 @@ export const dogzilla = $root.dogzilla = (() => {
                     object.appStartId = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
                 } else
                     object.appStartId = options.longs === String ? "0" : 0;
-                object.signalType = options.enums === String ? "DOGZILLA_SIGNAL_TYPE_UNSPECIFIED" : 0;
+                object.signalType = options.enums === String ? "YAHBOOM_DOGZILLA_LITE_SIGNAL_TYPE_UNSPECIFIED" : 0;
                 object.device = null;
                 object.status = null;
                 if (options.bytes === String)
@@ -23262,15 +23262,15 @@ export const dogzilla = $root.dogzilla = (() => {
                 else
                     object.appStartId = options.longs === String ? $util.Long.prototype.toString.call(message.appStartId) : options.longs === Number ? new $util.LongBits(message.appStartId.low >>> 0, message.appStartId.high >>> 0).toNumber(true) : message.appStartId;
             if (message.signalType != null && message.hasOwnProperty("signalType"))
-                object.signalType = options.enums === String ? $root.dogzilla.DogzillaSignalType[message.signalType] === undefined ? message.signalType : $root.dogzilla.DogzillaSignalType[message.signalType] : message.signalType;
+                object.signalType = options.enums === String ? $root.yahboom_dogzilla_lite.YahboomDogzillaLiteSignalType[message.signalType] === undefined ? message.signalType : $root.yahboom_dogzilla_lite.YahboomDogzillaLiteSignalType[message.signalType] : message.signalType;
             if (message.device != null && message.hasOwnProperty("device"))
-                object.device = $root.dogzilla.DogzillaDevice.toObject(message.device, options);
+                object.device = $root.yahboom_dogzilla_lite.YahboomDogzillaLiteDevice.toObject(message.device, options);
             if (message.status != null && message.hasOwnProperty("status"))
-                object.status = $root.dogzilla.DogzillaStatus.toObject(message.status, options);
+                object.status = $root.yahboom_dogzilla_lite.YahboomDogzillaLiteStatus.toObject(message.status, options);
             if (message.data != null && message.hasOwnProperty("data"))
                 object.data = options.bytes === String ? $util.base64.encode(message.data, 0, message.data.length) : options.bytes === Array ? Array.prototype.slice.call(message.data) : message.data;
             if (message.command != null && message.hasOwnProperty("command"))
-                object.command = $root.dogzilla.TxEnvelope.toObject(message.command, options);
+                object.command = $root.yahboom_dogzilla_lite.TxEnvelope.toObject(message.command, options);
             if (message.errorMessage != null && message.hasOwnProperty("errorMessage"))
                 object.errorMessage = message.errorMessage;
             return object;
@@ -23279,7 +23279,7 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * Converts this RxEnvelope to JSON.
          * @function toJSON
-         * @memberof dogzilla.RxEnvelope
+         * @memberof yahboom_dogzilla_lite.RxEnvelope
          * @instance
          * @returns {Object.<string,*>} JSON object
          */
@@ -23290,7 +23290,7 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * Gets the default type url for RxEnvelope
          * @function getTypeUrl
-         * @memberof dogzilla.RxEnvelope
+         * @memberof yahboom_dogzilla_lite.RxEnvelope
          * @static
          * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
          * @returns {string} The default type url
@@ -23299,29 +23299,29 @@ export const dogzilla = $root.dogzilla = (() => {
             if (typeUrlPrefix === undefined) {
                 typeUrlPrefix = "type.googleapis.com";
             }
-            return typeUrlPrefix + "/dogzilla.RxEnvelope";
+            return typeUrlPrefix + "/yahboom_dogzilla_lite.RxEnvelope";
         };
 
         return RxEnvelope;
     })();
 
-    dogzilla.InferenceState = (function() {
+    yahboom_dogzilla_lite.InferenceState = (function() {
 
         /**
          * Properties of an InferenceState.
-         * @memberof dogzilla
+         * @memberof yahboom_dogzilla_lite
          * @interface IInferenceState
          * @property {Uint8Array|null} [lastInferenceQueuePtr] InferenceState lastInferenceQueuePtr
-         * @property {Array.<dogzilla.InferenceState.IDeviceState>|null} [devices] InferenceState devices
+         * @property {Array.<yahboom_dogzilla_lite.InferenceState.IDeviceState>|null} [devices] InferenceState devices
          */
 
         /**
          * Constructs a new InferenceState.
-         * @memberof dogzilla
+         * @memberof yahboom_dogzilla_lite
          * @classdesc Represents an InferenceState.
          * @implements IInferenceState
          * @constructor
-         * @param {dogzilla.IInferenceState=} [properties] Properties to set
+         * @param {yahboom_dogzilla_lite.IInferenceState=} [properties] Properties to set
          */
         function InferenceState(properties) {
             this.devices = [];
@@ -23334,15 +23334,15 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * InferenceState lastInferenceQueuePtr.
          * @member {Uint8Array} lastInferenceQueuePtr
-         * @memberof dogzilla.InferenceState
+         * @memberof yahboom_dogzilla_lite.InferenceState
          * @instance
          */
         InferenceState.prototype.lastInferenceQueuePtr = $util.newBuffer([]);
 
         /**
          * InferenceState devices.
-         * @member {Array.<dogzilla.InferenceState.IDeviceState>} devices
-         * @memberof dogzilla.InferenceState
+         * @member {Array.<yahboom_dogzilla_lite.InferenceState.IDeviceState>} devices
+         * @memberof yahboom_dogzilla_lite.InferenceState
          * @instance
          */
         InferenceState.prototype.devices = $util.emptyArray;
@@ -23350,21 +23350,21 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * Creates a new InferenceState instance using the specified properties.
          * @function create
-         * @memberof dogzilla.InferenceState
+         * @memberof yahboom_dogzilla_lite.InferenceState
          * @static
-         * @param {dogzilla.IInferenceState=} [properties] Properties to set
-         * @returns {dogzilla.InferenceState} InferenceState instance
+         * @param {yahboom_dogzilla_lite.IInferenceState=} [properties] Properties to set
+         * @returns {yahboom_dogzilla_lite.InferenceState} InferenceState instance
          */
         InferenceState.create = function create(properties) {
             return new InferenceState(properties);
         };
 
         /**
-         * Encodes the specified InferenceState message. Does not implicitly {@link dogzilla.InferenceState.verify|verify} messages.
+         * Encodes the specified InferenceState message. Does not implicitly {@link yahboom_dogzilla_lite.InferenceState.verify|verify} messages.
          * @function encode
-         * @memberof dogzilla.InferenceState
+         * @memberof yahboom_dogzilla_lite.InferenceState
          * @static
-         * @param {dogzilla.IInferenceState} message InferenceState message or plain object to encode
+         * @param {yahboom_dogzilla_lite.IInferenceState} message InferenceState message or plain object to encode
          * @param {$protobuf.Writer} [writer] Writer to encode to
          * @returns {$protobuf.Writer} Writer
          */
@@ -23375,16 +23375,16 @@ export const dogzilla = $root.dogzilla = (() => {
                 writer.uint32(/* id 1, wireType 2 =*/10).bytes(message.lastInferenceQueuePtr);
             if (message.devices != null && message.devices.length)
                 for (let i = 0; i < message.devices.length; ++i)
-                    $root.dogzilla.InferenceState.DeviceState.encode(message.devices[i], writer.uint32(/* id 10, wireType 2 =*/82).fork()).ldelim();
+                    $root.yahboom_dogzilla_lite.InferenceState.DeviceState.encode(message.devices[i], writer.uint32(/* id 10, wireType 2 =*/82).fork()).ldelim();
             return writer;
         };
 
         /**
-         * Encodes the specified InferenceState message, length delimited. Does not implicitly {@link dogzilla.InferenceState.verify|verify} messages.
+         * Encodes the specified InferenceState message, length delimited. Does not implicitly {@link yahboom_dogzilla_lite.InferenceState.verify|verify} messages.
          * @function encodeDelimited
-         * @memberof dogzilla.InferenceState
+         * @memberof yahboom_dogzilla_lite.InferenceState
          * @static
-         * @param {dogzilla.IInferenceState} message InferenceState message or plain object to encode
+         * @param {yahboom_dogzilla_lite.IInferenceState} message InferenceState message or plain object to encode
          * @param {$protobuf.Writer} [writer] Writer to encode to
          * @returns {$protobuf.Writer} Writer
          */
@@ -23395,11 +23395,11 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * Decodes an InferenceState message from the specified reader or buffer.
          * @function decode
-         * @memberof dogzilla.InferenceState
+         * @memberof yahboom_dogzilla_lite.InferenceState
          * @static
          * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
          * @param {number} [length] Message length if known beforehand
-         * @returns {dogzilla.InferenceState} InferenceState
+         * @returns {yahboom_dogzilla_lite.InferenceState} InferenceState
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
@@ -23410,7 +23410,7 @@ export const dogzilla = $root.dogzilla = (() => {
                 long = 0;
             if (long > $Reader.recursionLimit)
                 throw Error("maximum nesting depth exceeded");
-            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.dogzilla.InferenceState();
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.yahboom_dogzilla_lite.InferenceState();
             while (reader.pos < end) {
                 let tag = reader.uint32();
                 if (tag === error)
@@ -23423,7 +23423,7 @@ export const dogzilla = $root.dogzilla = (() => {
                 case 10: {
                         if (!(message.devices && message.devices.length))
                             message.devices = [];
-                        message.devices.push($root.dogzilla.InferenceState.DeviceState.decode(reader, reader.uint32(), undefined, long + 1));
+                        message.devices.push($root.yahboom_dogzilla_lite.InferenceState.DeviceState.decode(reader, reader.uint32(), undefined, long + 1));
                         break;
                     }
                 default:
@@ -23437,10 +23437,10 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * Decodes an InferenceState message from the specified reader or buffer, length delimited.
          * @function decodeDelimited
-         * @memberof dogzilla.InferenceState
+         * @memberof yahboom_dogzilla_lite.InferenceState
          * @static
          * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
-         * @returns {dogzilla.InferenceState} InferenceState
+         * @returns {yahboom_dogzilla_lite.InferenceState} InferenceState
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
@@ -23453,7 +23453,7 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * Verifies an InferenceState message.
          * @function verify
-         * @memberof dogzilla.InferenceState
+         * @memberof yahboom_dogzilla_lite.InferenceState
          * @static
          * @param {Object.<string,*>} message Plain object to verify
          * @returns {string|null} `null` if valid, otherwise the reason why it is not
@@ -23472,7 +23472,7 @@ export const dogzilla = $root.dogzilla = (() => {
                 if (!Array.isArray(message.devices))
                     return "devices: array expected";
                 for (let i = 0; i < message.devices.length; ++i) {
-                    let error = $root.dogzilla.InferenceState.DeviceState.verify(message.devices[i], long + 1);
+                    let error = $root.yahboom_dogzilla_lite.InferenceState.DeviceState.verify(message.devices[i], long + 1);
                     if (error)
                         return "devices." + error;
                 }
@@ -23483,19 +23483,19 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * Creates an InferenceState message from a plain object. Also converts values to their respective internal types.
          * @function fromObject
-         * @memberof dogzilla.InferenceState
+         * @memberof yahboom_dogzilla_lite.InferenceState
          * @static
          * @param {Object.<string,*>} object Plain object
-         * @returns {dogzilla.InferenceState} InferenceState
+         * @returns {yahboom_dogzilla_lite.InferenceState} InferenceState
          */
         InferenceState.fromObject = function fromObject(object, long) {
-            if (object instanceof $root.dogzilla.InferenceState)
+            if (object instanceof $root.yahboom_dogzilla_lite.InferenceState)
                 return object;
             if (long === undefined)
                 long = 0;
             if (long > $util.recursionLimit)
                 throw Error("maximum nesting depth exceeded");
-            let message = new $root.dogzilla.InferenceState();
+            let message = new $root.yahboom_dogzilla_lite.InferenceState();
             if (object.lastInferenceQueuePtr != null)
                 if (typeof object.lastInferenceQueuePtr === "string")
                     $util.base64.decode(object.lastInferenceQueuePtr, message.lastInferenceQueuePtr = $util.newBuffer($util.base64.length(object.lastInferenceQueuePtr)), 0);
@@ -23503,12 +23503,12 @@ export const dogzilla = $root.dogzilla = (() => {
                     message.lastInferenceQueuePtr = object.lastInferenceQueuePtr;
             if (object.devices) {
                 if (!Array.isArray(object.devices))
-                    throw TypeError(".dogzilla.InferenceState.devices: array expected");
+                    throw TypeError(".yahboom_dogzilla_lite.InferenceState.devices: array expected");
                 message.devices = [];
                 for (let i = 0; i < object.devices.length; ++i) {
                     if (typeof object.devices[i] !== "object")
-                        throw TypeError(".dogzilla.InferenceState.devices: object expected");
-                    message.devices[i] = $root.dogzilla.InferenceState.DeviceState.fromObject(object.devices[i], long + 1);
+                        throw TypeError(".yahboom_dogzilla_lite.InferenceState.devices: object expected");
+                    message.devices[i] = $root.yahboom_dogzilla_lite.InferenceState.DeviceState.fromObject(object.devices[i], long + 1);
                 }
             }
             return message;
@@ -23517,9 +23517,9 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * Creates a plain object from an InferenceState message. Also converts values to other types if specified.
          * @function toObject
-         * @memberof dogzilla.InferenceState
+         * @memberof yahboom_dogzilla_lite.InferenceState
          * @static
-         * @param {dogzilla.InferenceState} message InferenceState
+         * @param {yahboom_dogzilla_lite.InferenceState} message InferenceState
          * @param {$protobuf.IConversionOptions} [options] Conversion options
          * @returns {Object.<string,*>} Plain object
          */
@@ -23542,7 +23542,7 @@ export const dogzilla = $root.dogzilla = (() => {
             if (message.devices && message.devices.length) {
                 object.devices = [];
                 for (let j = 0; j < message.devices.length; ++j)
-                    object.devices[j] = $root.dogzilla.InferenceState.DeviceState.toObject(message.devices[j], options);
+                    object.devices[j] = $root.yahboom_dogzilla_lite.InferenceState.DeviceState.toObject(message.devices[j], options);
             }
             return object;
         };
@@ -23550,7 +23550,7 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * Converts this InferenceState to JSON.
          * @function toJSON
-         * @memberof dogzilla.InferenceState
+         * @memberof yahboom_dogzilla_lite.InferenceState
          * @instance
          * @returns {Object.<string,*>} JSON object
          */
@@ -23561,7 +23561,7 @@ export const dogzilla = $root.dogzilla = (() => {
         /**
          * Gets the default type url for InferenceState
          * @function getTypeUrl
-         * @memberof dogzilla.InferenceState
+         * @memberof yahboom_dogzilla_lite.InferenceState
          * @static
          * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
          * @returns {string} The default type url
@@ -23570,17 +23570,17 @@ export const dogzilla = $root.dogzilla = (() => {
             if (typeUrlPrefix === undefined) {
                 typeUrlPrefix = "type.googleapis.com";
             }
-            return typeUrlPrefix + "/dogzilla.InferenceState";
+            return typeUrlPrefix + "/yahboom_dogzilla_lite.InferenceState";
         };
 
         InferenceState.DeviceState = (function() {
 
             /**
              * Properties of a DeviceState.
-             * @memberof dogzilla.InferenceState
+             * @memberof yahboom_dogzilla_lite.InferenceState
              * @interface IDeviceState
-             * @property {dogzilla.IDogzillaDevice|null} [device] DeviceState device
-             * @property {dogzilla.IDogzillaStatus|null} [status] DeviceState status
+             * @property {yahboom_dogzilla_lite.IYahboomDogzillaLiteDevice|null} [device] DeviceState device
+             * @property {yahboom_dogzilla_lite.IYahboomDogzillaLiteStatus|null} [status] DeviceState status
              * @property {Long|null} [monotonicStampNs] DeviceState monotonicStampNs
              * @property {Long|null} [systemStampNs] DeviceState systemStampNs
              * @property {boolean|null} [isConnected] DeviceState isConnected
@@ -23588,11 +23588,11 @@ export const dogzilla = $root.dogzilla = (() => {
 
             /**
              * Constructs a new DeviceState.
-             * @memberof dogzilla.InferenceState
+             * @memberof yahboom_dogzilla_lite.InferenceState
              * @classdesc Represents a DeviceState.
              * @implements IDeviceState
              * @constructor
-             * @param {dogzilla.InferenceState.IDeviceState=} [properties] Properties to set
+             * @param {yahboom_dogzilla_lite.InferenceState.IDeviceState=} [properties] Properties to set
              */
             function DeviceState(properties) {
                 if (properties)
@@ -23603,16 +23603,16 @@ export const dogzilla = $root.dogzilla = (() => {
 
             /**
              * DeviceState device.
-             * @member {dogzilla.IDogzillaDevice|null|undefined} device
-             * @memberof dogzilla.InferenceState.DeviceState
+             * @member {yahboom_dogzilla_lite.IYahboomDogzillaLiteDevice|null|undefined} device
+             * @memberof yahboom_dogzilla_lite.InferenceState.DeviceState
              * @instance
              */
             DeviceState.prototype.device = null;
 
             /**
              * DeviceState status.
-             * @member {dogzilla.IDogzillaStatus|null|undefined} status
-             * @memberof dogzilla.InferenceState.DeviceState
+             * @member {yahboom_dogzilla_lite.IYahboomDogzillaLiteStatus|null|undefined} status
+             * @memberof yahboom_dogzilla_lite.InferenceState.DeviceState
              * @instance
              */
             DeviceState.prototype.status = null;
@@ -23620,7 +23620,7 @@ export const dogzilla = $root.dogzilla = (() => {
             /**
              * DeviceState monotonicStampNs.
              * @member {Long} monotonicStampNs
-             * @memberof dogzilla.InferenceState.DeviceState
+             * @memberof yahboom_dogzilla_lite.InferenceState.DeviceState
              * @instance
              */
             DeviceState.prototype.monotonicStampNs = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
@@ -23628,7 +23628,7 @@ export const dogzilla = $root.dogzilla = (() => {
             /**
              * DeviceState systemStampNs.
              * @member {Long} systemStampNs
-             * @memberof dogzilla.InferenceState.DeviceState
+             * @memberof yahboom_dogzilla_lite.InferenceState.DeviceState
              * @instance
              */
             DeviceState.prototype.systemStampNs = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
@@ -23636,7 +23636,7 @@ export const dogzilla = $root.dogzilla = (() => {
             /**
              * DeviceState isConnected.
              * @member {boolean} isConnected
-             * @memberof dogzilla.InferenceState.DeviceState
+             * @memberof yahboom_dogzilla_lite.InferenceState.DeviceState
              * @instance
              */
             DeviceState.prototype.isConnected = false;
@@ -23644,21 +23644,21 @@ export const dogzilla = $root.dogzilla = (() => {
             /**
              * Creates a new DeviceState instance using the specified properties.
              * @function create
-             * @memberof dogzilla.InferenceState.DeviceState
+             * @memberof yahboom_dogzilla_lite.InferenceState.DeviceState
              * @static
-             * @param {dogzilla.InferenceState.IDeviceState=} [properties] Properties to set
-             * @returns {dogzilla.InferenceState.DeviceState} DeviceState instance
+             * @param {yahboom_dogzilla_lite.InferenceState.IDeviceState=} [properties] Properties to set
+             * @returns {yahboom_dogzilla_lite.InferenceState.DeviceState} DeviceState instance
              */
             DeviceState.create = function create(properties) {
                 return new DeviceState(properties);
             };
 
             /**
-             * Encodes the specified DeviceState message. Does not implicitly {@link dogzilla.InferenceState.DeviceState.verify|verify} messages.
+             * Encodes the specified DeviceState message. Does not implicitly {@link yahboom_dogzilla_lite.InferenceState.DeviceState.verify|verify} messages.
              * @function encode
-             * @memberof dogzilla.InferenceState.DeviceState
+             * @memberof yahboom_dogzilla_lite.InferenceState.DeviceState
              * @static
-             * @param {dogzilla.InferenceState.IDeviceState} message DeviceState message or plain object to encode
+             * @param {yahboom_dogzilla_lite.InferenceState.IDeviceState} message DeviceState message or plain object to encode
              * @param {$protobuf.Writer} [writer] Writer to encode to
              * @returns {$protobuf.Writer} Writer
              */
@@ -23666,9 +23666,9 @@ export const dogzilla = $root.dogzilla = (() => {
                 if (!writer)
                     writer = $Writer.create();
                 if (message.device != null && Object.hasOwnProperty.call(message, "device"))
-                    $root.dogzilla.DogzillaDevice.encode(message.device, writer.uint32(/* id 1, wireType 2 =*/10).fork()).ldelim();
+                    $root.yahboom_dogzilla_lite.YahboomDogzillaLiteDevice.encode(message.device, writer.uint32(/* id 1, wireType 2 =*/10).fork()).ldelim();
                 if (message.status != null && Object.hasOwnProperty.call(message, "status"))
-                    $root.dogzilla.DogzillaStatus.encode(message.status, writer.uint32(/* id 2, wireType 2 =*/18).fork()).ldelim();
+                    $root.yahboom_dogzilla_lite.YahboomDogzillaLiteStatus.encode(message.status, writer.uint32(/* id 2, wireType 2 =*/18).fork()).ldelim();
                 if (message.monotonicStampNs != null && Object.hasOwnProperty.call(message, "monotonicStampNs"))
                     writer.uint32(/* id 3, wireType 0 =*/24).uint64(message.monotonicStampNs);
                 if (message.systemStampNs != null && Object.hasOwnProperty.call(message, "systemStampNs"))
@@ -23679,11 +23679,11 @@ export const dogzilla = $root.dogzilla = (() => {
             };
 
             /**
-             * Encodes the specified DeviceState message, length delimited. Does not implicitly {@link dogzilla.InferenceState.DeviceState.verify|verify} messages.
+             * Encodes the specified DeviceState message, length delimited. Does not implicitly {@link yahboom_dogzilla_lite.InferenceState.DeviceState.verify|verify} messages.
              * @function encodeDelimited
-             * @memberof dogzilla.InferenceState.DeviceState
+             * @memberof yahboom_dogzilla_lite.InferenceState.DeviceState
              * @static
-             * @param {dogzilla.InferenceState.IDeviceState} message DeviceState message or plain object to encode
+             * @param {yahboom_dogzilla_lite.InferenceState.IDeviceState} message DeviceState message or plain object to encode
              * @param {$protobuf.Writer} [writer] Writer to encode to
              * @returns {$protobuf.Writer} Writer
              */
@@ -23694,11 +23694,11 @@ export const dogzilla = $root.dogzilla = (() => {
             /**
              * Decodes a DeviceState message from the specified reader or buffer.
              * @function decode
-             * @memberof dogzilla.InferenceState.DeviceState
+             * @memberof yahboom_dogzilla_lite.InferenceState.DeviceState
              * @static
              * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
              * @param {number} [length] Message length if known beforehand
-             * @returns {dogzilla.InferenceState.DeviceState} DeviceState
+             * @returns {yahboom_dogzilla_lite.InferenceState.DeviceState} DeviceState
              * @throws {Error} If the payload is not a reader or valid buffer
              * @throws {$protobuf.util.ProtocolError} If required fields are missing
              */
@@ -23709,18 +23709,18 @@ export const dogzilla = $root.dogzilla = (() => {
                     long = 0;
                 if (long > $Reader.recursionLimit)
                     throw Error("maximum nesting depth exceeded");
-                let end = length === undefined ? reader.len : reader.pos + length, message = new $root.dogzilla.InferenceState.DeviceState();
+                let end = length === undefined ? reader.len : reader.pos + length, message = new $root.yahboom_dogzilla_lite.InferenceState.DeviceState();
                 while (reader.pos < end) {
                     let tag = reader.uint32();
                     if (tag === error)
                         break;
                     switch (tag >>> 3) {
                     case 1: {
-                            message.device = $root.dogzilla.DogzillaDevice.decode(reader, reader.uint32(), undefined, long + 1);
+                            message.device = $root.yahboom_dogzilla_lite.YahboomDogzillaLiteDevice.decode(reader, reader.uint32(), undefined, long + 1);
                             break;
                         }
                     case 2: {
-                            message.status = $root.dogzilla.DogzillaStatus.decode(reader, reader.uint32(), undefined, long + 1);
+                            message.status = $root.yahboom_dogzilla_lite.YahboomDogzillaLiteStatus.decode(reader, reader.uint32(), undefined, long + 1);
                             break;
                         }
                     case 3: {
@@ -23746,10 +23746,10 @@ export const dogzilla = $root.dogzilla = (() => {
             /**
              * Decodes a DeviceState message from the specified reader or buffer, length delimited.
              * @function decodeDelimited
-             * @memberof dogzilla.InferenceState.DeviceState
+             * @memberof yahboom_dogzilla_lite.InferenceState.DeviceState
              * @static
              * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
-             * @returns {dogzilla.InferenceState.DeviceState} DeviceState
+             * @returns {yahboom_dogzilla_lite.InferenceState.DeviceState} DeviceState
              * @throws {Error} If the payload is not a reader or valid buffer
              * @throws {$protobuf.util.ProtocolError} If required fields are missing
              */
@@ -23762,7 +23762,7 @@ export const dogzilla = $root.dogzilla = (() => {
             /**
              * Verifies a DeviceState message.
              * @function verify
-             * @memberof dogzilla.InferenceState.DeviceState
+             * @memberof yahboom_dogzilla_lite.InferenceState.DeviceState
              * @static
              * @param {Object.<string,*>} message Plain object to verify
              * @returns {string|null} `null` if valid, otherwise the reason why it is not
@@ -23775,12 +23775,12 @@ export const dogzilla = $root.dogzilla = (() => {
                 if (long > $util.recursionLimit)
                     return "maximum nesting depth exceeded";
                 if (message.device != null && message.hasOwnProperty("device")) {
-                    let error = $root.dogzilla.DogzillaDevice.verify(message.device, long + 1);
+                    let error = $root.yahboom_dogzilla_lite.YahboomDogzillaLiteDevice.verify(message.device, long + 1);
                     if (error)
                         return "device." + error;
                 }
                 if (message.status != null && message.hasOwnProperty("status")) {
-                    let error = $root.dogzilla.DogzillaStatus.verify(message.status, long + 1);
+                    let error = $root.yahboom_dogzilla_lite.YahboomDogzillaLiteStatus.verify(message.status, long + 1);
                     if (error)
                         return "status." + error;
                 }
@@ -23799,28 +23799,28 @@ export const dogzilla = $root.dogzilla = (() => {
             /**
              * Creates a DeviceState message from a plain object. Also converts values to their respective internal types.
              * @function fromObject
-             * @memberof dogzilla.InferenceState.DeviceState
+             * @memberof yahboom_dogzilla_lite.InferenceState.DeviceState
              * @static
              * @param {Object.<string,*>} object Plain object
-             * @returns {dogzilla.InferenceState.DeviceState} DeviceState
+             * @returns {yahboom_dogzilla_lite.InferenceState.DeviceState} DeviceState
              */
             DeviceState.fromObject = function fromObject(object, long) {
-                if (object instanceof $root.dogzilla.InferenceState.DeviceState)
+                if (object instanceof $root.yahboom_dogzilla_lite.InferenceState.DeviceState)
                     return object;
                 if (long === undefined)
                     long = 0;
                 if (long > $util.recursionLimit)
                     throw Error("maximum nesting depth exceeded");
-                let message = new $root.dogzilla.InferenceState.DeviceState();
+                let message = new $root.yahboom_dogzilla_lite.InferenceState.DeviceState();
                 if (object.device != null) {
                     if (typeof object.device !== "object")
-                        throw TypeError(".dogzilla.InferenceState.DeviceState.device: object expected");
-                    message.device = $root.dogzilla.DogzillaDevice.fromObject(object.device, long + 1);
+                        throw TypeError(".yahboom_dogzilla_lite.InferenceState.DeviceState.device: object expected");
+                    message.device = $root.yahboom_dogzilla_lite.YahboomDogzillaLiteDevice.fromObject(object.device, long + 1);
                 }
                 if (object.status != null) {
                     if (typeof object.status !== "object")
-                        throw TypeError(".dogzilla.InferenceState.DeviceState.status: object expected");
-                    message.status = $root.dogzilla.DogzillaStatus.fromObject(object.status, long + 1);
+                        throw TypeError(".yahboom_dogzilla_lite.InferenceState.DeviceState.status: object expected");
+                    message.status = $root.yahboom_dogzilla_lite.YahboomDogzillaLiteStatus.fromObject(object.status, long + 1);
                 }
                 if (object.monotonicStampNs != null)
                     if ($util.Long)
@@ -23848,9 +23848,9 @@ export const dogzilla = $root.dogzilla = (() => {
             /**
              * Creates a plain object from a DeviceState message. Also converts values to other types if specified.
              * @function toObject
-             * @memberof dogzilla.InferenceState.DeviceState
+             * @memberof yahboom_dogzilla_lite.InferenceState.DeviceState
              * @static
-             * @param {dogzilla.InferenceState.DeviceState} message DeviceState
+             * @param {yahboom_dogzilla_lite.InferenceState.DeviceState} message DeviceState
              * @param {$protobuf.IConversionOptions} [options] Conversion options
              * @returns {Object.<string,*>} Plain object
              */
@@ -23874,9 +23874,9 @@ export const dogzilla = $root.dogzilla = (() => {
                     object.isConnected = false;
                 }
                 if (message.device != null && message.hasOwnProperty("device"))
-                    object.device = $root.dogzilla.DogzillaDevice.toObject(message.device, options);
+                    object.device = $root.yahboom_dogzilla_lite.YahboomDogzillaLiteDevice.toObject(message.device, options);
                 if (message.status != null && message.hasOwnProperty("status"))
-                    object.status = $root.dogzilla.DogzillaStatus.toObject(message.status, options);
+                    object.status = $root.yahboom_dogzilla_lite.YahboomDogzillaLiteStatus.toObject(message.status, options);
                 if (message.monotonicStampNs != null && message.hasOwnProperty("monotonicStampNs"))
                     if (typeof message.monotonicStampNs === "number")
                         object.monotonicStampNs = options.longs === String ? String(message.monotonicStampNs) : message.monotonicStampNs;
@@ -23895,7 +23895,7 @@ export const dogzilla = $root.dogzilla = (() => {
             /**
              * Converts this DeviceState to JSON.
              * @function toJSON
-             * @memberof dogzilla.InferenceState.DeviceState
+             * @memberof yahboom_dogzilla_lite.InferenceState.DeviceState
              * @instance
              * @returns {Object.<string,*>} JSON object
              */
@@ -23906,7 +23906,7 @@ export const dogzilla = $root.dogzilla = (() => {
             /**
              * Gets the default type url for DeviceState
              * @function getTypeUrl
-             * @memberof dogzilla.InferenceState.DeviceState
+             * @memberof yahboom_dogzilla_lite.InferenceState.DeviceState
              * @static
              * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
              * @returns {string} The default type url
@@ -23915,7 +23915,7 @@ export const dogzilla = $root.dogzilla = (() => {
                 if (typeUrlPrefix === undefined) {
                     typeUrlPrefix = "type.googleapis.com";
                 }
-                return typeUrlPrefix + "/dogzilla.InferenceState.DeviceState";
+                return typeUrlPrefix + "/yahboom_dogzilla_lite.InferenceState.DeviceState";
             };
 
             return DeviceState;
@@ -23926,13 +23926,13 @@ export const dogzilla = $root.dogzilla = (() => {
 
     /**
      * CommandResult enum.
-     * @name dogzilla.CommandResult
+     * @name yahboom_dogzilla_lite.CommandResult
      * @enum {number}
      * @property {number} CR_PROCESSING=0 CR_PROCESSING value
      * @property {number} CR_SUCCESS=1 CR_SUCCESS value
      * @property {number} CR_FAILED=2 CR_FAILED value
      */
-    dogzilla.CommandResult = (function() {
+    yahboom_dogzilla_lite.CommandResult = (function() {
         const valuesById = {}, values = Object.create(valuesById);
         values[valuesById[0] = "CR_PROCESSING"] = 0;
         values[valuesById[1] = "CR_SUCCESS"] = 1;
@@ -23940,7 +23940,7 @@ export const dogzilla = $root.dogzilla = (() => {
         return values;
     })();
 
-    return dogzilla;
+    return yahboom_dogzilla_lite;
 })();
 
 export const sysinfo = $root.sysinfo = (() => {

@@ -1,10 +1,10 @@
-use crate::dogzilla_proto::{
-    Command, DogzillaDevice, DogzillaModel, DogzillaSignalType, RxEnvelope, TxEnvelope,
+use crate::yahboom_dogzilla_lite_proto::{
+    Command, YahboomDogzillaLiteDevice, YahboomDogzillaLiteModel, YahboomDogzillaLiteSignalType, RxEnvelope, TxEnvelope,
 };
-use crate::port::DogzillaPort;
+use crate::port::YahboomDogzillaLitePort;
 use crate::protocol::{BAUD_RATE, RPI_UART_PORT};
-use crate::sim::DogzillaSimulator;
-use crate::state::DogzillaCommunicator;
+use crate::sim::YahboomDogzillaLiteSimulator;
+use crate::state::YahboomDogzillaLiteCommunicator;
 use log::{error, info, warn};
 use normfs::NormFS;
 use prost::Message;
@@ -17,10 +17,10 @@ use std::sync::Arc;
 use std::time::Duration;
 use tokio::sync::RwLock;
 
-const RX_QUEUE_ID: &str = "dogzilla/rx";
-const TX_QUEUE_ID: &str = "dogzilla/tx";
-const INFERENCE_QUEUE_ID: &str = "dogzilla/inference";
-const SIM_PORT_NAME: &str = "dogzilla-sim";
+const RX_QUEUE_ID: &str = "yahboom-dogzilla-lite/rx";
+const TX_QUEUE_ID: &str = "yahboom-dogzilla-lite/tx";
+const INFERENCE_QUEUE_ID: &str = "yahboom-dogzilla-lite/inference";
+const SIM_PORT_NAME: &str = "yahboom-dogzilla-lite-sim";
 const DETECTION_RETRY_INTERVAL: Duration = Duration::from_secs(2);
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -30,12 +30,12 @@ enum ConnectionAttempt {
     NotDetected,
 }
 
-pub struct DogzillaDriver {
-    _com: Arc<DogzillaCommunicator>,
+pub struct YahboomDogzillaLiteDriver {
+    _com: Arc<YahboomDogzillaLiteCommunicator>,
     _connected_port: Arc<RwLock<Option<String>>>,
 }
 
-impl DogzillaDriver {
+impl YahboomDogzillaLiteDriver {
     pub async fn new<T: StationEngine>(
         normfs: Arc<NormFS>,
         station_engine: Arc<T>,
@@ -52,15 +52,15 @@ impl DogzillaDriver {
             .ensure_queue_exists_for_write(&inference_queue_id)
             .await?;
 
-        station_engine.register_queue(&rx_queue_id, QueueDataType::QdtDogzillaSerialRx, vec![]);
-        station_engine.register_queue(&tx_queue_id, QueueDataType::QdtDogzillaSerialTx, vec![]);
+        station_engine.register_queue(&rx_queue_id, QueueDataType::QdtYahboomDogzillaLiteSerialRx, vec![]);
+        station_engine.register_queue(&tx_queue_id, QueueDataType::QdtYahboomDogzillaLiteSerialTx, vec![]);
         station_engine.register_queue(
             &inference_queue_id,
-            QueueDataType::QdtDogzillaInference,
+            QueueDataType::QdtYahboomDogzillaLiteInference,
             vec![],
         );
 
-        let com = Arc::new(DogzillaCommunicator::new(
+        let com = Arc::new(YahboomDogzillaLiteCommunicator::new(
             normfs.clone(),
             rx_queue_id,
             tx_queue_id.clone(),
@@ -78,14 +78,14 @@ impl DogzillaDriver {
                     };
 
                     for cmd in &pack.commands {
-                        if cmd.r#type() != drivers::StationCommandType::StcDogzillaCommand {
+                        if cmd.r#type() != drivers::StationCommandType::StcYahboomDogzillaLiteCommand {
                             continue;
                         }
 
                         let command = match Command::decode(cmd.body.clone()) {
                             Ok(c) => c,
                             Err(e) => {
-                                error!("Failed to decode DOGZILLA command: {}", e);
+                                error!("Failed to decode YAHBOOM_DOGZILLA_LITE command: {}", e);
                                 continue;
                             }
                         };
@@ -100,7 +100,7 @@ impl DogzillaDriver {
                         };
 
                         if let Err(e) = com_for_commands.send_tx(&envelope) {
-                            error!("Failed to send DOGZILLA command to tx queue: {}", e);
+                            error!("Failed to send YAHBOOM_DOGZILLA_LITE command to tx queue: {}", e);
                         }
                     }
                 }
@@ -108,7 +108,7 @@ impl DogzillaDriver {
             }),
         )?;
 
-        info!("Started DOGZILLA driver");
+        info!("Started YAHBOOM_DOGZILLA_LITE driver");
 
         let driver = Self {
             _com: com.clone(),
@@ -120,7 +120,7 @@ impl DogzillaDriver {
         } else {
             let rpi_serial = read_rpi_cpu_serial().unwrap_or_default();
             info!(
-                "DOGZILLA detection watchdog started: port={} retry_interval={}s cpu_serial={}",
+                "YAHBOOM_DOGZILLA_LITE detection watchdog started: port={} retry_interval={}s cpu_serial={}",
                 RPI_UART_PORT,
                 DETECTION_RETRY_INTERVAL.as_secs(),
                 if rpi_serial.is_empty() {
@@ -136,7 +136,7 @@ impl DogzillaDriver {
     }
 
     fn start_connection_monitor(
-        com: Arc<DogzillaCommunicator>,
+        com: Arc<YahboomDogzillaLiteCommunicator>,
         connected_port: Arc<RwLock<Option<String>>>,
         rpi_serial: String,
     ) {
@@ -155,7 +155,7 @@ impl DogzillaDriver {
                     ConnectionAttempt::Connected => {
                         if last_failure.is_some() {
                             info!(
-                                "DOGZILLA detection recovered on {} after retry",
+                                "YAHBOOM_DOGZILLA_LITE detection recovered on {} after retry",
                                 RPI_UART_PORT
                             );
                         }
@@ -175,7 +175,7 @@ impl DogzillaDriver {
                     ConnectionAttempt::NotDetected => {
                         if last_failure != Some(ConnectionAttempt::NotDetected) {
                             warn!(
-                                "No dogzilla device detected on {}, retrying every {}s",
+                                "No Yahboom Dogzilla Lite device detected on {}, retrying every {}s",
                                 RPI_UART_PORT,
                                 DETECTION_RETRY_INTERVAL.as_secs()
                             );
@@ -189,13 +189,13 @@ impl DogzillaDriver {
     }
 
     async fn start_simulation(
-        com: &Arc<DogzillaCommunicator>,
+        com: &Arc<YahboomDogzillaLiteCommunicator>,
         connected_port: &Arc<RwLock<Option<String>>>,
     ) {
         let rpi_serial = read_rpi_cpu_serial().unwrap_or_default();
         let mut device_info = Self::create_device_info(SIM_PORT_NAME, &rpi_serial);
         device_info.firmware_version = "L-SIM".to_string();
-        device_info.model = DogzillaModel::DogzillaLite as i32;
+        device_info.model = YahboomDogzillaLiteModel::YahboomDogzillaLiteLite as i32;
 
         *connected_port.write().await = Some(SIM_PORT_NAME.to_string());
         Self::send_device_connect_signal(com, &device_info);
@@ -206,19 +206,19 @@ impl DogzillaDriver {
 
         tokio::spawn(async move {
             let mut simulator =
-                DogzillaSimulator::new(device_info_clone.clone(), com_clone.clone());
+                YahboomDogzillaLiteSimulator::new(device_info_clone.clone(), com_clone.clone());
             if let Err(e) = simulator.run().await {
-                warn!("DOGZILLA simulation error: {}", e);
+                warn!("YAHBOOM_DOGZILLA_LITE simulation error: {}", e);
             }
 
             *connected_port_clone.write().await = None;
             Self::send_device_disconnect_signal(&com_clone, &device_info_clone);
-            info!("DOGZILLA simulation stopped");
+            info!("YAHBOOM_DOGZILLA_LITE simulation stopped");
         });
     }
 
     async fn scan_and_connect(
-        com: &Arc<DogzillaCommunicator>,
+        com: &Arc<YahboomDogzillaLiteCommunicator>,
         connected_port: &Arc<RwLock<Option<String>>>,
         rpi_serial: &str,
     ) -> ConnectionAttempt {
@@ -228,15 +228,15 @@ impl DogzillaDriver {
 
         let mut device_info = Self::create_device_info(RPI_UART_PORT, rpi_serial);
         let mut port =
-            DogzillaPort::new(RPI_UART_PORT.to_string(), device_info.clone(), com.clone());
+            YahboomDogzillaLitePort::new(RPI_UART_PORT.to_string(), device_info.clone(), com.clone());
 
-        if let Some(firmware_version) = port.detect_dogzilla().await {
+        if let Some(firmware_version) = port.detect_yahboom_dogzilla_lite().await {
             let model = Self::detect_model_from_firmware(&firmware_version);
             device_info.firmware_version = firmware_version;
             device_info.model = model as i32;
 
             info!(
-                "DOGZILLA detected: port={} serial={} firmware=v{} model={:?}",
+                "YAHBOOM_DOGZILLA_LITE detected: port={} serial={} firmware=v{} model={:?}",
                 RPI_UART_PORT, device_info.serial_number, device_info.firmware_version, model
             );
 
@@ -249,12 +249,12 @@ impl DogzillaDriver {
 
             tokio::spawn(async move {
                 if let Err(e) = port.run().await {
-                    warn!("DOGZILLA port {} error: {}", RPI_UART_PORT, e);
+                    warn!("YAHBOOM_DOGZILLA_LITE port {} error: {}", RPI_UART_PORT, e);
                 }
 
                 *connected_port_clone.write().await = None;
                 Self::send_device_disconnect_signal(&com_clone, &device_info_clone);
-                info!("DOGZILLA port {} disconnected", RPI_UART_PORT);
+                info!("YAHBOOM_DOGZILLA_LITE port {} disconnected", RPI_UART_PORT);
             });
             ConnectionAttempt::Connected
         } else {
@@ -262,13 +262,13 @@ impl DogzillaDriver {
         }
     }
 
-    fn create_device_info(port_name: &str, rpi_serial: &str) -> DogzillaDevice {
-        DogzillaDevice {
+    fn create_device_info(port_name: &str, rpi_serial: &str) -> YahboomDogzillaLiteDevice {
+        YahboomDogzillaLiteDevice {
             port_name: port_name.to_string(),
             baud_rate: BAUD_RATE,
             serial_number: rpi_serial.to_string(),
             firmware_version: String::new(),
-            model: DogzillaModel::Unknown as i32,
+            model: YahboomDogzillaLiteModel::Unknown as i32,
             vid: 0,
             pid: 0,
             manufacturer: String::new(),
@@ -276,52 +276,52 @@ impl DogzillaDriver {
         }
     }
 
-    fn detect_model_from_firmware(firmware_version: &str) -> DogzillaModel {
+    fn detect_model_from_firmware(firmware_version: &str) -> YahboomDogzillaLiteModel {
         match firmware_version.chars().next() {
-            Some('L') => DogzillaModel::DogzillaLite,
-            Some('M') => DogzillaModel::DogzillaMini,
-            Some('R') => DogzillaModel::DogzillaRider,
-            _ => DogzillaModel::Unknown,
+            Some('L') => YahboomDogzillaLiteModel::YahboomDogzillaLiteLite,
+            Some('M') => YahboomDogzillaLiteModel::YahboomDogzillaLiteMini,
+            Some('R') => YahboomDogzillaLiteModel::YahboomDogzillaLiteRider,
+            _ => YahboomDogzillaLiteModel::Unknown,
         }
     }
 
-    fn send_device_connect_signal(comm: &DogzillaCommunicator, device_info: &DogzillaDevice) {
+    fn send_device_connect_signal(comm: &YahboomDogzillaLiteCommunicator, device_info: &YahboomDogzillaLiteDevice) {
         let envelope = RxEnvelope {
             monotonic_stamp_ns: systime::get_monotonic_stamp_ns(),
             local_stamp_ns: systime::get_local_stamp_ns(),
             app_start_id: systime::get_app_start_id(),
-            signal_type: DogzillaSignalType::DogzillaConnected as i32,
+            signal_type: YahboomDogzillaLiteSignalType::YahboomDogzillaLiteConnected as i32,
             device: Some(device_info.clone()),
             ..Default::default()
         };
 
         if let Err(e) = comm.send_rx(&envelope) {
-            error!("Failed to send DOGZILLA connect signal: {}", e);
+            error!("Failed to send YAHBOOM_DOGZILLA_LITE connect signal: {}", e);
         }
     }
 
-    fn send_device_disconnect_signal(comm: &DogzillaCommunicator, device_info: &DogzillaDevice) {
+    fn send_device_disconnect_signal(comm: &YahboomDogzillaLiteCommunicator, device_info: &YahboomDogzillaLiteDevice) {
         let envelope = RxEnvelope {
             monotonic_stamp_ns: systime::get_monotonic_stamp_ns(),
             local_stamp_ns: systime::get_local_stamp_ns(),
             app_start_id: systime::get_app_start_id(),
-            signal_type: DogzillaSignalType::DogzillaDisconnected as i32,
+            signal_type: YahboomDogzillaLiteSignalType::YahboomDogzillaLiteDisconnected as i32,
             device: Some(device_info.clone()),
             ..Default::default()
         };
 
         if let Err(e) = comm.send_rx(&envelope) {
-            error!("Failed to send DOGZILLA disconnect signal: {}", e);
+            error!("Failed to send YAHBOOM_DOGZILLA_LITE disconnect signal: {}", e);
         }
     }
 }
 
-pub async fn start_dogzilla_driver<T: StationEngine>(
+pub async fn start_yahboom_dogzilla_lite_driver<T: StationEngine>(
     normfs: Arc<NormFS>,
     station_engine: Arc<T>,
     simulation: bool,
-) -> Result<Arc<DogzillaDriver>, Box<dyn std::error::Error>> {
-    let driver = DogzillaDriver::new(normfs, station_engine, simulation).await?;
+) -> Result<Arc<YahboomDogzillaLiteDriver>, Box<dyn std::error::Error>> {
+    let driver = YahboomDogzillaLiteDriver::new(normfs, station_engine, simulation).await?;
     Ok(Arc::new(driver))
 }
 

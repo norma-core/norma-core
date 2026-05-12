@@ -1,11 +1,11 @@
 import { memo, useEffect, useState } from 'react';
 import type { FrameEntry } from '@/api/frame-parser';
-import { dogzilla, ov5647, usbvideo } from '@/api/proto.js';
-import DogzillaDashboard from '@/dogzilla/DogzillaDashboard';
-import DogzillaDesktopCard from '@/dogzilla/DogzillaDesktopCard';
+import { yahboom_dogzilla_lite, ov5647, usbvideo } from '@/api/proto.js';
+import YahboomDogzillaLiteDashboard from '@/yahboom_dogzilla_lite/YahboomDogzillaLiteDashboard';
+import YahboomDogzillaLiteDesktopCard from '@/yahboom_dogzilla_lite/YahboomDogzillaLiteDesktopCard';
 
-interface DogzillaCardProps {
-  deviceState: dogzilla.InferenceState.IDeviceState;
+interface YahboomDogzillaLiteCardProps {
+  deviceState: yahboom_dogzilla_lite.InferenceState.IDeviceState;
   deviceIndex: number;
   videoSources?: FrameEntry<usbvideo.IRxEnvelope>[];
   ov5647Sources?: FrameEntry<ov5647.IRxEnvelope>[];
@@ -13,12 +13,12 @@ interface DogzillaCardProps {
 
 const DESKTOP_MEDIA_QUERY = '(min-width: 1024px)';
 
-const DogzillaCard = memo(function DogzillaCard({
+const YahboomDogzillaLiteCard = memo(function YahboomDogzillaLiteCard({
   deviceState,
   deviceIndex,
   videoSources,
   ov5647Sources
-}: DogzillaCardProps) {
+}: YahboomDogzillaLiteCardProps) {
   const [isDesktop, setIsDesktop] = useState(() => {
     if (typeof window === 'undefined') {
       return false;
@@ -46,7 +46,7 @@ const DogzillaCard = memo(function DogzillaCard({
 
   if (isDesktop) {
     return (
-      <DogzillaDesktopCard
+      <YahboomDogzillaLiteDesktopCard
         deviceState={deviceState}
         deviceIndex={deviceIndex}
         videoSources={videoSources}
@@ -57,7 +57,7 @@ const DogzillaCard = memo(function DogzillaCard({
 
   return (
     <div className="mx-auto w-full max-w-[28rem] sm:max-w-[32rem]">
-      <DogzillaDashboard
+      <YahboomDogzillaLiteDashboard
         deviceState={deviceState}
         refreshToken={deviceIndex}
       />
@@ -65,4 +65,4 @@ const DogzillaCard = memo(function DogzillaCard({
   );
 });
 
-export default DogzillaCard;
+export default YahboomDogzillaLiteCard;

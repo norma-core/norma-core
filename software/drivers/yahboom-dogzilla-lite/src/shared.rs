@@ -1,9 +1,9 @@
-use crate::dogzilla_proto::{
-    Command, DogzillaDevice, DogzillaSignalType, DogzillaStatus, ImuOrientation, RxEnvelope,
+use crate::yahboom_dogzilla_lite_proto::{
+    Command, YahboomDogzillaLiteDevice, YahboomDogzillaLiteSignalType, YahboomDogzillaLiteStatus, ImuOrientation, RxEnvelope,
     TxEnvelope, servo_speed_command,
 };
 use crate::protocol;
-use crate::state::DogzillaCommunicator;
+use crate::state::YahboomDogzillaLiteCommunicator;
 use log::warn;
 
 pub(crate) const SERVO_COUNT: usize = 15;
@@ -77,13 +77,13 @@ pub(crate) fn compute_command_effect(command: &Command) -> CommandEffect {
 }
 
 pub(crate) fn build_status(
-    device_info: &DogzillaDevice,
+    device_info: &YahboomDogzillaLiteDevice,
     servo_positions: Vec<u32>,
     leg_servo_speed: u32,
     arm_servo_speed: u32,
     battery_level: u32,
     orientation: ImuOrientation,
-) -> DogzillaStatus {
+) -> YahboomDogzillaLiteStatus {
     let servo_angles = servo_positions
         .iter()
         .enumerate()
@@ -93,7 +93,7 @@ pub(crate) fn build_status(
         })
         .collect();
 
-    DogzillaStatus {
+    YahboomDogzillaLiteStatus {
         battery_level,
         model: device_info.model,
         firmware_version: device_info.firmware_version.clone(),
@@ -133,7 +133,7 @@ pub(crate) fn unsupported_command_message(command: &Command) -> Option<String> {
     }
 
     (!fields.is_empty())
-        .then(|| format!("Unsupported DOGZILLA command fields: {}", fields.join(", ")))
+        .then(|| format!("Unsupported YAHBOOM_DOGZILLA_LITE command fields: {}", fields.join(", ")))
 }
 
 pub(crate) fn should_report_command_success(command: &Command) -> bool {
@@ -146,15 +146,15 @@ pub(crate) fn should_report_command_success(command: &Command) -> bool {
 }
 
 pub(crate) fn send_status_update(
-    comm: &DogzillaCommunicator,
-    device_info: &DogzillaDevice,
-    status: DogzillaStatus,
+    comm: &YahboomDogzillaLiteCommunicator,
+    device_info: &YahboomDogzillaLiteDevice,
+    status: YahboomDogzillaLiteStatus,
 ) {
     let envelope = RxEnvelope {
         monotonic_stamp_ns: systime::get_monotonic_stamp_ns(),
         local_stamp_ns: systime::get_local_stamp_ns(),
         app_start_id: systime::get_app_start_id(),
-        signal_type: DogzillaSignalType::DogzillaStatusUpdate as i32,
+        signal_type: YahboomDogzillaLiteSignalType::YahboomDogzillaLiteStatusUpdate as i32,
         device: Some(device_info.clone()),
         status: Some(status),
         ..Default::default()
@@ -166,10 +166,10 @@ pub(crate) fn send_status_update(
 }
 
 pub(crate) fn send_command_result(
-    comm: &DogzillaCommunicator,
-    device_info: &DogzillaDevice,
+    comm: &YahboomDogzillaLiteCommunicator,
+    device_info: &YahboomDogzillaLiteDevice,
     command: &TxEnvelope,
-    signal_type: DogzillaSignalType,
+    signal_type: YahboomDogzillaLiteSignalType,
     error_message: Option<String>,
 ) {
     let envelope = RxEnvelope {

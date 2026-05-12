@@ -1,5 +1,5 @@
-use crate::dogzilla_proto::{
-    self, DogzillaDevice, DogzillaSignalType, InferenceState, RxEnvelope, TxEnvelope,
+use crate::yahboom_dogzilla_lite_proto::{
+    self, YahboomDogzillaLiteDevice, YahboomDogzillaLiteSignalType, InferenceState, RxEnvelope, TxEnvelope,
 };
 use bytes::{Bytes, BytesMut};
 use log::warn;
@@ -9,7 +9,7 @@ use std::sync::Arc;
 
 type SendResult<T> = Result<T, Box<dyn std::error::Error + Send + Sync>>;
 
-pub(crate) struct DogzillaCommunicator {
+pub(crate) struct YahboomDogzillaLiteCommunicator {
     pub(crate) normfs: Arc<NormFS>,
     pub(crate) rx_queue_id: normfs::QueueId,
     pub(crate) tx_queue_id: normfs::QueueId,
@@ -18,7 +18,7 @@ pub(crate) struct DogzillaCommunicator {
     state: Arc<parking_lot::RwLock<InferenceState>>,
 }
 
-impl DogzillaCommunicator {
+impl YahboomDogzillaLiteCommunicator {
     pub(crate) fn new(
         normfs: Arc<NormFS>,
         rx_queue_id: normfs::QueueId,
@@ -39,7 +39,7 @@ impl DogzillaCommunicator {
     pub(crate) fn send_rx(&self, envelope: &RxEnvelope) -> SendResult<()> {
         self.send_envelope(&self.rx_queue_id, envelope)?;
         if let Err(e) = self.update_state(envelope) {
-            warn!("Failed to update DOGZILLA inference state: {}", e);
+            warn!("Failed to update YAHBOOM_DOGZILLA_LITE inference state: {}", e);
         }
         Ok(())
     }
@@ -59,7 +59,7 @@ impl DogzillaCommunicator {
         Ok(self.normfs.enqueue(queue_id, Bytes::from(buf))?)
     }
 
-    fn add_device(&self, device: &DogzillaDevice, envelope: &RxEnvelope) {
+    fn add_device(&self, device: &YahboomDogzillaLiteDevice, envelope: &RxEnvelope) {
         let mut state = self.state.write();
         if let Some(device_state) = state
             .devices
@@ -75,7 +75,7 @@ impl DogzillaCommunicator {
 
         state
             .devices
-            .push(dogzilla_proto::inference_state::DeviceState {
+            .push(yahboom_dogzilla_lite_proto::inference_state::DeviceState {
                 device: Some(device.clone()),
                 status: None,
                 monotonic_stamp_ns: envelope.monotonic_stamp_ns,
@@ -84,7 +84,7 @@ impl DogzillaCommunicator {
             });
     }
 
-    fn disconnect_device(&self, device: &DogzillaDevice, envelope: &RxEnvelope) {
+    fn disconnect_device(&self, device: &YahboomDogzillaLiteDevice, envelope: &RxEnvelope) {
         let mut state = self.state.write();
         if let Some(device_state) = state
             .devices
@@ -123,12 +123,12 @@ impl DogzillaCommunicator {
             None => return Ok(()),
         };
 
-        match DogzillaSignalType::try_from(envelope.signal_type) {
-            Ok(DogzillaSignalType::DogzillaConnected) => self.add_device(device, envelope),
-            Ok(DogzillaSignalType::DogzillaDisconnected) => {
+        match YahboomDogzillaLiteSignalType::try_from(envelope.signal_type) {
+            Ok(YahboomDogzillaLiteSignalType::YahboomDogzillaLiteConnected) => self.add_device(device, envelope),
+            Ok(YahboomDogzillaLiteSignalType::YahboomDogzillaLiteDisconnected) => {
                 self.disconnect_device(device, envelope)
             }
-            Ok(DogzillaSignalType::DogzillaStatusUpdate | DogzillaSignalType::DogzillaError) => {
+            Ok(YahboomDogzillaLiteSignalType::YahboomDogzillaLiteStatusUpdate | YahboomDogzillaLiteSignalType::YahboomDogzillaLiteError) => {
                 self.update_device_status(envelope);
             }
             _ => {}

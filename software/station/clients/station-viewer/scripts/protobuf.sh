@@ -16,7 +16,7 @@ yarn run pbjs --wrap es6 --force-long -t static-module --es6 -l eslint-disable \
   ${SRC}/drivers/usbvideo/usbvideo.proto \
   ${SRC}/drivers/ov5647/ov5647.proto \
   ${SRC}/drivers/motors-mirroring/mirroring.proto \
-  ${SRC}/drivers/dogzilla/dogzilla.proto \
+  ${SRC}/drivers/yahboom-dogzilla-lite/yahboom_dogzilla_lite.proto \
   ${SRC}/drivers/sysinfo/sysinfo.proto \
   ${SRC}/drivers/inferences/normvla.proto \
   ${SRC}/normfs/normfs.proto \

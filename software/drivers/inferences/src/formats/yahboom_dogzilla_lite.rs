@@ -2,14 +2,14 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 use bytes::Bytes;
-use dogzilla::dogzilla_proto::InferenceState;
+use yahboom_dogzilla_lite::yahboom_dogzilla_lite_proto::InferenceState;
 use normfs::{NormFS, UintN};
 use parking_lot::Mutex;
 use prost::Message;
 use station_iface::iface_proto::drivers::QueueDataType;
 use station_iface::iface_proto::inference::{InferenceRx, inference_rx};
 
-const RAW_DOGZILLA_QUEUE_ID: &str = "dogzilla/inference";
+const RAW_YAHBOOM_DOGZILLA_LITE_QUEUE_ID: &str = "yahboom-dogzilla-lite/inference";
 
 #[derive(Clone, Eq, PartialEq)]
 struct PublishKey {
@@ -26,7 +26,7 @@ pub async fn mirror_state(
     config: &station_iface::config::Inference,
     shm_writer: Option<&crate::ShmWriter>,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let raw_entry = match find_raw_dogzilla_entry(inference_rx) {
+    let raw_entry = match find_raw_yahboom_dogzilla_lite_entry(inference_rx) {
         Some(entry) => entry,
         None => return Ok(()),
     };
@@ -56,17 +56,17 @@ pub async fn mirror_state(
     Ok(())
 }
 
-fn find_raw_dogzilla_entry(inference_rx: &InferenceRx) -> Option<&inference_rx::Entry> {
+fn find_raw_yahboom_dogzilla_lite_entry(inference_rx: &InferenceRx) -> Option<&inference_rx::Entry> {
     inference_rx.entries.iter().find(|entry| {
-        is_raw_dogzilla_queue(&entry.queue)
-            && entry_type(entry) == Some(QueueDataType::QdtDogzillaInference)
+        is_raw_yahboom_dogzilla_lite_queue(&entry.queue)
+            && entry_type(entry) == Some(QueueDataType::QdtYahboomDogzillaLiteInference)
             && !entry.ptr.is_empty()
     })
 }
 
-fn is_raw_dogzilla_queue(queue: &str) -> bool {
-    queue == RAW_DOGZILLA_QUEUE_ID
-        || (queue.starts_with('/') && queue.ends_with("/dogzilla/inference"))
+fn is_raw_yahboom_dogzilla_lite_queue(queue: &str) -> bool {
+    queue == RAW_YAHBOOM_DOGZILLA_LITE_QUEUE_ID
+        || (queue.starts_with('/') && queue.ends_with("/yahboom-dogzilla-lite/inference"))
 }
 
 fn entry_type(entry: &inference_rx::Entry) -> Option<QueueDataType> {

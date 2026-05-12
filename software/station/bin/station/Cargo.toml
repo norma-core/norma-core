@@ -6,7 +6,7 @@ edition = "2024"
 [features]
 default = []
 ov5647 = ["dep:ov5647"]
-dogzilla = ["dep:dogzilla", "inferences/dogzilla"]
+yahboom-dogzilla-lite = ["dep:yahboom-dogzilla-lite", "inferences/yahboom-dogzilla-lite"]
 
 [dependencies]
 prost = { workspace = true }
@@ -16,7 +16,7 @@ clap = { version = "4.5", features = ["derive"] }
 tokio = { workspace = true }
 station_iface = { path = "../../shared/station-iface" }
 st3215 = { path = "../../../drivers/st3215" }
-dogzilla = { path = "../../../drivers/dogzilla", optional = true }
+yahboom-dogzilla-lite = { path = "../../../drivers/yahboom-dogzilla-lite", optional = true }
 ov5647 = { path = "../../../drivers/ov5647", optional = true }
 systime = { path = "../../shared/systime-rs" }
 usbvideo = { path = "../../../drivers/usbvideo" }

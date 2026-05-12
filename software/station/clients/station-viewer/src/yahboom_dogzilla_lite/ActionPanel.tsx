@@ -1,9 +1,9 @@
 import { memo } from 'react';
-import { dogzilla } from '@/api/proto.js';
+import { yahboom_dogzilla_lite } from '@/api/proto.js';
 
 export interface ActionDefinition {
   label: string;
-  value: dogzilla.ActionType;
+  value: yahboom_dogzilla_lite.ActionType;
 }
 
 export interface ActionGroup {
@@ -12,46 +12,46 @@ export interface ActionGroup {
 }
 
 export const QUICK_ACTIONS: ActionDefinition[] = [
-  { label: 'Stand', value: dogzilla.ActionType.ACTION_STAND_UP },
-  { label: 'Sit', value: dogzilla.ActionType.ACTION_SIT_DOWN },
-  { label: 'Crawl', value: dogzilla.ActionType.ACTION_CRAWL_FORWARD },
-  { label: 'Reset', value: dogzilla.ActionType.ACTION_RESTORE_DEFAULT }
+  { label: 'Stand', value: yahboom_dogzilla_lite.ActionType.ACTION_STAND_UP },
+  { label: 'Sit', value: yahboom_dogzilla_lite.ActionType.ACTION_SIT_DOWN },
+  { label: 'Crawl', value: yahboom_dogzilla_lite.ActionType.ACTION_CRAWL_FORWARD },
+  { label: 'Reset', value: yahboom_dogzilla_lite.ActionType.ACTION_RESTORE_DEFAULT }
 ];
 
 export const ACTION_GROUPS: ActionGroup[] = [
   {
     title: 'Pose',
     actions: [
-      { label: 'Lie Down', value: dogzilla.ActionType.ACTION_LIE_DOWN },
-      { label: 'Stand Up', value: dogzilla.ActionType.ACTION_STAND_UP },
-      { label: 'Sit', value: dogzilla.ActionType.ACTION_SIT_DOWN },
-      { label: 'Squat', value: dogzilla.ActionType.ACTION_SQUAT }
+      { label: 'Lie Down', value: yahboom_dogzilla_lite.ActionType.ACTION_LIE_DOWN },
+      { label: 'Stand Up', value: yahboom_dogzilla_lite.ActionType.ACTION_STAND_UP },
+      { label: 'Sit', value: yahboom_dogzilla_lite.ActionType.ACTION_SIT_DOWN },
+      { label: 'Squat', value: yahboom_dogzilla_lite.ActionType.ACTION_SQUAT }
     ]
   },
   {
     title: 'Movement',
     actions: [
-      { label: 'Crawl', value: dogzilla.ActionType.ACTION_CRAWL_FORWARD },
-      { label: 'Turn', value: dogzilla.ActionType.ACTION_TURN_AROUND },
-      { label: 'Roll', value: dogzilla.ActionType.ACTION_ROLL },
-      { label: 'Pitch', value: dogzilla.ActionType.ACTION_PITCH },
-      { label: 'Yaw', value: dogzilla.ActionType.ACTION_YAW }
+      { label: 'Crawl', value: yahboom_dogzilla_lite.ActionType.ACTION_CRAWL_FORWARD },
+      { label: 'Turn', value: yahboom_dogzilla_lite.ActionType.ACTION_TURN_AROUND },
+      { label: 'Roll', value: yahboom_dogzilla_lite.ActionType.ACTION_ROLL },
+      { label: 'Pitch', value: yahboom_dogzilla_lite.ActionType.ACTION_PITCH },
+      { label: 'Yaw', value: yahboom_dogzilla_lite.ActionType.ACTION_YAW }
     ]
   },
   {
     title: 'Tricks',
     actions: [
-      { label: 'Wave', value: dogzilla.ActionType.ACTION_WAVE },
-      { label: 'Beg', value: dogzilla.ActionType.ACTION_BEG_FOR_FOOD },
-      { label: 'Pee', value: dogzilla.ActionType.ACTION_PEE },
-      { label: 'Pushups', value: dogzilla.ActionType.ACTION_PUSHUPS },
-      { label: 'Handshake', value: dogzilla.ActionType.ACTION_HANDSHAKE }
+      { label: 'Wave', value: yahboom_dogzilla_lite.ActionType.ACTION_WAVE },
+      { label: 'Beg', value: yahboom_dogzilla_lite.ActionType.ACTION_BEG_FOR_FOOD },
+      { label: 'Pee', value: yahboom_dogzilla_lite.ActionType.ACTION_PEE },
+      { label: 'Pushups', value: yahboom_dogzilla_lite.ActionType.ACTION_PUSHUPS },
+      { label: 'Handshake', value: yahboom_dogzilla_lite.ActionType.ACTION_HANDSHAKE }
     ]
   }
 ];
 
 interface ActionPanelProps {
-  activeAction: dogzilla.ActionType | null;
+  activeAction: yahboom_dogzilla_lite.ActionType | null;
   onActionSelect: (action: ActionDefinition) => void;
 }
 

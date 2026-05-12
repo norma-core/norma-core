@@ -1,9 +1,9 @@
 import { memo } from 'react';
-import { dogzilla } from '@/api/proto.js';
-import DogzillaViewer from '@/dogzilla/DogzillaViewer';
+import { yahboom_dogzilla_lite } from '@/api/proto.js';
+import YahboomDogzillaLiteViewer from '@/yahboom_dogzilla_lite/YahboomDogzillaLiteViewer';
 
-interface DogzillaExpandedProps {
-  data: dogzilla.InferenceState;
+interface YahboomDogzillaLiteExpandedProps {
+  data: yahboom_dogzilla_lite.InferenceState;
 }
 
 const SERVO_LABELS = [
@@ -24,7 +24,7 @@ const SERVO_LABELS = [
   { id: 53, label: 'arm shoulder' },
 ];
 
-function ServoTable({ status }: { status: dogzilla.IDogzillaStatus }) {
+function ServoTable({ status }: { status: yahboom_dogzilla_lite.IYahboomDogzillaLiteStatus }) {
   const positions = status.servoPositions ?? [];
   const angles = status.servoAngles ?? [];
 
@@ -67,16 +67,16 @@ function ServoTable({ status }: { status: dogzilla.IDogzillaStatus }) {
   );
 }
 
-const DogzillaExpanded = memo(function DogzillaExpanded({ data }: DogzillaExpandedProps) {
+const YahboomDogzillaLiteExpanded = memo(function YahboomDogzillaLiteExpanded({ data }: YahboomDogzillaLiteExpandedProps) {
   const deviceCount = data.devices?.length ?? 0;
   const connectedCount = data.devices?.filter(d => d.isConnected).length ?? 0;
 
   return (
     <div className="space-y-3">
       <div>
-        <div className="text-xs text-gray-400 mb-1">Dogzilla Inference State:</div>
+        <div className="text-xs text-gray-400 mb-1">YahboomDogzillaLite Inference State:</div>
         <div className="bg-gray-900 p-2 rounded text-xs space-y-1">
-          <div className="text-orange-400">Type: Dogzilla Inference State</div>
+          <div className="text-orange-400">Type: YahboomDogzillaLite Inference State</div>
           <div className="text-cyan-400">Devices: {deviceCount}</div>
           <div className="text-green-400">Connected: {connectedCount}</div>
         </div>
@@ -92,7 +92,7 @@ const DogzillaExpanded = memo(function DogzillaExpanded({ data }: DogzillaExpand
         const device = deviceState.device;
         const status = deviceState.status;
         const modelName = device?.model !== undefined && device.model !== null
-          ? dogzilla.DogzillaModel[device.model] ?? 'Unknown'
+          ? yahboom_dogzilla_lite.YahboomDogzillaLiteModel[device.model] ?? 'Unknown'
           : 'Unknown';
         const deviceKey = device?.serialNumber
           || device?.portName
@@ -101,7 +101,7 @@ const DogzillaExpanded = memo(function DogzillaExpanded({ data }: DogzillaExpand
             .join(':')
           || deviceState.monotonicStampNs?.toString()
           || deviceState.systemStampNs?.toString()
-          || 'unknown-dogzilla-device';
+          || 'unknown-yahboom_dogzilla_lite-device';
 
         return (
           <div key={deviceKey} className="bg-gray-900/60 border border-gray-800 rounded p-2 space-y-2">
@@ -135,7 +135,7 @@ const DogzillaExpanded = memo(function DogzillaExpanded({ data }: DogzillaExpand
 
             <div className="grid grid-cols-1 items-stretch gap-3 lg:grid-cols-2">
               <div className="min-h-[280px] overflow-hidden rounded bg-gray-950 lg:order-1">
-                <DogzillaViewer status={status} />
+                <YahboomDogzillaLiteViewer status={status} />
               </div>
               <div className="lg:order-2">
                 {status ? <ServoTable status={status} /> : (
@@ -150,4 +150,4 @@ const DogzillaExpanded = memo(function DogzillaExpanded({ data }: DogzillaExpand
   );
 });
 
-export default DogzillaExpanded;
+export default YahboomDogzillaLiteExpanded;

@@ -54,7 +54,8 @@ pub struct Drivers {
     #[serde(rename = "usb-video", skip_serializing_if = "Option::is_none")]
     pub usb_video: Option<UsbVideoConfig>,
 
-    pub dogzilla: Option<DogzillaConfig>,
+    #[serde(rename = "yahboom-dogzilla-lite", skip_serializing_if = "Option::is_none")]
+    pub yahboom_dogzilla_lite: Option<YahboomDogzillaLiteConfig>,
 
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub ov5647: Option<Ov5647Config>,
@@ -166,18 +167,18 @@ impl Inference {
         }
     }
 
-    pub fn default_dogzilla() -> Self {
+    pub fn default_yahboom_dogzilla_lite() -> Self {
         let shm_path = if cfg!(target_os = "linux") {
-            PathBuf::from("/run/station/dogzilla")
+            PathBuf::from("/run/station/yahboom-dogzilla-lite")
         } else {
-            PathBuf::from("/tmp/dogzilla")
+            PathBuf::from("/tmp/yahboom-dogzilla-lite")
         };
 
         Self {
-            queue_id: "inference/dogzilla".to_string(),
+            queue_id: "inference/yahboom-dogzilla-lite".to_string(),
             shm: shm_path,
             shm_size_mb: 1,
-            format: "dogzilla".to_string(),
+            format: "yahboom-dogzilla-lite".to_string(),
             st3215_bus: "auto".to_string(),
             update_interval: default_update_interval(),
         }
@@ -214,22 +215,22 @@ pub struct HikvisionConfig {
 
 #[derive(Debug, Serialize, Deserialize, Clone, Copy)]
 #[serde(rename_all = "lowercase")]
-pub enum DogzillaMode {
+pub enum YahboomDogzillaLiteMode {
     Real,
     Simulation,
 }
 
-fn default_dogzilla_mode() -> DogzillaMode {
-    DogzillaMode::Real
+fn default_yahboom_dogzilla_lite_mode() -> YahboomDogzillaLiteMode {
+    YahboomDogzillaLiteMode::Real
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct DogzillaConfig {
+pub struct YahboomDogzillaLiteConfig {
     #[serde(default)]
     pub enabled: bool,
 
-    #[serde(default = "default_dogzilla_mode")]
-    pub mode: DogzillaMode,
+    #[serde(default = "default_yahboom_dogzilla_lite_mode")]
+    pub mode: YahboomDogzillaLiteMode,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -273,7 +274,7 @@ impl Default for Drivers {
             st3215: Some(St3215Config::default()),
             system_info: true,
             usb_video: Some(UsbVideoConfig::default()),
-            dogzilla: None,
+            yahboom_dogzilla_lite: None,
             ov5647: None,
         }
     }

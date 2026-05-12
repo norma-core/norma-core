@@ -1,10 +1,10 @@
 import { memo, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { commandManager } from '@/api/commands.js';
-import { dogzilla, ov5647, usbvideo } from '@/api/proto.js';
-import DogzillaDesktopActionPanel from '@/dogzilla/DogzillaDesktopActionPanel';
-import DogzillaDesktopMovementPanel from '@/dogzilla/DogzillaDesktopMovementPanel';
-import type { DogzillaViewMode } from '@/dogzilla/DogzillaViewModeSwitch';
-import DogzillaViewer from '@/dogzilla/DogzillaViewer';
+import { yahboom_dogzilla_lite, ov5647, usbvideo } from '@/api/proto.js';
+import YahboomDogzillaLiteDesktopActionPanel from '@/yahboom_dogzilla_lite/YahboomDogzillaLiteDesktopActionPanel';
+import YahboomDogzillaLiteDesktopMovementPanel from '@/yahboom_dogzilla_lite/YahboomDogzillaLiteDesktopMovementPanel';
+import type { YahboomDogzillaLiteViewMode } from '@/yahboom_dogzilla_lite/YahboomDogzillaLiteViewModeSwitch';
+import YahboomDogzillaLiteViewer from '@/yahboom_dogzilla_lite/YahboomDogzillaLiteViewer';
 import Ov5647CameraViewer from '@/ov5647/CameraViewer';
 import UsbCameraViewer from '@/usbvideo/CameraViewer';
 import { getGradientClass } from '@/utils/color-utils';
@@ -61,11 +61,11 @@ type SelectedVideoSource =
   | { kind: 'usbvideo'; source: usbvideo.IRxEnvelope; sourceId: string }
   | { kind: 'ov5647'; source: ov5647.IRxEnvelope };
 
-interface DogzillaDesktopDashboardProps {
-  deviceState: dogzilla.InferenceState.IDeviceState | null;
+interface YahboomDogzillaLiteDesktopDashboardProps {
+  deviceState: yahboom_dogzilla_lite.InferenceState.IDeviceState | null;
   refreshToken?: number;
   selectedVideoSource?: SelectedVideoSource;
-  mainViewMode?: DogzillaViewMode;
+  mainViewMode?: YahboomDogzillaLiteViewMode;
 }
 
 interface PanelCardProps {
@@ -255,12 +255,12 @@ function ServoPanel({ title, controls, displayPositions, onChange }: ServoPanelP
   );
 }
 
-const DogzillaDesktopDashboard = memo(function DogzillaDesktopDashboard({
+const YahboomDogzillaLiteDesktopDashboard = memo(function YahboomDogzillaLiteDesktopDashboard({
   deviceState,
   refreshToken,
   selectedVideoSource,
   mainViewMode = '3d'
-}: DogzillaDesktopDashboardProps) {
+}: YahboomDogzillaLiteDesktopDashboardProps) {
   const fullscreenRootRef = useRef<HTMLDivElement | null>(null);
   const manualServoEditAtRef = useRef(DEFAULT_SERVO_POSITIONS.map(() => 0));
   const manualLegsSpeedEditAtRef = useRef(0);
@@ -276,7 +276,7 @@ const DogzillaDesktopDashboard = memo(function DogzillaDesktopDashboard({
     if (device?.model === null || device?.model === undefined) {
       return 'Unknown';
     }
-    return dogzilla.DogzillaModel[device.model] ?? 'DOGZILLA_MODEL_UNKNOWN';
+    return yahboom_dogzilla_lite.YahboomDogzillaLiteModel[device.model] ?? 'YAHBOOM_DOGZILLA_LITE_MODEL_UNKNOWN';
   }, [device?.model]);
 
   const livePositions = useMemo(() => {
@@ -296,21 +296,21 @@ const DogzillaDesktopDashboard = memo(function DogzillaDesktopDashboard({
   const displayPositions = servoPositions;
 
   const sendServoCommand = (servoId: number, position: number) => {
-    commandManager.sendDogzillaCommand({
+    commandManager.sendYahboomDogzillaLiteCommand({
       targetDeviceSerial: device?.serialNumber ?? '',
       servo: { servoId, position }
     });
   };
 
   const sendLegsSpeedCommand = (bodySpeed: number) => {
-    commandManager.sendDogzillaCommand({
+    commandManager.sendYahboomDogzillaLiteCommand({
       targetDeviceSerial: device?.serialNumber ?? '',
       servoSpeed: { bodyServoSpeed: bodySpeed }
     });
   };
 
   const sendArmSpeedCommand = (armServoSpeed: number) => {
-    commandManager.sendDogzillaCommand({
+    commandManager.sendYahboomDogzillaLiteCommand({
       targetDeviceSerial: device?.serialNumber ?? '',
       servoSpeed: { armServoSpeed }
     });
@@ -531,7 +531,7 @@ const DogzillaDesktopDashboard = memo(function DogzillaDesktopDashboard({
   };
 
   const renderRobotContent = (className?: string) => (
-    <DogzillaViewer
+    <YahboomDogzillaLiteViewer
       status={status}
       servoPositions={displayPositions}
       servoAngles={liveAngles}
@@ -558,7 +558,7 @@ const DogzillaDesktopDashboard = memo(function DogzillaDesktopDashboard({
         </div>
         {renderRobotInset()}
         <div hidden>
-          <DogzillaDesktopMovementPanel
+          <YahboomDogzillaLiteDesktopMovementPanel
             deviceSerial={device?.serialNumber ?? ''}
             showHints={false}
           />
@@ -592,13 +592,13 @@ const DogzillaDesktopDashboard = memo(function DogzillaDesktopDashboard({
               renderRobotInset()
             )}
             <div className="pointer-events-none absolute inset-x-4 bottom-4 z-10">
-              <DogzillaDesktopMovementPanel deviceSerial={device?.serialNumber ?? ''} />
+              <YahboomDogzillaLiteDesktopMovementPanel deviceSerial={device?.serialNumber ?? ''} />
             </div>
           </div>
         </div>
 
         <div className="flex min-h-0 flex-col gap-4 overflow-hidden">
-          <DogzillaDesktopActionPanel deviceSerial={device?.serialNumber ?? ''} />
+          <YahboomDogzillaLiteDesktopActionPanel deviceSerial={device?.serialNumber ?? ''} />
         </div>
       </div>
 
@@ -614,4 +614,4 @@ const DogzillaDesktopDashboard = memo(function DogzillaDesktopDashboard({
   );
 });
 
-export default DogzillaDesktopDashboard;
+export default YahboomDogzillaLiteDesktopDashboard;
