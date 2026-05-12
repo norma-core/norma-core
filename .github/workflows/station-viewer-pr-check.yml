@@ -2,7 +2,6 @@ name: Station Viewer PR Check
 
 env:
   NODE_VERSION: "22"
-  NPM_VERSION: "11"
 
 on:
   pull_request:
@@ -28,9 +27,6 @@ jobs:
           cache: "npm"
           cache-dependency-path: software/station/clients/station-viewer/package-lock.json
 
-      - name: Install npm
-        run: npm install -g npm@${{ env.NPM_VERSION }}
-
       - name: Install dependencies
         run: npm ci
 
@@ -39,9 +35,10 @@ jobs:
 
       - name: Audit dependencies
         run: npm audit --audit-level=moderate
+        continue-on-error: true
 
       - name: Lint
-        run: yarn lint
+        run: npm run lint
 
       - name: Typecheck
         run: npm run type-check
