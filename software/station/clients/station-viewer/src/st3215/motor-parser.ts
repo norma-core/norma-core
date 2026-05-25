@@ -14,11 +14,18 @@ const SIGN_BIT_MASK = 0x8000;
 export const MAX_ANGLE_STEP = 4095;
 const BUFFER_SIZE = 0x47;
 
-export function getEffectiveMotorRange(motor: st3215.InferenceState.IMotorState): {
+export function getEffectiveMotorRange(
+  motor: st3215.InferenceState.IMotorState,
+  options?: { forceFullRange?: boolean },
+): {
   min: number;
   max: number;
   isFallback: boolean;
 } {
+  if (options?.forceFullRange) {
+    return { min: 0, max: MAX_ANGLE_STEP, isFallback: true };
+  }
+
   const rawMin = motor.rangeMin ?? 0;
   const rawMax = motor.rangeMax ?? 0;
 

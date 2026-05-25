@@ -41,6 +41,7 @@ const MotorDataTable: React.FC<MotorDataTableProps> = ({
   const [motorControlStates, setMotorControlStates] = useState<Map<number, MotorControlState>>(new Map());
   const [hoveredMotor, setHoveredMotor] = useState<number | null>(null);
   const buttonIntervalRef = useRef<{ [key: string]: NodeJS.Timeout | null }>({});
+  const forceFullServoRange = (bus.motors?.length ?? 0) === 1;
 
   // Function to calculate moving average for latency (15 second window)
   const getMovingAverageLatency = (key: string, currentLatency: number): LatencyStats => {
@@ -108,7 +109,9 @@ const MotorDataTable: React.FC<MotorDataTableProps> = ({
   }, [bus.bus?.serialNumber]);
 
   const calculateTargetPosition = (motor: st3215.InferenceState.IMotorState, percentage: number) => {
-    const { min: rangeMin, max: rangeMax } = getEffectiveMotorRange(motor);
+    const { min: rangeMin, max: rangeMax } = getEffectiveMotorRange(motor, {
+      forceFullRange: forceFullServoRange,
+    });
 
     if (rangeMin > rangeMax) {
       const totalRange = (MAX_ANGLE_STEP - rangeMin) + rangeMax;
@@ -195,7 +198,9 @@ const MotorDataTable: React.FC<MotorDataTableProps> = ({
     
     // Get initial position
     let currentPosition = motor.state ? getMotorPosition(motor.state) : 0;
-    const { min: rangeMin, max: rangeMax } = getEffectiveMotorRange(motor);
+    const { min: rangeMin, max: rangeMax } = getEffectiveMotorRange(motor, {
+      forceFullRange: forceFullServoRange,
+    });
 
     // Calculate step size (1% of range)
     let stepSize: number;
@@ -316,7 +321,9 @@ const MotorDataTable: React.FC<MotorDataTableProps> = ({
             const position = motor.state ? getMotorPosition(motor.state) : 0;
             const current = motor.state ? getMotorCurrent(motor.state) : 0;
             const temperature = motor.state ? getMotorTemperature(motor.state) : 0;
-            const effectiveRange = getEffectiveMotorRange(motor);
+            const effectiveRange = getEffectiveMotorRange(motor, {
+              forceFullRange: forceFullServoRange,
+            });
             const percentage = calculatePercentage(position, effectiveRange.min, effectiveRange.max);
             const rangeCellTitle = effectiveRange.isFallback
               ? 'Uncalibrated — using full servo range'
@@ -488,7 +495,9 @@ const MotorDataTable: React.FC<MotorDataTableProps> = ({
           <div className="flex items-center justify-between">
             <span>🎮 Web Control Active</span>
             <span className="text-text-muted">
-              Drag to move • Hold +/- for continuous
+              {forceFullServoRange
+                ? 'Single motor: raw 0-4095 range'
+                : 'Drag to move • Hold +/- for continuous'}
             </span>
           </div>
         </div>

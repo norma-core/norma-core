@@ -5,6 +5,9 @@ import RobotRendererHost from './robot-rendering/RobotRendererHost';
 import type { BaseRobotRendererRef } from './robot-rendering/types';
 import MotorDataTable from './MotorDataTable';
 import CameraViewer from '../usbvideo/CameraViewer';
+import { getMotorVoltage } from './motor-parser';
+
+const LEADER_VOLTAGE_MAX = 60; // ST3215 voltage units are 0.1V; USB-powered leaders sit around 5V.
 
 interface BusWebGLRendererProps {
   busSerialNumber: string | null | undefined;
@@ -32,11 +35,21 @@ const BusWebGLRendererComponent = forwardRef<BusWebGLRendererRef, BusWebGLRender
     },
   }));
 
-  const { bus, showMotorData, busIndex, isWebControlled, selectedVideoSourceId, showCalibrateButton, needsCalibration, inCalibrationView } = props;
+  const { bus, showMotorData, busIndex, isWebControlled, selectedVideoSourceId, showCalibrateButton, needsCalibration, inCalibrationView, isLeader } = props;
+  const minPositiveVoltage = bus.motors?.reduce((min, motor) => {
+    if (!motor.state) {
+      return min;
+    }
+
+    const voltage = getMotorVoltage(motor.state);
+    return voltage > 0 ? Math.min(min, voltage) : min;
+  }, Number.POSITIVE_INFINITY) ?? Number.POSITIVE_INFINITY;
+  const isFiveVoltLeader = minPositiveVoltage <= LEADER_VOLTAGE_MAX;
+  const renderIsLeader = isFiveVoltLeader ? true : isLeader;
 
   return (
     <div className="relative w-full h-full">
-      <RobotRendererHost {...props} ref={childRef} />
+      <RobotRendererHost {...props} isLeader={renderIsLeader} ref={childRef} />
       <div className="absolute inset-0 w-full h-full z-20 pointer-events-none">
         {showMotorData &&
           <div className="pointer-events-auto">

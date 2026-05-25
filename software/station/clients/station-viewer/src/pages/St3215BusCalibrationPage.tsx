@@ -53,6 +53,7 @@ const St3215BusCalibrationPage: React.FC = () => {
   const currentBusState = selectedBus
     ? inferenceState?.st3215?.data.buses?.find((b: st3215.InferenceState.IBusState) => b.bus?.serialNumber === selectedBus.bus?.serialNumber) || selectedBus
     : null;
+  const hasMotors = (currentBusState?.motors?.length ?? 0) > 0;
   const isCalibrationFrozen = currentBusState?.motors?.some((motor: st3215.InferenceState.IMotorState) => motor.rangeFreezed) ?? false;
   const [showResetConfirmation, setShowResetConfirmation] = useState(isCalibrationFrozen);
   const getMotorRange = (motor: st3215.InferenceState.IMotorState) => {
@@ -64,12 +65,12 @@ const St3215BusCalibrationPage: React.FC = () => {
     (motor: st3215.InferenceState.IMotorState) => getMotorRange(motor) < MIN_CALIBRATED_RANGE
   ) ?? [];
   const allMotorsNarrow = motorsWithNarrowRange.length === (currentBusState?.motors?.length ?? 0);
-  const showMoveOverlay = !isCalibrationFrozen && !showResetConfirmation && allMotorsNarrow;
+  const showMoveOverlay = hasMotors && !isCalibrationFrozen && !showResetConfirmation && allMotorsNarrow;
 
   const calibrationState = currentBusState?.autoCalibration;
   const isCalibrating = calibrationState?.status === st3215.AutoCalibrationState.Status.IN_PROGRESS;
-  const hasValidMotors = currentBusState ? supportsSt3215Device(currentBusState) : false;
-  const isSupportedRobot = hasValidMotors;
+  const isSupportedRobot = currentBusState ? supportsSt3215Device(currentBusState) : false;
+  const isManualMotorControlEnabled = hasMotors && !isCalibrationFrozen;
 
   // Check voltage across all motors (voltage is in 0.1V units, so 70 = 7.0V)
   const minVoltage = currentBusState?.motors?.reduce((min, motor) => {
@@ -160,7 +161,7 @@ const St3215BusCalibrationPage: React.FC = () => {
     const renderResetButton = () => (
       <button
         onClick={() => setShowResetConfirmation(true)}
-        disabled={!hasValidMotors}
+        disabled={!hasMotors}
         className={`${actionButtonClasses} bg-accent-critical-bg text-text-primary hover:bg-accent-critical-bg active:scale-95`}
       >
         Reset
@@ -176,7 +177,7 @@ const St3215BusCalibrationPage: React.FC = () => {
         return (
           <button
             onClick={handleStopCalibration}
-            disabled={!hasValidMotors}
+            disabled={!hasMotors}
             className={`${wideActionButtonClasses} border-2 border-transparent bg-accent-danger-deep text-text-primary shadow-lg shadow-accent-danger-deep/30 hover:bg-accent-danger-deep hover:scale-105 active:scale-95`}
           >
             Stop Calibration
@@ -187,7 +188,7 @@ const St3215BusCalibrationPage: React.FC = () => {
       return (
         <button
           onClick={handleAutoCalibrate}
-          disabled={isCalibrationFrozen || !hasValidMotors || isLowVoltage}
+          disabled={isCalibrationFrozen || !hasMotors || isLowVoltage}
           className={`${wideActionButtonClasses} border-2 ${isLowVoltage ? 'border-accent-warning bg-accent-warning-deep shadow-accent-warning/30' : 'border-accent-secondary-deep bg-accent-secondary-bg shadow-accent-secondary-deep/30'} text-text-primary shadow-lg ${isLowVoltage ? 'hover:bg-accent-warning' : 'hover:bg-accent-secondary-deep'} hover:scale-105 active:scale-95`}
           style={{
             animation: isLowVoltage ? undefined : 'gentlePulse 2s ease-in-out infinite'
@@ -206,7 +207,7 @@ const St3215BusCalibrationPage: React.FC = () => {
       return (
         <button
           onClick={handleFreeze}
-          disabled={!hasValidMotors || isSavePending}
+          disabled={!hasMotors || isSavePending}
           className={`${actionButtonClasses} bg-accent-info-bg text-text-primary shadow-lg shadow-accent-info-deep/30 hover:bg-accent-info-deep hover:scale-105 active:scale-95`}
         >
           {isSavePending ? <ButtonLoadingLabel label="Saving..." /> : 'Save'}
@@ -251,12 +252,12 @@ const St3215BusCalibrationPage: React.FC = () => {
                 {renderSaveButton()}
               </div>
             </div>
-            {!hasValidMotors && (
+            {!hasMotors && (
               <div className="px-4 py-2 bg-accent-warning/10 border border-accent-warning-deep rounded text-accent-warning">
                 Power disconnected or motors not detected. Calibration is unavailable.
               </div>
             )}
-            {isLowVoltage && hasValidMotors && (
+            {isLowVoltage && hasMotors && (
               <div className="px-4 py-2 bg-accent-warning/10 border border-accent-warning-deep rounded text-accent-warning">
                 ⚠️ Low voltage detected ({(minVoltage / 10).toFixed(1)}V). Auto calibration is disabled. Please check power supply (requires at least 7.0V).
               </div>
@@ -364,6 +365,7 @@ const St3215BusCalibrationPage: React.FC = () => {
                 busIndex={0}
                 showMotorData={true}
                 inCalibrationView={true}
+                isWebControlled={isManualMotorControlEnabled}
               />
             ) : (
               <div className="relative h-full">
@@ -372,6 +374,12 @@ const St3215BusCalibrationPage: React.FC = () => {
                     3D model visualization is only available for registered device modules.
                     <br />
                     This bus has {currentBusState.motors?.length || 0} motor{currentBusState.motors?.length === 1 ? "" : "s"}.
+                    {currentBusState.motors?.length === 1 && (
+                      <>
+                        <br />
+                        Single motor control uses the raw 0-4095 servo range.
+                      </>
+                    )}
                   </p>
                 </div>
                 <div className="absolute inset-0 pointer-events-none">
@@ -379,7 +387,7 @@ const St3215BusCalibrationPage: React.FC = () => {
                     <MotorDataTable 
                       bus={currentBusState} 
                       busIndex={0} 
-                      isWebControlled={false} 
+                      isWebControlled={isManualMotorControlEnabled}
                     />
                   </div>
                 </div>
