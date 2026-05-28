@@ -4,7 +4,7 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="${ROOT_DIR:-$(cd "$SCRIPT_DIR/.." && pwd)}"
 LIBCAMERA_REPO="${LIBCAMERA_REPO:-https://github.com/raspberrypi/libcamera.git}"
-LIBCAMERA_VERSION="${LIBCAMERA_VERSION:-0.6.0}"
+LIBCAMERA_VERSION="${LIBCAMERA_VERSION:-0.7.0}"
 LIBCAMERA_TAG="v${LIBCAMERA_VERSION}"
 
 LIBCAMERA_SRC_DIR="${LIBCAMERA_SRC_DIR:-libcamera}"
@@ -74,7 +74,7 @@ INCLUDE_DIR="/mnt/'"$LIBCAMERA_INSTALL_DIR"'/usr/include/libcamera"
 # symbols remain unresolved for the final link with cargo-zigbuild.
 # A compat stub provides __isoc23_strtoul for glibc < 2.38 targets.
 
-cat > /tmp/glibc_compat.c << 'COMPAT_EOF'
+cat > /tmp/glibc_compat.c << COMPAT_EOF
 #include <stdlib.h>
 __attribute__((weak))
 unsigned long __isoc23_strtoul(const char *nptr, char **endptr, int base) {
@@ -91,7 +91,7 @@ g++ -c -std=c++17 -fPIC -O2 -fno-exceptions -fno-rtti \
     -o /tmp/wrapper.o
 
 LIBSTDCPP_A=$(g++ -print-file-name=libstdc++.a)
-ROOTS=$(nm -g /tmp/wrapper.o | grep " T lc_" | awk '{print "-u " $3}' | tr '\n' ' ')
+ROOTS=$(nm -g /tmp/wrapper.o | sed -n "s/.* T \(lc_.*\)$/-u \1/p" | tr "\n" " ")
 
 ld -r --gc-sections $ROOTS -o /tmp/camera_wrapper.o \
     /tmp/wrapper.o /tmp/glibc_compat.o "$LIBSTDCPP_A"

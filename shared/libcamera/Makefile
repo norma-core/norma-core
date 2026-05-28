@@ -3,7 +3,7 @@
 DOCKER_TAG := latest
 LIBCAMERA_IMAGE := libcamera-build-deps
 WORKSPACE_ROOT := $(shell pwd)/../..
-LIBCAMERA_VERSION ?= 0.6.0
+LIBCAMERA_VERSION ?= 0.7.0
 LIBCAMERA_SRC_DIR := target/tmp/libcamera
 LIBCAMERA_INSTALL_DIR := shared/libcamera/library/$(LIBCAMERA_VERSION)
 LIBCAMERA_WORK_BUILD := $(WORKSPACE_ROOT)/target/tmp/libcamera-build
