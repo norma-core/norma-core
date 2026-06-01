@@ -132,15 +132,15 @@ function getServoIndex(servoId: number) {
 
 function StatusPill({ label, value, tone = 'default' }: { label: string; value: string; tone?: 'default' | 'good' | 'warn' | 'danger' }) {
   const toneClass = {
-    default: 'border-gray-700 bg-gray-900/85 text-gray-100',
-    good: 'border-emerald-900 bg-gray-900/90 text-emerald-300',
-    warn: 'border-amber-900 bg-gray-900/90 text-amber-300',
-    danger: 'border-red-900 bg-gray-900/90 text-red-300'
+    default: 'border-border-default bg-surface-primary/85 text-text-primary',
+    good: 'border-accent-success-deep bg-surface-primary/90 text-accent-success',
+    warn: 'border-accent-warning-deep bg-surface-primary/90 text-accent-warning',
+    danger: 'border-accent-critical-deep bg-surface-primary/90 text-accent-critical'
   }[tone];
 
   return (
     <div className={`rounded-md border px-2.5 py-2 ${toneClass}`}>
-      <div className="text-[10px] font-medium uppercase tracking-wide text-gray-500">{label}</div>
+      <div className="text-[10px] font-medium uppercase tracking-wide text-text-muted">{label}</div>
       <div className="mt-1 font-mono text-sm font-semibold">{value}</div>
     </div>
   );
@@ -163,8 +163,8 @@ function TabButton({
       onClick={onClick}
       className={`flex min-h-9 min-w-[5.1rem] shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-md border px-3 py-2 text-sm font-medium transition ${
         isActive
-          ? 'border-cyan-500 bg-gray-800 text-cyan-300'
-          : 'border-gray-700 bg-gray-900/80 text-gray-300 hover:border-cyan-700 hover:text-cyan-300'
+          ? 'border-accent-data bg-accent-data/10 text-accent-data'
+          : 'border-border-default bg-surface-primary/80 text-text-secondary hover:border-accent-data hover:text-accent-data'
       }`}
     >
       <Icon className="h-4 w-4" />
@@ -188,8 +188,8 @@ function QuickActionButton({
       onClick={onClick}
       className={`min-h-9 shrink-0 rounded-full border px-3 py-1.5 text-sm font-semibold transition ${
         isDanger
-          ? 'border-red-900 bg-red-950/50 text-red-300 hover:border-red-700 hover:bg-red-950/70'
-          : 'border-gray-700 bg-gray-900/80 text-gray-100 hover:border-cyan-700 hover:text-cyan-300'
+          ? 'border-accent-critical-deep bg-accent-critical/10 text-accent-critical hover:border-accent-critical hover:bg-accent-critical/20'
+          : 'border-border-default bg-surface-primary/80 text-text-primary hover:border-accent-data hover:text-accent-data'
       }`}
     >
       {label}
@@ -213,15 +213,15 @@ function SliderControlCard({
   onChange: (value: number) => void;
 }) {
   return (
-    <div className="rounded-lg border border-gray-700 bg-gray-900/80 px-4 py-4">
+    <div className="rounded-lg border border-border-default bg-surface-primary/80 px-4 py-4">
       <div className="flex items-center justify-between">
         <div>
-          <div className="text-[11px] font-medium uppercase tracking-wide text-gray-500">{label}</div>
-          <div className="mt-1 font-mono text-lg font-semibold text-gray-100">{value}</div>
+          <div className="text-[11px] font-medium uppercase tracking-wide text-text-muted">{label}</div>
+          <div className="mt-1 font-mono text-lg font-semibold text-text-primary">{value}</div>
         </div>
-        <div className="text-right text-xs text-gray-500">
+        <div className="text-right text-xs text-text-muted">
           <div>Position</div>
-          <div className="mt-1 font-mono text-cyan-300">{angle === undefined ? '—' : `${Math.round(angle)}°`}</div>
+          <div className="mt-1 font-mono text-accent-data">{angle === undefined ? '—' : `${Math.round(angle)}°`}</div>
         </div>
       </div>
       <input
@@ -236,17 +236,17 @@ function SliderControlCard({
         <button
           type="button"
           onClick={() => onAdjust(-step)}
-          className="flex h-11 w-11 items-center justify-center rounded-md border border-gray-700 bg-gray-950 text-gray-100 transition hover:border-cyan-700 hover:text-cyan-300"
+          className="flex h-11 w-11 items-center justify-center rounded-md border border-border-default bg-surface-base text-text-primary transition hover:border-accent-data hover:text-accent-data"
         >
           <Minus className="h-4 w-4" />
         </button>
-        <div className="flex-1 rounded-md border border-gray-700 bg-gray-950 px-4 py-2 text-center font-mono text-sm font-medium text-gray-300">
+        <div className="flex-1 rounded-md border border-border-default bg-surface-base px-4 py-2 text-center font-mono text-sm font-medium text-text-secondary">
           Step {step}
         </div>
         <button
           type="button"
           onClick={() => onAdjust(step)}
-          className="flex h-11 w-11 items-center justify-center rounded-md border border-gray-700 bg-gray-950 text-gray-100 transition hover:border-cyan-700 hover:text-cyan-300"
+          className="flex h-11 w-11 items-center justify-center rounded-md border border-border-default bg-surface-base text-text-primary transition hover:border-accent-data hover:text-accent-data"
         >
           <Plus className="h-4 w-4" />
         </button>
@@ -265,16 +265,16 @@ function StatusSection({
   rows: Array<{ label: string; value: string }>;
 }) {
   return (
-    <section className="rounded-lg border border-gray-700 bg-gray-900/80 px-4 py-4">
+    <section className="rounded-lg border border-border-default bg-surface-primary/80 px-4 py-4">
       <div className="flex items-center gap-2">
-        <Icon className="h-4 w-4 text-cyan-400" />
-        <h3 className="text-[11px] font-semibold uppercase tracking-wide text-cyan-400">{title}</h3>
+        <Icon className="h-4 w-4 text-accent-data" />
+        <h3 className="text-[11px] font-semibold uppercase tracking-wide text-accent-data">{title}</h3>
       </div>
       <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
         {rows.map((row) => (
-          <div key={row.label} className="rounded-md border border-gray-700 bg-gray-950 px-3 py-3 text-sm">
-            <div className="text-gray-500">{row.label}</div>
-            <div className="mt-1 text-right font-mono font-medium text-gray-100">{row.value}</div>
+          <div key={row.label} className="rounded-md border border-border-default bg-surface-base px-3 py-3 text-sm">
+            <div className="text-text-muted">{row.label}</div>
+            <div className="mt-1 text-right font-mono font-medium text-text-primary">{row.value}</div>
           </div>
         ))}
       </div>
@@ -512,14 +512,14 @@ const YahboomDogzillaLiteDashboard = memo(function YahboomDogzillaLiteDashboard(
 
   const renderJointsTab = () => (
     <div className="space-y-4">
-      <div className="flex gap-2 rounded-lg border border-gray-700 bg-gray-900/80 p-2">
+      <div className="flex gap-2 rounded-lg border border-border-default bg-surface-primary/80 p-2">
         <button
           type="button"
           onClick={() => setJointTab('legs')}
           className={`flex-1 rounded-md px-4 py-3 text-sm font-semibold transition ${
             jointTab === 'legs'
-              ? 'border border-cyan-500 bg-gray-800 text-cyan-300'
-              : 'text-gray-300 hover:bg-gray-950 hover:text-cyan-300'
+              ? 'border border-accent-data bg-accent-data/10 text-accent-data'
+              : 'text-text-secondary hover:bg-surface-base hover:text-accent-data'
           }`}
         >
           Legs
@@ -529,8 +529,8 @@ const YahboomDogzillaLiteDashboard = memo(function YahboomDogzillaLiteDashboard(
           onClick={() => setJointTab('arm')}
           className={`flex-1 rounded-md px-4 py-3 text-sm font-semibold transition ${
             jointTab === 'arm'
-              ? 'border border-cyan-500 bg-gray-800 text-cyan-300'
-              : 'text-gray-300 hover:bg-gray-950 hover:text-cyan-300'
+              ? 'border border-accent-data bg-accent-data/10 text-accent-data'
+              : 'text-text-secondary hover:bg-surface-base hover:text-accent-data'
           }`}
         >
           Arm
@@ -547,8 +547,8 @@ const YahboomDogzillaLiteDashboard = memo(function YahboomDogzillaLiteDashboard(
                 onClick={() => setSelectedLeg(leg.key)}
                 className={`rounded-md border px-3 py-3 text-sm font-semibold transition ${
                   selectedLeg === leg.key
-                    ? 'border-cyan-500 bg-gray-800 text-cyan-300'
-                    : 'border-gray-700 bg-gray-900/80 text-gray-300 hover:border-cyan-700 hover:text-cyan-300'
+                    ? 'border-accent-data bg-accent-data/10 text-accent-data'
+                    : 'border-border-default bg-surface-primary/80 text-text-secondary hover:border-accent-data hover:text-accent-data'
                 }`}
               >
                 {leg.key}
@@ -556,31 +556,31 @@ const YahboomDogzillaLiteDashboard = memo(function YahboomDogzillaLiteDashboard(
             ))}
           </div>
 
-          <div className="rounded-lg border border-gray-700 bg-gray-900/80 px-4 py-4">
+          <div className="rounded-lg border border-border-default bg-surface-primary/80 px-4 py-4">
             <div className="flex items-center justify-between">
               <div>
-                <div className="text-[11px] font-medium uppercase tracking-wide text-gray-500">{selectedLeg}</div>
-                <div className="mt-1 text-lg font-semibold text-gray-100">{selectedLegConfig.label}</div>
+                <div className="text-[11px] font-medium uppercase tracking-wide text-text-muted">{selectedLeg}</div>
+                <div className="mt-1 text-lg font-semibold text-text-primary">{selectedLegConfig.label}</div>
               </div>
               <button
                 type="button"
                 onClick={applySelectedLegToAll}
-                className="rounded-md border border-gray-700 bg-gray-950 px-4 py-3 text-sm font-semibold text-gray-100 transition hover:border-cyan-700 hover:text-cyan-300"
+                className="rounded-md border border-border-default bg-surface-base px-4 py-3 text-sm font-semibold text-text-primary transition hover:border-accent-data hover:text-accent-data"
               >
                 Apply to all
               </button>
             </div>
-            <div className="mt-4 flex items-center justify-between rounded-md border border-gray-700 bg-gray-950 px-4 py-3">
-              <label className="flex items-center gap-3 text-sm font-medium text-gray-100">
+            <div className="mt-4 flex items-center justify-between rounded-md border border-border-default bg-surface-base px-4 py-3">
+              <label className="flex items-center gap-3 text-sm font-medium text-text-primary">
                 <input
                   type="checkbox"
                   checked={mirrorLegs}
                   onChange={(event) => setMirrorLegs(event.target.checked)}
-                  className="h-5 w-5 rounded border-gray-600 bg-gray-950 accent-cyan-500"
+                  className="h-5 w-5 rounded border-border-subtle bg-surface-base accent-accent-data"
                 />
                 Mirror
               </label>
-              <div className="text-right text-sm text-gray-500">
+              <div className="text-right text-sm text-text-muted">
                 {mirrorLegs ? 'Selected leg + opposite side' : 'Selected leg only'}
               </div>
             </div>
@@ -602,15 +602,15 @@ const YahboomDogzillaLiteDashboard = memo(function YahboomDogzillaLiteDashboard(
         </>
       ) : (
         <>
-          <div className="flex items-center justify-between rounded-lg border border-gray-700 bg-gray-900/80 px-4 py-4">
+          <div className="flex items-center justify-between rounded-lg border border-border-default bg-surface-primary/80 px-4 py-4">
             <div>
-              <div className="text-[11px] font-medium uppercase tracking-wide text-gray-500">Adjustment</div>
-              <div className="mt-1 text-sm text-gray-100">{armStepMode === 'coarse' ? 'Coarse' : 'Fine'} mode</div>
+              <div className="text-[11px] font-medium uppercase tracking-wide text-text-muted">Adjustment</div>
+              <div className="mt-1 text-sm text-text-primary">{armStepMode === 'coarse' ? 'Coarse' : 'Fine'} mode</div>
             </div>
             <button
               type="button"
               onClick={() => setArmStepMode((current) => (current === 'coarse' ? 'fine' : 'coarse'))}
-              className="rounded-md border border-gray-700 bg-gray-950 px-4 py-2 text-sm font-semibold text-gray-100 transition hover:border-cyan-700 hover:text-cyan-300"
+              className="rounded-md border border-border-default bg-surface-base px-4 py-2 text-sm font-semibold text-text-primary transition hover:border-accent-data hover:text-accent-data"
             >
               {armStepMode === 'coarse' ? 'Fine' : 'Coarse'}
             </button>
@@ -634,7 +634,7 @@ const YahboomDogzillaLiteDashboard = memo(function YahboomDogzillaLiteDashboard(
             <button
               type="button"
               onClick={applyArmNeutralPreset}
-              className="flex min-h-12 items-center justify-center gap-2 rounded-md border border-gray-700 bg-gray-900/80 px-4 py-3 text-sm font-semibold text-gray-100 transition hover:border-cyan-700 hover:text-cyan-300"
+              className="flex min-h-12 items-center justify-center gap-2 rounded-md border border-border-default bg-surface-primary/80 px-4 py-3 text-sm font-semibold text-text-primary transition hover:border-accent-data hover:text-accent-data"
             >
               <RotateCcw className="h-4 w-4" />
               Neutral preset
@@ -642,7 +642,7 @@ const YahboomDogzillaLiteDashboard = memo(function YahboomDogzillaLiteDashboard(
             <button
               type="button"
               onClick={() => sendAction(QUICK_ACTIONS[3])}
-              className="flex min-h-12 items-center justify-center gap-2 rounded-md border border-red-900 bg-red-950/50 px-4 py-3 text-sm font-semibold text-red-300 transition hover:border-red-700 hover:bg-red-950/70"
+              className="flex min-h-12 items-center justify-center gap-2 rounded-md border border-accent-critical-deep bg-accent-critical/10 px-4 py-3 text-sm font-semibold text-accent-critical transition hover:border-accent-critical hover:bg-accent-critical/20"
             >
               <RotateCcw className="h-4 w-4" />
               Reset
@@ -661,24 +661,24 @@ const YahboomDogzillaLiteDashboard = memo(function YahboomDogzillaLiteDashboard(
         <StatusSection title="Session / Network" icon={Activity} rows={networkRows} />
       </div>
 
-      <section className="rounded-lg border border-gray-700 bg-gray-900/80 px-4 py-4">
+      <section className="rounded-lg border border-border-default bg-surface-primary/80 px-4 py-4">
         <div className="flex items-center gap-2">
-          <Activity className="h-4 w-4 text-cyan-400" />
-          <h3 className="text-[11px] font-semibold uppercase tracking-wide text-cyan-400">History / Logs</h3>
+          <Activity className="h-4 w-4 text-accent-data" />
+          <h3 className="text-[11px] font-semibold uppercase tracking-wide text-accent-data">History / Logs</h3>
         </div>
         <div className="mt-4 space-y-3">
           {commandLog.length === 0 ? (
-            <div className="rounded-md border border-dashed border-gray-700 bg-gray-950 px-4 py-6 text-center text-sm text-gray-500">
+            <div className="rounded-md border border-dashed border-border-default bg-surface-base px-4 py-6 text-center text-sm text-text-muted">
               No control events yet.
             </div>
           ) : (
             commandLog.map((entry) => (
               <div
                 key={entry.id}
-                className="flex items-center justify-between gap-4 rounded-md border border-gray-700 bg-gray-950 px-4 py-3 text-sm"
+                className="flex items-center justify-between gap-4 rounded-md border border-border-default bg-surface-base px-4 py-3 text-sm"
               >
-                <span className="text-gray-100">{entry.label}</span>
-                <span className="font-mono text-xs uppercase tracking-wide text-gray-500">{formatTimestamp(entry.timestamp)}</span>
+                <span className="text-text-primary">{entry.label}</span>
+                <span className="font-mono text-xs uppercase tracking-wide text-text-muted">{formatTimestamp(entry.timestamp)}</span>
               </div>
             ))
           )}
@@ -688,9 +688,9 @@ const YahboomDogzillaLiteDashboard = memo(function YahboomDogzillaLiteDashboard(
   );
 
   return (
-    <div className="relative overflow-hidden rounded-lg border border-gray-700 bg-gray-900/50 text-gray-100">
+    <div className="relative overflow-hidden rounded-lg border border-border-default bg-surface-primary/50 text-text-primary">
       <div className="relative flex h-[calc(100svh-7rem)] min-h-[46rem] max-h-[900px] flex-col lg:grid lg:h-[min(84vh,58rem)] lg:min-h-[44rem] lg:max-h-none lg:grid-cols-[minmax(0,1.18fr)_minmax(24rem,0.92fr)]">
-        <section className="relative basis-[40%] overflow-hidden border-b border-gray-700 lg:basis-auto lg:border-b-0 lg:border-r lg:border-gray-700">
+        <section className="relative basis-[40%] overflow-hidden border-b border-border-default lg:basis-auto lg:border-b-0 lg:border-r lg:border-border-default">
           <YahboomDogzillaLiteViewer
             status={status}
             servoPositions={displayPositions}
@@ -700,16 +700,16 @@ const YahboomDogzillaLiteDashboard = memo(function YahboomDogzillaLiteDashboard(
 
           <div className="absolute inset-0 flex flex-col justify-between p-3 lg:p-4">
             <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0 max-w-[calc(100%-7.5rem)] rounded-md border border-gray-700 bg-gray-900/85 px-3 py-2">
-                <div className="text-[10px] font-medium uppercase tracking-wide text-gray-500">Robot</div>
-                <div className="mt-1 truncate font-mono text-sm font-semibold text-gray-100">
-                  {device?.serialNumber ? `YahboomDogzillaLite #${device.serialNumber}` : 'YahboomDogzillaLite'} • <span className={connectionTone === 'good' ? 'text-emerald-300' : 'text-red-300'}>{connectionLabel}</span>
+              <div className="min-w-0 max-w-[calc(100%-7.5rem)] rounded-md border border-border-default bg-surface-primary/85 px-3 py-2">
+                <div className="text-[10px] font-medium uppercase tracking-wide text-text-muted">Robot</div>
+                <div className="mt-1 truncate font-mono text-sm font-semibold text-text-primary">
+                  {device?.serialNumber ? `YahboomDogzillaLite #${device.serialNumber}` : 'YahboomDogzillaLite'} • <span className={connectionTone === 'good' ? 'text-accent-success' : 'text-accent-critical'}>{connectionLabel}</span>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={handleEmergencyStop}
-                className="pointer-events-auto flex min-h-10 items-center gap-2 rounded-md border border-red-900 bg-red-950/80 px-3 py-2 text-sm font-semibold text-red-300 transition hover:border-red-700 hover:bg-red-950"
+                className="pointer-events-auto flex min-h-10 items-center gap-2 rounded-md border border-accent-critical-deep bg-accent-critical/20 px-3 py-2 text-sm font-semibold text-accent-critical transition hover:border-accent-critical hover:bg-accent-critical/20"
               >
                 <ShieldAlert className="h-4 w-4" />
                 E-Stop
@@ -724,7 +724,7 @@ const YahboomDogzillaLiteDashboard = memo(function YahboomDogzillaLiteDashboard(
           </div>
         </section>
 
-        <section className="relative flex min-h-0 flex-1 flex-col bg-gray-900/85 px-3 pb-3 pt-3 lg:px-4 lg:pb-4 lg:pt-4">
+        <section className="relative flex min-h-0 flex-1 flex-col bg-surface-primary/85 px-3 pb-3 pt-3 lg:px-4 lg:pb-4 lg:pt-4">
           <div className="-mx-3 overflow-x-auto px-3 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             <div className="flex w-max gap-2">
               {TAB_DEFINITIONS.map((tab) => (
