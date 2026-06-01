@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from yahboom_dogzilla_lite import nmcli
-from yahboom_dogzilla_lite.network import MockProvider, Provider
+from yahboom_dogzilla_lite_monitor import nmcli
+from yahboom_dogzilla_lite_monitor.network import MockProvider, Provider
 
 
 def new_provider(mode: str) -> tuple[Provider, str]:

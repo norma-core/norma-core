@@ -1,14 +1,14 @@
 [project]
-name = "yahboom-dogzilla-lite"
+name = "yahboom-dogzilla-lite-monitor"
 version = "0.1.0"
-description = "Raspberry Pi Yahboom Dogzilla Lite status screen"
+description = "Raspberry Pi Yahboom Dogzilla Lite monitor"
 requires-python = ">=3.11,<3.12"
 dependencies = [
     "pillow>=10",
 ]
 
 [project.scripts]
-yahboom-dogzilla-lite = "yahboom_dogzilla_lite.main:main"
+yahboom-dogzilla-lite-monitor = "yahboom_dogzilla_lite_monitor.main:main"
 
 [dependency-groups]
 dev = [
@@ -22,7 +22,7 @@ build-backend = "uv_build"
 
 [tool.uv.build-backend]
 module-root = "src"
-module-name = "yahboom_dogzilla_lite"
+module-name = "yahboom_dogzilla_lite_monitor"
 
 [tool.ruff]
 line-length = 100

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from yahboom_dogzilla_lite import nmcli
-from yahboom_dogzilla_lite.network import InternetState
+from yahboom_dogzilla_lite_monitor import nmcli
+from yahboom_dogzilla_lite_monitor.network import InternetState
 
 
 def test_parse_active_wifi_requires_exact_connected_state() -> None:

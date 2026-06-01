@@ -3,8 +3,8 @@ from __future__ import annotations
 import argparse
 import logging
 
-from yahboom_dogzilla_lite import app, display, platform, station_state, station_system
-from yahboom_dogzilla_lite.network import Service
+from yahboom_dogzilla_lite_monitor import app, display, platform, station_state, station_system
+from yahboom_dogzilla_lite_monitor.network import Service
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -28,7 +28,7 @@ def build_parser() -> argparse.ArgumentParser:
         default=station_state.DEFAULT_SHM_PATH,
         help=(
             "path to the Yahboom Dogzilla Lite telemetry shared-memory file "
-            "(default: /run/station/yahboom-dogzilla-lite)"
+            "(default: /run/station/yahboom-dogzilla-lite-monitor)"
         ),
     )
     parser.add_argument(
@@ -44,7 +44,7 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
-    logger = logging.getLogger("yahboom-dogzilla-lite")
+    logger = logging.getLogger("yahboom-dogzilla-lite-monitor")
 
     provider, backend_name = platform.new_provider(args.backend)
     service = Service(provider)

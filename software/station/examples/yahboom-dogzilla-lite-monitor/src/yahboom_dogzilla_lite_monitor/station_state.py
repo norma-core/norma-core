@@ -9,7 +9,7 @@ from dataclasses import dataclass
 from dataclasses import field as dataclass_field
 from typing import Any, BinaryIO
 
-DEFAULT_SHM_PATH = "/run/station/yahboom-dogzilla-lite"
+DEFAULT_SHM_PATH = "/run/station/yahboom-dogzilla-lite-monitor"
 BUFFER_COUNT = 4
 HEADER_SIZE = 24
 EMPTY_SEQ = (1 << 64) - 1

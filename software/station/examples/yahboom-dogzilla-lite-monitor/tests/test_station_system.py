@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from yahboom_dogzilla_lite import station_system
+from yahboom_dogzilla_lite_monitor import station_system
 
 
 def test_parse_ip_addr_show_networks_preserves_interfaces() -> None:

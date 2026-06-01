@@ -4,9 +4,9 @@ import logging
 import time
 from typing import Any
 
-from yahboom_dogzilla_lite import render, station_state, station_system
-from yahboom_dogzilla_lite.display import Screen
-from yahboom_dogzilla_lite.network import InternetState, Service
+from yahboom_dogzilla_lite_monitor import render, station_state, station_system
+from yahboom_dogzilla_lite_monitor.display import Screen
+from yahboom_dogzilla_lite_monitor.network import InternetState, Service
 
 DEFAULT_POLL_INTERVAL = 3.0
 DEFAULT_STATION_STATE_STALE_AFTER = 10.0

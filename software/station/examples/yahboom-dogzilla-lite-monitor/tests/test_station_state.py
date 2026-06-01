@@ -5,7 +5,7 @@ import struct
 from pathlib import Path
 from typing import Any
 
-from yahboom_dogzilla_lite import station_state
+from yahboom_dogzilla_lite_monitor import station_state
 
 yahboom_dogzilla_lite_pb: Any = importlib.import_module(
     "target.gen_python.protobuf.drivers.yahboom_dogzilla_lite.yahboom_dogzilla_lite",

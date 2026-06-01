@@ -4,7 +4,7 @@ import shutil
 import subprocess
 from dataclasses import dataclass
 
-from yahboom_dogzilla_lite.network import InternetState, InternetStatus
+from yahboom_dogzilla_lite_monitor.network import InternetState, InternetStatus
 
 
 def available() -> bool:

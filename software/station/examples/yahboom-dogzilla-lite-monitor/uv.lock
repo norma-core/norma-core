@@ -3,7 +3,7 @@ revision = 3
 requires-python = "==3.11.*"
 
 [[package]]
-name = "yahboom-dogzilla-lite"
+name = "yahboom-dogzilla-lite-monitor"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
