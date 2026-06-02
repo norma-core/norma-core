@@ -29,8 +29,3 @@ class Service:
 
     def status(self) -> InternetStatus:
         return self._provider.status()
-
-
-class MockProvider:
-    def status(self) -> InternetStatus:
-        return InternetStatus(InternetState.ONLINE, "wlan0")

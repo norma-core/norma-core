@@ -6,7 +6,6 @@ import os
 import platform
 import struct
 import time
-from dataclasses import dataclass
 from typing import Protocol
 
 from PIL import Image
@@ -44,6 +43,18 @@ GPIO_IOCTL_DIR_SHIFT = 30
 GPIO_IOCTL_WRITE = 1
 GPIO_IOCTL_READ = 2
 
+DISPLAY_WIDTH = 320
+DISPLAY_HEIGHT = 240
+DISPLAY_OFFSET_X = 0
+DISPLAY_OFFSET_Y = 0
+DISPLAY_INVERT_COLORS = True
+DISPLAY_SPI_SPEED_HZ = 40_000_000
+DISPLAY_MADCTL = 0x70
+DISPLAY_SPI_DEVICE = "/dev/spidev0.0"
+DISPLAY_GPIOCHIP = "/dev/gpiochip0"
+DISPLAY_DC_PIN = 25
+DISPLAY_RESET_PIN = 27
+
 
 class Screen(Protocol):
     def bounds(self) -> tuple[int, int]: ...
@@ -53,73 +64,24 @@ class Screen(Protocol):
     def close(self) -> None: ...
 
 
-@dataclass
-class Config:
-    mode: str = "auto"
-    spi_device: str = "/dev/spidev0.0"
-    gpiochip: str = "/dev/gpiochip0"
-    dc_pin: int = 25
-    reset_pin: int = 27
-    width: int = 320
-    height: int = 240
-    offset_x: int = 0
-    offset_y: int = 0
-    spi_speed_hz: int = 40_000_000
-    madctl: int = 0x70
-    invert_colors: bool = True
-
-
-class MockScreen:
-    def __init__(self, width: int = 320, height: int = 240) -> None:
-        self.width = width
-        self.height = height
-        self.frames: list[Image.Image] = []
-
-    def bounds(self) -> tuple[int, int]:
-        return self.width, self.height
-
-    def present(self, image: Image.Image) -> None:
-        if image.size != self.bounds():
-            raise ValueError(f"frame size {image.size} does not match display size {self.bounds()}")
-        self.frames.append(image.copy())
-
-    def close(self) -> None:
-        return None
-
-
-def new_screen(config: Config) -> Screen:
-    mode = config.mode.strip().lower() or "auto"
-    if mode == "mock":
-        return MockScreen(config.width, config.height)
-    if mode not in {"auto", "st7789"}:
-        raise ValueError(f"unsupported display mode {config.mode!r}")
+def new_screen() -> Screen:
     if platform.system() != "Linux":
-        if mode == "auto":
-            return MockScreen(config.width, config.height)
-        raise RuntimeError("st7789 display mode is only supported on Linux")
-    return ST7789Screen(config)
+        raise RuntimeError("ST7789 display is only supported on Linux")
+    return ST7789Screen()
 
 
 class ST7789Screen:
-    def __init__(self, config: Config) -> None:
-        if config.width <= 0 or config.height <= 0:
-            raise ValueError("display size must be positive")
-        if config.dc_pin < 0:
-            raise ValueError("dc pin is required")
-        self.width = config.width
-        self.height = config.height
-        self.offset_x = config.offset_x
-        self.offset_y = config.offset_y
-        self._spi_fd = os.open(config.spi_device, os.O_RDWR)
+    def __init__(self) -> None:
+        self.width = DISPLAY_WIDTH
+        self.height = DISPLAY_HEIGHT
+        self.offset_x = DISPLAY_OFFSET_X
+        self.offset_y = DISPLAY_OFFSET_Y
+        self._spi_fd = os.open(DISPLAY_SPI_DEVICE, os.O_RDWR)
         try:
-            _configure_spi(self._spi_fd, 0, 8, config.spi_speed_hz)
-            self._dc = GpioPin(config.gpiochip, config.dc_pin)
-            self._reset = (
-                GpioPin(config.gpiochip, config.reset_pin)
-                if config.reset_pin >= 0
-                else None
-            )
-            self._init_controller(config)
+            _configure_spi(self._spi_fd, 0, 8, DISPLAY_SPI_SPEED_HZ)
+            self._dc = GpioPin(DISPLAY_GPIOCHIP, DISPLAY_DC_PIN)
+            self._reset = GpioPin(DISPLAY_GPIOCHIP, DISPLAY_RESET_PIN)
+            self._init_controller()
             self.present(Image.new("RGBA", self.bounds(), (0, 0, 0, 255)))
         except Exception:
             self.close()
@@ -143,7 +105,7 @@ class ST7789Screen:
             os.close(self._spi_fd)
             self._spi_fd = -1
 
-    def _init_controller(self, config: Config) -> None:
+    def _init_controller(self) -> None:
         if self._reset is not None:
             self._reset.write(False)
             time.sleep(0.020)
@@ -154,8 +116,8 @@ class ST7789Screen:
         self._write_command(CMD_SLPOUT)
         time.sleep(0.120)
         self._write_command_data(CMD_COLMOD, 0x55)
-        self._write_command_data(CMD_MADCTL, config.madctl & 0xFF)
-        self._write_command(CMD_INVON if config.invert_colors else CMD_INVOFF)
+        self._write_command_data(CMD_MADCTL, DISPLAY_MADCTL)
+        self._write_command(CMD_INVON if DISPLAY_INVERT_COLORS else CMD_INVOFF)
         self._write_command(CMD_NORON)
         time.sleep(0.020)
         self._write_command(CMD_DISPON)
