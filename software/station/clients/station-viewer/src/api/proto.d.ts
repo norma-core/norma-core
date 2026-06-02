@@ -7466,6 +7466,9 @@ export namespace yahboom_dogzilla_lite {
 
         /** InferenceState devices */
         devices?: (yahboom_dogzilla_lite.InferenceState.IDeviceState[]|null);
+
+        /** InferenceState networks */
+        networks?: (yahboom_dogzilla_lite.InferenceState.INetworkState[]|null);
     }
 
     /** Represents an InferenceState. */
@@ -7482,6 +7485,9 @@ export namespace yahboom_dogzilla_lite {
 
         /** InferenceState devices. */
         public devices: yahboom_dogzilla_lite.InferenceState.IDeviceState[];
+
+        /** InferenceState networks. */
+        public networks: yahboom_dogzilla_lite.InferenceState.INetworkState[];
 
         /**
          * Creates a new InferenceState instance using the specified properties.
@@ -7678,6 +7684,206 @@ export namespace yahboom_dogzilla_lite {
 
             /**
              * Gets the default type url for DeviceState
+             * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+             * @returns The default type url
+             */
+            public static getTypeUrl(typeUrlPrefix?: string): string;
+        }
+
+        /** Properties of a NetworkIp. */
+        interface INetworkIp {
+
+            /** NetworkIp addr */
+            addr?: (string|null);
+        }
+
+        /** Represents a NetworkIp. */
+        class NetworkIp implements INetworkIp {
+
+            /**
+             * Constructs a new NetworkIp.
+             * @param [properties] Properties to set
+             */
+            constructor(properties?: yahboom_dogzilla_lite.InferenceState.INetworkIp);
+
+            /** NetworkIp addr. */
+            public addr: string;
+
+            /**
+             * Creates a new NetworkIp instance using the specified properties.
+             * @param [properties] Properties to set
+             * @returns NetworkIp instance
+             */
+            public static create(properties?: yahboom_dogzilla_lite.InferenceState.INetworkIp): yahboom_dogzilla_lite.InferenceState.NetworkIp;
+
+            /**
+             * Encodes the specified NetworkIp message. Does not implicitly {@link yahboom_dogzilla_lite.InferenceState.NetworkIp.verify|verify} messages.
+             * @param message NetworkIp message or plain object to encode
+             * @param [writer] Writer to encode to
+             * @returns Writer
+             */
+            public static encode(message: yahboom_dogzilla_lite.InferenceState.INetworkIp, writer?: $protobuf.Writer): $protobuf.Writer;
+
+            /**
+             * Encodes the specified NetworkIp message, length delimited. Does not implicitly {@link yahboom_dogzilla_lite.InferenceState.NetworkIp.verify|verify} messages.
+             * @param message NetworkIp message or plain object to encode
+             * @param [writer] Writer to encode to
+             * @returns Writer
+             */
+            public static encodeDelimited(message: yahboom_dogzilla_lite.InferenceState.INetworkIp, writer?: $protobuf.Writer): $protobuf.Writer;
+
+            /**
+             * Decodes a NetworkIp message from the specified reader or buffer.
+             * @param reader Reader or buffer to decode from
+             * @param [length] Message length if known beforehand
+             * @returns NetworkIp
+             * @throws {Error} If the payload is not a reader or valid buffer
+             * @throws {$protobuf.util.ProtocolError} If required fields are missing
+             */
+            public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): yahboom_dogzilla_lite.InferenceState.NetworkIp;
+
+            /**
+             * Decodes a NetworkIp message from the specified reader or buffer, length delimited.
+             * @param reader Reader or buffer to decode from
+             * @returns NetworkIp
+             * @throws {Error} If the payload is not a reader or valid buffer
+             * @throws {$protobuf.util.ProtocolError} If required fields are missing
+             */
+            public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): yahboom_dogzilla_lite.InferenceState.NetworkIp;
+
+            /**
+             * Verifies a NetworkIp message.
+             * @param message Plain object to verify
+             * @returns `null` if valid, otherwise the reason why it is not
+             */
+            public static verify(message: { [k: string]: any }): (string|null);
+
+            /**
+             * Creates a NetworkIp message from a plain object. Also converts values to their respective internal types.
+             * @param object Plain object
+             * @returns NetworkIp
+             */
+            public static fromObject(object: { [k: string]: any }): yahboom_dogzilla_lite.InferenceState.NetworkIp;
+
+            /**
+             * Creates a plain object from a NetworkIp message. Also converts values to other types if specified.
+             * @param message NetworkIp
+             * @param [options] Conversion options
+             * @returns Plain object
+             */
+            public static toObject(message: yahboom_dogzilla_lite.InferenceState.NetworkIp, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+            /**
+             * Converts this NetworkIp to JSON.
+             * @returns JSON object
+             */
+            public toJSON(): { [k: string]: any };
+
+            /**
+             * Gets the default type url for NetworkIp
+             * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+             * @returns The default type url
+             */
+            public static getTypeUrl(typeUrlPrefix?: string): string;
+        }
+
+        /** Properties of a NetworkState. */
+        interface INetworkState {
+
+            /** NetworkState iface */
+            iface?: (string|null);
+
+            /** NetworkState ips */
+            ips?: (yahboom_dogzilla_lite.InferenceState.INetworkIp[]|null);
+        }
+
+        /** Represents a NetworkState. */
+        class NetworkState implements INetworkState {
+
+            /**
+             * Constructs a new NetworkState.
+             * @param [properties] Properties to set
+             */
+            constructor(properties?: yahboom_dogzilla_lite.InferenceState.INetworkState);
+
+            /** NetworkState iface. */
+            public iface: string;
+
+            /** NetworkState ips. */
+            public ips: yahboom_dogzilla_lite.InferenceState.INetworkIp[];
+
+            /**
+             * Creates a new NetworkState instance using the specified properties.
+             * @param [properties] Properties to set
+             * @returns NetworkState instance
+             */
+            public static create(properties?: yahboom_dogzilla_lite.InferenceState.INetworkState): yahboom_dogzilla_lite.InferenceState.NetworkState;
+
+            /**
+             * Encodes the specified NetworkState message. Does not implicitly {@link yahboom_dogzilla_lite.InferenceState.NetworkState.verify|verify} messages.
+             * @param message NetworkState message or plain object to encode
+             * @param [writer] Writer to encode to
+             * @returns Writer
+             */
+            public static encode(message: yahboom_dogzilla_lite.InferenceState.INetworkState, writer?: $protobuf.Writer): $protobuf.Writer;
+
+            /**
+             * Encodes the specified NetworkState message, length delimited. Does not implicitly {@link yahboom_dogzilla_lite.InferenceState.NetworkState.verify|verify} messages.
+             * @param message NetworkState message or plain object to encode
+             * @param [writer] Writer to encode to
+             * @returns Writer
+             */
+            public static encodeDelimited(message: yahboom_dogzilla_lite.InferenceState.INetworkState, writer?: $protobuf.Writer): $protobuf.Writer;
+
+            /**
+             * Decodes a NetworkState message from the specified reader or buffer.
+             * @param reader Reader or buffer to decode from
+             * @param [length] Message length if known beforehand
+             * @returns NetworkState
+             * @throws {Error} If the payload is not a reader or valid buffer
+             * @throws {$protobuf.util.ProtocolError} If required fields are missing
+             */
+            public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): yahboom_dogzilla_lite.InferenceState.NetworkState;
+
+            /**
+             * Decodes a NetworkState message from the specified reader or buffer, length delimited.
+             * @param reader Reader or buffer to decode from
+             * @returns NetworkState
+             * @throws {Error} If the payload is not a reader or valid buffer
+             * @throws {$protobuf.util.ProtocolError} If required fields are missing
+             */
+            public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): yahboom_dogzilla_lite.InferenceState.NetworkState;
+
+            /**
+             * Verifies a NetworkState message.
+             * @param message Plain object to verify
+             * @returns `null` if valid, otherwise the reason why it is not
+             */
+            public static verify(message: { [k: string]: any }): (string|null);
+
+            /**
+             * Creates a NetworkState message from a plain object. Also converts values to their respective internal types.
+             * @param object Plain object
+             * @returns NetworkState
+             */
+            public static fromObject(object: { [k: string]: any }): yahboom_dogzilla_lite.InferenceState.NetworkState;
+
+            /**
+             * Creates a plain object from a NetworkState message. Also converts values to other types if specified.
+             * @param message NetworkState
+             * @param [options] Conversion options
+             * @returns Plain object
+             */
+            public static toObject(message: yahboom_dogzilla_lite.InferenceState.NetworkState, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+            /**
+             * Converts this NetworkState to JSON.
+             * @returns JSON object
+             */
+            public toJSON(): { [k: string]: any };
+
+            /**
+             * Gets the default type url for NetworkState
              * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
              * @returns The default type url
              */

@@ -249,9 +249,20 @@ message InferenceState {
         bool is_connected = 5;
     }
 
+    message NetworkIp {
+        string addr = 1;
+    }
+
+    message NetworkState {
+        string iface = 1;
+
+        repeated NetworkIp ips = 10;
+    }
+
     bytes last_inference_queue_ptr = 1;
 
     repeated DeviceState devices = 10;
+    repeated NetworkState networks = 20;
 }
 
 // Command result

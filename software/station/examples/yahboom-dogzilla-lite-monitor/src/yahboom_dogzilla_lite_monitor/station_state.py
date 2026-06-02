@@ -32,8 +32,15 @@ class DeviceStatus:
 
 
 @dataclass(frozen=True)
+class NetworkStatus:
+    iface: str = ""
+    ip_addresses: list[str] = dataclass_field(default_factory=list)
+
+
+@dataclass(frozen=True)
 class State:
     devices: list[DeviceStatus] = dataclass_field(default_factory=list)
+    networks: list[NetworkStatus] = dataclass_field(default_factory=list)
 
     def primary_battery_status(self) -> BatteryStatus:
         fallback: BatteryStatus | None = None
@@ -45,6 +52,22 @@ class State:
             if fallback is None:
                 fallback = device.battery
         return fallback or BatteryStatus()
+
+    def wlan_ip_addresses(self) -> list[str]:
+        seen: set[str] = set()
+        out: list[str] = []
+        for network in self.networks:
+            if not network.iface.startswith("wlan"):
+                continue
+            for raw_addr in network.ip_addresses:
+                addr = normalize_ipv4_address(raw_addr)
+                if addr and addr not in seen:
+                    seen.add(addr)
+                    out.append(addr)
+        return out
+
+    def has_wlan_ip(self) -> bool:
+        return bool(self.wlan_ip_addresses())
 
 
 @dataclass(frozen=True)
@@ -197,6 +220,7 @@ def parse_state(payload: bytes) -> State:
     reader = pb.InferenceStateReader(memoryview(payload))
     return State(
         devices=[parse_device_status_reader(device) for device in reader.get_devices()],
+        networks=[parse_network_status_reader(network) for network in reader.get_networks()],
     )
 
 
@@ -210,8 +234,33 @@ def parse_device_status_reader(reader: Any) -> DeviceStatus:
     )
 
 
+def parse_network_status_reader(reader: Any) -> NetworkStatus:
+    return NetworkStatus(
+        iface=reader.get_iface(),
+        ip_addresses=[ip.get_addr() for ip in reader.get_ips()],
+    )
+
+
 def clamp_battery_level(level: int) -> int:
     return min(max(level, 0), 100)
+
+
+def normalize_ipv4_address(raw: str) -> str:
+    value = raw.strip()
+    if "/" in value:
+        value = value.split("/", 1)[0]
+    parts = value.split(".")
+    if len(parts) != 4:
+        return ""
+    try:
+        octets = [int(part) for part in parts]
+    except ValueError:
+        return ""
+    if any(part < 0 or part > 255 for part in octets):
+        return ""
+    if octets[0] == 127:
+        return ""
+    return ".".join(str(part) for part in octets)
 
 
 def _protobuf_module() -> Any:

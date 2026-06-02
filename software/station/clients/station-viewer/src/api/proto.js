@@ -21239,6 +21239,7 @@ export const yahboom_dogzilla_lite = $root.yahboom_dogzilla_lite = (() => {
          * @interface IInferenceState
          * @property {Uint8Array|null} [lastInferenceQueuePtr] InferenceState lastInferenceQueuePtr
          * @property {Array.<yahboom_dogzilla_lite.InferenceState.IDeviceState>|null} [devices] InferenceState devices
+         * @property {Array.<yahboom_dogzilla_lite.InferenceState.INetworkState>|null} [networks] InferenceState networks
          */
 
         /**
@@ -21251,6 +21252,7 @@ export const yahboom_dogzilla_lite = $root.yahboom_dogzilla_lite = (() => {
          */
         function InferenceState(properties) {
             this.devices = [];
+            this.networks = [];
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
                     if (properties[keys[i]] != null && keys[i] !== "__proto__")
@@ -21272,6 +21274,14 @@ export const yahboom_dogzilla_lite = $root.yahboom_dogzilla_lite = (() => {
          * @instance
          */
         InferenceState.prototype.devices = $util.emptyArray;
+
+        /**
+         * InferenceState networks.
+         * @member {Array.<yahboom_dogzilla_lite.InferenceState.INetworkState>} networks
+         * @memberof yahboom_dogzilla_lite.InferenceState
+         * @instance
+         */
+        InferenceState.prototype.networks = $util.emptyArray;
 
         /**
          * Creates a new InferenceState instance using the specified properties.
@@ -21302,6 +21312,9 @@ export const yahboom_dogzilla_lite = $root.yahboom_dogzilla_lite = (() => {
             if (message.devices != null && message.devices.length)
                 for (let i = 0; i < message.devices.length; ++i)
                     $root.yahboom_dogzilla_lite.InferenceState.DeviceState.encode(message.devices[i], writer.uint32(/* id 10, wireType 2 =*/82).fork()).ldelim();
+            if (message.networks != null && message.networks.length)
+                for (let i = 0; i < message.networks.length; ++i)
+                    $root.yahboom_dogzilla_lite.InferenceState.NetworkState.encode(message.networks[i], writer.uint32(/* id 20, wireType 2 =*/162).fork()).ldelim();
             return writer;
         };
 
@@ -21350,6 +21363,12 @@ export const yahboom_dogzilla_lite = $root.yahboom_dogzilla_lite = (() => {
                         if (!(message.devices && message.devices.length))
                             message.devices = [];
                         message.devices.push($root.yahboom_dogzilla_lite.InferenceState.DeviceState.decode(reader, reader.uint32(), undefined, long + 1));
+                        break;
+                    }
+                case 20: {
+                        if (!(message.networks && message.networks.length))
+                            message.networks = [];
+                        message.networks.push($root.yahboom_dogzilla_lite.InferenceState.NetworkState.decode(reader, reader.uint32(), undefined, long + 1));
                         break;
                     }
                 default:
@@ -21403,6 +21422,15 @@ export const yahboom_dogzilla_lite = $root.yahboom_dogzilla_lite = (() => {
                         return "devices." + error;
                 }
             }
+            if (message.networks != null && message.hasOwnProperty("networks")) {
+                if (!Array.isArray(message.networks))
+                    return "networks: array expected";
+                for (let i = 0; i < message.networks.length; ++i) {
+                    let error = $root.yahboom_dogzilla_lite.InferenceState.NetworkState.verify(message.networks[i], long + 1);
+                    if (error)
+                        return "networks." + error;
+                }
+            }
             return null;
         };
 
@@ -21437,6 +21465,16 @@ export const yahboom_dogzilla_lite = $root.yahboom_dogzilla_lite = (() => {
                     message.devices[i] = $root.yahboom_dogzilla_lite.InferenceState.DeviceState.fromObject(object.devices[i], long + 1);
                 }
             }
+            if (object.networks) {
+                if (!Array.isArray(object.networks))
+                    throw TypeError(".yahboom_dogzilla_lite.InferenceState.networks: array expected");
+                message.networks = [];
+                for (let i = 0; i < object.networks.length; ++i) {
+                    if (typeof object.networks[i] !== "object")
+                        throw TypeError(".yahboom_dogzilla_lite.InferenceState.networks: object expected");
+                    message.networks[i] = $root.yahboom_dogzilla_lite.InferenceState.NetworkState.fromObject(object.networks[i], long + 1);
+                }
+            }
             return message;
         };
 
@@ -21453,8 +21491,10 @@ export const yahboom_dogzilla_lite = $root.yahboom_dogzilla_lite = (() => {
             if (!options)
                 options = {};
             let object = {};
-            if (options.arrays || options.defaults)
+            if (options.arrays || options.defaults) {
                 object.devices = [];
+                object.networks = [];
+            }
             if (options.defaults)
                 if (options.bytes === String)
                     object.lastInferenceQueuePtr = "";
@@ -21469,6 +21509,11 @@ export const yahboom_dogzilla_lite = $root.yahboom_dogzilla_lite = (() => {
                 object.devices = [];
                 for (let j = 0; j < message.devices.length; ++j)
                     object.devices[j] = $root.yahboom_dogzilla_lite.InferenceState.DeviceState.toObject(message.devices[j], options);
+            }
+            if (message.networks && message.networks.length) {
+                object.networks = [];
+                for (let j = 0; j < message.networks.length; ++j)
+                    object.networks[j] = $root.yahboom_dogzilla_lite.InferenceState.NetworkState.toObject(message.networks[j], options);
             }
             return object;
         };
@@ -21845,6 +21890,485 @@ export const yahboom_dogzilla_lite = $root.yahboom_dogzilla_lite = (() => {
             };
 
             return DeviceState;
+        })();
+
+        InferenceState.NetworkIp = (function() {
+
+            /**
+             * Properties of a NetworkIp.
+             * @memberof yahboom_dogzilla_lite.InferenceState
+             * @interface INetworkIp
+             * @property {string|null} [addr] NetworkIp addr
+             */
+
+            /**
+             * Constructs a new NetworkIp.
+             * @memberof yahboom_dogzilla_lite.InferenceState
+             * @classdesc Represents a NetworkIp.
+             * @implements INetworkIp
+             * @constructor
+             * @param {yahboom_dogzilla_lite.InferenceState.INetworkIp=} [properties] Properties to set
+             */
+            function NetworkIp(properties) {
+                if (properties)
+                    for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                        if (properties[keys[i]] != null && keys[i] !== "__proto__")
+                            this[keys[i]] = properties[keys[i]];
+            }
+
+            /**
+             * NetworkIp addr.
+             * @member {string} addr
+             * @memberof yahboom_dogzilla_lite.InferenceState.NetworkIp
+             * @instance
+             */
+            NetworkIp.prototype.addr = "";
+
+            /**
+             * Creates a new NetworkIp instance using the specified properties.
+             * @function create
+             * @memberof yahboom_dogzilla_lite.InferenceState.NetworkIp
+             * @static
+             * @param {yahboom_dogzilla_lite.InferenceState.INetworkIp=} [properties] Properties to set
+             * @returns {yahboom_dogzilla_lite.InferenceState.NetworkIp} NetworkIp instance
+             */
+            NetworkIp.create = function create(properties) {
+                return new NetworkIp(properties);
+            };
+
+            /**
+             * Encodes the specified NetworkIp message. Does not implicitly {@link yahboom_dogzilla_lite.InferenceState.NetworkIp.verify|verify} messages.
+             * @function encode
+             * @memberof yahboom_dogzilla_lite.InferenceState.NetworkIp
+             * @static
+             * @param {yahboom_dogzilla_lite.InferenceState.INetworkIp} message NetworkIp message or plain object to encode
+             * @param {$protobuf.Writer} [writer] Writer to encode to
+             * @returns {$protobuf.Writer} Writer
+             */
+            NetworkIp.encode = function encode(message, writer) {
+                if (!writer)
+                    writer = $Writer.create();
+                if (message.addr != null && Object.hasOwnProperty.call(message, "addr"))
+                    writer.uint32(/* id 1, wireType 2 =*/10).string(message.addr);
+                return writer;
+            };
+
+            /**
+             * Encodes the specified NetworkIp message, length delimited. Does not implicitly {@link yahboom_dogzilla_lite.InferenceState.NetworkIp.verify|verify} messages.
+             * @function encodeDelimited
+             * @memberof yahboom_dogzilla_lite.InferenceState.NetworkIp
+             * @static
+             * @param {yahboom_dogzilla_lite.InferenceState.INetworkIp} message NetworkIp message or plain object to encode
+             * @param {$protobuf.Writer} [writer] Writer to encode to
+             * @returns {$protobuf.Writer} Writer
+             */
+            NetworkIp.encodeDelimited = function encodeDelimited(message, writer) {
+                return this.encode(message, writer).ldelim();
+            };
+
+            /**
+             * Decodes a NetworkIp message from the specified reader or buffer.
+             * @function decode
+             * @memberof yahboom_dogzilla_lite.InferenceState.NetworkIp
+             * @static
+             * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+             * @param {number} [length] Message length if known beforehand
+             * @returns {yahboom_dogzilla_lite.InferenceState.NetworkIp} NetworkIp
+             * @throws {Error} If the payload is not a reader or valid buffer
+             * @throws {$protobuf.util.ProtocolError} If required fields are missing
+             */
+            NetworkIp.decode = function decode(reader, length, error, long) {
+                if (!(reader instanceof $Reader))
+                    reader = $Reader.create(reader);
+                if (long === undefined)
+                    long = 0;
+                if (long > $Reader.recursionLimit)
+                    throw Error("maximum nesting depth exceeded");
+                let end = length === undefined ? reader.len : reader.pos + length, message = new $root.yahboom_dogzilla_lite.InferenceState.NetworkIp();
+                while (reader.pos < end) {
+                    let tag = reader.uint32();
+                    if (tag === error)
+                        break;
+                    switch (tag >>> 3) {
+                    case 1: {
+                            message.addr = reader.string();
+                            break;
+                        }
+                    default:
+                        reader.skipType(tag & 7, long);
+                        break;
+                    }
+                }
+                return message;
+            };
+
+            /**
+             * Decodes a NetworkIp message from the specified reader or buffer, length delimited.
+             * @function decodeDelimited
+             * @memberof yahboom_dogzilla_lite.InferenceState.NetworkIp
+             * @static
+             * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+             * @returns {yahboom_dogzilla_lite.InferenceState.NetworkIp} NetworkIp
+             * @throws {Error} If the payload is not a reader or valid buffer
+             * @throws {$protobuf.util.ProtocolError} If required fields are missing
+             */
+            NetworkIp.decodeDelimited = function decodeDelimited(reader) {
+                if (!(reader instanceof $Reader))
+                    reader = new $Reader(reader);
+                return this.decode(reader, reader.uint32());
+            };
+
+            /**
+             * Verifies a NetworkIp message.
+             * @function verify
+             * @memberof yahboom_dogzilla_lite.InferenceState.NetworkIp
+             * @static
+             * @param {Object.<string,*>} message Plain object to verify
+             * @returns {string|null} `null` if valid, otherwise the reason why it is not
+             */
+            NetworkIp.verify = function verify(message, long) {
+                if (typeof message !== "object" || message === null)
+                    return "object expected";
+                if (long === undefined)
+                    long = 0;
+                if (long > $util.recursionLimit)
+                    return "maximum nesting depth exceeded";
+                if (message.addr != null && message.hasOwnProperty("addr"))
+                    if (!$util.isString(message.addr))
+                        return "addr: string expected";
+                return null;
+            };
+
+            /**
+             * Creates a NetworkIp message from a plain object. Also converts values to their respective internal types.
+             * @function fromObject
+             * @memberof yahboom_dogzilla_lite.InferenceState.NetworkIp
+             * @static
+             * @param {Object.<string,*>} object Plain object
+             * @returns {yahboom_dogzilla_lite.InferenceState.NetworkIp} NetworkIp
+             */
+            NetworkIp.fromObject = function fromObject(object, long) {
+                if (object instanceof $root.yahboom_dogzilla_lite.InferenceState.NetworkIp)
+                    return object;
+                if (long === undefined)
+                    long = 0;
+                if (long > $util.recursionLimit)
+                    throw Error("maximum nesting depth exceeded");
+                let message = new $root.yahboom_dogzilla_lite.InferenceState.NetworkIp();
+                if (object.addr != null)
+                    message.addr = String(object.addr);
+                return message;
+            };
+
+            /**
+             * Creates a plain object from a NetworkIp message. Also converts values to other types if specified.
+             * @function toObject
+             * @memberof yahboom_dogzilla_lite.InferenceState.NetworkIp
+             * @static
+             * @param {yahboom_dogzilla_lite.InferenceState.NetworkIp} message NetworkIp
+             * @param {$protobuf.IConversionOptions} [options] Conversion options
+             * @returns {Object.<string,*>} Plain object
+             */
+            NetworkIp.toObject = function toObject(message, options) {
+                if (!options)
+                    options = {};
+                let object = {};
+                if (options.defaults)
+                    object.addr = "";
+                if (message.addr != null && message.hasOwnProperty("addr"))
+                    object.addr = message.addr;
+                return object;
+            };
+
+            /**
+             * Converts this NetworkIp to JSON.
+             * @function toJSON
+             * @memberof yahboom_dogzilla_lite.InferenceState.NetworkIp
+             * @instance
+             * @returns {Object.<string,*>} JSON object
+             */
+            NetworkIp.prototype.toJSON = function toJSON() {
+                return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+            };
+
+            /**
+             * Gets the default type url for NetworkIp
+             * @function getTypeUrl
+             * @memberof yahboom_dogzilla_lite.InferenceState.NetworkIp
+             * @static
+             * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+             * @returns {string} The default type url
+             */
+            NetworkIp.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+                if (typeUrlPrefix === undefined) {
+                    typeUrlPrefix = "type.googleapis.com";
+                }
+                return typeUrlPrefix + "/yahboom_dogzilla_lite.InferenceState.NetworkIp";
+            };
+
+            return NetworkIp;
+        })();
+
+        InferenceState.NetworkState = (function() {
+
+            /**
+             * Properties of a NetworkState.
+             * @memberof yahboom_dogzilla_lite.InferenceState
+             * @interface INetworkState
+             * @property {string|null} [iface] NetworkState iface
+             * @property {Array.<yahboom_dogzilla_lite.InferenceState.INetworkIp>|null} [ips] NetworkState ips
+             */
+
+            /**
+             * Constructs a new NetworkState.
+             * @memberof yahboom_dogzilla_lite.InferenceState
+             * @classdesc Represents a NetworkState.
+             * @implements INetworkState
+             * @constructor
+             * @param {yahboom_dogzilla_lite.InferenceState.INetworkState=} [properties] Properties to set
+             */
+            function NetworkState(properties) {
+                this.ips = [];
+                if (properties)
+                    for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                        if (properties[keys[i]] != null && keys[i] !== "__proto__")
+                            this[keys[i]] = properties[keys[i]];
+            }
+
+            /**
+             * NetworkState iface.
+             * @member {string} iface
+             * @memberof yahboom_dogzilla_lite.InferenceState.NetworkState
+             * @instance
+             */
+            NetworkState.prototype.iface = "";
+
+            /**
+             * NetworkState ips.
+             * @member {Array.<yahboom_dogzilla_lite.InferenceState.INetworkIp>} ips
+             * @memberof yahboom_dogzilla_lite.InferenceState.NetworkState
+             * @instance
+             */
+            NetworkState.prototype.ips = $util.emptyArray;
+
+            /**
+             * Creates a new NetworkState instance using the specified properties.
+             * @function create
+             * @memberof yahboom_dogzilla_lite.InferenceState.NetworkState
+             * @static
+             * @param {yahboom_dogzilla_lite.InferenceState.INetworkState=} [properties] Properties to set
+             * @returns {yahboom_dogzilla_lite.InferenceState.NetworkState} NetworkState instance
+             */
+            NetworkState.create = function create(properties) {
+                return new NetworkState(properties);
+            };
+
+            /**
+             * Encodes the specified NetworkState message. Does not implicitly {@link yahboom_dogzilla_lite.InferenceState.NetworkState.verify|verify} messages.
+             * @function encode
+             * @memberof yahboom_dogzilla_lite.InferenceState.NetworkState
+             * @static
+             * @param {yahboom_dogzilla_lite.InferenceState.INetworkState} message NetworkState message or plain object to encode
+             * @param {$protobuf.Writer} [writer] Writer to encode to
+             * @returns {$protobuf.Writer} Writer
+             */
+            NetworkState.encode = function encode(message, writer) {
+                if (!writer)
+                    writer = $Writer.create();
+                if (message.iface != null && Object.hasOwnProperty.call(message, "iface"))
+                    writer.uint32(/* id 1, wireType 2 =*/10).string(message.iface);
+                if (message.ips != null && message.ips.length)
+                    for (let i = 0; i < message.ips.length; ++i)
+                        $root.yahboom_dogzilla_lite.InferenceState.NetworkIp.encode(message.ips[i], writer.uint32(/* id 10, wireType 2 =*/82).fork()).ldelim();
+                return writer;
+            };
+
+            /**
+             * Encodes the specified NetworkState message, length delimited. Does not implicitly {@link yahboom_dogzilla_lite.InferenceState.NetworkState.verify|verify} messages.
+             * @function encodeDelimited
+             * @memberof yahboom_dogzilla_lite.InferenceState.NetworkState
+             * @static
+             * @param {yahboom_dogzilla_lite.InferenceState.INetworkState} message NetworkState message or plain object to encode
+             * @param {$protobuf.Writer} [writer] Writer to encode to
+             * @returns {$protobuf.Writer} Writer
+             */
+            NetworkState.encodeDelimited = function encodeDelimited(message, writer) {
+                return this.encode(message, writer).ldelim();
+            };
+
+            /**
+             * Decodes a NetworkState message from the specified reader or buffer.
+             * @function decode
+             * @memberof yahboom_dogzilla_lite.InferenceState.NetworkState
+             * @static
+             * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+             * @param {number} [length] Message length if known beforehand
+             * @returns {yahboom_dogzilla_lite.InferenceState.NetworkState} NetworkState
+             * @throws {Error} If the payload is not a reader or valid buffer
+             * @throws {$protobuf.util.ProtocolError} If required fields are missing
+             */
+            NetworkState.decode = function decode(reader, length, error, long) {
+                if (!(reader instanceof $Reader))
+                    reader = $Reader.create(reader);
+                if (long === undefined)
+                    long = 0;
+                if (long > $Reader.recursionLimit)
+                    throw Error("maximum nesting depth exceeded");
+                let end = length === undefined ? reader.len : reader.pos + length, message = new $root.yahboom_dogzilla_lite.InferenceState.NetworkState();
+                while (reader.pos < end) {
+                    let tag = reader.uint32();
+                    if (tag === error)
+                        break;
+                    switch (tag >>> 3) {
+                    case 1: {
+                            message.iface = reader.string();
+                            break;
+                        }
+                    case 10: {
+                            if (!(message.ips && message.ips.length))
+                                message.ips = [];
+                            message.ips.push($root.yahboom_dogzilla_lite.InferenceState.NetworkIp.decode(reader, reader.uint32(), undefined, long + 1));
+                            break;
+                        }
+                    default:
+                        reader.skipType(tag & 7, long);
+                        break;
+                    }
+                }
+                return message;
+            };
+
+            /**
+             * Decodes a NetworkState message from the specified reader or buffer, length delimited.
+             * @function decodeDelimited
+             * @memberof yahboom_dogzilla_lite.InferenceState.NetworkState
+             * @static
+             * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+             * @returns {yahboom_dogzilla_lite.InferenceState.NetworkState} NetworkState
+             * @throws {Error} If the payload is not a reader or valid buffer
+             * @throws {$protobuf.util.ProtocolError} If required fields are missing
+             */
+            NetworkState.decodeDelimited = function decodeDelimited(reader) {
+                if (!(reader instanceof $Reader))
+                    reader = new $Reader(reader);
+                return this.decode(reader, reader.uint32());
+            };
+
+            /**
+             * Verifies a NetworkState message.
+             * @function verify
+             * @memberof yahboom_dogzilla_lite.InferenceState.NetworkState
+             * @static
+             * @param {Object.<string,*>} message Plain object to verify
+             * @returns {string|null} `null` if valid, otherwise the reason why it is not
+             */
+            NetworkState.verify = function verify(message, long) {
+                if (typeof message !== "object" || message === null)
+                    return "object expected";
+                if (long === undefined)
+                    long = 0;
+                if (long > $util.recursionLimit)
+                    return "maximum nesting depth exceeded";
+                if (message.iface != null && message.hasOwnProperty("iface"))
+                    if (!$util.isString(message.iface))
+                        return "iface: string expected";
+                if (message.ips != null && message.hasOwnProperty("ips")) {
+                    if (!Array.isArray(message.ips))
+                        return "ips: array expected";
+                    for (let i = 0; i < message.ips.length; ++i) {
+                        let error = $root.yahboom_dogzilla_lite.InferenceState.NetworkIp.verify(message.ips[i], long + 1);
+                        if (error)
+                            return "ips." + error;
+                    }
+                }
+                return null;
+            };
+
+            /**
+             * Creates a NetworkState message from a plain object. Also converts values to their respective internal types.
+             * @function fromObject
+             * @memberof yahboom_dogzilla_lite.InferenceState.NetworkState
+             * @static
+             * @param {Object.<string,*>} object Plain object
+             * @returns {yahboom_dogzilla_lite.InferenceState.NetworkState} NetworkState
+             */
+            NetworkState.fromObject = function fromObject(object, long) {
+                if (object instanceof $root.yahboom_dogzilla_lite.InferenceState.NetworkState)
+                    return object;
+                if (long === undefined)
+                    long = 0;
+                if (long > $util.recursionLimit)
+                    throw Error("maximum nesting depth exceeded");
+                let message = new $root.yahboom_dogzilla_lite.InferenceState.NetworkState();
+                if (object.iface != null)
+                    message.iface = String(object.iface);
+                if (object.ips) {
+                    if (!Array.isArray(object.ips))
+                        throw TypeError(".yahboom_dogzilla_lite.InferenceState.NetworkState.ips: array expected");
+                    message.ips = [];
+                    for (let i = 0; i < object.ips.length; ++i) {
+                        if (typeof object.ips[i] !== "object")
+                            throw TypeError(".yahboom_dogzilla_lite.InferenceState.NetworkState.ips: object expected");
+                        message.ips[i] = $root.yahboom_dogzilla_lite.InferenceState.NetworkIp.fromObject(object.ips[i], long + 1);
+                    }
+                }
+                return message;
+            };
+
+            /**
+             * Creates a plain object from a NetworkState message. Also converts values to other types if specified.
+             * @function toObject
+             * @memberof yahboom_dogzilla_lite.InferenceState.NetworkState
+             * @static
+             * @param {yahboom_dogzilla_lite.InferenceState.NetworkState} message NetworkState
+             * @param {$protobuf.IConversionOptions} [options] Conversion options
+             * @returns {Object.<string,*>} Plain object
+             */
+            NetworkState.toObject = function toObject(message, options) {
+                if (!options)
+                    options = {};
+                let object = {};
+                if (options.arrays || options.defaults)
+                    object.ips = [];
+                if (options.defaults)
+                    object.iface = "";
+                if (message.iface != null && message.hasOwnProperty("iface"))
+                    object.iface = message.iface;
+                if (message.ips && message.ips.length) {
+                    object.ips = [];
+                    for (let j = 0; j < message.ips.length; ++j)
+                        object.ips[j] = $root.yahboom_dogzilla_lite.InferenceState.NetworkIp.toObject(message.ips[j], options);
+                }
+                return object;
+            };
+
+            /**
+             * Converts this NetworkState to JSON.
+             * @function toJSON
+             * @memberof yahboom_dogzilla_lite.InferenceState.NetworkState
+             * @instance
+             * @returns {Object.<string,*>} JSON object
+             */
+            NetworkState.prototype.toJSON = function toJSON() {
+                return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+            };
+
+            /**
+             * Gets the default type url for NetworkState
+             * @function getTypeUrl
+             * @memberof yahboom_dogzilla_lite.InferenceState.NetworkState
+             * @static
+             * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+             * @returns {string} The default type url
+             */
+            NetworkState.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+                if (typeUrlPrefix === undefined) {
+                    typeUrlPrefix = "type.googleapis.com";
+                }
+                return typeUrlPrefix + "/yahboom_dogzilla_lite.InferenceState.NetworkState";
+            };
+
+            return NetworkState;
         })();
 
         return InferenceState;

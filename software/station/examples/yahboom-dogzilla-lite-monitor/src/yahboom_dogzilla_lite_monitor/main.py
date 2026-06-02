@@ -3,8 +3,7 @@ from __future__ import annotations
 import argparse
 import logging
 
-from yahboom_dogzilla_lite_monitor import app, display, platform, station_state, station_system
-from yahboom_dogzilla_lite_monitor.network import Service
+from yahboom_dogzilla_lite_monitor import app, display, station_state
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -32,12 +31,8 @@ def main(argv: list[str] | None = None) -> int:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
     logger = logging.getLogger("yahboom-dogzilla-lite-monitor")
 
-    provider = platform.new_provider()
-    service = Service(provider)
-
     screen = None
     state_source = None
-    system_source = None
     try:
         screen = display.new_screen()
         try:
@@ -55,7 +50,6 @@ def main(argv: list[str] | None = None) -> int:
                 exc,
             )
 
-        system_source = station_system.Source()
         logger.info(
             "starting Yahboom Dogzilla Lite Python display",
             extra={
@@ -64,17 +58,13 @@ def main(argv: list[str] | None = None) -> int:
         )
         app.run(
             logger=logger,
-            service=service,
             state_source=state_source,
             station_state_path=args.station_state,
-            system_source=system_source,
             screen=screen,
             poll_interval=args.poll_interval,
             station_state_stale_after=args.station_state_stale_after,
         )
     finally:
-        if system_source is not None:
-            system_source.close()
         if state_source is not None:
             state_source.close()
         if screen is not None:

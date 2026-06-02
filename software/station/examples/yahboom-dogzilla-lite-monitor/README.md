@@ -7,7 +7,7 @@ on-device display showing:
 - internet connectivity
 - whether station telemetry is fresh
 - the primary Dogzilla battery level when available
-- local IPv4 addresses, preferring the active Wi-Fi interface
+- WLAN IPv4 addresses reported by station telemetry
 
 ## Examples
 
@@ -56,13 +56,12 @@ it through `yahboom-dogzilla-lite-monitor.service`.
 
 On each refresh cycle the monitor:
 
-1. Reads network connectivity through NetworkManager's `nmcli` backend.
-2. Opens and reads the station shared-memory frame at `--station-state`.
-3. Parses the generated `yahboom_dogzilla_lite` protobuf payload and extracts
-   the primary battery status.
-4. Collects local IPv4 addresses with `ip -4 -o addr show`, then falls back to
-   `ifconfig` and hostname lookup.
-5. Draws the current state with Pillow and presents it to the configured screen.
+1. Opens and reads the station shared-memory frame at `--station-state`.
+2. Parses the generated `yahboom_dogzilla_lite` protobuf payload and extracts
+   the primary battery status plus station system network telemetry.
+3. Treats Wi-Fi as connected when at least one `wlan*` interface has a valid
+   non-loopback IPv4 address.
+4. Draws the current state with Pillow and presents it to the configured screen.
 
 If station telemetry is missing, unreadable, or stale, the monitor keeps running
 and shows the station as offline with no battery value. If the shared-memory
