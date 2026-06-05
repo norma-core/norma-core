@@ -13,9 +13,6 @@ pub mod proto {
     pub mod normvla {
         include!("proto/normvla.rs");
     }
-    pub mod sysinfo {
-        include!("proto/sysinfo.rs");
-    }
 }
 
 mod formats;
