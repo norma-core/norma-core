@@ -12,13 +12,13 @@
     "allowImportingTsExtensions": true,
     "isolatedModules": true,
     "moduleDetection": "force",
+    "types": ["node"],
     "noEmit": true,
     "jsx": "react-jsx",
 
     /* Path Aliases */
-    "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["./src/*"]
     },
 
     /* Linting */

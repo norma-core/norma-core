@@ -290,7 +290,7 @@ class WebSocketManager extends EventTarget {
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
       const clientRequest = normfs.ClientRequest.create(request);
       const buffer = normfs.ClientRequest.encode(clientRequest).finish();
-      this.ws.send(buffer);
+      this.ws.send(buffer as unknown as ArrayBuffer);
     } else {
       throw ErrConnectionNotOpen;
     }
