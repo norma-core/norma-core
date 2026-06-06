@@ -31,8 +31,10 @@ export interface ChatMessage {
 
 interface ChatSessionRecord {
   version: number;
-  type: 'session.upsert';
-  session: ChatSession;
+  type: 'session.upsert' | 'session.delete';
+  session?: ChatSession;
+  sessionId?: string;
+  deletedAt?: string;
 }
 
 interface ChatMessageRecord {
@@ -165,9 +167,20 @@ export async function saveChatSession(session: ChatSession): Promise<void> {
   await webSocketManager.normFs.enqueue(CHAT_SESSIONS_QUEUE, encodeJson(record));
 }
 
+export async function deleteChatSession(sessionId: string): Promise<void> {
+  const record: ChatSessionRecord = {
+    version: CHAT_SCHEMA_VERSION,
+    type: 'session.delete',
+    sessionId,
+    deletedAt: new Date().toISOString(),
+  };
+  await webSocketManager.normFs.enqueue(CHAT_SESSIONS_QUEUE, encodeJson(record));
+}
+
 export async function loadChatSessions(): Promise<ChatSession[]> {
   const entries = await readRecentEntries(CHAT_SESSIONS_QUEUE, MAX_SESSION_EVENTS);
   const sessionsById = new Map<string, ChatSession>();
+  const deletedSessionIds = new Set<string>();
 
   for (const entry of entries) {
     const record = decodeJson<ChatSessionRecord>(entry.data);
@@ -176,11 +189,24 @@ export async function loadChatSessions(): Promise<ChatSession[]> {
       record.type === 'session.upsert' &&
       record.session?.id
     ) {
+      deletedSessionIds.delete(record.session.id);
       sessionsById.set(record.session.id, record.session);
+      continue;
+    }
+
+    if (
+      record?.version === CHAT_SCHEMA_VERSION &&
+      record.type === 'session.delete' &&
+      record.sessionId
+    ) {
+      sessionsById.delete(record.sessionId);
+      deletedSessionIds.add(record.sessionId);
     }
   }
 
-  return Array.from(sessionsById.values()).sort((a, b) => (
+  return Array.from(sessionsById.values()).filter((session) => (
+    !deletedSessionIds.has(session.id)
+  )).sort((a, b) => (
     new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
   ));
 }
@@ -196,7 +222,7 @@ export async function saveChatMessage(message: ChatMessage): Promise<void> {
 
 export async function loadChatMessages(sessionId: string): Promise<ChatMessage[]> {
   const entries = await readRecentEntries(sessionMessagesQueue(sessionId), MAX_MESSAGES_PER_SESSION);
-  const messages: ChatMessage[] = [];
+  const messagesById = new Map<string, ChatMessage>();
 
   for (const entry of entries) {
     const record = decodeJson<ChatMessageRecord>(entry.data);
@@ -205,11 +231,11 @@ export async function loadChatMessages(sessionId: string): Promise<ChatMessage[]
       record.type === 'message.create' &&
       record.message?.sessionId === sessionId
     ) {
-      messages.push(record.message);
+      messagesById.set(record.message.id, record.message);
     }
   }
 
-  return messages.sort((a, b) => (
+  return Array.from(messagesById.values()).sort((a, b) => (
     new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
   ));
 }
