@@ -4,28 +4,35 @@ import logging
 import time
 from typing import Any
 
-from yahboom_dogzilla_lite_monitor import render, station_state
+from yahboom_dogzilla_lite_monitor import render, station_state, system_state
 from yahboom_dogzilla_lite_monitor.display import Screen
 
 DEFAULT_POLL_INTERVAL = 3.0
-DEFAULT_STATION_STATE_STALE_AFTER = 10.0
+DEFAULT_DOGZILLA_STATE_STALE_AFTER = 10.0
+DEFAULT_SYSTEM_STATE_STALE_AFTER = 10.0
 
 
 def run(
     *,
     logger: logging.Logger,
-    state_source: station_state.Source | None,
-    station_state_path: str,
+    dogzilla_source: station_state.Source | None,
+    system_source: system_state.Source | None,
     screen: Screen,
     poll_interval: float = DEFAULT_POLL_INTERVAL,
-    station_state_stale_after: float = DEFAULT_STATION_STATE_STALE_AFTER,
+    dogzilla_state_stale_after: float = DEFAULT_DOGZILLA_STATE_STALE_AFTER,
+    system_state_stale_after: float = DEFAULT_SYSTEM_STATE_STALE_AFTER,
     once: bool = False,
 ) -> None:
     poll_interval = poll_interval if poll_interval > 0 else DEFAULT_POLL_INTERVAL
-    station_state_stale_after = (
-        station_state_stale_after
-        if station_state_stale_after > 0
-        else DEFAULT_STATION_STATE_STALE_AFTER
+    dogzilla_state_stale_after = (
+        dogzilla_state_stale_after
+        if dogzilla_state_stale_after > 0
+        else DEFAULT_DOGZILLA_STATE_STALE_AFTER
+    )
+    system_state_stale_after = (
+        system_state_stale_after
+        if system_state_stale_after > 0
+        else DEFAULT_SYSTEM_STATE_STALE_AFTER
     )
 
     current_connected = False
@@ -33,68 +40,75 @@ def run(
     current_battery = station_state.BatteryStatus()
     current_ip_addresses: list[str] = []
     last_state_error = ""
+    last_system_error = ""
     last_frame_key: tuple[Any, ...] | None = None
 
     def refresh_state() -> None:
         nonlocal current_connected, current_station_up, current_battery
-        nonlocal current_ip_addresses, state_source, last_state_error
+        nonlocal current_ip_addresses, dogzilla_source, system_source
+        nonlocal last_state_error, last_system_error
 
         current_connected = False
         current_station_up = False
         current_ip_addresses = []
-        if state_source is None and station_state_path:
+        if dogzilla_source is not None:
             try:
-                state_source = station_state.Source(station_state_path)
-                logger.info("station state source is now available: %s", station_state_path)
-            except OSError:
-                pass
-            except Exception as exc:
-                if str(exc) != last_state_error:
-                    logger.warning("failed to open station state source: %s", exc)
-                    last_state_error = str(exc)
-        if state_source is not None:
-            try:
-                frame = state_source.read_frame()
-                if frame.is_stale(station_state_stale_after):
+                frame = dogzilla_source.read_frame()
+                if frame.is_stale(dogzilla_state_stale_after):
                     current_battery = station_state.BatteryStatus()
                     age = frame.age_seconds()
                     error = (
-                        "station shared state is stale"
+                        "Dogzilla telemetry is stale"
                         if age is None
-                        else f"station shared state is stale: age={age:.1f}s"
+                        else f"Dogzilla telemetry is stale: age={age:.1f}s"
                     )
                     if error != last_state_error:
                         logger.warning(error)
                         last_state_error = error
                 else:
                     state = station_state.parse_state(frame.payload)
-                    current_ip_addresses = state.wlan_ip_addresses()
-                    current_connected = bool(current_ip_addresses)
                     current_station_up = True
                     current_battery = state.primary_battery_status()
                     last_state_error = ""
-            except station_state.NoSharedStateDataError as exc:
+            except station_state.NoDogzillaStateDataError as exc:
                 if str(exc) != last_state_error:
-                    logger.warning("station shared state unavailable: %s", exc)
+                    logger.warning("Dogzilla telemetry unavailable: %s", exc)
                     last_state_error = str(exc)
-                current_battery = station_state.BatteryStatus()
-            except OSError as exc:
-                if str(exc) != last_state_error:
-                    logger.warning("station state source disappeared: %s", exc)
-                    last_state_error = str(exc)
-                try:
-                    state_source.close()
-                except Exception:
-                    pass
-                state_source = None
                 current_battery = station_state.BatteryStatus()
             except Exception as exc:
                 if str(exc) != last_state_error:
-                    logger.warning("failed to fetch station state: %s", exc)
+                    logger.warning("failed to fetch Dogzilla state: %s", exc)
                     last_state_error = str(exc)
                 current_battery = station_state.BatteryStatus()
         else:
             current_battery = station_state.BatteryStatus()
+
+        if system_source is not None:
+            try:
+                frame = system_source.read_frame()
+                if frame.is_stale(system_state_stale_after):
+                    age = frame.age_seconds()
+                    error = (
+                        "system telemetry is stale"
+                        if age is None
+                        else f"system telemetry is stale: age={age:.1f}s"
+                    )
+                    if error != last_system_error:
+                        logger.warning(error)
+                        last_system_error = error
+                else:
+                    state = system_state.parse_state(frame.payload)
+                    current_ip_addresses = state.wlan_ip_addresses()
+                    current_connected = state.has_wlan_ip()
+                    last_system_error = ""
+            except system_state.NoSystemStateDataError as exc:
+                if str(exc) != last_system_error:
+                    logger.warning("system telemetry unavailable: %s", exc)
+                    last_system_error = str(exc)
+            except Exception as exc:
+                if str(exc) != last_system_error:
+                    logger.warning("failed to fetch system state: %s", exc)
+                    last_system_error = str(exc)
 
     def frame_key() -> tuple[Any, ...]:
         return (

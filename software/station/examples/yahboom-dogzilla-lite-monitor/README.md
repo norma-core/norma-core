@@ -7,7 +7,7 @@ on-device display showing:
 - internet connectivity
 - whether station telemetry is fresh
 - the primary Dogzilla battery level when available
-- WLAN IPv4 addresses reported by station telemetry
+- WLAN IPv4 addresses reported by station system telemetry
 
 ## Examples
 
@@ -49,23 +49,31 @@ it through `yahboom-dogzilla-lite-monitor.service`.
 | Flag | Default | Description |
 | --- | --- | --- |
 | `--poll-interval <seconds>` | `3.0` | Seconds between status refreshes. Non-positive values fall back to `3.0`. |
-| `--station-state <path>` | `/run/station/yahboom-dogzilla-lite-monitor` | Shared-memory telemetry file written by station inference mirroring. |
-| `--station-state-stale-after <seconds>` | `10.0` | Age after which telemetry is treated as stale. Non-positive values fall back to `10.0`. |
+| `--station-tcp <address>` | `127.0.0.1:8888` | Station NormFS TCP endpoint used to read telemetry queues. If a port is omitted, `8888` is used. |
+| `--dogzilla-queue <queue>` | `yahboom-dogzilla-lite/inference` | Station NormFS queue containing Yahboom Dogzilla Lite `InferenceState` payloads. |
+| `--system-queue <queue>` | `system/rx` | Station NormFS queue containing `sysinfo.Envelope` payloads. |
+| `--dogzilla-state-stale-after <seconds>` | `10.0` | Age after which Yahboom Dogzilla Lite telemetry is treated as stale. Non-positive values fall back to `10.0`. |
+| `--system-state-stale-after <seconds>` | `10.0` | Age after which system telemetry is treated as stale. Non-positive values fall back to `10.0`. |
 
 ## What It Does
 
 On each refresh cycle the monitor:
 
-1. Opens and reads the station shared-memory frame at `--station-state`.
-2. Parses the generated `yahboom_dogzilla_lite` protobuf payload and extracts
-   the primary battery status plus station system network telemetry.
-3. Treats Wi-Fi as connected when at least one `wlan*` interface has a valid
+1. Keeps background station TCP clients connected to `--station-tcp`.
+2. Reads the latest and then follows `--dogzilla-queue`, decoding each
+   generated `yahboom_dogzilla_lite.InferenceState` payload for station presence
+   and primary battery status.
+3. Reads the latest and then follows `--system-queue`, decoding each
+   `sysinfo.Envelope` payload published by `sysinfod`.
+4. Treats Wi-Fi as connected when at least one `wlan*` interface has a valid
    non-loopback IPv4 address.
-4. Draws the current state with Pillow and presents it to the configured screen.
+5. Draws the current state with Pillow and presents it to the configured screen.
 
-If station telemetry is missing, unreadable, or stale, the monitor keeps running
-and shows the station as offline with no battery value. If the shared-memory
-file appears later, it reopens it automatically.
+If Yahboom Dogzilla Lite telemetry is missing, unreadable, or stale, the monitor
+keeps running and shows the station as offline with no battery value. If system
+telemetry is still fresh, Wi-Fi/IP can remain visible. If station TCP is not
+ready yet, the monitor keeps retrying and updates the display when
+`yahboom-dogzilla-lite/inference` and `system/rx` start delivering entries.
 
 The ST7789 backend talks directly to Linux SPI and GPIO character devices.
 Non-Linux hosts can inspect the CLI, but cannot render frames.

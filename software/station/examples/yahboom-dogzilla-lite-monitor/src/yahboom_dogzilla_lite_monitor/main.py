@@ -3,25 +3,41 @@ from __future__ import annotations
 import argparse
 import logging
 
-from yahboom_dogzilla_lite_monitor import app, display, station_state
+from yahboom_dogzilla_lite_monitor import app, display, station_state, system_state
 
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Yahboom Dogzilla Lite Raspberry Pi status screen")
     parser.add_argument("--poll-interval", type=float, default=3.0)
     parser.add_argument(
-        "--station-state",
-        default=station_state.DEFAULT_SHM_PATH,
+        "--station-tcp",
+        default=system_state.DEFAULT_STATION_TCP,
+        help="station NormFS TCP address used to read telemetry queues (default: 127.0.0.1:8888)",
+    )
+    parser.add_argument(
+        "--dogzilla-queue",
+        default=station_state.DEFAULT_QUEUE_ID,
         help=(
-            "path to the Yahboom Dogzilla Lite telemetry shared-memory file "
-            "(default: /run/station/yahboom-dogzilla-lite-monitor)"
+            "station NormFS queue used for Yahboom Dogzilla Lite telemetry "
+            "(default: yahboom-dogzilla-lite/inference)"
         ),
     )
     parser.add_argument(
-        "--station-state-stale-after",
+        "--system-queue",
+        default=system_state.DEFAULT_QUEUE_ID,
+        help="station NormFS queue used for system telemetry (default: system/rx)",
+    )
+    parser.add_argument(
+        "--dogzilla-state-stale-after",
         type=float,
-        default=app.DEFAULT_STATION_STATE_STALE_AFTER,
-        help="seconds without fresh station telemetry before showing station offline",
+        default=app.DEFAULT_DOGZILLA_STATE_STALE_AFTER,
+        help="seconds without fresh Yahboom Dogzilla Lite telemetry before showing station offline",
+    )
+    parser.add_argument(
+        "--system-state-stale-after",
+        type=float,
+        default=app.DEFAULT_SYSTEM_STATE_STALE_AFTER,
+        help="seconds without fresh system telemetry before showing Wi-Fi disconnected",
     )
     return parser
 
@@ -32,41 +48,43 @@ def main(argv: list[str] | None = None) -> int:
     logger = logging.getLogger("yahboom-dogzilla-lite-monitor")
 
     screen = None
-    state_source = None
+    dogzilla_source = None
+    system_source = None
     try:
         screen = display.new_screen()
-        try:
-            state_source = station_state.Source(args.station_state)
-        except OSError as exc:
-            logger.warning(
-                "Yahboom Dogzilla Lite telemetry unavailable: path=%s error=%s",
-                args.station_state,
-                exc,
-            )
-        except RuntimeError as exc:
-            logger.warning(
-                "Yahboom Dogzilla Lite telemetry unreadable: path=%s error=%s",
-                args.station_state,
-                exc,
-            )
+        dogzilla_source = station_state.Source(
+            args.station_tcp,
+            args.dogzilla_queue,
+            logger=logger.getChild("dogzilla"),
+        )
+        system_source = system_state.Source(
+            args.station_tcp,
+            args.system_queue,
+            logger=logger.getChild("system"),
+        )
 
         logger.info(
             "starting Yahboom Dogzilla Lite Python display",
             extra={
-                "station_state": args.station_state,
+                "station_tcp": args.station_tcp,
+                "dogzilla_queue": args.dogzilla_queue,
+                "system_queue": args.system_queue,
             },
         )
         app.run(
             logger=logger,
-            state_source=state_source,
-            station_state_path=args.station_state,
+            dogzilla_source=dogzilla_source,
+            system_source=system_source,
             screen=screen,
             poll_interval=args.poll_interval,
-            station_state_stale_after=args.station_state_stale_after,
+            dogzilla_state_stale_after=args.dogzilla_state_stale_after,
+            system_state_stale_after=args.system_state_stale_after,
         )
     finally:
-        if state_source is not None:
-            state_source.close()
+        if dogzilla_source is not None:
+            dogzilla_source.close()
+        if system_source is not None:
+            system_source.close()
         if screen is not None:
             screen.close()
     return 0
