@@ -341,24 +341,20 @@ impl Station {
         match &self.config.inference {
             Some(inference_configs) => {
                 if !inference_configs.is_empty() {
-                    let inference_configs =
-                        self.with_default_yahboom_dogzilla_lite_inference(inference_configs.clone());
                     log::info!("Starting inference driver with {} configurations", inference_configs.len());
                     inferences::start(
                         self.normfs.clone(),
                         self.engine.clone(),
-                        inference_configs,
+                        inference_configs.clone(),
                     ).await?;
                 } else {
                     log::info!("Inference explicitly disabled (empty config)");
                 }
             }
             None => {
-                let default_config = self.default_inference_configs();
-                log::info!(
-                    "No inference configuration found, using {} default inference configuration(s)",
-                    default_config.len()
-                );
+                // User did not specify inference config, use default normvla
+                log::info!("No inference configuration found, using default normvla config");
+                let default_config = vec![station_iface::config::Inference::default_normvla()];
                 inferences::start(
                     self.normfs.clone(),
                     self.engine.clone(),
@@ -368,47 +364,6 @@ impl Station {
         }
 
         Ok(())
-    }
-
-    fn default_inference_configs(&self) -> Vec<station_iface::config::Inference> {
-        self.with_default_yahboom_dogzilla_lite_inference(vec![
-            station_iface::config::Inference::default_normvla(),
-        ])
-    }
-
-    fn with_default_yahboom_dogzilla_lite_inference(
-        &self,
-        configs: Vec<station_iface::config::Inference>,
-    ) -> Vec<station_iface::config::Inference> {
-        let yahboom_dogzilla_lite_enabled = self
-            .config
-            .drivers
-            .yahboom_dogzilla_lite
-            .as_ref()
-            .is_some_and(|config| config.enabled);
-        if !yahboom_dogzilla_lite_enabled {
-            return configs;
-        }
-
-        #[cfg(not(feature = "yahboom-dogzilla-lite"))]
-        {
-            return configs;
-        }
-
-        #[cfg(feature = "yahboom-dogzilla-lite")]
-        {
-            let mut configs = configs;
-            let has_yahboom_dogzilla_lite_config = configs
-                .iter()
-                .any(|config| config.format == "yahboom-dogzilla-lite" || config.queue_id == "inference/yahboom-dogzilla-lite");
-            if has_yahboom_dogzilla_lite_config {
-                return configs;
-            }
-
-            log::info!("Yahboom Dogzilla Lite enabled; adding default inference mirror");
-            configs.push(station_iface::config::Inference::default_yahboom_dogzilla_lite());
-            configs
-        }
     }
 
     async fn start_server(

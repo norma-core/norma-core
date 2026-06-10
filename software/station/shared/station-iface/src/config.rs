@@ -166,23 +166,6 @@ impl Inference {
             update_interval: default_update_interval(),
         }
     }
-
-    pub fn default_yahboom_dogzilla_lite() -> Self {
-        let shm_path = if cfg!(target_os = "linux") {
-            PathBuf::from("/run/station/yahboom-dogzilla-lite")
-        } else {
-            PathBuf::from("/tmp/yahboom-dogzilla-lite")
-        };
-
-        Self {
-            queue_id: "inference/yahboom-dogzilla-lite".to_string(),
-            shm: shm_path,
-            shm_size_mb: 1,
-            format: "yahboom-dogzilla-lite".to_string(),
-            st3215_bus: "auto".to_string(),
-            update_interval: default_update_interval(),
-        }
-    }
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

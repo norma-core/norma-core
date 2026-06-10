@@ -3,15 +3,10 @@ name = "inferences"
 version.workspace = true
 edition = "2024"
 
-[features]
-default = []
-yahboom-dogzilla-lite = ["dep:yahboom-dogzilla-lite"]
-
 [dependencies]
 tokio = { workspace = true }
 normfs = { workspace = true }
 station_iface = { path = "../../station/shared/station-iface" }
-yahboom-dogzilla-lite = { path = "../yahboom-dogzilla-lite", optional = true }
 st3215 = { path = "../st3215" }
 usbvideo = { path = "../usbvideo" }
 prost = { workspace = true }

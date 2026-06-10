@@ -1089,7 +1089,6 @@ dependencies = [
  "station_iface",
  "tokio",
  "usbvideo",
- "yahboom-dogzilla-lite",
 ]
 
 [[package]]

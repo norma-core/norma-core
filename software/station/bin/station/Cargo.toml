@@ -6,7 +6,7 @@ edition = "2024"
 [features]
 default = []
 ov5647 = ["dep:ov5647"]
-yahboom-dogzilla-lite = ["dep:yahboom-dogzilla-lite", "inferences/yahboom-dogzilla-lite"]
+yahboom-dogzilla-lite = ["dep:yahboom-dogzilla-lite"]
 
 [dependencies]
 prost = { workspace = true }
