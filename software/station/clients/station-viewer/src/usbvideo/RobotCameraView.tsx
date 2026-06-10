@@ -1,6 +1,7 @@
 import { memo } from 'react';
 import { Link } from 'react-router-dom';
 import { Scan } from 'lucide-react';
+import type { InferenceAnalysisState } from '@/api/inference';
 import { st3215 } from '@/api/proto.js';
 import CameraMotorStrip from '@/st3215/CameraMotorStrip';
 import MotorDataTable from '@/st3215/MotorDataTable';
@@ -18,6 +19,8 @@ interface RobotCameraViewProps {
   secondaryCameraFit?: CameraFitMode;
   onPrimaryCameraFitToggle?: () => void;
   onSecondaryCameraFitToggle?: () => void;
+  inferenceAnalysis?: InferenceAnalysisState;
+  inferenceModel?: string | null;
   bus: st3215.InferenceState.IBusState;
   busIndex: number;
   isWebControlled?: boolean;
@@ -34,6 +37,8 @@ const RobotCameraView = memo(function RobotCameraView({
   secondaryCameraFit = 'contain',
   onPrimaryCameraFitToggle,
   onSecondaryCameraFitToggle,
+  inferenceAnalysis,
+  inferenceModel,
   bus,
   busIndex,
   isWebControlled,
@@ -82,6 +87,65 @@ const RobotCameraView = memo(function RobotCameraView({
       <Scan className="h-4 w-4" aria-hidden="true" />
     </button>
   );
+  const renderInferenceOverlay = () => {
+    if (!inferenceModel || !inferenceAnalysis) {
+      return null;
+    }
+
+    const isRunning = inferenceAnalysis.status === 'running';
+    const isError = inferenceAnalysis.status === 'error';
+    const statusLabel =
+      inferenceAnalysis.status === 'idle' ? 'Waiting' :
+      isRunning ? 'Analyzing' :
+      isError ? 'Error' :
+      'Ready';
+    const statusColorClass =
+      isError ? 'bg-accent-critical' :
+      isRunning ? 'bg-accent-warning' :
+      inferenceAnalysis.status === 'ok' ? 'bg-accent-data' :
+      'bg-text-muted';
+    const message =
+      isError ? inferenceAnalysis.error :
+      inferenceAnalysis.text ??
+      (isRunning ? 'Analyzing current frame...' : 'Waiting for the next camera frame...');
+    const updatedAt = inferenceAnalysis.updatedAt
+      ? new Date(inferenceAnalysis.updatedAt).toLocaleTimeString([], {
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+        })
+      : null;
+
+    return (
+      <div
+        className="pointer-events-none absolute bottom-3 left-3 z-40 max-w-[min(420px,calc(100%-1.5rem))] rounded-md border border-border-default bg-surface-primary/85 p-3 text-left shadow-2xl backdrop-blur-sm"
+        aria-live="polite"
+      >
+        <div className="mb-1.5 flex min-w-0 items-center gap-2">
+          <span className={`h-2 w-2 shrink-0 rounded-full ${statusColorClass}`} />
+          <span className="text-[10px] font-bold uppercase tracking-wide text-text-label">
+            Inference {statusLabel}
+          </span>
+          <span className="min-w-0 truncate text-[10px] font-mono text-accent-data" title={inferenceModel}>
+            {inferenceModel}
+          </span>
+        </div>
+        <p className={`line-clamp-3 text-sm leading-snug ${isError ? 'text-accent-critical' : 'text-text-primary'}`}>
+          {message}
+        </p>
+        {(inferenceAnalysis.latencyMs !== undefined || updatedAt) && (
+          <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] font-mono uppercase tracking-wide text-text-muted">
+            {inferenceAnalysis.latencyMs !== undefined && (
+              <span>{inferenceAnalysis.latencyMs}ms</span>
+            )}
+            {updatedAt && (
+              <span>{updatedAt}</span>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  };
 
   return (
     <div className="relative flex flex-col w-full h-full min-h-0 overflow-hidden bg-black rounded-b-lg">
@@ -104,6 +168,7 @@ const RobotCameraView = memo(function RobotCameraView({
                 fit={primaryCameraFit}
               />
               {renderFitButton(primaryCameraFit, onPrimaryCameraFitToggle, 'Primary camera')}
+              {renderInferenceOverlay()}
             </div>
             <div className="relative min-h-0 min-w-0">
               <CameraViewer
@@ -124,6 +189,7 @@ const RobotCameraView = memo(function RobotCameraView({
               fit={primaryCameraFit}
             />
             {renderFitButton(primaryCameraFit, onPrimaryCameraFitToggle, 'Primary camera')}
+            {renderInferenceOverlay()}
             {secondaryVideoSourceId && (
               <div
                 className="absolute bottom-4 right-4 z-30 h-[160px] w-2/5 min-w-[220px] max-w-[360px] overflow-hidden rounded-lg border-2 border-border-default bg-surface-primary shadow-2xl"

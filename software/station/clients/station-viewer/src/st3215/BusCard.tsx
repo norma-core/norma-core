@@ -1,11 +1,14 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Long from 'long';
-import { Camera } from 'lucide-react';
+import { Camera, RefreshCw } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { commandManager } from '@/api/commands';
+import { OPENAI_COMPATIBLE_FORMAT_LABEL } from '@/api/inference';
 import { supportsSt3215Device } from '@/devices/registry';
 import { FrameEntry } from '@/api/frame-parser';
 import { useElementFullscreen } from '@/hooks/useElementFullscreen';
+import { useCameraInference } from '@/hooks/useCameraInference';
+import { useInferenceModels } from '@/hooks/useInferenceModels';
 import { motors_mirroring, st3215, usbvideo } from '@/api/proto.js';
 import { serverToLocal } from '@/api/timestamp-utils';
 import { getLatencyBgColor, getLatencyTextColor } from '@/utils/color-utils';
@@ -77,6 +80,16 @@ const BusCard: React.FC<BusCardProps> = ({
     toggleFullscreen: toggleCameraFullscreen,
     exitFullscreen: exitCameraFullscreen,
   } = useElementFullscreen(cameraContentRef);
+  const {
+    baseUrl: inferenceBaseUrl,
+    setBaseUrl: setInferenceBaseUrl,
+    models: inferenceModels,
+    selectedModel: selectedInferenceModel,
+    setSelectedModel: setSelectedInferenceModel,
+    isLoading: isInferenceModelsLoading,
+    error: inferenceModelsError,
+    refreshModels: refreshInferenceModels,
+  } = useInferenceModels(viewMode === 'camera');
   const busSerialNumber = bus.bus?.serialNumber ?? null;
   const webControlledStorageKey = busSerialNumber
     ? `station-viewer:web-controlled:${busSerialNumber}`
@@ -389,6 +402,27 @@ const BusCard: React.FC<BusCardProps> = ({
   const needsCalibration = hasMotors && (hasUnfrozenMotor || hasNarrowRange);
   const canRender3d = supportsSt3215Device(bus);
   const canShowCamera = activeVideoSources.length > 0;
+  const selectedAvailableInferenceModel = useMemo(() => {
+    if (!selectedInferenceModel) {
+      return null;
+    }
+
+    return inferenceModels.some((model) => model.id === selectedInferenceModel)
+      ? selectedInferenceModel
+      : null;
+  }, [selectedInferenceModel, inferenceModels]);
+  const canAnalyzeWithInference =
+    viewMode === 'camera' &&
+    Boolean(primaryVideoSourceId) &&
+    Boolean(selectedAvailableInferenceModel) &&
+    !inferenceModelsError &&
+    inferenceModels.length > 0;
+  const inferenceAnalysis = useCameraInference({
+    sourceId: viewMode === 'camera' ? primaryVideoSourceId : null,
+    baseUrl: inferenceBaseUrl,
+    model: selectedAvailableInferenceModel,
+    enabled: canAnalyzeWithInference,
+  });
 
   useEffect(() => {
     if (!canShowCamera && viewMode === 'camera') {
@@ -398,7 +432,9 @@ const BusCard: React.FC<BusCardProps> = ({
 
   const controlSourceWidthClass = viewMode === "camera" ? "w-[170px]" : "max-w-[180px]";
   const cameraSelectWidthClass = viewMode === "camera" ? "w-[150px]" : "max-w-[180px]";
-  const selectControlClass = "block h-9 min-w-0 rounded-md border border-border-subtle bg-surface-secondary pl-3 pr-10 text-sm text-text-primary focus:border-accent-success-deep focus:outline-none focus:ring-accent-success-deep";
+  const fieldControlBaseClass = "block h-9 min-w-0 rounded-md border border-border-subtle bg-surface-secondary text-sm text-text-primary focus:border-accent-success-deep focus:outline-none focus:ring-accent-success-deep";
+  const selectControlClass = `${fieldControlBaseClass} pl-3 pr-10`;
+  const inputControlClass = `${fieldControlBaseClass} px-3`;
   const primaryVideoSourceOptions = useMemo(
     () =>
       viewMode === "camera"
@@ -414,6 +450,18 @@ const BusCard: React.FC<BusCardProps> = ({
 
     void exitCameraFullscreen();
   }, [exitCameraFullscreen, viewMode]);
+
+  const inferenceEndpointInputId = `inference-endpoint-${busIndex}`;
+  const inferenceModelSelectId = `inference-model-${busIndex}`;
+  const inferenceStatusLabel =
+    isInferenceModelsLoading ? 'Inference loading' :
+    inferenceModelsError ? 'Inference offline' :
+    selectedAvailableInferenceModel ? 'Inference active' :
+    'No model';
+  const inferenceStatusClass =
+    inferenceModelsError ? 'border-accent-critical-deep bg-accent-critical-bg/20 text-accent-critical' :
+    selectedAvailableInferenceModel ? 'border-accent-data bg-accent-data/15 text-accent-data' :
+    'border-border-subtle bg-surface-primary text-text-muted';
 
   return (
     <div className="min-w-0 border border-border-default rounded-lg bg-surface-primary/50">
@@ -547,6 +595,76 @@ const BusCard: React.FC<BusCardProps> = ({
               })}
             </select>
           )}
+          {viewMode === "camera" && (
+            <div
+              className="flex min-w-0 max-w-full flex-wrap items-center gap-1.5"
+              role="group"
+              aria-label="Camera inference"
+            >
+              <label className="sr-only" htmlFor={inferenceEndpointInputId}>
+                Inference endpoint
+              </label>
+              <input
+                id={inferenceEndpointInputId}
+                type="text"
+                value={inferenceBaseUrl}
+                onChange={(event) => setInferenceBaseUrl(event.target.value)}
+                className={`${inputControlClass} w-[220px] max-w-full font-mono text-xs`}
+                title="OpenAI-compatible inference endpoint"
+                spellCheck={false}
+              />
+              <label className="sr-only" htmlFor={inferenceModelSelectId}>
+                Inference model
+              </label>
+              <select
+                id={inferenceModelSelectId}
+                value={selectedAvailableInferenceModel ?? ""}
+                onChange={(event) => setSelectedInferenceModel(event.target.value || null)}
+                disabled={isInferenceModelsLoading || Boolean(inferenceModelsError) || inferenceModels.length === 0}
+                className={`${selectControlClass} w-[220px] max-w-full disabled:cursor-not-allowed disabled:opacity-60`}
+                title={inferenceModelsError ?? "OpenAI-compatible vision model"}
+              >
+                {isInferenceModelsLoading ? (
+                  <option value="">Loading models...</option>
+                ) : inferenceModelsError ? (
+                  <option value="">Inference offline</option>
+                ) : inferenceModels.length === 0 ? (
+                  <option value="">No models</option>
+                ) : (
+                  inferenceModels.map((model) => (
+                    <option key={model.id} value={model.id} title={model.ownedBy}>
+                      {model.id}
+                    </option>
+                  ))
+                )}
+              </select>
+              <span
+                className="inline-flex h-9 max-w-[9rem] items-center rounded-md border border-border-subtle bg-surface-primary px-2.5 text-xs font-bold uppercase tracking-wide text-text-muted"
+                title="Camera frame is sent as OpenAI-compatible chat completions image_url input"
+              >
+                <span className="truncate">{OPENAI_COMPATIBLE_FORMAT_LABEL}</span>
+              </span>
+              <button
+                type="button"
+                onClick={() => void refreshInferenceModels()}
+                disabled={isInferenceModelsLoading}
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-border-subtle bg-surface-primary text-text-muted transition-colors hover:text-text-primary disabled:cursor-not-allowed disabled:opacity-50"
+                title="Refresh inference models"
+                aria-label="Refresh inference models"
+              >
+                <RefreshCw
+                  className={`h-4 w-4 ${isInferenceModelsLoading ? 'animate-spin' : ''}`}
+                  aria-hidden="true"
+                />
+              </button>
+              <span
+                className={`inline-flex h-9 max-w-[11rem] items-center rounded-md border px-2.5 text-xs font-bold uppercase tracking-wide ${inferenceStatusClass}`}
+                title={inferenceModelsError ?? selectedAvailableInferenceModel ?? inferenceStatusLabel}
+              >
+                <span className="truncate">{inferenceStatusLabel}</span>
+              </span>
+            </div>
+          )}
         </div>
         <div className="flex items-center gap-4 text-sm">
           <div className="flex items-center gap-1.5">
@@ -574,6 +692,8 @@ const BusCard: React.FC<BusCardProps> = ({
             <RobotCameraView
               primaryVideoSourceId={primaryVideoSourceId}
               secondaryVideoSourceId={secondaryVideoSourceId}
+              inferenceAnalysis={inferenceAnalysis}
+              inferenceModel={selectedAvailableInferenceModel}
               bus={bus}
               busIndex={busIndex}
               showMotorData={showCameraMotorData}
