@@ -47,6 +47,10 @@ pub struct Drivers {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub st3215: Option<St3215Config>,
 
+    /// Trampa VESC serial board configuration
+    #[serde(rename = "vesc-trampa", skip_serializing_if = "Option::is_none")]
+    pub vesc_trampa: Option<VescTrampaConfig>,
+
     /// Enable or disable system info monitoring
     #[serde(rename = "system-info")]
     pub system_info: bool,
@@ -103,6 +107,35 @@ impl Default for St3215Config {
             current_threshold: 100,
             motor_current_thresholds: None,
             deadband: 20,
+        }
+    }
+}
+
+/// Trampa VESC serial board configuration
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct VescTrampaConfig {
+    /// Enable or disable the VESC Trampa driver
+    #[serde(default = "default_vesc_trampa_enabled")]
+    pub enabled: bool,
+
+    /// Serial baud rate used for matching VESC board ports.
+    #[serde(rename = "port-baud-rate", default = "default_vesc_trampa_port_baud_rate")]
+    pub port_baud_rate: u32,
+}
+
+fn default_vesc_trampa_enabled() -> bool {
+    true
+}
+
+fn default_vesc_trampa_port_baud_rate() -> u32 {
+    115_200
+}
+
+impl Default for VescTrampaConfig {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            port_baud_rate: default_vesc_trampa_port_baud_rate(),
         }
     }
 }
@@ -194,6 +227,7 @@ impl Default for Drivers {
     fn default() -> Self {
         Self {
             st3215: Some(St3215Config::default()),
+            vesc_trampa: Some(VescTrampaConfig::default()),
             system_info: true,
             usb_video: Some(UsbVideoConfig::default()),
         }

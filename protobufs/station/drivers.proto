@@ -12,6 +12,8 @@ enum QueueDataType {
     QDT_ST3215_SERIAL_RX    = 11; // states
     QDT_ST3215_META         = 12; // meta
     QDT_ST3215_INFERENCE    = 13; // inference state
+
+    QDT_VESC_TRAMPA_SERIAL_RX = 14; // board connect/disconnect states
     
     QDT_FFMPEG_VIDEO_STREAM_RX = 20; // FFMPEGQueueHeader
     QDT_USB_VIDEO_FRAMES       = 21;

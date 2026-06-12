@@ -225,6 +225,26 @@ impl Station {
             None
         };
 
+        if let Some(vesc_trampa_config) = &self.config.drivers.vesc_trampa {
+            if vesc_trampa_config.enabled {
+                let config = vesc_trampa::VescTrampaDriverConfig {
+                    port_baud_rate: vesc_trampa_config.port_baud_rate,
+                };
+
+                if let Err(e) = vesc_trampa::start_vesc_trampa_driver(
+                    self.normfs.clone(),
+                    self.engine.clone(),
+                    config,
+                )
+                .await
+                {
+                    log::error!("Failed to start VESC Trampa driver: {}", e);
+                }
+            } else {
+                log::info!("VESC Trampa driver disabled by configuration");
+            }
+        }
+
         if let Some(st3215) = &st3215_config {
             // Start motors mirroring driver
             let motor_config = motors_mirroring::config::MotorConfig::from(st3215);

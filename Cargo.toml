@@ -6,6 +6,7 @@ members = [
   "software/drivers/st3215",
   "software/drivers/sysinfod",
   "software/drivers/usbvideo",
+  "software/drivers/vesc-trampa",
   "software/station/bin/station",
   "software/station/shared/station-iface",
   "software/station/shared/systime-rs",
@@ -23,4 +24,3 @@ bytes = "1.11"
 log = "0.4.28"
 parking_lot = "0.12"
 lazy_static = "1.5"
-

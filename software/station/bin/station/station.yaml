@@ -3,6 +3,9 @@ drivers:
     enabled: true
     current-threshold: 100
     deadband: 20
+  vesc-trampa:
+    enabled: true
+    port-baud-rate: 115200
   system-info: true
   usb-video:
     enabled: true
