@@ -405,6 +405,7 @@ export default function YahboomDogzillaLiteViewer({
   className = 'h-full min-h-[280px] w-full overflow-hidden'
 }: YahboomDogzillaLiteViewerProps) {
   const { theme } = useTheme();
+  const initialThemeRef = useRef(theme);
   const containerRef = useRef<HTMLDivElement>(null);
   const robotRef = useRef<YahboomDogzillaLiteRobot | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
@@ -442,7 +443,7 @@ export default function YahboomDogzillaLiteViewer({
 
     // Scene
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x303030);
+    scene.background = getRendererThemeColors(initialThemeRef.current).sceneBackground;
     sceneRef.current = scene;
 
     // Camera

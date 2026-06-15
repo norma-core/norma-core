@@ -256,10 +256,10 @@ const MovementPanelComponent = forwardRef<MovementPanelRef, MovementPanelProps>(
 
   return (
     <div className="space-y-4">
-      <div className="rounded-lg border border-gray-700 bg-gray-900/80 px-4 py-4">
-        <div className="mb-3 flex items-center justify-between text-[11px] uppercase tracking-wide text-gray-400">
+      <div className="rounded-lg border border-border-default bg-surface-primary/80 px-4 py-4">
+        <div className="mb-3 flex items-center justify-between text-[11px] uppercase tracking-wide text-text-label">
           <span>Movement</span>
-          <span className={`${isDragging ? 'text-cyan-300' : 'text-gray-500'} font-mono`}>{isDragging ? 'LIVE' : 'IDLE'}</span>
+          <span className={`${isDragging ? 'text-accent-data' : 'text-text-muted'} font-mono`}>{isDragging ? 'LIVE' : 'IDLE'}</span>
         </div>
         <div className="flex justify-center">
           <div
@@ -269,48 +269,48 @@ const MovementPanelComponent = forwardRef<MovementPanelRef, MovementPanelProps>(
             onPointerMove={handlePointerMove}
             onPointerUp={handlePointerUp}
             onPointerCancel={handlePointerUp}
-            className="relative touch-none rounded-full border border-gray-700 bg-gray-950"
+            className="relative touch-none rounded-full border border-border-default bg-surface-base"
             style={{ width: PAD_SIZE, height: PAD_SIZE }}
           >
-            <div className="absolute inset-[18%] rounded-full border border-gray-800" />
-            <div className="absolute inset-[34%] rounded-full border border-gray-800" />
-            <div className="absolute bottom-3 left-1/2 top-3 w-px -translate-x-1/2 bg-gray-800" />
-            <div className="absolute left-3 right-3 top-1/2 h-px -translate-y-1/2 bg-gray-800" />
+            <div className="absolute inset-[18%] rounded-full border border-border-subtle" />
+            <div className="absolute inset-[34%] rounded-full border border-border-subtle" />
+            <div className="absolute bottom-3 left-1/2 top-3 w-px -translate-x-1/2 bg-border-default" />
+            <div className="absolute left-3 right-3 top-1/2 h-px -translate-y-1/2 bg-border-default" />
             <div
-              className="absolute left-1/2 top-1/2 rounded-full border border-cyan-700 bg-cyan-950"
+              className="absolute left-1/2 top-1/2 rounded-full border border-accent-data/70 bg-accent-data/10"
               style={{
                 width: KNOB_SIZE,
                 height: KNOB_SIZE,
                 transform: `translate(-50%, -50%) translate(${joystick.x * KNOB_TRAVEL}px, ${joystick.y * KNOB_TRAVEL}px)`
               }}
             />
-            <div className="absolute left-1/2 top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full border border-cyan-700 bg-cyan-500" />
+            <div className="absolute left-1/2 top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full border border-accent-data bg-accent-data" />
           </div>
         </div>
         <div className="mt-4 grid grid-cols-3 gap-2">
-          <div className="rounded-md border border-gray-700 bg-gray-950 px-3 py-2 text-center">
-            <div className="text-[10px] uppercase tracking-wide text-gray-500">Fwd</div>
-            <div className="mt-1 font-mono text-sm font-semibold text-cyan-300">{liveValues.forward}%</div>
+          <div className="rounded-md border border-border-default bg-surface-base px-3 py-2 text-center">
+            <div className="text-[10px] uppercase tracking-wide text-text-muted">Fwd</div>
+            <div className="mt-1 font-mono text-sm font-semibold text-accent-data">{liveValues.forward}%</div>
           </div>
-          <div className="rounded-md border border-gray-700 bg-gray-950 px-3 py-2 text-center">
-            <div className="text-[10px] uppercase tracking-wide text-gray-500">Strafe</div>
-            <div className="mt-1 font-mono text-sm font-semibold text-cyan-300">{liveValues.strafe}%</div>
+          <div className="rounded-md border border-border-default bg-surface-base px-3 py-2 text-center">
+            <div className="text-[10px] uppercase tracking-wide text-text-muted">Strafe</div>
+            <div className="mt-1 font-mono text-sm font-semibold text-accent-data">{liveValues.strafe}%</div>
           </div>
           <button
             type="button"
             onClick={stopAll}
-            className="rounded-md border border-red-900 bg-red-950/50 px-3 py-2 text-center transition hover:border-red-700 hover:bg-red-950/70"
+            className="rounded-md border border-accent-critical-deep bg-accent-critical/10 px-3 py-2 text-center transition hover:border-accent-critical hover:bg-accent-critical/20"
           >
-            <div className="text-[10px] uppercase tracking-wide text-red-500">Brake</div>
-            <div className="mt-1 text-sm font-semibold text-red-300">Stop</div>
+            <div className="text-[10px] uppercase tracking-wide text-accent-critical">Brake</div>
+            <div className="mt-1 text-sm font-semibold text-accent-critical">Stop</div>
           </button>
         </div>
       </div>
 
-      <div className="rounded-lg border border-gray-700 bg-gray-900/80 px-4 py-3">
-        <div className="flex items-center justify-between text-[11px] uppercase tracking-wide text-gray-400">
+      <div className="rounded-lg border border-border-default bg-surface-primary/80 px-4 py-3">
+        <div className="flex items-center justify-between text-[11px] uppercase tracking-wide text-text-label">
           <span>Yaw</span>
-          <span className="font-mono text-cyan-300">{liveValues.yaw}%</span>
+          <span className="font-mono text-accent-data">{liveValues.yaw}%</span>
         </div>
         <input
           type="range"
@@ -325,10 +325,10 @@ const MovementPanelComponent = forwardRef<MovementPanelRef, MovementPanelProps>(
       </div>
 
       <div className="grid grid-cols-2 gap-3">
-        <div className="rounded-lg border border-gray-700 bg-gray-900/80 px-4 py-3">
-          <div className="mb-3 flex items-center justify-between text-[11px] uppercase tracking-wide text-gray-400">
+        <div className="rounded-lg border border-border-default bg-surface-primary/80 px-4 py-3">
+          <div className="mb-3 flex items-center justify-between text-[11px] uppercase tracking-wide text-text-label">
             <span>Leg Speed</span>
-            <span className="font-mono text-cyan-300">{legsSpeed}</span>
+            <span className="font-mono text-accent-data">{legsSpeed}</span>
           </div>
           <input
             type="range"
@@ -341,10 +341,10 @@ const MovementPanelComponent = forwardRef<MovementPanelRef, MovementPanelProps>(
             className="control-slider mt-4 h-4 w-full"
           />
         </div>
-        <div className="rounded-lg border border-gray-700 bg-gray-900/80 px-4 py-3">
-          <div className="mb-3 flex items-center justify-between text-[11px] uppercase tracking-wide text-gray-400">
+        <div className="rounded-lg border border-border-default bg-surface-primary/80 px-4 py-3">
+          <div className="mb-3 flex items-center justify-between text-[11px] uppercase tracking-wide text-text-label">
             <span>Arm Speed</span>
-            <span className="font-mono text-cyan-300">{armSpeed}</span>
+            <span className="font-mono text-accent-data">{armSpeed}</span>
           </div>
           <input
             type="range"

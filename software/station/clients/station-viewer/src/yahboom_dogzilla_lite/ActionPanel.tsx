@@ -61,10 +61,10 @@ const ActionPanel = memo(function ActionPanel({ activeAction, onActionSelect }: 
       {ACTION_GROUPS.map((group) => (
         <section key={group.title} className="space-y-2">
           <div className="flex items-center justify-between">
-            <h3 className="text-[11px] font-semibold uppercase tracking-wide text-cyan-400">
+            <h3 className="text-[11px] font-semibold uppercase tracking-wide text-accent-data">
               {group.title}
             </h3>
-            <div className="h-px flex-1 bg-gray-700" />
+            <div className="h-px flex-1 bg-border-default" />
           </div>
           <div className="grid grid-cols-2 gap-2 2xl:grid-cols-3">
             {group.actions.map((action) => {
@@ -76,8 +76,8 @@ const ActionPanel = memo(function ActionPanel({ activeAction, onActionSelect }: 
                   onClick={() => onActionSelect(action)}
                   className={`min-h-14 rounded-md border px-3 py-3 text-left text-sm font-medium transition ${
                     isActive
-                      ? 'border-cyan-500 bg-gray-800 text-cyan-300'
-                      : 'border-gray-700 bg-gray-900/80 text-gray-100 hover:border-cyan-700 hover:text-cyan-300'
+                      ? 'border-accent-data bg-accent-data/10 text-accent-data'
+                      : 'border-border-default bg-surface-primary/80 text-text-primary hover:border-accent-data hover:text-accent-data'
                   }`}
                 >
                   {action.label}
@@ -87,8 +87,8 @@ const ActionPanel = memo(function ActionPanel({ activeAction, onActionSelect }: 
           </div>
         </section>
       ))}
-      <section className="space-y-2 border-t border-gray-700 pt-4">
-        <h3 className="text-[11px] font-semibold uppercase tracking-wide text-red-400">
+      <section className="space-y-2 border-t border-border-default pt-4">
+        <h3 className="text-[11px] font-semibold uppercase tracking-wide text-accent-critical">
           Reset
         </h3>
         <button
@@ -96,8 +96,8 @@ const ActionPanel = memo(function ActionPanel({ activeAction, onActionSelect }: 
           onClick={() => onActionSelect(QUICK_ACTIONS[3])}
           className={`w-full rounded-md border px-4 py-4 text-left text-sm font-semibold transition ${
             activeAction === QUICK_ACTIONS[3].value
-              ? 'border-red-700 bg-red-950 text-red-300'
-              : 'border-red-900 bg-red-950/50 text-red-300 hover:border-red-700 hover:bg-red-950/70'
+              ? 'border-accent-critical bg-accent-critical/20 text-accent-critical'
+              : 'border-accent-critical-deep bg-accent-critical/10 text-accent-critical hover:border-accent-critical hover:bg-accent-critical/20'
           }`}
         >
           Restore Default Pose
