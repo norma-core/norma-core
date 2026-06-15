@@ -41,9 +41,6 @@ Run on Raspberry Pi hardware with defaults:
 uv run --frozen yahboom-dogzilla-lite-monitor
 ```
 
-The image build installs it under `/opt/yahboom-dogzilla-lite-monitor` and runs
-it through `yahboom-dogzilla-lite-monitor.service`.
-
 ## Flags
 
 | Flag | Default | Description |
