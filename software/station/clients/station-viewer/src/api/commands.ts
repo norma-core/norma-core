@@ -1,4 +1,4 @@
-import { st3215, drivers, commands, motors_mirroring, inference_tags } from "./proto.js";
+import { st3215, drivers, commands, motors_mirroring, inference_tags, vesc_trampa } from "./proto.js";
 import webSocketManager from "./websocket.js";
 
 function commandIdToBytes(id: number): Uint8Array {
@@ -61,6 +61,11 @@ export class CommandManager {
     public async sendInferenceTagCommand(command: inference_tags.ICommand): Promise<void> {
         const body = inference_tags.Command.encode(command).finish();
         await this.sendCommand(drivers.StationCommandType.STC_INFERENCE_TAG_COMMAND, body);
+    }
+
+    public async sendVescTrampaCommand(command: vesc_trampa.ICommand): Promise<void> {
+        const body = vesc_trampa.Command.encode(command).finish();
+        await this.sendCommand(drivers.StationCommandType.STC_VESC_TRAMPA_COMMAND, body);
     }
 }
 

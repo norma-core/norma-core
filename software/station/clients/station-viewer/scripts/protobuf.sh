@@ -12,6 +12,7 @@ npm exec -- pbjs --wrap es6 --force-long -t static-module --es6 -l eslint-disabl
   ${SRC}/station/startups.proto \
   ${SRC}/station/inference_tags.proto \
   ${SRC}/drivers/st3215/st3215.proto \
+  ${SRC}/drivers/vesc-trampa/vesc_trampa.proto \
   ${SRC}/drivers/usbvideo/usbvideo.proto \
   ${SRC}/drivers/motors-mirroring/mirroring.proto \
   ${SRC}/drivers/sysinfo/sysinfo.proto \

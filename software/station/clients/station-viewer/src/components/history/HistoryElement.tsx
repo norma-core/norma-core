@@ -1,12 +1,12 @@
 import { useState } from 'react';
-import { usbvideo, st3215, motors_mirroring, sysinfo, normvla } from '@/api/proto.js';
+import { usbvideo, st3215, motors_mirroring, sysinfo, normvla, vesc_trampa } from '@/api/proto.js';
 import { formatBytes, parseUsbVideoData, parseMirroringData, parseSysinfoData, parseNormvlaData } from '@/components/history/history-utils';
 import ExpandedView from '@/components/history/ExpandedView';
 
 export interface HistoryElementData {
   queueId: string;
   entryId: Uint8Array;
-  data: Uint8Array | usbvideo.IRxEnvelope | st3215.IInferenceState | st3215.ITxEnvelope | motors_mirroring.IRxEnvelope | sysinfo.IEnvelope | normvla.IFrame | null;
+  data: Uint8Array | usbvideo.IRxEnvelope | st3215.IInferenceState | st3215.ITxEnvelope | vesc_trampa.IInferenceState | vesc_trampa.IRxEnvelope | vesc_trampa.ITxEnvelope | motors_mirroring.IRxEnvelope | sysinfo.IEnvelope | normvla.IFrame | null;
   rawData?: Uint8Array | null;
   error?: string;
   type?: string;
@@ -39,7 +39,7 @@ function formatQueueIdForDisplay(queueId: string): string {
 }
 
 function HistoryElement({ element, index, dataQueueType, dataQueueId }: HistoryElementProps) {
-  const [isExpanded, setIsExpanded] = useState(element.type === 'usbvideo' || element.type === 'st3215' || element.type === 'normvla' || element.type === 'st3215tx');
+  const [isExpanded, setIsExpanded] = useState(element.type === 'usbvideo' || element.type === 'st3215' || element.type === 'normvla' || element.type === 'st3215tx' || element.type === 'vesc-trampa' || element.type === 'vesc-trampa-rx' || element.type === 'vesc-trampa-tx');
   const displayQueueId = formatQueueIdForDisplay(element.queueId);
 
   const usbVideoData = element.type === 'usbvideo' && element.data ? parseUsbVideoData(element.data) : null;
@@ -47,6 +47,7 @@ function HistoryElement({ element, index, dataQueueType, dataQueueId }: HistoryE
   const sysinfoData = element.type === 'sysinfo' && element.data ? parseSysinfoData(element.data) : null;
   const normvlaData = element.type === 'normvla' && element.data ? parseNormvlaData(element.data as Uint8Array | normvla.IFrame) : null;
   const st3215TxData = element.type === 'st3215tx' && element.data && !(element.data instanceof Uint8Array) ? element.data as st3215.ITxEnvelope : null;
+  const vescTrampaTxData = element.type === 'vesc-trampa-tx' && element.data && !(element.data instanceof Uint8Array) ? element.data as vesc_trampa.ITxEnvelope : null;
 
   const canExpand = !!element.data;
 
@@ -199,6 +200,26 @@ function HistoryElement({ element, index, dataQueueType, dataQueueId }: HistoryE
               {st3215TxData.action && (
                 <span className="text-accent-success">
                   Action
+                </span>
+              )}
+            </div>
+          )}
+
+          {vescTrampaTxData && (
+            <div className="flex items-center gap-3 text-xs">
+              {vescTrampaTxData.targetBoardUuid && (
+                <span className="text-accent-danger">
+                  UUID: {formatBytes(vescTrampaTxData.targetBoardUuid, 12)}
+                </span>
+              )}
+              {vescTrampaTxData.boardCommand && (
+                <span className="text-accent-data">
+                  Payload: {vescTrampaTxData.boardCommand.payload?.length ?? 0}b
+                </span>
+              )}
+              {vescTrampaTxData.boardCommand?.responseExpected && (
+                <span className="text-accent-success">
+                  Response
                 </span>
               )}
             </div>

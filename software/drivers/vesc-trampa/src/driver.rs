@@ -1,10 +1,11 @@
-use crate::port::VescTrampaPort;
+use crate::port::{VescTrampaPort, VescTrampaProbeError};
 use crate::state::VescTrampaCommunicator;
-use crate::vesc_trampa_proto::VescTrampaBoard as VescTrampaBoardProto;
-use log::{error, info, warn};
+use crate::vesc_trampa_proto::{Command, TxEnvelope, VescTrampaBoard as VescTrampaBoardProto};
+use log::{debug, error, info, warn};
 use normfs::NormFS;
+use prost::Message;
 use station_iface::StationEngine;
-use station_iface::iface_proto::drivers;
+use station_iface::iface_proto::{commands, drivers};
 use std::collections::HashSet;
 use std::sync::Arc;
 use std::time::Duration;
@@ -13,6 +14,8 @@ use tokio::time::interval;
 use tokio_serial::{SerialPortInfo, SerialPortType, available_ports};
 
 pub const RX_QUEUE_ID: &str = "vesc-trampa/rx";
+pub const TX_QUEUE_ID: &str = "vesc-trampa/tx";
+pub const INFERENCE_QUEUE_ID: &str = "vesc-trampa/inference";
 
 #[derive(Debug, Clone)]
 pub struct VescTrampaDriverConfig {
@@ -40,15 +43,78 @@ impl VescTrampaDriver {
         config: VescTrampaDriverConfig,
     ) -> Result<Self, Box<dyn std::error::Error>> {
         let rx_queue_id = normfs.resolve(RX_QUEUE_ID);
+        let tx_queue_id = normfs.resolve(TX_QUEUE_ID);
+        let inference_queue_id = normfs.resolve(INFERENCE_QUEUE_ID);
         normfs.ensure_queue_exists_for_write(&rx_queue_id).await?;
+        normfs.ensure_queue_exists_for_write(&tx_queue_id).await?;
+        normfs
+            .ensure_queue_exists_for_write(&inference_queue_id)
+            .await?;
         station_engine.register_queue(
             &rx_queue_id,
             drivers::QueueDataType::QdtVescTrampaSerialRx,
             vec![],
         );
+        station_engine.register_queue(
+            &tx_queue_id,
+            drivers::QueueDataType::QdtVescTrampaSerialTx,
+            vec![],
+        );
+        station_engine.register_queue(
+            &inference_queue_id,
+            drivers::QueueDataType::QdtVescTrampaInference,
+            vec![],
+        );
+
+        let com = Arc::new(VescTrampaCommunicator::new(
+            normfs.clone(),
+            rx_queue_id,
+            tx_queue_id,
+            inference_queue_id,
+        ));
+
+        let com4commands = com.clone();
+        let commands_queue_id = normfs.resolve("commands");
+        normfs.subscribe(
+            &commands_queue_id,
+            Box::new(move |entries: &[(normfs::UintN, bytes::Bytes)]| {
+                for (_, data) in entries {
+                    if let Ok(pack) = commands::StationCommandsPack::decode(data.as_ref()) {
+                        for cmd in &pack.commands {
+                            if cmd.r#type() != drivers::StationCommandType::StcVescTrampaCommand {
+                                continue;
+                            }
+
+                            let command = match Command::decode(cmd.body.clone()) {
+                                Ok(command) => command,
+                                Err(error) => {
+                                    error!("Failed to decode VESC Trampa command: {}", error);
+                                    continue;
+                                }
+                            };
+
+                            let envelope = TxEnvelope {
+                                monotonic_stamp_ns: systime::get_monotonic_stamp_ns(),
+                                local_stamp_ns: systime::get_local_stamp_ns(),
+                                app_start_id: systime::get_app_start_id(),
+                                target_board_uuid: command.target_board_uuid,
+                                command_id: cmd.command_id.clone(),
+                                board_command: command.board_command,
+                                motor_mode: command.motor_mode,
+                            };
+
+                            if let Err(error) = com4commands.send_tx(&envelope) {
+                                error!("Failed to send VESC Trampa command to tx queue: {}", error);
+                            }
+                        }
+                    }
+                }
+                true
+            }),
+        )?;
 
         let driver = Self {
-            com: Arc::new(VescTrampaCommunicator::new(normfs, rx_queue_id)),
+            com,
             ports: Arc::new(RwLock::new(HashSet::new())),
             config,
         };
@@ -91,7 +157,7 @@ impl VescTrampaDriver {
                     if !ports_guard.contains(&port_name) {
                         let board_info = Self::create_board_info(&port_info, config);
                         info!(
-                            "New VESC Trampa board detected: {} ({})",
+                            "New VESC Trampa USB candidate detected: {} ({})",
                             board_info.serial_number, board_info.port_name
                         );
 
@@ -102,15 +168,33 @@ impl VescTrampaDriver {
 
                         let ports_clone = ports.clone();
                         tokio::spawn(async move {
-                            if let Err(error) = port.open().await {
-                                warn!("Failed to open VESC Trampa port {}: {}", port_name, error);
-                            }
+                            let probe_failed = match port.open().await {
+                                Ok(()) => false,
+                                Err(error)
+                                    if error.downcast_ref::<VescTrampaProbeError>().is_some() =>
+                                {
+                                    debug!(
+                                        "Ignoring non-VESC Trampa serial candidate {}: {}",
+                                        port_name, error
+                                    );
+                                    true
+                                }
+                                Err(error) => {
+                                    warn!(
+                                        "Failed to open VESC Trampa port {}: {}",
+                                        port_name, error
+                                    );
+                                    false
+                                }
+                            };
 
                             ports_clone.write().await.remove(&port_name);
-                            info!(
-                                "VESC Trampa port {} disconnected and removed from management",
-                                port_name
-                            );
+                            if !probe_failed {
+                                info!(
+                                    "VESC Trampa port {} disconnected and removed from management",
+                                    port_name
+                                );
+                            }
                         });
                     }
                 }
@@ -167,6 +251,7 @@ impl VescTrampaDriver {
             manufacturer,
             product,
             port_baud_rate: config.port_baud_rate,
+            ..Default::default()
         }
     }
 }

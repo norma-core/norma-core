@@ -6,21 +6,62 @@ use tokio::io::{AsyncRead, AsyncWrite};
 
 use super::{CommPacket, PacketError};
 
-pub const COMM_FW_VERSION: u8 = 0;
-pub const COMM_GET_MCCONF: u8 = 14;
-pub const COMM_GET_APPCONF: u8 = 17;
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[repr(u32)]
+pub enum VescCommandId {
+    FwVersion = 0,
+    GetValues = 4,
+    SetHandbrake = 10,
+    GetMotorConfig = 14,
+    GetAppConfig = 17,
+}
+
+impl VescCommandId {
+    pub fn as_u32(self) -> u32 {
+        self as u32
+    }
+
+    pub fn wire_id(self) -> u8 {
+        self.as_u32() as u8
+    }
+
+    pub fn from_u32(value: u32) -> Option<Self> {
+        match value {
+            0 => Some(Self::FwVersion),
+            4 => Some(Self::GetValues),
+            10 => Some(Self::SetHandbrake),
+            14 => Some(Self::GetMotorConfig),
+            17 => Some(Self::GetAppConfig),
+            _ => None,
+        }
+    }
+
+    pub fn from_wire_id(value: u8) -> Option<Self> {
+        Self::from_u32(value as u32)
+    }
+
+    pub fn name(self) -> &'static str {
+        match self {
+            Self::FwVersion => "COMM_FW_VERSION",
+            Self::GetValues => "COMM_GET_VALUES",
+            Self::SetHandbrake => "COMM_SET_HANDBRAKE",
+            Self::GetMotorConfig => "COMM_GET_MCCONF",
+            Self::GetAppConfig => "COMM_GET_APPCONF",
+        }
+    }
+}
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum PayloadError {
     EmptyPayload,
     UnexpectedPacketId {
-        expected: u8,
-        actual: u8,
+        expected: u32,
+        actual: u32,
         source_payload: Bytes,
     },
     ResponseTypeMismatch {
         expected: &'static str,
-        actual_packet_id: u8,
+        actual_packet_id: u32,
         source_payload: Bytes,
     },
     MissingBytes {
@@ -33,6 +74,7 @@ pub enum PayloadError {
         field: &'static str,
         source_payload: Bytes,
     },
+    InvalidPacket(PacketError),
 }
 
 impl fmt::Display for PayloadError {
@@ -65,6 +107,7 @@ impl fmt::Display for PayloadError {
             Self::UnterminatedString { field, .. } => {
                 write!(f, "unterminated VESC firmware info string field '{field}'")
             }
+            Self::InvalidPacket(error) => write!(f, "invalid VESC packet: {error}"),
         }
     }
 }
@@ -74,22 +117,45 @@ impl std::error::Error for PayloadError {}
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum VescRequest {
     FirmwareInfo,
+    Values,
     MotorConfig,
     AppConfig,
 }
 
 impl VescRequest {
-    fn command(&self) -> u8 {
+    pub fn command(&self) -> VescCommandId {
         match self {
-            Self::FirmwareInfo => COMM_FW_VERSION,
-            Self::MotorConfig => COMM_GET_MCCONF,
-            Self::AppConfig => COMM_GET_APPCONF,
+            Self::FirmwareInfo => VescCommandId::FwVersion,
+            Self::Values => VescCommandId::GetValues,
+            Self::MotorConfig => VescCommandId::GetMotorConfig,
+            Self::AppConfig => VescCommandId::GetAppConfig,
+        }
+    }
+
+    pub fn command_id(&self) -> u32 {
+        self.command().as_u32()
+    }
+
+    pub fn wire_command_id(&self) -> u8 {
+        self.command().wire_id()
+    }
+
+    pub fn expected_response_command(&self) -> VescCommandId {
+        self.command()
+    }
+
+    pub fn expected_response_name(&self) -> &'static str {
+        match self {
+            Self::FirmwareInfo => "FirmwareInfo",
+            Self::Values => "Values",
+            Self::MotorConfig => "MotorConfig",
+            Self::AppConfig => "AppConfig",
         }
     }
 
     pub fn to_bytes(&self) -> Bytes {
         let mut payload = BytesMut::with_capacity(1);
-        payload.put_u8(self.command());
+        payload.put_u8(self.wire_command_id());
         payload.freeze()
     }
 
@@ -111,8 +177,7 @@ impl VescRequest {
         timeout_ms: u64,
     ) -> Result<VescResponse, Box<dyn std::error::Error + Send + Sync>> {
         self.async_write(stream, timeout_ms).await?;
-        let response_packet = CommPacket::async_read(stream, timeout_ms).await?;
-        Ok(VescResponse::parse(self, response_packet.into_payload())?)
+        VescResponse::async_read(self, stream, timeout_ms).await
     }
 }
 
@@ -120,66 +185,145 @@ impl VescRequest {
 pub enum VescResponse {
     FirmwareInfo {
         info: FirmwareInfoPayload,
+        source_packet: CommPacket,
+        source_bytes: Bytes,
+    },
+    Values {
+        values: ValuesPayload,
+        source_packet: CommPacket,
         source_bytes: Bytes,
     },
     MotorConfig {
         config: MotorConfigPayload,
+        source_packet: CommPacket,
         source_bytes: Bytes,
     },
     AppConfig {
         config: AppConfigPayload,
+        source_packet: CommPacket,
         source_bytes: Bytes,
     },
 }
 
 impl VescResponse {
+    pub async fn async_read<R: AsyncRead + Unpin>(
+        request: &VescRequest,
+        reader: &mut R,
+        timeout_ms: u64,
+    ) -> Result<Self, Box<dyn std::error::Error + Send + Sync>> {
+        let response_packet = CommPacket::async_read(reader, timeout_ms).await?;
+        Ok(Self::parse_packet(request, response_packet)?)
+    }
+
     pub fn parse(request: &VescRequest, source_bytes: Bytes) -> Result<Self, PayloadError> {
-        let actual_packet_id = *source_bytes.first().ok_or(PayloadError::EmptyPayload)?;
+        let source_packet = CommPacket::new(source_bytes).map_err(PayloadError::InvalidPacket)?;
+        Self::parse_packet(request, source_packet)
+    }
+
+    pub fn parse_packet(
+        request: &VescRequest,
+        source_packet: CommPacket,
+    ) -> Result<Self, PayloadError> {
+        let source_bytes = source_packet.payload().clone();
+        let actual_packet_id = *source_bytes.first().ok_or(PayloadError::EmptyPayload)? as u32;
+        let expected_packet_id = request.expected_response_command().as_u32();
+
+        if actual_packet_id != expected_packet_id {
+            return Err(PayloadError::ResponseTypeMismatch {
+                expected: request.expected_response_name(),
+                actual_packet_id,
+                source_payload: source_bytes,
+            });
+        }
 
         match request {
             VescRequest::FirmwareInfo => {
-                if actual_packet_id != COMM_FW_VERSION {
-                    return Err(PayloadError::ResponseTypeMismatch {
-                        expected: "FirmwareInfo",
-                        actual_packet_id,
-                        source_payload: source_bytes,
-                    });
-                }
-
                 let info = FirmwareInfoPayload::parse(source_bytes.clone())?;
-                Ok(Self::FirmwareInfo { info, source_bytes })
+                Ok(Self::FirmwareInfo {
+                    info,
+                    source_packet,
+                    source_bytes,
+                })
+            }
+            VescRequest::Values => {
+                let values = ValuesPayload::parse(source_bytes.clone())?;
+                Ok(Self::Values {
+                    values,
+                    source_packet,
+                    source_bytes,
+                })
             }
             VescRequest::MotorConfig => {
-                if actual_packet_id != COMM_GET_MCCONF {
-                    return Err(PayloadError::ResponseTypeMismatch {
-                        expected: "MotorConfig",
-                        actual_packet_id,
-                        source_payload: source_bytes,
-                    });
-                }
-
                 let config = MotorConfigPayload::parse(source_bytes.clone())?;
                 Ok(Self::MotorConfig {
                     config,
+                    source_packet,
                     source_bytes,
                 })
             }
             VescRequest::AppConfig => {
-                if actual_packet_id != COMM_GET_APPCONF {
-                    return Err(PayloadError::ResponseTypeMismatch {
-                        expected: "AppConfig",
-                        actual_packet_id,
-                        source_payload: source_bytes,
-                    });
-                }
-
                 let config = AppConfigPayload::parse(source_bytes.clone())?;
                 Ok(Self::AppConfig {
                     config,
+                    source_packet,
                     source_bytes,
                 })
             }
         }
+    }
+
+    pub fn source_packet(&self) -> &CommPacket {
+        match self {
+            Self::FirmwareInfo { source_packet, .. }
+            | Self::Values { source_packet, .. }
+            | Self::MotorConfig { source_packet, .. }
+            | Self::AppConfig { source_packet, .. } => source_packet,
+        }
+    }
+
+    pub fn source_bytes(&self) -> &Bytes {
+        match self {
+            Self::FirmwareInfo { source_bytes, .. }
+            | Self::Values { source_bytes, .. }
+            | Self::MotorConfig { source_bytes, .. }
+            | Self::AppConfig { source_bytes, .. } => source_bytes,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ValuesPayload {
+    payload: Bytes,
+}
+
+impl ValuesPayload {
+    pub fn parse(payload: Bytes) -> Result<Self, PayloadError> {
+        require_exact_id(&payload, VescCommandId::GetValues.as_u32())?;
+        Ok(Self { payload })
+    }
+
+    pub fn raw_payload(&self) -> &Bytes {
+        &self.payload
+    }
+
+    pub fn command_id(&self) -> u32 {
+        self.payload[0] as u32
+    }
+
+    pub fn values_bytes(&self) -> &[u8] {
+        &self.payload[1..]
+    }
+}
+
+impl fmt::Display for ValuesPayload {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "command_id={}, values_len={}, raw_payload_len={}",
+            self.command_id(),
+            self.values_bytes().len(),
+            self.raw_payload().len(),
+        )
     }
 }
 
@@ -190,7 +334,7 @@ pub struct MotorConfigPayload {
 
 impl MotorConfigPayload {
     pub fn parse(payload: Bytes) -> Result<Self, PayloadError> {
-        require_exact_id(&payload, COMM_GET_MCCONF)?;
+        require_exact_id(&payload, VescCommandId::GetMotorConfig.as_u32())?;
         Ok(Self { payload })
     }
 
@@ -198,8 +342,8 @@ impl MotorConfigPayload {
         &self.payload
     }
 
-    pub fn command_id(&self) -> u8 {
-        self.payload[0]
+    pub fn command_id(&self) -> u32 {
+        self.payload[0] as u32
     }
 
     pub fn config_bytes(&self) -> &[u8] {
@@ -226,7 +370,7 @@ pub struct AppConfigPayload {
 
 impl AppConfigPayload {
     pub fn parse(payload: Bytes) -> Result<Self, PayloadError> {
-        require_exact_id(&payload, COMM_GET_APPCONF)?;
+        require_exact_id(&payload, VescCommandId::GetAppConfig.as_u32())?;
         Ok(Self { payload })
     }
 
@@ -234,8 +378,8 @@ impl AppConfigPayload {
         &self.payload
     }
 
-    pub fn command_id(&self) -> u8 {
-        self.payload[0]
+    pub fn command_id(&self) -> u32 {
+        self.payload[0] as u32
     }
 
     pub fn config_bytes(&self) -> &[u8] {
@@ -275,7 +419,7 @@ pub struct FirmwareInfoPayload {
 
 impl FirmwareInfoPayload {
     pub fn parse(payload: Bytes) -> Result<Self, PayloadError> {
-        require_exact_id(&payload, COMM_FW_VERSION)?;
+        require_exact_id(&payload, VescCommandId::FwVersion.as_u32())?;
         require_len(&payload, 3, "firmware_version")?;
 
         let mut idx = 3;
@@ -323,8 +467,8 @@ impl FirmwareInfoPayload {
         &self.payload
     }
 
-    pub fn command_id(&self) -> u8 {
-        self.payload[0]
+    pub fn command_id(&self) -> u32 {
+        self.payload[0] as u32
     }
 
     pub fn major(&self) -> u8 {
@@ -431,10 +575,11 @@ impl fmt::Display for FirmwareInfoPayload {
     }
 }
 
-fn require_exact_id(payload: &Bytes, expected: u8) -> Result<(), PayloadError> {
+fn require_exact_id(payload: &Bytes, expected: u32) -> Result<(), PayloadError> {
     let Some(actual) = payload.first().copied() else {
         return Err(PayloadError::EmptyPayload);
     };
+    let actual = actual as u32;
 
     if actual != expected {
         return Err(PayloadError::UnexpectedPacketId {
@@ -570,10 +715,15 @@ fn format_bytes(value: &[u8]) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use tokio::io::AsyncWriteExt;
+
+    fn wire(command_id: VescCommandId) -> u8 {
+        command_id.wire_id()
+    }
 
     fn current_fw_payload() -> Bytes {
         let mut payload = Vec::new();
-        payload.extend_from_slice(&[COMM_FW_VERSION, 6, 5]);
+        payload.extend_from_slice(&[wire(VescCommandId::FwVersion), 6, 5]);
         payload.extend_from_slice(b"HW_60V\0");
         payload.extend_from_slice(&[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]);
         payload.extend_from_slice(&[1, 2, 3, 4, 1, 2, 0, 0b11]);
@@ -586,7 +736,15 @@ mod tests {
     fn builds_firmware_info_request_payload() {
         assert_eq!(
             VescRequest::FirmwareInfo.to_bytes(),
-            Bytes::from_static(&[COMM_FW_VERSION])
+            Bytes::from(vec![wire(VescCommandId::FwVersion)])
+        );
+    }
+
+    #[test]
+    fn builds_values_request_payload() {
+        assert_eq!(
+            VescRequest::Values.to_bytes(),
+            Bytes::from(vec![wire(VescCommandId::GetValues)])
         );
     }
 
@@ -594,7 +752,7 @@ mod tests {
     fn builds_motor_config_request_payload() {
         assert_eq!(
             VescRequest::MotorConfig.to_bytes(),
-            Bytes::from_static(&[COMM_GET_MCCONF])
+            Bytes::from(vec![wire(VescCommandId::GetMotorConfig)])
         );
     }
 
@@ -602,8 +760,77 @@ mod tests {
     fn builds_app_config_request_payload() {
         assert_eq!(
             VescRequest::AppConfig.to_bytes(),
-            Bytes::from_static(&[COMM_GET_APPCONF])
+            Bytes::from(vec![wire(VescCommandId::GetAppConfig)])
         );
+    }
+
+    #[test]
+    fn exposes_request_command_and_expected_response_metadata() {
+        assert_eq!(
+            VescRequest::FirmwareInfo.command(),
+            VescCommandId::FwVersion
+        );
+        assert_eq!(
+            VescRequest::FirmwareInfo.command_id(),
+            VescCommandId::FwVersion.as_u32()
+        );
+        assert_eq!(
+            VescRequest::FirmwareInfo.wire_command_id(),
+            wire(VescCommandId::FwVersion)
+        );
+        assert_eq!(
+            VescRequest::FirmwareInfo.expected_response_command(),
+            VescCommandId::FwVersion
+        );
+        assert_eq!(
+            VescRequest::FirmwareInfo.expected_response_name(),
+            "FirmwareInfo"
+        );
+
+        assert_eq!(
+            VescRequest::Values.expected_response_command(),
+            VescCommandId::GetValues
+        );
+        assert_eq!(VescRequest::Values.expected_response_name(), "Values");
+        assert_eq!(
+            VescRequest::MotorConfig.expected_response_command(),
+            VescCommandId::GetMotorConfig
+        );
+        assert_eq!(
+            VescRequest::AppConfig.expected_response_command(),
+            VescCommandId::GetAppConfig
+        );
+    }
+
+    #[test]
+    fn maps_u32_and_wire_command_ids() {
+        assert_eq!(
+            VescCommandId::from_u32(VescCommandId::GetValues.as_u32()),
+            Some(VescCommandId::GetValues)
+        );
+        assert_eq!(
+            VescCommandId::from_wire_id(wire(VescCommandId::GetValues)),
+            Some(VescCommandId::GetValues)
+        );
+        assert_eq!(
+            VescCommandId::from_u32(VescCommandId::GetMotorConfig.as_u32()),
+            Some(VescCommandId::GetMotorConfig)
+        );
+        assert_eq!(
+            VescCommandId::from_wire_id(wire(VescCommandId::GetMotorConfig)),
+            Some(VescCommandId::GetMotorConfig)
+        );
+        assert_eq!(
+            VescCommandId::GetMotorConfig.wire_id(),
+            wire(VescCommandId::GetMotorConfig)
+        );
+        assert_eq!(VescCommandId::GetMotorConfig.name(), "COMM_GET_MCCONF");
+        assert_eq!(
+            VescCommandId::from_wire_id(wire(VescCommandId::SetHandbrake)),
+            Some(VescCommandId::SetHandbrake)
+        );
+        assert_eq!(VescCommandId::SetHandbrake.wire_id(), 10);
+        assert_eq!(VescCommandId::SetHandbrake.name(), "COMM_SET_HANDBRAKE");
     }
 
     #[test]
@@ -612,7 +839,7 @@ mod tests {
         let info = FirmwareInfoPayload::parse(raw.clone()).unwrap();
 
         assert_eq!(info.raw_payload(), &raw);
-        assert_eq!(info.command_id(), COMM_FW_VERSION);
+        assert_eq!(info.command_id(), VescCommandId::FwVersion.as_u32());
         assert_eq!(info.major(), 6);
         assert_eq!(info.minor(), 5);
         assert_eq!(info.hardware_name().unwrap(), "HW_60V");
@@ -661,7 +888,39 @@ mod tests {
         let payload = current_fw_payload();
 
         match VescResponse::parse(&VescRequest::FirmwareInfo, payload).unwrap() {
-            VescResponse::FirmwareInfo { info, source_bytes } => {
+            VescResponse::FirmwareInfo {
+                info,
+                source_packet,
+                source_bytes,
+            } => {
+                assert_eq!(source_packet.payload(), info.raw_payload());
+                assert_eq!(source_bytes, info.raw_payload().clone());
+                assert_eq!(info.hardware_name().unwrap(), "HW_60V");
+            }
+            _ => unreachable!(),
+        }
+    }
+
+    #[tokio::test]
+    async fn async_reads_response_variant_for_request() {
+        let packet = CommPacket::new(current_fw_payload()).unwrap();
+        let frame = packet.encode();
+        let (mut reader, mut writer) = tokio::io::duplex(frame.len());
+
+        writer.write_all(&frame).await.unwrap();
+        drop(writer);
+
+        match VescResponse::async_read(&VescRequest::FirmwareInfo, &mut reader, 100)
+            .await
+            .unwrap()
+        {
+            VescResponse::FirmwareInfo {
+                info,
+                source_packet,
+                source_bytes,
+            } => {
+                assert_eq!(source_packet.start_byte(), packet.start_byte());
+                assert_eq!(source_packet.crc(), packet.crc());
                 assert_eq!(source_bytes, info.raw_payload().clone());
                 assert_eq!(info.hardware_name().unwrap(), "HW_60V");
             }
@@ -670,16 +929,45 @@ mod tests {
     }
 
     #[test]
+    fn parses_values_response_variant_for_request() {
+        let payload = Bytes::from(vec![wire(VescCommandId::GetValues), 0xaa, 0xbb, 0xcc]);
+
+        match VescResponse::parse(&VescRequest::Values, payload).unwrap() {
+            VescResponse::Values {
+                values,
+                source_packet,
+                source_bytes,
+            } => {
+                assert_eq!(source_packet.payload(), values.raw_payload());
+                assert_eq!(
+                    source_packet.command_id(),
+                    Some(VescCommandId::GetValues.as_u32())
+                );
+                assert_eq!(source_bytes, values.raw_payload().clone());
+                assert_eq!(values.command_id(), VescCommandId::GetValues.as_u32());
+                assert_eq!(values.values_bytes(), &[0xaa, 0xbb, 0xcc]);
+                assert_eq!(
+                    values.to_string(),
+                    "command_id=4, values_len=3, raw_payload_len=4"
+                );
+            }
+            _ => unreachable!(),
+        }
+    }
+
+    #[test]
     fn parses_motor_config_response_variant_for_request() {
-        let payload = Bytes::from_static(&[COMM_GET_MCCONF, 0xaa, 0xbb, 0xcc]);
+        let payload = Bytes::from(vec![wire(VescCommandId::GetMotorConfig), 0xaa, 0xbb, 0xcc]);
 
         match VescResponse::parse(&VescRequest::MotorConfig, payload).unwrap() {
             VescResponse::MotorConfig {
                 config,
+                source_packet,
                 source_bytes,
             } => {
+                assert_eq!(source_packet.payload(), config.raw_payload());
                 assert_eq!(source_bytes, config.raw_payload().clone());
-                assert_eq!(config.command_id(), COMM_GET_MCCONF);
+                assert_eq!(config.command_id(), VescCommandId::GetMotorConfig.as_u32());
                 assert_eq!(config.config_bytes(), &[0xaa, 0xbb, 0xcc]);
                 assert_eq!(
                     config.to_string(),
@@ -692,15 +980,17 @@ mod tests {
 
     #[test]
     fn parses_app_config_response_variant_for_request() {
-        let payload = Bytes::from_static(&[COMM_GET_APPCONF, 0xaa, 0xbb, 0xcc]);
+        let payload = Bytes::from(vec![wire(VescCommandId::GetAppConfig), 0xaa, 0xbb, 0xcc]);
 
         match VescResponse::parse(&VescRequest::AppConfig, payload).unwrap() {
             VescResponse::AppConfig {
                 config,
+                source_packet,
                 source_bytes,
             } => {
+                assert_eq!(source_packet.payload(), config.raw_payload());
                 assert_eq!(source_bytes, config.raw_payload().clone());
-                assert_eq!(config.command_id(), COMM_GET_APPCONF);
+                assert_eq!(config.command_id(), VescCommandId::GetAppConfig.as_u32());
                 assert_eq!(config.config_bytes(), &[0xaa, 0xbb, 0xcc]);
                 assert_eq!(
                     config.to_string(),
@@ -713,9 +1003,15 @@ mod tests {
 
     #[test]
     fn parses_minimal_legacy_firmware_info_response() {
-        let info =
-            FirmwareInfoPayload::parse(Bytes::from_static(&[COMM_FW_VERSION, 5, 3, b'H', b'W', 0]))
-                .unwrap();
+        let info = FirmwareInfoPayload::parse(Bytes::from(vec![
+            wire(VescCommandId::FwVersion),
+            5,
+            3,
+            b'H',
+            b'W',
+            0,
+        ]))
+        .unwrap();
 
         assert_eq!(info.major(), 5);
         assert_eq!(info.minor(), 3);
@@ -726,7 +1022,7 @@ mod tests {
 
     #[test]
     fn rejects_unterminated_hardware_name() {
-        let payload = Bytes::from_static(&[COMM_FW_VERSION, 6, 5, b'H', b'W']);
+        let payload = Bytes::from(vec![wire(VescCommandId::FwVersion), 6, 5, b'H', b'W']);
 
         assert_eq!(
             FirmwareInfoPayload::parse(payload.clone()),
@@ -746,6 +1042,20 @@ mod tests {
             Err(PayloadError::ResponseTypeMismatch {
                 expected: "FirmwareInfo",
                 actual_packet_id: 0x01,
+                source_payload: payload,
+            })
+        );
+    }
+
+    #[test]
+    fn rejects_response_packet_id_that_does_not_match_request_metadata() {
+        let payload = Bytes::from(vec![wire(VescCommandId::GetAppConfig)]);
+
+        assert_eq!(
+            VescResponse::parse(&VescRequest::MotorConfig, payload.clone()),
+            Err(PayloadError::ResponseTypeMismatch {
+                expected: "MotorConfig",
+                actual_packet_id: VescCommandId::GetAppConfig.as_u32(),
                 source_payload: payload,
             })
         );

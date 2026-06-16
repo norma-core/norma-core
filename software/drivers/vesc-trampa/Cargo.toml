@@ -20,7 +20,8 @@ station_iface = { path = "../../station/shared/station-iface" }
 prost = { workspace = true }
 bytes = { workspace = true }
 log = { workspace = true }
-tokio-serial = "5.4.5"
+tokio-serial = { workspace = true }
+parking_lot = { workspace = true }
 
 [lib]
 path = "src/lib.rs"

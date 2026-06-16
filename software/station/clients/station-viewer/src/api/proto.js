@@ -197,6 +197,7 @@ export const commands = $root.commands = (() => {
                 case 0:
                 case 1:
                 case 2:
+                case 3:
                     break;
                 }
             if (message.body != null && message.hasOwnProperty("body"))
@@ -244,6 +245,10 @@ export const commands = $root.commands = (() => {
             case "STC_INFERENCE_TAG_COMMAND":
             case 2:
                 message.type = 2;
+                break;
+            case "STC_VESC_TRAMPA_COMMAND":
+            case 3:
+                message.type = 3;
                 break;
             }
             if (object.body != null)
@@ -690,6 +695,9 @@ export const drivers = $root.drivers = (() => {
      * @property {number} QDT_ST3215_SERIAL_RX=11 QDT_ST3215_SERIAL_RX value
      * @property {number} QDT_ST3215_META=12 QDT_ST3215_META value
      * @property {number} QDT_ST3215_INFERENCE=13 QDT_ST3215_INFERENCE value
+     * @property {number} QDT_VESC_TRAMPA_SERIAL_RX=14 QDT_VESC_TRAMPA_SERIAL_RX value
+     * @property {number} QDT_VESC_TRAMPA_SERIAL_TX=15 QDT_VESC_TRAMPA_SERIAL_TX value
+     * @property {number} QDT_VESC_TRAMPA_INFERENCE=16 QDT_VESC_TRAMPA_INFERENCE value
      * @property {number} QDT_FFMPEG_VIDEO_STREAM_RX=20 QDT_FFMPEG_VIDEO_STREAM_RX value
      * @property {number} QDT_USB_VIDEO_FRAMES=21 QDT_USB_VIDEO_FRAMES value
      * @property {number} QDT_INFERENCE_FRAMES=22 QDT_INFERENCE_FRAMES value
@@ -706,6 +714,9 @@ export const drivers = $root.drivers = (() => {
         values[valuesById[11] = "QDT_ST3215_SERIAL_RX"] = 11;
         values[valuesById[12] = "QDT_ST3215_META"] = 12;
         values[valuesById[13] = "QDT_ST3215_INFERENCE"] = 13;
+        values[valuesById[14] = "QDT_VESC_TRAMPA_SERIAL_RX"] = 14;
+        values[valuesById[15] = "QDT_VESC_TRAMPA_SERIAL_TX"] = 15;
+        values[valuesById[16] = "QDT_VESC_TRAMPA_INFERENCE"] = 16;
         values[valuesById[20] = "QDT_FFMPEG_VIDEO_STREAM_RX"] = 20;
         values[valuesById[21] = "QDT_USB_VIDEO_FRAMES"] = 21;
         values[valuesById[22] = "QDT_INFERENCE_FRAMES"] = 22;
@@ -721,12 +732,14 @@ export const drivers = $root.drivers = (() => {
      * @property {number} STC_ST3215_COMMAND=0 STC_ST3215_COMMAND value
      * @property {number} STC_MOTOR_MIRRORING_COMMAND=1 STC_MOTOR_MIRRORING_COMMAND value
      * @property {number} STC_INFERENCE_TAG_COMMAND=2 STC_INFERENCE_TAG_COMMAND value
+     * @property {number} STC_VESC_TRAMPA_COMMAND=3 STC_VESC_TRAMPA_COMMAND value
      */
     drivers.StationCommandType = (function() {
         const valuesById = {}, values = Object.create(valuesById);
         values[valuesById[0] = "STC_ST3215_COMMAND"] = 0;
         values[valuesById[1] = "STC_MOTOR_MIRRORING_COMMAND"] = 1;
         values[valuesById[2] = "STC_INFERENCE_TAG_COMMAND"] = 2;
+        values[valuesById[3] = "STC_VESC_TRAMPA_COMMAND"] = 3;
         return values;
     })();
 
@@ -1279,6 +1292,9 @@ export const inference = $root.inference = (() => {
                     case 11:
                     case 12:
                     case 13:
+                    case 14:
+                    case 15:
+                    case 16:
                     case 20:
                     case 21:
                     case 22:
@@ -1350,6 +1366,18 @@ export const inference = $root.inference = (() => {
                 case "QDT_ST3215_INFERENCE":
                 case 13:
                     message.type = 13;
+                    break;
+                case "QDT_VESC_TRAMPA_SERIAL_RX":
+                case 14:
+                    message.type = 14;
+                    break;
+                case "QDT_VESC_TRAMPA_SERIAL_TX":
+                case 15:
+                    message.type = 15;
+                    break;
+                case "QDT_VESC_TRAMPA_INFERENCE":
+                case 16:
+                    message.type = 16;
                     break;
                 case "QDT_FFMPEG_VIDEO_STREAM_RX":
                 case 20:
@@ -10850,6 +10878,3653 @@ export const st3215 = $root.st3215 = (() => {
     })();
 
     return st3215;
+})();
+
+export const vesc_trampa = $root.vesc_trampa = (() => {
+
+    /**
+     * Namespace vesc_trampa.
+     * @exports vesc_trampa
+     * @namespace
+     */
+    const vesc_trampa = {};
+
+    /**
+     * VescTrampaSignalType enum.
+     * @name vesc_trampa.VescTrampaSignalType
+     * @enum {number}
+     * @property {number} VESC_TRAMPA_SIGNAL_TYPE_UNSPECIFIED=0 VESC_TRAMPA_SIGNAL_TYPE_UNSPECIFIED value
+     * @property {number} VESC_TRAMPA_BOARD_CONNECT=1 VESC_TRAMPA_BOARD_CONNECT value
+     * @property {number} VESC_TRAMPA_BOARD_DISCONNECT=2 VESC_TRAMPA_BOARD_DISCONNECT value
+     * @property {number} VESC_TRAMPA_BOARD_PACKET=3 VESC_TRAMPA_BOARD_PACKET value
+     * @property {number} VESC_TRAMPA_COMMAND=4 VESC_TRAMPA_COMMAND value
+     * @property {number} VESC_TRAMPA_COMMAND_SUCCESS=5 VESC_TRAMPA_COMMAND_SUCCESS value
+     * @property {number} VESC_TRAMPA_COMMAND_REJECTED=6 VESC_TRAMPA_COMMAND_REJECTED value
+     * @property {number} VESC_TRAMPA_COMMAND_FAILED=7 VESC_TRAMPA_COMMAND_FAILED value
+     */
+    vesc_trampa.VescTrampaSignalType = (function() {
+        const valuesById = {}, values = Object.create(valuesById);
+        values[valuesById[0] = "VESC_TRAMPA_SIGNAL_TYPE_UNSPECIFIED"] = 0;
+        values[valuesById[1] = "VESC_TRAMPA_BOARD_CONNECT"] = 1;
+        values[valuesById[2] = "VESC_TRAMPA_BOARD_DISCONNECT"] = 2;
+        values[valuesById[3] = "VESC_TRAMPA_BOARD_PACKET"] = 3;
+        values[valuesById[4] = "VESC_TRAMPA_COMMAND"] = 4;
+        values[valuesById[5] = "VESC_TRAMPA_COMMAND_SUCCESS"] = 5;
+        values[valuesById[6] = "VESC_TRAMPA_COMMAND_REJECTED"] = 6;
+        values[valuesById[7] = "VESC_TRAMPA_COMMAND_FAILED"] = 7;
+        return values;
+    })();
+
+    vesc_trampa.RxEnvelope = (function() {
+
+        /**
+         * Properties of a RxEnvelope.
+         * @memberof vesc_trampa
+         * @interface IRxEnvelope
+         * @property {Long|null} [monotonicStampNs] RxEnvelope monotonicStampNs
+         * @property {Long|null} [localStampNs] RxEnvelope localStampNs
+         * @property {Long|null} [appStartId] RxEnvelope appStartId
+         * @property {vesc_trampa.VescTrampaSignalType|null} [signalType] RxEnvelope signalType
+         * @property {vesc_trampa.IVescTrampaBoard|null} [board] RxEnvelope board
+         * @property {vesc_trampa.IVescTrampaBoardPacket|null} [boardPacket] RxEnvelope boardPacket
+         * @property {vesc_trampa.ITxEnvelope|null} [command] RxEnvelope command
+         * @property {string|null} [error] RxEnvelope error
+         */
+
+        /**
+         * Constructs a new RxEnvelope.
+         * @memberof vesc_trampa
+         * @classdesc Represents a RxEnvelope.
+         * @implements IRxEnvelope
+         * @constructor
+         * @param {vesc_trampa.IRxEnvelope=} [properties] Properties to set
+         */
+        function RxEnvelope(properties) {
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * RxEnvelope monotonicStampNs.
+         * @member {Long} monotonicStampNs
+         * @memberof vesc_trampa.RxEnvelope
+         * @instance
+         */
+        RxEnvelope.prototype.monotonicStampNs = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+
+        /**
+         * RxEnvelope localStampNs.
+         * @member {Long} localStampNs
+         * @memberof vesc_trampa.RxEnvelope
+         * @instance
+         */
+        RxEnvelope.prototype.localStampNs = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+
+        /**
+         * RxEnvelope appStartId.
+         * @member {Long} appStartId
+         * @memberof vesc_trampa.RxEnvelope
+         * @instance
+         */
+        RxEnvelope.prototype.appStartId = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+
+        /**
+         * RxEnvelope signalType.
+         * @member {vesc_trampa.VescTrampaSignalType} signalType
+         * @memberof vesc_trampa.RxEnvelope
+         * @instance
+         */
+        RxEnvelope.prototype.signalType = 0;
+
+        /**
+         * RxEnvelope board.
+         * @member {vesc_trampa.IVescTrampaBoard|null|undefined} board
+         * @memberof vesc_trampa.RxEnvelope
+         * @instance
+         */
+        RxEnvelope.prototype.board = null;
+
+        /**
+         * RxEnvelope boardPacket.
+         * @member {vesc_trampa.IVescTrampaBoardPacket|null|undefined} boardPacket
+         * @memberof vesc_trampa.RxEnvelope
+         * @instance
+         */
+        RxEnvelope.prototype.boardPacket = null;
+
+        /**
+         * RxEnvelope command.
+         * @member {vesc_trampa.ITxEnvelope|null|undefined} command
+         * @memberof vesc_trampa.RxEnvelope
+         * @instance
+         */
+        RxEnvelope.prototype.command = null;
+
+        /**
+         * RxEnvelope error.
+         * @member {string} error
+         * @memberof vesc_trampa.RxEnvelope
+         * @instance
+         */
+        RxEnvelope.prototype.error = "";
+
+        /**
+         * Creates a new RxEnvelope instance using the specified properties.
+         * @function create
+         * @memberof vesc_trampa.RxEnvelope
+         * @static
+         * @param {vesc_trampa.IRxEnvelope=} [properties] Properties to set
+         * @returns {vesc_trampa.RxEnvelope} RxEnvelope instance
+         */
+        RxEnvelope.create = function create(properties) {
+            return new RxEnvelope(properties);
+        };
+
+        /**
+         * Encodes the specified RxEnvelope message. Does not implicitly {@link vesc_trampa.RxEnvelope.verify|verify} messages.
+         * @function encode
+         * @memberof vesc_trampa.RxEnvelope
+         * @static
+         * @param {vesc_trampa.IRxEnvelope} message RxEnvelope message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        RxEnvelope.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.monotonicStampNs != null && Object.hasOwnProperty.call(message, "monotonicStampNs"))
+                writer.uint32(/* id 1, wireType 0 =*/8).uint64(message.monotonicStampNs);
+            if (message.localStampNs != null && Object.hasOwnProperty.call(message, "localStampNs"))
+                writer.uint32(/* id 2, wireType 0 =*/16).uint64(message.localStampNs);
+            if (message.appStartId != null && Object.hasOwnProperty.call(message, "appStartId"))
+                writer.uint32(/* id 3, wireType 0 =*/24).uint64(message.appStartId);
+            if (message.signalType != null && Object.hasOwnProperty.call(message, "signalType"))
+                writer.uint32(/* id 10, wireType 0 =*/80).int32(message.signalType);
+            if (message.board != null && Object.hasOwnProperty.call(message, "board"))
+                $root.vesc_trampa.VescTrampaBoard.encode(message.board, writer.uint32(/* id 11, wireType 2 =*/90).fork()).ldelim();
+            if (message.boardPacket != null && Object.hasOwnProperty.call(message, "boardPacket"))
+                $root.vesc_trampa.VescTrampaBoardPacket.encode(message.boardPacket, writer.uint32(/* id 20, wireType 2 =*/162).fork()).ldelim();
+            if (message.command != null && Object.hasOwnProperty.call(message, "command"))
+                $root.vesc_trampa.TxEnvelope.encode(message.command, writer.uint32(/* id 30, wireType 2 =*/242).fork()).ldelim();
+            if (message.error != null && Object.hasOwnProperty.call(message, "error"))
+                writer.uint32(/* id 50, wireType 2 =*/402).string(message.error);
+            return writer;
+        };
+
+        /**
+         * Encodes the specified RxEnvelope message, length delimited. Does not implicitly {@link vesc_trampa.RxEnvelope.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof vesc_trampa.RxEnvelope
+         * @static
+         * @param {vesc_trampa.IRxEnvelope} message RxEnvelope message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        RxEnvelope.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes a RxEnvelope message from the specified reader or buffer.
+         * @function decode
+         * @memberof vesc_trampa.RxEnvelope
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {vesc_trampa.RxEnvelope} RxEnvelope
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        RxEnvelope.decode = function decode(reader, length, error, long) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.vesc_trampa.RxEnvelope();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                if (tag === error)
+                    break;
+                switch (tag >>> 3) {
+                case 1: {
+                        message.monotonicStampNs = reader.uint64();
+                        break;
+                    }
+                case 2: {
+                        message.localStampNs = reader.uint64();
+                        break;
+                    }
+                case 3: {
+                        message.appStartId = reader.uint64();
+                        break;
+                    }
+                case 10: {
+                        message.signalType = reader.int32();
+                        break;
+                    }
+                case 11: {
+                        message.board = $root.vesc_trampa.VescTrampaBoard.decode(reader, reader.uint32(), undefined, long + 1);
+                        break;
+                    }
+                case 20: {
+                        message.boardPacket = $root.vesc_trampa.VescTrampaBoardPacket.decode(reader, reader.uint32(), undefined, long + 1);
+                        break;
+                    }
+                case 30: {
+                        message.command = $root.vesc_trampa.TxEnvelope.decode(reader, reader.uint32(), undefined, long + 1);
+                        break;
+                    }
+                case 50: {
+                        message.error = reader.string();
+                        break;
+                    }
+                default:
+                    reader.skipType(tag & 7, long);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes a RxEnvelope message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof vesc_trampa.RxEnvelope
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {vesc_trampa.RxEnvelope} RxEnvelope
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        RxEnvelope.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies a RxEnvelope message.
+         * @function verify
+         * @memberof vesc_trampa.RxEnvelope
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        RxEnvelope.verify = function verify(message, long) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
+            if (message.monotonicStampNs != null && message.hasOwnProperty("monotonicStampNs"))
+                if (!$util.isInteger(message.monotonicStampNs) && !(message.monotonicStampNs && $util.isInteger(message.monotonicStampNs.low) && $util.isInteger(message.monotonicStampNs.high)))
+                    return "monotonicStampNs: integer|Long expected";
+            if (message.localStampNs != null && message.hasOwnProperty("localStampNs"))
+                if (!$util.isInteger(message.localStampNs) && !(message.localStampNs && $util.isInteger(message.localStampNs.low) && $util.isInteger(message.localStampNs.high)))
+                    return "localStampNs: integer|Long expected";
+            if (message.appStartId != null && message.hasOwnProperty("appStartId"))
+                if (!$util.isInteger(message.appStartId) && !(message.appStartId && $util.isInteger(message.appStartId.low) && $util.isInteger(message.appStartId.high)))
+                    return "appStartId: integer|Long expected";
+            if (message.signalType != null && message.hasOwnProperty("signalType"))
+                switch (message.signalType) {
+                default:
+                    return "signalType: enum value expected";
+                case 0:
+                case 1:
+                case 2:
+                case 3:
+                case 4:
+                case 5:
+                case 6:
+                case 7:
+                    break;
+                }
+            if (message.board != null && message.hasOwnProperty("board")) {
+                let error = $root.vesc_trampa.VescTrampaBoard.verify(message.board, long + 1);
+                if (error)
+                    return "board." + error;
+            }
+            if (message.boardPacket != null && message.hasOwnProperty("boardPacket")) {
+                let error = $root.vesc_trampa.VescTrampaBoardPacket.verify(message.boardPacket, long + 1);
+                if (error)
+                    return "boardPacket." + error;
+            }
+            if (message.command != null && message.hasOwnProperty("command")) {
+                let error = $root.vesc_trampa.TxEnvelope.verify(message.command, long + 1);
+                if (error)
+                    return "command." + error;
+            }
+            if (message.error != null && message.hasOwnProperty("error"))
+                if (!$util.isString(message.error))
+                    return "error: string expected";
+            return null;
+        };
+
+        /**
+         * Creates a RxEnvelope message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof vesc_trampa.RxEnvelope
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {vesc_trampa.RxEnvelope} RxEnvelope
+         */
+        RxEnvelope.fromObject = function fromObject(object, long) {
+            if (object instanceof $root.vesc_trampa.RxEnvelope)
+                return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let message = new $root.vesc_trampa.RxEnvelope();
+            if (object.monotonicStampNs != null)
+                if ($util.Long)
+                    (message.monotonicStampNs = $util.Long.fromValue(object.monotonicStampNs)).unsigned = true;
+                else if (typeof object.monotonicStampNs === "string")
+                    message.monotonicStampNs = parseInt(object.monotonicStampNs, 10);
+                else if (typeof object.monotonicStampNs === "number")
+                    message.monotonicStampNs = object.monotonicStampNs;
+                else if (typeof object.monotonicStampNs === "object")
+                    message.monotonicStampNs = new $util.LongBits(object.monotonicStampNs.low >>> 0, object.monotonicStampNs.high >>> 0).toNumber(true);
+            if (object.localStampNs != null)
+                if ($util.Long)
+                    (message.localStampNs = $util.Long.fromValue(object.localStampNs)).unsigned = true;
+                else if (typeof object.localStampNs === "string")
+                    message.localStampNs = parseInt(object.localStampNs, 10);
+                else if (typeof object.localStampNs === "number")
+                    message.localStampNs = object.localStampNs;
+                else if (typeof object.localStampNs === "object")
+                    message.localStampNs = new $util.LongBits(object.localStampNs.low >>> 0, object.localStampNs.high >>> 0).toNumber(true);
+            if (object.appStartId != null)
+                if ($util.Long)
+                    (message.appStartId = $util.Long.fromValue(object.appStartId)).unsigned = true;
+                else if (typeof object.appStartId === "string")
+                    message.appStartId = parseInt(object.appStartId, 10);
+                else if (typeof object.appStartId === "number")
+                    message.appStartId = object.appStartId;
+                else if (typeof object.appStartId === "object")
+                    message.appStartId = new $util.LongBits(object.appStartId.low >>> 0, object.appStartId.high >>> 0).toNumber(true);
+            switch (object.signalType) {
+            default:
+                if (typeof object.signalType === "number") {
+                    message.signalType = object.signalType;
+                    break;
+                }
+                break;
+            case "VESC_TRAMPA_SIGNAL_TYPE_UNSPECIFIED":
+            case 0:
+                message.signalType = 0;
+                break;
+            case "VESC_TRAMPA_BOARD_CONNECT":
+            case 1:
+                message.signalType = 1;
+                break;
+            case "VESC_TRAMPA_BOARD_DISCONNECT":
+            case 2:
+                message.signalType = 2;
+                break;
+            case "VESC_TRAMPA_BOARD_PACKET":
+            case 3:
+                message.signalType = 3;
+                break;
+            case "VESC_TRAMPA_COMMAND":
+            case 4:
+                message.signalType = 4;
+                break;
+            case "VESC_TRAMPA_COMMAND_SUCCESS":
+            case 5:
+                message.signalType = 5;
+                break;
+            case "VESC_TRAMPA_COMMAND_REJECTED":
+            case 6:
+                message.signalType = 6;
+                break;
+            case "VESC_TRAMPA_COMMAND_FAILED":
+            case 7:
+                message.signalType = 7;
+                break;
+            }
+            if (object.board != null) {
+                if (typeof object.board !== "object")
+                    throw TypeError(".vesc_trampa.RxEnvelope.board: object expected");
+                message.board = $root.vesc_trampa.VescTrampaBoard.fromObject(object.board, long + 1);
+            }
+            if (object.boardPacket != null) {
+                if (typeof object.boardPacket !== "object")
+                    throw TypeError(".vesc_trampa.RxEnvelope.boardPacket: object expected");
+                message.boardPacket = $root.vesc_trampa.VescTrampaBoardPacket.fromObject(object.boardPacket, long + 1);
+            }
+            if (object.command != null) {
+                if (typeof object.command !== "object")
+                    throw TypeError(".vesc_trampa.RxEnvelope.command: object expected");
+                message.command = $root.vesc_trampa.TxEnvelope.fromObject(object.command, long + 1);
+            }
+            if (object.error != null)
+                message.error = String(object.error);
+            return message;
+        };
+
+        /**
+         * Creates a plain object from a RxEnvelope message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof vesc_trampa.RxEnvelope
+         * @static
+         * @param {vesc_trampa.RxEnvelope} message RxEnvelope
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        RxEnvelope.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.defaults) {
+                if ($util.Long) {
+                    let long = new $util.Long(0, 0, true);
+                    object.monotonicStampNs = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+                } else
+                    object.monotonicStampNs = options.longs === String ? "0" : 0;
+                if ($util.Long) {
+                    let long = new $util.Long(0, 0, true);
+                    object.localStampNs = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+                } else
+                    object.localStampNs = options.longs === String ? "0" : 0;
+                if ($util.Long) {
+                    let long = new $util.Long(0, 0, true);
+                    object.appStartId = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+                } else
+                    object.appStartId = options.longs === String ? "0" : 0;
+                object.signalType = options.enums === String ? "VESC_TRAMPA_SIGNAL_TYPE_UNSPECIFIED" : 0;
+                object.board = null;
+                object.boardPacket = null;
+                object.command = null;
+                object.error = "";
+            }
+            if (message.monotonicStampNs != null && message.hasOwnProperty("monotonicStampNs"))
+                if (typeof message.monotonicStampNs === "number")
+                    object.monotonicStampNs = options.longs === String ? String(message.monotonicStampNs) : message.monotonicStampNs;
+                else
+                    object.monotonicStampNs = options.longs === String ? $util.Long.prototype.toString.call(message.monotonicStampNs) : options.longs === Number ? new $util.LongBits(message.monotonicStampNs.low >>> 0, message.monotonicStampNs.high >>> 0).toNumber(true) : message.monotonicStampNs;
+            if (message.localStampNs != null && message.hasOwnProperty("localStampNs"))
+                if (typeof message.localStampNs === "number")
+                    object.localStampNs = options.longs === String ? String(message.localStampNs) : message.localStampNs;
+                else
+                    object.localStampNs = options.longs === String ? $util.Long.prototype.toString.call(message.localStampNs) : options.longs === Number ? new $util.LongBits(message.localStampNs.low >>> 0, message.localStampNs.high >>> 0).toNumber(true) : message.localStampNs;
+            if (message.appStartId != null && message.hasOwnProperty("appStartId"))
+                if (typeof message.appStartId === "number")
+                    object.appStartId = options.longs === String ? String(message.appStartId) : message.appStartId;
+                else
+                    object.appStartId = options.longs === String ? $util.Long.prototype.toString.call(message.appStartId) : options.longs === Number ? new $util.LongBits(message.appStartId.low >>> 0, message.appStartId.high >>> 0).toNumber(true) : message.appStartId;
+            if (message.signalType != null && message.hasOwnProperty("signalType"))
+                object.signalType = options.enums === String ? $root.vesc_trampa.VescTrampaSignalType[message.signalType] === undefined ? message.signalType : $root.vesc_trampa.VescTrampaSignalType[message.signalType] : message.signalType;
+            if (message.board != null && message.hasOwnProperty("board"))
+                object.board = $root.vesc_trampa.VescTrampaBoard.toObject(message.board, options);
+            if (message.boardPacket != null && message.hasOwnProperty("boardPacket"))
+                object.boardPacket = $root.vesc_trampa.VescTrampaBoardPacket.toObject(message.boardPacket, options);
+            if (message.command != null && message.hasOwnProperty("command"))
+                object.command = $root.vesc_trampa.TxEnvelope.toObject(message.command, options);
+            if (message.error != null && message.hasOwnProperty("error"))
+                object.error = message.error;
+            return object;
+        };
+
+        /**
+         * Converts this RxEnvelope to JSON.
+         * @function toJSON
+         * @memberof vesc_trampa.RxEnvelope
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        RxEnvelope.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for RxEnvelope
+         * @function getTypeUrl
+         * @memberof vesc_trampa.RxEnvelope
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        RxEnvelope.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+            if (typeUrlPrefix === undefined) {
+                typeUrlPrefix = "type.googleapis.com";
+            }
+            return typeUrlPrefix + "/vesc_trampa.RxEnvelope";
+        };
+
+        return RxEnvelope;
+    })();
+
+    vesc_trampa.TxEnvelope = (function() {
+
+        /**
+         * Properties of a TxEnvelope.
+         * @memberof vesc_trampa
+         * @interface ITxEnvelope
+         * @property {Long|null} [monotonicStampNs] TxEnvelope monotonicStampNs
+         * @property {Long|null} [localStampNs] TxEnvelope localStampNs
+         * @property {Long|null} [appStartId] TxEnvelope appStartId
+         * @property {Uint8Array|null} [targetBoardUuid] TxEnvelope targetBoardUuid
+         * @property {Uint8Array|null} [commandId] TxEnvelope commandId
+         * @property {vesc_trampa.IVescTrampaBoardCommand|null} [boardCommand] TxEnvelope boardCommand
+         * @property {vesc_trampa.IVescTrampaMotorModeCommand|null} [motorMode] TxEnvelope motorMode
+         */
+
+        /**
+         * Constructs a new TxEnvelope.
+         * @memberof vesc_trampa
+         * @classdesc Represents a TxEnvelope.
+         * @implements ITxEnvelope
+         * @constructor
+         * @param {vesc_trampa.ITxEnvelope=} [properties] Properties to set
+         */
+        function TxEnvelope(properties) {
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * TxEnvelope monotonicStampNs.
+         * @member {Long} monotonicStampNs
+         * @memberof vesc_trampa.TxEnvelope
+         * @instance
+         */
+        TxEnvelope.prototype.monotonicStampNs = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+
+        /**
+         * TxEnvelope localStampNs.
+         * @member {Long} localStampNs
+         * @memberof vesc_trampa.TxEnvelope
+         * @instance
+         */
+        TxEnvelope.prototype.localStampNs = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+
+        /**
+         * TxEnvelope appStartId.
+         * @member {Long} appStartId
+         * @memberof vesc_trampa.TxEnvelope
+         * @instance
+         */
+        TxEnvelope.prototype.appStartId = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+
+        /**
+         * TxEnvelope targetBoardUuid.
+         * @member {Uint8Array} targetBoardUuid
+         * @memberof vesc_trampa.TxEnvelope
+         * @instance
+         */
+        TxEnvelope.prototype.targetBoardUuid = $util.newBuffer([]);
+
+        /**
+         * TxEnvelope commandId.
+         * @member {Uint8Array} commandId
+         * @memberof vesc_trampa.TxEnvelope
+         * @instance
+         */
+        TxEnvelope.prototype.commandId = $util.newBuffer([]);
+
+        /**
+         * TxEnvelope boardCommand.
+         * @member {vesc_trampa.IVescTrampaBoardCommand|null|undefined} boardCommand
+         * @memberof vesc_trampa.TxEnvelope
+         * @instance
+         */
+        TxEnvelope.prototype.boardCommand = null;
+
+        /**
+         * TxEnvelope motorMode.
+         * @member {vesc_trampa.IVescTrampaMotorModeCommand|null|undefined} motorMode
+         * @memberof vesc_trampa.TxEnvelope
+         * @instance
+         */
+        TxEnvelope.prototype.motorMode = null;
+
+        /**
+         * Creates a new TxEnvelope instance using the specified properties.
+         * @function create
+         * @memberof vesc_trampa.TxEnvelope
+         * @static
+         * @param {vesc_trampa.ITxEnvelope=} [properties] Properties to set
+         * @returns {vesc_trampa.TxEnvelope} TxEnvelope instance
+         */
+        TxEnvelope.create = function create(properties) {
+            return new TxEnvelope(properties);
+        };
+
+        /**
+         * Encodes the specified TxEnvelope message. Does not implicitly {@link vesc_trampa.TxEnvelope.verify|verify} messages.
+         * @function encode
+         * @memberof vesc_trampa.TxEnvelope
+         * @static
+         * @param {vesc_trampa.ITxEnvelope} message TxEnvelope message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        TxEnvelope.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.monotonicStampNs != null && Object.hasOwnProperty.call(message, "monotonicStampNs"))
+                writer.uint32(/* id 1, wireType 0 =*/8).uint64(message.monotonicStampNs);
+            if (message.localStampNs != null && Object.hasOwnProperty.call(message, "localStampNs"))
+                writer.uint32(/* id 2, wireType 0 =*/16).uint64(message.localStampNs);
+            if (message.targetBoardUuid != null && Object.hasOwnProperty.call(message, "targetBoardUuid"))
+                writer.uint32(/* id 3, wireType 2 =*/26).bytes(message.targetBoardUuid);
+            if (message.commandId != null && Object.hasOwnProperty.call(message, "commandId"))
+                writer.uint32(/* id 4, wireType 2 =*/34).bytes(message.commandId);
+            if (message.appStartId != null && Object.hasOwnProperty.call(message, "appStartId"))
+                writer.uint32(/* id 5, wireType 0 =*/40).uint64(message.appStartId);
+            if (message.boardCommand != null && Object.hasOwnProperty.call(message, "boardCommand"))
+                $root.vesc_trampa.VescTrampaBoardCommand.encode(message.boardCommand, writer.uint32(/* id 10, wireType 2 =*/82).fork()).ldelim();
+            if (message.motorMode != null && Object.hasOwnProperty.call(message, "motorMode"))
+                $root.vesc_trampa.VescTrampaMotorModeCommand.encode(message.motorMode, writer.uint32(/* id 11, wireType 2 =*/90).fork()).ldelim();
+            return writer;
+        };
+
+        /**
+         * Encodes the specified TxEnvelope message, length delimited. Does not implicitly {@link vesc_trampa.TxEnvelope.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof vesc_trampa.TxEnvelope
+         * @static
+         * @param {vesc_trampa.ITxEnvelope} message TxEnvelope message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        TxEnvelope.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes a TxEnvelope message from the specified reader or buffer.
+         * @function decode
+         * @memberof vesc_trampa.TxEnvelope
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {vesc_trampa.TxEnvelope} TxEnvelope
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        TxEnvelope.decode = function decode(reader, length, error, long) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.vesc_trampa.TxEnvelope();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                if (tag === error)
+                    break;
+                switch (tag >>> 3) {
+                case 1: {
+                        message.monotonicStampNs = reader.uint64();
+                        break;
+                    }
+                case 2: {
+                        message.localStampNs = reader.uint64();
+                        break;
+                    }
+                case 5: {
+                        message.appStartId = reader.uint64();
+                        break;
+                    }
+                case 3: {
+                        message.targetBoardUuid = reader.bytes();
+                        break;
+                    }
+                case 4: {
+                        message.commandId = reader.bytes();
+                        break;
+                    }
+                case 10: {
+                        message.boardCommand = $root.vesc_trampa.VescTrampaBoardCommand.decode(reader, reader.uint32(), undefined, long + 1);
+                        break;
+                    }
+                case 11: {
+                        message.motorMode = $root.vesc_trampa.VescTrampaMotorModeCommand.decode(reader, reader.uint32(), undefined, long + 1);
+                        break;
+                    }
+                default:
+                    reader.skipType(tag & 7, long);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes a TxEnvelope message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof vesc_trampa.TxEnvelope
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {vesc_trampa.TxEnvelope} TxEnvelope
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        TxEnvelope.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies a TxEnvelope message.
+         * @function verify
+         * @memberof vesc_trampa.TxEnvelope
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        TxEnvelope.verify = function verify(message, long) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
+            if (message.monotonicStampNs != null && message.hasOwnProperty("monotonicStampNs"))
+                if (!$util.isInteger(message.monotonicStampNs) && !(message.monotonicStampNs && $util.isInteger(message.monotonicStampNs.low) && $util.isInteger(message.monotonicStampNs.high)))
+                    return "monotonicStampNs: integer|Long expected";
+            if (message.localStampNs != null && message.hasOwnProperty("localStampNs"))
+                if (!$util.isInteger(message.localStampNs) && !(message.localStampNs && $util.isInteger(message.localStampNs.low) && $util.isInteger(message.localStampNs.high)))
+                    return "localStampNs: integer|Long expected";
+            if (message.appStartId != null && message.hasOwnProperty("appStartId"))
+                if (!$util.isInteger(message.appStartId) && !(message.appStartId && $util.isInteger(message.appStartId.low) && $util.isInteger(message.appStartId.high)))
+                    return "appStartId: integer|Long expected";
+            if (message.targetBoardUuid != null && message.hasOwnProperty("targetBoardUuid"))
+                if (!(message.targetBoardUuid && typeof message.targetBoardUuid.length === "number" || $util.isString(message.targetBoardUuid)))
+                    return "targetBoardUuid: buffer expected";
+            if (message.commandId != null && message.hasOwnProperty("commandId"))
+                if (!(message.commandId && typeof message.commandId.length === "number" || $util.isString(message.commandId)))
+                    return "commandId: buffer expected";
+            if (message.boardCommand != null && message.hasOwnProperty("boardCommand")) {
+                let error = $root.vesc_trampa.VescTrampaBoardCommand.verify(message.boardCommand, long + 1);
+                if (error)
+                    return "boardCommand." + error;
+            }
+            if (message.motorMode != null && message.hasOwnProperty("motorMode")) {
+                let error = $root.vesc_trampa.VescTrampaMotorModeCommand.verify(message.motorMode, long + 1);
+                if (error)
+                    return "motorMode." + error;
+            }
+            return null;
+        };
+
+        /**
+         * Creates a TxEnvelope message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof vesc_trampa.TxEnvelope
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {vesc_trampa.TxEnvelope} TxEnvelope
+         */
+        TxEnvelope.fromObject = function fromObject(object, long) {
+            if (object instanceof $root.vesc_trampa.TxEnvelope)
+                return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let message = new $root.vesc_trampa.TxEnvelope();
+            if (object.monotonicStampNs != null)
+                if ($util.Long)
+                    (message.monotonicStampNs = $util.Long.fromValue(object.monotonicStampNs)).unsigned = true;
+                else if (typeof object.monotonicStampNs === "string")
+                    message.monotonicStampNs = parseInt(object.monotonicStampNs, 10);
+                else if (typeof object.monotonicStampNs === "number")
+                    message.monotonicStampNs = object.monotonicStampNs;
+                else if (typeof object.monotonicStampNs === "object")
+                    message.monotonicStampNs = new $util.LongBits(object.monotonicStampNs.low >>> 0, object.monotonicStampNs.high >>> 0).toNumber(true);
+            if (object.localStampNs != null)
+                if ($util.Long)
+                    (message.localStampNs = $util.Long.fromValue(object.localStampNs)).unsigned = true;
+                else if (typeof object.localStampNs === "string")
+                    message.localStampNs = parseInt(object.localStampNs, 10);
+                else if (typeof object.localStampNs === "number")
+                    message.localStampNs = object.localStampNs;
+                else if (typeof object.localStampNs === "object")
+                    message.localStampNs = new $util.LongBits(object.localStampNs.low >>> 0, object.localStampNs.high >>> 0).toNumber(true);
+            if (object.appStartId != null)
+                if ($util.Long)
+                    (message.appStartId = $util.Long.fromValue(object.appStartId)).unsigned = true;
+                else if (typeof object.appStartId === "string")
+                    message.appStartId = parseInt(object.appStartId, 10);
+                else if (typeof object.appStartId === "number")
+                    message.appStartId = object.appStartId;
+                else if (typeof object.appStartId === "object")
+                    message.appStartId = new $util.LongBits(object.appStartId.low >>> 0, object.appStartId.high >>> 0).toNumber(true);
+            if (object.targetBoardUuid != null)
+                if (typeof object.targetBoardUuid === "string")
+                    $util.base64.decode(object.targetBoardUuid, message.targetBoardUuid = $util.newBuffer($util.base64.length(object.targetBoardUuid)), 0);
+                else if (object.targetBoardUuid.length >= 0)
+                    message.targetBoardUuid = object.targetBoardUuid;
+            if (object.commandId != null)
+                if (typeof object.commandId === "string")
+                    $util.base64.decode(object.commandId, message.commandId = $util.newBuffer($util.base64.length(object.commandId)), 0);
+                else if (object.commandId.length >= 0)
+                    message.commandId = object.commandId;
+            if (object.boardCommand != null) {
+                if (typeof object.boardCommand !== "object")
+                    throw TypeError(".vesc_trampa.TxEnvelope.boardCommand: object expected");
+                message.boardCommand = $root.vesc_trampa.VescTrampaBoardCommand.fromObject(object.boardCommand, long + 1);
+            }
+            if (object.motorMode != null) {
+                if (typeof object.motorMode !== "object")
+                    throw TypeError(".vesc_trampa.TxEnvelope.motorMode: object expected");
+                message.motorMode = $root.vesc_trampa.VescTrampaMotorModeCommand.fromObject(object.motorMode, long + 1);
+            }
+            return message;
+        };
+
+        /**
+         * Creates a plain object from a TxEnvelope message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof vesc_trampa.TxEnvelope
+         * @static
+         * @param {vesc_trampa.TxEnvelope} message TxEnvelope
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        TxEnvelope.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.defaults) {
+                if ($util.Long) {
+                    let long = new $util.Long(0, 0, true);
+                    object.monotonicStampNs = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+                } else
+                    object.monotonicStampNs = options.longs === String ? "0" : 0;
+                if ($util.Long) {
+                    let long = new $util.Long(0, 0, true);
+                    object.localStampNs = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+                } else
+                    object.localStampNs = options.longs === String ? "0" : 0;
+                if (options.bytes === String)
+                    object.targetBoardUuid = "";
+                else {
+                    object.targetBoardUuid = [];
+                    if (options.bytes !== Array)
+                        object.targetBoardUuid = $util.newBuffer(object.targetBoardUuid);
+                }
+                if (options.bytes === String)
+                    object.commandId = "";
+                else {
+                    object.commandId = [];
+                    if (options.bytes !== Array)
+                        object.commandId = $util.newBuffer(object.commandId);
+                }
+                if ($util.Long) {
+                    let long = new $util.Long(0, 0, true);
+                    object.appStartId = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+                } else
+                    object.appStartId = options.longs === String ? "0" : 0;
+                object.boardCommand = null;
+                object.motorMode = null;
+            }
+            if (message.monotonicStampNs != null && message.hasOwnProperty("monotonicStampNs"))
+                if (typeof message.monotonicStampNs === "number")
+                    object.monotonicStampNs = options.longs === String ? String(message.monotonicStampNs) : message.monotonicStampNs;
+                else
+                    object.monotonicStampNs = options.longs === String ? $util.Long.prototype.toString.call(message.monotonicStampNs) : options.longs === Number ? new $util.LongBits(message.monotonicStampNs.low >>> 0, message.monotonicStampNs.high >>> 0).toNumber(true) : message.monotonicStampNs;
+            if (message.localStampNs != null && message.hasOwnProperty("localStampNs"))
+                if (typeof message.localStampNs === "number")
+                    object.localStampNs = options.longs === String ? String(message.localStampNs) : message.localStampNs;
+                else
+                    object.localStampNs = options.longs === String ? $util.Long.prototype.toString.call(message.localStampNs) : options.longs === Number ? new $util.LongBits(message.localStampNs.low >>> 0, message.localStampNs.high >>> 0).toNumber(true) : message.localStampNs;
+            if (message.targetBoardUuid != null && message.hasOwnProperty("targetBoardUuid"))
+                object.targetBoardUuid = options.bytes === String ? $util.base64.encode(message.targetBoardUuid, 0, message.targetBoardUuid.length) : options.bytes === Array ? Array.prototype.slice.call(message.targetBoardUuid) : message.targetBoardUuid;
+            if (message.commandId != null && message.hasOwnProperty("commandId"))
+                object.commandId = options.bytes === String ? $util.base64.encode(message.commandId, 0, message.commandId.length) : options.bytes === Array ? Array.prototype.slice.call(message.commandId) : message.commandId;
+            if (message.appStartId != null && message.hasOwnProperty("appStartId"))
+                if (typeof message.appStartId === "number")
+                    object.appStartId = options.longs === String ? String(message.appStartId) : message.appStartId;
+                else
+                    object.appStartId = options.longs === String ? $util.Long.prototype.toString.call(message.appStartId) : options.longs === Number ? new $util.LongBits(message.appStartId.low >>> 0, message.appStartId.high >>> 0).toNumber(true) : message.appStartId;
+            if (message.boardCommand != null && message.hasOwnProperty("boardCommand"))
+                object.boardCommand = $root.vesc_trampa.VescTrampaBoardCommand.toObject(message.boardCommand, options);
+            if (message.motorMode != null && message.hasOwnProperty("motorMode"))
+                object.motorMode = $root.vesc_trampa.VescTrampaMotorModeCommand.toObject(message.motorMode, options);
+            return object;
+        };
+
+        /**
+         * Converts this TxEnvelope to JSON.
+         * @function toJSON
+         * @memberof vesc_trampa.TxEnvelope
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        TxEnvelope.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for TxEnvelope
+         * @function getTypeUrl
+         * @memberof vesc_trampa.TxEnvelope
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        TxEnvelope.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+            if (typeUrlPrefix === undefined) {
+                typeUrlPrefix = "type.googleapis.com";
+            }
+            return typeUrlPrefix + "/vesc_trampa.TxEnvelope";
+        };
+
+        return TxEnvelope;
+    })();
+
+    vesc_trampa.Command = (function() {
+
+        /**
+         * Properties of a Command.
+         * @memberof vesc_trampa
+         * @interface ICommand
+         * @property {Uint8Array|null} [targetBoardUuid] Command targetBoardUuid
+         * @property {vesc_trampa.IVescTrampaBoardCommand|null} [boardCommand] Command boardCommand
+         * @property {vesc_trampa.IVescTrampaMotorModeCommand|null} [motorMode] Command motorMode
+         */
+
+        /**
+         * Constructs a new Command.
+         * @memberof vesc_trampa
+         * @classdesc Represents a Command.
+         * @implements ICommand
+         * @constructor
+         * @param {vesc_trampa.ICommand=} [properties] Properties to set
+         */
+        function Command(properties) {
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * Command targetBoardUuid.
+         * @member {Uint8Array} targetBoardUuid
+         * @memberof vesc_trampa.Command
+         * @instance
+         */
+        Command.prototype.targetBoardUuid = $util.newBuffer([]);
+
+        /**
+         * Command boardCommand.
+         * @member {vesc_trampa.IVescTrampaBoardCommand|null|undefined} boardCommand
+         * @memberof vesc_trampa.Command
+         * @instance
+         */
+        Command.prototype.boardCommand = null;
+
+        /**
+         * Command motorMode.
+         * @member {vesc_trampa.IVescTrampaMotorModeCommand|null|undefined} motorMode
+         * @memberof vesc_trampa.Command
+         * @instance
+         */
+        Command.prototype.motorMode = null;
+
+        /**
+         * Creates a new Command instance using the specified properties.
+         * @function create
+         * @memberof vesc_trampa.Command
+         * @static
+         * @param {vesc_trampa.ICommand=} [properties] Properties to set
+         * @returns {vesc_trampa.Command} Command instance
+         */
+        Command.create = function create(properties) {
+            return new Command(properties);
+        };
+
+        /**
+         * Encodes the specified Command message. Does not implicitly {@link vesc_trampa.Command.verify|verify} messages.
+         * @function encode
+         * @memberof vesc_trampa.Command
+         * @static
+         * @param {vesc_trampa.ICommand} message Command message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        Command.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.targetBoardUuid != null && Object.hasOwnProperty.call(message, "targetBoardUuid"))
+                writer.uint32(/* id 1, wireType 2 =*/10).bytes(message.targetBoardUuid);
+            if (message.boardCommand != null && Object.hasOwnProperty.call(message, "boardCommand"))
+                $root.vesc_trampa.VescTrampaBoardCommand.encode(message.boardCommand, writer.uint32(/* id 10, wireType 2 =*/82).fork()).ldelim();
+            if (message.motorMode != null && Object.hasOwnProperty.call(message, "motorMode"))
+                $root.vesc_trampa.VescTrampaMotorModeCommand.encode(message.motorMode, writer.uint32(/* id 11, wireType 2 =*/90).fork()).ldelim();
+            return writer;
+        };
+
+        /**
+         * Encodes the specified Command message, length delimited. Does not implicitly {@link vesc_trampa.Command.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof vesc_trampa.Command
+         * @static
+         * @param {vesc_trampa.ICommand} message Command message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        Command.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes a Command message from the specified reader or buffer.
+         * @function decode
+         * @memberof vesc_trampa.Command
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {vesc_trampa.Command} Command
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        Command.decode = function decode(reader, length, error, long) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.vesc_trampa.Command();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                if (tag === error)
+                    break;
+                switch (tag >>> 3) {
+                case 1: {
+                        message.targetBoardUuid = reader.bytes();
+                        break;
+                    }
+                case 10: {
+                        message.boardCommand = $root.vesc_trampa.VescTrampaBoardCommand.decode(reader, reader.uint32(), undefined, long + 1);
+                        break;
+                    }
+                case 11: {
+                        message.motorMode = $root.vesc_trampa.VescTrampaMotorModeCommand.decode(reader, reader.uint32(), undefined, long + 1);
+                        break;
+                    }
+                default:
+                    reader.skipType(tag & 7, long);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes a Command message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof vesc_trampa.Command
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {vesc_trampa.Command} Command
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        Command.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies a Command message.
+         * @function verify
+         * @memberof vesc_trampa.Command
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        Command.verify = function verify(message, long) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
+            if (message.targetBoardUuid != null && message.hasOwnProperty("targetBoardUuid"))
+                if (!(message.targetBoardUuid && typeof message.targetBoardUuid.length === "number" || $util.isString(message.targetBoardUuid)))
+                    return "targetBoardUuid: buffer expected";
+            if (message.boardCommand != null && message.hasOwnProperty("boardCommand")) {
+                let error = $root.vesc_trampa.VescTrampaBoardCommand.verify(message.boardCommand, long + 1);
+                if (error)
+                    return "boardCommand." + error;
+            }
+            if (message.motorMode != null && message.hasOwnProperty("motorMode")) {
+                let error = $root.vesc_trampa.VescTrampaMotorModeCommand.verify(message.motorMode, long + 1);
+                if (error)
+                    return "motorMode." + error;
+            }
+            return null;
+        };
+
+        /**
+         * Creates a Command message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof vesc_trampa.Command
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {vesc_trampa.Command} Command
+         */
+        Command.fromObject = function fromObject(object, long) {
+            if (object instanceof $root.vesc_trampa.Command)
+                return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let message = new $root.vesc_trampa.Command();
+            if (object.targetBoardUuid != null)
+                if (typeof object.targetBoardUuid === "string")
+                    $util.base64.decode(object.targetBoardUuid, message.targetBoardUuid = $util.newBuffer($util.base64.length(object.targetBoardUuid)), 0);
+                else if (object.targetBoardUuid.length >= 0)
+                    message.targetBoardUuid = object.targetBoardUuid;
+            if (object.boardCommand != null) {
+                if (typeof object.boardCommand !== "object")
+                    throw TypeError(".vesc_trampa.Command.boardCommand: object expected");
+                message.boardCommand = $root.vesc_trampa.VescTrampaBoardCommand.fromObject(object.boardCommand, long + 1);
+            }
+            if (object.motorMode != null) {
+                if (typeof object.motorMode !== "object")
+                    throw TypeError(".vesc_trampa.Command.motorMode: object expected");
+                message.motorMode = $root.vesc_trampa.VescTrampaMotorModeCommand.fromObject(object.motorMode, long + 1);
+            }
+            return message;
+        };
+
+        /**
+         * Creates a plain object from a Command message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof vesc_trampa.Command
+         * @static
+         * @param {vesc_trampa.Command} message Command
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        Command.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.defaults) {
+                if (options.bytes === String)
+                    object.targetBoardUuid = "";
+                else {
+                    object.targetBoardUuid = [];
+                    if (options.bytes !== Array)
+                        object.targetBoardUuid = $util.newBuffer(object.targetBoardUuid);
+                }
+                object.boardCommand = null;
+                object.motorMode = null;
+            }
+            if (message.targetBoardUuid != null && message.hasOwnProperty("targetBoardUuid"))
+                object.targetBoardUuid = options.bytes === String ? $util.base64.encode(message.targetBoardUuid, 0, message.targetBoardUuid.length) : options.bytes === Array ? Array.prototype.slice.call(message.targetBoardUuid) : message.targetBoardUuid;
+            if (message.boardCommand != null && message.hasOwnProperty("boardCommand"))
+                object.boardCommand = $root.vesc_trampa.VescTrampaBoardCommand.toObject(message.boardCommand, options);
+            if (message.motorMode != null && message.hasOwnProperty("motorMode"))
+                object.motorMode = $root.vesc_trampa.VescTrampaMotorModeCommand.toObject(message.motorMode, options);
+            return object;
+        };
+
+        /**
+         * Converts this Command to JSON.
+         * @function toJSON
+         * @memberof vesc_trampa.Command
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        Command.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for Command
+         * @function getTypeUrl
+         * @memberof vesc_trampa.Command
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        Command.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+            if (typeUrlPrefix === undefined) {
+                typeUrlPrefix = "type.googleapis.com";
+            }
+            return typeUrlPrefix + "/vesc_trampa.Command";
+        };
+
+        return Command;
+    })();
+
+    vesc_trampa.VescTrampaBoardCommand = (function() {
+
+        /**
+         * Properties of a VescTrampaBoardCommand.
+         * @memberof vesc_trampa
+         * @interface IVescTrampaBoardCommand
+         * @property {Uint8Array|null} [payload] VescTrampaBoardCommand payload
+         * @property {boolean|null} [responseExpected] VescTrampaBoardCommand responseExpected
+         */
+
+        /**
+         * Constructs a new VescTrampaBoardCommand.
+         * @memberof vesc_trampa
+         * @classdesc Represents a VescTrampaBoardCommand.
+         * @implements IVescTrampaBoardCommand
+         * @constructor
+         * @param {vesc_trampa.IVescTrampaBoardCommand=} [properties] Properties to set
+         */
+        function VescTrampaBoardCommand(properties) {
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * VescTrampaBoardCommand payload.
+         * @member {Uint8Array} payload
+         * @memberof vesc_trampa.VescTrampaBoardCommand
+         * @instance
+         */
+        VescTrampaBoardCommand.prototype.payload = $util.newBuffer([]);
+
+        /**
+         * VescTrampaBoardCommand responseExpected.
+         * @member {boolean} responseExpected
+         * @memberof vesc_trampa.VescTrampaBoardCommand
+         * @instance
+         */
+        VescTrampaBoardCommand.prototype.responseExpected = false;
+
+        /**
+         * Creates a new VescTrampaBoardCommand instance using the specified properties.
+         * @function create
+         * @memberof vesc_trampa.VescTrampaBoardCommand
+         * @static
+         * @param {vesc_trampa.IVescTrampaBoardCommand=} [properties] Properties to set
+         * @returns {vesc_trampa.VescTrampaBoardCommand} VescTrampaBoardCommand instance
+         */
+        VescTrampaBoardCommand.create = function create(properties) {
+            return new VescTrampaBoardCommand(properties);
+        };
+
+        /**
+         * Encodes the specified VescTrampaBoardCommand message. Does not implicitly {@link vesc_trampa.VescTrampaBoardCommand.verify|verify} messages.
+         * @function encode
+         * @memberof vesc_trampa.VescTrampaBoardCommand
+         * @static
+         * @param {vesc_trampa.IVescTrampaBoardCommand} message VescTrampaBoardCommand message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        VescTrampaBoardCommand.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.payload != null && Object.hasOwnProperty.call(message, "payload"))
+                writer.uint32(/* id 1, wireType 2 =*/10).bytes(message.payload);
+            if (message.responseExpected != null && Object.hasOwnProperty.call(message, "responseExpected"))
+                writer.uint32(/* id 2, wireType 0 =*/16).bool(message.responseExpected);
+            return writer;
+        };
+
+        /**
+         * Encodes the specified VescTrampaBoardCommand message, length delimited. Does not implicitly {@link vesc_trampa.VescTrampaBoardCommand.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof vesc_trampa.VescTrampaBoardCommand
+         * @static
+         * @param {vesc_trampa.IVescTrampaBoardCommand} message VescTrampaBoardCommand message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        VescTrampaBoardCommand.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes a VescTrampaBoardCommand message from the specified reader or buffer.
+         * @function decode
+         * @memberof vesc_trampa.VescTrampaBoardCommand
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {vesc_trampa.VescTrampaBoardCommand} VescTrampaBoardCommand
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        VescTrampaBoardCommand.decode = function decode(reader, length, error, long) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.vesc_trampa.VescTrampaBoardCommand();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                if (tag === error)
+                    break;
+                switch (tag >>> 3) {
+                case 1: {
+                        message.payload = reader.bytes();
+                        break;
+                    }
+                case 2: {
+                        message.responseExpected = reader.bool();
+                        break;
+                    }
+                default:
+                    reader.skipType(tag & 7, long);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes a VescTrampaBoardCommand message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof vesc_trampa.VescTrampaBoardCommand
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {vesc_trampa.VescTrampaBoardCommand} VescTrampaBoardCommand
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        VescTrampaBoardCommand.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies a VescTrampaBoardCommand message.
+         * @function verify
+         * @memberof vesc_trampa.VescTrampaBoardCommand
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        VescTrampaBoardCommand.verify = function verify(message, long) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
+            if (message.payload != null && message.hasOwnProperty("payload"))
+                if (!(message.payload && typeof message.payload.length === "number" || $util.isString(message.payload)))
+                    return "payload: buffer expected";
+            if (message.responseExpected != null && message.hasOwnProperty("responseExpected"))
+                if (typeof message.responseExpected !== "boolean")
+                    return "responseExpected: boolean expected";
+            return null;
+        };
+
+        /**
+         * Creates a VescTrampaBoardCommand message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof vesc_trampa.VescTrampaBoardCommand
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {vesc_trampa.VescTrampaBoardCommand} VescTrampaBoardCommand
+         */
+        VescTrampaBoardCommand.fromObject = function fromObject(object, long) {
+            if (object instanceof $root.vesc_trampa.VescTrampaBoardCommand)
+                return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let message = new $root.vesc_trampa.VescTrampaBoardCommand();
+            if (object.payload != null)
+                if (typeof object.payload === "string")
+                    $util.base64.decode(object.payload, message.payload = $util.newBuffer($util.base64.length(object.payload)), 0);
+                else if (object.payload.length >= 0)
+                    message.payload = object.payload;
+            if (object.responseExpected != null)
+                message.responseExpected = Boolean(object.responseExpected);
+            return message;
+        };
+
+        /**
+         * Creates a plain object from a VescTrampaBoardCommand message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof vesc_trampa.VescTrampaBoardCommand
+         * @static
+         * @param {vesc_trampa.VescTrampaBoardCommand} message VescTrampaBoardCommand
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        VescTrampaBoardCommand.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.defaults) {
+                if (options.bytes === String)
+                    object.payload = "";
+                else {
+                    object.payload = [];
+                    if (options.bytes !== Array)
+                        object.payload = $util.newBuffer(object.payload);
+                }
+                object.responseExpected = false;
+            }
+            if (message.payload != null && message.hasOwnProperty("payload"))
+                object.payload = options.bytes === String ? $util.base64.encode(message.payload, 0, message.payload.length) : options.bytes === Array ? Array.prototype.slice.call(message.payload) : message.payload;
+            if (message.responseExpected != null && message.hasOwnProperty("responseExpected"))
+                object.responseExpected = message.responseExpected;
+            return object;
+        };
+
+        /**
+         * Converts this VescTrampaBoardCommand to JSON.
+         * @function toJSON
+         * @memberof vesc_trampa.VescTrampaBoardCommand
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        VescTrampaBoardCommand.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for VescTrampaBoardCommand
+         * @function getTypeUrl
+         * @memberof vesc_trampa.VescTrampaBoardCommand
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        VescTrampaBoardCommand.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+            if (typeUrlPrefix === undefined) {
+                typeUrlPrefix = "type.googleapis.com";
+            }
+            return typeUrlPrefix + "/vesc_trampa.VescTrampaBoardCommand";
+        };
+
+        return VescTrampaBoardCommand;
+    })();
+
+    /**
+     * VescTrampaMotorMode enum.
+     * @name vesc_trampa.VescTrampaMotorMode
+     * @enum {number}
+     * @property {number} VESC_TRAMPA_MOTOR_MODE_UNSPECIFIED=0 VESC_TRAMPA_MOTOR_MODE_UNSPECIFIED value
+     * @property {number} VESC_TRAMPA_MOTOR_MODE_HOLD=1 VESC_TRAMPA_MOTOR_MODE_HOLD value
+     */
+    vesc_trampa.VescTrampaMotorMode = (function() {
+        const valuesById = {}, values = Object.create(valuesById);
+        values[valuesById[0] = "VESC_TRAMPA_MOTOR_MODE_UNSPECIFIED"] = 0;
+        values[valuesById[1] = "VESC_TRAMPA_MOTOR_MODE_HOLD"] = 1;
+        return values;
+    })();
+
+    vesc_trampa.VescTrampaMotorModeCommand = (function() {
+
+        /**
+         * Properties of a VescTrampaMotorModeCommand.
+         * @memberof vesc_trampa
+         * @interface IVescTrampaMotorModeCommand
+         * @property {vesc_trampa.VescTrampaMotorMode|null} [mode] VescTrampaMotorModeCommand mode
+         */
+
+        /**
+         * Constructs a new VescTrampaMotorModeCommand.
+         * @memberof vesc_trampa
+         * @classdesc Represents a VescTrampaMotorModeCommand.
+         * @implements IVescTrampaMotorModeCommand
+         * @constructor
+         * @param {vesc_trampa.IVescTrampaMotorModeCommand=} [properties] Properties to set
+         */
+        function VescTrampaMotorModeCommand(properties) {
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * VescTrampaMotorModeCommand mode.
+         * @member {vesc_trampa.VescTrampaMotorMode} mode
+         * @memberof vesc_trampa.VescTrampaMotorModeCommand
+         * @instance
+         */
+        VescTrampaMotorModeCommand.prototype.mode = 0;
+
+        /**
+         * Creates a new VescTrampaMotorModeCommand instance using the specified properties.
+         * @function create
+         * @memberof vesc_trampa.VescTrampaMotorModeCommand
+         * @static
+         * @param {vesc_trampa.IVescTrampaMotorModeCommand=} [properties] Properties to set
+         * @returns {vesc_trampa.VescTrampaMotorModeCommand} VescTrampaMotorModeCommand instance
+         */
+        VescTrampaMotorModeCommand.create = function create(properties) {
+            return new VescTrampaMotorModeCommand(properties);
+        };
+
+        /**
+         * Encodes the specified VescTrampaMotorModeCommand message. Does not implicitly {@link vesc_trampa.VescTrampaMotorModeCommand.verify|verify} messages.
+         * @function encode
+         * @memberof vesc_trampa.VescTrampaMotorModeCommand
+         * @static
+         * @param {vesc_trampa.IVescTrampaMotorModeCommand} message VescTrampaMotorModeCommand message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        VescTrampaMotorModeCommand.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.mode != null && Object.hasOwnProperty.call(message, "mode"))
+                writer.uint32(/* id 1, wireType 0 =*/8).int32(message.mode);
+            return writer;
+        };
+
+        /**
+         * Encodes the specified VescTrampaMotorModeCommand message, length delimited. Does not implicitly {@link vesc_trampa.VescTrampaMotorModeCommand.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof vesc_trampa.VescTrampaMotorModeCommand
+         * @static
+         * @param {vesc_trampa.IVescTrampaMotorModeCommand} message VescTrampaMotorModeCommand message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        VescTrampaMotorModeCommand.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes a VescTrampaMotorModeCommand message from the specified reader or buffer.
+         * @function decode
+         * @memberof vesc_trampa.VescTrampaMotorModeCommand
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {vesc_trampa.VescTrampaMotorModeCommand} VescTrampaMotorModeCommand
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        VescTrampaMotorModeCommand.decode = function decode(reader, length, error, long) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.vesc_trampa.VescTrampaMotorModeCommand();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                if (tag === error)
+                    break;
+                switch (tag >>> 3) {
+                case 1: {
+                        message.mode = reader.int32();
+                        break;
+                    }
+                default:
+                    reader.skipType(tag & 7, long);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes a VescTrampaMotorModeCommand message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof vesc_trampa.VescTrampaMotorModeCommand
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {vesc_trampa.VescTrampaMotorModeCommand} VescTrampaMotorModeCommand
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        VescTrampaMotorModeCommand.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies a VescTrampaMotorModeCommand message.
+         * @function verify
+         * @memberof vesc_trampa.VescTrampaMotorModeCommand
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        VescTrampaMotorModeCommand.verify = function verify(message, long) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
+            if (message.mode != null && message.hasOwnProperty("mode"))
+                switch (message.mode) {
+                default:
+                    return "mode: enum value expected";
+                case 0:
+                case 1:
+                    break;
+                }
+            return null;
+        };
+
+        /**
+         * Creates a VescTrampaMotorModeCommand message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof vesc_trampa.VescTrampaMotorModeCommand
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {vesc_trampa.VescTrampaMotorModeCommand} VescTrampaMotorModeCommand
+         */
+        VescTrampaMotorModeCommand.fromObject = function fromObject(object, long) {
+            if (object instanceof $root.vesc_trampa.VescTrampaMotorModeCommand)
+                return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let message = new $root.vesc_trampa.VescTrampaMotorModeCommand();
+            switch (object.mode) {
+            default:
+                if (typeof object.mode === "number") {
+                    message.mode = object.mode;
+                    break;
+                }
+                break;
+            case "VESC_TRAMPA_MOTOR_MODE_UNSPECIFIED":
+            case 0:
+                message.mode = 0;
+                break;
+            case "VESC_TRAMPA_MOTOR_MODE_HOLD":
+            case 1:
+                message.mode = 1;
+                break;
+            }
+            return message;
+        };
+
+        /**
+         * Creates a plain object from a VescTrampaMotorModeCommand message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof vesc_trampa.VescTrampaMotorModeCommand
+         * @static
+         * @param {vesc_trampa.VescTrampaMotorModeCommand} message VescTrampaMotorModeCommand
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        VescTrampaMotorModeCommand.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.defaults)
+                object.mode = options.enums === String ? "VESC_TRAMPA_MOTOR_MODE_UNSPECIFIED" : 0;
+            if (message.mode != null && message.hasOwnProperty("mode"))
+                object.mode = options.enums === String ? $root.vesc_trampa.VescTrampaMotorMode[message.mode] === undefined ? message.mode : $root.vesc_trampa.VescTrampaMotorMode[message.mode] : message.mode;
+            return object;
+        };
+
+        /**
+         * Converts this VescTrampaMotorModeCommand to JSON.
+         * @function toJSON
+         * @memberof vesc_trampa.VescTrampaMotorModeCommand
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        VescTrampaMotorModeCommand.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for VescTrampaMotorModeCommand
+         * @function getTypeUrl
+         * @memberof vesc_trampa.VescTrampaMotorModeCommand
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        VescTrampaMotorModeCommand.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+            if (typeUrlPrefix === undefined) {
+                typeUrlPrefix = "type.googleapis.com";
+            }
+            return typeUrlPrefix + "/vesc_trampa.VescTrampaMotorModeCommand";
+        };
+
+        return VescTrampaMotorModeCommand;
+    })();
+
+    vesc_trampa.VescTrampaBoardPacket = (function() {
+
+        /**
+         * Properties of a VescTrampaBoardPacket.
+         * @memberof vesc_trampa
+         * @interface IVescTrampaBoardPacket
+         * @property {number|null} [startByte] VescTrampaBoardPacket startByte
+         * @property {number|null} [payloadLen] VescTrampaBoardPacket payloadLen
+         * @property {number|null} [commandId] VescTrampaBoardPacket commandId
+         * @property {Uint8Array|null} [payload] VescTrampaBoardPacket payload
+         * @property {number|null} [crc] VescTrampaBoardPacket crc
+         * @property {number|null} [endByte] VescTrampaBoardPacket endByte
+         */
+
+        /**
+         * Constructs a new VescTrampaBoardPacket.
+         * @memberof vesc_trampa
+         * @classdesc Represents a VescTrampaBoardPacket.
+         * @implements IVescTrampaBoardPacket
+         * @constructor
+         * @param {vesc_trampa.IVescTrampaBoardPacket=} [properties] Properties to set
+         */
+        function VescTrampaBoardPacket(properties) {
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * VescTrampaBoardPacket startByte.
+         * @member {number} startByte
+         * @memberof vesc_trampa.VescTrampaBoardPacket
+         * @instance
+         */
+        VescTrampaBoardPacket.prototype.startByte = 0;
+
+        /**
+         * VescTrampaBoardPacket payloadLen.
+         * @member {number} payloadLen
+         * @memberof vesc_trampa.VescTrampaBoardPacket
+         * @instance
+         */
+        VescTrampaBoardPacket.prototype.payloadLen = 0;
+
+        /**
+         * VescTrampaBoardPacket commandId.
+         * @member {number} commandId
+         * @memberof vesc_trampa.VescTrampaBoardPacket
+         * @instance
+         */
+        VescTrampaBoardPacket.prototype.commandId = 0;
+
+        /**
+         * VescTrampaBoardPacket payload.
+         * @member {Uint8Array} payload
+         * @memberof vesc_trampa.VescTrampaBoardPacket
+         * @instance
+         */
+        VescTrampaBoardPacket.prototype.payload = $util.newBuffer([]);
+
+        /**
+         * VescTrampaBoardPacket crc.
+         * @member {number} crc
+         * @memberof vesc_trampa.VescTrampaBoardPacket
+         * @instance
+         */
+        VescTrampaBoardPacket.prototype.crc = 0;
+
+        /**
+         * VescTrampaBoardPacket endByte.
+         * @member {number} endByte
+         * @memberof vesc_trampa.VescTrampaBoardPacket
+         * @instance
+         */
+        VescTrampaBoardPacket.prototype.endByte = 0;
+
+        /**
+         * Creates a new VescTrampaBoardPacket instance using the specified properties.
+         * @function create
+         * @memberof vesc_trampa.VescTrampaBoardPacket
+         * @static
+         * @param {vesc_trampa.IVescTrampaBoardPacket=} [properties] Properties to set
+         * @returns {vesc_trampa.VescTrampaBoardPacket} VescTrampaBoardPacket instance
+         */
+        VescTrampaBoardPacket.create = function create(properties) {
+            return new VescTrampaBoardPacket(properties);
+        };
+
+        /**
+         * Encodes the specified VescTrampaBoardPacket message. Does not implicitly {@link vesc_trampa.VescTrampaBoardPacket.verify|verify} messages.
+         * @function encode
+         * @memberof vesc_trampa.VescTrampaBoardPacket
+         * @static
+         * @param {vesc_trampa.IVescTrampaBoardPacket} message VescTrampaBoardPacket message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        VescTrampaBoardPacket.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.startByte != null && Object.hasOwnProperty.call(message, "startByte"))
+                writer.uint32(/* id 1, wireType 0 =*/8).uint32(message.startByte);
+            if (message.payloadLen != null && Object.hasOwnProperty.call(message, "payloadLen"))
+                writer.uint32(/* id 2, wireType 0 =*/16).uint32(message.payloadLen);
+            if (message.commandId != null && Object.hasOwnProperty.call(message, "commandId"))
+                writer.uint32(/* id 3, wireType 0 =*/24).uint32(message.commandId);
+            if (message.payload != null && Object.hasOwnProperty.call(message, "payload"))
+                writer.uint32(/* id 4, wireType 2 =*/34).bytes(message.payload);
+            if (message.crc != null && Object.hasOwnProperty.call(message, "crc"))
+                writer.uint32(/* id 5, wireType 0 =*/40).uint32(message.crc);
+            if (message.endByte != null && Object.hasOwnProperty.call(message, "endByte"))
+                writer.uint32(/* id 6, wireType 0 =*/48).uint32(message.endByte);
+            return writer;
+        };
+
+        /**
+         * Encodes the specified VescTrampaBoardPacket message, length delimited. Does not implicitly {@link vesc_trampa.VescTrampaBoardPacket.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof vesc_trampa.VescTrampaBoardPacket
+         * @static
+         * @param {vesc_trampa.IVescTrampaBoardPacket} message VescTrampaBoardPacket message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        VescTrampaBoardPacket.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes a VescTrampaBoardPacket message from the specified reader or buffer.
+         * @function decode
+         * @memberof vesc_trampa.VescTrampaBoardPacket
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {vesc_trampa.VescTrampaBoardPacket} VescTrampaBoardPacket
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        VescTrampaBoardPacket.decode = function decode(reader, length, error, long) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.vesc_trampa.VescTrampaBoardPacket();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                if (tag === error)
+                    break;
+                switch (tag >>> 3) {
+                case 1: {
+                        message.startByte = reader.uint32();
+                        break;
+                    }
+                case 2: {
+                        message.payloadLen = reader.uint32();
+                        break;
+                    }
+                case 3: {
+                        message.commandId = reader.uint32();
+                        break;
+                    }
+                case 4: {
+                        message.payload = reader.bytes();
+                        break;
+                    }
+                case 5: {
+                        message.crc = reader.uint32();
+                        break;
+                    }
+                case 6: {
+                        message.endByte = reader.uint32();
+                        break;
+                    }
+                default:
+                    reader.skipType(tag & 7, long);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes a VescTrampaBoardPacket message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof vesc_trampa.VescTrampaBoardPacket
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {vesc_trampa.VescTrampaBoardPacket} VescTrampaBoardPacket
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        VescTrampaBoardPacket.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies a VescTrampaBoardPacket message.
+         * @function verify
+         * @memberof vesc_trampa.VescTrampaBoardPacket
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        VescTrampaBoardPacket.verify = function verify(message, long) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
+            if (message.startByte != null && message.hasOwnProperty("startByte"))
+                if (!$util.isInteger(message.startByte))
+                    return "startByte: integer expected";
+            if (message.payloadLen != null && message.hasOwnProperty("payloadLen"))
+                if (!$util.isInteger(message.payloadLen))
+                    return "payloadLen: integer expected";
+            if (message.commandId != null && message.hasOwnProperty("commandId"))
+                if (!$util.isInteger(message.commandId))
+                    return "commandId: integer expected";
+            if (message.payload != null && message.hasOwnProperty("payload"))
+                if (!(message.payload && typeof message.payload.length === "number" || $util.isString(message.payload)))
+                    return "payload: buffer expected";
+            if (message.crc != null && message.hasOwnProperty("crc"))
+                if (!$util.isInteger(message.crc))
+                    return "crc: integer expected";
+            if (message.endByte != null && message.hasOwnProperty("endByte"))
+                if (!$util.isInteger(message.endByte))
+                    return "endByte: integer expected";
+            return null;
+        };
+
+        /**
+         * Creates a VescTrampaBoardPacket message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof vesc_trampa.VescTrampaBoardPacket
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {vesc_trampa.VescTrampaBoardPacket} VescTrampaBoardPacket
+         */
+        VescTrampaBoardPacket.fromObject = function fromObject(object, long) {
+            if (object instanceof $root.vesc_trampa.VescTrampaBoardPacket)
+                return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let message = new $root.vesc_trampa.VescTrampaBoardPacket();
+            if (object.startByte != null)
+                message.startByte = object.startByte >>> 0;
+            if (object.payloadLen != null)
+                message.payloadLen = object.payloadLen >>> 0;
+            if (object.commandId != null)
+                message.commandId = object.commandId >>> 0;
+            if (object.payload != null)
+                if (typeof object.payload === "string")
+                    $util.base64.decode(object.payload, message.payload = $util.newBuffer($util.base64.length(object.payload)), 0);
+                else if (object.payload.length >= 0)
+                    message.payload = object.payload;
+            if (object.crc != null)
+                message.crc = object.crc >>> 0;
+            if (object.endByte != null)
+                message.endByte = object.endByte >>> 0;
+            return message;
+        };
+
+        /**
+         * Creates a plain object from a VescTrampaBoardPacket message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof vesc_trampa.VescTrampaBoardPacket
+         * @static
+         * @param {vesc_trampa.VescTrampaBoardPacket} message VescTrampaBoardPacket
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        VescTrampaBoardPacket.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.defaults) {
+                object.startByte = 0;
+                object.payloadLen = 0;
+                object.commandId = 0;
+                if (options.bytes === String)
+                    object.payload = "";
+                else {
+                    object.payload = [];
+                    if (options.bytes !== Array)
+                        object.payload = $util.newBuffer(object.payload);
+                }
+                object.crc = 0;
+                object.endByte = 0;
+            }
+            if (message.startByte != null && message.hasOwnProperty("startByte"))
+                object.startByte = message.startByte;
+            if (message.payloadLen != null && message.hasOwnProperty("payloadLen"))
+                object.payloadLen = message.payloadLen;
+            if (message.commandId != null && message.hasOwnProperty("commandId"))
+                object.commandId = message.commandId;
+            if (message.payload != null && message.hasOwnProperty("payload"))
+                object.payload = options.bytes === String ? $util.base64.encode(message.payload, 0, message.payload.length) : options.bytes === Array ? Array.prototype.slice.call(message.payload) : message.payload;
+            if (message.crc != null && message.hasOwnProperty("crc"))
+                object.crc = message.crc;
+            if (message.endByte != null && message.hasOwnProperty("endByte"))
+                object.endByte = message.endByte;
+            return object;
+        };
+
+        /**
+         * Converts this VescTrampaBoardPacket to JSON.
+         * @function toJSON
+         * @memberof vesc_trampa.VescTrampaBoardPacket
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        VescTrampaBoardPacket.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for VescTrampaBoardPacket
+         * @function getTypeUrl
+         * @memberof vesc_trampa.VescTrampaBoardPacket
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        VescTrampaBoardPacket.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+            if (typeUrlPrefix === undefined) {
+                typeUrlPrefix = "type.googleapis.com";
+            }
+            return typeUrlPrefix + "/vesc_trampa.VescTrampaBoardPacket";
+        };
+
+        return VescTrampaBoardPacket;
+    })();
+
+    vesc_trampa.InferenceState = (function() {
+
+        /**
+         * Properties of an InferenceState.
+         * @memberof vesc_trampa
+         * @interface IInferenceState
+         * @property {Uint8Array|null} [lastInferenceQueuePtr] InferenceState lastInferenceQueuePtr
+         * @property {Array.<vesc_trampa.InferenceState.IBoardState>|null} [boards] InferenceState boards
+         */
+
+        /**
+         * Constructs a new InferenceState.
+         * @memberof vesc_trampa
+         * @classdesc Represents an InferenceState.
+         * @implements IInferenceState
+         * @constructor
+         * @param {vesc_trampa.IInferenceState=} [properties] Properties to set
+         */
+        function InferenceState(properties) {
+            this.boards = [];
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * InferenceState lastInferenceQueuePtr.
+         * @member {Uint8Array} lastInferenceQueuePtr
+         * @memberof vesc_trampa.InferenceState
+         * @instance
+         */
+        InferenceState.prototype.lastInferenceQueuePtr = $util.newBuffer([]);
+
+        /**
+         * InferenceState boards.
+         * @member {Array.<vesc_trampa.InferenceState.IBoardState>} boards
+         * @memberof vesc_trampa.InferenceState
+         * @instance
+         */
+        InferenceState.prototype.boards = $util.emptyArray;
+
+        /**
+         * Creates a new InferenceState instance using the specified properties.
+         * @function create
+         * @memberof vesc_trampa.InferenceState
+         * @static
+         * @param {vesc_trampa.IInferenceState=} [properties] Properties to set
+         * @returns {vesc_trampa.InferenceState} InferenceState instance
+         */
+        InferenceState.create = function create(properties) {
+            return new InferenceState(properties);
+        };
+
+        /**
+         * Encodes the specified InferenceState message. Does not implicitly {@link vesc_trampa.InferenceState.verify|verify} messages.
+         * @function encode
+         * @memberof vesc_trampa.InferenceState
+         * @static
+         * @param {vesc_trampa.IInferenceState} message InferenceState message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        InferenceState.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.lastInferenceQueuePtr != null && Object.hasOwnProperty.call(message, "lastInferenceQueuePtr"))
+                writer.uint32(/* id 1, wireType 2 =*/10).bytes(message.lastInferenceQueuePtr);
+            if (message.boards != null && message.boards.length)
+                for (let i = 0; i < message.boards.length; ++i)
+                    $root.vesc_trampa.InferenceState.BoardState.encode(message.boards[i], writer.uint32(/* id 10, wireType 2 =*/82).fork()).ldelim();
+            return writer;
+        };
+
+        /**
+         * Encodes the specified InferenceState message, length delimited. Does not implicitly {@link vesc_trampa.InferenceState.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof vesc_trampa.InferenceState
+         * @static
+         * @param {vesc_trampa.IInferenceState} message InferenceState message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        InferenceState.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes an InferenceState message from the specified reader or buffer.
+         * @function decode
+         * @memberof vesc_trampa.InferenceState
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {vesc_trampa.InferenceState} InferenceState
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        InferenceState.decode = function decode(reader, length, error, long) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.vesc_trampa.InferenceState();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                if (tag === error)
+                    break;
+                switch (tag >>> 3) {
+                case 1: {
+                        message.lastInferenceQueuePtr = reader.bytes();
+                        break;
+                    }
+                case 10: {
+                        if (!(message.boards && message.boards.length))
+                            message.boards = [];
+                        message.boards.push($root.vesc_trampa.InferenceState.BoardState.decode(reader, reader.uint32(), undefined, long + 1));
+                        break;
+                    }
+                default:
+                    reader.skipType(tag & 7, long);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes an InferenceState message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof vesc_trampa.InferenceState
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {vesc_trampa.InferenceState} InferenceState
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        InferenceState.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies an InferenceState message.
+         * @function verify
+         * @memberof vesc_trampa.InferenceState
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        InferenceState.verify = function verify(message, long) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
+            if (message.lastInferenceQueuePtr != null && message.hasOwnProperty("lastInferenceQueuePtr"))
+                if (!(message.lastInferenceQueuePtr && typeof message.lastInferenceQueuePtr.length === "number" || $util.isString(message.lastInferenceQueuePtr)))
+                    return "lastInferenceQueuePtr: buffer expected";
+            if (message.boards != null && message.hasOwnProperty("boards")) {
+                if (!Array.isArray(message.boards))
+                    return "boards: array expected";
+                for (let i = 0; i < message.boards.length; ++i) {
+                    let error = $root.vesc_trampa.InferenceState.BoardState.verify(message.boards[i], long + 1);
+                    if (error)
+                        return "boards." + error;
+                }
+            }
+            return null;
+        };
+
+        /**
+         * Creates an InferenceState message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof vesc_trampa.InferenceState
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {vesc_trampa.InferenceState} InferenceState
+         */
+        InferenceState.fromObject = function fromObject(object, long) {
+            if (object instanceof $root.vesc_trampa.InferenceState)
+                return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let message = new $root.vesc_trampa.InferenceState();
+            if (object.lastInferenceQueuePtr != null)
+                if (typeof object.lastInferenceQueuePtr === "string")
+                    $util.base64.decode(object.lastInferenceQueuePtr, message.lastInferenceQueuePtr = $util.newBuffer($util.base64.length(object.lastInferenceQueuePtr)), 0);
+                else if (object.lastInferenceQueuePtr.length >= 0)
+                    message.lastInferenceQueuePtr = object.lastInferenceQueuePtr;
+            if (object.boards) {
+                if (!Array.isArray(object.boards))
+                    throw TypeError(".vesc_trampa.InferenceState.boards: array expected");
+                message.boards = [];
+                for (let i = 0; i < object.boards.length; ++i) {
+                    if (typeof object.boards[i] !== "object")
+                        throw TypeError(".vesc_trampa.InferenceState.boards: object expected");
+                    message.boards[i] = $root.vesc_trampa.InferenceState.BoardState.fromObject(object.boards[i], long + 1);
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Creates a plain object from an InferenceState message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof vesc_trampa.InferenceState
+         * @static
+         * @param {vesc_trampa.InferenceState} message InferenceState
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        InferenceState.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.arrays || options.defaults)
+                object.boards = [];
+            if (options.defaults)
+                if (options.bytes === String)
+                    object.lastInferenceQueuePtr = "";
+                else {
+                    object.lastInferenceQueuePtr = [];
+                    if (options.bytes !== Array)
+                        object.lastInferenceQueuePtr = $util.newBuffer(object.lastInferenceQueuePtr);
+                }
+            if (message.lastInferenceQueuePtr != null && message.hasOwnProperty("lastInferenceQueuePtr"))
+                object.lastInferenceQueuePtr = options.bytes === String ? $util.base64.encode(message.lastInferenceQueuePtr, 0, message.lastInferenceQueuePtr.length) : options.bytes === Array ? Array.prototype.slice.call(message.lastInferenceQueuePtr) : message.lastInferenceQueuePtr;
+            if (message.boards && message.boards.length) {
+                object.boards = [];
+                for (let j = 0; j < message.boards.length; ++j)
+                    object.boards[j] = $root.vesc_trampa.InferenceState.BoardState.toObject(message.boards[j], options);
+            }
+            return object;
+        };
+
+        /**
+         * Converts this InferenceState to JSON.
+         * @function toJSON
+         * @memberof vesc_trampa.InferenceState
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        InferenceState.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for InferenceState
+         * @function getTypeUrl
+         * @memberof vesc_trampa.InferenceState
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        InferenceState.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+            if (typeUrlPrefix === undefined) {
+                typeUrlPrefix = "type.googleapis.com";
+            }
+            return typeUrlPrefix + "/vesc_trampa.InferenceState";
+        };
+
+        InferenceState.BoardState = (function() {
+
+            /**
+             * Properties of a BoardState.
+             * @memberof vesc_trampa.InferenceState
+             * @interface IBoardState
+             * @property {vesc_trampa.IVescTrampaBoard|null} [board] BoardState board
+             * @property {vesc_trampa.VescTrampaMotorMode|null} [motorMode] BoardState motorMode
+             * @property {Long|null} [monotonicStampNs] BoardState monotonicStampNs
+             * @property {Long|null} [localStampNs] BoardState localStampNs
+             * @property {Long|null} [appStartId] BoardState appStartId
+             * @property {Uint8Array|null} [valuesPayload] BoardState valuesPayload
+             * @property {Uint8Array|null} [valuesRxPointer] BoardState valuesRxPointer
+             * @property {Long|null} [valuesMonotonicStampNs] BoardState valuesMonotonicStampNs
+             * @property {Long|null} [valuesLocalStampNs] BoardState valuesLocalStampNs
+             * @property {Long|null} [valuesAppStartId] BoardState valuesAppStartId
+             */
+
+            /**
+             * Constructs a new BoardState.
+             * @memberof vesc_trampa.InferenceState
+             * @classdesc Represents a BoardState.
+             * @implements IBoardState
+             * @constructor
+             * @param {vesc_trampa.InferenceState.IBoardState=} [properties] Properties to set
+             */
+            function BoardState(properties) {
+                if (properties)
+                    for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                        if (properties[keys[i]] != null && keys[i] !== "__proto__")
+                            this[keys[i]] = properties[keys[i]];
+            }
+
+            /**
+             * BoardState board.
+             * @member {vesc_trampa.IVescTrampaBoard|null|undefined} board
+             * @memberof vesc_trampa.InferenceState.BoardState
+             * @instance
+             */
+            BoardState.prototype.board = null;
+
+            /**
+             * BoardState motorMode.
+             * @member {vesc_trampa.VescTrampaMotorMode} motorMode
+             * @memberof vesc_trampa.InferenceState.BoardState
+             * @instance
+             */
+            BoardState.prototype.motorMode = 0;
+
+            /**
+             * BoardState monotonicStampNs.
+             * @member {Long} monotonicStampNs
+             * @memberof vesc_trampa.InferenceState.BoardState
+             * @instance
+             */
+            BoardState.prototype.monotonicStampNs = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+
+            /**
+             * BoardState localStampNs.
+             * @member {Long} localStampNs
+             * @memberof vesc_trampa.InferenceState.BoardState
+             * @instance
+             */
+            BoardState.prototype.localStampNs = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+
+            /**
+             * BoardState appStartId.
+             * @member {Long} appStartId
+             * @memberof vesc_trampa.InferenceState.BoardState
+             * @instance
+             */
+            BoardState.prototype.appStartId = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+
+            /**
+             * BoardState valuesPayload.
+             * @member {Uint8Array} valuesPayload
+             * @memberof vesc_trampa.InferenceState.BoardState
+             * @instance
+             */
+            BoardState.prototype.valuesPayload = $util.newBuffer([]);
+
+            /**
+             * BoardState valuesRxPointer.
+             * @member {Uint8Array} valuesRxPointer
+             * @memberof vesc_trampa.InferenceState.BoardState
+             * @instance
+             */
+            BoardState.prototype.valuesRxPointer = $util.newBuffer([]);
+
+            /**
+             * BoardState valuesMonotonicStampNs.
+             * @member {Long} valuesMonotonicStampNs
+             * @memberof vesc_trampa.InferenceState.BoardState
+             * @instance
+             */
+            BoardState.prototype.valuesMonotonicStampNs = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+
+            /**
+             * BoardState valuesLocalStampNs.
+             * @member {Long} valuesLocalStampNs
+             * @memberof vesc_trampa.InferenceState.BoardState
+             * @instance
+             */
+            BoardState.prototype.valuesLocalStampNs = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+
+            /**
+             * BoardState valuesAppStartId.
+             * @member {Long} valuesAppStartId
+             * @memberof vesc_trampa.InferenceState.BoardState
+             * @instance
+             */
+            BoardState.prototype.valuesAppStartId = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+
+            /**
+             * Creates a new BoardState instance using the specified properties.
+             * @function create
+             * @memberof vesc_trampa.InferenceState.BoardState
+             * @static
+             * @param {vesc_trampa.InferenceState.IBoardState=} [properties] Properties to set
+             * @returns {vesc_trampa.InferenceState.BoardState} BoardState instance
+             */
+            BoardState.create = function create(properties) {
+                return new BoardState(properties);
+            };
+
+            /**
+             * Encodes the specified BoardState message. Does not implicitly {@link vesc_trampa.InferenceState.BoardState.verify|verify} messages.
+             * @function encode
+             * @memberof vesc_trampa.InferenceState.BoardState
+             * @static
+             * @param {vesc_trampa.InferenceState.IBoardState} message BoardState message or plain object to encode
+             * @param {$protobuf.Writer} [writer] Writer to encode to
+             * @returns {$protobuf.Writer} Writer
+             */
+            BoardState.encode = function encode(message, writer) {
+                if (!writer)
+                    writer = $Writer.create();
+                if (message.board != null && Object.hasOwnProperty.call(message, "board"))
+                    $root.vesc_trampa.VescTrampaBoard.encode(message.board, writer.uint32(/* id 1, wireType 2 =*/10).fork()).ldelim();
+                if (message.motorMode != null && Object.hasOwnProperty.call(message, "motorMode"))
+                    writer.uint32(/* id 2, wireType 0 =*/16).int32(message.motorMode);
+                if (message.monotonicStampNs != null && Object.hasOwnProperty.call(message, "monotonicStampNs"))
+                    writer.uint32(/* id 3, wireType 0 =*/24).uint64(message.monotonicStampNs);
+                if (message.localStampNs != null && Object.hasOwnProperty.call(message, "localStampNs"))
+                    writer.uint32(/* id 4, wireType 0 =*/32).uint64(message.localStampNs);
+                if (message.appStartId != null && Object.hasOwnProperty.call(message, "appStartId"))
+                    writer.uint32(/* id 5, wireType 0 =*/40).uint64(message.appStartId);
+                if (message.valuesPayload != null && Object.hasOwnProperty.call(message, "valuesPayload"))
+                    writer.uint32(/* id 10, wireType 2 =*/82).bytes(message.valuesPayload);
+                if (message.valuesRxPointer != null && Object.hasOwnProperty.call(message, "valuesRxPointer"))
+                    writer.uint32(/* id 11, wireType 2 =*/90).bytes(message.valuesRxPointer);
+                if (message.valuesMonotonicStampNs != null && Object.hasOwnProperty.call(message, "valuesMonotonicStampNs"))
+                    writer.uint32(/* id 12, wireType 0 =*/96).uint64(message.valuesMonotonicStampNs);
+                if (message.valuesLocalStampNs != null && Object.hasOwnProperty.call(message, "valuesLocalStampNs"))
+                    writer.uint32(/* id 13, wireType 0 =*/104).uint64(message.valuesLocalStampNs);
+                if (message.valuesAppStartId != null && Object.hasOwnProperty.call(message, "valuesAppStartId"))
+                    writer.uint32(/* id 14, wireType 0 =*/112).uint64(message.valuesAppStartId);
+                return writer;
+            };
+
+            /**
+             * Encodes the specified BoardState message, length delimited. Does not implicitly {@link vesc_trampa.InferenceState.BoardState.verify|verify} messages.
+             * @function encodeDelimited
+             * @memberof vesc_trampa.InferenceState.BoardState
+             * @static
+             * @param {vesc_trampa.InferenceState.IBoardState} message BoardState message or plain object to encode
+             * @param {$protobuf.Writer} [writer] Writer to encode to
+             * @returns {$protobuf.Writer} Writer
+             */
+            BoardState.encodeDelimited = function encodeDelimited(message, writer) {
+                return this.encode(message, writer).ldelim();
+            };
+
+            /**
+             * Decodes a BoardState message from the specified reader or buffer.
+             * @function decode
+             * @memberof vesc_trampa.InferenceState.BoardState
+             * @static
+             * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+             * @param {number} [length] Message length if known beforehand
+             * @returns {vesc_trampa.InferenceState.BoardState} BoardState
+             * @throws {Error} If the payload is not a reader or valid buffer
+             * @throws {$protobuf.util.ProtocolError} If required fields are missing
+             */
+            BoardState.decode = function decode(reader, length, error, long) {
+                if (!(reader instanceof $Reader))
+                    reader = $Reader.create(reader);
+                if (long === undefined)
+                    long = 0;
+                if (long > $Reader.recursionLimit)
+                    throw Error("maximum nesting depth exceeded");
+                let end = length === undefined ? reader.len : reader.pos + length, message = new $root.vesc_trampa.InferenceState.BoardState();
+                while (reader.pos < end) {
+                    let tag = reader.uint32();
+                    if (tag === error)
+                        break;
+                    switch (tag >>> 3) {
+                    case 1: {
+                            message.board = $root.vesc_trampa.VescTrampaBoard.decode(reader, reader.uint32(), undefined, long + 1);
+                            break;
+                        }
+                    case 2: {
+                            message.motorMode = reader.int32();
+                            break;
+                        }
+                    case 3: {
+                            message.monotonicStampNs = reader.uint64();
+                            break;
+                        }
+                    case 4: {
+                            message.localStampNs = reader.uint64();
+                            break;
+                        }
+                    case 5: {
+                            message.appStartId = reader.uint64();
+                            break;
+                        }
+                    case 10: {
+                            message.valuesPayload = reader.bytes();
+                            break;
+                        }
+                    case 11: {
+                            message.valuesRxPointer = reader.bytes();
+                            break;
+                        }
+                    case 12: {
+                            message.valuesMonotonicStampNs = reader.uint64();
+                            break;
+                        }
+                    case 13: {
+                            message.valuesLocalStampNs = reader.uint64();
+                            break;
+                        }
+                    case 14: {
+                            message.valuesAppStartId = reader.uint64();
+                            break;
+                        }
+                    default:
+                        reader.skipType(tag & 7, long);
+                        break;
+                    }
+                }
+                return message;
+            };
+
+            /**
+             * Decodes a BoardState message from the specified reader or buffer, length delimited.
+             * @function decodeDelimited
+             * @memberof vesc_trampa.InferenceState.BoardState
+             * @static
+             * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+             * @returns {vesc_trampa.InferenceState.BoardState} BoardState
+             * @throws {Error} If the payload is not a reader or valid buffer
+             * @throws {$protobuf.util.ProtocolError} If required fields are missing
+             */
+            BoardState.decodeDelimited = function decodeDelimited(reader) {
+                if (!(reader instanceof $Reader))
+                    reader = new $Reader(reader);
+                return this.decode(reader, reader.uint32());
+            };
+
+            /**
+             * Verifies a BoardState message.
+             * @function verify
+             * @memberof vesc_trampa.InferenceState.BoardState
+             * @static
+             * @param {Object.<string,*>} message Plain object to verify
+             * @returns {string|null} `null` if valid, otherwise the reason why it is not
+             */
+            BoardState.verify = function verify(message, long) {
+                if (typeof message !== "object" || message === null)
+                    return "object expected";
+                if (long === undefined)
+                    long = 0;
+                if (long > $util.recursionLimit)
+                    return "maximum nesting depth exceeded";
+                if (message.board != null && message.hasOwnProperty("board")) {
+                    let error = $root.vesc_trampa.VescTrampaBoard.verify(message.board, long + 1);
+                    if (error)
+                        return "board." + error;
+                }
+                if (message.motorMode != null && message.hasOwnProperty("motorMode"))
+                    switch (message.motorMode) {
+                    default:
+                        return "motorMode: enum value expected";
+                    case 0:
+                    case 1:
+                        break;
+                    }
+                if (message.monotonicStampNs != null && message.hasOwnProperty("monotonicStampNs"))
+                    if (!$util.isInteger(message.monotonicStampNs) && !(message.monotonicStampNs && $util.isInteger(message.monotonicStampNs.low) && $util.isInteger(message.monotonicStampNs.high)))
+                        return "monotonicStampNs: integer|Long expected";
+                if (message.localStampNs != null && message.hasOwnProperty("localStampNs"))
+                    if (!$util.isInteger(message.localStampNs) && !(message.localStampNs && $util.isInteger(message.localStampNs.low) && $util.isInteger(message.localStampNs.high)))
+                        return "localStampNs: integer|Long expected";
+                if (message.appStartId != null && message.hasOwnProperty("appStartId"))
+                    if (!$util.isInteger(message.appStartId) && !(message.appStartId && $util.isInteger(message.appStartId.low) && $util.isInteger(message.appStartId.high)))
+                        return "appStartId: integer|Long expected";
+                if (message.valuesPayload != null && message.hasOwnProperty("valuesPayload"))
+                    if (!(message.valuesPayload && typeof message.valuesPayload.length === "number" || $util.isString(message.valuesPayload)))
+                        return "valuesPayload: buffer expected";
+                if (message.valuesRxPointer != null && message.hasOwnProperty("valuesRxPointer"))
+                    if (!(message.valuesRxPointer && typeof message.valuesRxPointer.length === "number" || $util.isString(message.valuesRxPointer)))
+                        return "valuesRxPointer: buffer expected";
+                if (message.valuesMonotonicStampNs != null && message.hasOwnProperty("valuesMonotonicStampNs"))
+                    if (!$util.isInteger(message.valuesMonotonicStampNs) && !(message.valuesMonotonicStampNs && $util.isInteger(message.valuesMonotonicStampNs.low) && $util.isInteger(message.valuesMonotonicStampNs.high)))
+                        return "valuesMonotonicStampNs: integer|Long expected";
+                if (message.valuesLocalStampNs != null && message.hasOwnProperty("valuesLocalStampNs"))
+                    if (!$util.isInteger(message.valuesLocalStampNs) && !(message.valuesLocalStampNs && $util.isInteger(message.valuesLocalStampNs.low) && $util.isInteger(message.valuesLocalStampNs.high)))
+                        return "valuesLocalStampNs: integer|Long expected";
+                if (message.valuesAppStartId != null && message.hasOwnProperty("valuesAppStartId"))
+                    if (!$util.isInteger(message.valuesAppStartId) && !(message.valuesAppStartId && $util.isInteger(message.valuesAppStartId.low) && $util.isInteger(message.valuesAppStartId.high)))
+                        return "valuesAppStartId: integer|Long expected";
+                return null;
+            };
+
+            /**
+             * Creates a BoardState message from a plain object. Also converts values to their respective internal types.
+             * @function fromObject
+             * @memberof vesc_trampa.InferenceState.BoardState
+             * @static
+             * @param {Object.<string,*>} object Plain object
+             * @returns {vesc_trampa.InferenceState.BoardState} BoardState
+             */
+            BoardState.fromObject = function fromObject(object, long) {
+                if (object instanceof $root.vesc_trampa.InferenceState.BoardState)
+                    return object;
+                if (long === undefined)
+                    long = 0;
+                if (long > $util.recursionLimit)
+                    throw Error("maximum nesting depth exceeded");
+                let message = new $root.vesc_trampa.InferenceState.BoardState();
+                if (object.board != null) {
+                    if (typeof object.board !== "object")
+                        throw TypeError(".vesc_trampa.InferenceState.BoardState.board: object expected");
+                    message.board = $root.vesc_trampa.VescTrampaBoard.fromObject(object.board, long + 1);
+                }
+                switch (object.motorMode) {
+                default:
+                    if (typeof object.motorMode === "number") {
+                        message.motorMode = object.motorMode;
+                        break;
+                    }
+                    break;
+                case "VESC_TRAMPA_MOTOR_MODE_UNSPECIFIED":
+                case 0:
+                    message.motorMode = 0;
+                    break;
+                case "VESC_TRAMPA_MOTOR_MODE_HOLD":
+                case 1:
+                    message.motorMode = 1;
+                    break;
+                }
+                if (object.monotonicStampNs != null)
+                    if ($util.Long)
+                        (message.monotonicStampNs = $util.Long.fromValue(object.monotonicStampNs)).unsigned = true;
+                    else if (typeof object.monotonicStampNs === "string")
+                        message.monotonicStampNs = parseInt(object.monotonicStampNs, 10);
+                    else if (typeof object.monotonicStampNs === "number")
+                        message.monotonicStampNs = object.monotonicStampNs;
+                    else if (typeof object.monotonicStampNs === "object")
+                        message.monotonicStampNs = new $util.LongBits(object.monotonicStampNs.low >>> 0, object.monotonicStampNs.high >>> 0).toNumber(true);
+                if (object.localStampNs != null)
+                    if ($util.Long)
+                        (message.localStampNs = $util.Long.fromValue(object.localStampNs)).unsigned = true;
+                    else if (typeof object.localStampNs === "string")
+                        message.localStampNs = parseInt(object.localStampNs, 10);
+                    else if (typeof object.localStampNs === "number")
+                        message.localStampNs = object.localStampNs;
+                    else if (typeof object.localStampNs === "object")
+                        message.localStampNs = new $util.LongBits(object.localStampNs.low >>> 0, object.localStampNs.high >>> 0).toNumber(true);
+                if (object.appStartId != null)
+                    if ($util.Long)
+                        (message.appStartId = $util.Long.fromValue(object.appStartId)).unsigned = true;
+                    else if (typeof object.appStartId === "string")
+                        message.appStartId = parseInt(object.appStartId, 10);
+                    else if (typeof object.appStartId === "number")
+                        message.appStartId = object.appStartId;
+                    else if (typeof object.appStartId === "object")
+                        message.appStartId = new $util.LongBits(object.appStartId.low >>> 0, object.appStartId.high >>> 0).toNumber(true);
+                if (object.valuesPayload != null)
+                    if (typeof object.valuesPayload === "string")
+                        $util.base64.decode(object.valuesPayload, message.valuesPayload = $util.newBuffer($util.base64.length(object.valuesPayload)), 0);
+                    else if (object.valuesPayload.length >= 0)
+                        message.valuesPayload = object.valuesPayload;
+                if (object.valuesRxPointer != null)
+                    if (typeof object.valuesRxPointer === "string")
+                        $util.base64.decode(object.valuesRxPointer, message.valuesRxPointer = $util.newBuffer($util.base64.length(object.valuesRxPointer)), 0);
+                    else if (object.valuesRxPointer.length >= 0)
+                        message.valuesRxPointer = object.valuesRxPointer;
+                if (object.valuesMonotonicStampNs != null)
+                    if ($util.Long)
+                        (message.valuesMonotonicStampNs = $util.Long.fromValue(object.valuesMonotonicStampNs)).unsigned = true;
+                    else if (typeof object.valuesMonotonicStampNs === "string")
+                        message.valuesMonotonicStampNs = parseInt(object.valuesMonotonicStampNs, 10);
+                    else if (typeof object.valuesMonotonicStampNs === "number")
+                        message.valuesMonotonicStampNs = object.valuesMonotonicStampNs;
+                    else if (typeof object.valuesMonotonicStampNs === "object")
+                        message.valuesMonotonicStampNs = new $util.LongBits(object.valuesMonotonicStampNs.low >>> 0, object.valuesMonotonicStampNs.high >>> 0).toNumber(true);
+                if (object.valuesLocalStampNs != null)
+                    if ($util.Long)
+                        (message.valuesLocalStampNs = $util.Long.fromValue(object.valuesLocalStampNs)).unsigned = true;
+                    else if (typeof object.valuesLocalStampNs === "string")
+                        message.valuesLocalStampNs = parseInt(object.valuesLocalStampNs, 10);
+                    else if (typeof object.valuesLocalStampNs === "number")
+                        message.valuesLocalStampNs = object.valuesLocalStampNs;
+                    else if (typeof object.valuesLocalStampNs === "object")
+                        message.valuesLocalStampNs = new $util.LongBits(object.valuesLocalStampNs.low >>> 0, object.valuesLocalStampNs.high >>> 0).toNumber(true);
+                if (object.valuesAppStartId != null)
+                    if ($util.Long)
+                        (message.valuesAppStartId = $util.Long.fromValue(object.valuesAppStartId)).unsigned = true;
+                    else if (typeof object.valuesAppStartId === "string")
+                        message.valuesAppStartId = parseInt(object.valuesAppStartId, 10);
+                    else if (typeof object.valuesAppStartId === "number")
+                        message.valuesAppStartId = object.valuesAppStartId;
+                    else if (typeof object.valuesAppStartId === "object")
+                        message.valuesAppStartId = new $util.LongBits(object.valuesAppStartId.low >>> 0, object.valuesAppStartId.high >>> 0).toNumber(true);
+                return message;
+            };
+
+            /**
+             * Creates a plain object from a BoardState message. Also converts values to other types if specified.
+             * @function toObject
+             * @memberof vesc_trampa.InferenceState.BoardState
+             * @static
+             * @param {vesc_trampa.InferenceState.BoardState} message BoardState
+             * @param {$protobuf.IConversionOptions} [options] Conversion options
+             * @returns {Object.<string,*>} Plain object
+             */
+            BoardState.toObject = function toObject(message, options) {
+                if (!options)
+                    options = {};
+                let object = {};
+                if (options.defaults) {
+                    object.board = null;
+                    object.motorMode = options.enums === String ? "VESC_TRAMPA_MOTOR_MODE_UNSPECIFIED" : 0;
+                    if ($util.Long) {
+                        let long = new $util.Long(0, 0, true);
+                        object.monotonicStampNs = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+                    } else
+                        object.monotonicStampNs = options.longs === String ? "0" : 0;
+                    if ($util.Long) {
+                        let long = new $util.Long(0, 0, true);
+                        object.localStampNs = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+                    } else
+                        object.localStampNs = options.longs === String ? "0" : 0;
+                    if ($util.Long) {
+                        let long = new $util.Long(0, 0, true);
+                        object.appStartId = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+                    } else
+                        object.appStartId = options.longs === String ? "0" : 0;
+                    if (options.bytes === String)
+                        object.valuesPayload = "";
+                    else {
+                        object.valuesPayload = [];
+                        if (options.bytes !== Array)
+                            object.valuesPayload = $util.newBuffer(object.valuesPayload);
+                    }
+                    if (options.bytes === String)
+                        object.valuesRxPointer = "";
+                    else {
+                        object.valuesRxPointer = [];
+                        if (options.bytes !== Array)
+                            object.valuesRxPointer = $util.newBuffer(object.valuesRxPointer);
+                    }
+                    if ($util.Long) {
+                        let long = new $util.Long(0, 0, true);
+                        object.valuesMonotonicStampNs = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+                    } else
+                        object.valuesMonotonicStampNs = options.longs === String ? "0" : 0;
+                    if ($util.Long) {
+                        let long = new $util.Long(0, 0, true);
+                        object.valuesLocalStampNs = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+                    } else
+                        object.valuesLocalStampNs = options.longs === String ? "0" : 0;
+                    if ($util.Long) {
+                        let long = new $util.Long(0, 0, true);
+                        object.valuesAppStartId = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+                    } else
+                        object.valuesAppStartId = options.longs === String ? "0" : 0;
+                }
+                if (message.board != null && message.hasOwnProperty("board"))
+                    object.board = $root.vesc_trampa.VescTrampaBoard.toObject(message.board, options);
+                if (message.motorMode != null && message.hasOwnProperty("motorMode"))
+                    object.motorMode = options.enums === String ? $root.vesc_trampa.VescTrampaMotorMode[message.motorMode] === undefined ? message.motorMode : $root.vesc_trampa.VescTrampaMotorMode[message.motorMode] : message.motorMode;
+                if (message.monotonicStampNs != null && message.hasOwnProperty("monotonicStampNs"))
+                    if (typeof message.monotonicStampNs === "number")
+                        object.monotonicStampNs = options.longs === String ? String(message.monotonicStampNs) : message.monotonicStampNs;
+                    else
+                        object.monotonicStampNs = options.longs === String ? $util.Long.prototype.toString.call(message.monotonicStampNs) : options.longs === Number ? new $util.LongBits(message.monotonicStampNs.low >>> 0, message.monotonicStampNs.high >>> 0).toNumber(true) : message.monotonicStampNs;
+                if (message.localStampNs != null && message.hasOwnProperty("localStampNs"))
+                    if (typeof message.localStampNs === "number")
+                        object.localStampNs = options.longs === String ? String(message.localStampNs) : message.localStampNs;
+                    else
+                        object.localStampNs = options.longs === String ? $util.Long.prototype.toString.call(message.localStampNs) : options.longs === Number ? new $util.LongBits(message.localStampNs.low >>> 0, message.localStampNs.high >>> 0).toNumber(true) : message.localStampNs;
+                if (message.appStartId != null && message.hasOwnProperty("appStartId"))
+                    if (typeof message.appStartId === "number")
+                        object.appStartId = options.longs === String ? String(message.appStartId) : message.appStartId;
+                    else
+                        object.appStartId = options.longs === String ? $util.Long.prototype.toString.call(message.appStartId) : options.longs === Number ? new $util.LongBits(message.appStartId.low >>> 0, message.appStartId.high >>> 0).toNumber(true) : message.appStartId;
+                if (message.valuesPayload != null && message.hasOwnProperty("valuesPayload"))
+                    object.valuesPayload = options.bytes === String ? $util.base64.encode(message.valuesPayload, 0, message.valuesPayload.length) : options.bytes === Array ? Array.prototype.slice.call(message.valuesPayload) : message.valuesPayload;
+                if (message.valuesRxPointer != null && message.hasOwnProperty("valuesRxPointer"))
+                    object.valuesRxPointer = options.bytes === String ? $util.base64.encode(message.valuesRxPointer, 0, message.valuesRxPointer.length) : options.bytes === Array ? Array.prototype.slice.call(message.valuesRxPointer) : message.valuesRxPointer;
+                if (message.valuesMonotonicStampNs != null && message.hasOwnProperty("valuesMonotonicStampNs"))
+                    if (typeof message.valuesMonotonicStampNs === "number")
+                        object.valuesMonotonicStampNs = options.longs === String ? String(message.valuesMonotonicStampNs) : message.valuesMonotonicStampNs;
+                    else
+                        object.valuesMonotonicStampNs = options.longs === String ? $util.Long.prototype.toString.call(message.valuesMonotonicStampNs) : options.longs === Number ? new $util.LongBits(message.valuesMonotonicStampNs.low >>> 0, message.valuesMonotonicStampNs.high >>> 0).toNumber(true) : message.valuesMonotonicStampNs;
+                if (message.valuesLocalStampNs != null && message.hasOwnProperty("valuesLocalStampNs"))
+                    if (typeof message.valuesLocalStampNs === "number")
+                        object.valuesLocalStampNs = options.longs === String ? String(message.valuesLocalStampNs) : message.valuesLocalStampNs;
+                    else
+                        object.valuesLocalStampNs = options.longs === String ? $util.Long.prototype.toString.call(message.valuesLocalStampNs) : options.longs === Number ? new $util.LongBits(message.valuesLocalStampNs.low >>> 0, message.valuesLocalStampNs.high >>> 0).toNumber(true) : message.valuesLocalStampNs;
+                if (message.valuesAppStartId != null && message.hasOwnProperty("valuesAppStartId"))
+                    if (typeof message.valuesAppStartId === "number")
+                        object.valuesAppStartId = options.longs === String ? String(message.valuesAppStartId) : message.valuesAppStartId;
+                    else
+                        object.valuesAppStartId = options.longs === String ? $util.Long.prototype.toString.call(message.valuesAppStartId) : options.longs === Number ? new $util.LongBits(message.valuesAppStartId.low >>> 0, message.valuesAppStartId.high >>> 0).toNumber(true) : message.valuesAppStartId;
+                return object;
+            };
+
+            /**
+             * Converts this BoardState to JSON.
+             * @function toJSON
+             * @memberof vesc_trampa.InferenceState.BoardState
+             * @instance
+             * @returns {Object.<string,*>} JSON object
+             */
+            BoardState.prototype.toJSON = function toJSON() {
+                return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+            };
+
+            /**
+             * Gets the default type url for BoardState
+             * @function getTypeUrl
+             * @memberof vesc_trampa.InferenceState.BoardState
+             * @static
+             * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+             * @returns {string} The default type url
+             */
+            BoardState.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+                if (typeUrlPrefix === undefined) {
+                    typeUrlPrefix = "type.googleapis.com";
+                }
+                return typeUrlPrefix + "/vesc_trampa.InferenceState.BoardState";
+            };
+
+            return BoardState;
+        })();
+
+        return InferenceState;
+    })();
+
+    vesc_trampa.VescTrampaBoard = (function() {
+
+        /**
+         * Properties of a VescTrampaBoard.
+         * @memberof vesc_trampa
+         * @interface IVescTrampaBoard
+         * @property {string|null} [portName] VescTrampaBoard portName
+         * @property {number|null} [vid] VescTrampaBoard vid
+         * @property {number|null} [pid] VescTrampaBoard pid
+         * @property {string|null} [serialNumber] VescTrampaBoard serialNumber
+         * @property {string|null} [manufacturer] VescTrampaBoard manufacturer
+         * @property {string|null} [product] VescTrampaBoard product
+         * @property {number|null} [portBaudRate] VescTrampaBoard portBaudRate
+         * @property {number|null} [firmwareMajor] VescTrampaBoard firmwareMajor
+         * @property {number|null} [firmwareMinor] VescTrampaBoard firmwareMinor
+         * @property {string|null} [hardwareName] VescTrampaBoard hardwareName
+         * @property {Uint8Array|null} [uuid] VescTrampaBoard uuid
+         * @property {boolean|null} [pairingDone] VescTrampaBoard pairingDone
+         * @property {number|null} [testVersionNumber] VescTrampaBoard testVersionNumber
+         * @property {number|null} [hardwareType] VescTrampaBoard hardwareType
+         * @property {number|null} [customConfigCount] VescTrampaBoard customConfigCount
+         * @property {boolean|null} [hasPhaseFilters] VescTrampaBoard hasPhaseFilters
+         * @property {number|null} [qmlHw] VescTrampaBoard qmlHw
+         * @property {number|null} [qmlApp] VescTrampaBoard qmlApp
+         * @property {number|null} [nrfFlags] VescTrampaBoard nrfFlags
+         * @property {string|null} [firmwareName] VescTrampaBoard firmwareName
+         * @property {number|null} [hardwareConfigCrc] VescTrampaBoard hardwareConfigCrc
+         * @property {Uint8Array|null} [firmwareInfoExtraBytes] VescTrampaBoard firmwareInfoExtraBytes
+         * @property {Uint8Array|null} [firmwareInfoRawPayload] VescTrampaBoard firmwareInfoRawPayload
+         */
+
+        /**
+         * Constructs a new VescTrampaBoard.
+         * @memberof vesc_trampa
+         * @classdesc Represents a VescTrampaBoard.
+         * @implements IVescTrampaBoard
+         * @constructor
+         * @param {vesc_trampa.IVescTrampaBoard=} [properties] Properties to set
+         */
+        function VescTrampaBoard(properties) {
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * VescTrampaBoard portName.
+         * @member {string} portName
+         * @memberof vesc_trampa.VescTrampaBoard
+         * @instance
+         */
+        VescTrampaBoard.prototype.portName = "";
+
+        /**
+         * VescTrampaBoard vid.
+         * @member {number} vid
+         * @memberof vesc_trampa.VescTrampaBoard
+         * @instance
+         */
+        VescTrampaBoard.prototype.vid = 0;
+
+        /**
+         * VescTrampaBoard pid.
+         * @member {number} pid
+         * @memberof vesc_trampa.VescTrampaBoard
+         * @instance
+         */
+        VescTrampaBoard.prototype.pid = 0;
+
+        /**
+         * VescTrampaBoard serialNumber.
+         * @member {string} serialNumber
+         * @memberof vesc_trampa.VescTrampaBoard
+         * @instance
+         */
+        VescTrampaBoard.prototype.serialNumber = "";
+
+        /**
+         * VescTrampaBoard manufacturer.
+         * @member {string} manufacturer
+         * @memberof vesc_trampa.VescTrampaBoard
+         * @instance
+         */
+        VescTrampaBoard.prototype.manufacturer = "";
+
+        /**
+         * VescTrampaBoard product.
+         * @member {string} product
+         * @memberof vesc_trampa.VescTrampaBoard
+         * @instance
+         */
+        VescTrampaBoard.prototype.product = "";
+
+        /**
+         * VescTrampaBoard portBaudRate.
+         * @member {number} portBaudRate
+         * @memberof vesc_trampa.VescTrampaBoard
+         * @instance
+         */
+        VescTrampaBoard.prototype.portBaudRate = 0;
+
+        /**
+         * VescTrampaBoard firmwareMajor.
+         * @member {number} firmwareMajor
+         * @memberof vesc_trampa.VescTrampaBoard
+         * @instance
+         */
+        VescTrampaBoard.prototype.firmwareMajor = 0;
+
+        /**
+         * VescTrampaBoard firmwareMinor.
+         * @member {number} firmwareMinor
+         * @memberof vesc_trampa.VescTrampaBoard
+         * @instance
+         */
+        VescTrampaBoard.prototype.firmwareMinor = 0;
+
+        /**
+         * VescTrampaBoard hardwareName.
+         * @member {string} hardwareName
+         * @memberof vesc_trampa.VescTrampaBoard
+         * @instance
+         */
+        VescTrampaBoard.prototype.hardwareName = "";
+
+        /**
+         * VescTrampaBoard uuid.
+         * @member {Uint8Array} uuid
+         * @memberof vesc_trampa.VescTrampaBoard
+         * @instance
+         */
+        VescTrampaBoard.prototype.uuid = $util.newBuffer([]);
+
+        /**
+         * VescTrampaBoard pairingDone.
+         * @member {boolean} pairingDone
+         * @memberof vesc_trampa.VescTrampaBoard
+         * @instance
+         */
+        VescTrampaBoard.prototype.pairingDone = false;
+
+        /**
+         * VescTrampaBoard testVersionNumber.
+         * @member {number} testVersionNumber
+         * @memberof vesc_trampa.VescTrampaBoard
+         * @instance
+         */
+        VescTrampaBoard.prototype.testVersionNumber = 0;
+
+        /**
+         * VescTrampaBoard hardwareType.
+         * @member {number} hardwareType
+         * @memberof vesc_trampa.VescTrampaBoard
+         * @instance
+         */
+        VescTrampaBoard.prototype.hardwareType = 0;
+
+        /**
+         * VescTrampaBoard customConfigCount.
+         * @member {number} customConfigCount
+         * @memberof vesc_trampa.VescTrampaBoard
+         * @instance
+         */
+        VescTrampaBoard.prototype.customConfigCount = 0;
+
+        /**
+         * VescTrampaBoard hasPhaseFilters.
+         * @member {boolean} hasPhaseFilters
+         * @memberof vesc_trampa.VescTrampaBoard
+         * @instance
+         */
+        VescTrampaBoard.prototype.hasPhaseFilters = false;
+
+        /**
+         * VescTrampaBoard qmlHw.
+         * @member {number} qmlHw
+         * @memberof vesc_trampa.VescTrampaBoard
+         * @instance
+         */
+        VescTrampaBoard.prototype.qmlHw = 0;
+
+        /**
+         * VescTrampaBoard qmlApp.
+         * @member {number} qmlApp
+         * @memberof vesc_trampa.VescTrampaBoard
+         * @instance
+         */
+        VescTrampaBoard.prototype.qmlApp = 0;
+
+        /**
+         * VescTrampaBoard nrfFlags.
+         * @member {number} nrfFlags
+         * @memberof vesc_trampa.VescTrampaBoard
+         * @instance
+         */
+        VescTrampaBoard.prototype.nrfFlags = 0;
+
+        /**
+         * VescTrampaBoard firmwareName.
+         * @member {string} firmwareName
+         * @memberof vesc_trampa.VescTrampaBoard
+         * @instance
+         */
+        VescTrampaBoard.prototype.firmwareName = "";
+
+        /**
+         * VescTrampaBoard hardwareConfigCrc.
+         * @member {number} hardwareConfigCrc
+         * @memberof vesc_trampa.VescTrampaBoard
+         * @instance
+         */
+        VescTrampaBoard.prototype.hardwareConfigCrc = 0;
+
+        /**
+         * VescTrampaBoard firmwareInfoExtraBytes.
+         * @member {Uint8Array} firmwareInfoExtraBytes
+         * @memberof vesc_trampa.VescTrampaBoard
+         * @instance
+         */
+        VescTrampaBoard.prototype.firmwareInfoExtraBytes = $util.newBuffer([]);
+
+        /**
+         * VescTrampaBoard firmwareInfoRawPayload.
+         * @member {Uint8Array} firmwareInfoRawPayload
+         * @memberof vesc_trampa.VescTrampaBoard
+         * @instance
+         */
+        VescTrampaBoard.prototype.firmwareInfoRawPayload = $util.newBuffer([]);
+
+        /**
+         * Creates a new VescTrampaBoard instance using the specified properties.
+         * @function create
+         * @memberof vesc_trampa.VescTrampaBoard
+         * @static
+         * @param {vesc_trampa.IVescTrampaBoard=} [properties] Properties to set
+         * @returns {vesc_trampa.VescTrampaBoard} VescTrampaBoard instance
+         */
+        VescTrampaBoard.create = function create(properties) {
+            return new VescTrampaBoard(properties);
+        };
+
+        /**
+         * Encodes the specified VescTrampaBoard message. Does not implicitly {@link vesc_trampa.VescTrampaBoard.verify|verify} messages.
+         * @function encode
+         * @memberof vesc_trampa.VescTrampaBoard
+         * @static
+         * @param {vesc_trampa.IVescTrampaBoard} message VescTrampaBoard message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        VescTrampaBoard.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.portName != null && Object.hasOwnProperty.call(message, "portName"))
+                writer.uint32(/* id 1, wireType 2 =*/10).string(message.portName);
+            if (message.vid != null && Object.hasOwnProperty.call(message, "vid"))
+                writer.uint32(/* id 2, wireType 0 =*/16).uint32(message.vid);
+            if (message.pid != null && Object.hasOwnProperty.call(message, "pid"))
+                writer.uint32(/* id 3, wireType 0 =*/24).uint32(message.pid);
+            if (message.serialNumber != null && Object.hasOwnProperty.call(message, "serialNumber"))
+                writer.uint32(/* id 4, wireType 2 =*/34).string(message.serialNumber);
+            if (message.manufacturer != null && Object.hasOwnProperty.call(message, "manufacturer"))
+                writer.uint32(/* id 5, wireType 2 =*/42).string(message.manufacturer);
+            if (message.product != null && Object.hasOwnProperty.call(message, "product"))
+                writer.uint32(/* id 6, wireType 2 =*/50).string(message.product);
+            if (message.portBaudRate != null && Object.hasOwnProperty.call(message, "portBaudRate"))
+                writer.uint32(/* id 7, wireType 0 =*/56).uint32(message.portBaudRate);
+            if (message.firmwareMajor != null && Object.hasOwnProperty.call(message, "firmwareMajor"))
+                writer.uint32(/* id 20, wireType 0 =*/160).uint32(message.firmwareMajor);
+            if (message.firmwareMinor != null && Object.hasOwnProperty.call(message, "firmwareMinor"))
+                writer.uint32(/* id 21, wireType 0 =*/168).uint32(message.firmwareMinor);
+            if (message.hardwareName != null && Object.hasOwnProperty.call(message, "hardwareName"))
+                writer.uint32(/* id 22, wireType 2 =*/178).string(message.hardwareName);
+            if (message.uuid != null && Object.hasOwnProperty.call(message, "uuid"))
+                writer.uint32(/* id 23, wireType 2 =*/186).bytes(message.uuid);
+            if (message.pairingDone != null && Object.hasOwnProperty.call(message, "pairingDone"))
+                writer.uint32(/* id 24, wireType 0 =*/192).bool(message.pairingDone);
+            if (message.testVersionNumber != null && Object.hasOwnProperty.call(message, "testVersionNumber"))
+                writer.uint32(/* id 25, wireType 0 =*/200).uint32(message.testVersionNumber);
+            if (message.hardwareType != null && Object.hasOwnProperty.call(message, "hardwareType"))
+                writer.uint32(/* id 26, wireType 0 =*/208).uint32(message.hardwareType);
+            if (message.customConfigCount != null && Object.hasOwnProperty.call(message, "customConfigCount"))
+                writer.uint32(/* id 27, wireType 0 =*/216).uint32(message.customConfigCount);
+            if (message.hasPhaseFilters != null && Object.hasOwnProperty.call(message, "hasPhaseFilters"))
+                writer.uint32(/* id 28, wireType 0 =*/224).bool(message.hasPhaseFilters);
+            if (message.qmlHw != null && Object.hasOwnProperty.call(message, "qmlHw"))
+                writer.uint32(/* id 29, wireType 0 =*/232).uint32(message.qmlHw);
+            if (message.qmlApp != null && Object.hasOwnProperty.call(message, "qmlApp"))
+                writer.uint32(/* id 30, wireType 0 =*/240).uint32(message.qmlApp);
+            if (message.nrfFlags != null && Object.hasOwnProperty.call(message, "nrfFlags"))
+                writer.uint32(/* id 31, wireType 0 =*/248).uint32(message.nrfFlags);
+            if (message.firmwareName != null && Object.hasOwnProperty.call(message, "firmwareName"))
+                writer.uint32(/* id 32, wireType 2 =*/258).string(message.firmwareName);
+            if (message.hardwareConfigCrc != null && Object.hasOwnProperty.call(message, "hardwareConfigCrc"))
+                writer.uint32(/* id 33, wireType 0 =*/264).uint32(message.hardwareConfigCrc);
+            if (message.firmwareInfoExtraBytes != null && Object.hasOwnProperty.call(message, "firmwareInfoExtraBytes"))
+                writer.uint32(/* id 34, wireType 2 =*/274).bytes(message.firmwareInfoExtraBytes);
+            if (message.firmwareInfoRawPayload != null && Object.hasOwnProperty.call(message, "firmwareInfoRawPayload"))
+                writer.uint32(/* id 35, wireType 2 =*/282).bytes(message.firmwareInfoRawPayload);
+            return writer;
+        };
+
+        /**
+         * Encodes the specified VescTrampaBoard message, length delimited. Does not implicitly {@link vesc_trampa.VescTrampaBoard.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof vesc_trampa.VescTrampaBoard
+         * @static
+         * @param {vesc_trampa.IVescTrampaBoard} message VescTrampaBoard message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        VescTrampaBoard.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes a VescTrampaBoard message from the specified reader or buffer.
+         * @function decode
+         * @memberof vesc_trampa.VescTrampaBoard
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {vesc_trampa.VescTrampaBoard} VescTrampaBoard
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        VescTrampaBoard.decode = function decode(reader, length, error, long) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.vesc_trampa.VescTrampaBoard();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                if (tag === error)
+                    break;
+                switch (tag >>> 3) {
+                case 1: {
+                        message.portName = reader.string();
+                        break;
+                    }
+                case 2: {
+                        message.vid = reader.uint32();
+                        break;
+                    }
+                case 3: {
+                        message.pid = reader.uint32();
+                        break;
+                    }
+                case 4: {
+                        message.serialNumber = reader.string();
+                        break;
+                    }
+                case 5: {
+                        message.manufacturer = reader.string();
+                        break;
+                    }
+                case 6: {
+                        message.product = reader.string();
+                        break;
+                    }
+                case 7: {
+                        message.portBaudRate = reader.uint32();
+                        break;
+                    }
+                case 20: {
+                        message.firmwareMajor = reader.uint32();
+                        break;
+                    }
+                case 21: {
+                        message.firmwareMinor = reader.uint32();
+                        break;
+                    }
+                case 22: {
+                        message.hardwareName = reader.string();
+                        break;
+                    }
+                case 23: {
+                        message.uuid = reader.bytes();
+                        break;
+                    }
+                case 24: {
+                        message.pairingDone = reader.bool();
+                        break;
+                    }
+                case 25: {
+                        message.testVersionNumber = reader.uint32();
+                        break;
+                    }
+                case 26: {
+                        message.hardwareType = reader.uint32();
+                        break;
+                    }
+                case 27: {
+                        message.customConfigCount = reader.uint32();
+                        break;
+                    }
+                case 28: {
+                        message.hasPhaseFilters = reader.bool();
+                        break;
+                    }
+                case 29: {
+                        message.qmlHw = reader.uint32();
+                        break;
+                    }
+                case 30: {
+                        message.qmlApp = reader.uint32();
+                        break;
+                    }
+                case 31: {
+                        message.nrfFlags = reader.uint32();
+                        break;
+                    }
+                case 32: {
+                        message.firmwareName = reader.string();
+                        break;
+                    }
+                case 33: {
+                        message.hardwareConfigCrc = reader.uint32();
+                        break;
+                    }
+                case 34: {
+                        message.firmwareInfoExtraBytes = reader.bytes();
+                        break;
+                    }
+                case 35: {
+                        message.firmwareInfoRawPayload = reader.bytes();
+                        break;
+                    }
+                default:
+                    reader.skipType(tag & 7, long);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes a VescTrampaBoard message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof vesc_trampa.VescTrampaBoard
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {vesc_trampa.VescTrampaBoard} VescTrampaBoard
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        VescTrampaBoard.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies a VescTrampaBoard message.
+         * @function verify
+         * @memberof vesc_trampa.VescTrampaBoard
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        VescTrampaBoard.verify = function verify(message, long) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
+            if (message.portName != null && message.hasOwnProperty("portName"))
+                if (!$util.isString(message.portName))
+                    return "portName: string expected";
+            if (message.vid != null && message.hasOwnProperty("vid"))
+                if (!$util.isInteger(message.vid))
+                    return "vid: integer expected";
+            if (message.pid != null && message.hasOwnProperty("pid"))
+                if (!$util.isInteger(message.pid))
+                    return "pid: integer expected";
+            if (message.serialNumber != null && message.hasOwnProperty("serialNumber"))
+                if (!$util.isString(message.serialNumber))
+                    return "serialNumber: string expected";
+            if (message.manufacturer != null && message.hasOwnProperty("manufacturer"))
+                if (!$util.isString(message.manufacturer))
+                    return "manufacturer: string expected";
+            if (message.product != null && message.hasOwnProperty("product"))
+                if (!$util.isString(message.product))
+                    return "product: string expected";
+            if (message.portBaudRate != null && message.hasOwnProperty("portBaudRate"))
+                if (!$util.isInteger(message.portBaudRate))
+                    return "portBaudRate: integer expected";
+            if (message.firmwareMajor != null && message.hasOwnProperty("firmwareMajor"))
+                if (!$util.isInteger(message.firmwareMajor))
+                    return "firmwareMajor: integer expected";
+            if (message.firmwareMinor != null && message.hasOwnProperty("firmwareMinor"))
+                if (!$util.isInteger(message.firmwareMinor))
+                    return "firmwareMinor: integer expected";
+            if (message.hardwareName != null && message.hasOwnProperty("hardwareName"))
+                if (!$util.isString(message.hardwareName))
+                    return "hardwareName: string expected";
+            if (message.uuid != null && message.hasOwnProperty("uuid"))
+                if (!(message.uuid && typeof message.uuid.length === "number" || $util.isString(message.uuid)))
+                    return "uuid: buffer expected";
+            if (message.pairingDone != null && message.hasOwnProperty("pairingDone"))
+                if (typeof message.pairingDone !== "boolean")
+                    return "pairingDone: boolean expected";
+            if (message.testVersionNumber != null && message.hasOwnProperty("testVersionNumber"))
+                if (!$util.isInteger(message.testVersionNumber))
+                    return "testVersionNumber: integer expected";
+            if (message.hardwareType != null && message.hasOwnProperty("hardwareType"))
+                if (!$util.isInteger(message.hardwareType))
+                    return "hardwareType: integer expected";
+            if (message.customConfigCount != null && message.hasOwnProperty("customConfigCount"))
+                if (!$util.isInteger(message.customConfigCount))
+                    return "customConfigCount: integer expected";
+            if (message.hasPhaseFilters != null && message.hasOwnProperty("hasPhaseFilters"))
+                if (typeof message.hasPhaseFilters !== "boolean")
+                    return "hasPhaseFilters: boolean expected";
+            if (message.qmlHw != null && message.hasOwnProperty("qmlHw"))
+                if (!$util.isInteger(message.qmlHw))
+                    return "qmlHw: integer expected";
+            if (message.qmlApp != null && message.hasOwnProperty("qmlApp"))
+                if (!$util.isInteger(message.qmlApp))
+                    return "qmlApp: integer expected";
+            if (message.nrfFlags != null && message.hasOwnProperty("nrfFlags"))
+                if (!$util.isInteger(message.nrfFlags))
+                    return "nrfFlags: integer expected";
+            if (message.firmwareName != null && message.hasOwnProperty("firmwareName"))
+                if (!$util.isString(message.firmwareName))
+                    return "firmwareName: string expected";
+            if (message.hardwareConfigCrc != null && message.hasOwnProperty("hardwareConfigCrc"))
+                if (!$util.isInteger(message.hardwareConfigCrc))
+                    return "hardwareConfigCrc: integer expected";
+            if (message.firmwareInfoExtraBytes != null && message.hasOwnProperty("firmwareInfoExtraBytes"))
+                if (!(message.firmwareInfoExtraBytes && typeof message.firmwareInfoExtraBytes.length === "number" || $util.isString(message.firmwareInfoExtraBytes)))
+                    return "firmwareInfoExtraBytes: buffer expected";
+            if (message.firmwareInfoRawPayload != null && message.hasOwnProperty("firmwareInfoRawPayload"))
+                if (!(message.firmwareInfoRawPayload && typeof message.firmwareInfoRawPayload.length === "number" || $util.isString(message.firmwareInfoRawPayload)))
+                    return "firmwareInfoRawPayload: buffer expected";
+            return null;
+        };
+
+        /**
+         * Creates a VescTrampaBoard message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof vesc_trampa.VescTrampaBoard
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {vesc_trampa.VescTrampaBoard} VescTrampaBoard
+         */
+        VescTrampaBoard.fromObject = function fromObject(object, long) {
+            if (object instanceof $root.vesc_trampa.VescTrampaBoard)
+                return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let message = new $root.vesc_trampa.VescTrampaBoard();
+            if (object.portName != null)
+                message.portName = String(object.portName);
+            if (object.vid != null)
+                message.vid = object.vid >>> 0;
+            if (object.pid != null)
+                message.pid = object.pid >>> 0;
+            if (object.serialNumber != null)
+                message.serialNumber = String(object.serialNumber);
+            if (object.manufacturer != null)
+                message.manufacturer = String(object.manufacturer);
+            if (object.product != null)
+                message.product = String(object.product);
+            if (object.portBaudRate != null)
+                message.portBaudRate = object.portBaudRate >>> 0;
+            if (object.firmwareMajor != null)
+                message.firmwareMajor = object.firmwareMajor >>> 0;
+            if (object.firmwareMinor != null)
+                message.firmwareMinor = object.firmwareMinor >>> 0;
+            if (object.hardwareName != null)
+                message.hardwareName = String(object.hardwareName);
+            if (object.uuid != null)
+                if (typeof object.uuid === "string")
+                    $util.base64.decode(object.uuid, message.uuid = $util.newBuffer($util.base64.length(object.uuid)), 0);
+                else if (object.uuid.length >= 0)
+                    message.uuid = object.uuid;
+            if (object.pairingDone != null)
+                message.pairingDone = Boolean(object.pairingDone);
+            if (object.testVersionNumber != null)
+                message.testVersionNumber = object.testVersionNumber >>> 0;
+            if (object.hardwareType != null)
+                message.hardwareType = object.hardwareType >>> 0;
+            if (object.customConfigCount != null)
+                message.customConfigCount = object.customConfigCount >>> 0;
+            if (object.hasPhaseFilters != null)
+                message.hasPhaseFilters = Boolean(object.hasPhaseFilters);
+            if (object.qmlHw != null)
+                message.qmlHw = object.qmlHw >>> 0;
+            if (object.qmlApp != null)
+                message.qmlApp = object.qmlApp >>> 0;
+            if (object.nrfFlags != null)
+                message.nrfFlags = object.nrfFlags >>> 0;
+            if (object.firmwareName != null)
+                message.firmwareName = String(object.firmwareName);
+            if (object.hardwareConfigCrc != null)
+                message.hardwareConfigCrc = object.hardwareConfigCrc >>> 0;
+            if (object.firmwareInfoExtraBytes != null)
+                if (typeof object.firmwareInfoExtraBytes === "string")
+                    $util.base64.decode(object.firmwareInfoExtraBytes, message.firmwareInfoExtraBytes = $util.newBuffer($util.base64.length(object.firmwareInfoExtraBytes)), 0);
+                else if (object.firmwareInfoExtraBytes.length >= 0)
+                    message.firmwareInfoExtraBytes = object.firmwareInfoExtraBytes;
+            if (object.firmwareInfoRawPayload != null)
+                if (typeof object.firmwareInfoRawPayload === "string")
+                    $util.base64.decode(object.firmwareInfoRawPayload, message.firmwareInfoRawPayload = $util.newBuffer($util.base64.length(object.firmwareInfoRawPayload)), 0);
+                else if (object.firmwareInfoRawPayload.length >= 0)
+                    message.firmwareInfoRawPayload = object.firmwareInfoRawPayload;
+            return message;
+        };
+
+        /**
+         * Creates a plain object from a VescTrampaBoard message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof vesc_trampa.VescTrampaBoard
+         * @static
+         * @param {vesc_trampa.VescTrampaBoard} message VescTrampaBoard
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        VescTrampaBoard.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.defaults) {
+                object.portName = "";
+                object.vid = 0;
+                object.pid = 0;
+                object.serialNumber = "";
+                object.manufacturer = "";
+                object.product = "";
+                object.portBaudRate = 0;
+                object.firmwareMajor = 0;
+                object.firmwareMinor = 0;
+                object.hardwareName = "";
+                if (options.bytes === String)
+                    object.uuid = "";
+                else {
+                    object.uuid = [];
+                    if (options.bytes !== Array)
+                        object.uuid = $util.newBuffer(object.uuid);
+                }
+                object.pairingDone = false;
+                object.testVersionNumber = 0;
+                object.hardwareType = 0;
+                object.customConfigCount = 0;
+                object.hasPhaseFilters = false;
+                object.qmlHw = 0;
+                object.qmlApp = 0;
+                object.nrfFlags = 0;
+                object.firmwareName = "";
+                object.hardwareConfigCrc = 0;
+                if (options.bytes === String)
+                    object.firmwareInfoExtraBytes = "";
+                else {
+                    object.firmwareInfoExtraBytes = [];
+                    if (options.bytes !== Array)
+                        object.firmwareInfoExtraBytes = $util.newBuffer(object.firmwareInfoExtraBytes);
+                }
+                if (options.bytes === String)
+                    object.firmwareInfoRawPayload = "";
+                else {
+                    object.firmwareInfoRawPayload = [];
+                    if (options.bytes !== Array)
+                        object.firmwareInfoRawPayload = $util.newBuffer(object.firmwareInfoRawPayload);
+                }
+            }
+            if (message.portName != null && message.hasOwnProperty("portName"))
+                object.portName = message.portName;
+            if (message.vid != null && message.hasOwnProperty("vid"))
+                object.vid = message.vid;
+            if (message.pid != null && message.hasOwnProperty("pid"))
+                object.pid = message.pid;
+            if (message.serialNumber != null && message.hasOwnProperty("serialNumber"))
+                object.serialNumber = message.serialNumber;
+            if (message.manufacturer != null && message.hasOwnProperty("manufacturer"))
+                object.manufacturer = message.manufacturer;
+            if (message.product != null && message.hasOwnProperty("product"))
+                object.product = message.product;
+            if (message.portBaudRate != null && message.hasOwnProperty("portBaudRate"))
+                object.portBaudRate = message.portBaudRate;
+            if (message.firmwareMajor != null && message.hasOwnProperty("firmwareMajor"))
+                object.firmwareMajor = message.firmwareMajor;
+            if (message.firmwareMinor != null && message.hasOwnProperty("firmwareMinor"))
+                object.firmwareMinor = message.firmwareMinor;
+            if (message.hardwareName != null && message.hasOwnProperty("hardwareName"))
+                object.hardwareName = message.hardwareName;
+            if (message.uuid != null && message.hasOwnProperty("uuid"))
+                object.uuid = options.bytes === String ? $util.base64.encode(message.uuid, 0, message.uuid.length) : options.bytes === Array ? Array.prototype.slice.call(message.uuid) : message.uuid;
+            if (message.pairingDone != null && message.hasOwnProperty("pairingDone"))
+                object.pairingDone = message.pairingDone;
+            if (message.testVersionNumber != null && message.hasOwnProperty("testVersionNumber"))
+                object.testVersionNumber = message.testVersionNumber;
+            if (message.hardwareType != null && message.hasOwnProperty("hardwareType"))
+                object.hardwareType = message.hardwareType;
+            if (message.customConfigCount != null && message.hasOwnProperty("customConfigCount"))
+                object.customConfigCount = message.customConfigCount;
+            if (message.hasPhaseFilters != null && message.hasOwnProperty("hasPhaseFilters"))
+                object.hasPhaseFilters = message.hasPhaseFilters;
+            if (message.qmlHw != null && message.hasOwnProperty("qmlHw"))
+                object.qmlHw = message.qmlHw;
+            if (message.qmlApp != null && message.hasOwnProperty("qmlApp"))
+                object.qmlApp = message.qmlApp;
+            if (message.nrfFlags != null && message.hasOwnProperty("nrfFlags"))
+                object.nrfFlags = message.nrfFlags;
+            if (message.firmwareName != null && message.hasOwnProperty("firmwareName"))
+                object.firmwareName = message.firmwareName;
+            if (message.hardwareConfigCrc != null && message.hasOwnProperty("hardwareConfigCrc"))
+                object.hardwareConfigCrc = message.hardwareConfigCrc;
+            if (message.firmwareInfoExtraBytes != null && message.hasOwnProperty("firmwareInfoExtraBytes"))
+                object.firmwareInfoExtraBytes = options.bytes === String ? $util.base64.encode(message.firmwareInfoExtraBytes, 0, message.firmwareInfoExtraBytes.length) : options.bytes === Array ? Array.prototype.slice.call(message.firmwareInfoExtraBytes) : message.firmwareInfoExtraBytes;
+            if (message.firmwareInfoRawPayload != null && message.hasOwnProperty("firmwareInfoRawPayload"))
+                object.firmwareInfoRawPayload = options.bytes === String ? $util.base64.encode(message.firmwareInfoRawPayload, 0, message.firmwareInfoRawPayload.length) : options.bytes === Array ? Array.prototype.slice.call(message.firmwareInfoRawPayload) : message.firmwareInfoRawPayload;
+            return object;
+        };
+
+        /**
+         * Converts this VescTrampaBoard to JSON.
+         * @function toJSON
+         * @memberof vesc_trampa.VescTrampaBoard
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        VescTrampaBoard.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for VescTrampaBoard
+         * @function getTypeUrl
+         * @memberof vesc_trampa.VescTrampaBoard
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        VescTrampaBoard.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+            if (typeUrlPrefix === undefined) {
+                typeUrlPrefix = "type.googleapis.com";
+            }
+            return typeUrlPrefix + "/vesc_trampa.VescTrampaBoard";
+        };
+
+        return VescTrampaBoard;
+    })();
+
+    return vesc_trampa;
 })();
 
 export const usbvideo = $root.usbvideo = (() => {

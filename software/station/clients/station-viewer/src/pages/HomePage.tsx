@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import Long from 'long';
 import { useInferenceState, useConnectionStatsWithUptime, useLatestEntryId, useWakeLock, invalidateTagsCache } from "@/hooks";
 import BusViewer from "@/st3215/BusViewer";
+import VescTrampaViewer from "@/vesc-trampa/VescTrampaViewer";
 import AsciiRobot from "@/components/AsciiRobot";
 import { copyToClipboard } from "@/api/clipboard-utils";
 import { commandManager } from "@/api/commands";
@@ -32,7 +33,9 @@ function HomePage() {
   const latestEntryId = useLatestEntryId();
   const connectionStats = useConnectionStatsWithUptime();
   const [copied, setCopied] = useState(false);
-  const hasRobotData = Boolean(inferenceState?.st3215?.data?.buses?.length);
+  const hasSt3215Data = Boolean(inferenceState?.st3215?.data?.buses?.length);
+  const hasVescTrampaData = Boolean(inferenceState?.vescTrampa?.data?.boards?.length);
+  const hasRobotData = hasSt3215Data || hasVescTrampaData;
   const isDesktopApp = window.stationDesktop?.isDesktop === true;
 
   useEffect(() => {
@@ -86,7 +89,7 @@ function HomePage() {
                     }`} aria-label={connectionStats.status}></span>
                   </div>
                 )}
-                {connectionStats.status === 'connected' && inferenceState?.st3215?.data?.buses && inferenceState.st3215.data.buses.length > 0 && (
+                {connectionStats.status === 'connected' && hasRobotData && (
                   <div className="hidden sm:flex items-center gap-2 px-2 py-1 bg-surface-secondary rounded border border-border-default">
                     <span className="text-text-label text-xs uppercase tracking-wide">FPS</span>
                     <span className={`font-bold text-xs font-mono ${connectionStats.isFpsReady ? getFPSColor(connectionStats.fps) : 'text-text-label'}`}>
@@ -136,11 +139,18 @@ function HomePage() {
       </div>
       <div className="flex-1 min-h-0 overflow-auto p-4 flex">
         {hasRobotData ? (
-          <BusViewer
-            inferenceState={inferenceState!.st3215!.data}
-            videoSources={inferenceState?.videoQueues}
-            mirroringState={inferenceState?.mirroring?.data.state || undefined}
-          />
+          <div className="flex flex-1 flex-col gap-4">
+            {hasSt3215Data && (
+              <BusViewer
+                inferenceState={inferenceState!.st3215!.data}
+                videoSources={inferenceState?.videoQueues}
+                mirroringState={inferenceState?.mirroring?.data.state || undefined}
+              />
+            )}
+            {hasVescTrampaData && (
+              <VescTrampaViewer inferenceState={inferenceState!.vescTrampa!.data} />
+            )}
+          </div>
         ) : (
           <div className="flex flex-1 min-h-full w-full items-center justify-center rounded-lg border border-dashed border-border-default bg-surface-primary/40 px-6">
             <AsciiRobot />

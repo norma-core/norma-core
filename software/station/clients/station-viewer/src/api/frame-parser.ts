@@ -1,5 +1,5 @@
 import Long from 'long';
-import { drivers, inference, motors_mirroring, normvla, st3215, sysinfo, usbvideo } from '@/api/proto.js';
+import { drivers, inference, motors_mirroring, normvla, st3215, sysinfo, usbvideo, vesc_trampa } from '@/api/proto.js';
 import { NormFsClient } from "./normfs.js";
 import { getGlobalTimeAdjustmentNs, isTimeSyncActive } from '@/api/time-sync.js';
 import {
@@ -19,6 +19,9 @@ export interface Frame {
   stateId?: Uint8Array;
   st3215?: FrameEntry<st3215.IInferenceState>;
   st3215Tx?: FrameEntry<st3215.ITxEnvelope>;
+  vescTrampa?: FrameEntry<vesc_trampa.IInferenceState>;
+  vescTrampaRx?: FrameEntry<vesc_trampa.IRxEnvelope>;
+  vescTrampaTx?: FrameEntry<vesc_trampa.ITxEnvelope>;
   videoQueues?: FrameEntry<usbvideo.IRxEnvelope>[];
   mirroring?: FrameEntry<motors_mirroring.IRxEnvelope>;
   sysinfo?: FrameEntry<sysinfo.IEnvelope>;
@@ -40,7 +43,7 @@ export interface Frame {
 }
 
 // Find entry in previous frame with matching queue and pointer
-type DecodedEntry = st3215.IInferenceState | st3215.ITxEnvelope | usbvideo.IRxEnvelope | motors_mirroring.IRxEnvelope | sysinfo.IEnvelope | normvla.IFrame | null;
+type DecodedEntry = st3215.IInferenceState | st3215.ITxEnvelope | vesc_trampa.IInferenceState | vesc_trampa.IRxEnvelope | vesc_trampa.ITxEnvelope | usbvideo.IRxEnvelope | motors_mirroring.IRxEnvelope | sysinfo.IEnvelope | normvla.IFrame | null;
 
 interface ParseFrameOptions {
   retainRawData?: boolean;
@@ -70,6 +73,30 @@ function findPreviousEntry(
       if (prevPtr.length === ptr.length && prevPtr.every((b, i) => b === ptr[i])) {
         return { decoded: match.data, rawData: match.rawData ?? null };
       }
+    }
+  }
+
+  // Check vescTrampa
+  if (previousFrame.vescTrampa?.queueId === queue) {
+    const prevPtr = previousFrame.vescTrampa.ptr;
+    if (prevPtr.length === ptr.length && prevPtr.every((b, i) => b === ptr[i])) {
+      return { decoded: previousFrame.vescTrampa.data, rawData: previousFrame.vescTrampa.rawData ?? null };
+    }
+  }
+
+  // Check vescTrampaRx
+  if (previousFrame.vescTrampaRx?.queueId === queue) {
+    const prevPtr = previousFrame.vescTrampaRx.ptr;
+    if (prevPtr.length === ptr.length && prevPtr.every((b, i) => b === ptr[i])) {
+      return { decoded: previousFrame.vescTrampaRx.data, rawData: previousFrame.vescTrampaRx.rawData ?? null };
+    }
+  }
+
+  // Check vescTrampaTx
+  if (previousFrame.vescTrampaTx?.queueId === queue) {
+    const prevPtr = previousFrame.vescTrampaTx.ptr;
+    if (prevPtr.length === ptr.length && prevPtr.every((b, i) => b === ptr[i])) {
+      return { decoded: previousFrame.vescTrampaTx.data, rawData: previousFrame.vescTrampaTx.rawData ?? null };
     }
   }
 
@@ -221,6 +248,27 @@ export async function parseFrame(
                 console.error("Failed to decode st3215.TxEnvelope:", error);
               }
               break;
+            case drivers.QueueDataType.QDT_VESC_TRAMPA_SERIAL_RX:
+              try {
+                decoded = vesc_trampa.RxEnvelope.decode(streamEntry.data);
+              } catch (error) {
+                console.error("Failed to decode vesc_trampa.RxEnvelope:", error);
+              }
+              break;
+            case drivers.QueueDataType.QDT_VESC_TRAMPA_INFERENCE:
+              try {
+                decoded = vesc_trampa.InferenceState.decode(streamEntry.data);
+              } catch (error) {
+                console.error("Failed to decode vesc_trampa.InferenceState:", error);
+              }
+              break;
+            case drivers.QueueDataType.QDT_VESC_TRAMPA_SERIAL_TX:
+              try {
+                decoded = vesc_trampa.TxEnvelope.decode(streamEntry.data);
+              } catch (error) {
+                console.error("Failed to decode vesc_trampa.TxEnvelope:", error);
+              }
+              break;
             default:
               if (entry.queue?.endsWith('/inference/normvla')) {
                 try {
@@ -303,6 +351,33 @@ export async function parseFrame(
               queueId: result.queue,
               ptr: result.ptr,
               data: result.decoded as st3215.ITxEnvelope,
+              rawData: retainRawData ? result.rawData ?? null : null,
+              queueType: result.type
+            };
+            break;
+          case drivers.QueueDataType.QDT_VESC_TRAMPA_SERIAL_RX:
+            frame.vescTrampaRx = {
+              queueId: result.queue,
+              ptr: result.ptr,
+              data: result.decoded as vesc_trampa.IRxEnvelope,
+              rawData: retainRawData ? result.rawData ?? null : null,
+              queueType: result.type
+            };
+            break;
+          case drivers.QueueDataType.QDT_VESC_TRAMPA_INFERENCE:
+            frame.vescTrampa = {
+              queueId: result.queue,
+              ptr: result.ptr,
+              data: result.decoded as vesc_trampa.IInferenceState,
+              rawData: retainRawData ? result.rawData ?? null : null,
+              queueType: result.type
+            };
+            break;
+          case drivers.QueueDataType.QDT_VESC_TRAMPA_SERIAL_TX:
+            frame.vescTrampaTx = {
+              queueId: result.queue,
+              ptr: result.ptr,
+              data: result.decoded as vesc_trampa.ITxEnvelope,
               rawData: retainRawData ? result.rawData ?? null : null,
               queueType: result.type
             };

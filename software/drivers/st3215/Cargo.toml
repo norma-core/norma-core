@@ -22,7 +22,7 @@ prost = { workspace = true }
 bytes = { workspace = true }
 parking_lot = { workspace = true }
 log = { workspace = true }
-tokio-serial = "5.4.5"
+tokio-serial = { workspace = true }
 
 [lib]
 path = "src/lib.rs"

@@ -94,6 +94,9 @@ impl std::error::Error for PacketError {}
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CommPacket {
     pub payload: Bytes,
+    start_byte: u8,
+    crc: u16,
+    end_byte: u8,
 }
 
 impl CommPacket {
@@ -105,7 +108,15 @@ impl CommPacket {
             });
         }
 
-        Ok(Self { payload })
+        let start_byte = start_byte_for_payload_len(payload.len());
+        let crc = crc16(payload.as_ref());
+
+        Ok(Self {
+            payload,
+            start_byte,
+            crc,
+            end_byte: PACKET_END,
+        })
     }
 
     pub fn len(&self) -> usize {
@@ -120,19 +131,43 @@ impl CommPacket {
         self.payload
     }
 
+    pub fn payload(&self) -> &Bytes {
+        &self.payload
+    }
+
+    pub fn start_byte(&self) -> u8 {
+        self.start_byte
+    }
+
+    pub fn payload_len(&self) -> usize {
+        self.payload.len()
+    }
+
+    pub fn command_id(&self) -> Option<u32> {
+        self.payload.first().map(|command_id| *command_id as u32)
+    }
+
+    pub fn crc(&self) -> u16 {
+        self.crc
+    }
+
     pub fn crc16(&self) -> u16 {
-        crc16(self.payload.as_ref())
+        self.crc
+    }
+
+    pub fn end_byte(&self) -> u8 {
+        self.end_byte
     }
 
     pub fn encode(&self) -> Bytes {
         let payload_len = self.payload.len();
-        let crc = self.crc16();
-        let mut frame = BytesMut::with_capacity(encoded_len(payload_len));
+        let mut frame =
+            BytesMut::with_capacity(encoded_len_for_start_byte(self.start_byte, payload_len));
 
-        if payload_len <= SHORT_PAYLOAD_MAX_LEN {
+        if self.start_byte == SHORT_PACKET_START {
             frame.put_u8(SHORT_PACKET_START);
             frame.put_u8(payload_len as u8);
-        } else if payload_len <= LONG_PAYLOAD_MAX_LEN {
+        } else if self.start_byte == LONG_PACKET_START {
             frame.put_u8(LONG_PACKET_START);
             frame.put_u16(payload_len as u16);
         } else {
@@ -143,8 +178,8 @@ impl CommPacket {
         }
 
         frame.extend_from_slice(self.payload.as_ref());
-        frame.put_u16(crc);
-        frame.put_u8(PACKET_END);
+        frame.put_u16(self.crc);
+        frame.put_u8(self.end_byte);
         frame.freeze()
     }
 
@@ -209,7 +244,12 @@ impl CommPacket {
             });
         }
 
-        Self::new(Bytes::copy_from_slice(payload))
+        Ok(Self {
+            payload: Bytes::copy_from_slice(payload),
+            start_byte: frame[0],
+            crc: actual_crc,
+            end_byte,
+        })
     }
 
     pub async fn async_write<W: AsyncWrite + Unpin>(
@@ -305,13 +345,22 @@ pub fn crc16(payload: &[u8]) -> u16 {
     crc
 }
 
-fn encoded_len(payload_len: usize) -> usize {
-    let header_len = if payload_len <= SHORT_PAYLOAD_MAX_LEN {
-        2
+fn start_byte_for_payload_len(payload_len: usize) -> u8 {
+    if payload_len <= SHORT_PAYLOAD_MAX_LEN {
+        SHORT_PACKET_START
     } else if payload_len <= LONG_PAYLOAD_MAX_LEN {
-        3
+        LONG_PACKET_START
     } else {
-        4
+        EXTENDED_PACKET_START
+    }
+}
+
+fn encoded_len_for_start_byte(start_byte: u8, payload_len: usize) -> usize {
+    let header_len = match start_byte {
+        SHORT_PACKET_START => 2,
+        LONG_PACKET_START => 3,
+        EXTENDED_PACKET_START => 4,
+        _ => unreachable!(),
     };
 
     header_len + payload_len + 3

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { usbvideo, st3215, motors_mirroring, sysinfo, normvla } from '@/api/proto.js';
+import { usbvideo, st3215, motors_mirroring, sysinfo, normvla, vesc_trampa } from '@/api/proto.js';
 import { createCroppedJson } from '@/components/history/history-utils';
 import RawBytesExpanded from '@/components/history/RawBytesExpanded';
 import MirroringExpanded from '@/components/history/MirroringExpanded';
@@ -13,7 +13,7 @@ import FullscreenImageViewer from '@/components/FullscreenImageViewer';
 type DataTab = 'visual' | 'json' | 'raw';
 
 interface ExpandedViewProps {
-  data: usbvideo.IRxEnvelope | st3215.IInferenceState | st3215.ITxEnvelope | motors_mirroring.IRxEnvelope | sysinfo.IEnvelope | normvla.IFrame | Uint8Array;
+  data: usbvideo.IRxEnvelope | st3215.IInferenceState | st3215.ITxEnvelope | vesc_trampa.IInferenceState | vesc_trampa.IRxEnvelope | vesc_trampa.ITxEnvelope | motors_mirroring.IRxEnvelope | sysinfo.IEnvelope | normvla.IFrame | Uint8Array;
   type: string | undefined;
   rawData?: Uint8Array | null;
 }
@@ -26,6 +26,8 @@ const TAB_OPTIONS: { id: DataTab; label: string }[] = [
 
 function tryDecodeProtobuf(rawData: Uint8Array): { decoded: unknown; typeName: string } | null {
   const decoders = [
+    { name: 'vesc_trampa.InferenceState', decode: () => vesc_trampa.InferenceState.decode(rawData) },
+    { name: 'vesc_trampa.RxEnvelope', decode: () => vesc_trampa.RxEnvelope.decode(rawData) },
     { name: 'st3215.RxEnvelope', decode: () => st3215.RxEnvelope.decode(rawData) },
     { name: 'st3215.TxEnvelope', decode: () => st3215.TxEnvelope.decode(rawData) },
     { name: 'usbvideo.RxEnvelope', decode: () => usbvideo.RxEnvelope.decode(rawData) },
@@ -63,12 +65,18 @@ function getAvailableTabs(
   const isUsbVideo = type === 'usbvideo' && data instanceof usbvideo.RxEnvelope;
   const isSt3215 = type === 'st3215' && data instanceof st3215.InferenceState;
   const isSt3215Tx = type === 'st3215tx' && data instanceof st3215.TxEnvelope;
+  const isVescTrampaTx = type === 'vesc-trampa-tx' && data instanceof vesc_trampa.TxEnvelope;
   const isMirroring = type === 'mirroring' && data instanceof motors_mirroring.RxEnvelope;
   const isSysinfo = type === 'sysinfo' && data instanceof sysinfo.Envelope;
   const isNormvla = type === 'normvla' && data instanceof normvla.Frame;
+  const isVescTrampa = type === 'vesc-trampa-rx' && data instanceof vesc_trampa.RxEnvelope;
 
-  if (isUsbVideo || isSt3215 || isSt3215Tx || isMirroring || isSysinfo || isNormvla) {
+  if (isUsbVideo || isSt3215 || isSt3215Tx || isVescTrampaTx || isMirroring || isSysinfo || isNormvla) {
     return ['visual', 'json', 'raw'];
+  }
+
+  if (isVescTrampa) {
+    return ['json', 'raw'];
   }
 
   return ['json', 'raw'];
@@ -194,6 +202,23 @@ export default function ExpandedView({ data, type, rawData }: ExpandedViewProps)
         </div>
       );
     }
+    if (type === 'vesc-trampa-tx' && data instanceof vesc_trampa.TxEnvelope) {
+      return (
+        <div className="space-y-2">
+          <div className="text-xs text-text-label">
+            UUID: {data.targetBoardUuid ? Array.from(data.targetBoardUuid).map((byte) => byte.toString(16).padStart(2, '0')).join('') : 'N/A'}
+          </div>
+          {data.boardCommand && (
+            <div className="bg-surface-primary p-2 rounded text-xs">
+              <div className="text-accent-data mb-1">Board Command:</div>
+              <div className="text-text-secondary">
+                Payload: {data.boardCommand.payload?.length ?? 0} bytes, Response: {data.boardCommand.responseExpected ? 'yes' : 'no'}
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    }
     if (data instanceof Uint8Array) {
       return <RawBytesExpanded data={data} />;
     }
@@ -268,6 +293,40 @@ export default function ExpandedView({ data, type, rawData }: ExpandedViewProps)
           <div className="text-xs text-text-label mb-1">ST3215 TxEnvelope JSON:</div>
           <div className="bg-surface-primary p-2 rounded text-xs font-mono text-accent-data overflow-x-auto max-h-64 overflow-y-auto">
             <pre>{JSON.stringify(data, null, 2)}</pre>
+          </div>
+        </div>
+      );
+    }
+    if (type === 'vesc-trampa-tx' && data instanceof vesc_trampa.TxEnvelope) {
+      const txData = vesc_trampa.TxEnvelope.toObject(data, {
+        longs: String,
+        enums: String,
+        bytes: String,
+        defaults: true
+      });
+
+      return (
+        <div>
+          <div className="text-xs text-text-label mb-1">VESC Trampa TxEnvelope JSON:</div>
+          <div className="bg-surface-primary p-2 rounded text-xs font-mono text-accent-data overflow-x-auto max-h-64 overflow-y-auto">
+            <pre>{JSON.stringify(txData, null, 2)}</pre>
+          </div>
+        </div>
+      );
+    }
+    if (type === 'vesc-trampa-rx' && data instanceof vesc_trampa.RxEnvelope) {
+      const vescData = vesc_trampa.RxEnvelope.toObject(data, {
+        longs: String,
+        enums: String,
+        bytes: String,
+        defaults: true
+      });
+
+      return (
+        <div>
+          <div className="text-xs text-text-label mb-1">VESC Trampa RxEnvelope JSON:</div>
+          <div className="bg-surface-primary p-2 rounded text-xs font-mono text-accent-data overflow-x-auto max-h-64 overflow-y-auto">
+            <pre>{JSON.stringify(vescData, null, 2)}</pre>
           </div>
         </div>
       );

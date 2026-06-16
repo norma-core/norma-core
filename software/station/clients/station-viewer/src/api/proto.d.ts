@@ -241,6 +241,9 @@ export namespace drivers {
         QDT_ST3215_SERIAL_RX = 11,
         QDT_ST3215_META = 12,
         QDT_ST3215_INFERENCE = 13,
+        QDT_VESC_TRAMPA_SERIAL_RX = 14,
+        QDT_VESC_TRAMPA_SERIAL_TX = 15,
+        QDT_VESC_TRAMPA_INFERENCE = 16,
         QDT_FFMPEG_VIDEO_STREAM_RX = 20,
         QDT_USB_VIDEO_FRAMES = 21,
         QDT_INFERENCE_FRAMES = 22,
@@ -252,7 +255,8 @@ export namespace drivers {
     enum StationCommandType {
         STC_ST3215_COMMAND = 0,
         STC_MOTOR_MIRRORING_COMMAND = 1,
-        STC_INFERENCE_TAG_COMMAND = 2
+        STC_INFERENCE_TAG_COMMAND = 2,
+        STC_VESC_TRAMPA_COMMAND = 3
     }
 }
 
@@ -3788,6 +3792,1222 @@ export namespace st3215 {
             SEK_INVALID_DATA = 5,
             SEK_TIMEOUT = 6
         }
+    }
+}
+
+/** Namespace vesc_trampa. */
+export namespace vesc_trampa {
+
+    /** VescTrampaSignalType enum. */
+    enum VescTrampaSignalType {
+        VESC_TRAMPA_SIGNAL_TYPE_UNSPECIFIED = 0,
+        VESC_TRAMPA_BOARD_CONNECT = 1,
+        VESC_TRAMPA_BOARD_DISCONNECT = 2,
+        VESC_TRAMPA_BOARD_PACKET = 3,
+        VESC_TRAMPA_COMMAND = 4,
+        VESC_TRAMPA_COMMAND_SUCCESS = 5,
+        VESC_TRAMPA_COMMAND_REJECTED = 6,
+        VESC_TRAMPA_COMMAND_FAILED = 7
+    }
+
+    /** Properties of a RxEnvelope. */
+    interface IRxEnvelope {
+
+        /** RxEnvelope monotonicStampNs */
+        monotonicStampNs?: (Long|null);
+
+        /** RxEnvelope localStampNs */
+        localStampNs?: (Long|null);
+
+        /** RxEnvelope appStartId */
+        appStartId?: (Long|null);
+
+        /** RxEnvelope signalType */
+        signalType?: (vesc_trampa.VescTrampaSignalType|null);
+
+        /** RxEnvelope board */
+        board?: (vesc_trampa.IVescTrampaBoard|null);
+
+        /** RxEnvelope boardPacket */
+        boardPacket?: (vesc_trampa.IVescTrampaBoardPacket|null);
+
+        /** RxEnvelope command */
+        command?: (vesc_trampa.ITxEnvelope|null);
+
+        /** RxEnvelope error */
+        error?: (string|null);
+    }
+
+    /** Represents a RxEnvelope. */
+    class RxEnvelope implements IRxEnvelope {
+
+        /**
+         * Constructs a new RxEnvelope.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: vesc_trampa.IRxEnvelope);
+
+        /** RxEnvelope monotonicStampNs. */
+        public monotonicStampNs: Long;
+
+        /** RxEnvelope localStampNs. */
+        public localStampNs: Long;
+
+        /** RxEnvelope appStartId. */
+        public appStartId: Long;
+
+        /** RxEnvelope signalType. */
+        public signalType: vesc_trampa.VescTrampaSignalType;
+
+        /** RxEnvelope board. */
+        public board?: (vesc_trampa.IVescTrampaBoard|null);
+
+        /** RxEnvelope boardPacket. */
+        public boardPacket?: (vesc_trampa.IVescTrampaBoardPacket|null);
+
+        /** RxEnvelope command. */
+        public command?: (vesc_trampa.ITxEnvelope|null);
+
+        /** RxEnvelope error. */
+        public error: string;
+
+        /**
+         * Creates a new RxEnvelope instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns RxEnvelope instance
+         */
+        public static create(properties?: vesc_trampa.IRxEnvelope): vesc_trampa.RxEnvelope;
+
+        /**
+         * Encodes the specified RxEnvelope message. Does not implicitly {@link vesc_trampa.RxEnvelope.verify|verify} messages.
+         * @param message RxEnvelope message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: vesc_trampa.IRxEnvelope, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified RxEnvelope message, length delimited. Does not implicitly {@link vesc_trampa.RxEnvelope.verify|verify} messages.
+         * @param message RxEnvelope message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: vesc_trampa.IRxEnvelope, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes a RxEnvelope message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns RxEnvelope
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): vesc_trampa.RxEnvelope;
+
+        /**
+         * Decodes a RxEnvelope message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns RxEnvelope
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): vesc_trampa.RxEnvelope;
+
+        /**
+         * Verifies a RxEnvelope message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates a RxEnvelope message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns RxEnvelope
+         */
+        public static fromObject(object: { [k: string]: any }): vesc_trampa.RxEnvelope;
+
+        /**
+         * Creates a plain object from a RxEnvelope message. Also converts values to other types if specified.
+         * @param message RxEnvelope
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: vesc_trampa.RxEnvelope, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this RxEnvelope to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for RxEnvelope
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
+    /** Properties of a TxEnvelope. */
+    interface ITxEnvelope {
+
+        /** TxEnvelope monotonicStampNs */
+        monotonicStampNs?: (Long|null);
+
+        /** TxEnvelope localStampNs */
+        localStampNs?: (Long|null);
+
+        /** TxEnvelope appStartId */
+        appStartId?: (Long|null);
+
+        /** TxEnvelope targetBoardUuid */
+        targetBoardUuid?: (Uint8Array|null);
+
+        /** TxEnvelope commandId */
+        commandId?: (Uint8Array|null);
+
+        /** TxEnvelope boardCommand */
+        boardCommand?: (vesc_trampa.IVescTrampaBoardCommand|null);
+
+        /** TxEnvelope motorMode */
+        motorMode?: (vesc_trampa.IVescTrampaMotorModeCommand|null);
+    }
+
+    /** Represents a TxEnvelope. */
+    class TxEnvelope implements ITxEnvelope {
+
+        /**
+         * Constructs a new TxEnvelope.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: vesc_trampa.ITxEnvelope);
+
+        /** TxEnvelope monotonicStampNs. */
+        public monotonicStampNs: Long;
+
+        /** TxEnvelope localStampNs. */
+        public localStampNs: Long;
+
+        /** TxEnvelope appStartId. */
+        public appStartId: Long;
+
+        /** TxEnvelope targetBoardUuid. */
+        public targetBoardUuid: Uint8Array;
+
+        /** TxEnvelope commandId. */
+        public commandId: Uint8Array;
+
+        /** TxEnvelope boardCommand. */
+        public boardCommand?: (vesc_trampa.IVescTrampaBoardCommand|null);
+
+        /** TxEnvelope motorMode. */
+        public motorMode?: (vesc_trampa.IVescTrampaMotorModeCommand|null);
+
+        /**
+         * Creates a new TxEnvelope instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns TxEnvelope instance
+         */
+        public static create(properties?: vesc_trampa.ITxEnvelope): vesc_trampa.TxEnvelope;
+
+        /**
+         * Encodes the specified TxEnvelope message. Does not implicitly {@link vesc_trampa.TxEnvelope.verify|verify} messages.
+         * @param message TxEnvelope message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: vesc_trampa.ITxEnvelope, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified TxEnvelope message, length delimited. Does not implicitly {@link vesc_trampa.TxEnvelope.verify|verify} messages.
+         * @param message TxEnvelope message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: vesc_trampa.ITxEnvelope, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes a TxEnvelope message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns TxEnvelope
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): vesc_trampa.TxEnvelope;
+
+        /**
+         * Decodes a TxEnvelope message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns TxEnvelope
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): vesc_trampa.TxEnvelope;
+
+        /**
+         * Verifies a TxEnvelope message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates a TxEnvelope message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns TxEnvelope
+         */
+        public static fromObject(object: { [k: string]: any }): vesc_trampa.TxEnvelope;
+
+        /**
+         * Creates a plain object from a TxEnvelope message. Also converts values to other types if specified.
+         * @param message TxEnvelope
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: vesc_trampa.TxEnvelope, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this TxEnvelope to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for TxEnvelope
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
+    /** Properties of a Command. */
+    interface ICommand {
+
+        /** Command targetBoardUuid */
+        targetBoardUuid?: (Uint8Array|null);
+
+        /** Command boardCommand */
+        boardCommand?: (vesc_trampa.IVescTrampaBoardCommand|null);
+
+        /** Command motorMode */
+        motorMode?: (vesc_trampa.IVescTrampaMotorModeCommand|null);
+    }
+
+    /** Represents a Command. */
+    class Command implements ICommand {
+
+        /**
+         * Constructs a new Command.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: vesc_trampa.ICommand);
+
+        /** Command targetBoardUuid. */
+        public targetBoardUuid: Uint8Array;
+
+        /** Command boardCommand. */
+        public boardCommand?: (vesc_trampa.IVescTrampaBoardCommand|null);
+
+        /** Command motorMode. */
+        public motorMode?: (vesc_trampa.IVescTrampaMotorModeCommand|null);
+
+        /**
+         * Creates a new Command instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns Command instance
+         */
+        public static create(properties?: vesc_trampa.ICommand): vesc_trampa.Command;
+
+        /**
+         * Encodes the specified Command message. Does not implicitly {@link vesc_trampa.Command.verify|verify} messages.
+         * @param message Command message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: vesc_trampa.ICommand, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified Command message, length delimited. Does not implicitly {@link vesc_trampa.Command.verify|verify} messages.
+         * @param message Command message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: vesc_trampa.ICommand, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes a Command message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns Command
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): vesc_trampa.Command;
+
+        /**
+         * Decodes a Command message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns Command
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): vesc_trampa.Command;
+
+        /**
+         * Verifies a Command message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates a Command message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns Command
+         */
+        public static fromObject(object: { [k: string]: any }): vesc_trampa.Command;
+
+        /**
+         * Creates a plain object from a Command message. Also converts values to other types if specified.
+         * @param message Command
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: vesc_trampa.Command, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this Command to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for Command
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
+    /** Properties of a VescTrampaBoardCommand. */
+    interface IVescTrampaBoardCommand {
+
+        /** VescTrampaBoardCommand payload */
+        payload?: (Uint8Array|null);
+
+        /** VescTrampaBoardCommand responseExpected */
+        responseExpected?: (boolean|null);
+    }
+
+    /** Represents a VescTrampaBoardCommand. */
+    class VescTrampaBoardCommand implements IVescTrampaBoardCommand {
+
+        /**
+         * Constructs a new VescTrampaBoardCommand.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: vesc_trampa.IVescTrampaBoardCommand);
+
+        /** VescTrampaBoardCommand payload. */
+        public payload: Uint8Array;
+
+        /** VescTrampaBoardCommand responseExpected. */
+        public responseExpected: boolean;
+
+        /**
+         * Creates a new VescTrampaBoardCommand instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns VescTrampaBoardCommand instance
+         */
+        public static create(properties?: vesc_trampa.IVescTrampaBoardCommand): vesc_trampa.VescTrampaBoardCommand;
+
+        /**
+         * Encodes the specified VescTrampaBoardCommand message. Does not implicitly {@link vesc_trampa.VescTrampaBoardCommand.verify|verify} messages.
+         * @param message VescTrampaBoardCommand message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: vesc_trampa.IVescTrampaBoardCommand, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified VescTrampaBoardCommand message, length delimited. Does not implicitly {@link vesc_trampa.VescTrampaBoardCommand.verify|verify} messages.
+         * @param message VescTrampaBoardCommand message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: vesc_trampa.IVescTrampaBoardCommand, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes a VescTrampaBoardCommand message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns VescTrampaBoardCommand
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): vesc_trampa.VescTrampaBoardCommand;
+
+        /**
+         * Decodes a VescTrampaBoardCommand message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns VescTrampaBoardCommand
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): vesc_trampa.VescTrampaBoardCommand;
+
+        /**
+         * Verifies a VescTrampaBoardCommand message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates a VescTrampaBoardCommand message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns VescTrampaBoardCommand
+         */
+        public static fromObject(object: { [k: string]: any }): vesc_trampa.VescTrampaBoardCommand;
+
+        /**
+         * Creates a plain object from a VescTrampaBoardCommand message. Also converts values to other types if specified.
+         * @param message VescTrampaBoardCommand
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: vesc_trampa.VescTrampaBoardCommand, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this VescTrampaBoardCommand to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for VescTrampaBoardCommand
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
+    /** VescTrampaMotorMode enum. */
+    enum VescTrampaMotorMode {
+        VESC_TRAMPA_MOTOR_MODE_UNSPECIFIED = 0,
+        VESC_TRAMPA_MOTOR_MODE_HOLD = 1
+    }
+
+    /** Properties of a VescTrampaMotorModeCommand. */
+    interface IVescTrampaMotorModeCommand {
+
+        /** VescTrampaMotorModeCommand mode */
+        mode?: (vesc_trampa.VescTrampaMotorMode|null);
+    }
+
+    /** Represents a VescTrampaMotorModeCommand. */
+    class VescTrampaMotorModeCommand implements IVescTrampaMotorModeCommand {
+
+        /**
+         * Constructs a new VescTrampaMotorModeCommand.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: vesc_trampa.IVescTrampaMotorModeCommand);
+
+        /** VescTrampaMotorModeCommand mode. */
+        public mode: vesc_trampa.VescTrampaMotorMode;
+
+        /**
+         * Creates a new VescTrampaMotorModeCommand instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns VescTrampaMotorModeCommand instance
+         */
+        public static create(properties?: vesc_trampa.IVescTrampaMotorModeCommand): vesc_trampa.VescTrampaMotorModeCommand;
+
+        /**
+         * Encodes the specified VescTrampaMotorModeCommand message. Does not implicitly {@link vesc_trampa.VescTrampaMotorModeCommand.verify|verify} messages.
+         * @param message VescTrampaMotorModeCommand message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: vesc_trampa.IVescTrampaMotorModeCommand, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified VescTrampaMotorModeCommand message, length delimited. Does not implicitly {@link vesc_trampa.VescTrampaMotorModeCommand.verify|verify} messages.
+         * @param message VescTrampaMotorModeCommand message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: vesc_trampa.IVescTrampaMotorModeCommand, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes a VescTrampaMotorModeCommand message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns VescTrampaMotorModeCommand
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): vesc_trampa.VescTrampaMotorModeCommand;
+
+        /**
+         * Decodes a VescTrampaMotorModeCommand message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns VescTrampaMotorModeCommand
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): vesc_trampa.VescTrampaMotorModeCommand;
+
+        /**
+         * Verifies a VescTrampaMotorModeCommand message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates a VescTrampaMotorModeCommand message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns VescTrampaMotorModeCommand
+         */
+        public static fromObject(object: { [k: string]: any }): vesc_trampa.VescTrampaMotorModeCommand;
+
+        /**
+         * Creates a plain object from a VescTrampaMotorModeCommand message. Also converts values to other types if specified.
+         * @param message VescTrampaMotorModeCommand
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: vesc_trampa.VescTrampaMotorModeCommand, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this VescTrampaMotorModeCommand to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for VescTrampaMotorModeCommand
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
+    /** Properties of a VescTrampaBoardPacket. */
+    interface IVescTrampaBoardPacket {
+
+        /** VescTrampaBoardPacket startByte */
+        startByte?: (number|null);
+
+        /** VescTrampaBoardPacket payloadLen */
+        payloadLen?: (number|null);
+
+        /** VescTrampaBoardPacket commandId */
+        commandId?: (number|null);
+
+        /** VescTrampaBoardPacket payload */
+        payload?: (Uint8Array|null);
+
+        /** VescTrampaBoardPacket crc */
+        crc?: (number|null);
+
+        /** VescTrampaBoardPacket endByte */
+        endByte?: (number|null);
+    }
+
+    /** Represents a VescTrampaBoardPacket. */
+    class VescTrampaBoardPacket implements IVescTrampaBoardPacket {
+
+        /**
+         * Constructs a new VescTrampaBoardPacket.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: vesc_trampa.IVescTrampaBoardPacket);
+
+        /** VescTrampaBoardPacket startByte. */
+        public startByte: number;
+
+        /** VescTrampaBoardPacket payloadLen. */
+        public payloadLen: number;
+
+        /** VescTrampaBoardPacket commandId. */
+        public commandId: number;
+
+        /** VescTrampaBoardPacket payload. */
+        public payload: Uint8Array;
+
+        /** VescTrampaBoardPacket crc. */
+        public crc: number;
+
+        /** VescTrampaBoardPacket endByte. */
+        public endByte: number;
+
+        /**
+         * Creates a new VescTrampaBoardPacket instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns VescTrampaBoardPacket instance
+         */
+        public static create(properties?: vesc_trampa.IVescTrampaBoardPacket): vesc_trampa.VescTrampaBoardPacket;
+
+        /**
+         * Encodes the specified VescTrampaBoardPacket message. Does not implicitly {@link vesc_trampa.VescTrampaBoardPacket.verify|verify} messages.
+         * @param message VescTrampaBoardPacket message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: vesc_trampa.IVescTrampaBoardPacket, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified VescTrampaBoardPacket message, length delimited. Does not implicitly {@link vesc_trampa.VescTrampaBoardPacket.verify|verify} messages.
+         * @param message VescTrampaBoardPacket message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: vesc_trampa.IVescTrampaBoardPacket, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes a VescTrampaBoardPacket message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns VescTrampaBoardPacket
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): vesc_trampa.VescTrampaBoardPacket;
+
+        /**
+         * Decodes a VescTrampaBoardPacket message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns VescTrampaBoardPacket
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): vesc_trampa.VescTrampaBoardPacket;
+
+        /**
+         * Verifies a VescTrampaBoardPacket message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates a VescTrampaBoardPacket message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns VescTrampaBoardPacket
+         */
+        public static fromObject(object: { [k: string]: any }): vesc_trampa.VescTrampaBoardPacket;
+
+        /**
+         * Creates a plain object from a VescTrampaBoardPacket message. Also converts values to other types if specified.
+         * @param message VescTrampaBoardPacket
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: vesc_trampa.VescTrampaBoardPacket, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this VescTrampaBoardPacket to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for VescTrampaBoardPacket
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
+    /** Properties of an InferenceState. */
+    interface IInferenceState {
+
+        /** InferenceState lastInferenceQueuePtr */
+        lastInferenceQueuePtr?: (Uint8Array|null);
+
+        /** InferenceState boards */
+        boards?: (vesc_trampa.InferenceState.IBoardState[]|null);
+    }
+
+    /** Represents an InferenceState. */
+    class InferenceState implements IInferenceState {
+
+        /**
+         * Constructs a new InferenceState.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: vesc_trampa.IInferenceState);
+
+        /** InferenceState lastInferenceQueuePtr. */
+        public lastInferenceQueuePtr: Uint8Array;
+
+        /** InferenceState boards. */
+        public boards: vesc_trampa.InferenceState.IBoardState[];
+
+        /**
+         * Creates a new InferenceState instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns InferenceState instance
+         */
+        public static create(properties?: vesc_trampa.IInferenceState): vesc_trampa.InferenceState;
+
+        /**
+         * Encodes the specified InferenceState message. Does not implicitly {@link vesc_trampa.InferenceState.verify|verify} messages.
+         * @param message InferenceState message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: vesc_trampa.IInferenceState, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified InferenceState message, length delimited. Does not implicitly {@link vesc_trampa.InferenceState.verify|verify} messages.
+         * @param message InferenceState message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: vesc_trampa.IInferenceState, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes an InferenceState message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns InferenceState
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): vesc_trampa.InferenceState;
+
+        /**
+         * Decodes an InferenceState message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns InferenceState
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): vesc_trampa.InferenceState;
+
+        /**
+         * Verifies an InferenceState message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates an InferenceState message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns InferenceState
+         */
+        public static fromObject(object: { [k: string]: any }): vesc_trampa.InferenceState;
+
+        /**
+         * Creates a plain object from an InferenceState message. Also converts values to other types if specified.
+         * @param message InferenceState
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: vesc_trampa.InferenceState, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this InferenceState to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for InferenceState
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
+    namespace InferenceState {
+
+        /** Properties of a BoardState. */
+        interface IBoardState {
+
+            /** BoardState board */
+            board?: (vesc_trampa.IVescTrampaBoard|null);
+
+            /** BoardState motorMode */
+            motorMode?: (vesc_trampa.VescTrampaMotorMode|null);
+
+            /** BoardState monotonicStampNs */
+            monotonicStampNs?: (Long|null);
+
+            /** BoardState localStampNs */
+            localStampNs?: (Long|null);
+
+            /** BoardState appStartId */
+            appStartId?: (Long|null);
+
+            /** BoardState valuesPayload */
+            valuesPayload?: (Uint8Array|null);
+
+            /** BoardState valuesRxPointer */
+            valuesRxPointer?: (Uint8Array|null);
+
+            /** BoardState valuesMonotonicStampNs */
+            valuesMonotonicStampNs?: (Long|null);
+
+            /** BoardState valuesLocalStampNs */
+            valuesLocalStampNs?: (Long|null);
+
+            /** BoardState valuesAppStartId */
+            valuesAppStartId?: (Long|null);
+        }
+
+        /** Represents a BoardState. */
+        class BoardState implements IBoardState {
+
+            /**
+             * Constructs a new BoardState.
+             * @param [properties] Properties to set
+             */
+            constructor(properties?: vesc_trampa.InferenceState.IBoardState);
+
+            /** BoardState board. */
+            public board?: (vesc_trampa.IVescTrampaBoard|null);
+
+            /** BoardState motorMode. */
+            public motorMode: vesc_trampa.VescTrampaMotorMode;
+
+            /** BoardState monotonicStampNs. */
+            public monotonicStampNs: Long;
+
+            /** BoardState localStampNs. */
+            public localStampNs: Long;
+
+            /** BoardState appStartId. */
+            public appStartId: Long;
+
+            /** BoardState valuesPayload. */
+            public valuesPayload: Uint8Array;
+
+            /** BoardState valuesRxPointer. */
+            public valuesRxPointer: Uint8Array;
+
+            /** BoardState valuesMonotonicStampNs. */
+            public valuesMonotonicStampNs: Long;
+
+            /** BoardState valuesLocalStampNs. */
+            public valuesLocalStampNs: Long;
+
+            /** BoardState valuesAppStartId. */
+            public valuesAppStartId: Long;
+
+            /**
+             * Creates a new BoardState instance using the specified properties.
+             * @param [properties] Properties to set
+             * @returns BoardState instance
+             */
+            public static create(properties?: vesc_trampa.InferenceState.IBoardState): vesc_trampa.InferenceState.BoardState;
+
+            /**
+             * Encodes the specified BoardState message. Does not implicitly {@link vesc_trampa.InferenceState.BoardState.verify|verify} messages.
+             * @param message BoardState message or plain object to encode
+             * @param [writer] Writer to encode to
+             * @returns Writer
+             */
+            public static encode(message: vesc_trampa.InferenceState.IBoardState, writer?: $protobuf.Writer): $protobuf.Writer;
+
+            /**
+             * Encodes the specified BoardState message, length delimited. Does not implicitly {@link vesc_trampa.InferenceState.BoardState.verify|verify} messages.
+             * @param message BoardState message or plain object to encode
+             * @param [writer] Writer to encode to
+             * @returns Writer
+             */
+            public static encodeDelimited(message: vesc_trampa.InferenceState.IBoardState, writer?: $protobuf.Writer): $protobuf.Writer;
+
+            /**
+             * Decodes a BoardState message from the specified reader or buffer.
+             * @param reader Reader or buffer to decode from
+             * @param [length] Message length if known beforehand
+             * @returns BoardState
+             * @throws {Error} If the payload is not a reader or valid buffer
+             * @throws {$protobuf.util.ProtocolError} If required fields are missing
+             */
+            public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): vesc_trampa.InferenceState.BoardState;
+
+            /**
+             * Decodes a BoardState message from the specified reader or buffer, length delimited.
+             * @param reader Reader or buffer to decode from
+             * @returns BoardState
+             * @throws {Error} If the payload is not a reader or valid buffer
+             * @throws {$protobuf.util.ProtocolError} If required fields are missing
+             */
+            public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): vesc_trampa.InferenceState.BoardState;
+
+            /**
+             * Verifies a BoardState message.
+             * @param message Plain object to verify
+             * @returns `null` if valid, otherwise the reason why it is not
+             */
+            public static verify(message: { [k: string]: any }): (string|null);
+
+            /**
+             * Creates a BoardState message from a plain object. Also converts values to their respective internal types.
+             * @param object Plain object
+             * @returns BoardState
+             */
+            public static fromObject(object: { [k: string]: any }): vesc_trampa.InferenceState.BoardState;
+
+            /**
+             * Creates a plain object from a BoardState message. Also converts values to other types if specified.
+             * @param message BoardState
+             * @param [options] Conversion options
+             * @returns Plain object
+             */
+            public static toObject(message: vesc_trampa.InferenceState.BoardState, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+            /**
+             * Converts this BoardState to JSON.
+             * @returns JSON object
+             */
+            public toJSON(): { [k: string]: any };
+
+            /**
+             * Gets the default type url for BoardState
+             * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+             * @returns The default type url
+             */
+            public static getTypeUrl(typeUrlPrefix?: string): string;
+        }
+    }
+
+    /** Properties of a VescTrampaBoard. */
+    interface IVescTrampaBoard {
+
+        /** VescTrampaBoard portName */
+        portName?: (string|null);
+
+        /** VescTrampaBoard vid */
+        vid?: (number|null);
+
+        /** VescTrampaBoard pid */
+        pid?: (number|null);
+
+        /** VescTrampaBoard serialNumber */
+        serialNumber?: (string|null);
+
+        /** VescTrampaBoard manufacturer */
+        manufacturer?: (string|null);
+
+        /** VescTrampaBoard product */
+        product?: (string|null);
+
+        /** VescTrampaBoard portBaudRate */
+        portBaudRate?: (number|null);
+
+        /** VescTrampaBoard firmwareMajor */
+        firmwareMajor?: (number|null);
+
+        /** VescTrampaBoard firmwareMinor */
+        firmwareMinor?: (number|null);
+
+        /** VescTrampaBoard hardwareName */
+        hardwareName?: (string|null);
+
+        /** VescTrampaBoard uuid */
+        uuid?: (Uint8Array|null);
+
+        /** VescTrampaBoard pairingDone */
+        pairingDone?: (boolean|null);
+
+        /** VescTrampaBoard testVersionNumber */
+        testVersionNumber?: (number|null);
+
+        /** VescTrampaBoard hardwareType */
+        hardwareType?: (number|null);
+
+        /** VescTrampaBoard customConfigCount */
+        customConfigCount?: (number|null);
+
+        /** VescTrampaBoard hasPhaseFilters */
+        hasPhaseFilters?: (boolean|null);
+
+        /** VescTrampaBoard qmlHw */
+        qmlHw?: (number|null);
+
+        /** VescTrampaBoard qmlApp */
+        qmlApp?: (number|null);
+
+        /** VescTrampaBoard nrfFlags */
+        nrfFlags?: (number|null);
+
+        /** VescTrampaBoard firmwareName */
+        firmwareName?: (string|null);
+
+        /** VescTrampaBoard hardwareConfigCrc */
+        hardwareConfigCrc?: (number|null);
+
+        /** VescTrampaBoard firmwareInfoExtraBytes */
+        firmwareInfoExtraBytes?: (Uint8Array|null);
+
+        /** VescTrampaBoard firmwareInfoRawPayload */
+        firmwareInfoRawPayload?: (Uint8Array|null);
+    }
+
+    /** Represents a VescTrampaBoard. */
+    class VescTrampaBoard implements IVescTrampaBoard {
+
+        /**
+         * Constructs a new VescTrampaBoard.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: vesc_trampa.IVescTrampaBoard);
+
+        /** VescTrampaBoard portName. */
+        public portName: string;
+
+        /** VescTrampaBoard vid. */
+        public vid: number;
+
+        /** VescTrampaBoard pid. */
+        public pid: number;
+
+        /** VescTrampaBoard serialNumber. */
+        public serialNumber: string;
+
+        /** VescTrampaBoard manufacturer. */
+        public manufacturer: string;
+
+        /** VescTrampaBoard product. */
+        public product: string;
+
+        /** VescTrampaBoard portBaudRate. */
+        public portBaudRate: number;
+
+        /** VescTrampaBoard firmwareMajor. */
+        public firmwareMajor: number;
+
+        /** VescTrampaBoard firmwareMinor. */
+        public firmwareMinor: number;
+
+        /** VescTrampaBoard hardwareName. */
+        public hardwareName: string;
+
+        /** VescTrampaBoard uuid. */
+        public uuid: Uint8Array;
+
+        /** VescTrampaBoard pairingDone. */
+        public pairingDone: boolean;
+
+        /** VescTrampaBoard testVersionNumber. */
+        public testVersionNumber: number;
+
+        /** VescTrampaBoard hardwareType. */
+        public hardwareType: number;
+
+        /** VescTrampaBoard customConfigCount. */
+        public customConfigCount: number;
+
+        /** VescTrampaBoard hasPhaseFilters. */
+        public hasPhaseFilters: boolean;
+
+        /** VescTrampaBoard qmlHw. */
+        public qmlHw: number;
+
+        /** VescTrampaBoard qmlApp. */
+        public qmlApp: number;
+
+        /** VescTrampaBoard nrfFlags. */
+        public nrfFlags: number;
+
+        /** VescTrampaBoard firmwareName. */
+        public firmwareName: string;
+
+        /** VescTrampaBoard hardwareConfigCrc. */
+        public hardwareConfigCrc: number;
+
+        /** VescTrampaBoard firmwareInfoExtraBytes. */
+        public firmwareInfoExtraBytes: Uint8Array;
+
+        /** VescTrampaBoard firmwareInfoRawPayload. */
+        public firmwareInfoRawPayload: Uint8Array;
+
+        /**
+         * Creates a new VescTrampaBoard instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns VescTrampaBoard instance
+         */
+        public static create(properties?: vesc_trampa.IVescTrampaBoard): vesc_trampa.VescTrampaBoard;
+
+        /**
+         * Encodes the specified VescTrampaBoard message. Does not implicitly {@link vesc_trampa.VescTrampaBoard.verify|verify} messages.
+         * @param message VescTrampaBoard message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: vesc_trampa.IVescTrampaBoard, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified VescTrampaBoard message, length delimited. Does not implicitly {@link vesc_trampa.VescTrampaBoard.verify|verify} messages.
+         * @param message VescTrampaBoard message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: vesc_trampa.IVescTrampaBoard, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes a VescTrampaBoard message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns VescTrampaBoard
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): vesc_trampa.VescTrampaBoard;
+
+        /**
+         * Decodes a VescTrampaBoard message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns VescTrampaBoard
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): vesc_trampa.VescTrampaBoard;
+
+        /**
+         * Verifies a VescTrampaBoard message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates a VescTrampaBoard message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns VescTrampaBoard
+         */
+        public static fromObject(object: { [k: string]: any }): vesc_trampa.VescTrampaBoard;
+
+        /**
+         * Creates a plain object from a VescTrampaBoard message. Also converts values to other types if specified.
+         * @param message VescTrampaBoard
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: vesc_trampa.VescTrampaBoard, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this VescTrampaBoard to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for VescTrampaBoard
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
     }
 }
 
