@@ -274,6 +274,7 @@ const YahboomDogzillaLiteDesktopCard = memo(function YahboomDogzillaLiteDesktopC
   const latencyLabel = latencyAvg.avg < 1000
     ? `${latencyAvg.avg.toFixed(0)}ms`
     : `${(latencyAvg.avg / 1000).toFixed(1)}s`;
+  const hasMultipleVideoSources = activeVideoSources.length > 1;
   const cameraSelectValue = primaryVideoSourceId ?? '';
   const cameraSelectLabel = activeVideoSources.length === 0 ? 'No Video' : 'None';
 
@@ -298,7 +299,7 @@ const YahboomDogzillaLiteDesktopCard = memo(function YahboomDogzillaLiteDesktopC
             onChange={handleMainViewModeChange}
             photoDisabled={!primaryVideoSource}
           />
-          {mainViewMode === 'photo' || mainViewMode === 'fullscreenVideo' ? (
+          {hasMultipleVideoSources && (mainViewMode === 'photo' || mainViewMode === 'fullscreenVideo') ? (
             <div
               className="flex min-w-0 max-w-full items-center gap-1.5 overflow-x-auto py-0.5"
               role="group"
@@ -349,7 +350,7 @@ const YahboomDogzillaLiteDesktopCard = memo(function YahboomDogzillaLiteDesktopC
                 );
               })}
             </div>
-          ) : (
+          ) : hasMultipleVideoSources ? (
             <select
               value={cameraSelectValue}
               onChange={(event) => handlePrimaryVideoSourceChange(event.target.value || null)}
@@ -363,7 +364,7 @@ const YahboomDogzillaLiteDesktopCard = memo(function YahboomDogzillaLiteDesktopC
                 </option>
               ))}
             </select>
-          )}
+          ) : null}
         </div>
 
         <div className="flex items-center gap-2 text-sm">

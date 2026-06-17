@@ -406,7 +406,7 @@ const YahboomDogzillaLiteDashboard = memo(function YahboomDogzillaLiteDashboard(
   }, [cameraOptions, selectedVideoSourceId]);
 
   useEffect(() => {
-    if (cameraOptions.length === 0 || stageViewMode === 'fullscreenVideo') {
+    if (cameraOptions.length <= 1 || stageViewMode === 'fullscreenVideo') {
       setIsCameraPickerOpen(false);
     }
   }, [cameraOptions.length, stageViewMode]);
@@ -463,6 +463,7 @@ const YahboomDogzillaLiteDashboard = memo(function YahboomDogzillaLiteDashboard(
   const connectionLabel = isConnected ? 'Online' : 'Offline';
   const connectionTone = isConnected ? 'good' : 'danger';
   const robotDisplayName = device?.serialNumber ? `Dogzilla #${device.serialNumber}` : 'Dogzilla Lite';
+  const hasMultipleCameraOptions = cameraOptions.length > 1;
 
   const selectedLegConfig = LEG_CONFIGS.find((leg) => leg.key === selectedLeg) ?? LEG_CONFIGS[0];
   const selectedLegValues = LEG_CONTROL_KEYS.map((controlKey) => {
@@ -942,86 +943,87 @@ const YahboomDogzillaLiteDashboard = memo(function YahboomDogzillaLiteDashboard(
                   {renderCameraModeButton({ mode: 'camera', label: 'Camera', icon: Camera })}
                   {renderCameraModeButton({ mode: 'fullscreenVideo', label: 'Fullscreen camera', icon: Maximize2 })}
                 </div>
-                <div className="relative min-w-0">
-                  <button
-                    type="button"
-                    disabled={cameraOptions.length === 0}
-                    onClick={() => setIsCameraPickerOpen((current) => !current)}
-                    className={`flex h-10 w-[9.5rem] min-w-0 items-center justify-between gap-2 rounded-md border px-3 text-left text-xs font-semibold transition focus:outline-none focus:ring-1 focus:ring-accent-data disabled:cursor-not-allowed disabled:opacity-45 ${
-                      isCameraPickerOpen
-                        ? 'border-accent-data bg-surface-primary text-text-primary'
-                        : 'border-border-subtle bg-surface-secondary text-text-primary hover:border-accent-data'
-                    }`}
-                    aria-haspopup="listbox"
-                    aria-expanded={isCameraPickerOpen}
-                    aria-label="Camera source"
-                    title={selectedVideoSource?.label ?? 'No camera'}
-                  >
-                    <span className="min-w-0 truncate">
-                      {selectedVideoSource?.shortLabel ?? 'No camera'}
-                    </span>
-                    <ChevronDown
-                      className={`h-3.5 w-3.5 shrink-0 text-text-muted transition-transform ${isCameraPickerOpen ? 'rotate-180' : ''}`}
-                      strokeWidth={2.5}
-                    />
-                  </button>
-
-                  {isCameraPickerOpen && (
-                    <div
-                      className="absolute bottom-[calc(100%+0.5rem)] right-0 z-40 w-[min(19rem,calc(100vw-2rem))] overflow-hidden rounded-xl border border-border-default bg-surface-primary/95 p-1.5 shadow-2xl backdrop-blur-md"
-                      role="listbox"
+                {hasMultipleCameraOptions && (
+                  <div className="relative min-w-0">
+                    <button
+                      type="button"
+                      onClick={() => setIsCameraPickerOpen((current) => !current)}
+                      className={`flex h-10 w-[9.5rem] min-w-0 items-center justify-between gap-2 rounded-md border px-3 text-left text-xs font-semibold transition focus:outline-none focus:ring-1 focus:ring-accent-data ${
+                        isCameraPickerOpen
+                          ? 'border-accent-data bg-surface-primary text-text-primary'
+                          : 'border-border-subtle bg-surface-secondary text-text-primary hover:border-accent-data'
+                      }`}
+                      aria-haspopup="listbox"
+                      aria-expanded={isCameraPickerOpen}
                       aria-label="Camera source"
+                      title={selectedVideoSource?.label ?? 'No camera'}
                     >
-                      <div className="px-2.5 pb-1.5 pt-1 text-[10px] font-bold uppercase tracking-[0.16em] text-text-muted">
-                        Camera source
-                      </div>
-                      <div className="max-h-56 overflow-y-auto">
-                        {cameraOptions.map((option) => {
-                          const isSelected = option.id === selectedVideoSourceId;
+                      <span className="min-w-0 truncate">
+                        {selectedVideoSource?.shortLabel ?? 'No camera'}
+                      </span>
+                      <ChevronDown
+                        className={`h-3.5 w-3.5 shrink-0 text-text-muted transition-transform ${isCameraPickerOpen ? 'rotate-180' : ''}`}
+                        strokeWidth={2.5}
+                      />
+                    </button>
 
-                          return (
-                            <button
-                              key={option.id}
-                              type="button"
-                              onClick={() => {
-                                setSelectedVideoSourceId(option.id);
-                                setIsCameraPickerOpen(false);
-                              }}
-                              className={`flex w-full items-center gap-2 rounded-lg px-2.5 py-2.5 text-left transition ${
-                                isSelected
-                                  ? 'bg-accent-data text-surface-base'
-                                  : 'text-text-primary hover:bg-surface-secondary'
-                              }`}
-                              role="option"
-                              aria-selected={isSelected}
-                              title={option.label}
-                            >
-                              <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border ${
-                                isSelected
-                                  ? 'border-surface-base/70 bg-surface-base/18'
-                                  : 'border-border-subtle text-transparent'
-                              }`}
+                    {isCameraPickerOpen && (
+                      <div
+                        className="absolute bottom-[calc(100%+0.5rem)] right-0 z-40 w-[min(19rem,calc(100vw-2rem))] overflow-hidden rounded-xl border border-border-default bg-surface-primary/95 p-1.5 shadow-2xl backdrop-blur-md"
+                        role="listbox"
+                        aria-label="Camera source"
+                      >
+                        <div className="px-2.5 pb-1.5 pt-1 text-[10px] font-bold uppercase tracking-[0.16em] text-text-muted">
+                          Camera source
+                        </div>
+                        <div className="max-h-56 overflow-y-auto">
+                          {cameraOptions.map((option) => {
+                            const isSelected = option.id === selectedVideoSourceId;
+
+                            return (
+                              <button
+                                key={option.id}
+                                type="button"
+                                onClick={() => {
+                                  setSelectedVideoSourceId(option.id);
+                                  setIsCameraPickerOpen(false);
+                                }}
+                                className={`flex w-full items-center gap-2 rounded-lg px-2.5 py-2.5 text-left transition ${
+                                  isSelected
+                                    ? 'bg-accent-data text-surface-base'
+                                    : 'text-text-primary hover:bg-surface-secondary'
+                                }`}
+                                role="option"
+                                aria-selected={isSelected}
+                                title={option.label}
                               >
-                                <Check className="h-3.5 w-3.5" strokeWidth={3} />
-                              </span>
-                              <span className="min-w-0 flex-1">
-                                <span className="block truncate text-sm font-bold">
-                                  {option.shortLabel}
-                                </span>
-                                <span className={`block truncate text-[11px] font-medium ${
-                                  isSelected ? 'text-surface-base/72' : 'text-text-muted'
+                                <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border ${
+                                  isSelected
+                                    ? 'border-surface-base/70 bg-surface-base/18'
+                                    : 'border-border-subtle text-transparent'
                                 }`}
                                 >
-                                  {option.detail}
+                                  <Check className="h-3.5 w-3.5" strokeWidth={3} />
                                 </span>
-                              </span>
-                            </button>
-                          );
-                        })}
+                                <span className="min-w-0 flex-1">
+                                  <span className="block truncate text-sm font-bold">
+                                    {option.shortLabel}
+                                  </span>
+                                  <span className={`block truncate text-[11px] font-medium ${
+                                    isSelected ? 'text-surface-base/72' : 'text-text-muted'
+                                  }`}
+                                  >
+                                    {option.detail}
+                                  </span>
+                                </span>
+                              </button>
+                            );
+                          })}
+                        </div>
                       </div>
-                    </div>
-                  )}
-                </div>
+                    )}
+                  </div>
+                )}
               </div>
               {isCameraStageActive && (
                 <button
