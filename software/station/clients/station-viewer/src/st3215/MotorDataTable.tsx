@@ -1,6 +1,6 @@
 import React, { useCallback, useRef, useState } from 'react';
 import {st3215} from '../api/proto';
-import { ADDR_GOAL_POSITION, getMotorPosition, getMotorCurrent, getMotorTemperature } from './motor-parser';
+import { ADDR_GOAL_POSITION, MAX_ANGLE_STEP, getEffectiveMotorRange, getMotorPosition, getMotorCurrent, getMotorTemperature } from './motor-parser';
 import { serverToLocal } from '../api/timestamp-utils';
 import Long from 'long';
 import { commandManager } from '../api/commands';
@@ -41,6 +41,7 @@ const MotorDataTable: React.FC<MotorDataTableProps> = ({
   const [motorControlStates, setMotorControlStates] = useState<Map<number, MotorControlState>>(new Map());
   const [hoveredMotor, setHoveredMotor] = useState<number | null>(null);
   const buttonIntervalRef = useRef<{ [key: string]: NodeJS.Timeout | null }>({});
+  const forceFullServoRange = (bus.motors?.length ?? 0) === 1;
 
   // Function to calculate moving average for latency (15 second window)
   const getMovingAverageLatency = (key: string, currentLatency: number): LatencyStats => {
@@ -72,7 +73,6 @@ const MotorDataTable: React.FC<MotorDataTableProps> = ({
   };
 
   const calculatePercentage = (position: number, min: number, max: number) => {
-    const MAX_ANGLE_STEP = 4095;
     if (min > max) { // Counter-arc
       const totalRange = (MAX_ANGLE_STEP - min) + max;
       if (totalRange === 0) return 0;
@@ -109,9 +109,9 @@ const MotorDataTable: React.FC<MotorDataTableProps> = ({
   }, [bus.bus?.serialNumber]);
 
   const calculateTargetPosition = (motor: st3215.InferenceState.IMotorState, percentage: number) => {
-    const rangeMin = motor.rangeMin || 0;
-    const rangeMax = motor.rangeMax || 4095;
-    const MAX_ANGLE_STEP = 4095;
+    const { min: rangeMin, max: rangeMax } = getEffectiveMotorRange(motor, {
+      forceFullRange: forceFullServoRange,
+    });
 
     if (rangeMin > rangeMax) {
       const totalRange = (MAX_ANGLE_STEP - rangeMin) + rangeMax;
@@ -198,10 +198,10 @@ const MotorDataTable: React.FC<MotorDataTableProps> = ({
     
     // Get initial position
     let currentPosition = motor.state ? getMotorPosition(motor.state) : 0;
-    const rangeMin = motor.rangeMin || 0;
-    const rangeMax = motor.rangeMax || 4095;
-    const MAX_ANGLE_STEP = 4095;
-    
+    const { min: rangeMin, max: rangeMax } = getEffectiveMotorRange(motor, {
+      forceFullRange: forceFullServoRange,
+    });
+
     // Calculate step size (1% of range)
     let stepSize: number;
     if (rangeMin > rangeMax) { // Counter-arc
@@ -321,7 +321,14 @@ const MotorDataTable: React.FC<MotorDataTableProps> = ({
             const position = motor.state ? getMotorPosition(motor.state) : 0;
             const current = motor.state ? getMotorCurrent(motor.state) : 0;
             const temperature = motor.state ? getMotorTemperature(motor.state) : 0;
-            const percentage = calculatePercentage(position, motor.rangeMin || 0, motor.rangeMax || 0);
+            const effectiveRange = getEffectiveMotorRange(motor, {
+              forceFullRange: forceFullServoRange,
+            });
+            const percentage = calculatePercentage(position, effectiveRange.min, effectiveRange.max);
+            const rangeCellTitle = effectiveRange.isFallback
+              ? 'Uncalibrated — using full servo range'
+              : undefined;
+            const rangeCellClass = `px-2 py-1.5 text-text-muted tabular-nums${effectiveRange.isFallback ? ' italic' : ''}`;
             const adjustedMotorStamp = motor.monotonicStampNs ? serverToLocal(Long.fromValue(motor.monotonicStampNs)) : null;
             const latency = adjustedMotorStamp ? (now - (adjustedMotorStamp.toNumber() / 1e6)) : 0;
             const latencyAvg = getMovingAverageLatency(`bus-${busIndex}-motor-${motorIndex}`, latency);
@@ -341,8 +348,8 @@ const MotorDataTable: React.FC<MotorDataTableProps> = ({
                 <td className={`px-2 py-1.5 ${getCurrentColor(current)} tabular-nums text-right`}>{current}</td>
                 
                 {/* Range Min */}
-                <td className="px-2 py-1.5 text-text-muted tabular-nums text-right">
-                  {motor.rangeMin?.toString().padStart(4, '0') || '0000'}
+                <td className={`${rangeCellClass} text-right`} title={rangeCellTitle}>
+                  {effectiveRange.min.toString().padStart(4, '0')}
                 </td>
                 
                 {/* Range Progress Bar */}
@@ -382,10 +389,10 @@ const MotorDataTable: React.FC<MotorDataTableProps> = ({
                       
                       {/* Target position preview (when dragging) */}
                       {controlState?.isDragging && controlState.targetPosition !== null && (
-                        <div 
+                        <div
                           className="absolute top-0 h-full bg-accent-info-deep opacity-70"
-                          style={{ 
-                            width: `${calculatePercentage(controlState.targetPosition, motor.rangeMin || 0, motor.rangeMax || 0)}%`,
+                          style={{
+                            width: `${calculatePercentage(controlState.targetPosition, effectiveRange.min, effectiveRange.max)}%`,
                             pointerEvents: 'none'
                           }}
                         />
@@ -399,10 +406,10 @@ const MotorDataTable: React.FC<MotorDataTableProps> = ({
                       
                       {/* Target position indicator (when dragging) */}
                       {controlState?.isDragging && controlState.targetPosition !== null && (
-                        <div 
+                        <div
                           className="absolute top-0 h-full w-1 bg-accent-info shadow-lg"
-                          style={{ 
-                            left: `${calculatePercentage(controlState.targetPosition, motor.rangeMin || 0, motor.rangeMax || 0)}%`,
+                          style={{
+                            left: `${calculatePercentage(controlState.targetPosition, effectiveRange.min, effectiveRange.max)}%`,
                             pointerEvents: 'none'
                           }}
                         />
@@ -419,7 +426,7 @@ const MotorDataTable: React.FC<MotorDataTableProps> = ({
                     {/* Dragging percentage display */}
                     {controlState?.isDragging && controlState.targetPosition !== null && (
                       <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-accent-info-bg text-text-primary text-xs px-2 py-1 rounded font-bold z-10">
-                        {calculatePercentage(controlState.targetPosition, motor.rangeMin || 0, motor.rangeMax || 0).toFixed(1)}%
+                        {calculatePercentage(controlState.targetPosition, effectiveRange.min, effectiveRange.max).toFixed(1)}%
                       </div>
                     )}
 
@@ -439,8 +446,8 @@ const MotorDataTable: React.FC<MotorDataTableProps> = ({
                 </td>
                 
                 {/* Range Max */}
-                <td className="px-2 py-1.5 text-text-muted tabular-nums">
-                  {motor.rangeMax?.toString().padStart(4, '0') || '4095'}
+                <td className={rangeCellClass} title={rangeCellTitle}>
+                  {effectiveRange.max.toString().padStart(4, '0')}
                 </td>
                 
                 {/* Percentage */}
@@ -488,7 +495,9 @@ const MotorDataTable: React.FC<MotorDataTableProps> = ({
           <div className="flex items-center justify-between">
             <span>🎮 Web Control Active</span>
             <span className="text-text-muted">
-              Drag to move • Hold +/- for continuous
+              {forceFullServoRange
+                ? 'Single motor: raw 0-4095 range'
+                : 'Drag to move • Hold +/- for continuous'}
             </span>
           </div>
         </div>

@@ -1,0 +1,1 @@
+NormaCore Portenta X8 image build configuration.

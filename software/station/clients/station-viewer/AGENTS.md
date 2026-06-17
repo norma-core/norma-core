@@ -5,12 +5,12 @@ Guidelines for AI coding agents operating in this React/TypeScript project.
 ## Commands
 
 ```bash
-yarn dev              # Start Vite dev server (http://localhost:5173)
-yarn build            # Full build: hashes, proto, type-check, and Vite build
-yarn build:proto      # Regenerate protobuf bindings from ../../../../../protobufs
-yarn lint             # Run oxlint (Rust-based linter)
-yarn type-check       # Run TypeScript compiler without emitting
-yarn preview          # Preview production build locally
+npm run dev          # Start Vite dev server (http://localhost:5173)
+npm run build        # Full build: hashes, proto, type-check, and Vite build
+npm run build:proto  # Regenerate protobuf bindings from ../../../../../protobufs
+npm run lint         # Run oxlint (Rust-based linter)
+npm run type-check   # Run TypeScript compiler without emitting
+npm run preview      # Preview production build locally
 ```
 
 **Testing:** Not configured. No test runner exists in this project.
@@ -280,7 +280,7 @@ public send(packet: web.IClientPacket) {
 }
 ```
 
-Run `yarn build:proto` after modifying .proto files.
+Run `npm run build:proto` after modifying .proto files.
 
 ## State Management
 
@@ -312,6 +312,6 @@ proxy: {
 
 ## Build Notes
 
-- `yarn build:hashes` generates `src/assets-manifest.json` for cache-busting (used by `src/utils/asset-hashes.ts`)
+- `npm run build:hashes` generates `src/assets-manifest.json` for cache-busting (used by `src/utils/asset-hashes.ts`)
 - `__STATION_VERSION__` global is defined at build time (workspace version + git hash) — declared in `vite-env.d.ts`, used in `Navigation.tsx`
 - Vite is configured with `vite-plugin-compression` for gzip output

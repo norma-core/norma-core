@@ -1,0 +1,57 @@
+#!/bin/sh
+
+LOG=/var/log/x8-dns-control.log
+RESOLV=/etc/resolv.conf
+
+log() {
+    echo "$(date '+%Y-%m-%d %H:%M:%S') x8-dns-control: $*" >> "$LOG"
+}
+
+tailscale_up() {
+    ip link show tailscale0 >/dev/null 2>&1 || return 1
+    tailscale status >/dev/null 2>&1 || return 1
+    return 0
+}
+
+write_fallback_dns_if_empty() {
+    if [ ! -s "$RESOLV" ]; then
+        cat > "$RESOLV" <<'EOF2'
+nameserver 1.1.1.1
+nameserver 8.8.8.8
+options timeout:2 attempts:2
+EOF2
+        log "wrote fallback DNS"
+    fi
+}
+
+write_tailscale_dns() {
+    cat > "$RESOLV" <<'EOF2'
+# Managed by x8-dns-control
+# Tailscale MagicDNS / Quad100 first, public fallback second.
+nameserver 100.100.100.100
+nameserver 1.1.1.1
+nameserver 8.8.8.8
+options timeout:2 attempts:2
+EOF2
+    log "wrote Tailscale DNS"
+}
+
+mkdir -p /var/log
+
+LAST=""
+
+while :; do
+    if tailscale_up; then
+        WANT="tailscale"
+        if [ "$LAST" != "$WANT" ]; then
+            write_tailscale_dns
+            LAST="$WANT"
+        fi
+    else
+        WANT="fallback"
+        write_fallback_dns_if_empty
+        LAST="$WANT"
+    fi
+
+    sleep 10
+done

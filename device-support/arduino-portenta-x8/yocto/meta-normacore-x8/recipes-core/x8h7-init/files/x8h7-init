@@ -1,0 +1,53 @@
+#!/bin/sh
+
+### BEGIN INIT INFO
+# Provides:          x8h7-init
+# Required-Start:    $local_fs
+# Required-Stop:     $local_fs
+# Default-Start:     S
+# Default-Stop:      0 1 6
+# Short-Description: Program Portenta X8 STM32H7 and load x8h7 modules
+### END INIT INFO
+
+DT_X8H7="/sys/firmware/devicetree/base/soc@0/bus@30800000/spba-bus@30800000/spi@30840000/x8h7@0"
+
+case "$1" in
+    start)
+        [ -e "$DT_X8H7" ] || exit 0
+
+        echo "Portenta X8: loading pre-H7 modules"
+        /bin/sh /usr/arduino/extra/load_modules_pre.sh || exit 1
+
+        echo "Portenta X8: programming/checking STM32H7 firmware"
+        /bin/sh /usr/arduino/extra/program-h7.sh || exit 1
+
+        echo "Portenta X8: loading post-H7 IO modules"
+        /bin/sh /usr/arduino/extra/load_modules_post.sh || exit 1
+
+        if [ -x /usr/bin/m4_led_forwarder ]; then
+            /usr/bin/m4_led_forwarder enable || true
+        fi
+        ;;
+
+    stop)
+        if [ -x /usr/bin/m4_led_forwarder ]; then
+            /usr/bin/m4_led_forwarder disable || true
+        fi
+
+        if [ -x /usr/arduino/extra/unload_modules.sh ]; then
+            /bin/sh /usr/arduino/extra/unload_modules.sh || true
+        fi
+        ;;
+
+    restart)
+        "$0" stop
+        "$0" start
+        ;;
+
+    *)
+        echo "Usage: $0 {start|stop|restart}"
+        exit 1
+        ;;
+esac
+
+exit 0

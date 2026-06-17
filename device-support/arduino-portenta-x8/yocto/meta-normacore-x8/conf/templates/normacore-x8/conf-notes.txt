@@ -1,0 +1,21 @@
+Build target:
+  bitbake x8-normacore
+
+Before building, create local access files in the build directory:
+
+  conf/local-rootpw.inc
+    X8_ROOT_HASH = "\$6\$..."
+
+  conf/root-authorized_keys
+    ssh-ed25519 ...
+
+  conf/local-secrets.inc
+    X8_ROOT_AUTHORIZED_KEYS_FILE = "${TOPDIR}/conf/root-authorized_keys"
+
+The image build intentionally fails if either X8_ROOT_HASH or
+X8_ROOT_AUTHORIZED_KEYS_FILE is missing or empty.
+
+Flash prep after a successful build:
+  cp -Lf tmp/deploy/images/portenta-x8/x8-normacore-portenta-x8.rootfs.wic.zst /path/to/flash-x8/x8-clean-hw-image-portenta-x8.wic.zst
+  zstd -d -f /path/to/flash-x8/x8-clean-hw-image-portenta-x8.wic.zst -o /path/to/flash-x8/x8-clean-hw-image-portenta-x8.wic
+  cp -f tmp/deploy/images/portenta-x8/imx-boot-portenta-x8-sd.bin-flash_evk /path/to/flash-x8/imx-boot-x8-clean.bin

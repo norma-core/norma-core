@@ -1,0 +1,48 @@
+appId: dev.normacore.station-app
+productName: NormaCore Station
+electronLanguages:
+  - en
+directories:
+  output: release
+files:
+  - dist/**/*
+mac:
+  category: public.app-category.developer-tools
+  icon: build/icon.icns
+  entitlements: build/entitlements.mac.plist
+  entitlementsInherit: build/entitlements.mac.inherit.plist
+  hardenedRuntime: true
+  gatekeeperAssess: false
+  identity: "Aleksandr Batsuev (4GKC7NNZTP)"
+  notarize: true
+  extendInfo:
+    NSUSBDeviceUsageDescription: NormaCore Station needs USB access to communicate with robotic hardware.
+    NSSerialPortUsageDescription: NormaCore Station needs serial port access to communicate with robotic hardware.
+  target:
+    - dmg
+    - zip
+linux:
+  icon: build/icon.png
+  category: Development
+  executableName: normacore-station
+  maintainer: NormaCore <hello@normacore.dev>
+  vendor: NormaCore
+  desktop:
+    entry:
+      Name: NormaCore Station
+      Comment: Physical Operations Platform
+      StartupWMClass: "NormaCore Station"
+      Type: Application
+      Categories: Development;
+  target:
+    - AppImage
+    - deb
+    - rpm
+    - tar.gz
+extraResources:
+  - from: ../station-viewer/dist
+    to: station-viewer-dist
+  - from: ../../../../target/release
+    to: bin
+    filter:
+      - station

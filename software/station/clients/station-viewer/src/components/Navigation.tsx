@@ -1,5 +1,6 @@
 import { Link, useLocation } from "react-router-dom";
 import { useTheme } from "@/hooks/useTheme";
+import { isElectron } from "@/utils/platform";
 import { Laptop, Moon, Sun } from "lucide-react";
 
 const THEME_OPTIONS = ['auto', 'light', 'dark'] as const;
@@ -31,12 +32,14 @@ function Navigation() {
   const nextThemePreference = THEME_OPTIONS[(THEME_OPTIONS.indexOf(themePreference) + 1) % THEME_OPTIONS.length];
   const ThemeIcon = THEME_ICONS[themePreference];
 
+  const logoSrc = isElectron() ? './logo.svg' : '/logo.svg';
+
   return (
     <div className="relative z-40 bg-surface-primary border-b-2 border-border-default">
       <div className="px-4 py-2 flex items-center gap-4">
         <Link to="/" className="group">
           <img
-            src="/logo.svg"
+            src={logoSrc}
             alt="Station View"
             title="NormaCore"
             className="h-8 logo-first-load logo-invert opacity-80 transition-opacity duration-200 group-hover:opacity-100"

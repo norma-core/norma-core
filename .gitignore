@@ -1,4 +1,5 @@
 .DS_Store
 /target/
 __pycache__
-js-vendor
+# Local vendored JS package tarballs for offline installs.
+js-vendor/

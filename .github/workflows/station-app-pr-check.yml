@@ -1,0 +1,47 @@
+name: Station App PR Check
+
+env:
+  NODE_VERSION: "22"
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/station-app-pr-check.yml"
+      - "software/station/clients/station-app/**"
+
+jobs:
+  lint-typecheck-and-build:
+    name: Lint, Typecheck and Build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: software/station/clients/station-app
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+          cache-dependency-path: software/station/clients/station-app/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify dependency signatures
+        run: npm audit signatures
+
+      - name: Audit dependencies
+        run: npm audit --audit-level=moderate
+        continue-on-error: true
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run type-check
+
+      - name: Build
+        run: npm run build

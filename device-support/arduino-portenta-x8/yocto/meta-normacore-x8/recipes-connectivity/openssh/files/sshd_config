@@ -1,0 +1,47 @@
+Port 22
+AddressFamily any
+ListenAddress 0.0.0.0
+ListenAddress ::
+
+HostKey /etc/ssh/ssh_host_ed25519_key
+
+PubkeyAuthentication yes
+AuthenticationMethods publickey
+PasswordAuthentication no
+PermitEmptyPasswords no
+KbdInteractiveAuthentication no
+ChallengeResponseAuthentication no
+HostbasedAuthentication no
+IgnoreRhosts yes
+
+PermitRootLogin prohibit-password
+AllowUsers root
+
+AuthorizedKeysFile .ssh/authorized_keys
+StrictModes yes
+
+PubkeyAcceptedAlgorithms ssh-ed25519,ecdsa-sha2-nistp256,ecdsa-sha2-nistp384,ecdsa-sha2-nistp521
+HostKeyAlgorithms ssh-ed25519,ecdsa-sha2-nistp256,ecdsa-sha2-nistp384,ecdsa-sha2-nistp521
+KexAlgorithms curve25519-sha256,curve25519-sha256@libssh.org,ecdh-sha2-nistp256,ecdh-sha2-nistp384,ecdh-sha2-nistp521
+
+Ciphers chacha20-poly1305@openssh.com,aes256-gcm@openssh.com,aes128-gcm@openssh.com
+MACs hmac-sha2-512-etm@openssh.com,hmac-sha2-256-etm@openssh.com
+
+X11Forwarding no
+AllowAgentForwarding no
+AllowTcpForwarding no
+GatewayPorts no
+PermitTunnel no
+PermitUserEnvironment no
+
+Subsystem sftp internal-sftp
+
+LoginGraceTime 20
+MaxAuthTries 3
+MaxSessions 2
+ClientAliveInterval 30
+ClientAliveCountMax 3
+UseDNS no
+Compression no
+
+PidFile /var/run/sshd.pid

@@ -1,3 +1,5 @@
+import { st3215 } from '../api/proto';
+
 const ADDR_MIDPOINT = 0x1F;
 export const ADDR_TORQUE_ENABLE = 0x28;
 export const ADDR_GOAL_POSITION = 0x2A;
@@ -9,8 +11,33 @@ const ADDR_STATUS = 0x40;
 const ADDR_PRESENT_CURRENT = 0x45;
 
 const SIGN_BIT_MASK = 0x8000;
-const MAX_ANGLE_STEP = 4095;
+export const MAX_ANGLE_STEP = 4095;
 const BUFFER_SIZE = 0x47;
+
+export function getEffectiveMotorRange(
+  motor: st3215.InferenceState.IMotorState,
+  options?: { forceFullRange?: boolean },
+): {
+  min: number;
+  max: number;
+  isFallback: boolean;
+} {
+  if (options?.forceFullRange) {
+    return { min: 0, max: MAX_ANGLE_STEP, isFallback: true };
+  }
+
+  const rawMin = motor.rangeMin ?? 0;
+  const rawMax = motor.rangeMax ?? 0;
+
+  // Fresh/reset uncalibrated motors can report rangeMin/rangeMax equal to
+  // the current position, and that value may change after jogging. Treat any
+  // collapsed range as uncalibrated and use the full servo range in the UI.
+  if (rawMin === rawMax) {
+    return { min: 0, max: MAX_ANGLE_STEP, isFallback: true };
+  }
+
+  return { min: rawMin, max: rawMax, isFallback: false };
+}
 
 export function getMotorPosition(data: Uint8Array): number {
   if (data.length < ADDR_REAL_POSITION + 2) {

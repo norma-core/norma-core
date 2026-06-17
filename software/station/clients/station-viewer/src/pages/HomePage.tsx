@@ -35,6 +35,7 @@ function HomePage() {
   const [copied, setCopied] = useState(false);
   const hasRobotData = Boolean(inferenceState?.st3215?.data?.buses?.length);
   const hasYahboomDogzillaLiteData = Boolean(inferenceState?.yahboom_dogzilla_lite?.data?.devices?.length);
+  const isDesktopApp = window.stationDesktop?.isDesktop === true;
 
   useEffect(() => {
     if (copied) {
@@ -74,17 +75,19 @@ function HomePage() {
           {connectionStats && (
             <>
               <div className="flex items-center gap-2">
-                <div className="flex items-center gap-2 px-2 py-1 bg-surface-secondary rounded border border-border-default">
-                  <span className="hidden sm:inline text-text-label text-xs uppercase tracking-wide">Status</span>
-                  <span className="hidden sm:inline font-semibold uppercase text-xs text-text-label">
-                    {connectionStats.status}
-                  </span>
-                  <span className={`sm:hidden inline-flex items-center justify-center w-4 h-4 rounded-full ${
-                    connectionStats.status === 'connected' ? 'bg-accent-success' :
-                    connectionStats.status === 'connecting' ? 'bg-accent-warning' :
-                    'bg-accent-critical'
-                  }`} aria-label={connectionStats.status}></span>
-                </div>
+                {!isDesktopApp && (
+                  <div className="flex items-center gap-2 px-2 py-1 bg-surface-secondary rounded border border-border-default">
+                    <span className="hidden sm:inline text-text-label text-xs uppercase tracking-wide">Status</span>
+                    <span className="hidden sm:inline font-semibold uppercase text-xs text-text-label">
+                      {connectionStats.status}
+                    </span>
+                    <span className={`sm:hidden inline-flex items-center justify-center w-4 h-4 rounded-full ${
+                      connectionStats.status === 'connected' ? 'bg-accent-success' :
+                      connectionStats.status === 'connecting' ? 'bg-accent-warning' :
+                      'bg-accent-critical'
+                    }`} aria-label={connectionStats.status}></span>
+                  </div>
+                )}
                 {connectionStats.status === 'connected' && inferenceState?.st3215?.data?.buses && inferenceState.st3215.data.buses.length > 0 && (
                   <div className="hidden sm:flex items-center gap-2 px-2 py-1 bg-surface-secondary rounded border border-border-default">
                     <span className="text-text-label text-xs uppercase tracking-wide">FPS</span>

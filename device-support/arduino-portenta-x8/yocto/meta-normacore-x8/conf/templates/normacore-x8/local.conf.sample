@@ -1,0 +1,63 @@
+MACHINE ??= "portenta-x8"
+DISTRO ?= "fsl-imx-xwayland"
+USER_CLASSES ?= "buildstats"
+PATCHRESOLVE = "noop"
+
+BB_DISKMON_DIRS ??= "\
+    STOPTASKS,${TMPDIR},1G,100K \
+    STOPTASKS,${DL_DIR},1G,100K \
+    STOPTASKS,${SSTATE_DIR},1G,100K \
+    STOPTASKS,/tmp,100M,100K \
+    HALT,${TMPDIR},100M,1K \
+    HALT,${DL_DIR},100M,1K \
+    HALT,${SSTATE_DIR},100M,1K \
+    HALT,/tmp,10M,1K"
+
+PACKAGECONFIG:append:pn-qemu-system-native = " sdl"
+CONF_VERSION = "2"
+
+DL_DIR ?= "${BSPDIR}/downloads/"
+ACCEPT_FSL_EULA = "1"
+
+PACKAGE_CLASSES = "package_deb"
+EXTRA_IMAGE_FEATURES = ""
+IMAGE_FEATURES = ""
+IMAGE_LINGUAS = ""
+
+# No systemd as PID 1.
+INIT_MANAGER = "sysvinit"
+VIRTUAL-RUNTIME_init_manager = "sysvinit"
+VIRTUAL-RUNTIME_initscripts = "initscripts"
+
+# Use real udev without systemd.
+VIRTUAL-RUNTIME_dev_manager = "eudev"
+PREFERRED_PROVIDER_udev = "eudev"
+
+DISTRO_FEATURES:remove = "systemd"
+DISTRO_FEATURES_BACKFILL_CONSIDERED += "systemd"
+
+# No GUI / desktop stack in the target image.
+DISTRO_FEATURES:remove = "x11 wayland opengl vulkan pulseaudio pam polkit zeroconf"
+
+# Keep board hardware features.
+DISTRO_FEATURES:append = " wifi bluetooth alsa"
+
+# Required local access configuration. These files must stay outside the layer.
+include conf/local-rootpw.inc
+include conf/local-secrets.inc
+
+PACKAGE_EXCLUDE:pn-x8-normacore += "\
+    dropbear \
+    docker docker-cli docker-compose docker-compose-plugin docker-moby moby \
+    containerd runc nerdctl podman buildah skopeo lxc lxcfs k3s kubernetes \
+    aktualizr ostree \
+    systemd systemd-compat-units systemd-serialgetty systemd-analyze \
+    python3 python3-core python3-modules python3-misc \
+    gcc g++ make cmake ninja packagegroup-core-buildessential \
+"
+
+# Keep PPP small; no PAM.
+PACKAGECONFIG:remove:pn-ppp = "pam"
+
+# UTF-8 locale for tmux and shell sessions.
+GLIBC_GENERATE_LOCALES = "en_US.UTF-8"

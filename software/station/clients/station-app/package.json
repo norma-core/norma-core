@@ -1,0 +1,41 @@
+{
+  "name": "@normacore/station-app",
+  "version": "0.1.0-beta.8",
+  "description": "Desktop Electron wrapper for NormaCore station-viewer",
+  "author": "NormaCore.Dev <hello@normacore.dev>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/norma-core/norma-core.git",
+    "directory": "software/station/clients/station-app"
+  },
+  "main": "dist/main.js",
+  "scripts": {
+    "generate:version": "node scripts/generate-version.mjs",
+    "install:electron": "node node_modules/electron/install.js",
+    "dev": "node scripts/generate-version.mjs && tsc && electron .",
+    "dev:tools": "node scripts/generate-version.mjs && tsc && electron . --devtools",
+    "build": "node scripts/generate-version.mjs && tsc",
+    "build:viewer": "cd ../station-viewer && npm run build",
+    "build:station": "cd ../../../.. && cargo build --release --package=station",
+    "clean:release": "rm -rf release",
+    "start": "npm run build:viewer && npm run build:station && npm run build && electron . --load-dist",
+    "package:mac": "npm run clean:release && npm run build:viewer && npm run build:station && npm run build && electron-builder --mac --config electron-builder.yml",
+    "package:mac:unsigned": "npm run clean:release && npm run build:viewer && npm run build:station && npm run build && CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --mac --config electron-builder.yml",
+    "lint": "oxlint src/",
+    "type-check": "node scripts/generate-version.mjs && tsc --noEmit"
+  },
+  "dependencies": {
+    "electron-window-state": "^5.0.3"
+  },
+  "devDependencies": {
+    "electron": "^41.5.0",
+    "electron-builder": "^26.0.0",
+    "oxlint": "^1.50.0",
+    "typescript": "6.0.3"
+  },
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "packageManager": "npm@11"
+}

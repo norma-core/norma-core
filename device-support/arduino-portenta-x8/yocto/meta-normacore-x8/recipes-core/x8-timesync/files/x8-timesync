@@ -1,0 +1,47 @@
+#!/bin/sh
+
+LOG=/var/log/x8-timesync.log
+STATUS=/etc/x8-time-sync.status
+NTP_SERVERS="${NTP_SERVERS:-pool.ntp.org time.cloudflare.com time.google.com}"
+
+log() {
+    echo "$(date '+%Y-%m-%d %H:%M:%S') x8-timesync: $*" >> "$LOG"
+}
+
+network_ready() {
+    ip route show default 2>/dev/null | grep -q '^default ' || return 1
+    ping -c 1 -W 3 1.1.1.1 >/dev/null 2>&1 || return 1
+    return 0
+}
+
+sync_once() {
+    for s in $NTP_SERVERS; do
+        log "trying NTP server $s"
+
+        if command -v ntpd >/dev/null 2>&1; then
+            ntpd -n -q -p "$s" >> "$LOG" 2>&1 && return 0
+        fi
+
+        busybox ntpd -n -q -p "$s" >> "$LOG" 2>&1 && return 0
+    done
+
+    return 1
+}
+
+mkdir -p /var/log
+
+while :; do
+    if network_ready; then
+        if sync_once; then
+            date -u '+%Y-%m-%dT%H:%M:%SZ' > "$STATUS"
+            log "time sync OK: $(cat "$STATUS")"
+            sleep 3600
+        else
+            log "time sync failed"
+            sleep 60
+        fi
+    else
+        log "network not ready"
+        sleep 10
+    fi
+done

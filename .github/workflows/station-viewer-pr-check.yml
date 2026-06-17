@@ -6,11 +6,12 @@ env:
 on:
   pull_request:
     paths:
+      - ".github/workflows/station-viewer-pr-check.yml"
       - "software/station/clients/station-viewer/**"
 
 jobs:
-  typecheck-and-build:
-    name: Typecheck and Build
+  lint-typecheck-and-build:
+    name: Lint, Typecheck and Build
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -23,14 +24,24 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: "yarn"
-          cache-dependency-path: software/station/clients/station-viewer/yarn.lock
+          cache: "npm"
+          cache-dependency-path: software/station/clients/station-viewer/package-lock.json
 
       - name: Install dependencies
-        run: yarn install --frozen-lockfile
+        run: npm ci
+
+      - name: Verify dependency signatures
+        run: npm audit signatures
+
+      - name: Audit dependencies
+        run: npm audit --audit-level=moderate
+        continue-on-error: true
+
+      - name: Lint
+        run: npm run lint
 
       - name: Typecheck
-        run: yarn type-check
+        run: npm run type-check
 
       - name: Build
-        run: yarn build
+        run: npm run build

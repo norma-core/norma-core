@@ -1,0 +1,43 @@
+#!/bin/sh
+
+### BEGIN INIT INFO
+# Provides:          x8-timesync
+# Required-Start:    $network
+# Required-Stop:
+# Default-Start:     2 3 4 5
+# Default-Stop:
+# Short-Description: Sync time when network becomes available
+### END INIT INFO
+
+PIDFILE=/run/x8-timesync.pid
+
+case "$1" in
+    start)
+        mkdir -p /run /var/log
+        if [ -f "$PIDFILE" ] && kill -0 "$(cat "$PIDFILE")" 2>/dev/null; then
+            echo "x8-timesync already running"
+            exit 0
+        fi
+        echo "Starting x8-timesync"
+        /usr/sbin/x8-timesync &
+        echo "$!" > "$PIDFILE"
+        ;;
+
+    stop)
+        [ -f "$PIDFILE" ] && kill "$(cat "$PIDFILE")" 2>/dev/null || true
+        rm -f "$PIDFILE"
+        ;;
+
+    restart)
+        "$0" stop
+        sleep 1
+        "$0" start
+        ;;
+
+    *)
+        echo "Usage: $0 {start|stop|restart}"
+        exit 1
+        ;;
+esac
+
+exit 0

@@ -1075,7 +1075,7 @@ dependencies = [
 
 [[package]]
 name = "inferences"
-version = "0.1.0-beta.7"
+version = "0.1.0-beta.8"
 dependencies = [
  "bytes",
  "lazy_static",
@@ -1354,7 +1354,7 @@ dependencies = [
 
 [[package]]
 name = "motors-mirroring"
-version = "0.1.0-beta.7"
+version = "0.1.0-beta.8"
 dependencies = [
  "bytes",
  "log",
@@ -2379,7 +2379,7 @@ dependencies = [
 
 [[package]]
 name = "st3215"
-version = "0.1.0-beta.7"
+version = "0.1.0-beta.8"
 dependencies = [
  "bytes",
  "log",
@@ -2407,7 +2407,7 @@ checksum = "a2eb9349b6444b326872e140eb1cf5e7c522154d69e7a0ffb0fb81c06b37543f"
 
 [[package]]
 name = "station"
-version = "0.1.0-beta.7"
+version = "0.1.0-beta.8"
 dependencies = [
  "anyhow",
  "bytes",
@@ -2440,7 +2440,7 @@ dependencies = [
 
 [[package]]
 name = "station_iface"
-version = "0.1.0-beta.7"
+version = "0.1.0-beta.8"
 dependencies = [
  "humantime-serde",
  "normfs",
@@ -2509,7 +2509,7 @@ dependencies = [
 
 [[package]]
 name = "sysinfod"
-version = "0.1.0-beta.7"
+version = "0.1.0-beta.8"
 dependencies = [
  "bytes",
  "libc",
@@ -2545,7 +2545,7 @@ dependencies = [
 
 [[package]]
 name = "systime"
-version = "0.1.0-beta.7"
+version = "0.1.0-beta.8"
 dependencies = [
  "libc",
  "log",
@@ -2922,7 +2922,7 @@ checksum = "daf8dba3b7eb870caf1ddeed7bc9d2a049f3cfdfae7cb521b087cc33ae4c49da"
 
 [[package]]
 name = "usbvideo"
-version = "0.1.0-beta.7"
+version = "0.1.0-beta.8"
 dependencies = [
  "bytes",
  "libc",

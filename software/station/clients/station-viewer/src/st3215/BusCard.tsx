@@ -637,6 +637,12 @@ const BusCard: React.FC<BusCardProps> = ({
                     <br />
                     This bus has {bus.motors?.length} motor
                     {bus.motors?.length === 1 ? "" : "s"}.
+                    {bus.motors?.length === 1 && (
+                      <>
+                        <br />
+                        Single motor control uses the raw 0-4095 servo range.
+                      </>
+                    )}
                   </>
                 )}
               </p>

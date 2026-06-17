@@ -56,6 +56,8 @@ const stationVersion = `${resolveWorkspaceVersion()} (${resolveGitHash()})`;
 
 // https://vite.dev/config/
 export default defineConfig({
+  // Required for loading the built viewer from Electron via file://.
+  base: './',
   define: {
     __STATION_VERSION__: JSON.stringify(stationVersion),
   },

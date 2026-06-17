@@ -1,0 +1,42 @@
+LCONF_VERSION = "7"
+
+BBPATH = "${TOPDIR}"
+BSPDIR := "${@os.path.abspath(os.path.dirname(d.getVar('FILE', True)) + '/../..')}"
+
+BBFILES ?= ""
+BBLAYERS = " \
+  ${BSPDIR}/sources/poky/meta \
+  ${BSPDIR}/sources/poky/meta-poky \
+  \
+  ${BSPDIR}/sources/meta-openembedded/meta-oe \
+  ${BSPDIR}/sources/meta-openembedded/meta-multimedia \
+  ${BSPDIR}/sources/meta-openembedded/meta-python \
+  \
+  ${BSPDIR}/sources/meta-freescale \
+  ${BSPDIR}/sources/meta-freescale-3rdparty \
+  ${BSPDIR}/sources/meta-freescale-distro \
+"
+
+# i.MX Yocto Project Release layers
+BBLAYERS += "${BSPDIR}/sources/meta-imx/meta-imx-bsp"
+BBLAYERS += "${BSPDIR}/sources/meta-imx/meta-imx-sdk"
+BBLAYERS += "${BSPDIR}/sources/meta-imx/meta-imx-ml"
+BBLAYERS += "${BSPDIR}/sources/meta-imx/meta-imx-v2x"
+BBLAYERS += "${BSPDIR}/sources/meta-nxp-demo-experience"
+BBLAYERS += "${BSPDIR}/sources/meta-nxp-connectivity/meta-nxp-matter-baseline"
+BBLAYERS += "${BSPDIR}/sources/meta-nxp-connectivity/meta-nxp-openthread"
+
+BBLAYERS += "${BSPDIR}/sources/meta-arm/meta-arm"
+BBLAYERS += "${BSPDIR}/sources/meta-arm/meta-arm-toolchain"
+BBLAYERS += "${BSPDIR}/sources/meta-clang"
+BBLAYERS += "${BSPDIR}/sources/meta-openembedded/meta-gnome"
+BBLAYERS += "${BSPDIR}/sources/meta-openembedded/meta-networking"
+BBLAYERS += "${BSPDIR}/sources/meta-openembedded/meta-filesystems"
+BBLAYERS += "${BSPDIR}/sources/meta-qt6"
+BBLAYERS += "${BSPDIR}/sources/meta-security/meta-parsec"
+BBLAYERS += "${BSPDIR}/sources/meta-security/meta-tpm"
+BBLAYERS += "${BSPDIR}/sources/meta-virtualization"
+BBLAYERS += "${BSPDIR}/sources/meta-arduino/meta-arduino-common"
+BBLAYERS += "${BSPDIR}/sources/meta-arduino/meta-arduino-nxp"
+BBLAYERS += "${BSPDIR}/sources/norma-core/device-support/arduino-portenta-x8/yocto/meta-normacore-x8"
+BBLAYERS += "${BSPDIR}/sources/meta-tailscale"
