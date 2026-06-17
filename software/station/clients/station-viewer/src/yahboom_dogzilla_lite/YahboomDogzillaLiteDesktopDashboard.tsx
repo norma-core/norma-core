@@ -664,6 +664,7 @@ const YahboomDogzillaLiteDesktopDashboard = memo(function YahboomDogzillaLiteDes
   const renderCameraHudControls = () => (
     <CameraHudControls
       cameraLayout={cameraLayout}
+      showMultiCameraControls={false}
       hasMotors={false}
       showMotorData={false}
       isFullscreen={mainViewMode === 'fullscreenVideo'}
