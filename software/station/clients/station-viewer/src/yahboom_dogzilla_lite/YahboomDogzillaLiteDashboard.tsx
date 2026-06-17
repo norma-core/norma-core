@@ -2,24 +2,31 @@ import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import Long from 'long';
 import {
   Activity,
+  Camera,
+  Check,
+  ChevronDown,
   Gauge,
+  Maximize2,
   Minus,
   Move3d,
+  OctagonX,
   Plus,
   Radar,
   RotateCcw,
-  ShieldAlert,
   SlidersHorizontal,
   Sparkles
 } from 'lucide-react';
+import type { FrameEntry } from '@/api/frame-parser';
 import { commandManager } from '@/api/commands.js';
 import { serverToLocal } from '@/api/timestamp-utils';
-import { yahboom_dogzilla_lite } from '@/api/proto.js';
+import { yahboom_dogzilla_lite, usbvideo } from '@/api/proto.js';
 import ActionPanel, { QUICK_ACTIONS, type ActionDefinition } from '@/yahboom_dogzilla_lite/ActionPanel';
 import YahboomDogzillaLiteViewer from '@/yahboom_dogzilla_lite/YahboomDogzillaLiteViewer';
 import MovementPanel, { type MovementPanelRef } from '@/yahboom_dogzilla_lite/MovementPanel';
 import { getYahboomDogzillaLiteModelLabel } from '@/yahboom_dogzilla_lite/model-labels';
 import { useConnectionStatsWithUptime } from '@/hooks';
+import UsbCameraViewer from '@/usbvideo/CameraViewer';
+import { getVideoSourceId, getVideoSourceLabel } from '@/usbvideo/camera-source';
 
 const DEFAULT_SERVO_POSITIONS = [
   128, 200, 110, 128, 200, 110, 128, 200, 110, 128, 200, 110,
@@ -82,6 +89,7 @@ type TabId = (typeof TAB_DEFINITIONS)[number]['id'];
 type JointTabId = 'legs' | 'arm';
 type LegKey = (typeof LEG_CONFIGS)[number]['key'];
 type LegControlKey = (typeof LEG_CONTROL_KEYS)[number];
+type StageViewMode = '3d' | 'camera' | 'fullscreenVideo';
 
 interface DashboardLogEntry {
   id: number;
@@ -92,6 +100,15 @@ interface DashboardLogEntry {
 interface YahboomDogzillaLiteDashboardProps {
   deviceState: yahboom_dogzilla_lite.InferenceState.IDeviceState | null;
   refreshToken?: number;
+  videoSources?: FrameEntry<usbvideo.IRxEnvelope>[];
+}
+
+interface CameraOption {
+  id: string;
+  label: string;
+  shortLabel: string;
+  detail: string;
+  entry: FrameEntry<usbvideo.IRxEnvelope>;
 }
 
 function clampByte(value: number) {
@@ -130,18 +147,26 @@ function getServoIndex(servoId: number) {
   return SERVO_IDS.indexOf(servoId);
 }
 
+function exitFullscreen() {
+  if (typeof document !== 'undefined' && document.fullscreenElement) {
+    void document.exitFullscreen().catch(() => undefined);
+  }
+}
+
 function StatusPill({ label, value, tone = 'default' }: { label: string; value: string; tone?: 'default' | 'good' | 'warn' | 'danger' }) {
   const toneClass = {
-    default: 'border-border-default bg-surface-primary/85 text-text-primary',
-    good: 'border-accent-success-deep bg-surface-primary/90 text-accent-success',
-    warn: 'border-accent-warning-deep bg-surface-primary/90 text-accent-warning',
-    danger: 'border-accent-critical-deep bg-surface-primary/90 text-accent-critical'
+    default: 'text-text-primary',
+    good: 'text-accent-success',
+    warn: 'text-accent-warning',
+    danger: 'text-accent-critical'
   }[tone];
 
   return (
-    <div className={`rounded-md border px-2.5 py-2 ${toneClass}`}>
-      <div className="text-[10px] font-medium uppercase tracking-wide text-text-muted">{label}</div>
-      <div className="mt-1 font-mono text-sm font-semibold">{value}</div>
+    <div className="flex min-w-0 items-baseline gap-1">
+      <span className="shrink-0 text-[9px] font-semibold uppercase tracking-wide text-text-muted">{label}</span>
+      <span className={`min-w-0 truncate font-mono text-[13px] font-bold leading-none ${toneClass}`} title={value}>
+        {value}
+      </span>
     </div>
   );
 }
@@ -284,13 +309,18 @@ function StatusSection({
 
 const YahboomDogzillaLiteDashboard = memo(function YahboomDogzillaLiteDashboard({
   deviceState,
-  refreshToken
+  refreshToken,
+  videoSources
 }: YahboomDogzillaLiteDashboardProps) {
+  const fullscreenRootRef = useRef<HTMLDivElement | null>(null);
   const movementPanelRef = useRef<MovementPanelRef | null>(null);
   const latencyHistoryRef = useRef<Array<{ timestamp: number; latency: number }>>([]);
   const logIdRef = useRef(0);
 
   const [activeTab, setActiveTab] = useState<TabId>('move');
+  const [stageViewMode, setStageViewMode] = useState<StageViewMode>('3d');
+  const [selectedVideoSourceId, setSelectedVideoSourceId] = useState('');
+  const [isCameraPickerOpen, setIsCameraPickerOpen] = useState(false);
   const [jointTab, setJointTab] = useState<JointTabId>('legs');
   const [selectedLeg, setSelectedLeg] = useState<LegKey>('FL');
   const [mirrorLegs, setMirrorLegs] = useState(false);
@@ -298,7 +328,6 @@ const YahboomDogzillaLiteDashboard = memo(function YahboomDogzillaLiteDashboard(
   const [legsSpeed, setLegsSpeed] = useState(128);
   const [armSpeed, setArmSpeed] = useState(128);
   const [activeAction, setActiveAction] = useState<yahboom_dogzilla_lite.ActionType | null>(null);
-  const [lastActionLabel, setLastActionLabel] = useState('Ready');
   const [commandLog, setCommandLog] = useState<DashboardLogEntry[]>([]);
 
   const connectionStats = useConnectionStatsWithUptime();
@@ -306,6 +335,40 @@ const YahboomDogzillaLiteDashboard = memo(function YahboomDogzillaLiteDashboard(
   const status = deviceState?.status ?? null;
   const device = deviceState?.device ?? null;
   const isConnected = deviceState?.isConnected ?? false;
+  const usbVideoSources = useMemo(() => videoSources ?? [], [videoSources]);
+
+  const cameraOptions = useMemo<CameraOption[]>(() => (
+    usbVideoSources.map((entry) => {
+      const id = getVideoSourceId(entry);
+      const camera = entry.data.camera;
+      const product = camera?.product?.trim();
+      const deviceNumber = camera?.deviceNumber !== undefined ? `USB ${camera.deviceNumber}` : '';
+      const uniqueId = camera?.uniqueId ?? '';
+      const shortLabel = product || deviceNumber || 'Camera';
+
+      return {
+        id,
+        label: getVideoSourceLabel(entry),
+        shortLabel,
+        detail: uniqueId || entry.queueId,
+        entry
+      };
+    }).filter((option) => option.id.length > 0)
+  ), [usbVideoSources]);
+
+  const selectedVideoSource = useMemo(() => {
+    const option = cameraOptions.find((cameraOption) => cameraOption.id === selectedVideoSourceId);
+    return option
+      ? {
+        kind: 'usbvideo' as const,
+        source: option.entry.data,
+        sourceId: option.id,
+        label: option.label,
+        shortLabel: option.shortLabel,
+        detail: option.detail
+      }
+      : undefined;
+  }, [cameraOptions, selectedVideoSourceId]);
 
   const modelLabel = useMemo(() => getYahboomDogzillaLiteModelLabel(device?.model), [device?.model]);
 
@@ -334,6 +397,49 @@ const YahboomDogzillaLiteDashboard = memo(function YahboomDogzillaLiteDashboard(
     }
   }, [status?.armServoSpeed, status?.legServoSpeed]);
 
+  useEffect(() => {
+    if (cameraOptions.some((option) => option.id === selectedVideoSourceId)) {
+      return;
+    }
+
+    setSelectedVideoSourceId(cameraOptions[0]?.id ?? '');
+  }, [cameraOptions, selectedVideoSourceId]);
+
+  useEffect(() => {
+    if (cameraOptions.length === 0 || stageViewMode === 'fullscreenVideo') {
+      setIsCameraPickerOpen(false);
+    }
+  }, [cameraOptions.length, stageViewMode]);
+
+  useEffect(() => {
+    if (!selectedVideoSource && stageViewMode !== '3d') {
+      exitFullscreen();
+      setStageViewMode('3d');
+    }
+  }, [selectedVideoSource, stageViewMode]);
+
+  useEffect(() => {
+    if (stageViewMode !== 'fullscreenVideo') {
+      return;
+    }
+
+    fullscreenRootRef.current?.focus({ preventScroll: true });
+    if (!document.fullscreenElement) {
+      void fullscreenRootRef.current?.requestFullscreen().catch(() => undefined);
+    }
+  }, [stageViewMode]);
+
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      if (!document.fullscreenElement && stageViewMode === 'fullscreenVideo') {
+        setStageViewMode(selectedVideoSource ? 'camera' : '3d');
+      }
+    };
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  }, [selectedVideoSource, stageViewMode]);
+
   const now = Date.now();
   const frameTimestamp = deviceState?.monotonicStampNs
     ? serverToLocal(Long.fromValue(deviceState.monotonicStampNs)).toNumber() / 1e6
@@ -356,6 +462,7 @@ const YahboomDogzillaLiteDashboard = memo(function YahboomDogzillaLiteDashboard(
 
   const connectionLabel = isConnected ? 'Online' : 'Offline';
   const connectionTone = isConnected ? 'good' : 'danger';
+  const robotDisplayName = device?.serialNumber ? `Dogzilla #${device.serialNumber}` : 'Dogzilla Lite';
 
   const selectedLegConfig = LEG_CONFIGS.find((leg) => leg.key === selectedLeg) ?? LEG_CONFIGS[0];
   const selectedLegValues = LEG_CONTROL_KEYS.map((controlKey) => {
@@ -407,7 +514,6 @@ const YahboomDogzillaLiteDashboard = memo(function YahboomDogzillaLiteDashboard(
       action: { action: action.value }
     });
     setActiveAction(action.value);
-    setLastActionLabel(action.label);
     pushLog(`Action: ${action.label}`);
   };
 
@@ -430,8 +536,21 @@ const YahboomDogzillaLiteDashboard = memo(function YahboomDogzillaLiteDashboard(
   const handleEmergencyStop = () => {
     movementPanelRef.current?.stopAll();
     setActiveAction(null);
-    setLastActionLabel('Emergency Stop');
     pushLog('Emergency stop');
+  };
+
+  const handleStageViewModeChange = (nextMode: StageViewMode) => {
+    if (nextMode !== '3d' && !selectedVideoSource) {
+      return;
+    }
+
+    setIsCameraPickerOpen(false);
+
+    if (nextMode !== 'fullscreenVideo') {
+      exitFullscreen();
+    }
+
+    setStageViewMode(nextMode);
   };
 
   const updateLegServo = (controlKey: LegControlKey, nextValue: number) => {
@@ -465,7 +584,6 @@ const YahboomDogzillaLiteDashboard = memo(function YahboomDogzillaLiteDashboard(
     ARM_SERVO_IDS.forEach((servoId, index) => {
       sendServoCommand(servoId, ARM_DEFAULT_POSITIONS[index]);
     });
-    setLastActionLabel('Arm Neutral');
     pushLog('Arm neutral preset');
   };
 
@@ -687,45 +805,241 @@ const YahboomDogzillaLiteDashboard = memo(function YahboomDogzillaLiteDashboard(
     </div>
   );
 
-  return (
-    <div className="relative overflow-hidden rounded-lg border border-border-default bg-surface-primary/50 text-text-primary">
-      <div className="relative flex h-[calc(100svh-7rem)] min-h-[46rem] max-h-[900px] flex-col lg:grid lg:h-[min(84vh,58rem)] lg:min-h-[44rem] lg:max-h-none lg:grid-cols-[minmax(0,1.18fr)_minmax(24rem,0.92fr)]">
-        <section className="relative basis-[40%] overflow-hidden border-b border-border-default lg:basis-auto lg:border-b-0 lg:border-r lg:border-border-default">
-          <YahboomDogzillaLiteViewer
-            status={status}
-            servoPositions={displayPositions}
-            servoAngles={liveAngles}
-            refreshToken={refreshToken}
-          />
+  const renderRobotContent = (className = 'h-full min-h-0 w-full overflow-hidden') => (
+    <YahboomDogzillaLiteViewer
+      status={status}
+      servoPositions={displayPositions}
+      servoAngles={liveAngles}
+      refreshToken={refreshToken}
+      className={className}
+    />
+  );
 
-          <div className="absolute inset-0 flex flex-col justify-between p-3 lg:p-4">
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0 max-w-[calc(100%-7.5rem)] rounded-md border border-border-default bg-surface-primary/85 px-3 py-2">
-                <div className="text-[10px] font-medium uppercase tracking-wide text-text-muted">Robot</div>
-                <div className="mt-1 truncate font-mono text-sm font-semibold text-text-primary">
-                  {device?.serialNumber ? `YahboomDogzillaLite #${device.serialNumber}` : 'YahboomDogzillaLite'} • <span className={connectionTone === 'good' ? 'text-accent-success' : 'text-accent-critical'}>{connectionLabel}</span>
+  const renderCameraContent = (fit: 'contain' | 'cover' = 'cover') => (
+    <UsbCameraViewer
+      sourceId={selectedVideoSource?.sourceId}
+      className="h-full w-full"
+      fit={fit}
+    />
+  );
+  const isCameraStageActive = stageViewMode === 'camera' && Boolean(selectedVideoSource);
+
+  const renderCameraModeButton = ({
+    mode,
+    label,
+    icon: Icon
+  }: {
+    mode: StageViewMode;
+    label?: string;
+    icon?: typeof Camera;
+  }) => {
+    const isActive = stageViewMode === mode;
+    const isDisabled = mode !== '3d' && !selectedVideoSource;
+
+    return (
+      <button
+        type="button"
+        disabled={isDisabled}
+        onClick={() => handleStageViewModeChange(mode)}
+        className={`flex h-10 min-w-10 items-center justify-center rounded-md px-2 text-xs font-semibold transition focus:outline-none focus:ring-2 focus:ring-accent-data/60 disabled:cursor-not-allowed disabled:opacity-35 ${
+          isActive
+            ? 'bg-accent-data text-surface-base'
+            : 'text-text-secondary hover:bg-surface-elevated hover:text-text-primary'
+        }`}
+        aria-label={label ?? mode}
+        title={label ?? mode}
+      >
+        {Icon ? <Icon className="h-3.5 w-3.5" strokeWidth={2.5} /> : label}
+      </button>
+    );
+  };
+
+  if (stageViewMode === 'fullscreenVideo' && selectedVideoSource) {
+    return (
+      <div
+        ref={fullscreenRootRef}
+        tabIndex={-1}
+        className="fixed inset-0 z-50 overflow-hidden bg-black text-text-primary outline-none"
+      >
+        <div className="h-full w-full">
+          {renderCameraContent('cover')}
+        </div>
+        <div className="absolute left-3 top-3 z-20 flex items-center gap-2">
+          <button
+            type="button"
+            onClick={handleEmergencyStop}
+            className="flex min-h-10 items-center gap-2 rounded-md border border-accent-critical-deep bg-accent-critical/35 px-3 py-2 text-sm font-semibold text-accent-critical transition hover:border-accent-critical hover:bg-accent-critical/45"
+          >
+            <OctagonX className="h-4 w-4" />
+            E-Stop
+          </button>
+          <button
+            type="button"
+            onClick={() => handleStageViewModeChange('camera')}
+            className="min-h-10 rounded-md border border-border-default bg-surface-primary/85 px-3 py-2 text-sm font-semibold text-text-primary transition hover:border-accent-data hover:text-accent-data"
+          >
+            Exit
+          </button>
+        </div>
+        <div className="pointer-events-auto absolute bottom-3 right-3 z-20 h-28 w-40 overflow-hidden rounded-md border border-border-default bg-surface-primary shadow-lg">
+          {renderRobotContent('h-full min-h-0 w-full overflow-hidden')}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative -mx-1 overflow-hidden border-y border-border-default bg-surface-primary/50 text-text-primary sm:mx-0 sm:rounded-lg sm:border">
+      <div className="relative flex h-[calc(100svh-7rem)] min-h-[46rem] max-h-[900px] flex-col lg:grid lg:h-[min(84vh,58rem)] lg:min-h-[44rem] lg:max-h-none lg:grid-cols-[minmax(0,1.18fr)_minmax(24rem,0.92fr)]">
+        <section className="relative basis-[43%] overflow-hidden border-b border-border-default bg-surface-base lg:basis-auto lg:border-b-0 lg:border-r lg:border-border-default">
+          <div className="absolute inset-0">
+            {isCameraStageActive ? renderCameraContent('cover') : renderRobotContent()}
+          </div>
+
+          {isCameraStageActive && (
+            <div className="pointer-events-auto absolute right-3 top-[4.5rem] z-10 h-20 w-32 overflow-hidden rounded-md border border-border-default bg-surface-primary shadow-lg">
+              {renderRobotContent('h-full min-h-0 w-full overflow-hidden')}
+            </div>
+          )}
+
+          <div className="pointer-events-none absolute inset-0">
+            <div className="absolute inset-x-3 top-3 z-20 flex items-start justify-between gap-2">
+              <div className={`pointer-events-auto min-w-0 rounded-lg border border-border-default/45 bg-surface-primary/24 px-3 py-2 backdrop-blur-[2px] ${
+                isCameraStageActive ? 'max-w-[calc(100%-9.25rem)]' : 'max-w-[calc(100%-3.25rem)]'
+              }`}
+              >
+                <div className="flex min-w-0 items-center gap-2">
+                  <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${connectionTone === 'good' ? 'bg-accent-success' : 'bg-accent-critical'}`} />
+                  <span className="min-w-0 truncate font-mono text-sm font-bold leading-none text-text-primary" title={robotDisplayName}>
+                    {robotDisplayName}
+                  </span>
+                </div>
+                <div className="mt-2 flex min-w-0 items-center gap-3">
+                  <StatusPill label="Bat" value={batteryLabel} tone={batteryTone} />
+                  <StatusPill label="Ping" value={`${Math.round(pingValue)} ms`} tone={pingTone} />
                 </div>
               </div>
-              <button
-                type="button"
-                onClick={handleEmergencyStop}
-                className="pointer-events-auto flex min-h-10 items-center gap-2 rounded-md border border-accent-critical-deep bg-accent-critical/20 px-3 py-2 text-sm font-semibold text-accent-critical transition hover:border-accent-critical hover:bg-accent-critical/20"
-              >
-                <ShieldAlert className="h-4 w-4" />
-                E-Stop
-              </button>
+              {!isCameraStageActive && (
+                <button
+                  type="button"
+                  onClick={handleEmergencyStop}
+                  className="pointer-events-auto flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-accent-critical-deep bg-accent-critical/14 text-accent-critical shadow-sm backdrop-blur-sm transition hover:border-accent-critical hover:bg-accent-critical/22 focus:outline-none focus:ring-2 focus:ring-accent-critical-deep focus:ring-offset-2 focus:ring-offset-surface-primary"
+                  aria-label="Emergency stop"
+                  title="Emergency stop"
+                >
+                  <OctagonX className="h-4 w-4" />
+                </button>
+              )}
             </div>
 
-            <div className="grid grid-cols-3 gap-2">
-              <StatusPill label="Battery" value={batteryLabel} tone={batteryTone} />
-              <StatusPill label="Latency" value={`${Math.round(pingValue)} ms`} tone={pingTone} />
-              <StatusPill label="Action" value={lastActionLabel} />
+            <div className="absolute inset-x-3 bottom-3 z-20 flex items-end justify-between gap-2">
+              <div className={`pointer-events-auto flex h-12 w-fit min-w-0 items-center gap-2 rounded-lg border border-border-default/45 bg-surface-primary/24 p-1 backdrop-blur-[2px] ${
+                isCameraStageActive ? 'max-w-[calc(100%-3.25rem)]' : 'max-w-full'
+              }`}
+              >
+                <div className="inline-flex h-10 shrink-0 overflow-hidden rounded-md bg-surface-secondary">
+                  {renderCameraModeButton({ mode: '3d', label: '3D' })}
+                  {renderCameraModeButton({ mode: 'camera', label: 'Camera', icon: Camera })}
+                  {renderCameraModeButton({ mode: 'fullscreenVideo', label: 'Fullscreen camera', icon: Maximize2 })}
+                </div>
+                <div className="relative min-w-0">
+                  <button
+                    type="button"
+                    disabled={cameraOptions.length === 0}
+                    onClick={() => setIsCameraPickerOpen((current) => !current)}
+                    className={`flex h-10 w-[9.5rem] min-w-0 items-center justify-between gap-2 rounded-md border px-3 text-left text-xs font-semibold transition focus:outline-none focus:ring-1 focus:ring-accent-data disabled:cursor-not-allowed disabled:opacity-45 ${
+                      isCameraPickerOpen
+                        ? 'border-accent-data bg-surface-primary text-text-primary'
+                        : 'border-border-subtle bg-surface-secondary text-text-primary hover:border-accent-data'
+                    }`}
+                    aria-haspopup="listbox"
+                    aria-expanded={isCameraPickerOpen}
+                    aria-label="Camera source"
+                    title={selectedVideoSource?.label ?? 'No camera'}
+                  >
+                    <span className="min-w-0 truncate">
+                      {selectedVideoSource?.shortLabel ?? 'No camera'}
+                    </span>
+                    <ChevronDown
+                      className={`h-3.5 w-3.5 shrink-0 text-text-muted transition-transform ${isCameraPickerOpen ? 'rotate-180' : ''}`}
+                      strokeWidth={2.5}
+                    />
+                  </button>
+
+                  {isCameraPickerOpen && (
+                    <div
+                      className="absolute bottom-[calc(100%+0.5rem)] right-0 z-40 w-[min(19rem,calc(100vw-2rem))] overflow-hidden rounded-xl border border-border-default bg-surface-primary/95 p-1.5 shadow-2xl backdrop-blur-md"
+                      role="listbox"
+                      aria-label="Camera source"
+                    >
+                      <div className="px-2.5 pb-1.5 pt-1 text-[10px] font-bold uppercase tracking-[0.16em] text-text-muted">
+                        Camera source
+                      </div>
+                      <div className="max-h-56 overflow-y-auto">
+                        {cameraOptions.map((option) => {
+                          const isSelected = option.id === selectedVideoSourceId;
+
+                          return (
+                            <button
+                              key={option.id}
+                              type="button"
+                              onClick={() => {
+                                setSelectedVideoSourceId(option.id);
+                                setIsCameraPickerOpen(false);
+                              }}
+                              className={`flex w-full items-center gap-2 rounded-lg px-2.5 py-2.5 text-left transition ${
+                                isSelected
+                                  ? 'bg-accent-data text-surface-base'
+                                  : 'text-text-primary hover:bg-surface-secondary'
+                              }`}
+                              role="option"
+                              aria-selected={isSelected}
+                              title={option.label}
+                            >
+                              <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border ${
+                                isSelected
+                                  ? 'border-surface-base/70 bg-surface-base/18'
+                                  : 'border-border-subtle text-transparent'
+                              }`}
+                              >
+                                <Check className="h-3.5 w-3.5" strokeWidth={3} />
+                              </span>
+                              <span className="min-w-0 flex-1">
+                                <span className="block truncate text-sm font-bold">
+                                  {option.shortLabel}
+                                </span>
+                                <span className={`block truncate text-[11px] font-medium ${
+                                  isSelected ? 'text-surface-base/72' : 'text-text-muted'
+                                }`}
+                                >
+                                  {option.detail}
+                                </span>
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+              {isCameraStageActive && (
+                <button
+                  type="button"
+                  onClick={handleEmergencyStop}
+                  className="pointer-events-auto flex h-12 w-12 shrink-0 items-center justify-center rounded-lg border border-accent-critical-deep bg-accent-critical/18 text-accent-critical shadow-lg backdrop-blur-sm transition hover:border-accent-critical hover:bg-accent-critical/28 focus:outline-none focus:ring-2 focus:ring-accent-critical-deep focus:ring-offset-2 focus:ring-offset-surface-primary"
+                  aria-label="Emergency stop"
+                  title="Emergency stop"
+                >
+                  <OctagonX className="h-5 w-5" />
+                </button>
+              )}
             </div>
           </div>
         </section>
 
-        <section className="relative flex min-h-0 flex-1 flex-col bg-surface-primary/85 px-3 pb-3 pt-3 lg:px-4 lg:pb-4 lg:pt-4">
-          <div className="-mx-3 overflow-x-auto px-3 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <section className="relative flex min-h-0 flex-1 flex-col bg-surface-primary/90 px-2.5 pb-2.5 pt-2.5 lg:px-4 lg:pb-4 lg:pt-4">
+          <div className="-mx-2.5 overflow-x-auto px-2.5 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             <div className="flex w-max gap-2">
               {TAB_DEFINITIONS.map((tab) => (
                 <TabButton
@@ -739,7 +1053,7 @@ const YahboomDogzillaLiteDashboard = memo(function YahboomDogzillaLiteDashboard(
             </div>
           </div>
 
-          <div className="-mx-3 mt-2 overflow-x-auto px-3 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div className="-mx-2.5 mt-1.5 overflow-x-auto px-2.5 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             <div className="flex w-max gap-2">
               {QUICK_ACTIONS.map((action) => (
                 <QuickActionButton
@@ -752,7 +1066,7 @@ const YahboomDogzillaLiteDashboard = memo(function YahboomDogzillaLiteDashboard(
             </div>
           </div>
 
-          <div className="mt-2 min-h-0 flex-1 overflow-y-auto pb-1">
+          <div className="mt-1.5 min-h-0 flex-1 overflow-y-auto pb-1">
             {activeTab === 'move' && renderMoveTab()}
             {activeTab === 'actions' && renderActionsTab()}
             {activeTab === 'joints' && renderJointsTab()}

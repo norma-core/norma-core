@@ -57,6 +57,7 @@ const YahboomDogzillaLiteCard = memo(function YahboomDogzillaLiteCard({
       <YahboomDogzillaLiteDashboard
         deviceState={deviceState}
         refreshToken={deviceIndex}
+        videoSources={videoSources}
       />
     </div>
   );

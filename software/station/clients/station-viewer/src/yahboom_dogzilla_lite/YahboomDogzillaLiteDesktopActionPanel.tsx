@@ -44,11 +44,11 @@ const YahboomDogzillaLiteDesktopActionPanel = memo(function YahboomDogzillaLiteD
   };
 
   return (
-    <div className="rounded-xl border border-border-default bg-surface-primary/80 p-3 backdrop-blur">
-      <h3 className="flex min-h-6 items-center pb-1 text-[10px] font-semibold uppercase tracking-[0.22em] text-accent-data">
+    <div className="flex h-full min-h-0 flex-col rounded-lg border border-border-default bg-surface-primary/72 p-3 backdrop-blur">
+      <h3 className="flex min-h-6 items-center pb-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-accent-data">
         Actions
       </h3>
-      <div className="mt-1 grid grid-cols-4 gap-2 text-[9px] font-semibold uppercase tracking-[0.05em] text-text-primary">
+      <div className="mt-1 grid min-h-0 flex-1 grid-cols-4 gap-2 text-[10px] font-semibold text-text-primary">
         {ACTIONS.map((action) => {
           const isReset = action.value === yahboom_dogzilla_lite.ActionType.ACTION_RESTORE_DEFAULT;
           return (
@@ -56,9 +56,9 @@ const YahboomDogzillaLiteDesktopActionPanel = memo(function YahboomDogzillaLiteD
               key={action.value}
               type="button"
               onClick={() => sendAction(action.value)}
-              className={`min-h-14 w-full rounded px-1.5 py-2 text-center transition-colors active:bg-surface-active ${isReset
-                ? 'bg-accent-info-bg text-text-primary hover:bg-accent-info-deep'
-                : 'bg-surface-tertiary text-text-primary hover:bg-surface-elevated'
+              className={`min-h-12 w-full rounded-md border px-1.5 py-2 text-center transition-colors active:bg-surface-active ${isReset
+                ? 'border-accent-critical-deep bg-accent-critical/12 text-accent-critical hover:bg-accent-critical/20'
+                : 'border-border-default bg-surface-tertiary/78 text-text-primary hover:border-border-subtle hover:bg-surface-elevated'
               }`}
             >
               <span className="flex h-full items-center justify-center whitespace-normal text-center leading-tight">

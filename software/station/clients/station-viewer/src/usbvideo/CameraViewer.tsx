@@ -170,10 +170,6 @@ const CameraViewer = memo(function CameraViewer({
             <span className="text-xs font-mono text-accent-data">{fps.toFixed(1)}</span>
           </div>
         )}
-        <div className="absolute right-0 top-0 z-20 rounded-bl-lg bg-surface-secondary/50 p-2 text-right">
-          <span className="text-xs text-text-label">FPS: </span>
-          <span className="text-xs font-mono text-accent-data">{fps.toFixed(1)}</span>
-        </div>
       </div>
     </div>
   );
