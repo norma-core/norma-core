@@ -26,11 +26,11 @@ class NetworkStatus:
 class State:
     networks: list[NetworkStatus] = dataclass_field(default_factory=list)
 
-    def wlan_ip_addresses(self) -> list[str]:
+    def _ip_addresses_for_prefix(self, iface_prefix: str) -> list[str]:
         seen: set[str] = set()
         out: list[str] = []
         for network in self.networks:
-            if not network.iface.startswith("wlan"):
+            if not network.iface.startswith(iface_prefix):
                 continue
             for raw_addr in network.ip_addresses:
                 addr = normalize_ipv4_address(raw_addr)
@@ -38,6 +38,12 @@ class State:
                     seen.add(addr)
                     out.append(addr)
         return out
+
+    def wlan_ip_addresses(self) -> list[str]:
+        return self._ip_addresses_for_prefix("wlan")
+
+    def tailscale_ip_addresses(self) -> list[str]:
+        return self._ip_addresses_for_prefix("tailscale")
 
     def has_wlan_ip(self) -> bool:
         return bool(self.wlan_ip_addresses())

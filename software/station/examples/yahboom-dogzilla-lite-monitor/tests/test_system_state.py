@@ -43,6 +43,36 @@ def test_parse_state_requires_wlan_interface_for_connectivity() -> None:
     assert not state.has_wlan_ip()
 
 
+def test_parse_state_extracts_tailscale_ipv4_addresses() -> None:
+    payload = sysinfo_pb.Envelope(
+        data=sysinfo_pb.EnvelopeData(
+            networks=[
+                network_state("eth0", ["10.42.0.10"]),
+                network_state("wlan0", ["192.168.12.34/24"]),
+                network_state("tailscale0", ["100.64.0.5/32", "bad", "127.0.0.1"]),
+            ],
+        ),
+    ).encode()
+
+    state = system_state.parse_state(payload)
+
+    assert state.tailscale_ip_addresses() == ["100.64.0.5"]
+    # The wlan accessor is unaffected by the tailscale interface.
+    assert state.wlan_ip_addresses() == ["192.168.12.34"]
+
+
+def test_tailscale_ip_addresses_empty_without_tailscale_interface() -> None:
+    payload = sysinfo_pb.Envelope(
+        data=sysinfo_pb.EnvelopeData(
+            networks=[network_state("wlan0", ["192.168.12.34"])],
+        ),
+    ).encode()
+
+    state = system_state.parse_state(payload)
+
+    assert state.tailscale_ip_addresses() == []
+
+
 def test_parse_state_empty_payload() -> None:
     assert system_state.parse_state(b"") == system_state.State()
 

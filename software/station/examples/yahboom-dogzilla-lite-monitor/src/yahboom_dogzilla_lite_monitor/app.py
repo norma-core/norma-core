@@ -97,9 +97,12 @@ def run(
                         logger.warning(error)
                         last_system_error = error
                 else:
-                    state = system_state.parse_state(frame.payload)
-                    current_ip_addresses = state.wlan_ip_addresses()
-                    current_connected = state.has_wlan_ip()
+                    sys_state = system_state.parse_state(frame.payload)
+                    current_ip_addresses = [
+                        *sys_state.wlan_ip_addresses(),
+                        *sys_state.tailscale_ip_addresses(),
+                    ]
+                    current_connected = sys_state.has_wlan_ip()
                     last_system_error = ""
             except system_state.NoSystemStateDataError as exc:
                 if str(exc) != last_system_error:
