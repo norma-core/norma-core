@@ -262,3 +262,487 @@ body {
   border-radius: 9999px;
   background: var(--color-accent-data);
 }
+
+.dogzilla-mobile-dashboard[data-remote-fullscreen="true"],
+.dogzilla-mobile-dashboard:fullscreen {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 60;
+  margin: 0 !important;
+  width: 100vw;
+  height: 100svh;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: var(--color-surface-base);
+}
+
+.dogzilla-mobile-dashboard[data-remote-fullscreen="true"] .dogzilla-mobile-layout,
+.dogzilla-mobile-dashboard:fullscreen .dogzilla-mobile-layout {
+  height: 100svh !important;
+  min-height: 100svh !important;
+  max-height: none !important;
+}
+
+@media (max-width: 1023px) and (orientation: landscape) {
+  .dogzilla-mobile-shell {
+    max-width: none !important;
+  }
+
+  .dogzilla-mobile-dashboard {
+    margin-inline: 0 !important;
+    border-radius: 1rem;
+  }
+
+  .dogzilla-mobile-layout {
+    display: block !important;
+    height: clamp(18rem, calc(100svh - 8.5rem), 35rem) !important;
+    min-height: 18rem !important;
+    max-height: none !important;
+    overflow: hidden;
+  }
+
+  .dogzilla-stage {
+    position: absolute !important;
+    inset: 0 !important;
+    min-height: 0 !important;
+    border: 0 !important;
+  }
+
+  .dogzilla-stage::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 5;
+    pointer-events: none;
+    background:
+      radial-gradient(circle at 18% 82%, rgba(34, 211, 238, 0.14), transparent 27%),
+      radial-gradient(circle at 84% 78%, rgba(34, 211, 238, 0.10), transparent 24%),
+      linear-gradient(90deg, rgba(0, 0, 0, 0.30), transparent 32%, transparent 68%, rgba(0, 0, 0, 0.30)),
+      linear-gradient(180deg, rgba(0, 0, 0, 0.18), transparent 34%, rgba(0, 0, 0, 0.22));
+  }
+
+  .dogzilla-stage-hud {
+    inset-inline: 0.85rem !important;
+    top: 0.75rem !important;
+    align-items: center !important;
+  }
+
+  .dogzilla-stage-status-card {
+    width: min(21rem, 42vw);
+    min-height: 2.85rem;
+    border-radius: 9999px !important;
+    border-color: color-mix(in srgb, var(--color-border-default) 55%, transparent) !important;
+    background: linear-gradient(90deg, color-mix(in srgb, var(--color-surface-primary) 70%, transparent), color-mix(in srgb, var(--color-surface-primary) 42%, transparent)) !important;
+    box-shadow: 0 1.25rem 3rem rgba(0, 0, 0, 0.18);
+    backdrop-filter: blur(14px) saturate(125%) !important;
+  }
+
+  .dogzilla-stage-status-card > div:first-child,
+  .dogzilla-stage-status-card > div:last-child {
+    margin: 0 !important;
+  }
+
+  .dogzilla-stage-action-cluster {
+    gap: 0.45rem !important;
+  }
+
+  .dogzilla-stage-estop {
+    width: 3.4rem !important;
+    height: 2.75rem !important;
+    border-radius: 9999px !important;
+    background: color-mix(in srgb, var(--color-accent-critical) 18%, transparent) !important;
+    box-shadow: 0 0.8rem 2rem rgba(239, 68, 68, 0.24);
+  }
+
+  .dogzilla-remote-fullscreen-toggle {
+    width: 2.75rem !important;
+    height: 2.75rem !important;
+    border-radius: 9999px !important;
+    border-color: color-mix(in srgb, var(--color-border-default) 58%, transparent) !important;
+    background: color-mix(in srgb, var(--color-surface-primary) 50%, transparent) !important;
+    box-shadow: 0 0.8rem 2rem rgba(0, 0, 0, 0.14);
+  }
+
+  .dogzilla-stage-preview {
+    top: 4.4rem !important;
+    right: 1rem !important;
+    width: min(13rem, 22vw) !important;
+    height: min(8rem, 24vh) !important;
+    border-radius: 0.9rem !important;
+  }
+
+  .dogzilla-mobile-layout:not([data-active-tab="move"]) .dogzilla-stage-preview {
+    display: none !important;
+  }
+
+  .dogzilla-stage-bottom-controls {
+    inset: 0.75rem auto auto 50% !important;
+    width: auto !important;
+    transform: translateX(-50%);
+    justify-content: center !important;
+  }
+
+  .dogzilla-view-controls {
+    height: 2.75rem !important;
+    border-radius: 9999px !important;
+    border-color: color-mix(in srgb, var(--color-border-default) 56%, transparent) !important;
+    background: color-mix(in srgb, var(--color-surface-primary) 58%, transparent) !important;
+    box-shadow: 0 1rem 2.5rem rgba(0, 0, 0, 0.16);
+    backdrop-filter: blur(14px) saturate(125%) !important;
+  }
+
+  .dogzilla-view-controls > .inline-flex {
+    height: 2.25rem !important;
+    border-radius: 9999px !important;
+  }
+
+  .dogzilla-control-panel {
+    position: absolute !important;
+    inset: 0 !important;
+    overflow: hidden;
+    padding: 0 !important;
+    pointer-events: none;
+    background: transparent !important;
+  }
+
+  .dogzilla-tab-strip {
+    position: absolute;
+    z-index: 35;
+    bottom: 0.55rem;
+    left: 50%;
+    width: max-content;
+    max-width: min(32rem, 54vw);
+    margin: 0 !important;
+    padding: 0.25rem !important;
+    transform: translateX(-50%);
+    pointer-events: auto;
+    border: 1px solid color-mix(in srgb, var(--color-border-default) 60%, transparent);
+    border-radius: 9999px;
+    background: color-mix(in srgb, var(--color-surface-primary) 68%, transparent);
+    box-shadow: 0 1rem 2.5rem rgba(0, 0, 0, 0.18);
+    backdrop-filter: blur(16px) saturate(130%);
+  }
+
+  .dogzilla-tab-list {
+    width: max-content !important;
+    gap: 0.25rem !important;
+  }
+
+  .dogzilla-tab-button {
+    min-width: 0 !important;
+    min-height: 2.35rem !important;
+    border-radius: 9999px !important;
+    padding: 0.5rem 0.8rem !important;
+    font-size: 0.8rem !important;
+  }
+
+  .dogzilla-quick-actions {
+    position: absolute;
+    z-index: 30;
+    bottom: 3.35rem;
+    left: 50%;
+    width: min(27rem, 48vw);
+    margin: 0 !important;
+    padding: 0 !important;
+    transform: translateX(-50%);
+    overflow: visible !important;
+    pointer-events: auto;
+  }
+
+  .dogzilla-quick-action-list {
+    display: grid !important;
+    width: 100% !important;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.45rem !important;
+  }
+
+  .dogzilla-quick-action-button {
+    min-height: 2.15rem !important;
+    padding: 0.35rem 0.55rem !important;
+    font-size: 0.76rem !important;
+    background: color-mix(in srgb, var(--color-surface-primary) 54%, transparent) !important;
+    box-shadow: 0 0.7rem 1.6rem rgba(0, 0, 0, 0.12);
+    backdrop-filter: blur(12px) saturate(130%);
+  }
+
+  .dogzilla-mobile-dashboard[data-remote-fullscreen="true"] .dogzilla-quick-actions,
+  .dogzilla-mobile-dashboard:fullscreen .dogzilla-quick-actions {
+    width: min(27rem, 48vw);
+  }
+
+  .dogzilla-mobile-dashboard[data-remote-fullscreen="true"] .dogzilla-quick-action-list,
+  .dogzilla-mobile-dashboard:fullscreen .dogzilla-quick-action-list {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .dogzilla-tab-content {
+    pointer-events: auto;
+  }
+
+  .dogzilla-control-panel[data-active-tab="move"] .dogzilla-tab-content {
+    position: absolute;
+    inset: 0;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    pointer-events: none;
+  }
+
+  .dogzilla-control-panel[data-active-tab="move"] .dogzilla-move-panel {
+    display: grid !important;
+    height: 100%;
+    grid-template-areas:
+      "left center right"
+      "left center right";
+    grid-template-columns: minmax(10rem, 22vw) minmax(0, 1fr) minmax(10rem, 22vw);
+    grid-template-rows: 1fr auto;
+    gap: 0.75rem;
+    align-items: end;
+    padding: 4.1rem 1rem 4.25rem;
+    pointer-events: none;
+  }
+
+  .dogzilla-move-pad-card,
+  .dogzilla-yaw-card,
+  .dogzilla-speed-card {
+    border-color: color-mix(in srgb, var(--color-border-default) 42%, transparent) !important;
+    background: color-mix(in srgb, var(--color-surface-primary) 40%, transparent) !important;
+    box-shadow: 0 1rem 2.5rem rgba(0, 0, 0, 0.14);
+    backdrop-filter: blur(12px) saturate(125%);
+  }
+
+  .dogzilla-move-pad-card {
+    grid-area: left;
+    align-self: end;
+    width: min(12.5rem, 23vw);
+    padding: 0.55rem !important;
+    border-radius: 2rem !important;
+    pointer-events: auto;
+  }
+
+  .dogzilla-move-pad {
+    width: min(27vmin, 10.5rem) !important;
+    height: min(27vmin, 10.5rem) !important;
+    margin-inline: auto;
+    box-shadow:
+      inset 0 0 0 1px color-mix(in srgb, var(--color-border-default) 62%, transparent),
+      inset 0 0 4rem rgba(34, 211, 238, 0.08),
+      0 0 0 1.25rem color-mix(in srgb, var(--color-surface-primary) 18%, transparent);
+  }
+
+  .dogzilla-move-stats {
+    display: none !important;
+  }
+
+  .dogzilla-yaw-card {
+    grid-area: right;
+    align-self: end;
+    justify-self: end;
+    width: min(12.5rem, 23vw) !important;
+    padding: 0.55rem !important;
+    border-radius: 2rem !important;
+    pointer-events: auto;
+  }
+
+  .dogzilla-speed-grid {
+    display: grid !important;
+    position: absolute;
+    right: 1rem;
+    top: 4.3rem;
+    width: min(16rem, 28vw) !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.45rem !important;
+    pointer-events: auto;
+  }
+
+  .dogzilla-speed-card {
+    border-radius: 1rem !important;
+    padding: 0.5rem 0.55rem !important;
+  }
+
+  .dogzilla-speed-card .mb-3 {
+    margin-bottom: 0.35rem !important;
+  }
+
+  .dogzilla-yaw-card .control-slider,
+  .dogzilla-speed-card .control-slider {
+    margin-top: 0.6rem !important;
+  }
+
+  .dogzilla-yaw-card .control-slider {
+    display: none !important;
+  }
+
+  .dogzilla-yaw-pad {
+    display: flex !important;
+    width: min(27vmin, 10.5rem);
+    height: min(27vmin, 10.5rem);
+    margin: 0.35rem auto 0;
+    align-items: center;
+    justify-content: center;
+    border-radius: 9999px;
+    background:
+      radial-gradient(circle at center, rgba(34, 211, 238, 0.17), transparent 32%),
+      radial-gradient(circle at center, transparent 49%, color-mix(in srgb, var(--color-border-default) 54%, transparent) 50%, transparent 51%),
+      color-mix(in srgb, var(--color-surface-base) 38%, transparent);
+    box-shadow:
+      inset 0 0 0 1px color-mix(in srgb, var(--color-border-default) 62%, transparent),
+      inset 0 0 4rem rgba(34, 211, 238, 0.08),
+      0 0 0 1.25rem color-mix(in srgb, var(--color-surface-primary) 18%, transparent);
+  }
+
+  .dogzilla-yaw-ring {
+    border: 1px solid color-mix(in srgb, var(--color-accent-data) 42%, transparent);
+    box-shadow: inset 0 0 2rem rgba(34, 211, 238, 0.12);
+  }
+
+  .dogzilla-yaw-cross {
+    position: absolute;
+    top: 50%;
+    z-index: 2;
+    color: color-mix(in srgb, var(--color-text-primary) 74%, transparent);
+    font-size: 1.4rem;
+    line-height: 1;
+    transform: translateY(-50%);
+  }
+
+  .dogzilla-yaw-cross-left {
+    left: 1rem;
+  }
+
+  .dogzilla-yaw-cross-right {
+    right: 1rem;
+  }
+
+  .dogzilla-yaw-arc {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 78%;
+    height: 78%;
+    border-radius: 9999px;
+    border-top: 3px solid var(--color-accent-critical);
+    border-right: 3px solid transparent;
+    border-bottom: 3px solid transparent;
+    border-left: 3px solid transparent;
+    filter: drop-shadow(0 0 0.55rem color-mix(in srgb, var(--color-accent-critical) 70%, transparent));
+    transition: transform 80ms linear;
+  }
+
+  .dogzilla-yaw-core {
+    position: relative;
+    z-index: 3;
+    display: flex;
+    width: 3.75rem;
+    height: 3.75rem;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid color-mix(in srgb, var(--color-accent-data) 50%, transparent);
+    border-radius: 9999px;
+    background: color-mix(in srgb, var(--color-surface-base) 64%, transparent);
+    box-shadow: 0 0 1.2rem rgba(34, 211, 238, 0.16);
+  }
+
+  .dogzilla-yaw-core-value {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+    font-size: 0.95rem;
+    font-weight: 800;
+    line-height: 1;
+    color: var(--color-accent-data);
+  }
+
+  .dogzilla-yaw-core-label {
+    margin-top: 0.2rem;
+    font-size: 0.52rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    color: var(--color-text-muted);
+  }
+
+  .dogzilla-control-panel:not([data-active-tab="move"]) .dogzilla-quick-actions {
+    bottom: auto;
+    left: auto;
+    top: 4.85rem;
+    right: 0.85rem;
+    width: min(25rem, 42vw);
+    padding: 0.3rem !important;
+    transform: none;
+    border: 1px solid color-mix(in srgb, var(--color-border-default) 48%, transparent);
+    border-radius: 9999px;
+    background: color-mix(in srgb, var(--color-surface-primary) 42%, transparent);
+    box-shadow: 0 0.9rem 2rem rgba(0, 0, 0, 0.12);
+    backdrop-filter: blur(14px) saturate(125%);
+  }
+
+  .dogzilla-control-panel:not([data-active-tab="move"]) .dogzilla-quick-action-list {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .dogzilla-control-panel:not([data-active-tab="move"]) .dogzilla-quick-action-button {
+    min-height: 2rem !important;
+    padding: 0.32rem 0.45rem !important;
+    font-size: 0.72rem !important;
+    box-shadow: none;
+  }
+
+  .dogzilla-control-panel:not([data-active-tab="move"]) .dogzilla-tab-content {
+    position: absolute;
+    top: 7.9rem;
+    right: 0.85rem;
+    bottom: 4.3rem;
+    width: min(25rem, 42vw);
+    margin: 0 !important;
+    padding: 0.85rem !important;
+    overflow: auto !important;
+    border: 1px solid color-mix(in srgb, var(--color-border-default) 60%, transparent);
+    border-radius: 1.15rem;
+    background: color-mix(in srgb, var(--color-surface-primary) 78%, transparent);
+    box-shadow: 0 1.25rem 3rem rgba(0, 0, 0, 0.18);
+    backdrop-filter: blur(18px) saturate(130%);
+  }
+}
+
+@media (max-width: 1023px) and (orientation: landscape) and (max-height: 520px) {
+  .dogzilla-mobile-layout {
+    height: clamp(18rem, calc(100svh - 8.5rem), 22rem) !important;
+    min-height: 18rem !important;
+  }
+
+  .dogzilla-stage-status-card {
+    width: min(17rem, 38vw);
+  }
+
+  .dogzilla-quick-actions {
+    bottom: 3.15rem;
+  }
+
+  .dogzilla-control-panel[data-active-tab="move"] .dogzilla-move-panel {
+    padding-top: 3.75rem;
+    padding-bottom: 3.9rem;
+  }
+
+  .dogzilla-move-pad-card {
+    width: min(11.4rem, 22vw);
+    padding: 0.7rem !important;
+  }
+
+  .dogzilla-move-pad {
+    width: min(25vmin, 9.5rem) !important;
+    height: min(25vmin, 9.5rem) !important;
+  }
+
+  .dogzilla-yaw-card {
+    width: min(11.4rem, 22vw) !important;
+  }
+
+  .dogzilla-yaw-pad {
+    width: min(25vmin, 9.5rem) !important;
+    height: min(25vmin, 9.5rem) !important;
+  }
+
+  .dogzilla-speed-grid {
+    top: 3.9rem;
+    width: min(14rem, 27vw) !important;
+  }
+}

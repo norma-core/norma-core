@@ -53,7 +53,7 @@ const YahboomDogzillaLiteCard = memo(function YahboomDogzillaLiteCard({
   }
 
   return (
-    <div className="mx-auto w-full max-w-[28rem] sm:max-w-[32rem]">
+    <div className="dogzilla-mobile-shell mx-auto w-full max-w-[28rem] sm:max-w-[32rem]">
       <YahboomDogzillaLiteDashboard
         deviceState={deviceState}
         refreshToken={deviceIndex}

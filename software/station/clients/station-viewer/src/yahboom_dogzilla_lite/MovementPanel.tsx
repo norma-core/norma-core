@@ -47,16 +47,19 @@ const MovementPanelComponent = forwardRef<MovementPanelRef, MovementPanelProps>(
   ref
 ) {
   const padRef = useRef<HTMLDivElement | null>(null);
+  const yawPadRef = useRef<HTMLDivElement | null>(null);
   const lastSentRef = useRef(0);
   const pendingRef = useRef<{ moveX: number; moveY: number; moveYaw: number } | null>(null);
   const timerRef = useRef<number | null>(null);
   const joystickRef = useRef({ x: 0, y: 0 });
   const yawRef = useRef(NEUTRAL);
   const draggingRef = useRef(false);
+  const yawDraggingRef = useRef(false);
 
   const [joystick, setJoystick] = useState({ x: 0, y: 0 });
   const [yaw, setYaw] = useState(NEUTRAL);
   const [isDragging, setIsDragging] = useState(false);
+  const [isYawDragging, setIsYawDragging] = useState(false);
 
   const sendMovementCommand = useCallback(
     (values: { moveX: number; moveY: number; moveYaw: number }) => {
@@ -106,6 +109,7 @@ const MovementPanelComponent = forwardRef<MovementPanelRef, MovementPanelProps>(
     setJoystick({ x: 0, y: 0 });
     setYaw(NEUTRAL);
     setIsDragging(false);
+    setIsYawDragging(false);
     scheduleSend({
       moveX: NEUTRAL,
       moveY: NEUTRAL,
@@ -220,6 +224,21 @@ const MovementPanelComponent = forwardRef<MovementPanelRef, MovementPanelProps>(
     [updateJoystick]
   );
 
+  const updateYawFromPointer = useCallback(
+    (event: PointerEvent<HTMLDivElement>) => {
+      const pad = yawPadRef.current;
+      if (!pad) {
+        return;
+      }
+
+      const rect = pad.getBoundingClientRect();
+      const centerX = rect.left + rect.width / 2;
+      const x = clampNormalized((event.clientX - centerX) / (rect.width / 2));
+      updateYaw(normalizedToByte(x));
+    },
+    [updateYaw]
+  );
+
   const handlePointerDown = useCallback(
     (event: PointerEvent<HTMLDivElement>) => {
       draggingRef.current = true;
@@ -254,9 +273,46 @@ const MovementPanelComponent = forwardRef<MovementPanelRef, MovementPanelProps>(
     [stopTranslation]
   );
 
+  const handleYawPointerDown = useCallback(
+    (event: PointerEvent<HTMLDivElement>) => {
+      yawDraggingRef.current = true;
+      setIsYawDragging(true);
+      event.currentTarget.setPointerCapture(event.pointerId);
+      updateYawFromPointer(event);
+    },
+    [updateYawFromPointer]
+  );
+
+  const handleYawPointerMove = useCallback(
+    (event: PointerEvent<HTMLDivElement>) => {
+      if (!yawDraggingRef.current) {
+        return;
+      }
+      updateYawFromPointer(event);
+    },
+    [updateYawFromPointer]
+  );
+
+  const handleYawPointerUp = useCallback(
+    (event: PointerEvent<HTMLDivElement>) => {
+      if (!yawDraggingRef.current) {
+        return;
+      }
+      yawDraggingRef.current = false;
+      setIsYawDragging(false);
+      if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+        event.currentTarget.releasePointerCapture(event.pointerId);
+      }
+      stopYaw();
+    },
+    [stopYaw]
+  );
+
+  const yawNormalized = clampNormalized((yaw - NEUTRAL) / 127);
+
   return (
-    <div className="space-y-4">
-      <div className="rounded-lg border border-border-default bg-surface-primary/80 px-4 py-4">
+    <div className="dogzilla-move-panel space-y-4">
+      <div className="dogzilla-move-pad-card rounded-lg border border-border-default bg-surface-primary/80 px-4 py-4">
         <div className="mb-3 flex items-center justify-between text-[11px] uppercase tracking-wide text-text-label">
           <span>Movement</span>
           <span className={`${isDragging ? 'text-accent-data' : 'text-text-muted'} font-mono`}>{isDragging ? 'LIVE' : 'IDLE'}</span>
@@ -269,7 +325,7 @@ const MovementPanelComponent = forwardRef<MovementPanelRef, MovementPanelProps>(
             onPointerMove={handlePointerMove}
             onPointerUp={handlePointerUp}
             onPointerCancel={handlePointerUp}
-            className="relative touch-none rounded-full border border-border-default bg-surface-base"
+            className="dogzilla-move-pad relative touch-none rounded-full border border-border-default bg-surface-base"
             style={{ width: PAD_SIZE, height: PAD_SIZE }}
           >
             <div className="absolute inset-[18%] rounded-full border border-border-subtle" />
@@ -287,7 +343,7 @@ const MovementPanelComponent = forwardRef<MovementPanelRef, MovementPanelProps>(
             <div className="absolute left-1/2 top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full border border-accent-data bg-accent-data" />
           </div>
         </div>
-        <div className="mt-4 grid grid-cols-3 gap-2">
+        <div className="dogzilla-move-stats mt-4 grid grid-cols-3 gap-2">
           <div className="rounded-md border border-border-default bg-surface-base px-3 py-2 text-center">
             <div className="text-[10px] uppercase tracking-wide text-text-muted">Fwd</div>
             <div className="mt-1 font-mono text-sm font-semibold text-accent-data">{liveValues.forward}%</div>
@@ -307,10 +363,38 @@ const MovementPanelComponent = forwardRef<MovementPanelRef, MovementPanelProps>(
         </div>
       </div>
 
-      <div className="rounded-lg border border-border-default bg-surface-primary/80 px-4 py-3">
+      <div className="dogzilla-yaw-card rounded-lg border border-border-default bg-surface-primary/80 px-4 py-3">
         <div className="flex items-center justify-between text-[11px] uppercase tracking-wide text-text-label">
           <span>Yaw</span>
-          <span className="font-mono text-accent-data">{liveValues.yaw}%</span>
+          <span className={`${isYawDragging ? 'text-accent-data' : 'text-text-muted'} font-mono`}>
+            {isYawDragging ? `${liveValues.yaw}%` : 'READY'}
+          </span>
+        </div>
+        <div
+          ref={yawPadRef}
+          role="slider"
+          aria-label="Yaw"
+          aria-valuemin={-100}
+          aria-valuemax={100}
+          aria-valuenow={liveValues.yaw}
+          tabIndex={0}
+          onPointerDown={handleYawPointerDown}
+          onPointerMove={handleYawPointerMove}
+          onPointerUp={handleYawPointerUp}
+          onPointerCancel={handleYawPointerUp}
+          className="dogzilla-yaw-pad relative hidden touch-none select-none"
+        >
+          <div className="dogzilla-yaw-ring absolute inset-0 rounded-full" />
+          <div className="dogzilla-yaw-cross dogzilla-yaw-cross-left">‹</div>
+          <div className="dogzilla-yaw-cross dogzilla-yaw-cross-right">›</div>
+          <div
+            className="dogzilla-yaw-arc"
+            style={{ transform: `translate(-50%, -50%) rotate(${yawNormalized * 82}deg)` }}
+          />
+          <div className="dogzilla-yaw-core">
+            <span className="dogzilla-yaw-core-value">{liveValues.yaw}</span>
+            <span className="dogzilla-yaw-core-label">YAW</span>
+          </div>
         </div>
         <input
           type="range"
@@ -324,8 +408,8 @@ const MovementPanelComponent = forwardRef<MovementPanelRef, MovementPanelProps>(
         />
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
-        <div className="rounded-lg border border-border-default bg-surface-primary/80 px-4 py-3">
+      <div className="dogzilla-speed-grid grid grid-cols-2 gap-3">
+        <div className="dogzilla-speed-card rounded-lg border border-border-default bg-surface-primary/80 px-4 py-3">
           <div className="mb-3 flex items-center justify-between text-[11px] uppercase tracking-wide text-text-label">
             <span>Leg Speed</span>
             <span className="font-mono text-accent-data">{legsSpeed}</span>
@@ -341,7 +425,7 @@ const MovementPanelComponent = forwardRef<MovementPanelRef, MovementPanelProps>(
             className="control-slider mt-4 h-4 w-full"
           />
         </div>
-        <div className="rounded-lg border border-border-default bg-surface-primary/80 px-4 py-3">
+        <div className="dogzilla-speed-card rounded-lg border border-border-default bg-surface-primary/80 px-4 py-3">
           <div className="mb-3 flex items-center justify-between text-[11px] uppercase tracking-wide text-text-label">
             <span>Arm Speed</span>
             <span className="font-mono text-accent-data">{armSpeed}</span>

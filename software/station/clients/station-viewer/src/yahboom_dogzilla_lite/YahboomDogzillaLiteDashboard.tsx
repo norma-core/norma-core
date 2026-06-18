@@ -7,6 +7,7 @@ import {
   ChevronDown,
   Gauge,
   Maximize2,
+  Minimize2,
   Minus,
   Move3d,
   OctagonX,
@@ -89,7 +90,7 @@ type TabId = (typeof TAB_DEFINITIONS)[number]['id'];
 type JointTabId = 'legs' | 'arm';
 type LegKey = (typeof LEG_CONFIGS)[number]['key'];
 type LegControlKey = (typeof LEG_CONTROL_KEYS)[number];
-type StageViewMode = '3d' | 'camera' | 'fullscreenVideo';
+type StageViewMode = '3d' | 'camera';
 
 interface DashboardLogEntry {
   id: number;
@@ -186,7 +187,7 @@ function TabButton({
     <button
       type="button"
       onClick={onClick}
-      className={`flex min-h-9 min-w-[5.1rem] shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-md border px-3 py-2 text-sm font-medium transition ${
+      className={`dogzilla-tab-button flex min-h-9 min-w-[5.1rem] shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-md border px-3 py-2 text-sm font-medium transition ${
         isActive
           ? 'border-accent-data bg-accent-data/10 text-accent-data'
           : 'border-border-default bg-surface-primary/80 text-text-secondary hover:border-accent-data hover:text-accent-data'
@@ -211,7 +212,7 @@ function QuickActionButton({
     <button
       type="button"
       onClick={onClick}
-      className={`min-h-9 shrink-0 rounded-full border px-3 py-1.5 text-sm font-semibold transition ${
+      className={`dogzilla-quick-action-button min-h-9 shrink-0 rounded-full border px-3 py-1.5 text-sm font-semibold transition ${
         isDanger
           ? 'border-accent-critical-deep bg-accent-critical/10 text-accent-critical hover:border-accent-critical hover:bg-accent-critical/20'
           : 'border-border-default bg-surface-primary/80 text-text-primary hover:border-accent-data hover:text-accent-data'
@@ -312,7 +313,7 @@ const YahboomDogzillaLiteDashboard = memo(function YahboomDogzillaLiteDashboard(
   refreshToken,
   videoSources
 }: YahboomDogzillaLiteDashboardProps) {
-  const fullscreenRootRef = useRef<HTMLDivElement | null>(null);
+  const dashboardRootRef = useRef<HTMLDivElement | null>(null);
   const movementPanelRef = useRef<MovementPanelRef | null>(null);
   const latencyHistoryRef = useRef<Array<{ timestamp: number; latency: number }>>([]);
   const logIdRef = useRef(0);
@@ -327,6 +328,7 @@ const YahboomDogzillaLiteDashboard = memo(function YahboomDogzillaLiteDashboard(
   const [armStepMode, setArmStepMode] = useState<'coarse' | 'fine'>('coarse');
   const [legsSpeed, setLegsSpeed] = useState(128);
   const [armSpeed, setArmSpeed] = useState(128);
+  const [isRemoteFullscreen, setIsRemoteFullscreen] = useState(false);
   const [activeAction, setActiveAction] = useState<yahboom_dogzilla_lite.ActionType | null>(null);
   const [commandLog, setCommandLog] = useState<DashboardLogEntry[]>([]);
 
@@ -406,10 +408,10 @@ const YahboomDogzillaLiteDashboard = memo(function YahboomDogzillaLiteDashboard(
   }, [cameraOptions, selectedVideoSourceId]);
 
   useEffect(() => {
-    if (cameraOptions.length <= 1 || stageViewMode === 'fullscreenVideo') {
+    if (cameraOptions.length <= 1) {
       setIsCameraPickerOpen(false);
     }
-  }, [cameraOptions.length, stageViewMode]);
+  }, [cameraOptions.length]);
 
   useEffect(() => {
     if (!selectedVideoSource && stageViewMode !== '3d') {
@@ -419,26 +421,35 @@ const YahboomDogzillaLiteDashboard = memo(function YahboomDogzillaLiteDashboard(
   }, [selectedVideoSource, stageViewMode]);
 
   useEffect(() => {
-    if (stageViewMode !== 'fullscreenVideo') {
-      return;
+    if (!isRemoteFullscreen) {
+      return undefined;
     }
 
-    fullscreenRootRef.current?.focus({ preventScroll: true });
-    if (!document.fullscreenElement) {
-      void fullscreenRootRef.current?.requestFullscreen().catch(() => undefined);
-    }
-  }, [stageViewMode]);
+    const previousBodyOverflow = document.body.style.overflow;
+    const previousRootOverflow = document.documentElement.style.overflow;
+    document.body.style.overflow = 'hidden';
+    document.documentElement.style.overflow = 'hidden';
+
+    return () => {
+      document.body.style.overflow = previousBodyOverflow;
+      document.documentElement.style.overflow = previousRootOverflow;
+    };
+  }, [isRemoteFullscreen]);
 
   useEffect(() => {
     const handleFullscreenChange = () => {
-      if (!document.fullscreenElement && stageViewMode === 'fullscreenVideo') {
-        setStageViewMode(selectedVideoSource ? 'camera' : '3d');
+      if (document.fullscreenElement) {
+        return;
+      }
+
+      if (isRemoteFullscreen) {
+        setIsRemoteFullscreen(false);
       }
     };
 
     document.addEventListener('fullscreenchange', handleFullscreenChange);
     return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
-  }, [selectedVideoSource, stageViewMode]);
+  }, [isRemoteFullscreen]);
 
   const now = Date.now();
   const frameTimestamp = deviceState?.monotonicStampNs
@@ -546,12 +557,23 @@ const YahboomDogzillaLiteDashboard = memo(function YahboomDogzillaLiteDashboard(
     }
 
     setIsCameraPickerOpen(false);
+    setStageViewMode(nextMode);
+  };
 
-    if (nextMode !== 'fullscreenVideo') {
-      exitFullscreen();
+  const handleRemoteFullscreenToggle = () => {
+    if (isRemoteFullscreen) {
+      setIsRemoteFullscreen(false);
+      if (document.fullscreenElement === dashboardRootRef.current) {
+        exitFullscreen();
+      }
+      return;
     }
 
-    setStageViewMode(nextMode);
+    setIsRemoteFullscreen(true);
+    const root = dashboardRootRef.current;
+    if (root && !document.fullscreenElement && root.requestFullscreen) {
+      void root.requestFullscreen().catch(() => undefined);
+    }
   };
 
   const updateLegServo = (controlKey: LegControlKey, nextValue: number) => {
@@ -820,6 +842,7 @@ const YahboomDogzillaLiteDashboard = memo(function YahboomDogzillaLiteDashboard(
     <UsbCameraViewer
       sourceId={selectedVideoSource?.sourceId}
       className="h-full w-full"
+      overlay="none"
       fit={fit}
     />
   );
@@ -855,58 +878,31 @@ const YahboomDogzillaLiteDashboard = memo(function YahboomDogzillaLiteDashboard(
     );
   };
 
-  if (stageViewMode === 'fullscreenVideo' && selectedVideoSource) {
-    return (
-      <div
-        ref={fullscreenRootRef}
-        tabIndex={-1}
-        className="fixed inset-0 z-50 overflow-hidden bg-black text-text-primary outline-none"
-      >
-        <div className="h-full w-full">
-          {renderCameraContent('cover')}
-        </div>
-        <div className="absolute left-3 top-3 z-20 flex items-center gap-2">
-          <button
-            type="button"
-            onClick={handleEmergencyStop}
-            className="flex min-h-10 items-center gap-2 rounded-md border border-accent-critical-deep bg-accent-critical/35 px-3 py-2 text-sm font-semibold text-accent-critical transition hover:border-accent-critical hover:bg-accent-critical/45"
-          >
-            <OctagonX className="h-4 w-4" />
-            E-Stop
-          </button>
-          <button
-            type="button"
-            onClick={() => handleStageViewModeChange('camera')}
-            className="min-h-10 rounded-md border border-border-default bg-surface-primary/85 px-3 py-2 text-sm font-semibold text-text-primary transition hover:border-accent-data hover:text-accent-data"
-          >
-            Exit
-          </button>
-        </div>
-        <div className="pointer-events-auto absolute bottom-3 right-3 z-20 h-28 w-40 overflow-hidden rounded-md border border-border-default bg-surface-primary shadow-lg">
-          {renderRobotContent('h-full min-h-0 w-full overflow-hidden')}
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="relative -mx-1 overflow-hidden border-y border-border-default bg-surface-primary/50 text-text-primary sm:mx-0 sm:rounded-lg sm:border">
-      <div className="relative flex h-[calc(100svh-7rem)] min-h-[46rem] max-h-[900px] flex-col lg:grid lg:h-[min(84vh,58rem)] lg:min-h-[44rem] lg:max-h-none lg:grid-cols-[minmax(0,1.18fr)_minmax(24rem,0.92fr)]">
-        <section className="relative basis-[43%] overflow-hidden border-b border-border-default bg-surface-base lg:basis-auto lg:border-b-0 lg:border-r lg:border-border-default">
+    <div
+      ref={dashboardRootRef}
+      data-remote-fullscreen={isRemoteFullscreen ? 'true' : undefined}
+      className="dogzilla-mobile-dashboard relative -mx-1 overflow-hidden border-y border-border-default bg-surface-primary/50 text-text-primary sm:mx-0 sm:rounded-lg sm:border"
+    >
+      <div
+        data-active-tab={activeTab}
+        className="dogzilla-mobile-layout relative flex h-[calc(100svh-7rem)] min-h-[46rem] max-h-[900px] flex-col lg:grid lg:h-[min(84vh,58rem)] lg:min-h-[44rem] lg:max-h-none lg:grid-cols-[minmax(0,1.18fr)_minmax(24rem,0.92fr)]"
+      >
+        <section className="dogzilla-stage relative basis-[43%] overflow-hidden border-b border-border-default bg-surface-base lg:basis-auto lg:border-b-0 lg:border-r lg:border-border-default">
           <div className="absolute inset-0">
             {isCameraStageActive ? renderCameraContent('cover') : renderRobotContent()}
           </div>
 
           {isCameraStageActive && (
-            <div className="pointer-events-auto absolute right-3 top-[4.5rem] z-10 h-20 w-32 overflow-hidden rounded-md border border-border-default bg-surface-primary shadow-lg">
+            <div className="dogzilla-stage-preview pointer-events-auto absolute right-3 top-[4.5rem] z-10 h-20 w-32 overflow-hidden rounded-md border border-border-default bg-surface-primary shadow-lg">
               {renderRobotContent('h-full min-h-0 w-full overflow-hidden')}
             </div>
           )}
 
           <div className="pointer-events-none absolute inset-0">
-            <div className="absolute inset-x-3 top-3 z-20 flex items-start justify-between gap-2">
-              <div className={`pointer-events-auto min-w-0 rounded-lg border border-border-default/45 bg-surface-primary/24 px-3 py-2 backdrop-blur-[2px] ${
-                isCameraStageActive ? 'max-w-[calc(100%-9.25rem)]' : 'max-w-[calc(100%-3.25rem)]'
+            <div className="dogzilla-stage-hud absolute inset-x-3 top-3 z-20 flex items-start justify-between gap-2">
+              <div className={`dogzilla-stage-status-card pointer-events-auto min-w-0 rounded-lg border border-border-default/45 bg-surface-primary/24 px-3 py-2 backdrop-blur-[2px] ${
+                isCameraStageActive ? 'max-w-[calc(100%-3.25rem)]' : 'max-w-[calc(100%-6.5rem)]'
               }`}
               >
                 <div className="flex min-w-0 items-center gap-2">
@@ -920,28 +916,37 @@ const YahboomDogzillaLiteDashboard = memo(function YahboomDogzillaLiteDashboard(
                   <StatusPill label="Ping" value={`${Math.round(pingValue)} ms`} tone={pingTone} />
                 </div>
               </div>
-              {!isCameraStageActive && (
+              <div className="dogzilla-stage-action-cluster pointer-events-auto flex shrink-0 items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleRemoteFullscreenToggle}
+                  className="dogzilla-remote-fullscreen-toggle flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-border-default bg-surface-primary/35 text-text-secondary shadow-sm backdrop-blur-sm transition hover:border-accent-data hover:bg-accent-data/12 hover:text-accent-data focus:outline-none focus:ring-2 focus:ring-accent-data/70 focus:ring-offset-2 focus:ring-offset-surface-primary"
+                  aria-label={isRemoteFullscreen ? 'Exit remote fullscreen' : 'Open remote fullscreen'}
+                  aria-pressed={isRemoteFullscreen}
+                  title={isRemoteFullscreen ? 'Exit remote fullscreen' : 'Open remote fullscreen'}
+                >
+                  {isRemoteFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+                </button>
                 <button
                   type="button"
                   onClick={handleEmergencyStop}
-                  className="pointer-events-auto flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-accent-critical-deep bg-accent-critical/14 text-accent-critical shadow-sm backdrop-blur-sm transition hover:border-accent-critical hover:bg-accent-critical/22 focus:outline-none focus:ring-2 focus:ring-accent-critical-deep focus:ring-offset-2 focus:ring-offset-surface-primary"
+                  className="dogzilla-stage-estop pointer-events-auto flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-accent-critical-deep bg-accent-critical/14 text-accent-critical shadow-sm backdrop-blur-sm transition hover:border-accent-critical hover:bg-accent-critical/22 focus:outline-none focus:ring-2 focus:ring-accent-critical-deep focus:ring-offset-2 focus:ring-offset-surface-primary"
                   aria-label="Emergency stop"
                   title="Emergency stop"
                 >
                   <OctagonX className="h-4 w-4" />
                 </button>
-              )}
+              </div>
             </div>
 
-            <div className="absolute inset-x-3 bottom-3 z-20 flex items-end justify-between gap-2">
-              <div className={`pointer-events-auto flex h-12 w-fit min-w-0 items-center gap-2 rounded-lg border border-border-default/45 bg-surface-primary/24 p-1 backdrop-blur-[2px] ${
+            <div className="dogzilla-stage-bottom-controls absolute inset-x-3 bottom-3 z-20 flex items-end justify-between gap-2">
+              <div className={`dogzilla-view-controls pointer-events-auto flex h-12 w-fit min-w-0 items-center gap-2 rounded-lg border border-border-default/45 bg-surface-primary/24 p-1 backdrop-blur-[2px] ${
                 isCameraStageActive ? 'max-w-[calc(100%-3.25rem)]' : 'max-w-full'
               }`}
               >
                 <div className="inline-flex h-10 shrink-0 overflow-hidden rounded-md bg-surface-secondary">
                   {renderCameraModeButton({ mode: '3d', label: '3D' })}
                   {renderCameraModeButton({ mode: 'camera', label: 'Camera', icon: Camera })}
-                  {renderCameraModeButton({ mode: 'fullscreenVideo', label: 'Fullscreen camera', icon: Maximize2 })}
                 </div>
                 {hasMultipleCameraOptions && (
                   <div className="relative min-w-0">
@@ -1025,24 +1030,16 @@ const YahboomDogzillaLiteDashboard = memo(function YahboomDogzillaLiteDashboard(
                   </div>
                 )}
               </div>
-              {isCameraStageActive && (
-                <button
-                  type="button"
-                  onClick={handleEmergencyStop}
-                  className="pointer-events-auto flex h-12 w-12 shrink-0 items-center justify-center rounded-lg border border-accent-critical-deep bg-accent-critical/18 text-accent-critical shadow-lg backdrop-blur-sm transition hover:border-accent-critical hover:bg-accent-critical/28 focus:outline-none focus:ring-2 focus:ring-accent-critical-deep focus:ring-offset-2 focus:ring-offset-surface-primary"
-                  aria-label="Emergency stop"
-                  title="Emergency stop"
-                >
-                  <OctagonX className="h-5 w-5" />
-                </button>
-              )}
             </div>
           </div>
         </section>
 
-        <section className="relative flex min-h-0 flex-1 flex-col bg-surface-primary/90 px-2.5 pb-2.5 pt-2.5 lg:px-4 lg:pb-4 lg:pt-4">
-          <div className="-mx-2.5 overflow-x-auto px-2.5 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            <div className="flex w-max gap-2">
+        <section
+          data-active-tab={activeTab}
+          className="dogzilla-control-panel relative flex min-h-0 flex-1 flex-col bg-surface-primary/90 px-2.5 pb-2.5 pt-2.5 lg:px-4 lg:pb-4 lg:pt-4"
+        >
+          <div className="dogzilla-tab-strip -mx-2.5 overflow-x-auto px-2.5 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <div className="dogzilla-tab-list flex w-max gap-2">
               {TAB_DEFINITIONS.map((tab) => (
                 <TabButton
                   key={tab.id}
@@ -1055,8 +1052,8 @@ const YahboomDogzillaLiteDashboard = memo(function YahboomDogzillaLiteDashboard(
             </div>
           </div>
 
-          <div className="-mx-2.5 mt-1.5 overflow-x-auto px-2.5 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            <div className="flex w-max gap-2">
+          <div className="dogzilla-quick-actions -mx-2.5 mt-1.5 overflow-x-auto px-2.5 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <div className="dogzilla-quick-action-list flex w-max gap-2">
               {QUICK_ACTIONS.map((action) => (
                 <QuickActionButton
                   key={action.value}
@@ -1068,7 +1065,7 @@ const YahboomDogzillaLiteDashboard = memo(function YahboomDogzillaLiteDashboard(
             </div>
           </div>
 
-          <div className="mt-1.5 min-h-0 flex-1 overflow-y-auto pb-1">
+          <div className="dogzilla-tab-content mt-1.5 min-h-0 flex-1 overflow-y-auto pb-1">
             {activeTab === 'move' && renderMoveTab()}
             {activeTab === 'actions' && renderActionsTab()}
             {activeTab === 'joints' && renderJointsTab()}
