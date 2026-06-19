@@ -696,13 +696,19 @@ const YahboomDogzillaLiteDesktopDashboard = memo(function YahboomDogzillaLiteDes
       >
         <div className="relative h-full w-full">
           {renderCameraStage()}
-          {renderCameraHudControls()}
-        </div>
-        <div hidden>
-          <YahboomDogzillaLiteDesktopMovementPanel
-            deviceSerial={device?.serialNumber ?? ''}
-            showHints={false}
+          <div
+            className="pointer-events-none absolute inset-x-0 bottom-0 z-40 h-40 bg-gradient-to-t from-surface-base/45 via-surface-base/16 to-transparent"
+            aria-hidden="true"
           />
+          <div className="pointer-events-none absolute inset-x-6 bottom-5 z-50 flex justify-center">
+            <div className="pointer-events-auto w-full max-w-[42rem] px-1">
+              <YahboomDogzillaLiteDesktopMovementPanel
+                deviceSerial={device?.serialNumber ?? ''}
+                showHints
+              />
+            </div>
+          </div>
+          {renderCameraHudControls()}
         </div>
       </div>
     );
@@ -735,9 +741,6 @@ const YahboomDogzillaLiteDesktopDashboard = memo(function YahboomDogzillaLiteDes
                   Camera
                 </div>
               </div>
-            )}
-            {mainViewMode === 'photo' && primaryCameraSourceId && (
-              renderCameraHudControls()
             )}
             <div className="pointer-events-none absolute inset-x-4 bottom-4 z-10">
               <YahboomDogzillaLiteDesktopMovementPanel deviceSerial={device?.serialNumber ?? ''} />
