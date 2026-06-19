@@ -14,7 +14,7 @@ const AttitudeIndicatorComponent = function AttitudeIndicator({ roll, pitch }: A
   const pitchOffset = (clampedPitch / PITCH_RANGE) * PITCH_SCALE;
 
   return (
-    <div className="dogzilla-attitude relative h-16 w-16 overflow-hidden">
+    <div className="relative h-16 w-16 overflow-hidden group-data-[remote-fullscreen=true]/dashboard:!h-[4rem] group-data-[remote-fullscreen=true]/dashboard:!w-[4rem] group-data-[remote-fullscreen=true]/dashboard:rounded-md group-data-[remote-fullscreen=true]/dashboard:border group-data-[remote-fullscreen=true]/dashboard:border-accent-data/40 group-data-[remote-fullscreen=true]/dashboard:bg-surface-primary/50 group-data-[remote-fullscreen=true]/dashboard:shadow-[0_0.6rem_1.5rem_rgba(0,0,0,0.18)] group-data-[remote-fullscreen=true]/dashboard:backdrop-blur-md [@media(max-width:1023px)_and_(orientation:landscape)]:h-[3.6rem] [@media(max-width:1023px)_and_(orientation:landscape)]:w-[3.6rem] [@media(max-width:1023px)_and_(orientation:landscape)]:rounded-md [@media(max-width:1023px)_and_(orientation:landscape)]:border [@media(max-width:1023px)_and_(orientation:landscape)]:border-accent-data/40 [@media(max-width:1023px)_and_(orientation:landscape)]:bg-surface-primary/50 [@media(max-width:1023px)_and_(orientation:landscape)]:shadow-[0_0.6rem_1.5rem_rgba(0,0,0,0.18)] [@media(max-width:1023px)_and_(orientation:landscape)]:backdrop-blur-md [@media(max-width:1023px)_and_(orientation:landscape)_and_(max-height:520px)]:h-[3.2rem] [@media(max-width:1023px)_and_(orientation:landscape)_and_(max-height:520px)]:w-[3.2rem]">
       <svg viewBox="-32 -32 64 64" className="absolute inset-0 h-full w-full">
         <g transform={`rotate(${-clampedRoll})`}>
           <g transform={`translate(0 ${pitchOffset})`}>

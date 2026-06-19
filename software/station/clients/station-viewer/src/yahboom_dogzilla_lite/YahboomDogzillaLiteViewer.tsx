@@ -42,6 +42,40 @@ interface YahboomDogzillaLiteViewerProps {
   cameraPreset?: CameraPreset;
   refreshToken?: number;
   className?: string;
+  fullscreenFraming?: boolean;
+}
+
+function applyCameraPreset(
+  camera: THREE.PerspectiveCamera,
+  controls: OrbitControls,
+  cameraPreset: CameraPreset,
+  fullscreenFraming: boolean
+) {
+  const distance = fullscreenFraming ? 0.52 : 0.4;
+  const targetY = fullscreenFraming ? STANDING_HEIGHT + 0.035 : STANDING_HEIGHT;
+
+  switch (cameraPreset) {
+    case 'top':
+      camera.position.set(0, distance, 0.001);
+      break;
+    case 'front':
+      camera.position.set(distance, fullscreenFraming ? 0.2 : 0.15, 0);
+      break;
+    case 'side':
+      camera.position.set(0, fullscreenFraming ? 0.2 : 0.15, distance);
+      break;
+    case 'iso':
+    default:
+      camera.position.set(
+        fullscreenFraming ? 0.42 : 0.3,
+        fullscreenFraming ? 0.32 : 0.25,
+        fullscreenFraming ? 0.42 : 0.3
+      );
+      break;
+  }
+
+  controls.target.set(0, targetY, 0);
+  controls.update();
 }
 
 class YahboomDogzillaLiteRobot {
@@ -402,7 +436,8 @@ export default function YahboomDogzillaLiteViewer({
   servoAngles,
   cameraPreset = 'iso',
   refreshToken,
-  className = 'h-full min-h-[280px] w-full overflow-hidden'
+  className = 'h-full min-h-[280px] w-full overflow-hidden',
+  fullscreenFraming = false
 }: YahboomDogzillaLiteViewerProps) {
   const { theme } = useTheme();
   const initialThemeRef = useRef(theme);
@@ -592,57 +627,20 @@ export default function YahboomDogzillaLiteViewer({
 
   useEffect(() => {
     if (!cameraRef.current || !controlsRef.current) return;
-    const camera = cameraRef.current;
-    const controls = controlsRef.current;
-    const distance = 0.4;
-
-    switch (cameraPreset) {
-      case 'top':
-        camera.position.set(0, distance, 0.001);
-        break;
-      case 'front':
-        camera.position.set(distance, 0.15, 0);
-        break;
-      case 'side':
-        camera.position.set(0, 0.15, distance);
-        break;
-      case 'iso':
-      default:
-        camera.position.set(0.3, 0.25, 0.3);
-        break;
-    }
-    controls.update();
-  }, [cameraPreset]);
+    applyCameraPreset(cameraRef.current, controlsRef.current, cameraPreset, fullscreenFraming);
+  }, [cameraPreset, fullscreenFraming]);
 
   useEffect(() => {
     if (!containerRef.current || !cameraRef.current || !controlsRef.current || !rendererRef.current) return;
     const camera = cameraRef.current;
     const controls = controlsRef.current;
     const renderer = rendererRef.current;
-    const distance = 0.4;
 
-    switch (cameraPreset) {
-      case 'top':
-        camera.position.set(0, distance, 0.001);
-        break;
-      case 'front':
-        camera.position.set(distance, 0.15, 0);
-        break;
-      case 'side':
-        camera.position.set(0, 0.15, distance);
-        break;
-      case 'iso':
-      default:
-        camera.position.set(0.3, 0.25, 0.3);
-        break;
-    }
-
-    controls.target.set(0, STANDING_HEIGHT, 0);
-    controls.update();
+    applyCameraPreset(camera, controls, cameraPreset, fullscreenFraming);
     camera.aspect = containerRef.current.clientWidth / containerRef.current.clientHeight;
     camera.updateProjectionMatrix();
     renderer.setSize(containerRef.current.clientWidth, containerRef.current.clientHeight);
-  }, [refreshToken, cameraPreset]);
+  }, [refreshToken, cameraPreset, fullscreenFraming]);
 
   return <div ref={containerRef} className={className} />;
 }

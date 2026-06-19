@@ -23,6 +23,7 @@ import { serverToLocal } from '@/api/timestamp-utils';
 import { yahboom_dogzilla_lite, usbvideo } from '@/api/proto.js';
 import ActionPanel, { QUICK_ACTIONS, type ActionDefinition } from '@/yahboom_dogzilla_lite/ActionPanel';
 import AttitudeIndicator from '@/yahboom_dogzilla_lite/AttitudeIndicator';
+import { CONTROL_SLIDER_CLASS_NAME } from '@/yahboom_dogzilla_lite/control-classes';
 import YahboomDogzillaLiteViewer from '@/yahboom_dogzilla_lite/YahboomDogzillaLiteViewer';
 import MovementPanel, { type MovementPanelRef } from '@/yahboom_dogzilla_lite/MovementPanel';
 import { getYahboomDogzillaLiteModelLabel } from '@/yahboom_dogzilla_lite/model-labels';
@@ -167,8 +168,8 @@ function StatusPill({ label, value, tone = 'default' }: { label: string; value: 
 
   return (
     <div className="flex min-w-0 items-baseline gap-1">
-      <span className="shrink-0 text-[9px] font-semibold uppercase tracking-wide text-text-muted">{label}</span>
-      <span className={`min-w-0 truncate font-mono text-[13px] font-bold leading-none ${toneClass}`} title={value}>
+      <span className="shrink-0 text-[9px] font-semibold uppercase tracking-wide text-text-muted [@media(max-width:1023px)_and_(orientation:landscape)]:text-[8px] [@media(max-width:900px)_and_(orientation:portrait)]:text-[8px]">{label}</span>
+      <span className={`min-w-0 truncate font-mono text-[13px] font-bold leading-none [@media(max-width:1023px)_and_(orientation:landscape)]:text-[12px] [@media(max-width:900px)_and_(orientation:portrait)]:text-[12px] ${toneClass}`} title={value}>
         {value}
       </span>
     </div>
@@ -190,14 +191,14 @@ function TabButton({
     <button
       type="button"
       onClick={onClick}
-      className={`dogzilla-tab-button flex min-h-9 min-w-[5.1rem] shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-md border px-3 py-2 text-sm font-medium transition ${
+      className={`flex min-h-9 min-w-[5.1rem] shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-md border px-3 py-2 text-sm font-medium transition group-data-[remote-fullscreen=true]/dashboard:min-h-[2.05rem] group-data-[remote-fullscreen=true]/dashboard:min-w-0 group-data-[remote-fullscreen=true]/dashboard:rounded-md group-data-[remote-fullscreen=true]/dashboard:px-2.5 group-data-[remote-fullscreen=true]/dashboard:py-1.5 group-data-[remote-fullscreen=true]/dashboard:text-[0.76rem] group-data-[remote-fullscreen=true]/dashboard:uppercase group-data-[remote-fullscreen=true]/dashboard:tracking-[0.08em] [@media(max-width:1023px)_and_(orientation:landscape)]:min-h-[1.9rem] [@media(max-width:1023px)_and_(orientation:landscape)]:min-w-0 [@media(max-width:1023px)_and_(orientation:landscape)]:rounded [@media(max-width:1023px)_and_(orientation:landscape)]:px-[0.5rem] [@media(max-width:1023px)_and_(orientation:landscape)]:py-[0.32rem] [@media(max-width:1023px)_and_(orientation:landscape)]:text-[0.68rem] [@media(max-width:1023px)_and_(orientation:landscape)]:uppercase [@media(max-width:1023px)_and_(orientation:landscape)]:tracking-[0.08em] ${
         isActive
           ? 'border-accent-data bg-accent-data/10 text-accent-data'
           : 'border-border-default bg-surface-primary/80 text-text-secondary hover:border-accent-data hover:text-accent-data'
       }`}
     >
       <Icon className="h-4 w-4" />
-      <span>{label}</span>
+      <span className="group-data-[remote-fullscreen=true]/dashboard:hidden [@media(max-width:1023px)_and_(orientation:landscape)]:hidden">{label}</span>
     </button>
   );
 }
@@ -212,16 +213,16 @@ function StageViewToggle({
   onChange: (value: StageViewMode) => void;
 }) {
   const buttonClassName = (mode: StageViewMode) => (
-    `m-0 flex h-full w-full min-w-0 appearance-none items-center justify-center rounded-none border-0 p-0 text-xs font-semibold leading-none shadow-none transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-data/70 disabled:cursor-not-allowed disabled:opacity-35 ${
+    `m-0 flex h-8 w-10 shrink-0 appearance-none items-center justify-center rounded-md border p-0 text-[0.82rem] font-bold leading-none shadow-none transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-data/70 disabled:cursor-not-allowed disabled:opacity-35 group-data-[remote-fullscreen=true]/dashboard:h-8 group-data-[remote-fullscreen=true]/dashboard:w-10 [@media(max-width:1023px)_and_(orientation:landscape)]:h-[1.75rem] [@media(max-width:1023px)_and_(orientation:landscape)]:w-[2.2rem] [@media(max-width:1023px)_and_(orientation:landscape)]:text-[0.72rem] ${
       value === mode
-        ? 'bg-accent-data text-surface-base'
-        : 'bg-transparent text-text-secondary hover:bg-surface-primary/70 hover:text-text-primary'
+        ? 'border-accent-data bg-accent-data text-surface-base'
+        : 'border-accent-data/35 bg-surface-primary/70 text-text-secondary hover:border-accent-data/70 hover:bg-surface-primary/85 hover:text-text-primary'
     }`
   );
 
   return (
     <div
-      className="grid h-10 w-20 shrink-0 grid-cols-2 overflow-hidden rounded-md border border-accent-data/30 bg-surface-primary/40 p-0 [@media(max-width:1023px)_and_(orientation:landscape)]:h-[1.7rem]"
+      className="flex shrink-0 items-center gap-1 rounded-md"
       role="group"
       aria-label="Stage view"
     >
@@ -262,7 +263,7 @@ function QuickActionButton({
     <button
       type="button"
       onClick={onClick}
-      className={`dogzilla-quick-action-button min-h-9 shrink-0 rounded-full border px-3 py-1.5 text-sm font-semibold transition ${
+      className={`min-h-9 shrink-0 rounded-full border px-3 py-1.5 text-sm font-semibold transition group-data-[remote-fullscreen=true]/dashboard:min-h-[2.05rem] group-data-[remote-fullscreen=true]/dashboard:rounded-md group-data-[remote-fullscreen=true]/dashboard:bg-transparent group-data-[remote-fullscreen=true]/dashboard:px-3.5 group-data-[remote-fullscreen=true]/dashboard:py-1.5 group-data-[remote-fullscreen=true]/dashboard:text-[0.76rem] group-data-[remote-fullscreen=true]/dashboard:uppercase group-data-[remote-fullscreen=true]/dashboard:tracking-[0.08em] group-data-[remote-fullscreen=true]/dashboard:shadow-none group-data-[remote-fullscreen=true]/dashboard:backdrop-blur-0 [@media(max-width:1023px)_and_(orientation:landscape)]:min-h-[1.9rem] [@media(max-width:1023px)_and_(orientation:landscape)]:rounded [@media(max-width:1023px)_and_(orientation:landscape)]:bg-transparent [@media(max-width:1023px)_and_(orientation:landscape)]:px-[0.65rem] [@media(max-width:1023px)_and_(orientation:landscape)]:py-[0.32rem] [@media(max-width:1023px)_and_(orientation:landscape)]:text-[0.68rem] [@media(max-width:1023px)_and_(orientation:landscape)]:uppercase [@media(max-width:1023px)_and_(orientation:landscape)]:tracking-[0.08em] [@media(max-width:1023px)_and_(orientation:landscape)]:shadow-none [@media(max-width:1023px)_and_(orientation:landscape)]:backdrop-blur-0 ${
         isDanger
           ? 'border-accent-critical-deep bg-accent-critical/10 text-accent-critical hover:border-accent-critical hover:bg-accent-critical/20'
           : 'border-border-default bg-surface-primary/80 text-text-primary hover:border-accent-data hover:text-accent-data'
@@ -306,7 +307,7 @@ function SliderControlCard({
         max={255}
         value={value}
         onChange={(event) => onChange(Number(event.target.value))}
-        className="control-slider mt-4 h-4 w-full"
+        className={CONTROL_SLIDER_CLASS_NAME}
       />
       <div className="mt-4 flex items-center gap-3">
         <button
@@ -523,7 +524,9 @@ const YahboomDogzillaLiteDashboard = memo(function YahboomDogzillaLiteDashboard(
 
   const connectionLabel = isConnected ? 'Online' : 'Offline';
   const connectionTone = isConnected ? 'good' : 'danger';
-  const robotDisplayName = device?.serialNumber ? `Dogzilla #${device.serialNumber}` : 'Dogzilla Lite';
+  const robotSerial = device?.serialNumber ?? null;
+  const robotDisplayName = robotSerial ? `Dogzilla #${robotSerial}` : 'Dogzilla Lite';
+  const robotShortId = robotSerial ? `#${robotSerial.slice(-6)}` : 'Lite';
   const hasMultipleCameraOptions = cameraOptions.length > 1;
 
   const selectedLegConfig = LEG_CONFIGS.find((leg) => leg.key === selectedLeg) ?? LEG_CONFIGS[0];
@@ -885,6 +888,7 @@ const YahboomDogzillaLiteDashboard = memo(function YahboomDogzillaLiteDashboard(
       servoAngles={liveAngles}
       refreshToken={refreshToken}
       className={className}
+      fullscreenFraming={isRemoteFullscreen}
     />
   );
 
@@ -897,46 +901,149 @@ const YahboomDogzillaLiteDashboard = memo(function YahboomDogzillaLiteDashboard(
     />
   );
   const isCameraStageActive = stageViewMode === 'camera' && Boolean(selectedVideoSource);
+  const stageViewControls = (
+    <div className={`pointer-events-auto flex h-fit min-w-0 shrink-0 items-center gap-1.5 rounded-md bg-transparent p-0 [@media(max-width:900px)_and_(orientation:portrait)]:gap-1 ${
+      isCameraStageActive ? 'max-w-[calc(100vw-11rem)]' : 'max-w-full'
+    }`}
+    >
+      <StageViewToggle
+        value={stageViewMode}
+        cameraDisabled={!selectedVideoSource}
+        onChange={handleStageViewModeChange}
+      />
+      {hasMultipleCameraOptions && (
+        <div className="relative min-w-0">
+          <button
+            type="button"
+            onClick={() => setIsCameraPickerOpen((current) => !current)}
+            className={`flex h-8 w-[8.5rem] min-w-0 items-center justify-between gap-1.5 rounded-md border px-2 text-left text-[11px] font-semibold transition focus:outline-none focus:ring-1 focus:ring-accent-data [@media(max-width:1023px)_and_(orientation:landscape)]:h-[1.75rem] [@media(max-width:1023px)_and_(orientation:landscape)]:max-h-[1.75rem] [@media(max-width:1023px)_and_(orientation:landscape)]:w-[7.25rem] ${
+              isCameraPickerOpen
+                ? 'border-accent-data bg-surface-primary text-text-primary'
+                : 'border-border-subtle bg-surface-primary/70 text-text-primary hover:border-accent-data'
+            }`}
+            aria-haspopup="listbox"
+            aria-expanded={isCameraPickerOpen}
+            aria-label="Camera source"
+            title={selectedVideoSource?.label ?? 'No camera'}
+          >
+            <span className="min-w-0 truncate">
+              {selectedVideoSource?.shortLabel ?? 'No camera'}
+            </span>
+            <ChevronDown
+              className={`h-3.5 w-3.5 shrink-0 text-text-muted transition-transform ${isCameraPickerOpen ? 'rotate-180' : ''}`}
+              strokeWidth={2.5}
+            />
+          </button>
+
+          {isCameraPickerOpen && (
+            <div
+              className="absolute left-0 top-[calc(100%+0.5rem)] z-40 w-[min(19rem,calc(100vw-2rem))] overflow-hidden rounded-xl border border-border-default bg-surface-primary/95 p-1.5 shadow-2xl backdrop-blur-md"
+              role="listbox"
+              aria-label="Camera source"
+            >
+              <div className="px-2.5 pb-1.5 pt-1 text-[10px] font-bold uppercase tracking-[0.16em] text-text-muted">
+                Camera source
+              </div>
+              <div className="max-h-56 overflow-y-auto">
+                {cameraOptions.map((option) => {
+                  const isSelected = option.id === selectedVideoSourceId;
+
+                  return (
+                    <button
+                      key={option.id}
+                      type="button"
+                      onClick={() => {
+                        setSelectedVideoSourceId(option.id);
+                        setIsCameraPickerOpen(false);
+                      }}
+                      className={`flex w-full items-center gap-2 rounded-lg px-2.5 py-2.5 text-left transition ${
+                        isSelected
+                          ? 'bg-accent-data text-surface-base'
+                          : 'text-text-primary hover:bg-surface-secondary'
+                      }`}
+                      role="option"
+                      aria-selected={isSelected}
+                      title={option.label}
+                    >
+                      <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border ${
+                        isSelected
+                          ? 'border-surface-base/70 bg-surface-base/18'
+                          : 'border-border-subtle text-transparent'
+                      }`}
+                      >
+                        <Check className="h-3.5 w-3.5" strokeWidth={3} />
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-sm font-bold">
+                          {option.shortLabel}
+                        </span>
+                        <span className={`block truncate text-[11px] font-medium ${
+                          isSelected ? 'text-surface-base/72' : 'text-text-muted'
+                        }`}
+                        >
+                          {option.detail}
+                        </span>
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
 
   return (
     <div
       ref={dashboardRootRef}
       data-remote-fullscreen={isRemoteFullscreen ? 'true' : undefined}
-      className="dogzilla-mobile-dashboard relative -mx-1 overflow-hidden border-y border-border-default bg-surface-primary/50 text-text-primary sm:mx-0 sm:rounded-lg sm:border"
+      className="group/dashboard relative -mx-1 overflow-hidden border-y border-border-default bg-surface-primary/50 text-text-primary data-[remote-fullscreen=true]:!fixed data-[remote-fullscreen=true]:!inset-0 data-[remote-fullscreen=true]:!z-[60] data-[remote-fullscreen=true]:!m-0 data-[remote-fullscreen=true]:!h-[100svh] data-[remote-fullscreen=true]:!w-screen data-[remote-fullscreen=true]:!rounded-none data-[remote-fullscreen=true]:!border-0 data-[remote-fullscreen=true]:!bg-surface-base sm:mx-0 sm:rounded-lg sm:border [@media(max-width:1023px)_and_(orientation:landscape)]:mx-0 [@media(max-width:1023px)_and_(orientation:landscape)]:rounded-xl [&:fullscreen]:!fixed [&:fullscreen]:!inset-0 [&:fullscreen]:!z-[60] [&:fullscreen]:!m-0 [&:fullscreen]:!h-[100svh] [&:fullscreen]:!w-screen [&:fullscreen]:!rounded-none [&:fullscreen]:!border-0 [&:fullscreen]:!bg-surface-base"
     >
       <div
         data-active-tab={activeTab}
-        className="dogzilla-mobile-layout relative flex h-[calc(100svh-7rem)] min-h-[46rem] max-h-[900px] flex-col lg:grid lg:h-[min(84vh,58rem)] lg:min-h-[44rem] lg:max-h-none lg:grid-cols-[minmax(0,1.18fr)_minmax(24rem,0.92fr)]"
+        className="relative flex h-[calc(100svh-7rem)] min-h-[46rem] max-h-[900px] flex-col group-data-[remote-fullscreen=true]/dashboard:!block group-data-[remote-fullscreen=true]/dashboard:!h-[100svh] group-data-[remote-fullscreen=true]/dashboard:!min-h-[100svh] group-data-[remote-fullscreen=true]/dashboard:!max-h-none group-data-[remote-fullscreen=true]/dashboard:!overflow-hidden lg:grid lg:h-[min(84vh,58rem)] lg:min-h-[44rem] lg:max-h-none lg:grid-cols-[minmax(0,1.18fr)_minmax(24rem,0.92fr)] [@media(max-width:1023px)_and_(orientation:landscape)]:block [@media(max-width:1023px)_and_(orientation:landscape)]:h-[clamp(18rem,calc(100svh-8.5rem),35rem)] [@media(max-width:1023px)_and_(orientation:landscape)]:min-h-[18rem] [@media(max-width:1023px)_and_(orientation:landscape)]:max-h-none [@media(max-width:1023px)_and_(orientation:landscape)]:overflow-hidden [@media(max-width:1023px)_and_(orientation:landscape)_and_(max-height:520px)]:h-[clamp(18rem,calc(100svh-8.5rem),22rem)]"
       >
-        <section className="dogzilla-stage relative basis-[43%] overflow-hidden border-b border-border-default bg-surface-base lg:basis-auto lg:border-b-0 lg:border-r lg:border-border-default">
+        <section className="relative basis-[43%] overflow-hidden border-b border-border-default bg-surface-base group-data-[remote-fullscreen=true]/dashboard:!absolute group-data-[remote-fullscreen=true]/dashboard:!inset-0 group-data-[remote-fullscreen=true]/dashboard:!min-h-0 group-data-[remote-fullscreen=true]/dashboard:!border-0 lg:basis-auto lg:border-b-0 lg:border-r lg:border-border-default [@media(max-width:1023px)_and_(orientation:landscape)]:absolute [@media(max-width:1023px)_and_(orientation:landscape)]:inset-0 [@media(max-width:1023px)_and_(orientation:landscape)]:min-h-0 [@media(max-width:1023px)_and_(orientation:landscape)]:border-0">
           <div className="absolute inset-0">
             {isCameraStageActive ? renderCameraContent('cover') : renderRobotContent()}
           </div>
 
           <div className="pointer-events-none absolute inset-0">
-            <span className="dogzilla-corner-bracket dogzilla-corner-bracket-tl" aria-hidden />
-            <span className="dogzilla-corner-bracket dogzilla-corner-bracket-tr" aria-hidden />
-            <span className="dogzilla-corner-bracket dogzilla-corner-bracket-bl" aria-hidden />
-            <span className="dogzilla-corner-bracket dogzilla-corner-bracket-br" aria-hidden />
+            <div
+              className="pointer-events-none absolute inset-0 z-[5] hidden [background:radial-gradient(circle_at_18%_82%,rgba(34,211,238,0.14),transparent_27%),radial-gradient(circle_at_84%_78%,rgba(34,211,238,0.10),transparent_24%),linear-gradient(90deg,rgba(0,0,0,0.30),transparent_32%,transparent_68%,rgba(0,0,0,0.30)),linear-gradient(180deg,rgba(0,0,0,0.18),transparent_34%,rgba(0,0,0,0.22))] [@media(max-width:1023px)_and_(orientation:landscape)]:block"
+              aria-hidden="true"
+            />
+            <span className="pointer-events-none absolute left-[0.55rem] top-[0.55rem] z-[6] hidden h-[0.95rem] w-[0.95rem] border-l-2 border-t-2 border-accent-data/70 [@media(max-width:1023px)_and_(orientation:landscape)]:block" aria-hidden />
+            <span className="pointer-events-none absolute right-[0.55rem] top-[0.55rem] z-[6] hidden h-[0.95rem] w-[0.95rem] border-r-2 border-t-2 border-accent-data/70 [@media(max-width:1023px)_and_(orientation:landscape)]:block" aria-hidden />
+            <span className="pointer-events-none absolute bottom-[0.55rem] left-[0.55rem] z-[6] hidden h-[0.95rem] w-[0.95rem] border-b-2 border-l-2 border-accent-data/70 [@media(max-width:1023px)_and_(orientation:landscape)]:block" aria-hidden />
+            <span className="pointer-events-none absolute bottom-[0.55rem] right-[0.55rem] z-[6] hidden h-[0.95rem] w-[0.95rem] border-b-2 border-r-2 border-accent-data/70 [@media(max-width:1023px)_and_(orientation:landscape)]:block" aria-hidden />
 
-            <div className="dogzilla-stage-hud absolute inset-x-3 top-3 z-20 flex items-start justify-between gap-2">
-              <div className="dogzilla-stage-status-card pointer-events-auto min-w-0 max-w-[calc(100%-6.5rem)] rounded-md border border-accent-data/35 bg-surface-primary/30 px-3 py-2 backdrop-blur-[2px]">
-                <div className="flex min-w-0 items-center gap-2">
-                  <span className={`dogzilla-stage-status-dot h-2 w-2 shrink-0 rounded-full ${connectionTone === 'good' ? 'bg-accent-success' : 'bg-accent-critical'}`} />
-                  <span className="min-w-0 truncate font-mono text-[12px] font-bold uppercase leading-none tracking-[0.14em] text-text-primary" title={robotDisplayName}>
-                    {robotDisplayName}
-                  </span>
+            <div className="absolute inset-x-3 top-3 z-20 flex items-start justify-between gap-2 [@media(max-width:1023px)_and_(orientation:landscape)]:inset-x-[0.85rem] [@media(max-width:1023px)_and_(orientation:landscape)]:top-3 [@media(max-width:900px)_and_(orientation:portrait)]:top-3">
+              <div className="flex min-w-0 max-w-[calc(100%-6.5rem)] items-center gap-2 [@media(max-width:1023px)_and_(orientation:landscape)]:max-w-[calc(100%-6rem)] [@media(max-width:1023px)_and_(orientation:landscape)]:gap-1.5 [@media(max-width:900px)_and_(orientation:portrait)]:max-w-[calc(100%-6.25rem)] [@media(max-width:900px)_and_(orientation:portrait)]:flex-col [@media(max-width:900px)_and_(orientation:portrait)]:items-start [@media(max-width:900px)_and_(orientation:portrait)]:gap-1.5">
+                <div className="pointer-events-auto flex min-h-10 min-w-0 max-w-[min(26rem,calc(100vw-12rem))] shrink items-center gap-3 rounded-md border border-accent-data/35 bg-surface-primary/30 px-3 py-2 backdrop-blur-[2px] group-data-[remote-fullscreen=true]/dashboard:max-w-[26rem] group-data-[remote-fullscreen=true]/dashboard:gap-3.5 [@media(max-width:1023px)_and_(orientation:landscape)]:min-h-[2.35rem] [@media(max-width:1023px)_and_(orientation:landscape)]:max-w-[min(22rem,calc(100vw-12rem))] [@media(max-width:1023px)_and_(orientation:landscape)]:gap-2.5 [@media(max-width:1023px)_and_(orientation:landscape)]:border-accent-data/40 [@media(max-width:1023px)_and_(orientation:landscape)]:bg-surface-primary/55 [@media(max-width:1023px)_and_(orientation:landscape)]:px-2.5 [@media(max-width:1023px)_and_(orientation:landscape)]:py-[0.35rem] [@media(max-width:1023px)_and_(orientation:landscape)]:shadow-[0_0.6rem_1.5rem_rgba(0,0,0,0.18)] [@media(max-width:1023px)_and_(orientation:landscape)]:backdrop-blur-md [@media(max-width:900px)_and_(orientation:portrait)]:min-h-0 [@media(max-width:900px)_and_(orientation:portrait)]:w-[min(13rem,calc(100vw-7rem))] [@media(max-width:900px)_and_(orientation:portrait)]:max-w-[min(13rem,calc(100vw-7rem))] [@media(max-width:900px)_and_(orientation:portrait)]:flex-col [@media(max-width:900px)_and_(orientation:portrait)]:items-stretch [@media(max-width:900px)_and_(orientation:portrait)]:gap-1.5 [@media(max-width:900px)_and_(orientation:portrait)]:bg-surface-primary/65 [@media(max-width:900px)_and_(orientation:portrait)]:px-2.5 [@media(max-width:900px)_and_(orientation:portrait)]:py-2 [@media(max-width:900px)_and_(orientation:portrait)]:shadow-[0_0.55rem_1.35rem_rgba(0,0,0,0.14)] [@media(max-width:900px)_and_(orientation:portrait)]:backdrop-blur-md">
+                  <div className="flex min-w-0 items-center gap-2 [@media(max-width:900px)_and_(orientation:portrait)]:w-full">
+                    <span className={`h-2 w-2 shrink-0 rounded-full ${connectionTone === 'good' ? 'bg-accent-success' : 'bg-accent-critical'}`} />
+                    <span className="shrink-0 font-mono text-[12px] font-bold uppercase leading-none tracking-[0.14em] text-text-primary [@media(max-width:1023px)_and_(orientation:landscape)]:text-[11px]" title={robotDisplayName}>
+                      Dogzilla
+                    </span>
+                    <span className="min-w-0 truncate font-mono text-[11px] font-bold uppercase leading-none tracking-[0.12em] text-text-muted [@media(max-width:1023px)_and_(orientation:landscape)]:max-w-[5.5rem] [@media(max-width:900px)_and_(orientation:portrait)]:ml-auto [@media(max-width:900px)_and_(orientation:portrait)]:max-w-[4.6rem] [@media(max-width:900px)_and_(orientation:portrait)]:text-[10px]" title={robotDisplayName}>
+                      {robotShortId}
+                    </span>
+                  </div>
+                  <div className="flex min-w-0 items-center gap-3 [@media(max-width:1023px)_and_(orientation:landscape)]:gap-2.5 [@media(max-width:900px)_and_(orientation:portrait)]:w-full [@media(max-width:900px)_and_(orientation:portrait)]:justify-between [@media(max-width:900px)_and_(orientation:portrait)]:gap-2">
+                    <StatusPill label="Bat" value={batteryLabel} tone={batteryTone} />
+                    <StatusPill label="Ping" value={`${Math.round(pingValue)} ms`} tone={pingTone} />
+                  </div>
                 </div>
-                <div className="dogzilla-stage-status-rows mt-1.5 flex min-w-0 items-center gap-3">
-                  <StatusPill label="Bat" value={batteryLabel} tone={batteryTone} />
-                  <StatusPill label="Ping" value={`${Math.round(pingValue)} ms`} tone={pingTone} />
-                </div>
+                {stageViewControls}
               </div>
-              <div className="dogzilla-stage-action-cluster pointer-events-auto flex shrink-0 items-start gap-2">
+              <div className="pointer-events-auto flex shrink-0 items-start gap-2 [@media(max-width:1023px)_and_(orientation:landscape)]:gap-[0.45rem]">
                 <button
                   type="button"
                   onClick={handleRemoteFullscreenToggle}
-                  className="dogzilla-remote-fullscreen-toggle flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-border-default bg-surface-primary/35 text-text-secondary shadow-sm backdrop-blur-sm transition hover:border-accent-data hover:bg-accent-data/12 hover:text-accent-data focus:outline-none focus:ring-2 focus:ring-accent-data/70 focus:ring-offset-2 focus:ring-offset-surface-primary"
+                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-border-default bg-surface-primary/35 text-text-secondary shadow-sm backdrop-blur-sm transition hover:border-accent-data hover:bg-accent-data/12 hover:text-accent-data focus:outline-none focus:ring-2 focus:ring-accent-data/70 focus:ring-offset-2 focus:ring-offset-surface-primary [@media(max-width:1023px)_and_(orientation:landscape)]:border-accent-data/35 [@media(max-width:1023px)_and_(orientation:landscape)]:bg-surface-primary/50 [@media(max-width:1023px)_and_(orientation:landscape)]:shadow-[0_0.6rem_1.5rem_rgba(0,0,0,0.18)] [@media(max-width:1023px)_and_(orientation:landscape)]:backdrop-blur-md"
                   aria-label={isRemoteFullscreen ? 'Exit remote fullscreen' : 'Open remote fullscreen'}
                   aria-pressed={isRemoteFullscreen}
                   title={isRemoteFullscreen ? 'Exit remote fullscreen' : 'Open remote fullscreen'}
@@ -946,7 +1053,7 @@ const YahboomDogzillaLiteDashboard = memo(function YahboomDogzillaLiteDashboard(
                 <button
                   type="button"
                   onClick={handleEmergencyStop}
-                  className="dogzilla-stage-estop pointer-events-auto flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-accent-critical-deep bg-accent-critical/14 text-accent-critical shadow-sm backdrop-blur-sm transition hover:border-accent-critical hover:bg-accent-critical/22 focus:outline-none focus:ring-2 focus:ring-accent-critical-deep focus:ring-offset-2 focus:ring-offset-surface-primary"
+                  className="pointer-events-auto flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-accent-critical-deep bg-accent-critical/14 text-accent-critical shadow-sm backdrop-blur-sm transition hover:border-accent-critical hover:bg-accent-critical/22 focus:outline-none focus:ring-2 focus:ring-accent-critical-deep focus:ring-offset-2 focus:ring-offset-surface-primary [@media(max-width:1023px)_and_(orientation:landscape)]:border-accent-critical/55 [@media(max-width:1023px)_and_(orientation:landscape)]:bg-accent-critical/20 [@media(max-width:1023px)_and_(orientation:landscape)]:shadow-[0_0.6rem_1.5rem_rgba(0,0,0,0.18)] [@media(max-width:1023px)_and_(orientation:landscape)]:backdrop-blur-md"
                   aria-label="Emergency stop"
                   title="Emergency stop"
                 >
@@ -955,116 +1062,27 @@ const YahboomDogzillaLiteDashboard = memo(function YahboomDogzillaLiteDashboard(
               </div>
             </div>
 
-            <div className="dogzilla-telemetry-strip pointer-events-none absolute right-3 top-[4.5rem] z-20 flex flex-col items-end gap-2">
+            <div className={`pointer-events-none absolute right-3 top-[4.5rem] z-20 hidden flex-col items-end gap-2 group-data-[remote-fullscreen=true]/dashboard:!right-7 group-data-[remote-fullscreen=true]/dashboard:!top-[7.4rem] [@media(max-width:1023px)_and_(orientation:landscape)]:right-[0.85rem] [@media(max-width:1023px)_and_(orientation:landscape)]:top-[4.4rem] [@media(max-width:900px)_and_(orientation:portrait)]:group-data-[remote-fullscreen=true]/dashboard:!hidden ${
+              activeTab === 'move'
+                ? 'group-data-[remote-fullscreen=true]/dashboard:flex [@media(max-width:1023px)_and_(orientation:landscape)]:flex'
+                : ''
+            }`}
+            >
               <AttitudeIndicator
                 roll={wrapDegrees(status?.orientation?.roll ?? 0)}
                 pitch={wrapDegrees(status?.orientation?.pitch ?? 0)}
               />
-            </div>
-
-            <div className="dogzilla-stage-bottom-controls absolute inset-x-3 bottom-3 z-20 flex items-end justify-between gap-2">
-              <div className={`dogzilla-view-controls pointer-events-auto flex h-12 w-fit min-w-0 items-center gap-2 rounded-md border border-accent-data/35 bg-surface-primary/30 p-1 backdrop-blur-[2px] ${
-                isCameraStageActive ? 'max-w-[calc(100%-3.25rem)]' : 'max-w-full'
-              }`}
-              >
-                <StageViewToggle
-                  value={stageViewMode}
-                  cameraDisabled={!selectedVideoSource}
-                  onChange={handleStageViewModeChange}
-                />
-                {hasMultipleCameraOptions && (
-                  <div className="relative min-w-0">
-                    <button
-                      type="button"
-                      onClick={() => setIsCameraPickerOpen((current) => !current)}
-                      className={`flex h-10 w-[9.5rem] min-w-0 items-center justify-between gap-2 rounded-md border px-3 text-left text-xs font-semibold transition focus:outline-none focus:ring-1 focus:ring-accent-data ${
-                        isCameraPickerOpen
-                          ? 'border-accent-data bg-surface-primary text-text-primary'
-                          : 'border-border-subtle bg-surface-secondary text-text-primary hover:border-accent-data'
-                      }`}
-                      aria-haspopup="listbox"
-                      aria-expanded={isCameraPickerOpen}
-                      aria-label="Camera source"
-                      title={selectedVideoSource?.label ?? 'No camera'}
-                    >
-                      <span className="min-w-0 truncate">
-                        {selectedVideoSource?.shortLabel ?? 'No camera'}
-                      </span>
-                      <ChevronDown
-                        className={`h-3.5 w-3.5 shrink-0 text-text-muted transition-transform ${isCameraPickerOpen ? 'rotate-180' : ''}`}
-                        strokeWidth={2.5}
-                      />
-                    </button>
-
-                    {isCameraPickerOpen && (
-                      <div
-                        className="absolute bottom-[calc(100%+0.5rem)] right-0 z-40 w-[min(19rem,calc(100vw-2rem))] overflow-hidden rounded-xl border border-border-default bg-surface-primary/95 p-1.5 shadow-2xl backdrop-blur-md"
-                        role="listbox"
-                        aria-label="Camera source"
-                      >
-                        <div className="px-2.5 pb-1.5 pt-1 text-[10px] font-bold uppercase tracking-[0.16em] text-text-muted">
-                          Camera source
-                        </div>
-                        <div className="max-h-56 overflow-y-auto">
-                          {cameraOptions.map((option) => {
-                            const isSelected = option.id === selectedVideoSourceId;
-
-                            return (
-                              <button
-                                key={option.id}
-                                type="button"
-                                onClick={() => {
-                                  setSelectedVideoSourceId(option.id);
-                                  setIsCameraPickerOpen(false);
-                                }}
-                                className={`flex w-full items-center gap-2 rounded-lg px-2.5 py-2.5 text-left transition ${
-                                  isSelected
-                                    ? 'bg-accent-data text-surface-base'
-                                    : 'text-text-primary hover:bg-surface-secondary'
-                                }`}
-                                role="option"
-                                aria-selected={isSelected}
-                                title={option.label}
-                              >
-                                <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border ${
-                                  isSelected
-                                    ? 'border-surface-base/70 bg-surface-base/18'
-                                    : 'border-border-subtle text-transparent'
-                                }`}
-                                >
-                                  <Check className="h-3.5 w-3.5" strokeWidth={3} />
-                                </span>
-                                <span className="min-w-0 flex-1">
-                                  <span className="block truncate text-sm font-bold">
-                                    {option.shortLabel}
-                                  </span>
-                                  <span className={`block truncate text-[11px] font-medium ${
-                                    isSelected ? 'text-surface-base/72' : 'text-text-muted'
-                                  }`}
-                                  >
-                                    {option.detail}
-                                  </span>
-                                </span>
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
             </div>
           </div>
         </section>
 
         <section
           data-active-tab={activeTab}
-          className="dogzilla-control-panel relative flex min-h-0 flex-1 flex-col bg-surface-primary/90 px-2.5 pb-2.5 pt-2.5 lg:px-4 lg:pb-4 lg:pt-4"
+          className="relative flex min-h-0 flex-1 flex-col bg-surface-primary/90 px-2.5 pb-2.5 pt-2.5 group-data-[remote-fullscreen=true]/dashboard:!pointer-events-none group-data-[remote-fullscreen=true]/dashboard:!absolute group-data-[remote-fullscreen=true]/dashboard:!inset-0 group-data-[remote-fullscreen=true]/dashboard:!overflow-hidden group-data-[remote-fullscreen=true]/dashboard:!bg-transparent group-data-[remote-fullscreen=true]/dashboard:!p-0 lg:px-4 lg:pb-4 lg:pt-4 [@media(max-width:1023px)_and_(orientation:landscape)]:pointer-events-none [@media(max-width:1023px)_and_(orientation:landscape)]:absolute [@media(max-width:1023px)_and_(orientation:landscape)]:inset-0 [@media(max-width:1023px)_and_(orientation:landscape)]:overflow-hidden [@media(max-width:1023px)_and_(orientation:landscape)]:bg-transparent [@media(max-width:1023px)_and_(orientation:landscape)]:p-0 [@media(max-width:900px)_and_(orientation:portrait)]:group-data-[remote-fullscreen=true]/dashboard:!pointer-events-auto [@media(max-width:900px)_and_(orientation:portrait)]:group-data-[remote-fullscreen=true]/dashboard:!inset-x-3 [@media(max-width:900px)_and_(orientation:portrait)]:group-data-[remote-fullscreen=true]/dashboard:!bottom-3 [@media(max-width:900px)_and_(orientation:portrait)]:group-data-[remote-fullscreen=true]/dashboard:!top-auto [@media(max-width:900px)_and_(orientation:portrait)]:group-data-[remote-fullscreen=true]/dashboard:!z-[35] [@media(max-width:900px)_and_(orientation:portrait)]:group-data-[remote-fullscreen=true]/dashboard:!max-h-[48svh] [@media(max-width:900px)_and_(orientation:portrait)]:group-data-[remote-fullscreen=true]/dashboard:!overflow-hidden [@media(max-width:900px)_and_(orientation:portrait)]:group-data-[remote-fullscreen=true]/dashboard:!rounded-xl [@media(max-width:900px)_and_(orientation:portrait)]:group-data-[remote-fullscreen=true]/dashboard:!border [@media(max-width:900px)_and_(orientation:portrait)]:group-data-[remote-fullscreen=true]/dashboard:!border-accent-data/30 [@media(max-width:900px)_and_(orientation:portrait)]:group-data-[remote-fullscreen=true]/dashboard:!bg-surface-primary/68 [@media(max-width:900px)_and_(orientation:portrait)]:group-data-[remote-fullscreen=true]/dashboard:!p-2 [@media(max-width:900px)_and_(orientation:portrait)]:group-data-[remote-fullscreen=true]/dashboard:!shadow-[0_1rem_2.5rem_rgba(0,0,0,0.22)] [@media(max-width:900px)_and_(orientation:portrait)]:group-data-[remote-fullscreen=true]/dashboard:!backdrop-blur-md"
         >
-          <div className="dogzilla-command-rail">
-            <div className="dogzilla-tab-strip -mx-2.5 overflow-x-auto px-2.5 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-              <div className="dogzilla-tab-list flex w-max gap-2">
+          <div className="group-data-[remote-fullscreen=true]/dashboard:pointer-events-auto group-data-[remote-fullscreen=true]/dashboard:absolute group-data-[remote-fullscreen=true]/dashboard:!bottom-3 group-data-[remote-fullscreen=true]/dashboard:!left-1/2 group-data-[remote-fullscreen=true]/dashboard:z-[35] group-data-[remote-fullscreen=true]/dashboard:inline-flex group-data-[remote-fullscreen=true]/dashboard:!max-w-[84vw] group-data-[remote-fullscreen=true]/dashboard:-translate-x-1/2 group-data-[remote-fullscreen=true]/dashboard:items-stretch group-data-[remote-fullscreen=true]/dashboard:!gap-1.5 group-data-[remote-fullscreen=true]/dashboard:rounded-lg group-data-[remote-fullscreen=true]/dashboard:border group-data-[remote-fullscreen=true]/dashboard:border-accent-data/30 group-data-[remote-fullscreen=true]/dashboard:bg-surface-primary/55 group-data-[remote-fullscreen=true]/dashboard:!p-1.5 group-data-[remote-fullscreen=true]/dashboard:shadow-[0_0.9rem_2rem_rgba(0,0,0,0.16)] group-data-[remote-fullscreen=true]/dashboard:backdrop-blur-md [@media(max-width:1023px)_and_(orientation:landscape)]:pointer-events-auto [@media(max-width:1023px)_and_(orientation:landscape)]:absolute [@media(max-width:1023px)_and_(orientation:landscape)]:bottom-[0.6rem] [@media(max-width:1023px)_and_(orientation:landscape)]:left-1/2 [@media(max-width:1023px)_and_(orientation:landscape)]:z-[35] [@media(max-width:1023px)_and_(orientation:landscape)]:inline-flex [@media(max-width:1023px)_and_(orientation:landscape)]:max-w-[92vw] [@media(max-width:1023px)_and_(orientation:landscape)]:-translate-x-1/2 [@media(max-width:1023px)_and_(orientation:landscape)]:items-stretch [@media(max-width:1023px)_and_(orientation:landscape)]:gap-[0.35rem] [@media(max-width:1023px)_and_(orientation:landscape)]:rounded-md [@media(max-width:1023px)_and_(orientation:landscape)]:border [@media(max-width:1023px)_and_(orientation:landscape)]:border-accent-data/30 [@media(max-width:1023px)_and_(orientation:landscape)]:bg-surface-primary/55 [@media(max-width:1023px)_and_(orientation:landscape)]:p-[0.22rem] [@media(max-width:1023px)_and_(orientation:landscape)]:shadow-[0_0.9rem_2rem_rgba(0,0,0,0.16)] [@media(max-width:1023px)_and_(orientation:landscape)]:backdrop-blur-md [@media(max-width:900px)_and_(orientation:portrait)]:group-data-[remote-fullscreen=true]/dashboard:!relative [@media(max-width:900px)_and_(orientation:portrait)]:group-data-[remote-fullscreen=true]/dashboard:!bottom-auto [@media(max-width:900px)_and_(orientation:portrait)]:group-data-[remote-fullscreen=true]/dashboard:!left-auto [@media(max-width:900px)_and_(orientation:portrait)]:group-data-[remote-fullscreen=true]/dashboard:!block [@media(max-width:900px)_and_(orientation:portrait)]:group-data-[remote-fullscreen=true]/dashboard:!w-full [@media(max-width:900px)_and_(orientation:portrait)]:group-data-[remote-fullscreen=true]/dashboard:!max-w-full [@media(max-width:900px)_and_(orientation:portrait)]:group-data-[remote-fullscreen=true]/dashboard:!translate-x-0 [@media(max-width:900px)_and_(orientation:portrait)]:group-data-[remote-fullscreen=true]/dashboard:!rounded-none [@media(max-width:900px)_and_(orientation:portrait)]:group-data-[remote-fullscreen=true]/dashboard:!border-0 [@media(max-width:900px)_and_(orientation:portrait)]:group-data-[remote-fullscreen=true]/dashboard:!bg-transparent [@media(max-width:900px)_and_(orientation:portrait)]:group-data-[remote-fullscreen=true]/dashboard:!p-0 [@media(max-width:900px)_and_(orientation:portrait)]:group-data-[remote-fullscreen=true]/dashboard:!shadow-none [@media(max-width:900px)_and_(orientation:portrait)]:group-data-[remote-fullscreen=true]/dashboard:!backdrop-blur-0">
+            <div className="-mx-2.5 overflow-x-auto px-2.5 pb-1 [scrollbar-width:none] group-data-[remote-fullscreen=true]/dashboard:relative group-data-[remote-fullscreen=true]/dashboard:z-auto group-data-[remote-fullscreen=true]/dashboard:m-0 group-data-[remote-fullscreen=true]/dashboard:w-auto group-data-[remote-fullscreen=true]/dashboard:max-w-none group-data-[remote-fullscreen=true]/dashboard:p-0 group-data-[remote-fullscreen=true]/dashboard:shadow-none group-data-[remote-fullscreen=true]/dashboard:backdrop-blur-0 [@media(max-width:1023px)_and_(orientation:landscape)]:relative [@media(max-width:1023px)_and_(orientation:landscape)]:z-auto [@media(max-width:1023px)_and_(orientation:landscape)]:m-0 [@media(max-width:1023px)_and_(orientation:landscape)]:w-auto [@media(max-width:1023px)_and_(orientation:landscape)]:max-w-none [@media(max-width:1023px)_and_(orientation:landscape)]:p-0 [@media(max-width:1023px)_and_(orientation:landscape)]:shadow-none [@media(max-width:1023px)_and_(orientation:landscape)]:backdrop-blur-0 [&::-webkit-scrollbar]:hidden">
+              <div className="flex w-max gap-2 group-data-[remote-fullscreen=true]/dashboard:gap-2 [@media(max-width:1023px)_and_(orientation:landscape)]:gap-[0.3rem]">
                 {TAB_DEFINITIONS.map((tab) => (
                   <TabButton
                     key={tab.id}
@@ -1077,10 +1095,10 @@ const YahboomDogzillaLiteDashboard = memo(function YahboomDogzillaLiteDashboard(
               </div>
             </div>
 
-            <div className="dogzilla-command-rail-divider" aria-hidden />
+            <div className="hidden w-px shrink-0 self-stretch bg-accent-data/30 [@media(max-width:1023px)_and_(orientation:landscape)]:block" aria-hidden />
 
-            <div className="dogzilla-quick-actions -mx-2.5 mt-1.5 overflow-x-auto px-2.5 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-              <div className="dogzilla-quick-action-list flex w-max gap-2">
+            <div className="-mx-2.5 mt-1.5 overflow-x-auto px-2.5 pb-1 [scrollbar-width:none] group-data-[remote-fullscreen=true]/dashboard:relative group-data-[remote-fullscreen=true]/dashboard:z-auto group-data-[remote-fullscreen=true]/dashboard:m-0 group-data-[remote-fullscreen=true]/dashboard:overflow-visible group-data-[remote-fullscreen=true]/dashboard:p-0 group-data-[remote-fullscreen=true]/dashboard:pointer-events-auto [@media(max-width:1023px)_and_(orientation:landscape)]:relative [@media(max-width:1023px)_and_(orientation:landscape)]:z-auto [@media(max-width:1023px)_and_(orientation:landscape)]:m-0 [@media(max-width:1023px)_and_(orientation:landscape)]:overflow-visible [@media(max-width:1023px)_and_(orientation:landscape)]:p-0 [@media(max-width:1023px)_and_(orientation:landscape)]:pointer-events-auto [&::-webkit-scrollbar]:hidden">
+              <div className="flex w-max gap-2 group-data-[remote-fullscreen=true]/dashboard:gap-2 [@media(max-width:1023px)_and_(orientation:landscape)]:gap-[0.3rem]">
                 {QUICK_ACTIONS.map((action) => (
                   <QuickActionButton
                     key={action.value}
@@ -1093,7 +1111,12 @@ const YahboomDogzillaLiteDashboard = memo(function YahboomDogzillaLiteDashboard(
             </div>
           </div>
 
-          <div className="dogzilla-tab-content mt-1.5 min-h-0 flex-1 overflow-y-auto pb-1">
+          <div className={`mt-1.5 min-h-0 flex-1 overflow-y-auto pb-1 [@media(max-width:1023px)_and_(orientation:landscape)]:pointer-events-auto [@media(max-width:900px)_and_(orientation:portrait)]:group-data-[remote-fullscreen=true]/dashboard:!relative [@media(max-width:900px)_and_(orientation:portrait)]:group-data-[remote-fullscreen=true]/dashboard:!inset-auto [@media(max-width:900px)_and_(orientation:portrait)]:group-data-[remote-fullscreen=true]/dashboard:!m-0 [@media(max-width:900px)_and_(orientation:portrait)]:group-data-[remote-fullscreen=true]/dashboard:!mt-2 [@media(max-width:900px)_and_(orientation:portrait)]:group-data-[remote-fullscreen=true]/dashboard:!max-h-[calc(48svh-6.75rem)] [@media(max-width:900px)_and_(orientation:portrait)]:group-data-[remote-fullscreen=true]/dashboard:!overflow-y-auto [@media(max-width:900px)_and_(orientation:portrait)]:group-data-[remote-fullscreen=true]/dashboard:!pb-1 [@media(max-width:900px)_and_(orientation:portrait)]:group-data-[remote-fullscreen=true]/dashboard:!pointer-events-auto ${
+            activeTab === 'move'
+              ? 'group-data-[remote-fullscreen=true]/dashboard:pointer-events-none group-data-[remote-fullscreen=true]/dashboard:absolute group-data-[remote-fullscreen=true]/dashboard:inset-0 group-data-[remote-fullscreen=true]/dashboard:m-0 group-data-[remote-fullscreen=true]/dashboard:overflow-visible group-data-[remote-fullscreen=true]/dashboard:p-0 [@media(max-width:1023px)_and_(orientation:landscape)]:pointer-events-none [@media(max-width:1023px)_and_(orientation:landscape)]:absolute [@media(max-width:1023px)_and_(orientation:landscape)]:inset-0 [@media(max-width:1023px)_and_(orientation:landscape)]:m-0 [@media(max-width:1023px)_and_(orientation:landscape)]:overflow-visible [@media(max-width:1023px)_and_(orientation:landscape)]:p-0'
+              : '[@media(max-width:1023px)_and_(orientation:landscape)]:absolute [@media(max-width:1023px)_and_(orientation:landscape)]:bottom-16 [@media(max-width:1023px)_and_(orientation:landscape)]:right-[0.85rem] [@media(max-width:1023px)_and_(orientation:landscape)]:top-[7.9rem] [@media(max-width:1023px)_and_(orientation:landscape)]:m-0 [@media(max-width:1023px)_and_(orientation:landscape)]:w-[min(25rem,42vw)] [@media(max-width:1023px)_and_(orientation:landscape)]:overflow-auto [@media(max-width:1023px)_and_(orientation:landscape)]:rounded-lg [@media(max-width:1023px)_and_(orientation:landscape)]:border [@media(max-width:1023px)_and_(orientation:landscape)]:border-accent-data/30 [@media(max-width:1023px)_and_(orientation:landscape)]:bg-surface-primary/70 [@media(max-width:1023px)_and_(orientation:landscape)]:p-[0.85rem] [@media(max-width:1023px)_and_(orientation:landscape)]:shadow-[0_1.25rem_3rem_rgba(0,0,0,0.18)] [@media(max-width:1023px)_and_(orientation:landscape)]:backdrop-blur-lg'
+          }`}
+          >
             {activeTab === 'move' && renderMoveTab()}
             {activeTab === 'actions' && renderActionsTab()}
             {activeTab === 'joints' && renderJointsTab()}
