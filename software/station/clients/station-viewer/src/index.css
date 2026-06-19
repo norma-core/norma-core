@@ -437,21 +437,6 @@ body {
     gap: 0.35rem !important;
   }
 
-  .dogzilla-view-controls-segment {
-    height: 1.7rem !important;
-    border-radius: 0.25rem !important;
-    background: transparent !important;
-    border: 0 !important;
-  }
-
-  .dogzilla-view-controls-segment > button {
-    height: 1.7rem !important;
-    min-height: 0 !important;
-    max-height: 1.7rem !important;
-    border-radius: 0 !important;
-    padding-inline: 0.55rem !important;
-  }
-
   .dogzilla-view-controls .relative > button {
     height: 1.7rem !important;
     min-height: 0 !important;

@@ -202,6 +202,53 @@ function TabButton({
   );
 }
 
+function StageViewToggle({
+  value,
+  cameraDisabled,
+  onChange
+}: {
+  value: StageViewMode;
+  cameraDisabled: boolean;
+  onChange: (value: StageViewMode) => void;
+}) {
+  const buttonClassName = (mode: StageViewMode) => (
+    `m-0 flex h-full w-full min-w-0 appearance-none items-center justify-center rounded-none border-0 p-0 text-xs font-semibold leading-none shadow-none transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-data/70 disabled:cursor-not-allowed disabled:opacity-35 ${
+      value === mode
+        ? 'bg-accent-data text-surface-base'
+        : 'bg-transparent text-text-secondary hover:bg-surface-primary/70 hover:text-text-primary'
+    }`
+  );
+
+  return (
+    <div
+      className="grid h-10 w-20 shrink-0 grid-cols-2 overflow-hidden rounded-md border border-accent-data/30 bg-surface-primary/40 p-0 [@media(max-width:1023px)_and_(orientation:landscape)]:h-[1.7rem]"
+      role="group"
+      aria-label="Stage view"
+    >
+      <button
+        type="button"
+        className={buttonClassName('3d')}
+        onClick={() => onChange('3d')}
+        aria-pressed={value === '3d'}
+        title="3D"
+      >
+        3D
+      </button>
+      <button
+        type="button"
+        className={buttonClassName('camera')}
+        disabled={cameraDisabled}
+        onClick={() => onChange('camera')}
+        aria-pressed={value === 'camera'}
+        aria-label={cameraDisabled ? 'No camera' : 'Camera'}
+        title={cameraDisabled ? 'No camera' : 'Camera'}
+      >
+        <Camera className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden="true" />
+      </button>
+    </div>
+  );
+}
+
 function QuickActionButton({
   label,
   isDanger,
@@ -851,36 +898,6 @@ const YahboomDogzillaLiteDashboard = memo(function YahboomDogzillaLiteDashboard(
   );
   const isCameraStageActive = stageViewMode === 'camera' && Boolean(selectedVideoSource);
 
-  const renderCameraModeButton = ({
-    mode,
-    label,
-    icon: Icon
-  }: {
-    mode: StageViewMode;
-    label?: string;
-    icon?: typeof Camera;
-  }) => {
-    const isActive = stageViewMode === mode;
-    const isDisabled = mode !== '3d' && !selectedVideoSource;
-
-    return (
-      <button
-        type="button"
-        disabled={isDisabled}
-        onClick={() => handleStageViewModeChange(mode)}
-        className={`flex h-10 min-w-10 items-center justify-center rounded-md px-2 text-xs font-semibold transition focus:outline-none focus:ring-2 focus:ring-accent-data/60 disabled:cursor-not-allowed disabled:opacity-35 ${
-          isActive
-            ? 'bg-accent-data text-surface-base'
-            : 'text-text-secondary hover:bg-surface-elevated hover:text-text-primary'
-        }`}
-        aria-label={label ?? mode}
-        title={label ?? mode}
-      >
-        {Icon ? <Icon className="h-3.5 w-3.5" strokeWidth={2.5} /> : label}
-      </button>
-    );
-  };
-
   return (
     <div
       ref={dashboardRootRef}
@@ -950,10 +967,11 @@ const YahboomDogzillaLiteDashboard = memo(function YahboomDogzillaLiteDashboard(
                 isCameraStageActive ? 'max-w-[calc(100%-3.25rem)]' : 'max-w-full'
               }`}
               >
-                <div className="dogzilla-view-controls-segment inline-flex h-10 shrink-0 overflow-hidden rounded-sm border border-accent-data/30 bg-surface-primary/40">
-                  {renderCameraModeButton({ mode: '3d', label: '3D' })}
-                  {renderCameraModeButton({ mode: 'camera', label: 'Camera', icon: Camera })}
-                </div>
+                <StageViewToggle
+                  value={stageViewMode}
+                  cameraDisabled={!selectedVideoSource}
+                  onChange={handleStageViewModeChange}
+                />
                 {hasMultipleCameraOptions && (
                   <div className="relative min-w-0">
                     <button
