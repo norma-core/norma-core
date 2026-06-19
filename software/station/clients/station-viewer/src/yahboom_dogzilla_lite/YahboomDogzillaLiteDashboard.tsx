@@ -22,6 +22,7 @@ import { commandManager } from '@/api/commands.js';
 import { serverToLocal } from '@/api/timestamp-utils';
 import { yahboom_dogzilla_lite, usbvideo } from '@/api/proto.js';
 import ActionPanel, { QUICK_ACTIONS, type ActionDefinition } from '@/yahboom_dogzilla_lite/ActionPanel';
+import AttitudeIndicator from '@/yahboom_dogzilla_lite/AttitudeIndicator';
 import YahboomDogzillaLiteViewer from '@/yahboom_dogzilla_lite/YahboomDogzillaLiteViewer';
 import MovementPanel, { type MovementPanelRef } from '@/yahboom_dogzilla_lite/MovementPanel';
 import { getYahboomDogzillaLiteModelLabel } from '@/yahboom_dogzilla_lite/model-labels';
@@ -85,6 +86,8 @@ const formatAcceleration = (value: number | null | undefined) => {
   const formattedValue = (value ?? 0).toFixed(1);
   return formattedValue === '-0.0' ? '0.0' : formattedValue;
 };
+
+const wrapDegrees = (value: number) => value - 360 * Math.floor((value + 180) / 360);
 
 type TabId = (typeof TAB_DEFINITIONS)[number]['id'];
 type JointTabId = 'legs' | 'arm';
@@ -618,9 +621,9 @@ const YahboomDogzillaLiteDashboard = memo(function YahboomDogzillaLiteDashboard(
   ];
 
   const imuRows = [
-    { label: 'Roll', value: `${Math.round(status?.orientation?.roll ?? 0)}°` },
-    { label: 'Pitch', value: `${Math.round(status?.orientation?.pitch ?? 0)}°` },
-    { label: 'Yaw', value: `${Math.round(status?.orientation?.yaw ?? 0)}°` },
+    { label: 'Roll', value: `${Math.round(wrapDegrees(status?.orientation?.roll ?? 0))}°` },
+    { label: 'Pitch', value: `${Math.round(wrapDegrees(status?.orientation?.pitch ?? 0))}°` },
+    { label: 'Yaw', value: `${Math.round(wrapDegrees(status?.orientation?.yaw ?? 0))}°` },
     { label: 'Accel X', value: formatAcceleration(status?.acceleration?.x) },
     { label: 'Accel Y', value: formatAcceleration(status?.acceleration?.y) },
     { label: 'Accel Z', value: formatAcceleration(status?.acceleration?.z) }
@@ -893,30 +896,26 @@ const YahboomDogzillaLiteDashboard = memo(function YahboomDogzillaLiteDashboard(
             {isCameraStageActive ? renderCameraContent('cover') : renderRobotContent()}
           </div>
 
-          {isCameraStageActive && (
-            <div className="dogzilla-stage-preview pointer-events-auto absolute right-3 top-[4.5rem] z-10 h-20 w-32 overflow-hidden rounded-md border border-border-default bg-surface-primary shadow-lg">
-              {renderRobotContent('h-full min-h-0 w-full overflow-hidden')}
-            </div>
-          )}
-
           <div className="pointer-events-none absolute inset-0">
+            <span className="dogzilla-corner-bracket dogzilla-corner-bracket-tl" aria-hidden />
+            <span className="dogzilla-corner-bracket dogzilla-corner-bracket-tr" aria-hidden />
+            <span className="dogzilla-corner-bracket dogzilla-corner-bracket-bl" aria-hidden />
+            <span className="dogzilla-corner-bracket dogzilla-corner-bracket-br" aria-hidden />
+
             <div className="dogzilla-stage-hud absolute inset-x-3 top-3 z-20 flex items-start justify-between gap-2">
-              <div className={`dogzilla-stage-status-card pointer-events-auto min-w-0 rounded-lg border border-border-default/45 bg-surface-primary/24 px-3 py-2 backdrop-blur-[2px] ${
-                isCameraStageActive ? 'max-w-[calc(100%-3.25rem)]' : 'max-w-[calc(100%-6.5rem)]'
-              }`}
-              >
+              <div className="dogzilla-stage-status-card pointer-events-auto min-w-0 max-w-[calc(100%-6.5rem)] rounded-md border border-accent-data/35 bg-surface-primary/30 px-3 py-2 backdrop-blur-[2px]">
                 <div className="flex min-w-0 items-center gap-2">
-                  <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${connectionTone === 'good' ? 'bg-accent-success' : 'bg-accent-critical'}`} />
-                  <span className="min-w-0 truncate font-mono text-sm font-bold leading-none text-text-primary" title={robotDisplayName}>
+                  <span className={`dogzilla-stage-status-dot h-2 w-2 shrink-0 rounded-full ${connectionTone === 'good' ? 'bg-accent-success' : 'bg-accent-critical'}`} />
+                  <span className="min-w-0 truncate font-mono text-[12px] font-bold uppercase leading-none tracking-[0.14em] text-text-primary" title={robotDisplayName}>
                     {robotDisplayName}
                   </span>
                 </div>
-                <div className="mt-2 flex min-w-0 items-center gap-3">
+                <div className="dogzilla-stage-status-rows mt-1.5 flex min-w-0 items-center gap-3">
                   <StatusPill label="Bat" value={batteryLabel} tone={batteryTone} />
                   <StatusPill label="Ping" value={`${Math.round(pingValue)} ms`} tone={pingTone} />
                 </div>
               </div>
-              <div className="dogzilla-stage-action-cluster pointer-events-auto flex shrink-0 items-center gap-2">
+              <div className="dogzilla-stage-action-cluster pointer-events-auto flex shrink-0 items-start gap-2">
                 <button
                   type="button"
                   onClick={handleRemoteFullscreenToggle}
@@ -939,12 +938,19 @@ const YahboomDogzillaLiteDashboard = memo(function YahboomDogzillaLiteDashboard(
               </div>
             </div>
 
+            <div className="dogzilla-telemetry-strip pointer-events-none absolute right-3 top-[4.5rem] z-20 flex flex-col items-end gap-2">
+              <AttitudeIndicator
+                roll={wrapDegrees(status?.orientation?.roll ?? 0)}
+                pitch={wrapDegrees(status?.orientation?.pitch ?? 0)}
+              />
+            </div>
+
             <div className="dogzilla-stage-bottom-controls absolute inset-x-3 bottom-3 z-20 flex items-end justify-between gap-2">
-              <div className={`dogzilla-view-controls pointer-events-auto flex h-12 w-fit min-w-0 items-center gap-2 rounded-lg border border-border-default/45 bg-surface-primary/24 p-1 backdrop-blur-[2px] ${
+              <div className={`dogzilla-view-controls pointer-events-auto flex h-12 w-fit min-w-0 items-center gap-2 rounded-md border border-accent-data/35 bg-surface-primary/30 p-1 backdrop-blur-[2px] ${
                 isCameraStageActive ? 'max-w-[calc(100%-3.25rem)]' : 'max-w-full'
               }`}
               >
-                <div className="inline-flex h-10 shrink-0 overflow-hidden rounded-md bg-surface-secondary">
+                <div className="dogzilla-view-controls-segment inline-flex h-10 shrink-0 overflow-hidden rounded-sm border border-accent-data/30 bg-surface-primary/40">
                   {renderCameraModeButton({ mode: '3d', label: '3D' })}
                   {renderCameraModeButton({ mode: 'camera', label: 'Camera', icon: Camera })}
                 </div>
@@ -1038,30 +1044,34 @@ const YahboomDogzillaLiteDashboard = memo(function YahboomDogzillaLiteDashboard(
           data-active-tab={activeTab}
           className="dogzilla-control-panel relative flex min-h-0 flex-1 flex-col bg-surface-primary/90 px-2.5 pb-2.5 pt-2.5 lg:px-4 lg:pb-4 lg:pt-4"
         >
-          <div className="dogzilla-tab-strip -mx-2.5 overflow-x-auto px-2.5 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            <div className="dogzilla-tab-list flex w-max gap-2">
-              {TAB_DEFINITIONS.map((tab) => (
-                <TabButton
-                  key={tab.id}
-                  label={tab.label}
-                  icon={tab.icon}
-                  isActive={activeTab === tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                />
-              ))}
+          <div className="dogzilla-command-rail">
+            <div className="dogzilla-tab-strip -mx-2.5 overflow-x-auto px-2.5 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              <div className="dogzilla-tab-list flex w-max gap-2">
+                {TAB_DEFINITIONS.map((tab) => (
+                  <TabButton
+                    key={tab.id}
+                    label={tab.label}
+                    icon={tab.icon}
+                    isActive={activeTab === tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                  />
+                ))}
+              </div>
             </div>
-          </div>
 
-          <div className="dogzilla-quick-actions -mx-2.5 mt-1.5 overflow-x-auto px-2.5 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            <div className="dogzilla-quick-action-list flex w-max gap-2">
-              {QUICK_ACTIONS.map((action) => (
-                <QuickActionButton
-                  key={action.value}
-                  label={action.label}
-                  isDanger={action.value === yahboom_dogzilla_lite.ActionType.ACTION_RESTORE_DEFAULT}
-                  onClick={() => sendAction(action)}
-                />
-              ))}
+            <div className="dogzilla-command-rail-divider" aria-hidden />
+
+            <div className="dogzilla-quick-actions -mx-2.5 mt-1.5 overflow-x-auto px-2.5 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              <div className="dogzilla-quick-action-list flex w-max gap-2">
+                {QUICK_ACTIONS.map((action) => (
+                  <QuickActionButton
+                    key={action.value}
+                    label={action.label}
+                    isDanger={action.value === yahboom_dogzilla_lite.ActionType.ACTION_RESTORE_DEFAULT}
+                    onClick={() => sendAction(action)}
+                  />
+                ))}
+              </div>
             </div>
           </div>
 

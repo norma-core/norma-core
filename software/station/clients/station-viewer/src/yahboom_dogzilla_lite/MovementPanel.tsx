@@ -10,6 +10,7 @@ import {
   type PointerEvent
 } from 'react';
 import { commandManager } from '@/api/commands.js';
+import HeadingTape from '@/yahboom_dogzilla_lite/HeadingTape';
 
 interface MovementPanelProps {
   deviceSerial: string;
@@ -308,15 +309,42 @@ const MovementPanelComponent = forwardRef<MovementPanelRef, MovementPanelProps>(
     [stopYaw]
   );
 
+  const handleHeadingTapeStart = useCallback(() => {
+    yawDraggingRef.current = true;
+    setIsYawDragging(true);
+  }, []);
+
+  const handleHeadingTapeEnd = useCallback(() => {
+    yawDraggingRef.current = false;
+    setIsYawDragging(false);
+    stopYaw();
+  }, [stopYaw]);
+
   const yawNormalized = clampNormalized((yaw - NEUTRAL) / 127);
 
   return (
     <div className="dogzilla-move-panel space-y-4">
+      <HeadingTape
+        yawValue={yaw}
+        isActive={isYawDragging}
+        onChange={updateYaw}
+        onPointerStart={handleHeadingTapeStart}
+        onPointerEnd={handleHeadingTapeEnd}
+      />
+
       <div className="dogzilla-move-pad-card rounded-lg border border-border-default bg-surface-primary/80 px-4 py-4">
-        <div className="mb-3 flex items-center justify-between text-[11px] uppercase tracking-wide text-text-label">
-          <span>Movement</span>
-          <span className={`${isDragging ? 'text-accent-data' : 'text-text-muted'} font-mono`}>{isDragging ? 'LIVE' : 'IDLE'}</span>
+        <div className="dogzilla-move-pad-header mb-3 flex items-center justify-between text-[11px] uppercase tracking-wide text-text-label">
+          <span className="dogzilla-move-pad-title">Movement</span>
+          <span className={`dogzilla-move-pad-state font-mono ${isDragging ? 'text-accent-data' : 'text-text-muted'}`}>
+            {isDragging ? '[ LIVE ]' : '[ IDLE ]'}
+          </span>
         </div>
+        <span
+          className={`dogzilla-move-pad-state-overlay font-mono ${isDragging ? 'text-accent-data' : 'text-text-muted'}`}
+          aria-hidden
+        >
+          {isDragging ? '[ LIVE ]' : '[ IDLE ]'}
+        </span>
         <div className="flex justify-center">
           <div
             ref={padRef}
@@ -328,12 +356,16 @@ const MovementPanelComponent = forwardRef<MovementPanelRef, MovementPanelProps>(
             className="dogzilla-move-pad relative touch-none rounded-full border border-border-default bg-surface-base"
             style={{ width: PAD_SIZE, height: PAD_SIZE }}
           >
+            <span className="dogzilla-move-pad-bracket dogzilla-move-pad-bracket-tl" aria-hidden />
+            <span className="dogzilla-move-pad-bracket dogzilla-move-pad-bracket-tr" aria-hidden />
+            <span className="dogzilla-move-pad-bracket dogzilla-move-pad-bracket-bl" aria-hidden />
+            <span className="dogzilla-move-pad-bracket dogzilla-move-pad-bracket-br" aria-hidden />
             <div className="absolute inset-[18%] rounded-full border border-border-subtle" />
             <div className="absolute inset-[34%] rounded-full border border-border-subtle" />
             <div className="absolute bottom-3 left-1/2 top-3 w-px -translate-x-1/2 bg-border-default" />
             <div className="absolute left-3 right-3 top-1/2 h-px -translate-y-1/2 bg-border-default" />
             <div
-              className="absolute left-1/2 top-1/2 rounded-full border border-accent-data/70 bg-accent-data/10"
+              className="dogzilla-move-pad-knob absolute left-1/2 top-1/2 rounded-full border border-accent-data/70 bg-accent-data/10"
               style={{
                 width: KNOB_SIZE,
                 height: KNOB_SIZE,
@@ -366,8 +398,8 @@ const MovementPanelComponent = forwardRef<MovementPanelRef, MovementPanelProps>(
       <div className="dogzilla-yaw-card rounded-lg border border-border-default bg-surface-primary/80 px-4 py-3">
         <div className="flex items-center justify-between text-[11px] uppercase tracking-wide text-text-label">
           <span>Yaw</span>
-          <span className={`${isYawDragging ? 'text-accent-data' : 'text-text-muted'} font-mono`}>
-            {isYawDragging ? `${liveValues.yaw}%` : 'READY'}
+          <span className={`font-mono ${isYawDragging ? 'text-accent-data' : 'text-text-muted'}`}>
+            {isYawDragging ? `[ ${liveValues.yaw}% ]` : '[ READY ]'}
           </span>
         </div>
         <div
