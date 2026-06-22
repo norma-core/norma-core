@@ -1,0 +1,42 @@
+[package]
+name = "ov5647"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+# Station framework
+station_iface = { path = "../../station/shared/station-iface" }
+normfs = { workspace = true }
+systime = { path = "../../station/shared/systime-rs" }
+usbvideo = { path = "../usbvideo" }
+
+# Async runtime
+tokio = { version = "1", features = ["io-util", "time", "sync", "rt"] }
+
+# Protobuf
+prost = "0.12"
+bytes = "1.5"
+
+# Lock-free state
+parking_lot = "0.12"
+arc-swap = "1.7"
+
+# Image processing
+turbojpeg = { version = "1.3" }
+
+# Logging
+log = "0.4"
+tracing = "0.1"
+
+# Unix APIs
+libc = "0.2"
+
+# Error handling
+thiserror = "2"
+
+# Linux-only: libcamera FFI
+[target.'cfg(target_os = "linux")'.dependencies]
+libcamera-sys-static = { path = "../../../shared/libcamera-sys-static" }
+
+[lib]
+path = "src/lib.rs"

@@ -78,6 +78,9 @@ struct Station {
     usbvideo_instances: parking_lot::Mutex<Vec<Arc<usbvideo::pipeline::USBVideoManager<usbvideo::osx::CameraMacDriver>>>>,
     #[cfg(target_os = "linux")]
     usbvideo_instances: parking_lot::Mutex<Vec<Arc<usbvideo::pipeline::USBVideoManager<usbvideo::linux::CameraLinuxDriver>>>>,
+
+    #[cfg(feature = "ov5647")]
+    ov5647_handle: Mutex<Option<ov5647::Ov5647Handle>>,
 }
 
 struct Engine {
@@ -125,8 +128,10 @@ impl Station {
             engine: Arc::new(Engine {
                 main_queue: None,
                 inference: Mutex::new(None),
-             }),
+            }),
             usbvideo_instances: parking_lot::Mutex::new(Vec::new()),
+            #[cfg(feature = "ov5647")]
+            ov5647_handle: Mutex::new(None),
         })
     }
 
@@ -277,10 +282,84 @@ impl Station {
             log::info!("No USB video configuration found");
         }
 
-        // Start inference drivers
+        #[cfg(feature = "yahboom-dogzilla-lite")]
+        if let Some(yahboom_dogzilla_lite_config) = &self.config.drivers.yahboom_dogzilla_lite {
+            if yahboom_dogzilla_lite_config.enabled {
+                let simulation = matches!(yahboom_dogzilla_lite_config.mode, station_iface::config::YahboomDogzillaLiteMode::Simulation);
+                match yahboom_dogzilla_lite::start_yahboom_dogzilla_lite_driver(
+                    self.normfs.clone(),
+                    self.engine.clone(),
+                    simulation,
+                )
+                .await
+                {
+                    Ok(_) => {
+                        let mode = if simulation { "simulation" } else { "real" };
+                        log::info!("Yahboom Dogzilla Lite driver started (mode: {})", mode);
+                    },
+                    Err(e) => log::warn!("Failed to start Yahboom Dogzilla Lite driver: {}", e),
+                }
+            } else {
+                log::info!("Yahboom Dogzilla Lite driver disabled by configuration");
+            }
+        } else {
+            log::info!("Yahboom Dogzilla Lite driver disabled by configuration");
+        }
+
+        #[cfg(not(feature = "yahboom-dogzilla-lite"))]
+        if self.config.drivers.yahboom_dogzilla_lite.as_ref().is_some_and(|config| config.enabled) {
+            log::warn!("Yahboom Dogzilla Lite driver requested but not compiled (missing 'yahboom-dogzilla-lite' feature)");
+        }
+
+        #[cfg(feature = "ov5647")]
+        if let Some(ov5647_config) = &self.config.drivers.ov5647 {
+            if ov5647_config.enabled {
+                let (width, height) =
+                    match station_iface::config::parse_ov5647_dimension(&ov5647_config.dimension) {
+                        Some((w, h)) => (w, h),
+                        None => {
+                            if !ov5647_config.dimension.trim().is_empty() {
+                                log::warn!(
+                                    "Invalid OV5647 dimension '{}', using default {}x{}",
+                                    ov5647_config.dimension,
+                                    ov5647::DEFAULT_WIDTH,
+                                    ov5647::DEFAULT_HEIGHT,
+                                );
+                            }
+                            (ov5647::DEFAULT_WIDTH, ov5647::DEFAULT_HEIGHT)
+                        }
+                    };
+
+                match ov5647::start_ov5647(
+                    self.normfs.clone(),
+                    self.engine.clone(),
+                    width,
+                    height,
+                    ov5647_config.frames_per_second as u32,
+                    "video/ov5647",
+                )
+                .await
+                {
+                    Ok(handle) => {
+                        *self.ov5647_handle.lock() = Some(handle);
+                        log::info!("OV5647 driver started");
+                    }
+                    Err(e) => log::warn!("Failed to start OV5647 driver: {}", e),
+                }
+            } else {
+                log::info!("OV5647 driver disabled by configuration");
+            }
+        } else {
+            log::info!("No OV5647 configuration found");
+        }
+
+        #[cfg(not(feature = "ov5647"))]
+        if self.config.drivers.ov5647.as_ref().map_or(false, |c| c.enabled) {
+            log::warn!("OV5647 driver requested but not compiled (missing 'ov5647' feature)");
+        }
+
         match &self.config.inference {
             Some(inference_configs) => {
-                // User specified inference config (might be empty to disable)
                 if !inference_configs.is_empty() {
                     log::info!("Starting inference driver with {} configurations", inference_configs.len());
                     inferences::start(
@@ -331,6 +410,13 @@ impl Station {
             instance.stop().await;
         }
         log::info!("USB video instances stopped");
+
+        #[cfg(feature = "ov5647")]
+        if let Some(handle) = self.ov5647_handle.lock().take() {
+            log::info!("Stopping OV5647 driver...");
+            handle.stop().await;
+            log::info!("OV5647 driver stopped");
+        }
 
         log::info!("Closing NormFS (writing WAL)...");
 

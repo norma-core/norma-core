@@ -1,0 +1,24 @@
+[package]
+name = "yahboom-dogzilla-lite"
+version = "0.1.0"
+edition = "2024"
+
+[features]
+default = []
+
+[dependencies]
+tokio = { version = "1", features = ["io-util", "time", "sync"] }
+normfs = { workspace = true }
+systime = { path = "../../station/shared/systime-rs" }
+station_iface = { path = "../../station/shared/station-iface" }
+prost = "0.12"
+bytes = "1.5"
+parking_lot = { version = "0.12" }
+log = "0.4"
+tokio-serial = "5.4.5"
+
+[lib]
+path = "src/lib.rs"
+
+[build-dependencies]
+prost-build = "0.12"

@@ -7,13 +7,15 @@ members = [
   "software/drivers/sysinfod",
   "software/drivers/usbvideo",
   "software/drivers/vesc-trampa",
+  "software/drivers/yahboom-dogzilla-lite",
+  "software/drivers/ov5647",
   "software/station/bin/station",
   "software/station/shared/station-iface",
   "software/station/shared/systime-rs",
 ]
 
 [workspace.package]
-version = "0.1.0-beta.8"
+version = "0.1.0-beta.10"
 
 [workspace.dependencies]
 normfs = "0.1.0-beta.1"

@@ -1,0 +1,40 @@
+{
+        "version": 1.0,
+        "target": "pisp",
+
+        "pipeline_handler":
+        {
+                # Number of CFE config and stats buffers to allocate and use. A
+                # larger number minimises the possibility of dropping frames,
+                # but increases the latency for updating the HW configuration.
+                #
+                # "num_cfe_config_stats_buffers": 12,
+
+                # Number of jobs to queue ahead to the CFE on startup. A larger
+                # number will increase latency for 3A changes, but may reduce 
+                # avoidable frame drops.
+                #
+                # "num_cfe_config_queue": 2,
+
+                # Custom timeout value (in ms) for camera to use. This overrides
+                # the value computed by the pipeline handler based on frame
+                # durations.
+                #
+                # Set this value to 0 to use the pipeline handler computed
+                # timeout value.
+                #
+                # "camera_timeout_value_ms": 0,
+
+                # Disables temporal denoise functionality in the ISP pipeline.
+                # Disabling temporal denoise avoids allocating 2 additional
+                # Bayer framebuffers required for its operation.
+                #
+                # "disable_tdn": false,
+
+                # Disables multiframe HDR functionality in the ISP pipeline.
+                # Disabling multiframe HDR avoids allocating 2 additional Bayer
+                # framebuffers required for its operation.
+                #
+                # "disable_hdr": false,
+        }
+}

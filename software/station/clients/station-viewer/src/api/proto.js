@@ -198,6 +198,7 @@ export const commands = $root.commands = (() => {
                 case 1:
                 case 2:
                 case 3:
+                case 4:
                     break;
                 }
             if (message.body != null && message.hasOwnProperty("body"))
@@ -246,9 +247,13 @@ export const commands = $root.commands = (() => {
             case 2:
                 message.type = 2;
                 break;
-            case "STC_VESC_TRAMPA_COMMAND":
+            case "STC_YAHBOOM_DOGZILLA_LITE_COMMAND":
             case 3:
                 message.type = 3;
+                break;
+            case "STC_VESC_TRAMPA_COMMAND":
+            case 4:
+                message.type = 4;
                 break;
             }
             if (object.body != null)
@@ -703,6 +708,9 @@ export const drivers = $root.drivers = (() => {
      * @property {number} QDT_INFERENCE_FRAMES=22 QDT_INFERENCE_FRAMES value
      * @property {number} QDT_MOTOR_MIRRORING_MODES=30 QDT_MOTOR_MIRRORING_MODES value
      * @property {number} QDT_MOTOR_MIRRORING_RX=32 QDT_MOTOR_MIRRORING_RX value
+     * @property {number} QDT_YAHBOOM_DOGZILLA_LITE_SERIAL_TX=40 QDT_YAHBOOM_DOGZILLA_LITE_SERIAL_TX value
+     * @property {number} QDT_YAHBOOM_DOGZILLA_LITE_SERIAL_RX=41 QDT_YAHBOOM_DOGZILLA_LITE_SERIAL_RX value
+     * @property {number} QDT_YAHBOOM_DOGZILLA_LITE_INFERENCE=42 QDT_YAHBOOM_DOGZILLA_LITE_INFERENCE value
      */
     drivers.QueueDataType = (function() {
         const valuesById = {}, values = Object.create(valuesById);
@@ -722,6 +730,9 @@ export const drivers = $root.drivers = (() => {
         values[valuesById[22] = "QDT_INFERENCE_FRAMES"] = 22;
         values[valuesById[30] = "QDT_MOTOR_MIRRORING_MODES"] = 30;
         values[valuesById[32] = "QDT_MOTOR_MIRRORING_RX"] = 32;
+        values[valuesById[40] = "QDT_YAHBOOM_DOGZILLA_LITE_SERIAL_TX"] = 40;
+        values[valuesById[41] = "QDT_YAHBOOM_DOGZILLA_LITE_SERIAL_RX"] = 41;
+        values[valuesById[42] = "QDT_YAHBOOM_DOGZILLA_LITE_INFERENCE"] = 42;
         return values;
     })();
 
@@ -732,14 +743,16 @@ export const drivers = $root.drivers = (() => {
      * @property {number} STC_ST3215_COMMAND=0 STC_ST3215_COMMAND value
      * @property {number} STC_MOTOR_MIRRORING_COMMAND=1 STC_MOTOR_MIRRORING_COMMAND value
      * @property {number} STC_INFERENCE_TAG_COMMAND=2 STC_INFERENCE_TAG_COMMAND value
-     * @property {number} STC_VESC_TRAMPA_COMMAND=3 STC_VESC_TRAMPA_COMMAND value
+     * @property {number} STC_YAHBOOM_DOGZILLA_LITE_COMMAND=3 STC_YAHBOOM_DOGZILLA_LITE_COMMAND value
+     * @property {number} STC_VESC_TRAMPA_COMMAND=4 STC_VESC_TRAMPA_COMMAND value
      */
     drivers.StationCommandType = (function() {
         const valuesById = {}, values = Object.create(valuesById);
         values[valuesById[0] = "STC_ST3215_COMMAND"] = 0;
         values[valuesById[1] = "STC_MOTOR_MIRRORING_COMMAND"] = 1;
         values[valuesById[2] = "STC_INFERENCE_TAG_COMMAND"] = 2;
-        values[valuesById[3] = "STC_VESC_TRAMPA_COMMAND"] = 3;
+        values[valuesById[3] = "STC_YAHBOOM_DOGZILLA_LITE_COMMAND"] = 3;
+        values[valuesById[4] = "STC_VESC_TRAMPA_COMMAND"] = 4;
         return values;
     })();
 
@@ -1300,6 +1313,9 @@ export const inference = $root.inference = (() => {
                     case 22:
                     case 30:
                     case 32:
+                    case 40:
+                    case 41:
+                    case 42:
                         break;
                     }
                 return null;
@@ -1398,6 +1414,18 @@ export const inference = $root.inference = (() => {
                 case "QDT_MOTOR_MIRRORING_RX":
                 case 32:
                     message.type = 32;
+                    break;
+                case "QDT_YAHBOOM_DOGZILLA_LITE_SERIAL_TX":
+                case 40:
+                    message.type = 40;
+                    break;
+                case "QDT_YAHBOOM_DOGZILLA_LITE_SERIAL_RX":
+                case 41:
+                    message.type = 41;
+                    break;
+                case "QDT_YAHBOOM_DOGZILLA_LITE_INFERENCE":
+                case 42:
+                    message.type = 42;
                     break;
                 }
                 return message;
@@ -19255,6 +19283,6265 @@ export const motors_mirroring = $root.motors_mirroring = (() => {
     })();
 
     return motors_mirroring;
+})();
+
+export const yahboom_dogzilla_lite = $root.yahboom_dogzilla_lite = (() => {
+
+    /**
+     * Namespace yahboom_dogzilla_lite.
+     * @exports yahboom_dogzilla_lite
+     * @namespace
+     */
+    const yahboom_dogzilla_lite = {};
+
+    /**
+     * YahboomDogzillaLiteSignalType enum.
+     * @name yahboom_dogzilla_lite.YahboomDogzillaLiteSignalType
+     * @enum {number}
+     * @property {number} YAHBOOM_DOGZILLA_LITE_SIGNAL_TYPE_UNSPECIFIED=0 YAHBOOM_DOGZILLA_LITE_SIGNAL_TYPE_UNSPECIFIED value
+     * @property {number} YAHBOOM_DOGZILLA_LITE_CONNECTED=1 YAHBOOM_DOGZILLA_LITE_CONNECTED value
+     * @property {number} YAHBOOM_DOGZILLA_LITE_DISCONNECTED=2 YAHBOOM_DOGZILLA_LITE_DISCONNECTED value
+     * @property {number} YAHBOOM_DOGZILLA_LITE_STATUS_UPDATE=3 YAHBOOM_DOGZILLA_LITE_STATUS_UPDATE value
+     * @property {number} YAHBOOM_DOGZILLA_LITE_COMMAND=4 YAHBOOM_DOGZILLA_LITE_COMMAND value
+     * @property {number} YAHBOOM_DOGZILLA_LITE_COMMAND_SUCCESS=5 YAHBOOM_DOGZILLA_LITE_COMMAND_SUCCESS value
+     * @property {number} YAHBOOM_DOGZILLA_LITE_COMMAND_FAILED=6 YAHBOOM_DOGZILLA_LITE_COMMAND_FAILED value
+     * @property {number} YAHBOOM_DOGZILLA_LITE_ERROR=7 YAHBOOM_DOGZILLA_LITE_ERROR value
+     */
+    yahboom_dogzilla_lite.YahboomDogzillaLiteSignalType = (function() {
+        const valuesById = {}, values = Object.create(valuesById);
+        values[valuesById[0] = "YAHBOOM_DOGZILLA_LITE_SIGNAL_TYPE_UNSPECIFIED"] = 0;
+        values[valuesById[1] = "YAHBOOM_DOGZILLA_LITE_CONNECTED"] = 1;
+        values[valuesById[2] = "YAHBOOM_DOGZILLA_LITE_DISCONNECTED"] = 2;
+        values[valuesById[3] = "YAHBOOM_DOGZILLA_LITE_STATUS_UPDATE"] = 3;
+        values[valuesById[4] = "YAHBOOM_DOGZILLA_LITE_COMMAND"] = 4;
+        values[valuesById[5] = "YAHBOOM_DOGZILLA_LITE_COMMAND_SUCCESS"] = 5;
+        values[valuesById[6] = "YAHBOOM_DOGZILLA_LITE_COMMAND_FAILED"] = 6;
+        values[valuesById[7] = "YAHBOOM_DOGZILLA_LITE_ERROR"] = 7;
+        return values;
+    })();
+
+    /**
+     * YahboomDogzillaLiteModel enum.
+     * @name yahboom_dogzilla_lite.YahboomDogzillaLiteModel
+     * @enum {number}
+     * @property {number} YAHBOOM_DOGZILLA_LITE_MODEL_UNKNOWN=0 YAHBOOM_DOGZILLA_LITE_MODEL_UNKNOWN value
+     * @property {number} YAHBOOM_DOGZILLA_LITE_MINI=1 YAHBOOM_DOGZILLA_LITE_MINI value
+     * @property {number} YAHBOOM_DOGZILLA_LITE=2 YAHBOOM_DOGZILLA_LITE value
+     * @property {number} YAHBOOM_DOGZILLA_LITE_PRO=3 YAHBOOM_DOGZILLA_LITE_PRO value
+     * @property {number} YAHBOOM_DOGZILLA_LITE_RIDER=4 YAHBOOM_DOGZILLA_LITE_RIDER value
+     */
+    yahboom_dogzilla_lite.YahboomDogzillaLiteModel = (function() {
+        const valuesById = {}, values = Object.create(valuesById);
+        values[valuesById[0] = "YAHBOOM_DOGZILLA_LITE_MODEL_UNKNOWN"] = 0;
+        values[valuesById[1] = "YAHBOOM_DOGZILLA_LITE_MINI"] = 1;
+        values[valuesById[2] = "YAHBOOM_DOGZILLA_LITE"] = 2;
+        values[valuesById[3] = "YAHBOOM_DOGZILLA_LITE_PRO"] = 3;
+        values[valuesById[4] = "YAHBOOM_DOGZILLA_LITE_RIDER"] = 4;
+        return values;
+    })();
+
+    /**
+     * GaitType enum.
+     * @name yahboom_dogzilla_lite.GaitType
+     * @enum {number}
+     * @property {number} GAIT_TROT=0 GAIT_TROT value
+     * @property {number} GAIT_WALK=1 GAIT_WALK value
+     * @property {number} GAIT_HIGH_WALK=2 GAIT_HIGH_WALK value
+     * @property {number} GAIT_MICRO_TROT=3 GAIT_MICRO_TROT value
+     */
+    yahboom_dogzilla_lite.GaitType = (function() {
+        const valuesById = {}, values = Object.create(valuesById);
+        values[valuesById[0] = "GAIT_TROT"] = 0;
+        values[valuesById[1] = "GAIT_WALK"] = 1;
+        values[valuesById[2] = "GAIT_HIGH_WALK"] = 2;
+        values[valuesById[3] = "GAIT_MICRO_TROT"] = 3;
+        return values;
+    })();
+
+    /**
+     * PerformanceMode enum.
+     * @name yahboom_dogzilla_lite.PerformanceMode
+     * @enum {number}
+     * @property {number} PERFORMANCE_NORMAL_CONTROL=0 PERFORMANCE_NORMAL_CONTROL value
+     * @property {number} PERFORMANCE_CYCLE_ACTION=1 PERFORMANCE_CYCLE_ACTION value
+     */
+    yahboom_dogzilla_lite.PerformanceMode = (function() {
+        const valuesById = {}, values = Object.create(valuesById);
+        values[valuesById[0] = "PERFORMANCE_NORMAL_CONTROL"] = 0;
+        values[valuesById[1] = "PERFORMANCE_CYCLE_ACTION"] = 1;
+        return values;
+    })();
+
+    /**
+     * ImuMode enum.
+     * @name yahboom_dogzilla_lite.ImuMode
+     * @enum {number}
+     * @property {number} IMU_DISABLED=0 IMU_DISABLED value
+     * @property {number} IMU_SELF_STABILIZE=1 IMU_SELF_STABILIZE value
+     */
+    yahboom_dogzilla_lite.ImuMode = (function() {
+        const valuesById = {}, values = Object.create(valuesById);
+        values[valuesById[0] = "IMU_DISABLED"] = 0;
+        values[valuesById[1] = "IMU_SELF_STABILIZE"] = 1;
+        return values;
+    })();
+
+    /**
+     * ActionType enum.
+     * @name yahboom_dogzilla_lite.ActionType
+     * @enum {number}
+     * @property {number} ACTION_UNSPECIFIED=0 ACTION_UNSPECIFIED value
+     * @property {number} ACTION_LIE_DOWN=1 ACTION_LIE_DOWN value
+     * @property {number} ACTION_STAND_UP=2 ACTION_STAND_UP value
+     * @property {number} ACTION_CRAWL_FORWARD=3 ACTION_CRAWL_FORWARD value
+     * @property {number} ACTION_TURN_AROUND=4 ACTION_TURN_AROUND value
+     * @property {number} ACTION_MARCH_IN_PLACE=5 ACTION_MARCH_IN_PLACE value
+     * @property {number} ACTION_SQUAT=6 ACTION_SQUAT value
+     * @property {number} ACTION_ROLL=7 ACTION_ROLL value
+     * @property {number} ACTION_PITCH=8 ACTION_PITCH value
+     * @property {number} ACTION_YAW=9 ACTION_YAW value
+     * @property {number} ACTION_THREE_AXIS_ROTATION=10 ACTION_THREE_AXIS_ROTATION value
+     * @property {number} ACTION_PEE=11 ACTION_PEE value
+     * @property {number} ACTION_SIT_DOWN=12 ACTION_SIT_DOWN value
+     * @property {number} ACTION_WAVE=13 ACTION_WAVE value
+     * @property {number} ACTION_STRETCH=14 ACTION_STRETCH value
+     * @property {number} ACTION_WAVE2=15 ACTION_WAVE2 value
+     * @property {number} ACTION_SWAY=16 ACTION_SWAY value
+     * @property {number} ACTION_BEG_FOR_FOOD=17 ACTION_BEG_FOR_FOOD value
+     * @property {number} ACTION_FIND_FOOD=18 ACTION_FIND_FOOD value
+     * @property {number} ACTION_HANDSHAKE=19 ACTION_HANDSHAKE value
+     * @property {number} ACTION_ARM_DEMO=20 ACTION_ARM_DEMO value
+     * @property {number} ACTION_PUSHUPS=21 ACTION_PUSHUPS value
+     * @property {number} ACTION_PITCH_YAW_ROTATION=22 ACTION_PITCH_YAW_ROTATION value
+     * @property {number} ACTION_UP_DOWN_ROTATION=23 ACTION_UP_DOWN_ROTATION value
+     * @property {number} ACTION_FORWARD_BACKWARD_ROTATION=24 ACTION_FORWARD_BACKWARD_ROTATION value
+     * @property {number} ACTION_RESTORE_DEFAULT=255 ACTION_RESTORE_DEFAULT value
+     */
+    yahboom_dogzilla_lite.ActionType = (function() {
+        const valuesById = {}, values = Object.create(valuesById);
+        values[valuesById[0] = "ACTION_UNSPECIFIED"] = 0;
+        values[valuesById[1] = "ACTION_LIE_DOWN"] = 1;
+        values[valuesById[2] = "ACTION_STAND_UP"] = 2;
+        values[valuesById[3] = "ACTION_CRAWL_FORWARD"] = 3;
+        values[valuesById[4] = "ACTION_TURN_AROUND"] = 4;
+        values[valuesById[5] = "ACTION_MARCH_IN_PLACE"] = 5;
+        values[valuesById[6] = "ACTION_SQUAT"] = 6;
+        values[valuesById[7] = "ACTION_ROLL"] = 7;
+        values[valuesById[8] = "ACTION_PITCH"] = 8;
+        values[valuesById[9] = "ACTION_YAW"] = 9;
+        values[valuesById[10] = "ACTION_THREE_AXIS_ROTATION"] = 10;
+        values[valuesById[11] = "ACTION_PEE"] = 11;
+        values[valuesById[12] = "ACTION_SIT_DOWN"] = 12;
+        values[valuesById[13] = "ACTION_WAVE"] = 13;
+        values[valuesById[14] = "ACTION_STRETCH"] = 14;
+        values[valuesById[15] = "ACTION_WAVE2"] = 15;
+        values[valuesById[16] = "ACTION_SWAY"] = 16;
+        values[valuesById[17] = "ACTION_BEG_FOR_FOOD"] = 17;
+        values[valuesById[18] = "ACTION_FIND_FOOD"] = 18;
+        values[valuesById[19] = "ACTION_HANDSHAKE"] = 19;
+        values[valuesById[20] = "ACTION_ARM_DEMO"] = 20;
+        values[valuesById[21] = "ACTION_PUSHUPS"] = 21;
+        values[valuesById[22] = "ACTION_PITCH_YAW_ROTATION"] = 22;
+        values[valuesById[23] = "ACTION_UP_DOWN_ROTATION"] = 23;
+        values[valuesById[24] = "ACTION_FORWARD_BACKWARD_ROTATION"] = 24;
+        values[valuesById[255] = "ACTION_RESTORE_DEFAULT"] = 255;
+        return values;
+    })();
+
+    yahboom_dogzilla_lite.YahboomDogzillaLiteDevice = (function() {
+
+        /**
+         * Properties of a YahboomDogzillaLiteDevice.
+         * @memberof yahboom_dogzilla_lite
+         * @interface IYahboomDogzillaLiteDevice
+         * @property {string|null} [portName] YahboomDogzillaLiteDevice portName
+         * @property {number|null} [baudRate] YahboomDogzillaLiteDevice baudRate
+         * @property {string|null} [serialNumber] YahboomDogzillaLiteDevice serialNumber
+         * @property {string|null} [firmwareVersion] YahboomDogzillaLiteDevice firmwareVersion
+         * @property {yahboom_dogzilla_lite.YahboomDogzillaLiteModel|null} [model] YahboomDogzillaLiteDevice model
+         * @property {number|null} [vid] YahboomDogzillaLiteDevice vid
+         * @property {number|null} [pid] YahboomDogzillaLiteDevice pid
+         * @property {string|null} [manufacturer] YahboomDogzillaLiteDevice manufacturer
+         * @property {string|null} [product] YahboomDogzillaLiteDevice product
+         */
+
+        /**
+         * Constructs a new YahboomDogzillaLiteDevice.
+         * @memberof yahboom_dogzilla_lite
+         * @classdesc Represents a YahboomDogzillaLiteDevice.
+         * @implements IYahboomDogzillaLiteDevice
+         * @constructor
+         * @param {yahboom_dogzilla_lite.IYahboomDogzillaLiteDevice=} [properties] Properties to set
+         */
+        function YahboomDogzillaLiteDevice(properties) {
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * YahboomDogzillaLiteDevice portName.
+         * @member {string} portName
+         * @memberof yahboom_dogzilla_lite.YahboomDogzillaLiteDevice
+         * @instance
+         */
+        YahboomDogzillaLiteDevice.prototype.portName = "";
+
+        /**
+         * YahboomDogzillaLiteDevice baudRate.
+         * @member {number} baudRate
+         * @memberof yahboom_dogzilla_lite.YahboomDogzillaLiteDevice
+         * @instance
+         */
+        YahboomDogzillaLiteDevice.prototype.baudRate = 0;
+
+        /**
+         * YahboomDogzillaLiteDevice serialNumber.
+         * @member {string} serialNumber
+         * @memberof yahboom_dogzilla_lite.YahboomDogzillaLiteDevice
+         * @instance
+         */
+        YahboomDogzillaLiteDevice.prototype.serialNumber = "";
+
+        /**
+         * YahboomDogzillaLiteDevice firmwareVersion.
+         * @member {string} firmwareVersion
+         * @memberof yahboom_dogzilla_lite.YahboomDogzillaLiteDevice
+         * @instance
+         */
+        YahboomDogzillaLiteDevice.prototype.firmwareVersion = "";
+
+        /**
+         * YahboomDogzillaLiteDevice model.
+         * @member {yahboom_dogzilla_lite.YahboomDogzillaLiteModel} model
+         * @memberof yahboom_dogzilla_lite.YahboomDogzillaLiteDevice
+         * @instance
+         */
+        YahboomDogzillaLiteDevice.prototype.model = 0;
+
+        /**
+         * YahboomDogzillaLiteDevice vid.
+         * @member {number} vid
+         * @memberof yahboom_dogzilla_lite.YahboomDogzillaLiteDevice
+         * @instance
+         */
+        YahboomDogzillaLiteDevice.prototype.vid = 0;
+
+        /**
+         * YahboomDogzillaLiteDevice pid.
+         * @member {number} pid
+         * @memberof yahboom_dogzilla_lite.YahboomDogzillaLiteDevice
+         * @instance
+         */
+        YahboomDogzillaLiteDevice.prototype.pid = 0;
+
+        /**
+         * YahboomDogzillaLiteDevice manufacturer.
+         * @member {string} manufacturer
+         * @memberof yahboom_dogzilla_lite.YahboomDogzillaLiteDevice
+         * @instance
+         */
+        YahboomDogzillaLiteDevice.prototype.manufacturer = "";
+
+        /**
+         * YahboomDogzillaLiteDevice product.
+         * @member {string} product
+         * @memberof yahboom_dogzilla_lite.YahboomDogzillaLiteDevice
+         * @instance
+         */
+        YahboomDogzillaLiteDevice.prototype.product = "";
+
+        /**
+         * Creates a new YahboomDogzillaLiteDevice instance using the specified properties.
+         * @function create
+         * @memberof yahboom_dogzilla_lite.YahboomDogzillaLiteDevice
+         * @static
+         * @param {yahboom_dogzilla_lite.IYahboomDogzillaLiteDevice=} [properties] Properties to set
+         * @returns {yahboom_dogzilla_lite.YahboomDogzillaLiteDevice} YahboomDogzillaLiteDevice instance
+         */
+        YahboomDogzillaLiteDevice.create = function create(properties) {
+            return new YahboomDogzillaLiteDevice(properties);
+        };
+
+        /**
+         * Encodes the specified YahboomDogzillaLiteDevice message. Does not implicitly {@link yahboom_dogzilla_lite.YahboomDogzillaLiteDevice.verify|verify} messages.
+         * @function encode
+         * @memberof yahboom_dogzilla_lite.YahboomDogzillaLiteDevice
+         * @static
+         * @param {yahboom_dogzilla_lite.IYahboomDogzillaLiteDevice} message YahboomDogzillaLiteDevice message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        YahboomDogzillaLiteDevice.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.portName != null && Object.hasOwnProperty.call(message, "portName"))
+                writer.uint32(/* id 1, wireType 2 =*/10).string(message.portName);
+            if (message.baudRate != null && Object.hasOwnProperty.call(message, "baudRate"))
+                writer.uint32(/* id 2, wireType 0 =*/16).uint32(message.baudRate);
+            if (message.serialNumber != null && Object.hasOwnProperty.call(message, "serialNumber"))
+                writer.uint32(/* id 3, wireType 2 =*/26).string(message.serialNumber);
+            if (message.firmwareVersion != null && Object.hasOwnProperty.call(message, "firmwareVersion"))
+                writer.uint32(/* id 4, wireType 2 =*/34).string(message.firmwareVersion);
+            if (message.model != null && Object.hasOwnProperty.call(message, "model"))
+                writer.uint32(/* id 5, wireType 0 =*/40).int32(message.model);
+            if (message.vid != null && Object.hasOwnProperty.call(message, "vid"))
+                writer.uint32(/* id 10, wireType 0 =*/80).uint32(message.vid);
+            if (message.pid != null && Object.hasOwnProperty.call(message, "pid"))
+                writer.uint32(/* id 11, wireType 0 =*/88).uint32(message.pid);
+            if (message.manufacturer != null && Object.hasOwnProperty.call(message, "manufacturer"))
+                writer.uint32(/* id 12, wireType 2 =*/98).string(message.manufacturer);
+            if (message.product != null && Object.hasOwnProperty.call(message, "product"))
+                writer.uint32(/* id 13, wireType 2 =*/106).string(message.product);
+            return writer;
+        };
+
+        /**
+         * Encodes the specified YahboomDogzillaLiteDevice message, length delimited. Does not implicitly {@link yahboom_dogzilla_lite.YahboomDogzillaLiteDevice.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof yahboom_dogzilla_lite.YahboomDogzillaLiteDevice
+         * @static
+         * @param {yahboom_dogzilla_lite.IYahboomDogzillaLiteDevice} message YahboomDogzillaLiteDevice message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        YahboomDogzillaLiteDevice.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes a YahboomDogzillaLiteDevice message from the specified reader or buffer.
+         * @function decode
+         * @memberof yahboom_dogzilla_lite.YahboomDogzillaLiteDevice
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {yahboom_dogzilla_lite.YahboomDogzillaLiteDevice} YahboomDogzillaLiteDevice
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        YahboomDogzillaLiteDevice.decode = function decode(reader, length, error, long) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.yahboom_dogzilla_lite.YahboomDogzillaLiteDevice();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                if (tag === error)
+                    break;
+                switch (tag >>> 3) {
+                case 1: {
+                        message.portName = reader.string();
+                        break;
+                    }
+                case 2: {
+                        message.baudRate = reader.uint32();
+                        break;
+                    }
+                case 3: {
+                        message.serialNumber = reader.string();
+                        break;
+                    }
+                case 4: {
+                        message.firmwareVersion = reader.string();
+                        break;
+                    }
+                case 5: {
+                        message.model = reader.int32();
+                        break;
+                    }
+                case 10: {
+                        message.vid = reader.uint32();
+                        break;
+                    }
+                case 11: {
+                        message.pid = reader.uint32();
+                        break;
+                    }
+                case 12: {
+                        message.manufacturer = reader.string();
+                        break;
+                    }
+                case 13: {
+                        message.product = reader.string();
+                        break;
+                    }
+                default:
+                    reader.skipType(tag & 7, long);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes a YahboomDogzillaLiteDevice message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof yahboom_dogzilla_lite.YahboomDogzillaLiteDevice
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {yahboom_dogzilla_lite.YahboomDogzillaLiteDevice} YahboomDogzillaLiteDevice
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        YahboomDogzillaLiteDevice.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies a YahboomDogzillaLiteDevice message.
+         * @function verify
+         * @memberof yahboom_dogzilla_lite.YahboomDogzillaLiteDevice
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        YahboomDogzillaLiteDevice.verify = function verify(message, long) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
+            if (message.portName != null && message.hasOwnProperty("portName"))
+                if (!$util.isString(message.portName))
+                    return "portName: string expected";
+            if (message.baudRate != null && message.hasOwnProperty("baudRate"))
+                if (!$util.isInteger(message.baudRate))
+                    return "baudRate: integer expected";
+            if (message.serialNumber != null && message.hasOwnProperty("serialNumber"))
+                if (!$util.isString(message.serialNumber))
+                    return "serialNumber: string expected";
+            if (message.firmwareVersion != null && message.hasOwnProperty("firmwareVersion"))
+                if (!$util.isString(message.firmwareVersion))
+                    return "firmwareVersion: string expected";
+            if (message.model != null && message.hasOwnProperty("model"))
+                switch (message.model) {
+                default:
+                    return "model: enum value expected";
+                case 0:
+                case 1:
+                case 2:
+                case 3:
+                case 4:
+                    break;
+                }
+            if (message.vid != null && message.hasOwnProperty("vid"))
+                if (!$util.isInteger(message.vid))
+                    return "vid: integer expected";
+            if (message.pid != null && message.hasOwnProperty("pid"))
+                if (!$util.isInteger(message.pid))
+                    return "pid: integer expected";
+            if (message.manufacturer != null && message.hasOwnProperty("manufacturer"))
+                if (!$util.isString(message.manufacturer))
+                    return "manufacturer: string expected";
+            if (message.product != null && message.hasOwnProperty("product"))
+                if (!$util.isString(message.product))
+                    return "product: string expected";
+            return null;
+        };
+
+        /**
+         * Creates a YahboomDogzillaLiteDevice message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof yahboom_dogzilla_lite.YahboomDogzillaLiteDevice
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {yahboom_dogzilla_lite.YahboomDogzillaLiteDevice} YahboomDogzillaLiteDevice
+         */
+        YahboomDogzillaLiteDevice.fromObject = function fromObject(object, long) {
+            if (object instanceof $root.yahboom_dogzilla_lite.YahboomDogzillaLiteDevice)
+                return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let message = new $root.yahboom_dogzilla_lite.YahboomDogzillaLiteDevice();
+            if (object.portName != null)
+                message.portName = String(object.portName);
+            if (object.baudRate != null)
+                message.baudRate = object.baudRate >>> 0;
+            if (object.serialNumber != null)
+                message.serialNumber = String(object.serialNumber);
+            if (object.firmwareVersion != null)
+                message.firmwareVersion = String(object.firmwareVersion);
+            switch (object.model) {
+            default:
+                if (typeof object.model === "number") {
+                    message.model = object.model;
+                    break;
+                }
+                break;
+            case "YAHBOOM_DOGZILLA_LITE_MODEL_UNKNOWN":
+            case 0:
+                message.model = 0;
+                break;
+            case "YAHBOOM_DOGZILLA_LITE_MINI":
+            case 1:
+                message.model = 1;
+                break;
+            case "YAHBOOM_DOGZILLA_LITE":
+            case 2:
+                message.model = 2;
+                break;
+            case "YAHBOOM_DOGZILLA_LITE_PRO":
+            case 3:
+                message.model = 3;
+                break;
+            case "YAHBOOM_DOGZILLA_LITE_RIDER":
+            case 4:
+                message.model = 4;
+                break;
+            }
+            if (object.vid != null)
+                message.vid = object.vid >>> 0;
+            if (object.pid != null)
+                message.pid = object.pid >>> 0;
+            if (object.manufacturer != null)
+                message.manufacturer = String(object.manufacturer);
+            if (object.product != null)
+                message.product = String(object.product);
+            return message;
+        };
+
+        /**
+         * Creates a plain object from a YahboomDogzillaLiteDevice message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof yahboom_dogzilla_lite.YahboomDogzillaLiteDevice
+         * @static
+         * @param {yahboom_dogzilla_lite.YahboomDogzillaLiteDevice} message YahboomDogzillaLiteDevice
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        YahboomDogzillaLiteDevice.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.defaults) {
+                object.portName = "";
+                object.baudRate = 0;
+                object.serialNumber = "";
+                object.firmwareVersion = "";
+                object.model = options.enums === String ? "YAHBOOM_DOGZILLA_LITE_MODEL_UNKNOWN" : 0;
+                object.vid = 0;
+                object.pid = 0;
+                object.manufacturer = "";
+                object.product = "";
+            }
+            if (message.portName != null && message.hasOwnProperty("portName"))
+                object.portName = message.portName;
+            if (message.baudRate != null && message.hasOwnProperty("baudRate"))
+                object.baudRate = message.baudRate;
+            if (message.serialNumber != null && message.hasOwnProperty("serialNumber"))
+                object.serialNumber = message.serialNumber;
+            if (message.firmwareVersion != null && message.hasOwnProperty("firmwareVersion"))
+                object.firmwareVersion = message.firmwareVersion;
+            if (message.model != null && message.hasOwnProperty("model"))
+                object.model = options.enums === String ? $root.yahboom_dogzilla_lite.YahboomDogzillaLiteModel[message.model] === undefined ? message.model : $root.yahboom_dogzilla_lite.YahboomDogzillaLiteModel[message.model] : message.model;
+            if (message.vid != null && message.hasOwnProperty("vid"))
+                object.vid = message.vid;
+            if (message.pid != null && message.hasOwnProperty("pid"))
+                object.pid = message.pid;
+            if (message.manufacturer != null && message.hasOwnProperty("manufacturer"))
+                object.manufacturer = message.manufacturer;
+            if (message.product != null && message.hasOwnProperty("product"))
+                object.product = message.product;
+            return object;
+        };
+
+        /**
+         * Converts this YahboomDogzillaLiteDevice to JSON.
+         * @function toJSON
+         * @memberof yahboom_dogzilla_lite.YahboomDogzillaLiteDevice
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        YahboomDogzillaLiteDevice.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for YahboomDogzillaLiteDevice
+         * @function getTypeUrl
+         * @memberof yahboom_dogzilla_lite.YahboomDogzillaLiteDevice
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        YahboomDogzillaLiteDevice.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+            if (typeUrlPrefix === undefined) {
+                typeUrlPrefix = "type.googleapis.com";
+            }
+            return typeUrlPrefix + "/yahboom_dogzilla_lite.YahboomDogzillaLiteDevice";
+        };
+
+        return YahboomDogzillaLiteDevice;
+    })();
+
+    yahboom_dogzilla_lite.ImuOrientation = (function() {
+
+        /**
+         * Properties of an ImuOrientation.
+         * @memberof yahboom_dogzilla_lite
+         * @interface IImuOrientation
+         * @property {number|null} [roll] ImuOrientation roll
+         * @property {number|null} [pitch] ImuOrientation pitch
+         * @property {number|null} [yaw] ImuOrientation yaw
+         */
+
+        /**
+         * Constructs a new ImuOrientation.
+         * @memberof yahboom_dogzilla_lite
+         * @classdesc Represents an ImuOrientation.
+         * @implements IImuOrientation
+         * @constructor
+         * @param {yahboom_dogzilla_lite.IImuOrientation=} [properties] Properties to set
+         */
+        function ImuOrientation(properties) {
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * ImuOrientation roll.
+         * @member {number} roll
+         * @memberof yahboom_dogzilla_lite.ImuOrientation
+         * @instance
+         */
+        ImuOrientation.prototype.roll = 0;
+
+        /**
+         * ImuOrientation pitch.
+         * @member {number} pitch
+         * @memberof yahboom_dogzilla_lite.ImuOrientation
+         * @instance
+         */
+        ImuOrientation.prototype.pitch = 0;
+
+        /**
+         * ImuOrientation yaw.
+         * @member {number} yaw
+         * @memberof yahboom_dogzilla_lite.ImuOrientation
+         * @instance
+         */
+        ImuOrientation.prototype.yaw = 0;
+
+        /**
+         * Creates a new ImuOrientation instance using the specified properties.
+         * @function create
+         * @memberof yahboom_dogzilla_lite.ImuOrientation
+         * @static
+         * @param {yahboom_dogzilla_lite.IImuOrientation=} [properties] Properties to set
+         * @returns {yahboom_dogzilla_lite.ImuOrientation} ImuOrientation instance
+         */
+        ImuOrientation.create = function create(properties) {
+            return new ImuOrientation(properties);
+        };
+
+        /**
+         * Encodes the specified ImuOrientation message. Does not implicitly {@link yahboom_dogzilla_lite.ImuOrientation.verify|verify} messages.
+         * @function encode
+         * @memberof yahboom_dogzilla_lite.ImuOrientation
+         * @static
+         * @param {yahboom_dogzilla_lite.IImuOrientation} message ImuOrientation message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        ImuOrientation.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.roll != null && Object.hasOwnProperty.call(message, "roll"))
+                writer.uint32(/* id 1, wireType 5 =*/13).float(message.roll);
+            if (message.pitch != null && Object.hasOwnProperty.call(message, "pitch"))
+                writer.uint32(/* id 2, wireType 5 =*/21).float(message.pitch);
+            if (message.yaw != null && Object.hasOwnProperty.call(message, "yaw"))
+                writer.uint32(/* id 3, wireType 5 =*/29).float(message.yaw);
+            return writer;
+        };
+
+        /**
+         * Encodes the specified ImuOrientation message, length delimited. Does not implicitly {@link yahboom_dogzilla_lite.ImuOrientation.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof yahboom_dogzilla_lite.ImuOrientation
+         * @static
+         * @param {yahboom_dogzilla_lite.IImuOrientation} message ImuOrientation message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        ImuOrientation.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes an ImuOrientation message from the specified reader or buffer.
+         * @function decode
+         * @memberof yahboom_dogzilla_lite.ImuOrientation
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {yahboom_dogzilla_lite.ImuOrientation} ImuOrientation
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        ImuOrientation.decode = function decode(reader, length, error, long) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.yahboom_dogzilla_lite.ImuOrientation();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                if (tag === error)
+                    break;
+                switch (tag >>> 3) {
+                case 1: {
+                        message.roll = reader.float();
+                        break;
+                    }
+                case 2: {
+                        message.pitch = reader.float();
+                        break;
+                    }
+                case 3: {
+                        message.yaw = reader.float();
+                        break;
+                    }
+                default:
+                    reader.skipType(tag & 7, long);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes an ImuOrientation message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof yahboom_dogzilla_lite.ImuOrientation
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {yahboom_dogzilla_lite.ImuOrientation} ImuOrientation
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        ImuOrientation.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies an ImuOrientation message.
+         * @function verify
+         * @memberof yahboom_dogzilla_lite.ImuOrientation
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        ImuOrientation.verify = function verify(message, long) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
+            if (message.roll != null && message.hasOwnProperty("roll"))
+                if (typeof message.roll !== "number")
+                    return "roll: number expected";
+            if (message.pitch != null && message.hasOwnProperty("pitch"))
+                if (typeof message.pitch !== "number")
+                    return "pitch: number expected";
+            if (message.yaw != null && message.hasOwnProperty("yaw"))
+                if (typeof message.yaw !== "number")
+                    return "yaw: number expected";
+            return null;
+        };
+
+        /**
+         * Creates an ImuOrientation message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof yahboom_dogzilla_lite.ImuOrientation
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {yahboom_dogzilla_lite.ImuOrientation} ImuOrientation
+         */
+        ImuOrientation.fromObject = function fromObject(object, long) {
+            if (object instanceof $root.yahboom_dogzilla_lite.ImuOrientation)
+                return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let message = new $root.yahboom_dogzilla_lite.ImuOrientation();
+            if (object.roll != null)
+                message.roll = Number(object.roll);
+            if (object.pitch != null)
+                message.pitch = Number(object.pitch);
+            if (object.yaw != null)
+                message.yaw = Number(object.yaw);
+            return message;
+        };
+
+        /**
+         * Creates a plain object from an ImuOrientation message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof yahboom_dogzilla_lite.ImuOrientation
+         * @static
+         * @param {yahboom_dogzilla_lite.ImuOrientation} message ImuOrientation
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        ImuOrientation.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.defaults) {
+                object.roll = 0;
+                object.pitch = 0;
+                object.yaw = 0;
+            }
+            if (message.roll != null && message.hasOwnProperty("roll"))
+                object.roll = options.json && !isFinite(message.roll) ? String(message.roll) : message.roll;
+            if (message.pitch != null && message.hasOwnProperty("pitch"))
+                object.pitch = options.json && !isFinite(message.pitch) ? String(message.pitch) : message.pitch;
+            if (message.yaw != null && message.hasOwnProperty("yaw"))
+                object.yaw = options.json && !isFinite(message.yaw) ? String(message.yaw) : message.yaw;
+            return object;
+        };
+
+        /**
+         * Converts this ImuOrientation to JSON.
+         * @function toJSON
+         * @memberof yahboom_dogzilla_lite.ImuOrientation
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        ImuOrientation.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for ImuOrientation
+         * @function getTypeUrl
+         * @memberof yahboom_dogzilla_lite.ImuOrientation
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        ImuOrientation.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+            if (typeUrlPrefix === undefined) {
+                typeUrlPrefix = "type.googleapis.com";
+            }
+            return typeUrlPrefix + "/yahboom_dogzilla_lite.ImuOrientation";
+        };
+
+        return ImuOrientation;
+    })();
+
+    yahboom_dogzilla_lite.Acceleration = (function() {
+
+        /**
+         * Properties of an Acceleration.
+         * @memberof yahboom_dogzilla_lite
+         * @interface IAcceleration
+         * @property {number|null} [x] Acceleration x
+         * @property {number|null} [y] Acceleration y
+         * @property {number|null} [z] Acceleration z
+         */
+
+        /**
+         * Constructs a new Acceleration.
+         * @memberof yahboom_dogzilla_lite
+         * @classdesc Represents an Acceleration.
+         * @implements IAcceleration
+         * @constructor
+         * @param {yahboom_dogzilla_lite.IAcceleration=} [properties] Properties to set
+         */
+        function Acceleration(properties) {
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * Acceleration x.
+         * @member {number} x
+         * @memberof yahboom_dogzilla_lite.Acceleration
+         * @instance
+         */
+        Acceleration.prototype.x = 0;
+
+        /**
+         * Acceleration y.
+         * @member {number} y
+         * @memberof yahboom_dogzilla_lite.Acceleration
+         * @instance
+         */
+        Acceleration.prototype.y = 0;
+
+        /**
+         * Acceleration z.
+         * @member {number} z
+         * @memberof yahboom_dogzilla_lite.Acceleration
+         * @instance
+         */
+        Acceleration.prototype.z = 0;
+
+        /**
+         * Creates a new Acceleration instance using the specified properties.
+         * @function create
+         * @memberof yahboom_dogzilla_lite.Acceleration
+         * @static
+         * @param {yahboom_dogzilla_lite.IAcceleration=} [properties] Properties to set
+         * @returns {yahboom_dogzilla_lite.Acceleration} Acceleration instance
+         */
+        Acceleration.create = function create(properties) {
+            return new Acceleration(properties);
+        };
+
+        /**
+         * Encodes the specified Acceleration message. Does not implicitly {@link yahboom_dogzilla_lite.Acceleration.verify|verify} messages.
+         * @function encode
+         * @memberof yahboom_dogzilla_lite.Acceleration
+         * @static
+         * @param {yahboom_dogzilla_lite.IAcceleration} message Acceleration message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        Acceleration.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.x != null && Object.hasOwnProperty.call(message, "x"))
+                writer.uint32(/* id 1, wireType 5 =*/13).float(message.x);
+            if (message.y != null && Object.hasOwnProperty.call(message, "y"))
+                writer.uint32(/* id 2, wireType 5 =*/21).float(message.y);
+            if (message.z != null && Object.hasOwnProperty.call(message, "z"))
+                writer.uint32(/* id 3, wireType 5 =*/29).float(message.z);
+            return writer;
+        };
+
+        /**
+         * Encodes the specified Acceleration message, length delimited. Does not implicitly {@link yahboom_dogzilla_lite.Acceleration.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof yahboom_dogzilla_lite.Acceleration
+         * @static
+         * @param {yahboom_dogzilla_lite.IAcceleration} message Acceleration message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        Acceleration.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes an Acceleration message from the specified reader or buffer.
+         * @function decode
+         * @memberof yahboom_dogzilla_lite.Acceleration
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {yahboom_dogzilla_lite.Acceleration} Acceleration
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        Acceleration.decode = function decode(reader, length, error, long) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.yahboom_dogzilla_lite.Acceleration();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                if (tag === error)
+                    break;
+                switch (tag >>> 3) {
+                case 1: {
+                        message.x = reader.float();
+                        break;
+                    }
+                case 2: {
+                        message.y = reader.float();
+                        break;
+                    }
+                case 3: {
+                        message.z = reader.float();
+                        break;
+                    }
+                default:
+                    reader.skipType(tag & 7, long);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes an Acceleration message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof yahboom_dogzilla_lite.Acceleration
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {yahboom_dogzilla_lite.Acceleration} Acceleration
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        Acceleration.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies an Acceleration message.
+         * @function verify
+         * @memberof yahboom_dogzilla_lite.Acceleration
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        Acceleration.verify = function verify(message, long) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
+            if (message.x != null && message.hasOwnProperty("x"))
+                if (typeof message.x !== "number")
+                    return "x: number expected";
+            if (message.y != null && message.hasOwnProperty("y"))
+                if (typeof message.y !== "number")
+                    return "y: number expected";
+            if (message.z != null && message.hasOwnProperty("z"))
+                if (typeof message.z !== "number")
+                    return "z: number expected";
+            return null;
+        };
+
+        /**
+         * Creates an Acceleration message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof yahboom_dogzilla_lite.Acceleration
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {yahboom_dogzilla_lite.Acceleration} Acceleration
+         */
+        Acceleration.fromObject = function fromObject(object, long) {
+            if (object instanceof $root.yahboom_dogzilla_lite.Acceleration)
+                return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let message = new $root.yahboom_dogzilla_lite.Acceleration();
+            if (object.x != null)
+                message.x = Number(object.x);
+            if (object.y != null)
+                message.y = Number(object.y);
+            if (object.z != null)
+                message.z = Number(object.z);
+            return message;
+        };
+
+        /**
+         * Creates a plain object from an Acceleration message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof yahboom_dogzilla_lite.Acceleration
+         * @static
+         * @param {yahboom_dogzilla_lite.Acceleration} message Acceleration
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        Acceleration.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.defaults) {
+                object.x = 0;
+                object.y = 0;
+                object.z = 0;
+            }
+            if (message.x != null && message.hasOwnProperty("x"))
+                object.x = options.json && !isFinite(message.x) ? String(message.x) : message.x;
+            if (message.y != null && message.hasOwnProperty("y"))
+                object.y = options.json && !isFinite(message.y) ? String(message.y) : message.y;
+            if (message.z != null && message.hasOwnProperty("z"))
+                object.z = options.json && !isFinite(message.z) ? String(message.z) : message.z;
+            return object;
+        };
+
+        /**
+         * Converts this Acceleration to JSON.
+         * @function toJSON
+         * @memberof yahboom_dogzilla_lite.Acceleration
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        Acceleration.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for Acceleration
+         * @function getTypeUrl
+         * @memberof yahboom_dogzilla_lite.Acceleration
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        Acceleration.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+            if (typeUrlPrefix === undefined) {
+                typeUrlPrefix = "type.googleapis.com";
+            }
+            return typeUrlPrefix + "/yahboom_dogzilla_lite.Acceleration";
+        };
+
+        return Acceleration;
+    })();
+
+    yahboom_dogzilla_lite.YahboomDogzillaLiteStatus = (function() {
+
+        /**
+         * Properties of a YahboomDogzillaLiteStatus.
+         * @memberof yahboom_dogzilla_lite
+         * @interface IYahboomDogzillaLiteStatus
+         * @property {number|null} [batteryLevel] YahboomDogzillaLiteStatus batteryLevel
+         * @property {yahboom_dogzilla_lite.YahboomDogzillaLiteModel|null} [model] YahboomDogzillaLiteStatus model
+         * @property {string|null} [firmwareVersion] YahboomDogzillaLiteStatus firmwareVersion
+         * @property {Array.<number>|null} [servoPositions] YahboomDogzillaLiteStatus servoPositions
+         * @property {yahboom_dogzilla_lite.IImuOrientation|null} [orientation] YahboomDogzillaLiteStatus orientation
+         * @property {yahboom_dogzilla_lite.IAcceleration|null} [acceleration] YahboomDogzillaLiteStatus acceleration
+         * @property {number|null} [legServoSpeed] YahboomDogzillaLiteStatus legServoSpeed
+         * @property {number|null} [armServoSpeed] YahboomDogzillaLiteStatus armServoSpeed
+         * @property {Array.<number>|null} [servoAngles] YahboomDogzillaLiteStatus servoAngles
+         */
+
+        /**
+         * Constructs a new YahboomDogzillaLiteStatus.
+         * @memberof yahboom_dogzilla_lite
+         * @classdesc Represents a YahboomDogzillaLiteStatus.
+         * @implements IYahboomDogzillaLiteStatus
+         * @constructor
+         * @param {yahboom_dogzilla_lite.IYahboomDogzillaLiteStatus=} [properties] Properties to set
+         */
+        function YahboomDogzillaLiteStatus(properties) {
+            this.servoPositions = [];
+            this.servoAngles = [];
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * YahboomDogzillaLiteStatus batteryLevel.
+         * @member {number} batteryLevel
+         * @memberof yahboom_dogzilla_lite.YahboomDogzillaLiteStatus
+         * @instance
+         */
+        YahboomDogzillaLiteStatus.prototype.batteryLevel = 0;
+
+        /**
+         * YahboomDogzillaLiteStatus model.
+         * @member {yahboom_dogzilla_lite.YahboomDogzillaLiteModel} model
+         * @memberof yahboom_dogzilla_lite.YahboomDogzillaLiteStatus
+         * @instance
+         */
+        YahboomDogzillaLiteStatus.prototype.model = 0;
+
+        /**
+         * YahboomDogzillaLiteStatus firmwareVersion.
+         * @member {string} firmwareVersion
+         * @memberof yahboom_dogzilla_lite.YahboomDogzillaLiteStatus
+         * @instance
+         */
+        YahboomDogzillaLiteStatus.prototype.firmwareVersion = "";
+
+        /**
+         * YahboomDogzillaLiteStatus servoPositions.
+         * @member {Array.<number>} servoPositions
+         * @memberof yahboom_dogzilla_lite.YahboomDogzillaLiteStatus
+         * @instance
+         */
+        YahboomDogzillaLiteStatus.prototype.servoPositions = $util.emptyArray;
+
+        /**
+         * YahboomDogzillaLiteStatus orientation.
+         * @member {yahboom_dogzilla_lite.IImuOrientation|null|undefined} orientation
+         * @memberof yahboom_dogzilla_lite.YahboomDogzillaLiteStatus
+         * @instance
+         */
+        YahboomDogzillaLiteStatus.prototype.orientation = null;
+
+        /**
+         * YahboomDogzillaLiteStatus acceleration.
+         * @member {yahboom_dogzilla_lite.IAcceleration|null|undefined} acceleration
+         * @memberof yahboom_dogzilla_lite.YahboomDogzillaLiteStatus
+         * @instance
+         */
+        YahboomDogzillaLiteStatus.prototype.acceleration = null;
+
+        /**
+         * YahboomDogzillaLiteStatus legServoSpeed.
+         * @member {number} legServoSpeed
+         * @memberof yahboom_dogzilla_lite.YahboomDogzillaLiteStatus
+         * @instance
+         */
+        YahboomDogzillaLiteStatus.prototype.legServoSpeed = 0;
+
+        /**
+         * YahboomDogzillaLiteStatus armServoSpeed.
+         * @member {number} armServoSpeed
+         * @memberof yahboom_dogzilla_lite.YahboomDogzillaLiteStatus
+         * @instance
+         */
+        YahboomDogzillaLiteStatus.prototype.armServoSpeed = 0;
+
+        /**
+         * YahboomDogzillaLiteStatus servoAngles.
+         * @member {Array.<number>} servoAngles
+         * @memberof yahboom_dogzilla_lite.YahboomDogzillaLiteStatus
+         * @instance
+         */
+        YahboomDogzillaLiteStatus.prototype.servoAngles = $util.emptyArray;
+
+        /**
+         * Creates a new YahboomDogzillaLiteStatus instance using the specified properties.
+         * @function create
+         * @memberof yahboom_dogzilla_lite.YahboomDogzillaLiteStatus
+         * @static
+         * @param {yahboom_dogzilla_lite.IYahboomDogzillaLiteStatus=} [properties] Properties to set
+         * @returns {yahboom_dogzilla_lite.YahboomDogzillaLiteStatus} YahboomDogzillaLiteStatus instance
+         */
+        YahboomDogzillaLiteStatus.create = function create(properties) {
+            return new YahboomDogzillaLiteStatus(properties);
+        };
+
+        /**
+         * Encodes the specified YahboomDogzillaLiteStatus message. Does not implicitly {@link yahboom_dogzilla_lite.YahboomDogzillaLiteStatus.verify|verify} messages.
+         * @function encode
+         * @memberof yahboom_dogzilla_lite.YahboomDogzillaLiteStatus
+         * @static
+         * @param {yahboom_dogzilla_lite.IYahboomDogzillaLiteStatus} message YahboomDogzillaLiteStatus message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        YahboomDogzillaLiteStatus.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.batteryLevel != null && Object.hasOwnProperty.call(message, "batteryLevel"))
+                writer.uint32(/* id 1, wireType 0 =*/8).uint32(message.batteryLevel);
+            if (message.model != null && Object.hasOwnProperty.call(message, "model"))
+                writer.uint32(/* id 2, wireType 0 =*/16).int32(message.model);
+            if (message.firmwareVersion != null && Object.hasOwnProperty.call(message, "firmwareVersion"))
+                writer.uint32(/* id 3, wireType 2 =*/26).string(message.firmwareVersion);
+            if (message.servoPositions != null && message.servoPositions.length) {
+                writer.uint32(/* id 10, wireType 2 =*/82).fork();
+                for (let i = 0; i < message.servoPositions.length; ++i)
+                    writer.uint32(message.servoPositions[i]);
+                writer.ldelim();
+            }
+            if (message.orientation != null && Object.hasOwnProperty.call(message, "orientation"))
+                $root.yahboom_dogzilla_lite.ImuOrientation.encode(message.orientation, writer.uint32(/* id 11, wireType 2 =*/90).fork()).ldelim();
+            if (message.acceleration != null && Object.hasOwnProperty.call(message, "acceleration"))
+                $root.yahboom_dogzilla_lite.Acceleration.encode(message.acceleration, writer.uint32(/* id 12, wireType 2 =*/98).fork()).ldelim();
+            if (message.legServoSpeed != null && Object.hasOwnProperty.call(message, "legServoSpeed"))
+                writer.uint32(/* id 13, wireType 0 =*/104).uint32(message.legServoSpeed);
+            if (message.armServoSpeed != null && Object.hasOwnProperty.call(message, "armServoSpeed"))
+                writer.uint32(/* id 14, wireType 0 =*/112).uint32(message.armServoSpeed);
+            if (message.servoAngles != null && message.servoAngles.length) {
+                writer.uint32(/* id 15, wireType 2 =*/122).fork();
+                for (let i = 0; i < message.servoAngles.length; ++i)
+                    writer.float(message.servoAngles[i]);
+                writer.ldelim();
+            }
+            return writer;
+        };
+
+        /**
+         * Encodes the specified YahboomDogzillaLiteStatus message, length delimited. Does not implicitly {@link yahboom_dogzilla_lite.YahboomDogzillaLiteStatus.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof yahboom_dogzilla_lite.YahboomDogzillaLiteStatus
+         * @static
+         * @param {yahboom_dogzilla_lite.IYahboomDogzillaLiteStatus} message YahboomDogzillaLiteStatus message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        YahboomDogzillaLiteStatus.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes a YahboomDogzillaLiteStatus message from the specified reader or buffer.
+         * @function decode
+         * @memberof yahboom_dogzilla_lite.YahboomDogzillaLiteStatus
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {yahboom_dogzilla_lite.YahboomDogzillaLiteStatus} YahboomDogzillaLiteStatus
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        YahboomDogzillaLiteStatus.decode = function decode(reader, length, error, long) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.yahboom_dogzilla_lite.YahboomDogzillaLiteStatus();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                if (tag === error)
+                    break;
+                switch (tag >>> 3) {
+                case 1: {
+                        message.batteryLevel = reader.uint32();
+                        break;
+                    }
+                case 2: {
+                        message.model = reader.int32();
+                        break;
+                    }
+                case 3: {
+                        message.firmwareVersion = reader.string();
+                        break;
+                    }
+                case 10: {
+                        if (!(message.servoPositions && message.servoPositions.length))
+                            message.servoPositions = [];
+                        if ((tag & 7) === 2) {
+                            let end2 = reader.uint32() + reader.pos;
+                            while (reader.pos < end2)
+                                message.servoPositions.push(reader.uint32());
+                        } else
+                            message.servoPositions.push(reader.uint32());
+                        break;
+                    }
+                case 11: {
+                        message.orientation = $root.yahboom_dogzilla_lite.ImuOrientation.decode(reader, reader.uint32(), undefined, long + 1);
+                        break;
+                    }
+                case 12: {
+                        message.acceleration = $root.yahboom_dogzilla_lite.Acceleration.decode(reader, reader.uint32(), undefined, long + 1);
+                        break;
+                    }
+                case 13: {
+                        message.legServoSpeed = reader.uint32();
+                        break;
+                    }
+                case 14: {
+                        message.armServoSpeed = reader.uint32();
+                        break;
+                    }
+                case 15: {
+                        if (!(message.servoAngles && message.servoAngles.length))
+                            message.servoAngles = [];
+                        if ((tag & 7) === 2) {
+                            let end2 = reader.uint32() + reader.pos;
+                            while (reader.pos < end2)
+                                message.servoAngles.push(reader.float());
+                        } else
+                            message.servoAngles.push(reader.float());
+                        break;
+                    }
+                default:
+                    reader.skipType(tag & 7, long);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes a YahboomDogzillaLiteStatus message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof yahboom_dogzilla_lite.YahboomDogzillaLiteStatus
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {yahboom_dogzilla_lite.YahboomDogzillaLiteStatus} YahboomDogzillaLiteStatus
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        YahboomDogzillaLiteStatus.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies a YahboomDogzillaLiteStatus message.
+         * @function verify
+         * @memberof yahboom_dogzilla_lite.YahboomDogzillaLiteStatus
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        YahboomDogzillaLiteStatus.verify = function verify(message, long) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
+            if (message.batteryLevel != null && message.hasOwnProperty("batteryLevel"))
+                if (!$util.isInteger(message.batteryLevel))
+                    return "batteryLevel: integer expected";
+            if (message.model != null && message.hasOwnProperty("model"))
+                switch (message.model) {
+                default:
+                    return "model: enum value expected";
+                case 0:
+                case 1:
+                case 2:
+                case 3:
+                case 4:
+                    break;
+                }
+            if (message.firmwareVersion != null && message.hasOwnProperty("firmwareVersion"))
+                if (!$util.isString(message.firmwareVersion))
+                    return "firmwareVersion: string expected";
+            if (message.servoPositions != null && message.hasOwnProperty("servoPositions")) {
+                if (!Array.isArray(message.servoPositions))
+                    return "servoPositions: array expected";
+                for (let i = 0; i < message.servoPositions.length; ++i)
+                    if (!$util.isInteger(message.servoPositions[i]))
+                        return "servoPositions: integer[] expected";
+            }
+            if (message.orientation != null && message.hasOwnProperty("orientation")) {
+                let error = $root.yahboom_dogzilla_lite.ImuOrientation.verify(message.orientation, long + 1);
+                if (error)
+                    return "orientation." + error;
+            }
+            if (message.acceleration != null && message.hasOwnProperty("acceleration")) {
+                let error = $root.yahboom_dogzilla_lite.Acceleration.verify(message.acceleration, long + 1);
+                if (error)
+                    return "acceleration." + error;
+            }
+            if (message.legServoSpeed != null && message.hasOwnProperty("legServoSpeed"))
+                if (!$util.isInteger(message.legServoSpeed))
+                    return "legServoSpeed: integer expected";
+            if (message.armServoSpeed != null && message.hasOwnProperty("armServoSpeed"))
+                if (!$util.isInteger(message.armServoSpeed))
+                    return "armServoSpeed: integer expected";
+            if (message.servoAngles != null && message.hasOwnProperty("servoAngles")) {
+                if (!Array.isArray(message.servoAngles))
+                    return "servoAngles: array expected";
+                for (let i = 0; i < message.servoAngles.length; ++i)
+                    if (typeof message.servoAngles[i] !== "number")
+                        return "servoAngles: number[] expected";
+            }
+            return null;
+        };
+
+        /**
+         * Creates a YahboomDogzillaLiteStatus message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof yahboom_dogzilla_lite.YahboomDogzillaLiteStatus
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {yahboom_dogzilla_lite.YahboomDogzillaLiteStatus} YahboomDogzillaLiteStatus
+         */
+        YahboomDogzillaLiteStatus.fromObject = function fromObject(object, long) {
+            if (object instanceof $root.yahboom_dogzilla_lite.YahboomDogzillaLiteStatus)
+                return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let message = new $root.yahboom_dogzilla_lite.YahboomDogzillaLiteStatus();
+            if (object.batteryLevel != null)
+                message.batteryLevel = object.batteryLevel >>> 0;
+            switch (object.model) {
+            default:
+                if (typeof object.model === "number") {
+                    message.model = object.model;
+                    break;
+                }
+                break;
+            case "YAHBOOM_DOGZILLA_LITE_MODEL_UNKNOWN":
+            case 0:
+                message.model = 0;
+                break;
+            case "YAHBOOM_DOGZILLA_LITE_MINI":
+            case 1:
+                message.model = 1;
+                break;
+            case "YAHBOOM_DOGZILLA_LITE":
+            case 2:
+                message.model = 2;
+                break;
+            case "YAHBOOM_DOGZILLA_LITE_PRO":
+            case 3:
+                message.model = 3;
+                break;
+            case "YAHBOOM_DOGZILLA_LITE_RIDER":
+            case 4:
+                message.model = 4;
+                break;
+            }
+            if (object.firmwareVersion != null)
+                message.firmwareVersion = String(object.firmwareVersion);
+            if (object.servoPositions) {
+                if (!Array.isArray(object.servoPositions))
+                    throw TypeError(".yahboom_dogzilla_lite.YahboomDogzillaLiteStatus.servoPositions: array expected");
+                message.servoPositions = [];
+                for (let i = 0; i < object.servoPositions.length; ++i)
+                    message.servoPositions[i] = object.servoPositions[i] >>> 0;
+            }
+            if (object.orientation != null) {
+                if (typeof object.orientation !== "object")
+                    throw TypeError(".yahboom_dogzilla_lite.YahboomDogzillaLiteStatus.orientation: object expected");
+                message.orientation = $root.yahboom_dogzilla_lite.ImuOrientation.fromObject(object.orientation, long + 1);
+            }
+            if (object.acceleration != null) {
+                if (typeof object.acceleration !== "object")
+                    throw TypeError(".yahboom_dogzilla_lite.YahboomDogzillaLiteStatus.acceleration: object expected");
+                message.acceleration = $root.yahboom_dogzilla_lite.Acceleration.fromObject(object.acceleration, long + 1);
+            }
+            if (object.legServoSpeed != null)
+                message.legServoSpeed = object.legServoSpeed >>> 0;
+            if (object.armServoSpeed != null)
+                message.armServoSpeed = object.armServoSpeed >>> 0;
+            if (object.servoAngles) {
+                if (!Array.isArray(object.servoAngles))
+                    throw TypeError(".yahboom_dogzilla_lite.YahboomDogzillaLiteStatus.servoAngles: array expected");
+                message.servoAngles = [];
+                for (let i = 0; i < object.servoAngles.length; ++i)
+                    message.servoAngles[i] = Number(object.servoAngles[i]);
+            }
+            return message;
+        };
+
+        /**
+         * Creates a plain object from a YahboomDogzillaLiteStatus message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof yahboom_dogzilla_lite.YahboomDogzillaLiteStatus
+         * @static
+         * @param {yahboom_dogzilla_lite.YahboomDogzillaLiteStatus} message YahboomDogzillaLiteStatus
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        YahboomDogzillaLiteStatus.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.arrays || options.defaults) {
+                object.servoPositions = [];
+                object.servoAngles = [];
+            }
+            if (options.defaults) {
+                object.batteryLevel = 0;
+                object.model = options.enums === String ? "YAHBOOM_DOGZILLA_LITE_MODEL_UNKNOWN" : 0;
+                object.firmwareVersion = "";
+                object.orientation = null;
+                object.acceleration = null;
+                object.legServoSpeed = 0;
+                object.armServoSpeed = 0;
+            }
+            if (message.batteryLevel != null && message.hasOwnProperty("batteryLevel"))
+                object.batteryLevel = message.batteryLevel;
+            if (message.model != null && message.hasOwnProperty("model"))
+                object.model = options.enums === String ? $root.yahboom_dogzilla_lite.YahboomDogzillaLiteModel[message.model] === undefined ? message.model : $root.yahboom_dogzilla_lite.YahboomDogzillaLiteModel[message.model] : message.model;
+            if (message.firmwareVersion != null && message.hasOwnProperty("firmwareVersion"))
+                object.firmwareVersion = message.firmwareVersion;
+            if (message.servoPositions && message.servoPositions.length) {
+                object.servoPositions = [];
+                for (let j = 0; j < message.servoPositions.length; ++j)
+                    object.servoPositions[j] = message.servoPositions[j];
+            }
+            if (message.orientation != null && message.hasOwnProperty("orientation"))
+                object.orientation = $root.yahboom_dogzilla_lite.ImuOrientation.toObject(message.orientation, options);
+            if (message.acceleration != null && message.hasOwnProperty("acceleration"))
+                object.acceleration = $root.yahboom_dogzilla_lite.Acceleration.toObject(message.acceleration, options);
+            if (message.legServoSpeed != null && message.hasOwnProperty("legServoSpeed"))
+                object.legServoSpeed = message.legServoSpeed;
+            if (message.armServoSpeed != null && message.hasOwnProperty("armServoSpeed"))
+                object.armServoSpeed = message.armServoSpeed;
+            if (message.servoAngles && message.servoAngles.length) {
+                object.servoAngles = [];
+                for (let j = 0; j < message.servoAngles.length; ++j)
+                    object.servoAngles[j] = options.json && !isFinite(message.servoAngles[j]) ? String(message.servoAngles[j]) : message.servoAngles[j];
+            }
+            return object;
+        };
+
+        /**
+         * Converts this YahboomDogzillaLiteStatus to JSON.
+         * @function toJSON
+         * @memberof yahboom_dogzilla_lite.YahboomDogzillaLiteStatus
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        YahboomDogzillaLiteStatus.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for YahboomDogzillaLiteStatus
+         * @function getTypeUrl
+         * @memberof yahboom_dogzilla_lite.YahboomDogzillaLiteStatus
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        YahboomDogzillaLiteStatus.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+            if (typeUrlPrefix === undefined) {
+                typeUrlPrefix = "type.googleapis.com";
+            }
+            return typeUrlPrefix + "/yahboom_dogzilla_lite.YahboomDogzillaLiteStatus";
+        };
+
+        return YahboomDogzillaLiteStatus;
+    })();
+
+    yahboom_dogzilla_lite.ServoCommand = (function() {
+
+        /**
+         * Properties of a ServoCommand.
+         * @memberof yahboom_dogzilla_lite
+         * @interface IServoCommand
+         * @property {number|null} [servoId] ServoCommand servoId
+         * @property {number|null} [position] ServoCommand position
+         */
+
+        /**
+         * Constructs a new ServoCommand.
+         * @memberof yahboom_dogzilla_lite
+         * @classdesc Represents a ServoCommand.
+         * @implements IServoCommand
+         * @constructor
+         * @param {yahboom_dogzilla_lite.IServoCommand=} [properties] Properties to set
+         */
+        function ServoCommand(properties) {
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * ServoCommand servoId.
+         * @member {number} servoId
+         * @memberof yahboom_dogzilla_lite.ServoCommand
+         * @instance
+         */
+        ServoCommand.prototype.servoId = 0;
+
+        /**
+         * ServoCommand position.
+         * @member {number} position
+         * @memberof yahboom_dogzilla_lite.ServoCommand
+         * @instance
+         */
+        ServoCommand.prototype.position = 0;
+
+        /**
+         * Creates a new ServoCommand instance using the specified properties.
+         * @function create
+         * @memberof yahboom_dogzilla_lite.ServoCommand
+         * @static
+         * @param {yahboom_dogzilla_lite.IServoCommand=} [properties] Properties to set
+         * @returns {yahboom_dogzilla_lite.ServoCommand} ServoCommand instance
+         */
+        ServoCommand.create = function create(properties) {
+            return new ServoCommand(properties);
+        };
+
+        /**
+         * Encodes the specified ServoCommand message. Does not implicitly {@link yahboom_dogzilla_lite.ServoCommand.verify|verify} messages.
+         * @function encode
+         * @memberof yahboom_dogzilla_lite.ServoCommand
+         * @static
+         * @param {yahboom_dogzilla_lite.IServoCommand} message ServoCommand message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        ServoCommand.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.servoId != null && Object.hasOwnProperty.call(message, "servoId"))
+                writer.uint32(/* id 1, wireType 0 =*/8).uint32(message.servoId);
+            if (message.position != null && Object.hasOwnProperty.call(message, "position"))
+                writer.uint32(/* id 2, wireType 0 =*/16).uint32(message.position);
+            return writer;
+        };
+
+        /**
+         * Encodes the specified ServoCommand message, length delimited. Does not implicitly {@link yahboom_dogzilla_lite.ServoCommand.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof yahboom_dogzilla_lite.ServoCommand
+         * @static
+         * @param {yahboom_dogzilla_lite.IServoCommand} message ServoCommand message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        ServoCommand.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes a ServoCommand message from the specified reader or buffer.
+         * @function decode
+         * @memberof yahboom_dogzilla_lite.ServoCommand
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {yahboom_dogzilla_lite.ServoCommand} ServoCommand
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        ServoCommand.decode = function decode(reader, length, error, long) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.yahboom_dogzilla_lite.ServoCommand();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                if (tag === error)
+                    break;
+                switch (tag >>> 3) {
+                case 1: {
+                        message.servoId = reader.uint32();
+                        break;
+                    }
+                case 2: {
+                        message.position = reader.uint32();
+                        break;
+                    }
+                default:
+                    reader.skipType(tag & 7, long);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes a ServoCommand message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof yahboom_dogzilla_lite.ServoCommand
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {yahboom_dogzilla_lite.ServoCommand} ServoCommand
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        ServoCommand.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies a ServoCommand message.
+         * @function verify
+         * @memberof yahboom_dogzilla_lite.ServoCommand
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        ServoCommand.verify = function verify(message, long) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
+            if (message.servoId != null && message.hasOwnProperty("servoId"))
+                if (!$util.isInteger(message.servoId))
+                    return "servoId: integer expected";
+            if (message.position != null && message.hasOwnProperty("position"))
+                if (!$util.isInteger(message.position))
+                    return "position: integer expected";
+            return null;
+        };
+
+        /**
+         * Creates a ServoCommand message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof yahboom_dogzilla_lite.ServoCommand
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {yahboom_dogzilla_lite.ServoCommand} ServoCommand
+         */
+        ServoCommand.fromObject = function fromObject(object, long) {
+            if (object instanceof $root.yahboom_dogzilla_lite.ServoCommand)
+                return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let message = new $root.yahboom_dogzilla_lite.ServoCommand();
+            if (object.servoId != null)
+                message.servoId = object.servoId >>> 0;
+            if (object.position != null)
+                message.position = object.position >>> 0;
+            return message;
+        };
+
+        /**
+         * Creates a plain object from a ServoCommand message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof yahboom_dogzilla_lite.ServoCommand
+         * @static
+         * @param {yahboom_dogzilla_lite.ServoCommand} message ServoCommand
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        ServoCommand.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.defaults) {
+                object.servoId = 0;
+                object.position = 0;
+            }
+            if (message.servoId != null && message.hasOwnProperty("servoId"))
+                object.servoId = message.servoId;
+            if (message.position != null && message.hasOwnProperty("position"))
+                object.position = message.position;
+            return object;
+        };
+
+        /**
+         * Converts this ServoCommand to JSON.
+         * @function toJSON
+         * @memberof yahboom_dogzilla_lite.ServoCommand
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        ServoCommand.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for ServoCommand
+         * @function getTypeUrl
+         * @memberof yahboom_dogzilla_lite.ServoCommand
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        ServoCommand.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+            if (typeUrlPrefix === undefined) {
+                typeUrlPrefix = "type.googleapis.com";
+            }
+            return typeUrlPrefix + "/yahboom_dogzilla_lite.ServoCommand";
+        };
+
+        return ServoCommand;
+    })();
+
+    yahboom_dogzilla_lite.ServoSpeedCommand = (function() {
+
+        /**
+         * Properties of a ServoSpeedCommand.
+         * @memberof yahboom_dogzilla_lite
+         * @interface IServoSpeedCommand
+         * @property {number|null} [bodyServoSpeed] ServoSpeedCommand bodyServoSpeed
+         * @property {number|null} [armServoSpeed] ServoSpeedCommand armServoSpeed
+         */
+
+        /**
+         * Constructs a new ServoSpeedCommand.
+         * @memberof yahboom_dogzilla_lite
+         * @classdesc Represents a ServoSpeedCommand.
+         * @implements IServoSpeedCommand
+         * @constructor
+         * @param {yahboom_dogzilla_lite.IServoSpeedCommand=} [properties] Properties to set
+         */
+        function ServoSpeedCommand(properties) {
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * ServoSpeedCommand bodyServoSpeed.
+         * @member {number|null|undefined} bodyServoSpeed
+         * @memberof yahboom_dogzilla_lite.ServoSpeedCommand
+         * @instance
+         */
+        ServoSpeedCommand.prototype.bodyServoSpeed = null;
+
+        /**
+         * ServoSpeedCommand armServoSpeed.
+         * @member {number|null|undefined} armServoSpeed
+         * @memberof yahboom_dogzilla_lite.ServoSpeedCommand
+         * @instance
+         */
+        ServoSpeedCommand.prototype.armServoSpeed = null;
+
+        // OneOf field names bound to virtual getters and setters
+        let $oneOfFields;
+
+        /**
+         * ServoSpeedCommand bodySpeed.
+         * @member {"bodyServoSpeed"|undefined} bodySpeed
+         * @memberof yahboom_dogzilla_lite.ServoSpeedCommand
+         * @instance
+         */
+        Object.defineProperty(ServoSpeedCommand.prototype, "bodySpeed", {
+            get: $util.oneOfGetter($oneOfFields = ["bodyServoSpeed"]),
+            set: $util.oneOfSetter($oneOfFields)
+        });
+
+        /**
+         * ServoSpeedCommand armSpeed.
+         * @member {"armServoSpeed"|undefined} armSpeed
+         * @memberof yahboom_dogzilla_lite.ServoSpeedCommand
+         * @instance
+         */
+        Object.defineProperty(ServoSpeedCommand.prototype, "armSpeed", {
+            get: $util.oneOfGetter($oneOfFields = ["armServoSpeed"]),
+            set: $util.oneOfSetter($oneOfFields)
+        });
+
+        /**
+         * Creates a new ServoSpeedCommand instance using the specified properties.
+         * @function create
+         * @memberof yahboom_dogzilla_lite.ServoSpeedCommand
+         * @static
+         * @param {yahboom_dogzilla_lite.IServoSpeedCommand=} [properties] Properties to set
+         * @returns {yahboom_dogzilla_lite.ServoSpeedCommand} ServoSpeedCommand instance
+         */
+        ServoSpeedCommand.create = function create(properties) {
+            return new ServoSpeedCommand(properties);
+        };
+
+        /**
+         * Encodes the specified ServoSpeedCommand message. Does not implicitly {@link yahboom_dogzilla_lite.ServoSpeedCommand.verify|verify} messages.
+         * @function encode
+         * @memberof yahboom_dogzilla_lite.ServoSpeedCommand
+         * @static
+         * @param {yahboom_dogzilla_lite.IServoSpeedCommand} message ServoSpeedCommand message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        ServoSpeedCommand.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.bodyServoSpeed != null && Object.hasOwnProperty.call(message, "bodyServoSpeed"))
+                writer.uint32(/* id 1, wireType 0 =*/8).uint32(message.bodyServoSpeed);
+            if (message.armServoSpeed != null && Object.hasOwnProperty.call(message, "armServoSpeed"))
+                writer.uint32(/* id 2, wireType 0 =*/16).uint32(message.armServoSpeed);
+            return writer;
+        };
+
+        /**
+         * Encodes the specified ServoSpeedCommand message, length delimited. Does not implicitly {@link yahboom_dogzilla_lite.ServoSpeedCommand.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof yahboom_dogzilla_lite.ServoSpeedCommand
+         * @static
+         * @param {yahboom_dogzilla_lite.IServoSpeedCommand} message ServoSpeedCommand message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        ServoSpeedCommand.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes a ServoSpeedCommand message from the specified reader or buffer.
+         * @function decode
+         * @memberof yahboom_dogzilla_lite.ServoSpeedCommand
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {yahboom_dogzilla_lite.ServoSpeedCommand} ServoSpeedCommand
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        ServoSpeedCommand.decode = function decode(reader, length, error, long) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.yahboom_dogzilla_lite.ServoSpeedCommand();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                if (tag === error)
+                    break;
+                switch (tag >>> 3) {
+                case 1: {
+                        message.bodyServoSpeed = reader.uint32();
+                        break;
+                    }
+                case 2: {
+                        message.armServoSpeed = reader.uint32();
+                        break;
+                    }
+                default:
+                    reader.skipType(tag & 7, long);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes a ServoSpeedCommand message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof yahboom_dogzilla_lite.ServoSpeedCommand
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {yahboom_dogzilla_lite.ServoSpeedCommand} ServoSpeedCommand
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        ServoSpeedCommand.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies a ServoSpeedCommand message.
+         * @function verify
+         * @memberof yahboom_dogzilla_lite.ServoSpeedCommand
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        ServoSpeedCommand.verify = function verify(message, long) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
+            let properties = {};
+            if (message.bodyServoSpeed != null && message.hasOwnProperty("bodyServoSpeed")) {
+                properties.bodySpeed = 1;
+                if (!$util.isInteger(message.bodyServoSpeed))
+                    return "bodyServoSpeed: integer expected";
+            }
+            if (message.armServoSpeed != null && message.hasOwnProperty("armServoSpeed")) {
+                properties.armSpeed = 1;
+                if (!$util.isInteger(message.armServoSpeed))
+                    return "armServoSpeed: integer expected";
+            }
+            return null;
+        };
+
+        /**
+         * Creates a ServoSpeedCommand message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof yahboom_dogzilla_lite.ServoSpeedCommand
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {yahboom_dogzilla_lite.ServoSpeedCommand} ServoSpeedCommand
+         */
+        ServoSpeedCommand.fromObject = function fromObject(object, long) {
+            if (object instanceof $root.yahboom_dogzilla_lite.ServoSpeedCommand)
+                return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let message = new $root.yahboom_dogzilla_lite.ServoSpeedCommand();
+            if (object.bodyServoSpeed != null)
+                message.bodyServoSpeed = object.bodyServoSpeed >>> 0;
+            if (object.armServoSpeed != null)
+                message.armServoSpeed = object.armServoSpeed >>> 0;
+            return message;
+        };
+
+        /**
+         * Creates a plain object from a ServoSpeedCommand message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof yahboom_dogzilla_lite.ServoSpeedCommand
+         * @static
+         * @param {yahboom_dogzilla_lite.ServoSpeedCommand} message ServoSpeedCommand
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        ServoSpeedCommand.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (message.bodyServoSpeed != null && message.hasOwnProperty("bodyServoSpeed")) {
+                object.bodyServoSpeed = message.bodyServoSpeed;
+                if (options.oneofs)
+                    object.bodySpeed = "bodyServoSpeed";
+            }
+            if (message.armServoSpeed != null && message.hasOwnProperty("armServoSpeed")) {
+                object.armServoSpeed = message.armServoSpeed;
+                if (options.oneofs)
+                    object.armSpeed = "armServoSpeed";
+            }
+            return object;
+        };
+
+        /**
+         * Converts this ServoSpeedCommand to JSON.
+         * @function toJSON
+         * @memberof yahboom_dogzilla_lite.ServoSpeedCommand
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        ServoSpeedCommand.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for ServoSpeedCommand
+         * @function getTypeUrl
+         * @memberof yahboom_dogzilla_lite.ServoSpeedCommand
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        ServoSpeedCommand.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+            if (typeUrlPrefix === undefined) {
+                typeUrlPrefix = "type.googleapis.com";
+            }
+            return typeUrlPrefix + "/yahboom_dogzilla_lite.ServoSpeedCommand";
+        };
+
+        return ServoSpeedCommand;
+    })();
+
+    yahboom_dogzilla_lite.CalibrationCommand = (function() {
+
+        /**
+         * Properties of a CalibrationCommand.
+         * @memberof yahboom_dogzilla_lite
+         * @interface ICalibrationCommand
+         * @property {boolean|null} [enterCalibrationMode] CalibrationCommand enterCalibrationMode
+         * @property {boolean|null} [setOrigin] CalibrationCommand setOrigin
+         * @property {boolean|null} [servoCentering] CalibrationCommand servoCentering
+         * @property {boolean|null} [gyroCalibration] CalibrationCommand gyroCalibration
+         */
+
+        /**
+         * Constructs a new CalibrationCommand.
+         * @memberof yahboom_dogzilla_lite
+         * @classdesc Represents a CalibrationCommand.
+         * @implements ICalibrationCommand
+         * @constructor
+         * @param {yahboom_dogzilla_lite.ICalibrationCommand=} [properties] Properties to set
+         */
+        function CalibrationCommand(properties) {
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * CalibrationCommand enterCalibrationMode.
+         * @member {boolean} enterCalibrationMode
+         * @memberof yahboom_dogzilla_lite.CalibrationCommand
+         * @instance
+         */
+        CalibrationCommand.prototype.enterCalibrationMode = false;
+
+        /**
+         * CalibrationCommand setOrigin.
+         * @member {boolean} setOrigin
+         * @memberof yahboom_dogzilla_lite.CalibrationCommand
+         * @instance
+         */
+        CalibrationCommand.prototype.setOrigin = false;
+
+        /**
+         * CalibrationCommand servoCentering.
+         * @member {boolean} servoCentering
+         * @memberof yahboom_dogzilla_lite.CalibrationCommand
+         * @instance
+         */
+        CalibrationCommand.prototype.servoCentering = false;
+
+        /**
+         * CalibrationCommand gyroCalibration.
+         * @member {boolean} gyroCalibration
+         * @memberof yahboom_dogzilla_lite.CalibrationCommand
+         * @instance
+         */
+        CalibrationCommand.prototype.gyroCalibration = false;
+
+        /**
+         * Creates a new CalibrationCommand instance using the specified properties.
+         * @function create
+         * @memberof yahboom_dogzilla_lite.CalibrationCommand
+         * @static
+         * @param {yahboom_dogzilla_lite.ICalibrationCommand=} [properties] Properties to set
+         * @returns {yahboom_dogzilla_lite.CalibrationCommand} CalibrationCommand instance
+         */
+        CalibrationCommand.create = function create(properties) {
+            return new CalibrationCommand(properties);
+        };
+
+        /**
+         * Encodes the specified CalibrationCommand message. Does not implicitly {@link yahboom_dogzilla_lite.CalibrationCommand.verify|verify} messages.
+         * @function encode
+         * @memberof yahboom_dogzilla_lite.CalibrationCommand
+         * @static
+         * @param {yahboom_dogzilla_lite.ICalibrationCommand} message CalibrationCommand message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        CalibrationCommand.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.enterCalibrationMode != null && Object.hasOwnProperty.call(message, "enterCalibrationMode"))
+                writer.uint32(/* id 1, wireType 0 =*/8).bool(message.enterCalibrationMode);
+            if (message.setOrigin != null && Object.hasOwnProperty.call(message, "setOrigin"))
+                writer.uint32(/* id 2, wireType 0 =*/16).bool(message.setOrigin);
+            if (message.servoCentering != null && Object.hasOwnProperty.call(message, "servoCentering"))
+                writer.uint32(/* id 3, wireType 0 =*/24).bool(message.servoCentering);
+            if (message.gyroCalibration != null && Object.hasOwnProperty.call(message, "gyroCalibration"))
+                writer.uint32(/* id 4, wireType 0 =*/32).bool(message.gyroCalibration);
+            return writer;
+        };
+
+        /**
+         * Encodes the specified CalibrationCommand message, length delimited. Does not implicitly {@link yahboom_dogzilla_lite.CalibrationCommand.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof yahboom_dogzilla_lite.CalibrationCommand
+         * @static
+         * @param {yahboom_dogzilla_lite.ICalibrationCommand} message CalibrationCommand message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        CalibrationCommand.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes a CalibrationCommand message from the specified reader or buffer.
+         * @function decode
+         * @memberof yahboom_dogzilla_lite.CalibrationCommand
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {yahboom_dogzilla_lite.CalibrationCommand} CalibrationCommand
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        CalibrationCommand.decode = function decode(reader, length, error, long) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.yahboom_dogzilla_lite.CalibrationCommand();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                if (tag === error)
+                    break;
+                switch (tag >>> 3) {
+                case 1: {
+                        message.enterCalibrationMode = reader.bool();
+                        break;
+                    }
+                case 2: {
+                        message.setOrigin = reader.bool();
+                        break;
+                    }
+                case 3: {
+                        message.servoCentering = reader.bool();
+                        break;
+                    }
+                case 4: {
+                        message.gyroCalibration = reader.bool();
+                        break;
+                    }
+                default:
+                    reader.skipType(tag & 7, long);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes a CalibrationCommand message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof yahboom_dogzilla_lite.CalibrationCommand
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {yahboom_dogzilla_lite.CalibrationCommand} CalibrationCommand
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        CalibrationCommand.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies a CalibrationCommand message.
+         * @function verify
+         * @memberof yahboom_dogzilla_lite.CalibrationCommand
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        CalibrationCommand.verify = function verify(message, long) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
+            if (message.enterCalibrationMode != null && message.hasOwnProperty("enterCalibrationMode"))
+                if (typeof message.enterCalibrationMode !== "boolean")
+                    return "enterCalibrationMode: boolean expected";
+            if (message.setOrigin != null && message.hasOwnProperty("setOrigin"))
+                if (typeof message.setOrigin !== "boolean")
+                    return "setOrigin: boolean expected";
+            if (message.servoCentering != null && message.hasOwnProperty("servoCentering"))
+                if (typeof message.servoCentering !== "boolean")
+                    return "servoCentering: boolean expected";
+            if (message.gyroCalibration != null && message.hasOwnProperty("gyroCalibration"))
+                if (typeof message.gyroCalibration !== "boolean")
+                    return "gyroCalibration: boolean expected";
+            return null;
+        };
+
+        /**
+         * Creates a CalibrationCommand message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof yahboom_dogzilla_lite.CalibrationCommand
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {yahboom_dogzilla_lite.CalibrationCommand} CalibrationCommand
+         */
+        CalibrationCommand.fromObject = function fromObject(object, long) {
+            if (object instanceof $root.yahboom_dogzilla_lite.CalibrationCommand)
+                return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let message = new $root.yahboom_dogzilla_lite.CalibrationCommand();
+            if (object.enterCalibrationMode != null)
+                message.enterCalibrationMode = Boolean(object.enterCalibrationMode);
+            if (object.setOrigin != null)
+                message.setOrigin = Boolean(object.setOrigin);
+            if (object.servoCentering != null)
+                message.servoCentering = Boolean(object.servoCentering);
+            if (object.gyroCalibration != null)
+                message.gyroCalibration = Boolean(object.gyroCalibration);
+            return message;
+        };
+
+        /**
+         * Creates a plain object from a CalibrationCommand message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof yahboom_dogzilla_lite.CalibrationCommand
+         * @static
+         * @param {yahboom_dogzilla_lite.CalibrationCommand} message CalibrationCommand
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        CalibrationCommand.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.defaults) {
+                object.enterCalibrationMode = false;
+                object.setOrigin = false;
+                object.servoCentering = false;
+                object.gyroCalibration = false;
+            }
+            if (message.enterCalibrationMode != null && message.hasOwnProperty("enterCalibrationMode"))
+                object.enterCalibrationMode = message.enterCalibrationMode;
+            if (message.setOrigin != null && message.hasOwnProperty("setOrigin"))
+                object.setOrigin = message.setOrigin;
+            if (message.servoCentering != null && message.hasOwnProperty("servoCentering"))
+                object.servoCentering = message.servoCentering;
+            if (message.gyroCalibration != null && message.hasOwnProperty("gyroCalibration"))
+                object.gyroCalibration = message.gyroCalibration;
+            return object;
+        };
+
+        /**
+         * Converts this CalibrationCommand to JSON.
+         * @function toJSON
+         * @memberof yahboom_dogzilla_lite.CalibrationCommand
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        CalibrationCommand.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for CalibrationCommand
+         * @function getTypeUrl
+         * @memberof yahboom_dogzilla_lite.CalibrationCommand
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        CalibrationCommand.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+            if (typeUrlPrefix === undefined) {
+                typeUrlPrefix = "type.googleapis.com";
+            }
+            return typeUrlPrefix + "/yahboom_dogzilla_lite.CalibrationCommand";
+        };
+
+        return CalibrationCommand;
+    })();
+
+    yahboom_dogzilla_lite.ArmCommand = (function() {
+
+        /**
+         * Properties of an ArmCommand.
+         * @memberof yahboom_dogzilla_lite
+         * @interface IArmCommand
+         * @property {number|null} [gripperStatus] ArmCommand gripperStatus
+         * @property {number|null} [gripperX] ArmCommand gripperX
+         * @property {number|null} [gripperZ] ArmCommand gripperZ
+         * @property {number|null} [polarAngle] ArmCommand polarAngle
+         * @property {number|null} [polarRadius] ArmCommand polarRadius
+         * @property {boolean|null} [stabilityMode] ArmCommand stabilityMode
+         */
+
+        /**
+         * Constructs a new ArmCommand.
+         * @memberof yahboom_dogzilla_lite
+         * @classdesc Represents an ArmCommand.
+         * @implements IArmCommand
+         * @constructor
+         * @param {yahboom_dogzilla_lite.IArmCommand=} [properties] Properties to set
+         */
+        function ArmCommand(properties) {
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * ArmCommand gripperStatus.
+         * @member {number} gripperStatus
+         * @memberof yahboom_dogzilla_lite.ArmCommand
+         * @instance
+         */
+        ArmCommand.prototype.gripperStatus = 0;
+
+        /**
+         * ArmCommand gripperX.
+         * @member {number} gripperX
+         * @memberof yahboom_dogzilla_lite.ArmCommand
+         * @instance
+         */
+        ArmCommand.prototype.gripperX = 0;
+
+        /**
+         * ArmCommand gripperZ.
+         * @member {number} gripperZ
+         * @memberof yahboom_dogzilla_lite.ArmCommand
+         * @instance
+         */
+        ArmCommand.prototype.gripperZ = 0;
+
+        /**
+         * ArmCommand polarAngle.
+         * @member {number} polarAngle
+         * @memberof yahboom_dogzilla_lite.ArmCommand
+         * @instance
+         */
+        ArmCommand.prototype.polarAngle = 0;
+
+        /**
+         * ArmCommand polarRadius.
+         * @member {number} polarRadius
+         * @memberof yahboom_dogzilla_lite.ArmCommand
+         * @instance
+         */
+        ArmCommand.prototype.polarRadius = 0;
+
+        /**
+         * ArmCommand stabilityMode.
+         * @member {boolean} stabilityMode
+         * @memberof yahboom_dogzilla_lite.ArmCommand
+         * @instance
+         */
+        ArmCommand.prototype.stabilityMode = false;
+
+        /**
+         * Creates a new ArmCommand instance using the specified properties.
+         * @function create
+         * @memberof yahboom_dogzilla_lite.ArmCommand
+         * @static
+         * @param {yahboom_dogzilla_lite.IArmCommand=} [properties] Properties to set
+         * @returns {yahboom_dogzilla_lite.ArmCommand} ArmCommand instance
+         */
+        ArmCommand.create = function create(properties) {
+            return new ArmCommand(properties);
+        };
+
+        /**
+         * Encodes the specified ArmCommand message. Does not implicitly {@link yahboom_dogzilla_lite.ArmCommand.verify|verify} messages.
+         * @function encode
+         * @memberof yahboom_dogzilla_lite.ArmCommand
+         * @static
+         * @param {yahboom_dogzilla_lite.IArmCommand} message ArmCommand message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        ArmCommand.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.gripperStatus != null && Object.hasOwnProperty.call(message, "gripperStatus"))
+                writer.uint32(/* id 1, wireType 0 =*/8).uint32(message.gripperStatus);
+            if (message.gripperX != null && Object.hasOwnProperty.call(message, "gripperX"))
+                writer.uint32(/* id 2, wireType 0 =*/16).uint32(message.gripperX);
+            if (message.gripperZ != null && Object.hasOwnProperty.call(message, "gripperZ"))
+                writer.uint32(/* id 3, wireType 0 =*/24).uint32(message.gripperZ);
+            if (message.polarAngle != null && Object.hasOwnProperty.call(message, "polarAngle"))
+                writer.uint32(/* id 4, wireType 0 =*/32).uint32(message.polarAngle);
+            if (message.polarRadius != null && Object.hasOwnProperty.call(message, "polarRadius"))
+                writer.uint32(/* id 5, wireType 0 =*/40).uint32(message.polarRadius);
+            if (message.stabilityMode != null && Object.hasOwnProperty.call(message, "stabilityMode"))
+                writer.uint32(/* id 6, wireType 0 =*/48).bool(message.stabilityMode);
+            return writer;
+        };
+
+        /**
+         * Encodes the specified ArmCommand message, length delimited. Does not implicitly {@link yahboom_dogzilla_lite.ArmCommand.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof yahboom_dogzilla_lite.ArmCommand
+         * @static
+         * @param {yahboom_dogzilla_lite.IArmCommand} message ArmCommand message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        ArmCommand.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes an ArmCommand message from the specified reader or buffer.
+         * @function decode
+         * @memberof yahboom_dogzilla_lite.ArmCommand
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {yahboom_dogzilla_lite.ArmCommand} ArmCommand
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        ArmCommand.decode = function decode(reader, length, error, long) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.yahboom_dogzilla_lite.ArmCommand();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                if (tag === error)
+                    break;
+                switch (tag >>> 3) {
+                case 1: {
+                        message.gripperStatus = reader.uint32();
+                        break;
+                    }
+                case 2: {
+                        message.gripperX = reader.uint32();
+                        break;
+                    }
+                case 3: {
+                        message.gripperZ = reader.uint32();
+                        break;
+                    }
+                case 4: {
+                        message.polarAngle = reader.uint32();
+                        break;
+                    }
+                case 5: {
+                        message.polarRadius = reader.uint32();
+                        break;
+                    }
+                case 6: {
+                        message.stabilityMode = reader.bool();
+                        break;
+                    }
+                default:
+                    reader.skipType(tag & 7, long);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes an ArmCommand message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof yahboom_dogzilla_lite.ArmCommand
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {yahboom_dogzilla_lite.ArmCommand} ArmCommand
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        ArmCommand.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies an ArmCommand message.
+         * @function verify
+         * @memberof yahboom_dogzilla_lite.ArmCommand
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        ArmCommand.verify = function verify(message, long) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
+            if (message.gripperStatus != null && message.hasOwnProperty("gripperStatus"))
+                if (!$util.isInteger(message.gripperStatus))
+                    return "gripperStatus: integer expected";
+            if (message.gripperX != null && message.hasOwnProperty("gripperX"))
+                if (!$util.isInteger(message.gripperX))
+                    return "gripperX: integer expected";
+            if (message.gripperZ != null && message.hasOwnProperty("gripperZ"))
+                if (!$util.isInteger(message.gripperZ))
+                    return "gripperZ: integer expected";
+            if (message.polarAngle != null && message.hasOwnProperty("polarAngle"))
+                if (!$util.isInteger(message.polarAngle))
+                    return "polarAngle: integer expected";
+            if (message.polarRadius != null && message.hasOwnProperty("polarRadius"))
+                if (!$util.isInteger(message.polarRadius))
+                    return "polarRadius: integer expected";
+            if (message.stabilityMode != null && message.hasOwnProperty("stabilityMode"))
+                if (typeof message.stabilityMode !== "boolean")
+                    return "stabilityMode: boolean expected";
+            return null;
+        };
+
+        /**
+         * Creates an ArmCommand message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof yahboom_dogzilla_lite.ArmCommand
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {yahboom_dogzilla_lite.ArmCommand} ArmCommand
+         */
+        ArmCommand.fromObject = function fromObject(object, long) {
+            if (object instanceof $root.yahboom_dogzilla_lite.ArmCommand)
+                return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let message = new $root.yahboom_dogzilla_lite.ArmCommand();
+            if (object.gripperStatus != null)
+                message.gripperStatus = object.gripperStatus >>> 0;
+            if (object.gripperX != null)
+                message.gripperX = object.gripperX >>> 0;
+            if (object.gripperZ != null)
+                message.gripperZ = object.gripperZ >>> 0;
+            if (object.polarAngle != null)
+                message.polarAngle = object.polarAngle >>> 0;
+            if (object.polarRadius != null)
+                message.polarRadius = object.polarRadius >>> 0;
+            if (object.stabilityMode != null)
+                message.stabilityMode = Boolean(object.stabilityMode);
+            return message;
+        };
+
+        /**
+         * Creates a plain object from an ArmCommand message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof yahboom_dogzilla_lite.ArmCommand
+         * @static
+         * @param {yahboom_dogzilla_lite.ArmCommand} message ArmCommand
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        ArmCommand.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.defaults) {
+                object.gripperStatus = 0;
+                object.gripperX = 0;
+                object.gripperZ = 0;
+                object.polarAngle = 0;
+                object.polarRadius = 0;
+                object.stabilityMode = false;
+            }
+            if (message.gripperStatus != null && message.hasOwnProperty("gripperStatus"))
+                object.gripperStatus = message.gripperStatus;
+            if (message.gripperX != null && message.hasOwnProperty("gripperX"))
+                object.gripperX = message.gripperX;
+            if (message.gripperZ != null && message.hasOwnProperty("gripperZ"))
+                object.gripperZ = message.gripperZ;
+            if (message.polarAngle != null && message.hasOwnProperty("polarAngle"))
+                object.polarAngle = message.polarAngle;
+            if (message.polarRadius != null && message.hasOwnProperty("polarRadius"))
+                object.polarRadius = message.polarRadius;
+            if (message.stabilityMode != null && message.hasOwnProperty("stabilityMode"))
+                object.stabilityMode = message.stabilityMode;
+            return object;
+        };
+
+        /**
+         * Converts this ArmCommand to JSON.
+         * @function toJSON
+         * @memberof yahboom_dogzilla_lite.ArmCommand
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        ArmCommand.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for ArmCommand
+         * @function getTypeUrl
+         * @memberof yahboom_dogzilla_lite.ArmCommand
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        ArmCommand.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+            if (typeUrlPrefix === undefined) {
+                typeUrlPrefix = "type.googleapis.com";
+            }
+            return typeUrlPrefix + "/yahboom_dogzilla_lite.ArmCommand";
+        };
+
+        return ArmCommand;
+    })();
+
+    yahboom_dogzilla_lite.IoCommand = (function() {
+
+        /**
+         * Properties of an IoCommand.
+         * @memberof yahboom_dogzilla_lite
+         * @interface IIoCommand
+         * @property {boolean|null} [power_5vOutput] IoCommand power_5vOutput
+         * @property {boolean|null} [digitalIo] IoCommand digitalIo
+         */
+
+        /**
+         * Constructs a new IoCommand.
+         * @memberof yahboom_dogzilla_lite
+         * @classdesc Represents an IoCommand.
+         * @implements IIoCommand
+         * @constructor
+         * @param {yahboom_dogzilla_lite.IIoCommand=} [properties] Properties to set
+         */
+        function IoCommand(properties) {
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * IoCommand power_5vOutput.
+         * @member {boolean} power_5vOutput
+         * @memberof yahboom_dogzilla_lite.IoCommand
+         * @instance
+         */
+        IoCommand.prototype.power_5vOutput = false;
+
+        /**
+         * IoCommand digitalIo.
+         * @member {boolean} digitalIo
+         * @memberof yahboom_dogzilla_lite.IoCommand
+         * @instance
+         */
+        IoCommand.prototype.digitalIo = false;
+
+        /**
+         * Creates a new IoCommand instance using the specified properties.
+         * @function create
+         * @memberof yahboom_dogzilla_lite.IoCommand
+         * @static
+         * @param {yahboom_dogzilla_lite.IIoCommand=} [properties] Properties to set
+         * @returns {yahboom_dogzilla_lite.IoCommand} IoCommand instance
+         */
+        IoCommand.create = function create(properties) {
+            return new IoCommand(properties);
+        };
+
+        /**
+         * Encodes the specified IoCommand message. Does not implicitly {@link yahboom_dogzilla_lite.IoCommand.verify|verify} messages.
+         * @function encode
+         * @memberof yahboom_dogzilla_lite.IoCommand
+         * @static
+         * @param {yahboom_dogzilla_lite.IIoCommand} message IoCommand message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        IoCommand.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.power_5vOutput != null && Object.hasOwnProperty.call(message, "power_5vOutput"))
+                writer.uint32(/* id 1, wireType 0 =*/8).bool(message.power_5vOutput);
+            if (message.digitalIo != null && Object.hasOwnProperty.call(message, "digitalIo"))
+                writer.uint32(/* id 2, wireType 0 =*/16).bool(message.digitalIo);
+            return writer;
+        };
+
+        /**
+         * Encodes the specified IoCommand message, length delimited. Does not implicitly {@link yahboom_dogzilla_lite.IoCommand.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof yahboom_dogzilla_lite.IoCommand
+         * @static
+         * @param {yahboom_dogzilla_lite.IIoCommand} message IoCommand message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        IoCommand.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes an IoCommand message from the specified reader or buffer.
+         * @function decode
+         * @memberof yahboom_dogzilla_lite.IoCommand
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {yahboom_dogzilla_lite.IoCommand} IoCommand
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        IoCommand.decode = function decode(reader, length, error, long) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.yahboom_dogzilla_lite.IoCommand();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                if (tag === error)
+                    break;
+                switch (tag >>> 3) {
+                case 1: {
+                        message.power_5vOutput = reader.bool();
+                        break;
+                    }
+                case 2: {
+                        message.digitalIo = reader.bool();
+                        break;
+                    }
+                default:
+                    reader.skipType(tag & 7, long);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes an IoCommand message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof yahboom_dogzilla_lite.IoCommand
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {yahboom_dogzilla_lite.IoCommand} IoCommand
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        IoCommand.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies an IoCommand message.
+         * @function verify
+         * @memberof yahboom_dogzilla_lite.IoCommand
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        IoCommand.verify = function verify(message, long) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
+            if (message.power_5vOutput != null && message.hasOwnProperty("power_5vOutput"))
+                if (typeof message.power_5vOutput !== "boolean")
+                    return "power_5vOutput: boolean expected";
+            if (message.digitalIo != null && message.hasOwnProperty("digitalIo"))
+                if (typeof message.digitalIo !== "boolean")
+                    return "digitalIo: boolean expected";
+            return null;
+        };
+
+        /**
+         * Creates an IoCommand message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof yahboom_dogzilla_lite.IoCommand
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {yahboom_dogzilla_lite.IoCommand} IoCommand
+         */
+        IoCommand.fromObject = function fromObject(object, long) {
+            if (object instanceof $root.yahboom_dogzilla_lite.IoCommand)
+                return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let message = new $root.yahboom_dogzilla_lite.IoCommand();
+            if (object.power_5vOutput != null)
+                message.power_5vOutput = Boolean(object.power_5vOutput);
+            if (object.digitalIo != null)
+                message.digitalIo = Boolean(object.digitalIo);
+            return message;
+        };
+
+        /**
+         * Creates a plain object from an IoCommand message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof yahboom_dogzilla_lite.IoCommand
+         * @static
+         * @param {yahboom_dogzilla_lite.IoCommand} message IoCommand
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        IoCommand.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.defaults) {
+                object.power_5vOutput = false;
+                object.digitalIo = false;
+            }
+            if (message.power_5vOutput != null && message.hasOwnProperty("power_5vOutput"))
+                object.power_5vOutput = message.power_5vOutput;
+            if (message.digitalIo != null && message.hasOwnProperty("digitalIo"))
+                object.digitalIo = message.digitalIo;
+            return object;
+        };
+
+        /**
+         * Converts this IoCommand to JSON.
+         * @function toJSON
+         * @memberof yahboom_dogzilla_lite.IoCommand
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        IoCommand.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for IoCommand
+         * @function getTypeUrl
+         * @memberof yahboom_dogzilla_lite.IoCommand
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        IoCommand.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+            if (typeUrlPrefix === undefined) {
+                typeUrlPrefix = "type.googleapis.com";
+            }
+            return typeUrlPrefix + "/yahboom_dogzilla_lite.IoCommand";
+        };
+
+        return IoCommand;
+    })();
+
+    yahboom_dogzilla_lite.LedCommand = (function() {
+
+        /**
+         * Properties of a LedCommand.
+         * @memberof yahboom_dogzilla_lite
+         * @interface ILedCommand
+         * @property {number|null} [ledIndex] LedCommand ledIndex
+         * @property {Uint8Array|null} [rgbBytes] LedCommand rgbBytes
+         */
+
+        /**
+         * Constructs a new LedCommand.
+         * @memberof yahboom_dogzilla_lite
+         * @classdesc Represents a LedCommand.
+         * @implements ILedCommand
+         * @constructor
+         * @param {yahboom_dogzilla_lite.ILedCommand=} [properties] Properties to set
+         */
+        function LedCommand(properties) {
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * LedCommand ledIndex.
+         * @member {number} ledIndex
+         * @memberof yahboom_dogzilla_lite.LedCommand
+         * @instance
+         */
+        LedCommand.prototype.ledIndex = 0;
+
+        /**
+         * LedCommand rgbBytes.
+         * @member {Uint8Array} rgbBytes
+         * @memberof yahboom_dogzilla_lite.LedCommand
+         * @instance
+         */
+        LedCommand.prototype.rgbBytes = $util.newBuffer([]);
+
+        /**
+         * Creates a new LedCommand instance using the specified properties.
+         * @function create
+         * @memberof yahboom_dogzilla_lite.LedCommand
+         * @static
+         * @param {yahboom_dogzilla_lite.ILedCommand=} [properties] Properties to set
+         * @returns {yahboom_dogzilla_lite.LedCommand} LedCommand instance
+         */
+        LedCommand.create = function create(properties) {
+            return new LedCommand(properties);
+        };
+
+        /**
+         * Encodes the specified LedCommand message. Does not implicitly {@link yahboom_dogzilla_lite.LedCommand.verify|verify} messages.
+         * @function encode
+         * @memberof yahboom_dogzilla_lite.LedCommand
+         * @static
+         * @param {yahboom_dogzilla_lite.ILedCommand} message LedCommand message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        LedCommand.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.ledIndex != null && Object.hasOwnProperty.call(message, "ledIndex"))
+                writer.uint32(/* id 1, wireType 0 =*/8).uint32(message.ledIndex);
+            if (message.rgbBytes != null && Object.hasOwnProperty.call(message, "rgbBytes"))
+                writer.uint32(/* id 2, wireType 2 =*/18).bytes(message.rgbBytes);
+            return writer;
+        };
+
+        /**
+         * Encodes the specified LedCommand message, length delimited. Does not implicitly {@link yahboom_dogzilla_lite.LedCommand.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof yahboom_dogzilla_lite.LedCommand
+         * @static
+         * @param {yahboom_dogzilla_lite.ILedCommand} message LedCommand message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        LedCommand.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes a LedCommand message from the specified reader or buffer.
+         * @function decode
+         * @memberof yahboom_dogzilla_lite.LedCommand
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {yahboom_dogzilla_lite.LedCommand} LedCommand
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        LedCommand.decode = function decode(reader, length, error, long) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.yahboom_dogzilla_lite.LedCommand();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                if (tag === error)
+                    break;
+                switch (tag >>> 3) {
+                case 1: {
+                        message.ledIndex = reader.uint32();
+                        break;
+                    }
+                case 2: {
+                        message.rgbBytes = reader.bytes();
+                        break;
+                    }
+                default:
+                    reader.skipType(tag & 7, long);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes a LedCommand message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof yahboom_dogzilla_lite.LedCommand
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {yahboom_dogzilla_lite.LedCommand} LedCommand
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        LedCommand.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies a LedCommand message.
+         * @function verify
+         * @memberof yahboom_dogzilla_lite.LedCommand
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        LedCommand.verify = function verify(message, long) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
+            if (message.ledIndex != null && message.hasOwnProperty("ledIndex"))
+                if (!$util.isInteger(message.ledIndex))
+                    return "ledIndex: integer expected";
+            if (message.rgbBytes != null && message.hasOwnProperty("rgbBytes"))
+                if (!(message.rgbBytes && typeof message.rgbBytes.length === "number" || $util.isString(message.rgbBytes)))
+                    return "rgbBytes: buffer expected";
+            return null;
+        };
+
+        /**
+         * Creates a LedCommand message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof yahboom_dogzilla_lite.LedCommand
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {yahboom_dogzilla_lite.LedCommand} LedCommand
+         */
+        LedCommand.fromObject = function fromObject(object, long) {
+            if (object instanceof $root.yahboom_dogzilla_lite.LedCommand)
+                return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let message = new $root.yahboom_dogzilla_lite.LedCommand();
+            if (object.ledIndex != null)
+                message.ledIndex = object.ledIndex >>> 0;
+            if (object.rgbBytes != null)
+                if (typeof object.rgbBytes === "string")
+                    $util.base64.decode(object.rgbBytes, message.rgbBytes = $util.newBuffer($util.base64.length(object.rgbBytes)), 0);
+                else if (object.rgbBytes.length >= 0)
+                    message.rgbBytes = object.rgbBytes;
+            return message;
+        };
+
+        /**
+         * Creates a plain object from a LedCommand message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof yahboom_dogzilla_lite.LedCommand
+         * @static
+         * @param {yahboom_dogzilla_lite.LedCommand} message LedCommand
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        LedCommand.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.defaults) {
+                object.ledIndex = 0;
+                if (options.bytes === String)
+                    object.rgbBytes = "";
+                else {
+                    object.rgbBytes = [];
+                    if (options.bytes !== Array)
+                        object.rgbBytes = $util.newBuffer(object.rgbBytes);
+                }
+            }
+            if (message.ledIndex != null && message.hasOwnProperty("ledIndex"))
+                object.ledIndex = message.ledIndex;
+            if (message.rgbBytes != null && message.hasOwnProperty("rgbBytes"))
+                object.rgbBytes = options.bytes === String ? $util.base64.encode(message.rgbBytes, 0, message.rgbBytes.length) : options.bytes === Array ? Array.prototype.slice.call(message.rgbBytes) : message.rgbBytes;
+            return object;
+        };
+
+        /**
+         * Converts this LedCommand to JSON.
+         * @function toJSON
+         * @memberof yahboom_dogzilla_lite.LedCommand
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        LedCommand.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for LedCommand
+         * @function getTypeUrl
+         * @memberof yahboom_dogzilla_lite.LedCommand
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        LedCommand.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+            if (typeUrlPrefix === undefined) {
+                typeUrlPrefix = "type.googleapis.com";
+            }
+            return typeUrlPrefix + "/yahboom_dogzilla_lite.LedCommand";
+        };
+
+        return LedCommand;
+    })();
+
+    yahboom_dogzilla_lite.ActionCommand = (function() {
+
+        /**
+         * Properties of an ActionCommand.
+         * @memberof yahboom_dogzilla_lite
+         * @interface IActionCommand
+         * @property {yahboom_dogzilla_lite.ActionType|null} [action] ActionCommand action
+         */
+
+        /**
+         * Constructs a new ActionCommand.
+         * @memberof yahboom_dogzilla_lite
+         * @classdesc Represents an ActionCommand.
+         * @implements IActionCommand
+         * @constructor
+         * @param {yahboom_dogzilla_lite.IActionCommand=} [properties] Properties to set
+         */
+        function ActionCommand(properties) {
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * ActionCommand action.
+         * @member {yahboom_dogzilla_lite.ActionType} action
+         * @memberof yahboom_dogzilla_lite.ActionCommand
+         * @instance
+         */
+        ActionCommand.prototype.action = 0;
+
+        /**
+         * Creates a new ActionCommand instance using the specified properties.
+         * @function create
+         * @memberof yahboom_dogzilla_lite.ActionCommand
+         * @static
+         * @param {yahboom_dogzilla_lite.IActionCommand=} [properties] Properties to set
+         * @returns {yahboom_dogzilla_lite.ActionCommand} ActionCommand instance
+         */
+        ActionCommand.create = function create(properties) {
+            return new ActionCommand(properties);
+        };
+
+        /**
+         * Encodes the specified ActionCommand message. Does not implicitly {@link yahboom_dogzilla_lite.ActionCommand.verify|verify} messages.
+         * @function encode
+         * @memberof yahboom_dogzilla_lite.ActionCommand
+         * @static
+         * @param {yahboom_dogzilla_lite.IActionCommand} message ActionCommand message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        ActionCommand.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.action != null && Object.hasOwnProperty.call(message, "action"))
+                writer.uint32(/* id 1, wireType 0 =*/8).int32(message.action);
+            return writer;
+        };
+
+        /**
+         * Encodes the specified ActionCommand message, length delimited. Does not implicitly {@link yahboom_dogzilla_lite.ActionCommand.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof yahboom_dogzilla_lite.ActionCommand
+         * @static
+         * @param {yahboom_dogzilla_lite.IActionCommand} message ActionCommand message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        ActionCommand.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes an ActionCommand message from the specified reader or buffer.
+         * @function decode
+         * @memberof yahboom_dogzilla_lite.ActionCommand
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {yahboom_dogzilla_lite.ActionCommand} ActionCommand
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        ActionCommand.decode = function decode(reader, length, error, long) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.yahboom_dogzilla_lite.ActionCommand();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                if (tag === error)
+                    break;
+                switch (tag >>> 3) {
+                case 1: {
+                        message.action = reader.int32();
+                        break;
+                    }
+                default:
+                    reader.skipType(tag & 7, long);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes an ActionCommand message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof yahboom_dogzilla_lite.ActionCommand
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {yahboom_dogzilla_lite.ActionCommand} ActionCommand
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        ActionCommand.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies an ActionCommand message.
+         * @function verify
+         * @memberof yahboom_dogzilla_lite.ActionCommand
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        ActionCommand.verify = function verify(message, long) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
+            if (message.action != null && message.hasOwnProperty("action"))
+                switch (message.action) {
+                default:
+                    return "action: enum value expected";
+                case 0:
+                case 1:
+                case 2:
+                case 3:
+                case 4:
+                case 5:
+                case 6:
+                case 7:
+                case 8:
+                case 9:
+                case 10:
+                case 11:
+                case 12:
+                case 13:
+                case 14:
+                case 15:
+                case 16:
+                case 17:
+                case 18:
+                case 19:
+                case 20:
+                case 21:
+                case 22:
+                case 23:
+                case 24:
+                case 255:
+                    break;
+                }
+            return null;
+        };
+
+        /**
+         * Creates an ActionCommand message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof yahboom_dogzilla_lite.ActionCommand
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {yahboom_dogzilla_lite.ActionCommand} ActionCommand
+         */
+        ActionCommand.fromObject = function fromObject(object, long) {
+            if (object instanceof $root.yahboom_dogzilla_lite.ActionCommand)
+                return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let message = new $root.yahboom_dogzilla_lite.ActionCommand();
+            switch (object.action) {
+            default:
+                if (typeof object.action === "number") {
+                    message.action = object.action;
+                    break;
+                }
+                break;
+            case "ACTION_UNSPECIFIED":
+            case 0:
+                message.action = 0;
+                break;
+            case "ACTION_LIE_DOWN":
+            case 1:
+                message.action = 1;
+                break;
+            case "ACTION_STAND_UP":
+            case 2:
+                message.action = 2;
+                break;
+            case "ACTION_CRAWL_FORWARD":
+            case 3:
+                message.action = 3;
+                break;
+            case "ACTION_TURN_AROUND":
+            case 4:
+                message.action = 4;
+                break;
+            case "ACTION_MARCH_IN_PLACE":
+            case 5:
+                message.action = 5;
+                break;
+            case "ACTION_SQUAT":
+            case 6:
+                message.action = 6;
+                break;
+            case "ACTION_ROLL":
+            case 7:
+                message.action = 7;
+                break;
+            case "ACTION_PITCH":
+            case 8:
+                message.action = 8;
+                break;
+            case "ACTION_YAW":
+            case 9:
+                message.action = 9;
+                break;
+            case "ACTION_THREE_AXIS_ROTATION":
+            case 10:
+                message.action = 10;
+                break;
+            case "ACTION_PEE":
+            case 11:
+                message.action = 11;
+                break;
+            case "ACTION_SIT_DOWN":
+            case 12:
+                message.action = 12;
+                break;
+            case "ACTION_WAVE":
+            case 13:
+                message.action = 13;
+                break;
+            case "ACTION_STRETCH":
+            case 14:
+                message.action = 14;
+                break;
+            case "ACTION_WAVE2":
+            case 15:
+                message.action = 15;
+                break;
+            case "ACTION_SWAY":
+            case 16:
+                message.action = 16;
+                break;
+            case "ACTION_BEG_FOR_FOOD":
+            case 17:
+                message.action = 17;
+                break;
+            case "ACTION_FIND_FOOD":
+            case 18:
+                message.action = 18;
+                break;
+            case "ACTION_HANDSHAKE":
+            case 19:
+                message.action = 19;
+                break;
+            case "ACTION_ARM_DEMO":
+            case 20:
+                message.action = 20;
+                break;
+            case "ACTION_PUSHUPS":
+            case 21:
+                message.action = 21;
+                break;
+            case "ACTION_PITCH_YAW_ROTATION":
+            case 22:
+                message.action = 22;
+                break;
+            case "ACTION_UP_DOWN_ROTATION":
+            case 23:
+                message.action = 23;
+                break;
+            case "ACTION_FORWARD_BACKWARD_ROTATION":
+            case 24:
+                message.action = 24;
+                break;
+            case "ACTION_RESTORE_DEFAULT":
+            case 255:
+                message.action = 255;
+                break;
+            }
+            return message;
+        };
+
+        /**
+         * Creates a plain object from an ActionCommand message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof yahboom_dogzilla_lite.ActionCommand
+         * @static
+         * @param {yahboom_dogzilla_lite.ActionCommand} message ActionCommand
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        ActionCommand.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.defaults)
+                object.action = options.enums === String ? "ACTION_UNSPECIFIED" : 0;
+            if (message.action != null && message.hasOwnProperty("action"))
+                object.action = options.enums === String ? $root.yahboom_dogzilla_lite.ActionType[message.action] === undefined ? message.action : $root.yahboom_dogzilla_lite.ActionType[message.action] : message.action;
+            return object;
+        };
+
+        /**
+         * Converts this ActionCommand to JSON.
+         * @function toJSON
+         * @memberof yahboom_dogzilla_lite.ActionCommand
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        ActionCommand.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for ActionCommand
+         * @function getTypeUrl
+         * @memberof yahboom_dogzilla_lite.ActionCommand
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        ActionCommand.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+            if (typeUrlPrefix === undefined) {
+                typeUrlPrefix = "type.googleapis.com";
+            }
+            return typeUrlPrefix + "/yahboom_dogzilla_lite.ActionCommand";
+        };
+
+        return ActionCommand;
+    })();
+
+    yahboom_dogzilla_lite.MovementCommand = (function() {
+
+        /**
+         * Properties of a MovementCommand.
+         * @memberof yahboom_dogzilla_lite
+         * @interface IMovementCommand
+         * @property {number|null} [moveX] MovementCommand moveX
+         * @property {number|null} [moveY] MovementCommand moveY
+         * @property {number|null} [moveYaw] MovementCommand moveYaw
+         */
+
+        /**
+         * Constructs a new MovementCommand.
+         * @memberof yahboom_dogzilla_lite
+         * @classdesc Represents a MovementCommand.
+         * @implements IMovementCommand
+         * @constructor
+         * @param {yahboom_dogzilla_lite.IMovementCommand=} [properties] Properties to set
+         */
+        function MovementCommand(properties) {
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * MovementCommand moveX.
+         * @member {number} moveX
+         * @memberof yahboom_dogzilla_lite.MovementCommand
+         * @instance
+         */
+        MovementCommand.prototype.moveX = 0;
+
+        /**
+         * MovementCommand moveY.
+         * @member {number} moveY
+         * @memberof yahboom_dogzilla_lite.MovementCommand
+         * @instance
+         */
+        MovementCommand.prototype.moveY = 0;
+
+        /**
+         * MovementCommand moveYaw.
+         * @member {number} moveYaw
+         * @memberof yahboom_dogzilla_lite.MovementCommand
+         * @instance
+         */
+        MovementCommand.prototype.moveYaw = 0;
+
+        /**
+         * Creates a new MovementCommand instance using the specified properties.
+         * @function create
+         * @memberof yahboom_dogzilla_lite.MovementCommand
+         * @static
+         * @param {yahboom_dogzilla_lite.IMovementCommand=} [properties] Properties to set
+         * @returns {yahboom_dogzilla_lite.MovementCommand} MovementCommand instance
+         */
+        MovementCommand.create = function create(properties) {
+            return new MovementCommand(properties);
+        };
+
+        /**
+         * Encodes the specified MovementCommand message. Does not implicitly {@link yahboom_dogzilla_lite.MovementCommand.verify|verify} messages.
+         * @function encode
+         * @memberof yahboom_dogzilla_lite.MovementCommand
+         * @static
+         * @param {yahboom_dogzilla_lite.IMovementCommand} message MovementCommand message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        MovementCommand.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.moveX != null && Object.hasOwnProperty.call(message, "moveX"))
+                writer.uint32(/* id 1, wireType 0 =*/8).uint32(message.moveX);
+            if (message.moveY != null && Object.hasOwnProperty.call(message, "moveY"))
+                writer.uint32(/* id 2, wireType 0 =*/16).uint32(message.moveY);
+            if (message.moveYaw != null && Object.hasOwnProperty.call(message, "moveYaw"))
+                writer.uint32(/* id 3, wireType 0 =*/24).uint32(message.moveYaw);
+            return writer;
+        };
+
+        /**
+         * Encodes the specified MovementCommand message, length delimited. Does not implicitly {@link yahboom_dogzilla_lite.MovementCommand.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof yahboom_dogzilla_lite.MovementCommand
+         * @static
+         * @param {yahboom_dogzilla_lite.IMovementCommand} message MovementCommand message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        MovementCommand.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes a MovementCommand message from the specified reader or buffer.
+         * @function decode
+         * @memberof yahboom_dogzilla_lite.MovementCommand
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {yahboom_dogzilla_lite.MovementCommand} MovementCommand
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        MovementCommand.decode = function decode(reader, length, error, long) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.yahboom_dogzilla_lite.MovementCommand();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                if (tag === error)
+                    break;
+                switch (tag >>> 3) {
+                case 1: {
+                        message.moveX = reader.uint32();
+                        break;
+                    }
+                case 2: {
+                        message.moveY = reader.uint32();
+                        break;
+                    }
+                case 3: {
+                        message.moveYaw = reader.uint32();
+                        break;
+                    }
+                default:
+                    reader.skipType(tag & 7, long);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes a MovementCommand message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof yahboom_dogzilla_lite.MovementCommand
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {yahboom_dogzilla_lite.MovementCommand} MovementCommand
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        MovementCommand.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies a MovementCommand message.
+         * @function verify
+         * @memberof yahboom_dogzilla_lite.MovementCommand
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        MovementCommand.verify = function verify(message, long) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
+            if (message.moveX != null && message.hasOwnProperty("moveX"))
+                if (!$util.isInteger(message.moveX))
+                    return "moveX: integer expected";
+            if (message.moveY != null && message.hasOwnProperty("moveY"))
+                if (!$util.isInteger(message.moveY))
+                    return "moveY: integer expected";
+            if (message.moveYaw != null && message.hasOwnProperty("moveYaw"))
+                if (!$util.isInteger(message.moveYaw))
+                    return "moveYaw: integer expected";
+            return null;
+        };
+
+        /**
+         * Creates a MovementCommand message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof yahboom_dogzilla_lite.MovementCommand
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {yahboom_dogzilla_lite.MovementCommand} MovementCommand
+         */
+        MovementCommand.fromObject = function fromObject(object, long) {
+            if (object instanceof $root.yahboom_dogzilla_lite.MovementCommand)
+                return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let message = new $root.yahboom_dogzilla_lite.MovementCommand();
+            if (object.moveX != null)
+                message.moveX = object.moveX >>> 0;
+            if (object.moveY != null)
+                message.moveY = object.moveY >>> 0;
+            if (object.moveYaw != null)
+                message.moveYaw = object.moveYaw >>> 0;
+            return message;
+        };
+
+        /**
+         * Creates a plain object from a MovementCommand message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof yahboom_dogzilla_lite.MovementCommand
+         * @static
+         * @param {yahboom_dogzilla_lite.MovementCommand} message MovementCommand
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        MovementCommand.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.defaults) {
+                object.moveX = 0;
+                object.moveY = 0;
+                object.moveYaw = 0;
+            }
+            if (message.moveX != null && message.hasOwnProperty("moveX"))
+                object.moveX = message.moveX;
+            if (message.moveY != null && message.hasOwnProperty("moveY"))
+                object.moveY = message.moveY;
+            if (message.moveYaw != null && message.hasOwnProperty("moveYaw"))
+                object.moveYaw = message.moveYaw;
+            return object;
+        };
+
+        /**
+         * Converts this MovementCommand to JSON.
+         * @function toJSON
+         * @memberof yahboom_dogzilla_lite.MovementCommand
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        MovementCommand.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for MovementCommand
+         * @function getTypeUrl
+         * @memberof yahboom_dogzilla_lite.MovementCommand
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        MovementCommand.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+            if (typeUrlPrefix === undefined) {
+                typeUrlPrefix = "type.googleapis.com";
+            }
+            return typeUrlPrefix + "/yahboom_dogzilla_lite.MovementCommand";
+        };
+
+        return MovementCommand;
+    })();
+
+    yahboom_dogzilla_lite.ConfigCommand = (function() {
+
+        /**
+         * Properties of a ConfigCommand.
+         * @memberof yahboom_dogzilla_lite
+         * @interface IConfigCommand
+         * @property {yahboom_dogzilla_lite.PerformanceMode|null} [performanceMode] ConfigCommand performanceMode
+         * @property {yahboom_dogzilla_lite.GaitType|null} [gait] ConfigCommand gait
+         * @property {yahboom_dogzilla_lite.ImuMode|null} [imuMode] ConfigCommand imuMode
+         * @property {boolean|null} [enableFeedback] ConfigCommand enableFeedback
+         * @property {string|null} [bluetoothName] ConfigCommand bluetoothName
+         */
+
+        /**
+         * Constructs a new ConfigCommand.
+         * @memberof yahboom_dogzilla_lite
+         * @classdesc Represents a ConfigCommand.
+         * @implements IConfigCommand
+         * @constructor
+         * @param {yahboom_dogzilla_lite.IConfigCommand=} [properties] Properties to set
+         */
+        function ConfigCommand(properties) {
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * ConfigCommand performanceMode.
+         * @member {yahboom_dogzilla_lite.PerformanceMode} performanceMode
+         * @memberof yahboom_dogzilla_lite.ConfigCommand
+         * @instance
+         */
+        ConfigCommand.prototype.performanceMode = 0;
+
+        /**
+         * ConfigCommand gait.
+         * @member {yahboom_dogzilla_lite.GaitType} gait
+         * @memberof yahboom_dogzilla_lite.ConfigCommand
+         * @instance
+         */
+        ConfigCommand.prototype.gait = 0;
+
+        /**
+         * ConfigCommand imuMode.
+         * @member {yahboom_dogzilla_lite.ImuMode} imuMode
+         * @memberof yahboom_dogzilla_lite.ConfigCommand
+         * @instance
+         */
+        ConfigCommand.prototype.imuMode = 0;
+
+        /**
+         * ConfigCommand enableFeedback.
+         * @member {boolean} enableFeedback
+         * @memberof yahboom_dogzilla_lite.ConfigCommand
+         * @instance
+         */
+        ConfigCommand.prototype.enableFeedback = false;
+
+        /**
+         * ConfigCommand bluetoothName.
+         * @member {string} bluetoothName
+         * @memberof yahboom_dogzilla_lite.ConfigCommand
+         * @instance
+         */
+        ConfigCommand.prototype.bluetoothName = "";
+
+        /**
+         * Creates a new ConfigCommand instance using the specified properties.
+         * @function create
+         * @memberof yahboom_dogzilla_lite.ConfigCommand
+         * @static
+         * @param {yahboom_dogzilla_lite.IConfigCommand=} [properties] Properties to set
+         * @returns {yahboom_dogzilla_lite.ConfigCommand} ConfigCommand instance
+         */
+        ConfigCommand.create = function create(properties) {
+            return new ConfigCommand(properties);
+        };
+
+        /**
+         * Encodes the specified ConfigCommand message. Does not implicitly {@link yahboom_dogzilla_lite.ConfigCommand.verify|verify} messages.
+         * @function encode
+         * @memberof yahboom_dogzilla_lite.ConfigCommand
+         * @static
+         * @param {yahboom_dogzilla_lite.IConfigCommand} message ConfigCommand message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        ConfigCommand.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.performanceMode != null && Object.hasOwnProperty.call(message, "performanceMode"))
+                writer.uint32(/* id 1, wireType 0 =*/8).int32(message.performanceMode);
+            if (message.gait != null && Object.hasOwnProperty.call(message, "gait"))
+                writer.uint32(/* id 2, wireType 0 =*/16).int32(message.gait);
+            if (message.imuMode != null && Object.hasOwnProperty.call(message, "imuMode"))
+                writer.uint32(/* id 3, wireType 0 =*/24).int32(message.imuMode);
+            if (message.enableFeedback != null && Object.hasOwnProperty.call(message, "enableFeedback"))
+                writer.uint32(/* id 4, wireType 0 =*/32).bool(message.enableFeedback);
+            if (message.bluetoothName != null && Object.hasOwnProperty.call(message, "bluetoothName"))
+                writer.uint32(/* id 5, wireType 2 =*/42).string(message.bluetoothName);
+            return writer;
+        };
+
+        /**
+         * Encodes the specified ConfigCommand message, length delimited. Does not implicitly {@link yahboom_dogzilla_lite.ConfigCommand.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof yahboom_dogzilla_lite.ConfigCommand
+         * @static
+         * @param {yahboom_dogzilla_lite.IConfigCommand} message ConfigCommand message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        ConfigCommand.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes a ConfigCommand message from the specified reader or buffer.
+         * @function decode
+         * @memberof yahboom_dogzilla_lite.ConfigCommand
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {yahboom_dogzilla_lite.ConfigCommand} ConfigCommand
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        ConfigCommand.decode = function decode(reader, length, error, long) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.yahboom_dogzilla_lite.ConfigCommand();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                if (tag === error)
+                    break;
+                switch (tag >>> 3) {
+                case 1: {
+                        message.performanceMode = reader.int32();
+                        break;
+                    }
+                case 2: {
+                        message.gait = reader.int32();
+                        break;
+                    }
+                case 3: {
+                        message.imuMode = reader.int32();
+                        break;
+                    }
+                case 4: {
+                        message.enableFeedback = reader.bool();
+                        break;
+                    }
+                case 5: {
+                        message.bluetoothName = reader.string();
+                        break;
+                    }
+                default:
+                    reader.skipType(tag & 7, long);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes a ConfigCommand message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof yahboom_dogzilla_lite.ConfigCommand
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {yahboom_dogzilla_lite.ConfigCommand} ConfigCommand
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        ConfigCommand.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies a ConfigCommand message.
+         * @function verify
+         * @memberof yahboom_dogzilla_lite.ConfigCommand
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        ConfigCommand.verify = function verify(message, long) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
+            if (message.performanceMode != null && message.hasOwnProperty("performanceMode"))
+                switch (message.performanceMode) {
+                default:
+                    return "performanceMode: enum value expected";
+                case 0:
+                case 1:
+                    break;
+                }
+            if (message.gait != null && message.hasOwnProperty("gait"))
+                switch (message.gait) {
+                default:
+                    return "gait: enum value expected";
+                case 0:
+                case 1:
+                case 2:
+                case 3:
+                    break;
+                }
+            if (message.imuMode != null && message.hasOwnProperty("imuMode"))
+                switch (message.imuMode) {
+                default:
+                    return "imuMode: enum value expected";
+                case 0:
+                case 1:
+                    break;
+                }
+            if (message.enableFeedback != null && message.hasOwnProperty("enableFeedback"))
+                if (typeof message.enableFeedback !== "boolean")
+                    return "enableFeedback: boolean expected";
+            if (message.bluetoothName != null && message.hasOwnProperty("bluetoothName"))
+                if (!$util.isString(message.bluetoothName))
+                    return "bluetoothName: string expected";
+            return null;
+        };
+
+        /**
+         * Creates a ConfigCommand message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof yahboom_dogzilla_lite.ConfigCommand
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {yahboom_dogzilla_lite.ConfigCommand} ConfigCommand
+         */
+        ConfigCommand.fromObject = function fromObject(object, long) {
+            if (object instanceof $root.yahboom_dogzilla_lite.ConfigCommand)
+                return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let message = new $root.yahboom_dogzilla_lite.ConfigCommand();
+            switch (object.performanceMode) {
+            default:
+                if (typeof object.performanceMode === "number") {
+                    message.performanceMode = object.performanceMode;
+                    break;
+                }
+                break;
+            case "PERFORMANCE_NORMAL_CONTROL":
+            case 0:
+                message.performanceMode = 0;
+                break;
+            case "PERFORMANCE_CYCLE_ACTION":
+            case 1:
+                message.performanceMode = 1;
+                break;
+            }
+            switch (object.gait) {
+            default:
+                if (typeof object.gait === "number") {
+                    message.gait = object.gait;
+                    break;
+                }
+                break;
+            case "GAIT_TROT":
+            case 0:
+                message.gait = 0;
+                break;
+            case "GAIT_WALK":
+            case 1:
+                message.gait = 1;
+                break;
+            case "GAIT_HIGH_WALK":
+            case 2:
+                message.gait = 2;
+                break;
+            case "GAIT_MICRO_TROT":
+            case 3:
+                message.gait = 3;
+                break;
+            }
+            switch (object.imuMode) {
+            default:
+                if (typeof object.imuMode === "number") {
+                    message.imuMode = object.imuMode;
+                    break;
+                }
+                break;
+            case "IMU_DISABLED":
+            case 0:
+                message.imuMode = 0;
+                break;
+            case "IMU_SELF_STABILIZE":
+            case 1:
+                message.imuMode = 1;
+                break;
+            }
+            if (object.enableFeedback != null)
+                message.enableFeedback = Boolean(object.enableFeedback);
+            if (object.bluetoothName != null)
+                message.bluetoothName = String(object.bluetoothName);
+            return message;
+        };
+
+        /**
+         * Creates a plain object from a ConfigCommand message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof yahboom_dogzilla_lite.ConfigCommand
+         * @static
+         * @param {yahboom_dogzilla_lite.ConfigCommand} message ConfigCommand
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        ConfigCommand.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.defaults) {
+                object.performanceMode = options.enums === String ? "PERFORMANCE_NORMAL_CONTROL" : 0;
+                object.gait = options.enums === String ? "GAIT_TROT" : 0;
+                object.imuMode = options.enums === String ? "IMU_DISABLED" : 0;
+                object.enableFeedback = false;
+                object.bluetoothName = "";
+            }
+            if (message.performanceMode != null && message.hasOwnProperty("performanceMode"))
+                object.performanceMode = options.enums === String ? $root.yahboom_dogzilla_lite.PerformanceMode[message.performanceMode] === undefined ? message.performanceMode : $root.yahboom_dogzilla_lite.PerformanceMode[message.performanceMode] : message.performanceMode;
+            if (message.gait != null && message.hasOwnProperty("gait"))
+                object.gait = options.enums === String ? $root.yahboom_dogzilla_lite.GaitType[message.gait] === undefined ? message.gait : $root.yahboom_dogzilla_lite.GaitType[message.gait] : message.gait;
+            if (message.imuMode != null && message.hasOwnProperty("imuMode"))
+                object.imuMode = options.enums === String ? $root.yahboom_dogzilla_lite.ImuMode[message.imuMode] === undefined ? message.imuMode : $root.yahboom_dogzilla_lite.ImuMode[message.imuMode] : message.imuMode;
+            if (message.enableFeedback != null && message.hasOwnProperty("enableFeedback"))
+                object.enableFeedback = message.enableFeedback;
+            if (message.bluetoothName != null && message.hasOwnProperty("bluetoothName"))
+                object.bluetoothName = message.bluetoothName;
+            return object;
+        };
+
+        /**
+         * Converts this ConfigCommand to JSON.
+         * @function toJSON
+         * @memberof yahboom_dogzilla_lite.ConfigCommand
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        ConfigCommand.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for ConfigCommand
+         * @function getTypeUrl
+         * @memberof yahboom_dogzilla_lite.ConfigCommand
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        ConfigCommand.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+            if (typeUrlPrefix === undefined) {
+                typeUrlPrefix = "type.googleapis.com";
+            }
+            return typeUrlPrefix + "/yahboom_dogzilla_lite.ConfigCommand";
+        };
+
+        return ConfigCommand;
+    })();
+
+    yahboom_dogzilla_lite.Command = (function() {
+
+        /**
+         * Properties of a Command.
+         * @memberof yahboom_dogzilla_lite
+         * @interface ICommand
+         * @property {string|null} [targetDeviceSerial] Command targetDeviceSerial
+         * @property {yahboom_dogzilla_lite.IServoCommand|null} [servo] Command servo
+         * @property {yahboom_dogzilla_lite.IServoSpeedCommand|null} [servoSpeed] Command servoSpeed
+         * @property {yahboom_dogzilla_lite.ICalibrationCommand|null} [calibration] Command calibration
+         * @property {yahboom_dogzilla_lite.IArmCommand|null} [arm] Command arm
+         * @property {yahboom_dogzilla_lite.IIoCommand|null} [io] Command io
+         * @property {yahboom_dogzilla_lite.IConfigCommand|null} [config] Command config
+         * @property {yahboom_dogzilla_lite.ILedCommand|null} [led] Command led
+         * @property {yahboom_dogzilla_lite.IActionCommand|null} [action] Command action
+         * @property {yahboom_dogzilla_lite.IMovementCommand|null} [movement] Command movement
+         */
+
+        /**
+         * Constructs a new Command.
+         * @memberof yahboom_dogzilla_lite
+         * @classdesc Represents a Command.
+         * @implements ICommand
+         * @constructor
+         * @param {yahboom_dogzilla_lite.ICommand=} [properties] Properties to set
+         */
+        function Command(properties) {
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * Command targetDeviceSerial.
+         * @member {string} targetDeviceSerial
+         * @memberof yahboom_dogzilla_lite.Command
+         * @instance
+         */
+        Command.prototype.targetDeviceSerial = "";
+
+        /**
+         * Command servo.
+         * @member {yahboom_dogzilla_lite.IServoCommand|null|undefined} servo
+         * @memberof yahboom_dogzilla_lite.Command
+         * @instance
+         */
+        Command.prototype.servo = null;
+
+        /**
+         * Command servoSpeed.
+         * @member {yahboom_dogzilla_lite.IServoSpeedCommand|null|undefined} servoSpeed
+         * @memberof yahboom_dogzilla_lite.Command
+         * @instance
+         */
+        Command.prototype.servoSpeed = null;
+
+        /**
+         * Command calibration.
+         * @member {yahboom_dogzilla_lite.ICalibrationCommand|null|undefined} calibration
+         * @memberof yahboom_dogzilla_lite.Command
+         * @instance
+         */
+        Command.prototype.calibration = null;
+
+        /**
+         * Command arm.
+         * @member {yahboom_dogzilla_lite.IArmCommand|null|undefined} arm
+         * @memberof yahboom_dogzilla_lite.Command
+         * @instance
+         */
+        Command.prototype.arm = null;
+
+        /**
+         * Command io.
+         * @member {yahboom_dogzilla_lite.IIoCommand|null|undefined} io
+         * @memberof yahboom_dogzilla_lite.Command
+         * @instance
+         */
+        Command.prototype.io = null;
+
+        /**
+         * Command config.
+         * @member {yahboom_dogzilla_lite.IConfigCommand|null|undefined} config
+         * @memberof yahboom_dogzilla_lite.Command
+         * @instance
+         */
+        Command.prototype.config = null;
+
+        /**
+         * Command led.
+         * @member {yahboom_dogzilla_lite.ILedCommand|null|undefined} led
+         * @memberof yahboom_dogzilla_lite.Command
+         * @instance
+         */
+        Command.prototype.led = null;
+
+        /**
+         * Command action.
+         * @member {yahboom_dogzilla_lite.IActionCommand|null|undefined} action
+         * @memberof yahboom_dogzilla_lite.Command
+         * @instance
+         */
+        Command.prototype.action = null;
+
+        /**
+         * Command movement.
+         * @member {yahboom_dogzilla_lite.IMovementCommand|null|undefined} movement
+         * @memberof yahboom_dogzilla_lite.Command
+         * @instance
+         */
+        Command.prototype.movement = null;
+
+        /**
+         * Creates a new Command instance using the specified properties.
+         * @function create
+         * @memberof yahboom_dogzilla_lite.Command
+         * @static
+         * @param {yahboom_dogzilla_lite.ICommand=} [properties] Properties to set
+         * @returns {yahboom_dogzilla_lite.Command} Command instance
+         */
+        Command.create = function create(properties) {
+            return new Command(properties);
+        };
+
+        /**
+         * Encodes the specified Command message. Does not implicitly {@link yahboom_dogzilla_lite.Command.verify|verify} messages.
+         * @function encode
+         * @memberof yahboom_dogzilla_lite.Command
+         * @static
+         * @param {yahboom_dogzilla_lite.ICommand} message Command message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        Command.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.targetDeviceSerial != null && Object.hasOwnProperty.call(message, "targetDeviceSerial"))
+                writer.uint32(/* id 1, wireType 2 =*/10).string(message.targetDeviceSerial);
+            if (message.servo != null && Object.hasOwnProperty.call(message, "servo"))
+                $root.yahboom_dogzilla_lite.ServoCommand.encode(message.servo, writer.uint32(/* id 10, wireType 2 =*/82).fork()).ldelim();
+            if (message.servoSpeed != null && Object.hasOwnProperty.call(message, "servoSpeed"))
+                $root.yahboom_dogzilla_lite.ServoSpeedCommand.encode(message.servoSpeed, writer.uint32(/* id 11, wireType 2 =*/90).fork()).ldelim();
+            if (message.calibration != null && Object.hasOwnProperty.call(message, "calibration"))
+                $root.yahboom_dogzilla_lite.CalibrationCommand.encode(message.calibration, writer.uint32(/* id 12, wireType 2 =*/98).fork()).ldelim();
+            if (message.arm != null && Object.hasOwnProperty.call(message, "arm"))
+                $root.yahboom_dogzilla_lite.ArmCommand.encode(message.arm, writer.uint32(/* id 13, wireType 2 =*/106).fork()).ldelim();
+            if (message.io != null && Object.hasOwnProperty.call(message, "io"))
+                $root.yahboom_dogzilla_lite.IoCommand.encode(message.io, writer.uint32(/* id 14, wireType 2 =*/114).fork()).ldelim();
+            if (message.config != null && Object.hasOwnProperty.call(message, "config"))
+                $root.yahboom_dogzilla_lite.ConfigCommand.encode(message.config, writer.uint32(/* id 15, wireType 2 =*/122).fork()).ldelim();
+            if (message.led != null && Object.hasOwnProperty.call(message, "led"))
+                $root.yahboom_dogzilla_lite.LedCommand.encode(message.led, writer.uint32(/* id 16, wireType 2 =*/130).fork()).ldelim();
+            if (message.action != null && Object.hasOwnProperty.call(message, "action"))
+                $root.yahboom_dogzilla_lite.ActionCommand.encode(message.action, writer.uint32(/* id 17, wireType 2 =*/138).fork()).ldelim();
+            if (message.movement != null && Object.hasOwnProperty.call(message, "movement"))
+                $root.yahboom_dogzilla_lite.MovementCommand.encode(message.movement, writer.uint32(/* id 18, wireType 2 =*/146).fork()).ldelim();
+            return writer;
+        };
+
+        /**
+         * Encodes the specified Command message, length delimited. Does not implicitly {@link yahboom_dogzilla_lite.Command.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof yahboom_dogzilla_lite.Command
+         * @static
+         * @param {yahboom_dogzilla_lite.ICommand} message Command message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        Command.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes a Command message from the specified reader or buffer.
+         * @function decode
+         * @memberof yahboom_dogzilla_lite.Command
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {yahboom_dogzilla_lite.Command} Command
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        Command.decode = function decode(reader, length, error, long) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.yahboom_dogzilla_lite.Command();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                if (tag === error)
+                    break;
+                switch (tag >>> 3) {
+                case 1: {
+                        message.targetDeviceSerial = reader.string();
+                        break;
+                    }
+                case 10: {
+                        message.servo = $root.yahboom_dogzilla_lite.ServoCommand.decode(reader, reader.uint32(), undefined, long + 1);
+                        break;
+                    }
+                case 11: {
+                        message.servoSpeed = $root.yahboom_dogzilla_lite.ServoSpeedCommand.decode(reader, reader.uint32(), undefined, long + 1);
+                        break;
+                    }
+                case 12: {
+                        message.calibration = $root.yahboom_dogzilla_lite.CalibrationCommand.decode(reader, reader.uint32(), undefined, long + 1);
+                        break;
+                    }
+                case 13: {
+                        message.arm = $root.yahboom_dogzilla_lite.ArmCommand.decode(reader, reader.uint32(), undefined, long + 1);
+                        break;
+                    }
+                case 14: {
+                        message.io = $root.yahboom_dogzilla_lite.IoCommand.decode(reader, reader.uint32(), undefined, long + 1);
+                        break;
+                    }
+                case 15: {
+                        message.config = $root.yahboom_dogzilla_lite.ConfigCommand.decode(reader, reader.uint32(), undefined, long + 1);
+                        break;
+                    }
+                case 16: {
+                        message.led = $root.yahboom_dogzilla_lite.LedCommand.decode(reader, reader.uint32(), undefined, long + 1);
+                        break;
+                    }
+                case 17: {
+                        message.action = $root.yahboom_dogzilla_lite.ActionCommand.decode(reader, reader.uint32(), undefined, long + 1);
+                        break;
+                    }
+                case 18: {
+                        message.movement = $root.yahboom_dogzilla_lite.MovementCommand.decode(reader, reader.uint32(), undefined, long + 1);
+                        break;
+                    }
+                default:
+                    reader.skipType(tag & 7, long);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes a Command message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof yahboom_dogzilla_lite.Command
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {yahboom_dogzilla_lite.Command} Command
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        Command.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies a Command message.
+         * @function verify
+         * @memberof yahboom_dogzilla_lite.Command
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        Command.verify = function verify(message, long) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
+            if (message.targetDeviceSerial != null && message.hasOwnProperty("targetDeviceSerial"))
+                if (!$util.isString(message.targetDeviceSerial))
+                    return "targetDeviceSerial: string expected";
+            if (message.servo != null && message.hasOwnProperty("servo")) {
+                let error = $root.yahboom_dogzilla_lite.ServoCommand.verify(message.servo, long + 1);
+                if (error)
+                    return "servo." + error;
+            }
+            if (message.servoSpeed != null && message.hasOwnProperty("servoSpeed")) {
+                let error = $root.yahboom_dogzilla_lite.ServoSpeedCommand.verify(message.servoSpeed, long + 1);
+                if (error)
+                    return "servoSpeed." + error;
+            }
+            if (message.calibration != null && message.hasOwnProperty("calibration")) {
+                let error = $root.yahboom_dogzilla_lite.CalibrationCommand.verify(message.calibration, long + 1);
+                if (error)
+                    return "calibration." + error;
+            }
+            if (message.arm != null && message.hasOwnProperty("arm")) {
+                let error = $root.yahboom_dogzilla_lite.ArmCommand.verify(message.arm, long + 1);
+                if (error)
+                    return "arm." + error;
+            }
+            if (message.io != null && message.hasOwnProperty("io")) {
+                let error = $root.yahboom_dogzilla_lite.IoCommand.verify(message.io, long + 1);
+                if (error)
+                    return "io." + error;
+            }
+            if (message.config != null && message.hasOwnProperty("config")) {
+                let error = $root.yahboom_dogzilla_lite.ConfigCommand.verify(message.config, long + 1);
+                if (error)
+                    return "config." + error;
+            }
+            if (message.led != null && message.hasOwnProperty("led")) {
+                let error = $root.yahboom_dogzilla_lite.LedCommand.verify(message.led, long + 1);
+                if (error)
+                    return "led." + error;
+            }
+            if (message.action != null && message.hasOwnProperty("action")) {
+                let error = $root.yahboom_dogzilla_lite.ActionCommand.verify(message.action, long + 1);
+                if (error)
+                    return "action." + error;
+            }
+            if (message.movement != null && message.hasOwnProperty("movement")) {
+                let error = $root.yahboom_dogzilla_lite.MovementCommand.verify(message.movement, long + 1);
+                if (error)
+                    return "movement." + error;
+            }
+            return null;
+        };
+
+        /**
+         * Creates a Command message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof yahboom_dogzilla_lite.Command
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {yahboom_dogzilla_lite.Command} Command
+         */
+        Command.fromObject = function fromObject(object, long) {
+            if (object instanceof $root.yahboom_dogzilla_lite.Command)
+                return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let message = new $root.yahboom_dogzilla_lite.Command();
+            if (object.targetDeviceSerial != null)
+                message.targetDeviceSerial = String(object.targetDeviceSerial);
+            if (object.servo != null) {
+                if (typeof object.servo !== "object")
+                    throw TypeError(".yahboom_dogzilla_lite.Command.servo: object expected");
+                message.servo = $root.yahboom_dogzilla_lite.ServoCommand.fromObject(object.servo, long + 1);
+            }
+            if (object.servoSpeed != null) {
+                if (typeof object.servoSpeed !== "object")
+                    throw TypeError(".yahboom_dogzilla_lite.Command.servoSpeed: object expected");
+                message.servoSpeed = $root.yahboom_dogzilla_lite.ServoSpeedCommand.fromObject(object.servoSpeed, long + 1);
+            }
+            if (object.calibration != null) {
+                if (typeof object.calibration !== "object")
+                    throw TypeError(".yahboom_dogzilla_lite.Command.calibration: object expected");
+                message.calibration = $root.yahboom_dogzilla_lite.CalibrationCommand.fromObject(object.calibration, long + 1);
+            }
+            if (object.arm != null) {
+                if (typeof object.arm !== "object")
+                    throw TypeError(".yahboom_dogzilla_lite.Command.arm: object expected");
+                message.arm = $root.yahboom_dogzilla_lite.ArmCommand.fromObject(object.arm, long + 1);
+            }
+            if (object.io != null) {
+                if (typeof object.io !== "object")
+                    throw TypeError(".yahboom_dogzilla_lite.Command.io: object expected");
+                message.io = $root.yahboom_dogzilla_lite.IoCommand.fromObject(object.io, long + 1);
+            }
+            if (object.config != null) {
+                if (typeof object.config !== "object")
+                    throw TypeError(".yahboom_dogzilla_lite.Command.config: object expected");
+                message.config = $root.yahboom_dogzilla_lite.ConfigCommand.fromObject(object.config, long + 1);
+            }
+            if (object.led != null) {
+                if (typeof object.led !== "object")
+                    throw TypeError(".yahboom_dogzilla_lite.Command.led: object expected");
+                message.led = $root.yahboom_dogzilla_lite.LedCommand.fromObject(object.led, long + 1);
+            }
+            if (object.action != null) {
+                if (typeof object.action !== "object")
+                    throw TypeError(".yahboom_dogzilla_lite.Command.action: object expected");
+                message.action = $root.yahboom_dogzilla_lite.ActionCommand.fromObject(object.action, long + 1);
+            }
+            if (object.movement != null) {
+                if (typeof object.movement !== "object")
+                    throw TypeError(".yahboom_dogzilla_lite.Command.movement: object expected");
+                message.movement = $root.yahboom_dogzilla_lite.MovementCommand.fromObject(object.movement, long + 1);
+            }
+            return message;
+        };
+
+        /**
+         * Creates a plain object from a Command message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof yahboom_dogzilla_lite.Command
+         * @static
+         * @param {yahboom_dogzilla_lite.Command} message Command
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        Command.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.defaults) {
+                object.targetDeviceSerial = "";
+                object.servo = null;
+                object.servoSpeed = null;
+                object.calibration = null;
+                object.arm = null;
+                object.io = null;
+                object.config = null;
+                object.led = null;
+                object.action = null;
+                object.movement = null;
+            }
+            if (message.targetDeviceSerial != null && message.hasOwnProperty("targetDeviceSerial"))
+                object.targetDeviceSerial = message.targetDeviceSerial;
+            if (message.servo != null && message.hasOwnProperty("servo"))
+                object.servo = $root.yahboom_dogzilla_lite.ServoCommand.toObject(message.servo, options);
+            if (message.servoSpeed != null && message.hasOwnProperty("servoSpeed"))
+                object.servoSpeed = $root.yahboom_dogzilla_lite.ServoSpeedCommand.toObject(message.servoSpeed, options);
+            if (message.calibration != null && message.hasOwnProperty("calibration"))
+                object.calibration = $root.yahboom_dogzilla_lite.CalibrationCommand.toObject(message.calibration, options);
+            if (message.arm != null && message.hasOwnProperty("arm"))
+                object.arm = $root.yahboom_dogzilla_lite.ArmCommand.toObject(message.arm, options);
+            if (message.io != null && message.hasOwnProperty("io"))
+                object.io = $root.yahboom_dogzilla_lite.IoCommand.toObject(message.io, options);
+            if (message.config != null && message.hasOwnProperty("config"))
+                object.config = $root.yahboom_dogzilla_lite.ConfigCommand.toObject(message.config, options);
+            if (message.led != null && message.hasOwnProperty("led"))
+                object.led = $root.yahboom_dogzilla_lite.LedCommand.toObject(message.led, options);
+            if (message.action != null && message.hasOwnProperty("action"))
+                object.action = $root.yahboom_dogzilla_lite.ActionCommand.toObject(message.action, options);
+            if (message.movement != null && message.hasOwnProperty("movement"))
+                object.movement = $root.yahboom_dogzilla_lite.MovementCommand.toObject(message.movement, options);
+            return object;
+        };
+
+        /**
+         * Converts this Command to JSON.
+         * @function toJSON
+         * @memberof yahboom_dogzilla_lite.Command
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        Command.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for Command
+         * @function getTypeUrl
+         * @memberof yahboom_dogzilla_lite.Command
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        Command.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+            if (typeUrlPrefix === undefined) {
+                typeUrlPrefix = "type.googleapis.com";
+            }
+            return typeUrlPrefix + "/yahboom_dogzilla_lite.Command";
+        };
+
+        return Command;
+    })();
+
+    yahboom_dogzilla_lite.TxEnvelope = (function() {
+
+        /**
+         * Properties of a TxEnvelope.
+         * @memberof yahboom_dogzilla_lite
+         * @interface ITxEnvelope
+         * @property {Long|null} [monotonicStampNs] TxEnvelope monotonicStampNs
+         * @property {Long|null} [localStampNs] TxEnvelope localStampNs
+         * @property {Long|null} [appStartId] TxEnvelope appStartId
+         * @property {Uint8Array|null} [commandId] TxEnvelope commandId
+         * @property {string|null} [targetDeviceSerial] TxEnvelope targetDeviceSerial
+         * @property {yahboom_dogzilla_lite.ICommand|null} [command] TxEnvelope command
+         */
+
+        /**
+         * Constructs a new TxEnvelope.
+         * @memberof yahboom_dogzilla_lite
+         * @classdesc Represents a TxEnvelope.
+         * @implements ITxEnvelope
+         * @constructor
+         * @param {yahboom_dogzilla_lite.ITxEnvelope=} [properties] Properties to set
+         */
+        function TxEnvelope(properties) {
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * TxEnvelope monotonicStampNs.
+         * @member {Long} monotonicStampNs
+         * @memberof yahboom_dogzilla_lite.TxEnvelope
+         * @instance
+         */
+        TxEnvelope.prototype.monotonicStampNs = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+
+        /**
+         * TxEnvelope localStampNs.
+         * @member {Long} localStampNs
+         * @memberof yahboom_dogzilla_lite.TxEnvelope
+         * @instance
+         */
+        TxEnvelope.prototype.localStampNs = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+
+        /**
+         * TxEnvelope appStartId.
+         * @member {Long} appStartId
+         * @memberof yahboom_dogzilla_lite.TxEnvelope
+         * @instance
+         */
+        TxEnvelope.prototype.appStartId = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+
+        /**
+         * TxEnvelope commandId.
+         * @member {Uint8Array} commandId
+         * @memberof yahboom_dogzilla_lite.TxEnvelope
+         * @instance
+         */
+        TxEnvelope.prototype.commandId = $util.newBuffer([]);
+
+        /**
+         * TxEnvelope targetDeviceSerial.
+         * @member {string} targetDeviceSerial
+         * @memberof yahboom_dogzilla_lite.TxEnvelope
+         * @instance
+         */
+        TxEnvelope.prototype.targetDeviceSerial = "";
+
+        /**
+         * TxEnvelope command.
+         * @member {yahboom_dogzilla_lite.ICommand|null|undefined} command
+         * @memberof yahboom_dogzilla_lite.TxEnvelope
+         * @instance
+         */
+        TxEnvelope.prototype.command = null;
+
+        /**
+         * Creates a new TxEnvelope instance using the specified properties.
+         * @function create
+         * @memberof yahboom_dogzilla_lite.TxEnvelope
+         * @static
+         * @param {yahboom_dogzilla_lite.ITxEnvelope=} [properties] Properties to set
+         * @returns {yahboom_dogzilla_lite.TxEnvelope} TxEnvelope instance
+         */
+        TxEnvelope.create = function create(properties) {
+            return new TxEnvelope(properties);
+        };
+
+        /**
+         * Encodes the specified TxEnvelope message. Does not implicitly {@link yahboom_dogzilla_lite.TxEnvelope.verify|verify} messages.
+         * @function encode
+         * @memberof yahboom_dogzilla_lite.TxEnvelope
+         * @static
+         * @param {yahboom_dogzilla_lite.ITxEnvelope} message TxEnvelope message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        TxEnvelope.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.monotonicStampNs != null && Object.hasOwnProperty.call(message, "monotonicStampNs"))
+                writer.uint32(/* id 1, wireType 0 =*/8).uint64(message.monotonicStampNs);
+            if (message.localStampNs != null && Object.hasOwnProperty.call(message, "localStampNs"))
+                writer.uint32(/* id 2, wireType 0 =*/16).uint64(message.localStampNs);
+            if (message.appStartId != null && Object.hasOwnProperty.call(message, "appStartId"))
+                writer.uint32(/* id 3, wireType 0 =*/24).uint64(message.appStartId);
+            if (message.commandId != null && Object.hasOwnProperty.call(message, "commandId"))
+                writer.uint32(/* id 4, wireType 2 =*/34).bytes(message.commandId);
+            if (message.targetDeviceSerial != null && Object.hasOwnProperty.call(message, "targetDeviceSerial"))
+                writer.uint32(/* id 5, wireType 2 =*/42).string(message.targetDeviceSerial);
+            if (message.command != null && Object.hasOwnProperty.call(message, "command"))
+                $root.yahboom_dogzilla_lite.Command.encode(message.command, writer.uint32(/* id 10, wireType 2 =*/82).fork()).ldelim();
+            return writer;
+        };
+
+        /**
+         * Encodes the specified TxEnvelope message, length delimited. Does not implicitly {@link yahboom_dogzilla_lite.TxEnvelope.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof yahboom_dogzilla_lite.TxEnvelope
+         * @static
+         * @param {yahboom_dogzilla_lite.ITxEnvelope} message TxEnvelope message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        TxEnvelope.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes a TxEnvelope message from the specified reader or buffer.
+         * @function decode
+         * @memberof yahboom_dogzilla_lite.TxEnvelope
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {yahboom_dogzilla_lite.TxEnvelope} TxEnvelope
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        TxEnvelope.decode = function decode(reader, length, error, long) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.yahboom_dogzilla_lite.TxEnvelope();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                if (tag === error)
+                    break;
+                switch (tag >>> 3) {
+                case 1: {
+                        message.monotonicStampNs = reader.uint64();
+                        break;
+                    }
+                case 2: {
+                        message.localStampNs = reader.uint64();
+                        break;
+                    }
+                case 3: {
+                        message.appStartId = reader.uint64();
+                        break;
+                    }
+                case 4: {
+                        message.commandId = reader.bytes();
+                        break;
+                    }
+                case 5: {
+                        message.targetDeviceSerial = reader.string();
+                        break;
+                    }
+                case 10: {
+                        message.command = $root.yahboom_dogzilla_lite.Command.decode(reader, reader.uint32(), undefined, long + 1);
+                        break;
+                    }
+                default:
+                    reader.skipType(tag & 7, long);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes a TxEnvelope message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof yahboom_dogzilla_lite.TxEnvelope
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {yahboom_dogzilla_lite.TxEnvelope} TxEnvelope
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        TxEnvelope.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies a TxEnvelope message.
+         * @function verify
+         * @memberof yahboom_dogzilla_lite.TxEnvelope
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        TxEnvelope.verify = function verify(message, long) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
+            if (message.monotonicStampNs != null && message.hasOwnProperty("monotonicStampNs"))
+                if (!$util.isInteger(message.monotonicStampNs) && !(message.monotonicStampNs && $util.isInteger(message.monotonicStampNs.low) && $util.isInteger(message.monotonicStampNs.high)))
+                    return "monotonicStampNs: integer|Long expected";
+            if (message.localStampNs != null && message.hasOwnProperty("localStampNs"))
+                if (!$util.isInteger(message.localStampNs) && !(message.localStampNs && $util.isInteger(message.localStampNs.low) && $util.isInteger(message.localStampNs.high)))
+                    return "localStampNs: integer|Long expected";
+            if (message.appStartId != null && message.hasOwnProperty("appStartId"))
+                if (!$util.isInteger(message.appStartId) && !(message.appStartId && $util.isInteger(message.appStartId.low) && $util.isInteger(message.appStartId.high)))
+                    return "appStartId: integer|Long expected";
+            if (message.commandId != null && message.hasOwnProperty("commandId"))
+                if (!(message.commandId && typeof message.commandId.length === "number" || $util.isString(message.commandId)))
+                    return "commandId: buffer expected";
+            if (message.targetDeviceSerial != null && message.hasOwnProperty("targetDeviceSerial"))
+                if (!$util.isString(message.targetDeviceSerial))
+                    return "targetDeviceSerial: string expected";
+            if (message.command != null && message.hasOwnProperty("command")) {
+                let error = $root.yahboom_dogzilla_lite.Command.verify(message.command, long + 1);
+                if (error)
+                    return "command." + error;
+            }
+            return null;
+        };
+
+        /**
+         * Creates a TxEnvelope message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof yahboom_dogzilla_lite.TxEnvelope
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {yahboom_dogzilla_lite.TxEnvelope} TxEnvelope
+         */
+        TxEnvelope.fromObject = function fromObject(object, long) {
+            if (object instanceof $root.yahboom_dogzilla_lite.TxEnvelope)
+                return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let message = new $root.yahboom_dogzilla_lite.TxEnvelope();
+            if (object.monotonicStampNs != null)
+                if ($util.Long)
+                    (message.monotonicStampNs = $util.Long.fromValue(object.monotonicStampNs)).unsigned = true;
+                else if (typeof object.monotonicStampNs === "string")
+                    message.monotonicStampNs = parseInt(object.monotonicStampNs, 10);
+                else if (typeof object.monotonicStampNs === "number")
+                    message.monotonicStampNs = object.monotonicStampNs;
+                else if (typeof object.monotonicStampNs === "object")
+                    message.monotonicStampNs = new $util.LongBits(object.monotonicStampNs.low >>> 0, object.monotonicStampNs.high >>> 0).toNumber(true);
+            if (object.localStampNs != null)
+                if ($util.Long)
+                    (message.localStampNs = $util.Long.fromValue(object.localStampNs)).unsigned = true;
+                else if (typeof object.localStampNs === "string")
+                    message.localStampNs = parseInt(object.localStampNs, 10);
+                else if (typeof object.localStampNs === "number")
+                    message.localStampNs = object.localStampNs;
+                else if (typeof object.localStampNs === "object")
+                    message.localStampNs = new $util.LongBits(object.localStampNs.low >>> 0, object.localStampNs.high >>> 0).toNumber(true);
+            if (object.appStartId != null)
+                if ($util.Long)
+                    (message.appStartId = $util.Long.fromValue(object.appStartId)).unsigned = true;
+                else if (typeof object.appStartId === "string")
+                    message.appStartId = parseInt(object.appStartId, 10);
+                else if (typeof object.appStartId === "number")
+                    message.appStartId = object.appStartId;
+                else if (typeof object.appStartId === "object")
+                    message.appStartId = new $util.LongBits(object.appStartId.low >>> 0, object.appStartId.high >>> 0).toNumber(true);
+            if (object.commandId != null)
+                if (typeof object.commandId === "string")
+                    $util.base64.decode(object.commandId, message.commandId = $util.newBuffer($util.base64.length(object.commandId)), 0);
+                else if (object.commandId.length >= 0)
+                    message.commandId = object.commandId;
+            if (object.targetDeviceSerial != null)
+                message.targetDeviceSerial = String(object.targetDeviceSerial);
+            if (object.command != null) {
+                if (typeof object.command !== "object")
+                    throw TypeError(".yahboom_dogzilla_lite.TxEnvelope.command: object expected");
+                message.command = $root.yahboom_dogzilla_lite.Command.fromObject(object.command, long + 1);
+            }
+            return message;
+        };
+
+        /**
+         * Creates a plain object from a TxEnvelope message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof yahboom_dogzilla_lite.TxEnvelope
+         * @static
+         * @param {yahboom_dogzilla_lite.TxEnvelope} message TxEnvelope
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        TxEnvelope.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.defaults) {
+                if ($util.Long) {
+                    let long = new $util.Long(0, 0, true);
+                    object.monotonicStampNs = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+                } else
+                    object.monotonicStampNs = options.longs === String ? "0" : 0;
+                if ($util.Long) {
+                    let long = new $util.Long(0, 0, true);
+                    object.localStampNs = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+                } else
+                    object.localStampNs = options.longs === String ? "0" : 0;
+                if ($util.Long) {
+                    let long = new $util.Long(0, 0, true);
+                    object.appStartId = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+                } else
+                    object.appStartId = options.longs === String ? "0" : 0;
+                if (options.bytes === String)
+                    object.commandId = "";
+                else {
+                    object.commandId = [];
+                    if (options.bytes !== Array)
+                        object.commandId = $util.newBuffer(object.commandId);
+                }
+                object.targetDeviceSerial = "";
+                object.command = null;
+            }
+            if (message.monotonicStampNs != null && message.hasOwnProperty("monotonicStampNs"))
+                if (typeof message.monotonicStampNs === "number")
+                    object.monotonicStampNs = options.longs === String ? String(message.monotonicStampNs) : message.monotonicStampNs;
+                else
+                    object.monotonicStampNs = options.longs === String ? $util.Long.prototype.toString.call(message.monotonicStampNs) : options.longs === Number ? new $util.LongBits(message.monotonicStampNs.low >>> 0, message.monotonicStampNs.high >>> 0).toNumber(true) : message.monotonicStampNs;
+            if (message.localStampNs != null && message.hasOwnProperty("localStampNs"))
+                if (typeof message.localStampNs === "number")
+                    object.localStampNs = options.longs === String ? String(message.localStampNs) : message.localStampNs;
+                else
+                    object.localStampNs = options.longs === String ? $util.Long.prototype.toString.call(message.localStampNs) : options.longs === Number ? new $util.LongBits(message.localStampNs.low >>> 0, message.localStampNs.high >>> 0).toNumber(true) : message.localStampNs;
+            if (message.appStartId != null && message.hasOwnProperty("appStartId"))
+                if (typeof message.appStartId === "number")
+                    object.appStartId = options.longs === String ? String(message.appStartId) : message.appStartId;
+                else
+                    object.appStartId = options.longs === String ? $util.Long.prototype.toString.call(message.appStartId) : options.longs === Number ? new $util.LongBits(message.appStartId.low >>> 0, message.appStartId.high >>> 0).toNumber(true) : message.appStartId;
+            if (message.commandId != null && message.hasOwnProperty("commandId"))
+                object.commandId = options.bytes === String ? $util.base64.encode(message.commandId, 0, message.commandId.length) : options.bytes === Array ? Array.prototype.slice.call(message.commandId) : message.commandId;
+            if (message.targetDeviceSerial != null && message.hasOwnProperty("targetDeviceSerial"))
+                object.targetDeviceSerial = message.targetDeviceSerial;
+            if (message.command != null && message.hasOwnProperty("command"))
+                object.command = $root.yahboom_dogzilla_lite.Command.toObject(message.command, options);
+            return object;
+        };
+
+        /**
+         * Converts this TxEnvelope to JSON.
+         * @function toJSON
+         * @memberof yahboom_dogzilla_lite.TxEnvelope
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        TxEnvelope.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for TxEnvelope
+         * @function getTypeUrl
+         * @memberof yahboom_dogzilla_lite.TxEnvelope
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        TxEnvelope.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+            if (typeUrlPrefix === undefined) {
+                typeUrlPrefix = "type.googleapis.com";
+            }
+            return typeUrlPrefix + "/yahboom_dogzilla_lite.TxEnvelope";
+        };
+
+        return TxEnvelope;
+    })();
+
+    yahboom_dogzilla_lite.RxEnvelope = (function() {
+
+        /**
+         * Properties of a RxEnvelope.
+         * @memberof yahboom_dogzilla_lite
+         * @interface IRxEnvelope
+         * @property {Long|null} [monotonicStampNs] RxEnvelope monotonicStampNs
+         * @property {Long|null} [localStampNs] RxEnvelope localStampNs
+         * @property {Long|null} [appStartId] RxEnvelope appStartId
+         * @property {yahboom_dogzilla_lite.YahboomDogzillaLiteSignalType|null} [signalType] RxEnvelope signalType
+         * @property {yahboom_dogzilla_lite.IYahboomDogzillaLiteDevice|null} [device] RxEnvelope device
+         * @property {yahboom_dogzilla_lite.IYahboomDogzillaLiteStatus|null} [status] RxEnvelope status
+         * @property {Uint8Array|null} [data] RxEnvelope data
+         * @property {yahboom_dogzilla_lite.ITxEnvelope|null} [command] RxEnvelope command
+         * @property {string|null} [errorMessage] RxEnvelope errorMessage
+         */
+
+        /**
+         * Constructs a new RxEnvelope.
+         * @memberof yahboom_dogzilla_lite
+         * @classdesc Represents a RxEnvelope.
+         * @implements IRxEnvelope
+         * @constructor
+         * @param {yahboom_dogzilla_lite.IRxEnvelope=} [properties] Properties to set
+         */
+        function RxEnvelope(properties) {
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * RxEnvelope monotonicStampNs.
+         * @member {Long} monotonicStampNs
+         * @memberof yahboom_dogzilla_lite.RxEnvelope
+         * @instance
+         */
+        RxEnvelope.prototype.monotonicStampNs = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+
+        /**
+         * RxEnvelope localStampNs.
+         * @member {Long} localStampNs
+         * @memberof yahboom_dogzilla_lite.RxEnvelope
+         * @instance
+         */
+        RxEnvelope.prototype.localStampNs = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+
+        /**
+         * RxEnvelope appStartId.
+         * @member {Long} appStartId
+         * @memberof yahboom_dogzilla_lite.RxEnvelope
+         * @instance
+         */
+        RxEnvelope.prototype.appStartId = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+
+        /**
+         * RxEnvelope signalType.
+         * @member {yahboom_dogzilla_lite.YahboomDogzillaLiteSignalType} signalType
+         * @memberof yahboom_dogzilla_lite.RxEnvelope
+         * @instance
+         */
+        RxEnvelope.prototype.signalType = 0;
+
+        /**
+         * RxEnvelope device.
+         * @member {yahboom_dogzilla_lite.IYahboomDogzillaLiteDevice|null|undefined} device
+         * @memberof yahboom_dogzilla_lite.RxEnvelope
+         * @instance
+         */
+        RxEnvelope.prototype.device = null;
+
+        /**
+         * RxEnvelope status.
+         * @member {yahboom_dogzilla_lite.IYahboomDogzillaLiteStatus|null|undefined} status
+         * @memberof yahboom_dogzilla_lite.RxEnvelope
+         * @instance
+         */
+        RxEnvelope.prototype.status = null;
+
+        /**
+         * RxEnvelope data.
+         * @member {Uint8Array} data
+         * @memberof yahboom_dogzilla_lite.RxEnvelope
+         * @instance
+         */
+        RxEnvelope.prototype.data = $util.newBuffer([]);
+
+        /**
+         * RxEnvelope command.
+         * @member {yahboom_dogzilla_lite.ITxEnvelope|null|undefined} command
+         * @memberof yahboom_dogzilla_lite.RxEnvelope
+         * @instance
+         */
+        RxEnvelope.prototype.command = null;
+
+        /**
+         * RxEnvelope errorMessage.
+         * @member {string} errorMessage
+         * @memberof yahboom_dogzilla_lite.RxEnvelope
+         * @instance
+         */
+        RxEnvelope.prototype.errorMessage = "";
+
+        /**
+         * Creates a new RxEnvelope instance using the specified properties.
+         * @function create
+         * @memberof yahboom_dogzilla_lite.RxEnvelope
+         * @static
+         * @param {yahboom_dogzilla_lite.IRxEnvelope=} [properties] Properties to set
+         * @returns {yahboom_dogzilla_lite.RxEnvelope} RxEnvelope instance
+         */
+        RxEnvelope.create = function create(properties) {
+            return new RxEnvelope(properties);
+        };
+
+        /**
+         * Encodes the specified RxEnvelope message. Does not implicitly {@link yahboom_dogzilla_lite.RxEnvelope.verify|verify} messages.
+         * @function encode
+         * @memberof yahboom_dogzilla_lite.RxEnvelope
+         * @static
+         * @param {yahboom_dogzilla_lite.IRxEnvelope} message RxEnvelope message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        RxEnvelope.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.monotonicStampNs != null && Object.hasOwnProperty.call(message, "monotonicStampNs"))
+                writer.uint32(/* id 1, wireType 0 =*/8).uint64(message.monotonicStampNs);
+            if (message.localStampNs != null && Object.hasOwnProperty.call(message, "localStampNs"))
+                writer.uint32(/* id 2, wireType 0 =*/16).uint64(message.localStampNs);
+            if (message.appStartId != null && Object.hasOwnProperty.call(message, "appStartId"))
+                writer.uint32(/* id 3, wireType 0 =*/24).uint64(message.appStartId);
+            if (message.signalType != null && Object.hasOwnProperty.call(message, "signalType"))
+                writer.uint32(/* id 10, wireType 0 =*/80).int32(message.signalType);
+            if (message.device != null && Object.hasOwnProperty.call(message, "device"))
+                $root.yahboom_dogzilla_lite.YahboomDogzillaLiteDevice.encode(message.device, writer.uint32(/* id 11, wireType 2 =*/90).fork()).ldelim();
+            if (message.status != null && Object.hasOwnProperty.call(message, "status"))
+                $root.yahboom_dogzilla_lite.YahboomDogzillaLiteStatus.encode(message.status, writer.uint32(/* id 12, wireType 2 =*/98).fork()).ldelim();
+            if (message.data != null && Object.hasOwnProperty.call(message, "data"))
+                writer.uint32(/* id 20, wireType 2 =*/162).bytes(message.data);
+            if (message.command != null && Object.hasOwnProperty.call(message, "command"))
+                $root.yahboom_dogzilla_lite.TxEnvelope.encode(message.command, writer.uint32(/* id 30, wireType 2 =*/242).fork()).ldelim();
+            if (message.errorMessage != null && Object.hasOwnProperty.call(message, "errorMessage"))
+                writer.uint32(/* id 50, wireType 2 =*/402).string(message.errorMessage);
+            return writer;
+        };
+
+        /**
+         * Encodes the specified RxEnvelope message, length delimited. Does not implicitly {@link yahboom_dogzilla_lite.RxEnvelope.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof yahboom_dogzilla_lite.RxEnvelope
+         * @static
+         * @param {yahboom_dogzilla_lite.IRxEnvelope} message RxEnvelope message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        RxEnvelope.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes a RxEnvelope message from the specified reader or buffer.
+         * @function decode
+         * @memberof yahboom_dogzilla_lite.RxEnvelope
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {yahboom_dogzilla_lite.RxEnvelope} RxEnvelope
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        RxEnvelope.decode = function decode(reader, length, error, long) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.yahboom_dogzilla_lite.RxEnvelope();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                if (tag === error)
+                    break;
+                switch (tag >>> 3) {
+                case 1: {
+                        message.monotonicStampNs = reader.uint64();
+                        break;
+                    }
+                case 2: {
+                        message.localStampNs = reader.uint64();
+                        break;
+                    }
+                case 3: {
+                        message.appStartId = reader.uint64();
+                        break;
+                    }
+                case 10: {
+                        message.signalType = reader.int32();
+                        break;
+                    }
+                case 11: {
+                        message.device = $root.yahboom_dogzilla_lite.YahboomDogzillaLiteDevice.decode(reader, reader.uint32(), undefined, long + 1);
+                        break;
+                    }
+                case 12: {
+                        message.status = $root.yahboom_dogzilla_lite.YahboomDogzillaLiteStatus.decode(reader, reader.uint32(), undefined, long + 1);
+                        break;
+                    }
+                case 20: {
+                        message.data = reader.bytes();
+                        break;
+                    }
+                case 30: {
+                        message.command = $root.yahboom_dogzilla_lite.TxEnvelope.decode(reader, reader.uint32(), undefined, long + 1);
+                        break;
+                    }
+                case 50: {
+                        message.errorMessage = reader.string();
+                        break;
+                    }
+                default:
+                    reader.skipType(tag & 7, long);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes a RxEnvelope message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof yahboom_dogzilla_lite.RxEnvelope
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {yahboom_dogzilla_lite.RxEnvelope} RxEnvelope
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        RxEnvelope.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies a RxEnvelope message.
+         * @function verify
+         * @memberof yahboom_dogzilla_lite.RxEnvelope
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        RxEnvelope.verify = function verify(message, long) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
+            if (message.monotonicStampNs != null && message.hasOwnProperty("monotonicStampNs"))
+                if (!$util.isInteger(message.monotonicStampNs) && !(message.monotonicStampNs && $util.isInteger(message.monotonicStampNs.low) && $util.isInteger(message.monotonicStampNs.high)))
+                    return "monotonicStampNs: integer|Long expected";
+            if (message.localStampNs != null && message.hasOwnProperty("localStampNs"))
+                if (!$util.isInteger(message.localStampNs) && !(message.localStampNs && $util.isInteger(message.localStampNs.low) && $util.isInteger(message.localStampNs.high)))
+                    return "localStampNs: integer|Long expected";
+            if (message.appStartId != null && message.hasOwnProperty("appStartId"))
+                if (!$util.isInteger(message.appStartId) && !(message.appStartId && $util.isInteger(message.appStartId.low) && $util.isInteger(message.appStartId.high)))
+                    return "appStartId: integer|Long expected";
+            if (message.signalType != null && message.hasOwnProperty("signalType"))
+                switch (message.signalType) {
+                default:
+                    return "signalType: enum value expected";
+                case 0:
+                case 1:
+                case 2:
+                case 3:
+                case 4:
+                case 5:
+                case 6:
+                case 7:
+                    break;
+                }
+            if (message.device != null && message.hasOwnProperty("device")) {
+                let error = $root.yahboom_dogzilla_lite.YahboomDogzillaLiteDevice.verify(message.device, long + 1);
+                if (error)
+                    return "device." + error;
+            }
+            if (message.status != null && message.hasOwnProperty("status")) {
+                let error = $root.yahboom_dogzilla_lite.YahboomDogzillaLiteStatus.verify(message.status, long + 1);
+                if (error)
+                    return "status." + error;
+            }
+            if (message.data != null && message.hasOwnProperty("data"))
+                if (!(message.data && typeof message.data.length === "number" || $util.isString(message.data)))
+                    return "data: buffer expected";
+            if (message.command != null && message.hasOwnProperty("command")) {
+                let error = $root.yahboom_dogzilla_lite.TxEnvelope.verify(message.command, long + 1);
+                if (error)
+                    return "command." + error;
+            }
+            if (message.errorMessage != null && message.hasOwnProperty("errorMessage"))
+                if (!$util.isString(message.errorMessage))
+                    return "errorMessage: string expected";
+            return null;
+        };
+
+        /**
+         * Creates a RxEnvelope message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof yahboom_dogzilla_lite.RxEnvelope
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {yahboom_dogzilla_lite.RxEnvelope} RxEnvelope
+         */
+        RxEnvelope.fromObject = function fromObject(object, long) {
+            if (object instanceof $root.yahboom_dogzilla_lite.RxEnvelope)
+                return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let message = new $root.yahboom_dogzilla_lite.RxEnvelope();
+            if (object.monotonicStampNs != null)
+                if ($util.Long)
+                    (message.monotonicStampNs = $util.Long.fromValue(object.monotonicStampNs)).unsigned = true;
+                else if (typeof object.monotonicStampNs === "string")
+                    message.monotonicStampNs = parseInt(object.monotonicStampNs, 10);
+                else if (typeof object.monotonicStampNs === "number")
+                    message.monotonicStampNs = object.monotonicStampNs;
+                else if (typeof object.monotonicStampNs === "object")
+                    message.monotonicStampNs = new $util.LongBits(object.monotonicStampNs.low >>> 0, object.monotonicStampNs.high >>> 0).toNumber(true);
+            if (object.localStampNs != null)
+                if ($util.Long)
+                    (message.localStampNs = $util.Long.fromValue(object.localStampNs)).unsigned = true;
+                else if (typeof object.localStampNs === "string")
+                    message.localStampNs = parseInt(object.localStampNs, 10);
+                else if (typeof object.localStampNs === "number")
+                    message.localStampNs = object.localStampNs;
+                else if (typeof object.localStampNs === "object")
+                    message.localStampNs = new $util.LongBits(object.localStampNs.low >>> 0, object.localStampNs.high >>> 0).toNumber(true);
+            if (object.appStartId != null)
+                if ($util.Long)
+                    (message.appStartId = $util.Long.fromValue(object.appStartId)).unsigned = true;
+                else if (typeof object.appStartId === "string")
+                    message.appStartId = parseInt(object.appStartId, 10);
+                else if (typeof object.appStartId === "number")
+                    message.appStartId = object.appStartId;
+                else if (typeof object.appStartId === "object")
+                    message.appStartId = new $util.LongBits(object.appStartId.low >>> 0, object.appStartId.high >>> 0).toNumber(true);
+            switch (object.signalType) {
+            default:
+                if (typeof object.signalType === "number") {
+                    message.signalType = object.signalType;
+                    break;
+                }
+                break;
+            case "YAHBOOM_DOGZILLA_LITE_SIGNAL_TYPE_UNSPECIFIED":
+            case 0:
+                message.signalType = 0;
+                break;
+            case "YAHBOOM_DOGZILLA_LITE_CONNECTED":
+            case 1:
+                message.signalType = 1;
+                break;
+            case "YAHBOOM_DOGZILLA_LITE_DISCONNECTED":
+            case 2:
+                message.signalType = 2;
+                break;
+            case "YAHBOOM_DOGZILLA_LITE_STATUS_UPDATE":
+            case 3:
+                message.signalType = 3;
+                break;
+            case "YAHBOOM_DOGZILLA_LITE_COMMAND":
+            case 4:
+                message.signalType = 4;
+                break;
+            case "YAHBOOM_DOGZILLA_LITE_COMMAND_SUCCESS":
+            case 5:
+                message.signalType = 5;
+                break;
+            case "YAHBOOM_DOGZILLA_LITE_COMMAND_FAILED":
+            case 6:
+                message.signalType = 6;
+                break;
+            case "YAHBOOM_DOGZILLA_LITE_ERROR":
+            case 7:
+                message.signalType = 7;
+                break;
+            }
+            if (object.device != null) {
+                if (typeof object.device !== "object")
+                    throw TypeError(".yahboom_dogzilla_lite.RxEnvelope.device: object expected");
+                message.device = $root.yahboom_dogzilla_lite.YahboomDogzillaLiteDevice.fromObject(object.device, long + 1);
+            }
+            if (object.status != null) {
+                if (typeof object.status !== "object")
+                    throw TypeError(".yahboom_dogzilla_lite.RxEnvelope.status: object expected");
+                message.status = $root.yahboom_dogzilla_lite.YahboomDogzillaLiteStatus.fromObject(object.status, long + 1);
+            }
+            if (object.data != null)
+                if (typeof object.data === "string")
+                    $util.base64.decode(object.data, message.data = $util.newBuffer($util.base64.length(object.data)), 0);
+                else if (object.data.length >= 0)
+                    message.data = object.data;
+            if (object.command != null) {
+                if (typeof object.command !== "object")
+                    throw TypeError(".yahboom_dogzilla_lite.RxEnvelope.command: object expected");
+                message.command = $root.yahboom_dogzilla_lite.TxEnvelope.fromObject(object.command, long + 1);
+            }
+            if (object.errorMessage != null)
+                message.errorMessage = String(object.errorMessage);
+            return message;
+        };
+
+        /**
+         * Creates a plain object from a RxEnvelope message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof yahboom_dogzilla_lite.RxEnvelope
+         * @static
+         * @param {yahboom_dogzilla_lite.RxEnvelope} message RxEnvelope
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        RxEnvelope.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.defaults) {
+                if ($util.Long) {
+                    let long = new $util.Long(0, 0, true);
+                    object.monotonicStampNs = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+                } else
+                    object.monotonicStampNs = options.longs === String ? "0" : 0;
+                if ($util.Long) {
+                    let long = new $util.Long(0, 0, true);
+                    object.localStampNs = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+                } else
+                    object.localStampNs = options.longs === String ? "0" : 0;
+                if ($util.Long) {
+                    let long = new $util.Long(0, 0, true);
+                    object.appStartId = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+                } else
+                    object.appStartId = options.longs === String ? "0" : 0;
+                object.signalType = options.enums === String ? "YAHBOOM_DOGZILLA_LITE_SIGNAL_TYPE_UNSPECIFIED" : 0;
+                object.device = null;
+                object.status = null;
+                if (options.bytes === String)
+                    object.data = "";
+                else {
+                    object.data = [];
+                    if (options.bytes !== Array)
+                        object.data = $util.newBuffer(object.data);
+                }
+                object.command = null;
+                object.errorMessage = "";
+            }
+            if (message.monotonicStampNs != null && message.hasOwnProperty("monotonicStampNs"))
+                if (typeof message.monotonicStampNs === "number")
+                    object.monotonicStampNs = options.longs === String ? String(message.monotonicStampNs) : message.monotonicStampNs;
+                else
+                    object.monotonicStampNs = options.longs === String ? $util.Long.prototype.toString.call(message.monotonicStampNs) : options.longs === Number ? new $util.LongBits(message.monotonicStampNs.low >>> 0, message.monotonicStampNs.high >>> 0).toNumber(true) : message.monotonicStampNs;
+            if (message.localStampNs != null && message.hasOwnProperty("localStampNs"))
+                if (typeof message.localStampNs === "number")
+                    object.localStampNs = options.longs === String ? String(message.localStampNs) : message.localStampNs;
+                else
+                    object.localStampNs = options.longs === String ? $util.Long.prototype.toString.call(message.localStampNs) : options.longs === Number ? new $util.LongBits(message.localStampNs.low >>> 0, message.localStampNs.high >>> 0).toNumber(true) : message.localStampNs;
+            if (message.appStartId != null && message.hasOwnProperty("appStartId"))
+                if (typeof message.appStartId === "number")
+                    object.appStartId = options.longs === String ? String(message.appStartId) : message.appStartId;
+                else
+                    object.appStartId = options.longs === String ? $util.Long.prototype.toString.call(message.appStartId) : options.longs === Number ? new $util.LongBits(message.appStartId.low >>> 0, message.appStartId.high >>> 0).toNumber(true) : message.appStartId;
+            if (message.signalType != null && message.hasOwnProperty("signalType"))
+                object.signalType = options.enums === String ? $root.yahboom_dogzilla_lite.YahboomDogzillaLiteSignalType[message.signalType] === undefined ? message.signalType : $root.yahboom_dogzilla_lite.YahboomDogzillaLiteSignalType[message.signalType] : message.signalType;
+            if (message.device != null && message.hasOwnProperty("device"))
+                object.device = $root.yahboom_dogzilla_lite.YahboomDogzillaLiteDevice.toObject(message.device, options);
+            if (message.status != null && message.hasOwnProperty("status"))
+                object.status = $root.yahboom_dogzilla_lite.YahboomDogzillaLiteStatus.toObject(message.status, options);
+            if (message.data != null && message.hasOwnProperty("data"))
+                object.data = options.bytes === String ? $util.base64.encode(message.data, 0, message.data.length) : options.bytes === Array ? Array.prototype.slice.call(message.data) : message.data;
+            if (message.command != null && message.hasOwnProperty("command"))
+                object.command = $root.yahboom_dogzilla_lite.TxEnvelope.toObject(message.command, options);
+            if (message.errorMessage != null && message.hasOwnProperty("errorMessage"))
+                object.errorMessage = message.errorMessage;
+            return object;
+        };
+
+        /**
+         * Converts this RxEnvelope to JSON.
+         * @function toJSON
+         * @memberof yahboom_dogzilla_lite.RxEnvelope
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        RxEnvelope.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for RxEnvelope
+         * @function getTypeUrl
+         * @memberof yahboom_dogzilla_lite.RxEnvelope
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        RxEnvelope.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+            if (typeUrlPrefix === undefined) {
+                typeUrlPrefix = "type.googleapis.com";
+            }
+            return typeUrlPrefix + "/yahboom_dogzilla_lite.RxEnvelope";
+        };
+
+        return RxEnvelope;
+    })();
+
+    yahboom_dogzilla_lite.InferenceState = (function() {
+
+        /**
+         * Properties of an InferenceState.
+         * @memberof yahboom_dogzilla_lite
+         * @interface IInferenceState
+         * @property {Uint8Array|null} [lastInferenceQueuePtr] InferenceState lastInferenceQueuePtr
+         * @property {Array.<yahboom_dogzilla_lite.InferenceState.IDeviceState>|null} [devices] InferenceState devices
+         */
+
+        /**
+         * Constructs a new InferenceState.
+         * @memberof yahboom_dogzilla_lite
+         * @classdesc Represents an InferenceState.
+         * @implements IInferenceState
+         * @constructor
+         * @param {yahboom_dogzilla_lite.IInferenceState=} [properties] Properties to set
+         */
+        function InferenceState(properties) {
+            this.devices = [];
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * InferenceState lastInferenceQueuePtr.
+         * @member {Uint8Array} lastInferenceQueuePtr
+         * @memberof yahboom_dogzilla_lite.InferenceState
+         * @instance
+         */
+        InferenceState.prototype.lastInferenceQueuePtr = $util.newBuffer([]);
+
+        /**
+         * InferenceState devices.
+         * @member {Array.<yahboom_dogzilla_lite.InferenceState.IDeviceState>} devices
+         * @memberof yahboom_dogzilla_lite.InferenceState
+         * @instance
+         */
+        InferenceState.prototype.devices = $util.emptyArray;
+
+        /**
+         * Creates a new InferenceState instance using the specified properties.
+         * @function create
+         * @memberof yahboom_dogzilla_lite.InferenceState
+         * @static
+         * @param {yahboom_dogzilla_lite.IInferenceState=} [properties] Properties to set
+         * @returns {yahboom_dogzilla_lite.InferenceState} InferenceState instance
+         */
+        InferenceState.create = function create(properties) {
+            return new InferenceState(properties);
+        };
+
+        /**
+         * Encodes the specified InferenceState message. Does not implicitly {@link yahboom_dogzilla_lite.InferenceState.verify|verify} messages.
+         * @function encode
+         * @memberof yahboom_dogzilla_lite.InferenceState
+         * @static
+         * @param {yahboom_dogzilla_lite.IInferenceState} message InferenceState message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        InferenceState.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.lastInferenceQueuePtr != null && Object.hasOwnProperty.call(message, "lastInferenceQueuePtr"))
+                writer.uint32(/* id 1, wireType 2 =*/10).bytes(message.lastInferenceQueuePtr);
+            if (message.devices != null && message.devices.length)
+                for (let i = 0; i < message.devices.length; ++i)
+                    $root.yahboom_dogzilla_lite.InferenceState.DeviceState.encode(message.devices[i], writer.uint32(/* id 10, wireType 2 =*/82).fork()).ldelim();
+            return writer;
+        };
+
+        /**
+         * Encodes the specified InferenceState message, length delimited. Does not implicitly {@link yahboom_dogzilla_lite.InferenceState.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof yahboom_dogzilla_lite.InferenceState
+         * @static
+         * @param {yahboom_dogzilla_lite.IInferenceState} message InferenceState message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        InferenceState.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes an InferenceState message from the specified reader or buffer.
+         * @function decode
+         * @memberof yahboom_dogzilla_lite.InferenceState
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {yahboom_dogzilla_lite.InferenceState} InferenceState
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        InferenceState.decode = function decode(reader, length, error, long) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.yahboom_dogzilla_lite.InferenceState();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                if (tag === error)
+                    break;
+                switch (tag >>> 3) {
+                case 1: {
+                        message.lastInferenceQueuePtr = reader.bytes();
+                        break;
+                    }
+                case 10: {
+                        if (!(message.devices && message.devices.length))
+                            message.devices = [];
+                        message.devices.push($root.yahboom_dogzilla_lite.InferenceState.DeviceState.decode(reader, reader.uint32(), undefined, long + 1));
+                        break;
+                    }
+                default:
+                    reader.skipType(tag & 7, long);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes an InferenceState message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof yahboom_dogzilla_lite.InferenceState
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {yahboom_dogzilla_lite.InferenceState} InferenceState
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        InferenceState.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies an InferenceState message.
+         * @function verify
+         * @memberof yahboom_dogzilla_lite.InferenceState
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        InferenceState.verify = function verify(message, long) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
+            if (message.lastInferenceQueuePtr != null && message.hasOwnProperty("lastInferenceQueuePtr"))
+                if (!(message.lastInferenceQueuePtr && typeof message.lastInferenceQueuePtr.length === "number" || $util.isString(message.lastInferenceQueuePtr)))
+                    return "lastInferenceQueuePtr: buffer expected";
+            if (message.devices != null && message.hasOwnProperty("devices")) {
+                if (!Array.isArray(message.devices))
+                    return "devices: array expected";
+                for (let i = 0; i < message.devices.length; ++i) {
+                    let error = $root.yahboom_dogzilla_lite.InferenceState.DeviceState.verify(message.devices[i], long + 1);
+                    if (error)
+                        return "devices." + error;
+                }
+            }
+            return null;
+        };
+
+        /**
+         * Creates an InferenceState message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof yahboom_dogzilla_lite.InferenceState
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {yahboom_dogzilla_lite.InferenceState} InferenceState
+         */
+        InferenceState.fromObject = function fromObject(object, long) {
+            if (object instanceof $root.yahboom_dogzilla_lite.InferenceState)
+                return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let message = new $root.yahboom_dogzilla_lite.InferenceState();
+            if (object.lastInferenceQueuePtr != null)
+                if (typeof object.lastInferenceQueuePtr === "string")
+                    $util.base64.decode(object.lastInferenceQueuePtr, message.lastInferenceQueuePtr = $util.newBuffer($util.base64.length(object.lastInferenceQueuePtr)), 0);
+                else if (object.lastInferenceQueuePtr.length >= 0)
+                    message.lastInferenceQueuePtr = object.lastInferenceQueuePtr;
+            if (object.devices) {
+                if (!Array.isArray(object.devices))
+                    throw TypeError(".yahboom_dogzilla_lite.InferenceState.devices: array expected");
+                message.devices = [];
+                for (let i = 0; i < object.devices.length; ++i) {
+                    if (typeof object.devices[i] !== "object")
+                        throw TypeError(".yahboom_dogzilla_lite.InferenceState.devices: object expected");
+                    message.devices[i] = $root.yahboom_dogzilla_lite.InferenceState.DeviceState.fromObject(object.devices[i], long + 1);
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Creates a plain object from an InferenceState message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof yahboom_dogzilla_lite.InferenceState
+         * @static
+         * @param {yahboom_dogzilla_lite.InferenceState} message InferenceState
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        InferenceState.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.arrays || options.defaults)
+                object.devices = [];
+            if (options.defaults)
+                if (options.bytes === String)
+                    object.lastInferenceQueuePtr = "";
+                else {
+                    object.lastInferenceQueuePtr = [];
+                    if (options.bytes !== Array)
+                        object.lastInferenceQueuePtr = $util.newBuffer(object.lastInferenceQueuePtr);
+                }
+            if (message.lastInferenceQueuePtr != null && message.hasOwnProperty("lastInferenceQueuePtr"))
+                object.lastInferenceQueuePtr = options.bytes === String ? $util.base64.encode(message.lastInferenceQueuePtr, 0, message.lastInferenceQueuePtr.length) : options.bytes === Array ? Array.prototype.slice.call(message.lastInferenceQueuePtr) : message.lastInferenceQueuePtr;
+            if (message.devices && message.devices.length) {
+                object.devices = [];
+                for (let j = 0; j < message.devices.length; ++j)
+                    object.devices[j] = $root.yahboom_dogzilla_lite.InferenceState.DeviceState.toObject(message.devices[j], options);
+            }
+            return object;
+        };
+
+        /**
+         * Converts this InferenceState to JSON.
+         * @function toJSON
+         * @memberof yahboom_dogzilla_lite.InferenceState
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        InferenceState.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for InferenceState
+         * @function getTypeUrl
+         * @memberof yahboom_dogzilla_lite.InferenceState
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        InferenceState.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+            if (typeUrlPrefix === undefined) {
+                typeUrlPrefix = "type.googleapis.com";
+            }
+            return typeUrlPrefix + "/yahboom_dogzilla_lite.InferenceState";
+        };
+
+        InferenceState.DeviceState = (function() {
+
+            /**
+             * Properties of a DeviceState.
+             * @memberof yahboom_dogzilla_lite.InferenceState
+             * @interface IDeviceState
+             * @property {yahboom_dogzilla_lite.IYahboomDogzillaLiteDevice|null} [device] DeviceState device
+             * @property {yahboom_dogzilla_lite.IYahboomDogzillaLiteStatus|null} [status] DeviceState status
+             * @property {Long|null} [monotonicStampNs] DeviceState monotonicStampNs
+             * @property {Long|null} [systemStampNs] DeviceState systemStampNs
+             * @property {boolean|null} [isConnected] DeviceState isConnected
+             */
+
+            /**
+             * Constructs a new DeviceState.
+             * @memberof yahboom_dogzilla_lite.InferenceState
+             * @classdesc Represents a DeviceState.
+             * @implements IDeviceState
+             * @constructor
+             * @param {yahboom_dogzilla_lite.InferenceState.IDeviceState=} [properties] Properties to set
+             */
+            function DeviceState(properties) {
+                if (properties)
+                    for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                        if (properties[keys[i]] != null && keys[i] !== "__proto__")
+                            this[keys[i]] = properties[keys[i]];
+            }
+
+            /**
+             * DeviceState device.
+             * @member {yahboom_dogzilla_lite.IYahboomDogzillaLiteDevice|null|undefined} device
+             * @memberof yahboom_dogzilla_lite.InferenceState.DeviceState
+             * @instance
+             */
+            DeviceState.prototype.device = null;
+
+            /**
+             * DeviceState status.
+             * @member {yahboom_dogzilla_lite.IYahboomDogzillaLiteStatus|null|undefined} status
+             * @memberof yahboom_dogzilla_lite.InferenceState.DeviceState
+             * @instance
+             */
+            DeviceState.prototype.status = null;
+
+            /**
+             * DeviceState monotonicStampNs.
+             * @member {Long} monotonicStampNs
+             * @memberof yahboom_dogzilla_lite.InferenceState.DeviceState
+             * @instance
+             */
+            DeviceState.prototype.monotonicStampNs = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+
+            /**
+             * DeviceState systemStampNs.
+             * @member {Long} systemStampNs
+             * @memberof yahboom_dogzilla_lite.InferenceState.DeviceState
+             * @instance
+             */
+            DeviceState.prototype.systemStampNs = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+
+            /**
+             * DeviceState isConnected.
+             * @member {boolean} isConnected
+             * @memberof yahboom_dogzilla_lite.InferenceState.DeviceState
+             * @instance
+             */
+            DeviceState.prototype.isConnected = false;
+
+            /**
+             * Creates a new DeviceState instance using the specified properties.
+             * @function create
+             * @memberof yahboom_dogzilla_lite.InferenceState.DeviceState
+             * @static
+             * @param {yahboom_dogzilla_lite.InferenceState.IDeviceState=} [properties] Properties to set
+             * @returns {yahboom_dogzilla_lite.InferenceState.DeviceState} DeviceState instance
+             */
+            DeviceState.create = function create(properties) {
+                return new DeviceState(properties);
+            };
+
+            /**
+             * Encodes the specified DeviceState message. Does not implicitly {@link yahboom_dogzilla_lite.InferenceState.DeviceState.verify|verify} messages.
+             * @function encode
+             * @memberof yahboom_dogzilla_lite.InferenceState.DeviceState
+             * @static
+             * @param {yahboom_dogzilla_lite.InferenceState.IDeviceState} message DeviceState message or plain object to encode
+             * @param {$protobuf.Writer} [writer] Writer to encode to
+             * @returns {$protobuf.Writer} Writer
+             */
+            DeviceState.encode = function encode(message, writer) {
+                if (!writer)
+                    writer = $Writer.create();
+                if (message.device != null && Object.hasOwnProperty.call(message, "device"))
+                    $root.yahboom_dogzilla_lite.YahboomDogzillaLiteDevice.encode(message.device, writer.uint32(/* id 1, wireType 2 =*/10).fork()).ldelim();
+                if (message.status != null && Object.hasOwnProperty.call(message, "status"))
+                    $root.yahboom_dogzilla_lite.YahboomDogzillaLiteStatus.encode(message.status, writer.uint32(/* id 2, wireType 2 =*/18).fork()).ldelim();
+                if (message.monotonicStampNs != null && Object.hasOwnProperty.call(message, "monotonicStampNs"))
+                    writer.uint32(/* id 3, wireType 0 =*/24).uint64(message.monotonicStampNs);
+                if (message.systemStampNs != null && Object.hasOwnProperty.call(message, "systemStampNs"))
+                    writer.uint32(/* id 4, wireType 0 =*/32).uint64(message.systemStampNs);
+                if (message.isConnected != null && Object.hasOwnProperty.call(message, "isConnected"))
+                    writer.uint32(/* id 5, wireType 0 =*/40).bool(message.isConnected);
+                return writer;
+            };
+
+            /**
+             * Encodes the specified DeviceState message, length delimited. Does not implicitly {@link yahboom_dogzilla_lite.InferenceState.DeviceState.verify|verify} messages.
+             * @function encodeDelimited
+             * @memberof yahboom_dogzilla_lite.InferenceState.DeviceState
+             * @static
+             * @param {yahboom_dogzilla_lite.InferenceState.IDeviceState} message DeviceState message or plain object to encode
+             * @param {$protobuf.Writer} [writer] Writer to encode to
+             * @returns {$protobuf.Writer} Writer
+             */
+            DeviceState.encodeDelimited = function encodeDelimited(message, writer) {
+                return this.encode(message, writer).ldelim();
+            };
+
+            /**
+             * Decodes a DeviceState message from the specified reader or buffer.
+             * @function decode
+             * @memberof yahboom_dogzilla_lite.InferenceState.DeviceState
+             * @static
+             * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+             * @param {number} [length] Message length if known beforehand
+             * @returns {yahboom_dogzilla_lite.InferenceState.DeviceState} DeviceState
+             * @throws {Error} If the payload is not a reader or valid buffer
+             * @throws {$protobuf.util.ProtocolError} If required fields are missing
+             */
+            DeviceState.decode = function decode(reader, length, error, long) {
+                if (!(reader instanceof $Reader))
+                    reader = $Reader.create(reader);
+                if (long === undefined)
+                    long = 0;
+                if (long > $Reader.recursionLimit)
+                    throw Error("maximum nesting depth exceeded");
+                let end = length === undefined ? reader.len : reader.pos + length, message = new $root.yahboom_dogzilla_lite.InferenceState.DeviceState();
+                while (reader.pos < end) {
+                    let tag = reader.uint32();
+                    if (tag === error)
+                        break;
+                    switch (tag >>> 3) {
+                    case 1: {
+                            message.device = $root.yahboom_dogzilla_lite.YahboomDogzillaLiteDevice.decode(reader, reader.uint32(), undefined, long + 1);
+                            break;
+                        }
+                    case 2: {
+                            message.status = $root.yahboom_dogzilla_lite.YahboomDogzillaLiteStatus.decode(reader, reader.uint32(), undefined, long + 1);
+                            break;
+                        }
+                    case 3: {
+                            message.monotonicStampNs = reader.uint64();
+                            break;
+                        }
+                    case 4: {
+                            message.systemStampNs = reader.uint64();
+                            break;
+                        }
+                    case 5: {
+                            message.isConnected = reader.bool();
+                            break;
+                        }
+                    default:
+                        reader.skipType(tag & 7, long);
+                        break;
+                    }
+                }
+                return message;
+            };
+
+            /**
+             * Decodes a DeviceState message from the specified reader or buffer, length delimited.
+             * @function decodeDelimited
+             * @memberof yahboom_dogzilla_lite.InferenceState.DeviceState
+             * @static
+             * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+             * @returns {yahboom_dogzilla_lite.InferenceState.DeviceState} DeviceState
+             * @throws {Error} If the payload is not a reader or valid buffer
+             * @throws {$protobuf.util.ProtocolError} If required fields are missing
+             */
+            DeviceState.decodeDelimited = function decodeDelimited(reader) {
+                if (!(reader instanceof $Reader))
+                    reader = new $Reader(reader);
+                return this.decode(reader, reader.uint32());
+            };
+
+            /**
+             * Verifies a DeviceState message.
+             * @function verify
+             * @memberof yahboom_dogzilla_lite.InferenceState.DeviceState
+             * @static
+             * @param {Object.<string,*>} message Plain object to verify
+             * @returns {string|null} `null` if valid, otherwise the reason why it is not
+             */
+            DeviceState.verify = function verify(message, long) {
+                if (typeof message !== "object" || message === null)
+                    return "object expected";
+                if (long === undefined)
+                    long = 0;
+                if (long > $util.recursionLimit)
+                    return "maximum nesting depth exceeded";
+                if (message.device != null && message.hasOwnProperty("device")) {
+                    let error = $root.yahboom_dogzilla_lite.YahboomDogzillaLiteDevice.verify(message.device, long + 1);
+                    if (error)
+                        return "device." + error;
+                }
+                if (message.status != null && message.hasOwnProperty("status")) {
+                    let error = $root.yahboom_dogzilla_lite.YahboomDogzillaLiteStatus.verify(message.status, long + 1);
+                    if (error)
+                        return "status." + error;
+                }
+                if (message.monotonicStampNs != null && message.hasOwnProperty("monotonicStampNs"))
+                    if (!$util.isInteger(message.monotonicStampNs) && !(message.monotonicStampNs && $util.isInteger(message.monotonicStampNs.low) && $util.isInteger(message.monotonicStampNs.high)))
+                        return "monotonicStampNs: integer|Long expected";
+                if (message.systemStampNs != null && message.hasOwnProperty("systemStampNs"))
+                    if (!$util.isInteger(message.systemStampNs) && !(message.systemStampNs && $util.isInteger(message.systemStampNs.low) && $util.isInteger(message.systemStampNs.high)))
+                        return "systemStampNs: integer|Long expected";
+                if (message.isConnected != null && message.hasOwnProperty("isConnected"))
+                    if (typeof message.isConnected !== "boolean")
+                        return "isConnected: boolean expected";
+                return null;
+            };
+
+            /**
+             * Creates a DeviceState message from a plain object. Also converts values to their respective internal types.
+             * @function fromObject
+             * @memberof yahboom_dogzilla_lite.InferenceState.DeviceState
+             * @static
+             * @param {Object.<string,*>} object Plain object
+             * @returns {yahboom_dogzilla_lite.InferenceState.DeviceState} DeviceState
+             */
+            DeviceState.fromObject = function fromObject(object, long) {
+                if (object instanceof $root.yahboom_dogzilla_lite.InferenceState.DeviceState)
+                    return object;
+                if (long === undefined)
+                    long = 0;
+                if (long > $util.recursionLimit)
+                    throw Error("maximum nesting depth exceeded");
+                let message = new $root.yahboom_dogzilla_lite.InferenceState.DeviceState();
+                if (object.device != null) {
+                    if (typeof object.device !== "object")
+                        throw TypeError(".yahboom_dogzilla_lite.InferenceState.DeviceState.device: object expected");
+                    message.device = $root.yahboom_dogzilla_lite.YahboomDogzillaLiteDevice.fromObject(object.device, long + 1);
+                }
+                if (object.status != null) {
+                    if (typeof object.status !== "object")
+                        throw TypeError(".yahboom_dogzilla_lite.InferenceState.DeviceState.status: object expected");
+                    message.status = $root.yahboom_dogzilla_lite.YahboomDogzillaLiteStatus.fromObject(object.status, long + 1);
+                }
+                if (object.monotonicStampNs != null)
+                    if ($util.Long)
+                        (message.monotonicStampNs = $util.Long.fromValue(object.monotonicStampNs)).unsigned = true;
+                    else if (typeof object.monotonicStampNs === "string")
+                        message.monotonicStampNs = parseInt(object.monotonicStampNs, 10);
+                    else if (typeof object.monotonicStampNs === "number")
+                        message.monotonicStampNs = object.monotonicStampNs;
+                    else if (typeof object.monotonicStampNs === "object")
+                        message.monotonicStampNs = new $util.LongBits(object.monotonicStampNs.low >>> 0, object.monotonicStampNs.high >>> 0).toNumber(true);
+                if (object.systemStampNs != null)
+                    if ($util.Long)
+                        (message.systemStampNs = $util.Long.fromValue(object.systemStampNs)).unsigned = true;
+                    else if (typeof object.systemStampNs === "string")
+                        message.systemStampNs = parseInt(object.systemStampNs, 10);
+                    else if (typeof object.systemStampNs === "number")
+                        message.systemStampNs = object.systemStampNs;
+                    else if (typeof object.systemStampNs === "object")
+                        message.systemStampNs = new $util.LongBits(object.systemStampNs.low >>> 0, object.systemStampNs.high >>> 0).toNumber(true);
+                if (object.isConnected != null)
+                    message.isConnected = Boolean(object.isConnected);
+                return message;
+            };
+
+            /**
+             * Creates a plain object from a DeviceState message. Also converts values to other types if specified.
+             * @function toObject
+             * @memberof yahboom_dogzilla_lite.InferenceState.DeviceState
+             * @static
+             * @param {yahboom_dogzilla_lite.InferenceState.DeviceState} message DeviceState
+             * @param {$protobuf.IConversionOptions} [options] Conversion options
+             * @returns {Object.<string,*>} Plain object
+             */
+            DeviceState.toObject = function toObject(message, options) {
+                if (!options)
+                    options = {};
+                let object = {};
+                if (options.defaults) {
+                    object.device = null;
+                    object.status = null;
+                    if ($util.Long) {
+                        let long = new $util.Long(0, 0, true);
+                        object.monotonicStampNs = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+                    } else
+                        object.monotonicStampNs = options.longs === String ? "0" : 0;
+                    if ($util.Long) {
+                        let long = new $util.Long(0, 0, true);
+                        object.systemStampNs = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+                    } else
+                        object.systemStampNs = options.longs === String ? "0" : 0;
+                    object.isConnected = false;
+                }
+                if (message.device != null && message.hasOwnProperty("device"))
+                    object.device = $root.yahboom_dogzilla_lite.YahboomDogzillaLiteDevice.toObject(message.device, options);
+                if (message.status != null && message.hasOwnProperty("status"))
+                    object.status = $root.yahboom_dogzilla_lite.YahboomDogzillaLiteStatus.toObject(message.status, options);
+                if (message.monotonicStampNs != null && message.hasOwnProperty("monotonicStampNs"))
+                    if (typeof message.monotonicStampNs === "number")
+                        object.monotonicStampNs = options.longs === String ? String(message.monotonicStampNs) : message.monotonicStampNs;
+                    else
+                        object.monotonicStampNs = options.longs === String ? $util.Long.prototype.toString.call(message.monotonicStampNs) : options.longs === Number ? new $util.LongBits(message.monotonicStampNs.low >>> 0, message.monotonicStampNs.high >>> 0).toNumber(true) : message.monotonicStampNs;
+                if (message.systemStampNs != null && message.hasOwnProperty("systemStampNs"))
+                    if (typeof message.systemStampNs === "number")
+                        object.systemStampNs = options.longs === String ? String(message.systemStampNs) : message.systemStampNs;
+                    else
+                        object.systemStampNs = options.longs === String ? $util.Long.prototype.toString.call(message.systemStampNs) : options.longs === Number ? new $util.LongBits(message.systemStampNs.low >>> 0, message.systemStampNs.high >>> 0).toNumber(true) : message.systemStampNs;
+                if (message.isConnected != null && message.hasOwnProperty("isConnected"))
+                    object.isConnected = message.isConnected;
+                return object;
+            };
+
+            /**
+             * Converts this DeviceState to JSON.
+             * @function toJSON
+             * @memberof yahboom_dogzilla_lite.InferenceState.DeviceState
+             * @instance
+             * @returns {Object.<string,*>} JSON object
+             */
+            DeviceState.prototype.toJSON = function toJSON() {
+                return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+            };
+
+            /**
+             * Gets the default type url for DeviceState
+             * @function getTypeUrl
+             * @memberof yahboom_dogzilla_lite.InferenceState.DeviceState
+             * @static
+             * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+             * @returns {string} The default type url
+             */
+            DeviceState.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+                if (typeUrlPrefix === undefined) {
+                    typeUrlPrefix = "type.googleapis.com";
+                }
+                return typeUrlPrefix + "/yahboom_dogzilla_lite.InferenceState.DeviceState";
+            };
+
+            return DeviceState;
+        })();
+
+        return InferenceState;
+    })();
+
+    /**
+     * CommandResult enum.
+     * @name yahboom_dogzilla_lite.CommandResult
+     * @enum {number}
+     * @property {number} CR_PROCESSING=0 CR_PROCESSING value
+     * @property {number} CR_SUCCESS=1 CR_SUCCESS value
+     * @property {number} CR_FAILED=2 CR_FAILED value
+     */
+    yahboom_dogzilla_lite.CommandResult = (function() {
+        const valuesById = {}, values = Object.create(valuesById);
+        values[valuesById[0] = "CR_PROCESSING"] = 0;
+        values[valuesById[1] = "CR_SUCCESS"] = 1;
+        values[valuesById[2] = "CR_FAILED"] = 2;
+        return values;
+    })();
+
+    return yahboom_dogzilla_lite;
 })();
 
 export const sysinfo = $root.sysinfo = (() => {

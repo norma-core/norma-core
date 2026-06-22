@@ -52,6 +52,8 @@ function HistoryPage() {
     };
   }, []);
 
+  const videoQueueCount = parsedFrame?.videoQueues?.length ?? 0;
+
   return (
     <div className="w-full h-full flex flex-col">
       <div className="p-4 flex-shrink-0">
@@ -199,7 +201,7 @@ function HistoryPage() {
                           </div>
                         )}
                         {parsedFrame.videoQueues?.map((video, idx) => (
-                          <div key={idx} className="flex items-center justify-between">
+                          <div key={video.queueId} className="flex items-center justify-between">
                             <div className="flex items-center gap-3">
                               <span className="text-accent-warning font-mono">{video.queueId}</span>
                               <span className="text-accent-success text-xs px-1 py-0.5 bg-accent-success/10 rounded">VIDEO</span>
@@ -239,6 +241,17 @@ function HistoryPage() {
                             </div>
                             <div className="text-text-label font-mono">
                               {formatPtrBytes(parsedFrame.sysinfo.ptr)}
+                            </div>
+                          </div>
+                        )}
+                        {parsedFrame.yahboom_dogzilla_lite && (
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <span className="text-accent-warning font-mono">{parsedFrame.yahboom_dogzilla_lite.queueId}</span>
+                              <span className="text-accent-data text-xs px-1 py-0.5 bg-accent-data/10 rounded">YAHBOOM_DOGZILLA_LITE</span>
+                            </div>
+                            <div className="text-text-label font-mono">
+                              {formatPtrBytes(parsedFrame.yahboom_dogzilla_lite.ptr)}
                             </div>
                           </div>
                         )}
@@ -339,7 +352,7 @@ function HistoryPage() {
                   )}
                   {parsedFrame.videoQueues?.map((video, idx) => (
                     <HistoryElement
-                      key={`video-${idx}`}
+                      key={video.queueId}
                       element={{
                         queueId: video.queueId,
                         entryId: video.ptr,
@@ -400,6 +413,21 @@ function HistoryPage() {
                       }
                       dataQueueType="sysinfo"
                       dataQueueId={parsedFrame.sysinfo.queueId}
+                    />
+                  )}
+                  {parsedFrame.yahboom_dogzilla_lite && (
+                    <HistoryElement
+                      element={{
+                        queueId: parsedFrame.yahboom_dogzilla_lite.queueId,
+                        entryId: parsedFrame.yahboom_dogzilla_lite.ptr,
+                        data: parsedFrame.yahboom_dogzilla_lite.data,
+                        rawData: parsedFrame.yahboom_dogzilla_lite.rawData ?? null,
+                        type: getQueueType(parsedFrame.yahboom_dogzilla_lite.queueType),
+                        queueType: parsedFrame.yahboom_dogzilla_lite.queueType,
+                      }}
+                      index={videoQueueCount + (parsedFrame.mirroring ? 2 : 1) + (parsedFrame.sysinfo ? 1 : 0)}
+                      dataQueueType="yahboom-dogzilla-lite"
+                      dataQueueId={parsedFrame.yahboom_dogzilla_lite.queueId}
                     />
                   )}
                   {parsedFrame.normvla && (

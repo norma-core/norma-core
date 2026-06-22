@@ -248,7 +248,10 @@ export namespace drivers {
         QDT_USB_VIDEO_FRAMES = 21,
         QDT_INFERENCE_FRAMES = 22,
         QDT_MOTOR_MIRRORING_MODES = 30,
-        QDT_MOTOR_MIRRORING_RX = 32
+        QDT_MOTOR_MIRRORING_RX = 32,
+        QDT_YAHBOOM_DOGZILLA_LITE_SERIAL_TX = 40,
+        QDT_YAHBOOM_DOGZILLA_LITE_SERIAL_RX = 41,
+        QDT_YAHBOOM_DOGZILLA_LITE_INFERENCE = 42
     }
 
     /** StationCommandType enum. */
@@ -256,7 +259,8 @@ export namespace drivers {
         STC_ST3215_COMMAND = 0,
         STC_MOTOR_MIRRORING_COMMAND = 1,
         STC_INFERENCE_TAG_COMMAND = 2,
-        STC_VESC_TRAMPA_COMMAND = 3
+        STC_YAHBOOM_DOGZILLA_LITE_COMMAND = 3,
+        STC_VESC_TRAMPA_COMMAND = 4
     }
 }
 
@@ -6679,6 +6683,2233 @@ export namespace motors_mirroring {
              */
             public static getTypeUrl(typeUrlPrefix?: string): string;
         }
+    }
+}
+
+/** Namespace yahboom_dogzilla_lite. */
+export namespace yahboom_dogzilla_lite {
+
+    /** YahboomDogzillaLiteSignalType enum. */
+    enum YahboomDogzillaLiteSignalType {
+        YAHBOOM_DOGZILLA_LITE_SIGNAL_TYPE_UNSPECIFIED = 0,
+        YAHBOOM_DOGZILLA_LITE_CONNECTED = 1,
+        YAHBOOM_DOGZILLA_LITE_DISCONNECTED = 2,
+        YAHBOOM_DOGZILLA_LITE_STATUS_UPDATE = 3,
+        YAHBOOM_DOGZILLA_LITE_COMMAND = 4,
+        YAHBOOM_DOGZILLA_LITE_COMMAND_SUCCESS = 5,
+        YAHBOOM_DOGZILLA_LITE_COMMAND_FAILED = 6,
+        YAHBOOM_DOGZILLA_LITE_ERROR = 7
+    }
+
+    /** YahboomDogzillaLiteModel enum. */
+    enum YahboomDogzillaLiteModel {
+        YAHBOOM_DOGZILLA_LITE_MODEL_UNKNOWN = 0,
+        YAHBOOM_DOGZILLA_LITE_MINI = 1,
+        YAHBOOM_DOGZILLA_LITE = 2,
+        YAHBOOM_DOGZILLA_LITE_PRO = 3,
+        YAHBOOM_DOGZILLA_LITE_RIDER = 4
+    }
+
+    /** GaitType enum. */
+    enum GaitType {
+        GAIT_TROT = 0,
+        GAIT_WALK = 1,
+        GAIT_HIGH_WALK = 2,
+        GAIT_MICRO_TROT = 3
+    }
+
+    /** PerformanceMode enum. */
+    enum PerformanceMode {
+        PERFORMANCE_NORMAL_CONTROL = 0,
+        PERFORMANCE_CYCLE_ACTION = 1
+    }
+
+    /** ImuMode enum. */
+    enum ImuMode {
+        IMU_DISABLED = 0,
+        IMU_SELF_STABILIZE = 1
+    }
+
+    /** ActionType enum. */
+    enum ActionType {
+        ACTION_UNSPECIFIED = 0,
+        ACTION_LIE_DOWN = 1,
+        ACTION_STAND_UP = 2,
+        ACTION_CRAWL_FORWARD = 3,
+        ACTION_TURN_AROUND = 4,
+        ACTION_MARCH_IN_PLACE = 5,
+        ACTION_SQUAT = 6,
+        ACTION_ROLL = 7,
+        ACTION_PITCH = 8,
+        ACTION_YAW = 9,
+        ACTION_THREE_AXIS_ROTATION = 10,
+        ACTION_PEE = 11,
+        ACTION_SIT_DOWN = 12,
+        ACTION_WAVE = 13,
+        ACTION_STRETCH = 14,
+        ACTION_WAVE2 = 15,
+        ACTION_SWAY = 16,
+        ACTION_BEG_FOR_FOOD = 17,
+        ACTION_FIND_FOOD = 18,
+        ACTION_HANDSHAKE = 19,
+        ACTION_ARM_DEMO = 20,
+        ACTION_PUSHUPS = 21,
+        ACTION_PITCH_YAW_ROTATION = 22,
+        ACTION_UP_DOWN_ROTATION = 23,
+        ACTION_FORWARD_BACKWARD_ROTATION = 24,
+        ACTION_RESTORE_DEFAULT = 255
+    }
+
+    /** Properties of a YahboomDogzillaLiteDevice. */
+    interface IYahboomDogzillaLiteDevice {
+
+        /** YahboomDogzillaLiteDevice portName */
+        portName?: (string|null);
+
+        /** YahboomDogzillaLiteDevice baudRate */
+        baudRate?: (number|null);
+
+        /** YahboomDogzillaLiteDevice serialNumber */
+        serialNumber?: (string|null);
+
+        /** YahboomDogzillaLiteDevice firmwareVersion */
+        firmwareVersion?: (string|null);
+
+        /** YahboomDogzillaLiteDevice model */
+        model?: (yahboom_dogzilla_lite.YahboomDogzillaLiteModel|null);
+
+        /** YahboomDogzillaLiteDevice vid */
+        vid?: (number|null);
+
+        /** YahboomDogzillaLiteDevice pid */
+        pid?: (number|null);
+
+        /** YahboomDogzillaLiteDevice manufacturer */
+        manufacturer?: (string|null);
+
+        /** YahboomDogzillaLiteDevice product */
+        product?: (string|null);
+    }
+
+    /** Represents a YahboomDogzillaLiteDevice. */
+    class YahboomDogzillaLiteDevice implements IYahboomDogzillaLiteDevice {
+
+        /**
+         * Constructs a new YahboomDogzillaLiteDevice.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: yahboom_dogzilla_lite.IYahboomDogzillaLiteDevice);
+
+        /** YahboomDogzillaLiteDevice portName. */
+        public portName: string;
+
+        /** YahboomDogzillaLiteDevice baudRate. */
+        public baudRate: number;
+
+        /** YahboomDogzillaLiteDevice serialNumber. */
+        public serialNumber: string;
+
+        /** YahboomDogzillaLiteDevice firmwareVersion. */
+        public firmwareVersion: string;
+
+        /** YahboomDogzillaLiteDevice model. */
+        public model: yahboom_dogzilla_lite.YahboomDogzillaLiteModel;
+
+        /** YahboomDogzillaLiteDevice vid. */
+        public vid: number;
+
+        /** YahboomDogzillaLiteDevice pid. */
+        public pid: number;
+
+        /** YahboomDogzillaLiteDevice manufacturer. */
+        public manufacturer: string;
+
+        /** YahboomDogzillaLiteDevice product. */
+        public product: string;
+
+        /**
+         * Creates a new YahboomDogzillaLiteDevice instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns YahboomDogzillaLiteDevice instance
+         */
+        public static create(properties?: yahboom_dogzilla_lite.IYahboomDogzillaLiteDevice): yahboom_dogzilla_lite.YahboomDogzillaLiteDevice;
+
+        /**
+         * Encodes the specified YahboomDogzillaLiteDevice message. Does not implicitly {@link yahboom_dogzilla_lite.YahboomDogzillaLiteDevice.verify|verify} messages.
+         * @param message YahboomDogzillaLiteDevice message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: yahboom_dogzilla_lite.IYahboomDogzillaLiteDevice, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified YahboomDogzillaLiteDevice message, length delimited. Does not implicitly {@link yahboom_dogzilla_lite.YahboomDogzillaLiteDevice.verify|verify} messages.
+         * @param message YahboomDogzillaLiteDevice message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: yahboom_dogzilla_lite.IYahboomDogzillaLiteDevice, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes a YahboomDogzillaLiteDevice message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns YahboomDogzillaLiteDevice
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): yahboom_dogzilla_lite.YahboomDogzillaLiteDevice;
+
+        /**
+         * Decodes a YahboomDogzillaLiteDevice message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns YahboomDogzillaLiteDevice
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): yahboom_dogzilla_lite.YahboomDogzillaLiteDevice;
+
+        /**
+         * Verifies a YahboomDogzillaLiteDevice message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates a YahboomDogzillaLiteDevice message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns YahboomDogzillaLiteDevice
+         */
+        public static fromObject(object: { [k: string]: any }): yahboom_dogzilla_lite.YahboomDogzillaLiteDevice;
+
+        /**
+         * Creates a plain object from a YahboomDogzillaLiteDevice message. Also converts values to other types if specified.
+         * @param message YahboomDogzillaLiteDevice
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: yahboom_dogzilla_lite.YahboomDogzillaLiteDevice, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this YahboomDogzillaLiteDevice to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for YahboomDogzillaLiteDevice
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
+    /** Properties of an ImuOrientation. */
+    interface IImuOrientation {
+
+        /** ImuOrientation roll */
+        roll?: (number|null);
+
+        /** ImuOrientation pitch */
+        pitch?: (number|null);
+
+        /** ImuOrientation yaw */
+        yaw?: (number|null);
+    }
+
+    /** Represents an ImuOrientation. */
+    class ImuOrientation implements IImuOrientation {
+
+        /**
+         * Constructs a new ImuOrientation.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: yahboom_dogzilla_lite.IImuOrientation);
+
+        /** ImuOrientation roll. */
+        public roll: number;
+
+        /** ImuOrientation pitch. */
+        public pitch: number;
+
+        /** ImuOrientation yaw. */
+        public yaw: number;
+
+        /**
+         * Creates a new ImuOrientation instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns ImuOrientation instance
+         */
+        public static create(properties?: yahboom_dogzilla_lite.IImuOrientation): yahboom_dogzilla_lite.ImuOrientation;
+
+        /**
+         * Encodes the specified ImuOrientation message. Does not implicitly {@link yahboom_dogzilla_lite.ImuOrientation.verify|verify} messages.
+         * @param message ImuOrientation message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: yahboom_dogzilla_lite.IImuOrientation, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified ImuOrientation message, length delimited. Does not implicitly {@link yahboom_dogzilla_lite.ImuOrientation.verify|verify} messages.
+         * @param message ImuOrientation message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: yahboom_dogzilla_lite.IImuOrientation, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes an ImuOrientation message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns ImuOrientation
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): yahboom_dogzilla_lite.ImuOrientation;
+
+        /**
+         * Decodes an ImuOrientation message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns ImuOrientation
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): yahboom_dogzilla_lite.ImuOrientation;
+
+        /**
+         * Verifies an ImuOrientation message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates an ImuOrientation message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns ImuOrientation
+         */
+        public static fromObject(object: { [k: string]: any }): yahboom_dogzilla_lite.ImuOrientation;
+
+        /**
+         * Creates a plain object from an ImuOrientation message. Also converts values to other types if specified.
+         * @param message ImuOrientation
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: yahboom_dogzilla_lite.ImuOrientation, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this ImuOrientation to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for ImuOrientation
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
+    /** Properties of an Acceleration. */
+    interface IAcceleration {
+
+        /** Acceleration x */
+        x?: (number|null);
+
+        /** Acceleration y */
+        y?: (number|null);
+
+        /** Acceleration z */
+        z?: (number|null);
+    }
+
+    /** Represents an Acceleration. */
+    class Acceleration implements IAcceleration {
+
+        /**
+         * Constructs a new Acceleration.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: yahboom_dogzilla_lite.IAcceleration);
+
+        /** Acceleration x. */
+        public x: number;
+
+        /** Acceleration y. */
+        public y: number;
+
+        /** Acceleration z. */
+        public z: number;
+
+        /**
+         * Creates a new Acceleration instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns Acceleration instance
+         */
+        public static create(properties?: yahboom_dogzilla_lite.IAcceleration): yahboom_dogzilla_lite.Acceleration;
+
+        /**
+         * Encodes the specified Acceleration message. Does not implicitly {@link yahboom_dogzilla_lite.Acceleration.verify|verify} messages.
+         * @param message Acceleration message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: yahboom_dogzilla_lite.IAcceleration, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified Acceleration message, length delimited. Does not implicitly {@link yahboom_dogzilla_lite.Acceleration.verify|verify} messages.
+         * @param message Acceleration message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: yahboom_dogzilla_lite.IAcceleration, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes an Acceleration message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns Acceleration
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): yahboom_dogzilla_lite.Acceleration;
+
+        /**
+         * Decodes an Acceleration message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns Acceleration
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): yahboom_dogzilla_lite.Acceleration;
+
+        /**
+         * Verifies an Acceleration message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates an Acceleration message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns Acceleration
+         */
+        public static fromObject(object: { [k: string]: any }): yahboom_dogzilla_lite.Acceleration;
+
+        /**
+         * Creates a plain object from an Acceleration message. Also converts values to other types if specified.
+         * @param message Acceleration
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: yahboom_dogzilla_lite.Acceleration, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this Acceleration to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for Acceleration
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
+    /** Properties of a YahboomDogzillaLiteStatus. */
+    interface IYahboomDogzillaLiteStatus {
+
+        /** YahboomDogzillaLiteStatus batteryLevel */
+        batteryLevel?: (number|null);
+
+        /** YahboomDogzillaLiteStatus model */
+        model?: (yahboom_dogzilla_lite.YahboomDogzillaLiteModel|null);
+
+        /** YahboomDogzillaLiteStatus firmwareVersion */
+        firmwareVersion?: (string|null);
+
+        /** YahboomDogzillaLiteStatus servoPositions */
+        servoPositions?: (number[]|null);
+
+        /** YahboomDogzillaLiteStatus orientation */
+        orientation?: (yahboom_dogzilla_lite.IImuOrientation|null);
+
+        /** YahboomDogzillaLiteStatus acceleration */
+        acceleration?: (yahboom_dogzilla_lite.IAcceleration|null);
+
+        /** YahboomDogzillaLiteStatus legServoSpeed */
+        legServoSpeed?: (number|null);
+
+        /** YahboomDogzillaLiteStatus armServoSpeed */
+        armServoSpeed?: (number|null);
+
+        /** YahboomDogzillaLiteStatus servoAngles */
+        servoAngles?: (number[]|null);
+    }
+
+    /** Represents a YahboomDogzillaLiteStatus. */
+    class YahboomDogzillaLiteStatus implements IYahboomDogzillaLiteStatus {
+
+        /**
+         * Constructs a new YahboomDogzillaLiteStatus.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: yahboom_dogzilla_lite.IYahboomDogzillaLiteStatus);
+
+        /** YahboomDogzillaLiteStatus batteryLevel. */
+        public batteryLevel: number;
+
+        /** YahboomDogzillaLiteStatus model. */
+        public model: yahboom_dogzilla_lite.YahboomDogzillaLiteModel;
+
+        /** YahboomDogzillaLiteStatus firmwareVersion. */
+        public firmwareVersion: string;
+
+        /** YahboomDogzillaLiteStatus servoPositions. */
+        public servoPositions: number[];
+
+        /** YahboomDogzillaLiteStatus orientation. */
+        public orientation?: (yahboom_dogzilla_lite.IImuOrientation|null);
+
+        /** YahboomDogzillaLiteStatus acceleration. */
+        public acceleration?: (yahboom_dogzilla_lite.IAcceleration|null);
+
+        /** YahboomDogzillaLiteStatus legServoSpeed. */
+        public legServoSpeed: number;
+
+        /** YahboomDogzillaLiteStatus armServoSpeed. */
+        public armServoSpeed: number;
+
+        /** YahboomDogzillaLiteStatus servoAngles. */
+        public servoAngles: number[];
+
+        /**
+         * Creates a new YahboomDogzillaLiteStatus instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns YahboomDogzillaLiteStatus instance
+         */
+        public static create(properties?: yahboom_dogzilla_lite.IYahboomDogzillaLiteStatus): yahboom_dogzilla_lite.YahboomDogzillaLiteStatus;
+
+        /**
+         * Encodes the specified YahboomDogzillaLiteStatus message. Does not implicitly {@link yahboom_dogzilla_lite.YahboomDogzillaLiteStatus.verify|verify} messages.
+         * @param message YahboomDogzillaLiteStatus message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: yahboom_dogzilla_lite.IYahboomDogzillaLiteStatus, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified YahboomDogzillaLiteStatus message, length delimited. Does not implicitly {@link yahboom_dogzilla_lite.YahboomDogzillaLiteStatus.verify|verify} messages.
+         * @param message YahboomDogzillaLiteStatus message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: yahboom_dogzilla_lite.IYahboomDogzillaLiteStatus, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes a YahboomDogzillaLiteStatus message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns YahboomDogzillaLiteStatus
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): yahboom_dogzilla_lite.YahboomDogzillaLiteStatus;
+
+        /**
+         * Decodes a YahboomDogzillaLiteStatus message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns YahboomDogzillaLiteStatus
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): yahboom_dogzilla_lite.YahboomDogzillaLiteStatus;
+
+        /**
+         * Verifies a YahboomDogzillaLiteStatus message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates a YahboomDogzillaLiteStatus message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns YahboomDogzillaLiteStatus
+         */
+        public static fromObject(object: { [k: string]: any }): yahboom_dogzilla_lite.YahboomDogzillaLiteStatus;
+
+        /**
+         * Creates a plain object from a YahboomDogzillaLiteStatus message. Also converts values to other types if specified.
+         * @param message YahboomDogzillaLiteStatus
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: yahboom_dogzilla_lite.YahboomDogzillaLiteStatus, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this YahboomDogzillaLiteStatus to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for YahboomDogzillaLiteStatus
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
+    /** Properties of a ServoCommand. */
+    interface IServoCommand {
+
+        /** ServoCommand servoId */
+        servoId?: (number|null);
+
+        /** ServoCommand position */
+        position?: (number|null);
+    }
+
+    /** Represents a ServoCommand. */
+    class ServoCommand implements IServoCommand {
+
+        /**
+         * Constructs a new ServoCommand.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: yahboom_dogzilla_lite.IServoCommand);
+
+        /** ServoCommand servoId. */
+        public servoId: number;
+
+        /** ServoCommand position. */
+        public position: number;
+
+        /**
+         * Creates a new ServoCommand instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns ServoCommand instance
+         */
+        public static create(properties?: yahboom_dogzilla_lite.IServoCommand): yahboom_dogzilla_lite.ServoCommand;
+
+        /**
+         * Encodes the specified ServoCommand message. Does not implicitly {@link yahboom_dogzilla_lite.ServoCommand.verify|verify} messages.
+         * @param message ServoCommand message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: yahboom_dogzilla_lite.IServoCommand, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified ServoCommand message, length delimited. Does not implicitly {@link yahboom_dogzilla_lite.ServoCommand.verify|verify} messages.
+         * @param message ServoCommand message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: yahboom_dogzilla_lite.IServoCommand, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes a ServoCommand message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns ServoCommand
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): yahboom_dogzilla_lite.ServoCommand;
+
+        /**
+         * Decodes a ServoCommand message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns ServoCommand
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): yahboom_dogzilla_lite.ServoCommand;
+
+        /**
+         * Verifies a ServoCommand message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates a ServoCommand message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns ServoCommand
+         */
+        public static fromObject(object: { [k: string]: any }): yahboom_dogzilla_lite.ServoCommand;
+
+        /**
+         * Creates a plain object from a ServoCommand message. Also converts values to other types if specified.
+         * @param message ServoCommand
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: yahboom_dogzilla_lite.ServoCommand, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this ServoCommand to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for ServoCommand
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
+    /** Properties of a ServoSpeedCommand. */
+    interface IServoSpeedCommand {
+
+        /** ServoSpeedCommand bodyServoSpeed */
+        bodyServoSpeed?: (number|null);
+
+        /** ServoSpeedCommand armServoSpeed */
+        armServoSpeed?: (number|null);
+    }
+
+    /** Represents a ServoSpeedCommand. */
+    class ServoSpeedCommand implements IServoSpeedCommand {
+
+        /**
+         * Constructs a new ServoSpeedCommand.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: yahboom_dogzilla_lite.IServoSpeedCommand);
+
+        /** ServoSpeedCommand bodyServoSpeed. */
+        public bodyServoSpeed?: (number|null);
+
+        /** ServoSpeedCommand armServoSpeed. */
+        public armServoSpeed?: (number|null);
+
+        /** ServoSpeedCommand bodySpeed. */
+        public bodySpeed?: "bodyServoSpeed";
+
+        /** ServoSpeedCommand armSpeed. */
+        public armSpeed?: "armServoSpeed";
+
+        /**
+         * Creates a new ServoSpeedCommand instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns ServoSpeedCommand instance
+         */
+        public static create(properties?: yahboom_dogzilla_lite.IServoSpeedCommand): yahboom_dogzilla_lite.ServoSpeedCommand;
+
+        /**
+         * Encodes the specified ServoSpeedCommand message. Does not implicitly {@link yahboom_dogzilla_lite.ServoSpeedCommand.verify|verify} messages.
+         * @param message ServoSpeedCommand message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: yahboom_dogzilla_lite.IServoSpeedCommand, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified ServoSpeedCommand message, length delimited. Does not implicitly {@link yahboom_dogzilla_lite.ServoSpeedCommand.verify|verify} messages.
+         * @param message ServoSpeedCommand message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: yahboom_dogzilla_lite.IServoSpeedCommand, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes a ServoSpeedCommand message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns ServoSpeedCommand
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): yahboom_dogzilla_lite.ServoSpeedCommand;
+
+        /**
+         * Decodes a ServoSpeedCommand message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns ServoSpeedCommand
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): yahboom_dogzilla_lite.ServoSpeedCommand;
+
+        /**
+         * Verifies a ServoSpeedCommand message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates a ServoSpeedCommand message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns ServoSpeedCommand
+         */
+        public static fromObject(object: { [k: string]: any }): yahboom_dogzilla_lite.ServoSpeedCommand;
+
+        /**
+         * Creates a plain object from a ServoSpeedCommand message. Also converts values to other types if specified.
+         * @param message ServoSpeedCommand
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: yahboom_dogzilla_lite.ServoSpeedCommand, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this ServoSpeedCommand to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for ServoSpeedCommand
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
+    /** Properties of a CalibrationCommand. */
+    interface ICalibrationCommand {
+
+        /** CalibrationCommand enterCalibrationMode */
+        enterCalibrationMode?: (boolean|null);
+
+        /** CalibrationCommand setOrigin */
+        setOrigin?: (boolean|null);
+
+        /** CalibrationCommand servoCentering */
+        servoCentering?: (boolean|null);
+
+        /** CalibrationCommand gyroCalibration */
+        gyroCalibration?: (boolean|null);
+    }
+
+    /** Represents a CalibrationCommand. */
+    class CalibrationCommand implements ICalibrationCommand {
+
+        /**
+         * Constructs a new CalibrationCommand.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: yahboom_dogzilla_lite.ICalibrationCommand);
+
+        /** CalibrationCommand enterCalibrationMode. */
+        public enterCalibrationMode: boolean;
+
+        /** CalibrationCommand setOrigin. */
+        public setOrigin: boolean;
+
+        /** CalibrationCommand servoCentering. */
+        public servoCentering: boolean;
+
+        /** CalibrationCommand gyroCalibration. */
+        public gyroCalibration: boolean;
+
+        /**
+         * Creates a new CalibrationCommand instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns CalibrationCommand instance
+         */
+        public static create(properties?: yahboom_dogzilla_lite.ICalibrationCommand): yahboom_dogzilla_lite.CalibrationCommand;
+
+        /**
+         * Encodes the specified CalibrationCommand message. Does not implicitly {@link yahboom_dogzilla_lite.CalibrationCommand.verify|verify} messages.
+         * @param message CalibrationCommand message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: yahboom_dogzilla_lite.ICalibrationCommand, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified CalibrationCommand message, length delimited. Does not implicitly {@link yahboom_dogzilla_lite.CalibrationCommand.verify|verify} messages.
+         * @param message CalibrationCommand message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: yahboom_dogzilla_lite.ICalibrationCommand, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes a CalibrationCommand message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns CalibrationCommand
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): yahboom_dogzilla_lite.CalibrationCommand;
+
+        /**
+         * Decodes a CalibrationCommand message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns CalibrationCommand
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): yahboom_dogzilla_lite.CalibrationCommand;
+
+        /**
+         * Verifies a CalibrationCommand message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates a CalibrationCommand message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns CalibrationCommand
+         */
+        public static fromObject(object: { [k: string]: any }): yahboom_dogzilla_lite.CalibrationCommand;
+
+        /**
+         * Creates a plain object from a CalibrationCommand message. Also converts values to other types if specified.
+         * @param message CalibrationCommand
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: yahboom_dogzilla_lite.CalibrationCommand, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this CalibrationCommand to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for CalibrationCommand
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
+    /** Properties of an ArmCommand. */
+    interface IArmCommand {
+
+        /** ArmCommand gripperStatus */
+        gripperStatus?: (number|null);
+
+        /** ArmCommand gripperX */
+        gripperX?: (number|null);
+
+        /** ArmCommand gripperZ */
+        gripperZ?: (number|null);
+
+        /** ArmCommand polarAngle */
+        polarAngle?: (number|null);
+
+        /** ArmCommand polarRadius */
+        polarRadius?: (number|null);
+
+        /** ArmCommand stabilityMode */
+        stabilityMode?: (boolean|null);
+    }
+
+    /** Represents an ArmCommand. */
+    class ArmCommand implements IArmCommand {
+
+        /**
+         * Constructs a new ArmCommand.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: yahboom_dogzilla_lite.IArmCommand);
+
+        /** ArmCommand gripperStatus. */
+        public gripperStatus: number;
+
+        /** ArmCommand gripperX. */
+        public gripperX: number;
+
+        /** ArmCommand gripperZ. */
+        public gripperZ: number;
+
+        /** ArmCommand polarAngle. */
+        public polarAngle: number;
+
+        /** ArmCommand polarRadius. */
+        public polarRadius: number;
+
+        /** ArmCommand stabilityMode. */
+        public stabilityMode: boolean;
+
+        /**
+         * Creates a new ArmCommand instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns ArmCommand instance
+         */
+        public static create(properties?: yahboom_dogzilla_lite.IArmCommand): yahboom_dogzilla_lite.ArmCommand;
+
+        /**
+         * Encodes the specified ArmCommand message. Does not implicitly {@link yahboom_dogzilla_lite.ArmCommand.verify|verify} messages.
+         * @param message ArmCommand message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: yahboom_dogzilla_lite.IArmCommand, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified ArmCommand message, length delimited. Does not implicitly {@link yahboom_dogzilla_lite.ArmCommand.verify|verify} messages.
+         * @param message ArmCommand message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: yahboom_dogzilla_lite.IArmCommand, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes an ArmCommand message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns ArmCommand
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): yahboom_dogzilla_lite.ArmCommand;
+
+        /**
+         * Decodes an ArmCommand message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns ArmCommand
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): yahboom_dogzilla_lite.ArmCommand;
+
+        /**
+         * Verifies an ArmCommand message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates an ArmCommand message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns ArmCommand
+         */
+        public static fromObject(object: { [k: string]: any }): yahboom_dogzilla_lite.ArmCommand;
+
+        /**
+         * Creates a plain object from an ArmCommand message. Also converts values to other types if specified.
+         * @param message ArmCommand
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: yahboom_dogzilla_lite.ArmCommand, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this ArmCommand to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for ArmCommand
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
+    /** Properties of an IoCommand. */
+    interface IIoCommand {
+
+        /** IoCommand power_5vOutput */
+        power_5vOutput?: (boolean|null);
+
+        /** IoCommand digitalIo */
+        digitalIo?: (boolean|null);
+    }
+
+    /** Represents an IoCommand. */
+    class IoCommand implements IIoCommand {
+
+        /**
+         * Constructs a new IoCommand.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: yahboom_dogzilla_lite.IIoCommand);
+
+        /** IoCommand power_5vOutput. */
+        public power_5vOutput: boolean;
+
+        /** IoCommand digitalIo. */
+        public digitalIo: boolean;
+
+        /**
+         * Creates a new IoCommand instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns IoCommand instance
+         */
+        public static create(properties?: yahboom_dogzilla_lite.IIoCommand): yahboom_dogzilla_lite.IoCommand;
+
+        /**
+         * Encodes the specified IoCommand message. Does not implicitly {@link yahboom_dogzilla_lite.IoCommand.verify|verify} messages.
+         * @param message IoCommand message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: yahboom_dogzilla_lite.IIoCommand, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified IoCommand message, length delimited. Does not implicitly {@link yahboom_dogzilla_lite.IoCommand.verify|verify} messages.
+         * @param message IoCommand message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: yahboom_dogzilla_lite.IIoCommand, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes an IoCommand message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns IoCommand
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): yahboom_dogzilla_lite.IoCommand;
+
+        /**
+         * Decodes an IoCommand message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns IoCommand
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): yahboom_dogzilla_lite.IoCommand;
+
+        /**
+         * Verifies an IoCommand message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates an IoCommand message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns IoCommand
+         */
+        public static fromObject(object: { [k: string]: any }): yahboom_dogzilla_lite.IoCommand;
+
+        /**
+         * Creates a plain object from an IoCommand message. Also converts values to other types if specified.
+         * @param message IoCommand
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: yahboom_dogzilla_lite.IoCommand, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this IoCommand to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for IoCommand
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
+    /** Properties of a LedCommand. */
+    interface ILedCommand {
+
+        /** LedCommand ledIndex */
+        ledIndex?: (number|null);
+
+        /** LedCommand rgbBytes */
+        rgbBytes?: (Uint8Array|null);
+    }
+
+    /** Represents a LedCommand. */
+    class LedCommand implements ILedCommand {
+
+        /**
+         * Constructs a new LedCommand.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: yahboom_dogzilla_lite.ILedCommand);
+
+        /** LedCommand ledIndex. */
+        public ledIndex: number;
+
+        /** LedCommand rgbBytes. */
+        public rgbBytes: Uint8Array;
+
+        /**
+         * Creates a new LedCommand instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns LedCommand instance
+         */
+        public static create(properties?: yahboom_dogzilla_lite.ILedCommand): yahboom_dogzilla_lite.LedCommand;
+
+        /**
+         * Encodes the specified LedCommand message. Does not implicitly {@link yahboom_dogzilla_lite.LedCommand.verify|verify} messages.
+         * @param message LedCommand message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: yahboom_dogzilla_lite.ILedCommand, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified LedCommand message, length delimited. Does not implicitly {@link yahboom_dogzilla_lite.LedCommand.verify|verify} messages.
+         * @param message LedCommand message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: yahboom_dogzilla_lite.ILedCommand, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes a LedCommand message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns LedCommand
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): yahboom_dogzilla_lite.LedCommand;
+
+        /**
+         * Decodes a LedCommand message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns LedCommand
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): yahboom_dogzilla_lite.LedCommand;
+
+        /**
+         * Verifies a LedCommand message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates a LedCommand message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns LedCommand
+         */
+        public static fromObject(object: { [k: string]: any }): yahboom_dogzilla_lite.LedCommand;
+
+        /**
+         * Creates a plain object from a LedCommand message. Also converts values to other types if specified.
+         * @param message LedCommand
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: yahboom_dogzilla_lite.LedCommand, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this LedCommand to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for LedCommand
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
+    /** Properties of an ActionCommand. */
+    interface IActionCommand {
+
+        /** ActionCommand action */
+        action?: (yahboom_dogzilla_lite.ActionType|null);
+    }
+
+    /** Represents an ActionCommand. */
+    class ActionCommand implements IActionCommand {
+
+        /**
+         * Constructs a new ActionCommand.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: yahboom_dogzilla_lite.IActionCommand);
+
+        /** ActionCommand action. */
+        public action: yahboom_dogzilla_lite.ActionType;
+
+        /**
+         * Creates a new ActionCommand instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns ActionCommand instance
+         */
+        public static create(properties?: yahboom_dogzilla_lite.IActionCommand): yahboom_dogzilla_lite.ActionCommand;
+
+        /**
+         * Encodes the specified ActionCommand message. Does not implicitly {@link yahboom_dogzilla_lite.ActionCommand.verify|verify} messages.
+         * @param message ActionCommand message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: yahboom_dogzilla_lite.IActionCommand, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified ActionCommand message, length delimited. Does not implicitly {@link yahboom_dogzilla_lite.ActionCommand.verify|verify} messages.
+         * @param message ActionCommand message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: yahboom_dogzilla_lite.IActionCommand, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes an ActionCommand message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns ActionCommand
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): yahboom_dogzilla_lite.ActionCommand;
+
+        /**
+         * Decodes an ActionCommand message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns ActionCommand
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): yahboom_dogzilla_lite.ActionCommand;
+
+        /**
+         * Verifies an ActionCommand message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates an ActionCommand message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns ActionCommand
+         */
+        public static fromObject(object: { [k: string]: any }): yahboom_dogzilla_lite.ActionCommand;
+
+        /**
+         * Creates a plain object from an ActionCommand message. Also converts values to other types if specified.
+         * @param message ActionCommand
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: yahboom_dogzilla_lite.ActionCommand, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this ActionCommand to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for ActionCommand
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
+    /** Properties of a MovementCommand. */
+    interface IMovementCommand {
+
+        /** MovementCommand moveX */
+        moveX?: (number|null);
+
+        /** MovementCommand moveY */
+        moveY?: (number|null);
+
+        /** MovementCommand moveYaw */
+        moveYaw?: (number|null);
+    }
+
+    /** Represents a MovementCommand. */
+    class MovementCommand implements IMovementCommand {
+
+        /**
+         * Constructs a new MovementCommand.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: yahboom_dogzilla_lite.IMovementCommand);
+
+        /** MovementCommand moveX. */
+        public moveX: number;
+
+        /** MovementCommand moveY. */
+        public moveY: number;
+
+        /** MovementCommand moveYaw. */
+        public moveYaw: number;
+
+        /**
+         * Creates a new MovementCommand instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns MovementCommand instance
+         */
+        public static create(properties?: yahboom_dogzilla_lite.IMovementCommand): yahboom_dogzilla_lite.MovementCommand;
+
+        /**
+         * Encodes the specified MovementCommand message. Does not implicitly {@link yahboom_dogzilla_lite.MovementCommand.verify|verify} messages.
+         * @param message MovementCommand message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: yahboom_dogzilla_lite.IMovementCommand, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified MovementCommand message, length delimited. Does not implicitly {@link yahboom_dogzilla_lite.MovementCommand.verify|verify} messages.
+         * @param message MovementCommand message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: yahboom_dogzilla_lite.IMovementCommand, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes a MovementCommand message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns MovementCommand
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): yahboom_dogzilla_lite.MovementCommand;
+
+        /**
+         * Decodes a MovementCommand message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns MovementCommand
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): yahboom_dogzilla_lite.MovementCommand;
+
+        /**
+         * Verifies a MovementCommand message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates a MovementCommand message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns MovementCommand
+         */
+        public static fromObject(object: { [k: string]: any }): yahboom_dogzilla_lite.MovementCommand;
+
+        /**
+         * Creates a plain object from a MovementCommand message. Also converts values to other types if specified.
+         * @param message MovementCommand
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: yahboom_dogzilla_lite.MovementCommand, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this MovementCommand to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for MovementCommand
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
+    /** Properties of a ConfigCommand. */
+    interface IConfigCommand {
+
+        /** ConfigCommand performanceMode */
+        performanceMode?: (yahboom_dogzilla_lite.PerformanceMode|null);
+
+        /** ConfigCommand gait */
+        gait?: (yahboom_dogzilla_lite.GaitType|null);
+
+        /** ConfigCommand imuMode */
+        imuMode?: (yahboom_dogzilla_lite.ImuMode|null);
+
+        /** ConfigCommand enableFeedback */
+        enableFeedback?: (boolean|null);
+
+        /** ConfigCommand bluetoothName */
+        bluetoothName?: (string|null);
+    }
+
+    /** Represents a ConfigCommand. */
+    class ConfigCommand implements IConfigCommand {
+
+        /**
+         * Constructs a new ConfigCommand.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: yahboom_dogzilla_lite.IConfigCommand);
+
+        /** ConfigCommand performanceMode. */
+        public performanceMode: yahboom_dogzilla_lite.PerformanceMode;
+
+        /** ConfigCommand gait. */
+        public gait: yahboom_dogzilla_lite.GaitType;
+
+        /** ConfigCommand imuMode. */
+        public imuMode: yahboom_dogzilla_lite.ImuMode;
+
+        /** ConfigCommand enableFeedback. */
+        public enableFeedback: boolean;
+
+        /** ConfigCommand bluetoothName. */
+        public bluetoothName: string;
+
+        /**
+         * Creates a new ConfigCommand instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns ConfigCommand instance
+         */
+        public static create(properties?: yahboom_dogzilla_lite.IConfigCommand): yahboom_dogzilla_lite.ConfigCommand;
+
+        /**
+         * Encodes the specified ConfigCommand message. Does not implicitly {@link yahboom_dogzilla_lite.ConfigCommand.verify|verify} messages.
+         * @param message ConfigCommand message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: yahboom_dogzilla_lite.IConfigCommand, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified ConfigCommand message, length delimited. Does not implicitly {@link yahboom_dogzilla_lite.ConfigCommand.verify|verify} messages.
+         * @param message ConfigCommand message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: yahboom_dogzilla_lite.IConfigCommand, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes a ConfigCommand message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns ConfigCommand
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): yahboom_dogzilla_lite.ConfigCommand;
+
+        /**
+         * Decodes a ConfigCommand message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns ConfigCommand
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): yahboom_dogzilla_lite.ConfigCommand;
+
+        /**
+         * Verifies a ConfigCommand message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates a ConfigCommand message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns ConfigCommand
+         */
+        public static fromObject(object: { [k: string]: any }): yahboom_dogzilla_lite.ConfigCommand;
+
+        /**
+         * Creates a plain object from a ConfigCommand message. Also converts values to other types if specified.
+         * @param message ConfigCommand
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: yahboom_dogzilla_lite.ConfigCommand, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this ConfigCommand to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for ConfigCommand
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
+    /** Properties of a Command. */
+    interface ICommand {
+
+        /** Command targetDeviceSerial */
+        targetDeviceSerial?: (string|null);
+
+        /** Command servo */
+        servo?: (yahboom_dogzilla_lite.IServoCommand|null);
+
+        /** Command servoSpeed */
+        servoSpeed?: (yahboom_dogzilla_lite.IServoSpeedCommand|null);
+
+        /** Command calibration */
+        calibration?: (yahboom_dogzilla_lite.ICalibrationCommand|null);
+
+        /** Command arm */
+        arm?: (yahboom_dogzilla_lite.IArmCommand|null);
+
+        /** Command io */
+        io?: (yahboom_dogzilla_lite.IIoCommand|null);
+
+        /** Command config */
+        config?: (yahboom_dogzilla_lite.IConfigCommand|null);
+
+        /** Command led */
+        led?: (yahboom_dogzilla_lite.ILedCommand|null);
+
+        /** Command action */
+        action?: (yahboom_dogzilla_lite.IActionCommand|null);
+
+        /** Command movement */
+        movement?: (yahboom_dogzilla_lite.IMovementCommand|null);
+    }
+
+    /** Represents a Command. */
+    class Command implements ICommand {
+
+        /**
+         * Constructs a new Command.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: yahboom_dogzilla_lite.ICommand);
+
+        /** Command targetDeviceSerial. */
+        public targetDeviceSerial: string;
+
+        /** Command servo. */
+        public servo?: (yahboom_dogzilla_lite.IServoCommand|null);
+
+        /** Command servoSpeed. */
+        public servoSpeed?: (yahboom_dogzilla_lite.IServoSpeedCommand|null);
+
+        /** Command calibration. */
+        public calibration?: (yahboom_dogzilla_lite.ICalibrationCommand|null);
+
+        /** Command arm. */
+        public arm?: (yahboom_dogzilla_lite.IArmCommand|null);
+
+        /** Command io. */
+        public io?: (yahboom_dogzilla_lite.IIoCommand|null);
+
+        /** Command config. */
+        public config?: (yahboom_dogzilla_lite.IConfigCommand|null);
+
+        /** Command led. */
+        public led?: (yahboom_dogzilla_lite.ILedCommand|null);
+
+        /** Command action. */
+        public action?: (yahboom_dogzilla_lite.IActionCommand|null);
+
+        /** Command movement. */
+        public movement?: (yahboom_dogzilla_lite.IMovementCommand|null);
+
+        /**
+         * Creates a new Command instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns Command instance
+         */
+        public static create(properties?: yahboom_dogzilla_lite.ICommand): yahboom_dogzilla_lite.Command;
+
+        /**
+         * Encodes the specified Command message. Does not implicitly {@link yahboom_dogzilla_lite.Command.verify|verify} messages.
+         * @param message Command message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: yahboom_dogzilla_lite.ICommand, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified Command message, length delimited. Does not implicitly {@link yahboom_dogzilla_lite.Command.verify|verify} messages.
+         * @param message Command message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: yahboom_dogzilla_lite.ICommand, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes a Command message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns Command
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): yahboom_dogzilla_lite.Command;
+
+        /**
+         * Decodes a Command message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns Command
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): yahboom_dogzilla_lite.Command;
+
+        /**
+         * Verifies a Command message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates a Command message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns Command
+         */
+        public static fromObject(object: { [k: string]: any }): yahboom_dogzilla_lite.Command;
+
+        /**
+         * Creates a plain object from a Command message. Also converts values to other types if specified.
+         * @param message Command
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: yahboom_dogzilla_lite.Command, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this Command to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for Command
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
+    /** Properties of a TxEnvelope. */
+    interface ITxEnvelope {
+
+        /** TxEnvelope monotonicStampNs */
+        monotonicStampNs?: (Long|null);
+
+        /** TxEnvelope localStampNs */
+        localStampNs?: (Long|null);
+
+        /** TxEnvelope appStartId */
+        appStartId?: (Long|null);
+
+        /** TxEnvelope commandId */
+        commandId?: (Uint8Array|null);
+
+        /** TxEnvelope targetDeviceSerial */
+        targetDeviceSerial?: (string|null);
+
+        /** TxEnvelope command */
+        command?: (yahboom_dogzilla_lite.ICommand|null);
+    }
+
+    /** Represents a TxEnvelope. */
+    class TxEnvelope implements ITxEnvelope {
+
+        /**
+         * Constructs a new TxEnvelope.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: yahboom_dogzilla_lite.ITxEnvelope);
+
+        /** TxEnvelope monotonicStampNs. */
+        public monotonicStampNs: Long;
+
+        /** TxEnvelope localStampNs. */
+        public localStampNs: Long;
+
+        /** TxEnvelope appStartId. */
+        public appStartId: Long;
+
+        /** TxEnvelope commandId. */
+        public commandId: Uint8Array;
+
+        /** TxEnvelope targetDeviceSerial. */
+        public targetDeviceSerial: string;
+
+        /** TxEnvelope command. */
+        public command?: (yahboom_dogzilla_lite.ICommand|null);
+
+        /**
+         * Creates a new TxEnvelope instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns TxEnvelope instance
+         */
+        public static create(properties?: yahboom_dogzilla_lite.ITxEnvelope): yahboom_dogzilla_lite.TxEnvelope;
+
+        /**
+         * Encodes the specified TxEnvelope message. Does not implicitly {@link yahboom_dogzilla_lite.TxEnvelope.verify|verify} messages.
+         * @param message TxEnvelope message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: yahboom_dogzilla_lite.ITxEnvelope, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified TxEnvelope message, length delimited. Does not implicitly {@link yahboom_dogzilla_lite.TxEnvelope.verify|verify} messages.
+         * @param message TxEnvelope message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: yahboom_dogzilla_lite.ITxEnvelope, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes a TxEnvelope message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns TxEnvelope
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): yahboom_dogzilla_lite.TxEnvelope;
+
+        /**
+         * Decodes a TxEnvelope message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns TxEnvelope
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): yahboom_dogzilla_lite.TxEnvelope;
+
+        /**
+         * Verifies a TxEnvelope message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates a TxEnvelope message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns TxEnvelope
+         */
+        public static fromObject(object: { [k: string]: any }): yahboom_dogzilla_lite.TxEnvelope;
+
+        /**
+         * Creates a plain object from a TxEnvelope message. Also converts values to other types if specified.
+         * @param message TxEnvelope
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: yahboom_dogzilla_lite.TxEnvelope, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this TxEnvelope to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for TxEnvelope
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
+    /** Properties of a RxEnvelope. */
+    interface IRxEnvelope {
+
+        /** RxEnvelope monotonicStampNs */
+        monotonicStampNs?: (Long|null);
+
+        /** RxEnvelope localStampNs */
+        localStampNs?: (Long|null);
+
+        /** RxEnvelope appStartId */
+        appStartId?: (Long|null);
+
+        /** RxEnvelope signalType */
+        signalType?: (yahboom_dogzilla_lite.YahboomDogzillaLiteSignalType|null);
+
+        /** RxEnvelope device */
+        device?: (yahboom_dogzilla_lite.IYahboomDogzillaLiteDevice|null);
+
+        /** RxEnvelope status */
+        status?: (yahboom_dogzilla_lite.IYahboomDogzillaLiteStatus|null);
+
+        /** RxEnvelope data */
+        data?: (Uint8Array|null);
+
+        /** RxEnvelope command */
+        command?: (yahboom_dogzilla_lite.ITxEnvelope|null);
+
+        /** RxEnvelope errorMessage */
+        errorMessage?: (string|null);
+    }
+
+    /** Represents a RxEnvelope. */
+    class RxEnvelope implements IRxEnvelope {
+
+        /**
+         * Constructs a new RxEnvelope.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: yahboom_dogzilla_lite.IRxEnvelope);
+
+        /** RxEnvelope monotonicStampNs. */
+        public monotonicStampNs: Long;
+
+        /** RxEnvelope localStampNs. */
+        public localStampNs: Long;
+
+        /** RxEnvelope appStartId. */
+        public appStartId: Long;
+
+        /** RxEnvelope signalType. */
+        public signalType: yahboom_dogzilla_lite.YahboomDogzillaLiteSignalType;
+
+        /** RxEnvelope device. */
+        public device?: (yahboom_dogzilla_lite.IYahboomDogzillaLiteDevice|null);
+
+        /** RxEnvelope status. */
+        public status?: (yahboom_dogzilla_lite.IYahboomDogzillaLiteStatus|null);
+
+        /** RxEnvelope data. */
+        public data: Uint8Array;
+
+        /** RxEnvelope command. */
+        public command?: (yahboom_dogzilla_lite.ITxEnvelope|null);
+
+        /** RxEnvelope errorMessage. */
+        public errorMessage: string;
+
+        /**
+         * Creates a new RxEnvelope instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns RxEnvelope instance
+         */
+        public static create(properties?: yahboom_dogzilla_lite.IRxEnvelope): yahboom_dogzilla_lite.RxEnvelope;
+
+        /**
+         * Encodes the specified RxEnvelope message. Does not implicitly {@link yahboom_dogzilla_lite.RxEnvelope.verify|verify} messages.
+         * @param message RxEnvelope message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: yahboom_dogzilla_lite.IRxEnvelope, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified RxEnvelope message, length delimited. Does not implicitly {@link yahboom_dogzilla_lite.RxEnvelope.verify|verify} messages.
+         * @param message RxEnvelope message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: yahboom_dogzilla_lite.IRxEnvelope, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes a RxEnvelope message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns RxEnvelope
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): yahboom_dogzilla_lite.RxEnvelope;
+
+        /**
+         * Decodes a RxEnvelope message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns RxEnvelope
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): yahboom_dogzilla_lite.RxEnvelope;
+
+        /**
+         * Verifies a RxEnvelope message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates a RxEnvelope message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns RxEnvelope
+         */
+        public static fromObject(object: { [k: string]: any }): yahboom_dogzilla_lite.RxEnvelope;
+
+        /**
+         * Creates a plain object from a RxEnvelope message. Also converts values to other types if specified.
+         * @param message RxEnvelope
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: yahboom_dogzilla_lite.RxEnvelope, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this RxEnvelope to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for RxEnvelope
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
+    /** Properties of an InferenceState. */
+    interface IInferenceState {
+
+        /** InferenceState lastInferenceQueuePtr */
+        lastInferenceQueuePtr?: (Uint8Array|null);
+
+        /** InferenceState devices */
+        devices?: (yahboom_dogzilla_lite.InferenceState.IDeviceState[]|null);
+    }
+
+    /** Represents an InferenceState. */
+    class InferenceState implements IInferenceState {
+
+        /**
+         * Constructs a new InferenceState.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: yahboom_dogzilla_lite.IInferenceState);
+
+        /** InferenceState lastInferenceQueuePtr. */
+        public lastInferenceQueuePtr: Uint8Array;
+
+        /** InferenceState devices. */
+        public devices: yahboom_dogzilla_lite.InferenceState.IDeviceState[];
+
+        /**
+         * Creates a new InferenceState instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns InferenceState instance
+         */
+        public static create(properties?: yahboom_dogzilla_lite.IInferenceState): yahboom_dogzilla_lite.InferenceState;
+
+        /**
+         * Encodes the specified InferenceState message. Does not implicitly {@link yahboom_dogzilla_lite.InferenceState.verify|verify} messages.
+         * @param message InferenceState message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: yahboom_dogzilla_lite.IInferenceState, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified InferenceState message, length delimited. Does not implicitly {@link yahboom_dogzilla_lite.InferenceState.verify|verify} messages.
+         * @param message InferenceState message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: yahboom_dogzilla_lite.IInferenceState, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes an InferenceState message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns InferenceState
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): yahboom_dogzilla_lite.InferenceState;
+
+        /**
+         * Decodes an InferenceState message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns InferenceState
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): yahboom_dogzilla_lite.InferenceState;
+
+        /**
+         * Verifies an InferenceState message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates an InferenceState message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns InferenceState
+         */
+        public static fromObject(object: { [k: string]: any }): yahboom_dogzilla_lite.InferenceState;
+
+        /**
+         * Creates a plain object from an InferenceState message. Also converts values to other types if specified.
+         * @param message InferenceState
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: yahboom_dogzilla_lite.InferenceState, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this InferenceState to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for InferenceState
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
+    namespace InferenceState {
+
+        /** Properties of a DeviceState. */
+        interface IDeviceState {
+
+            /** DeviceState device */
+            device?: (yahboom_dogzilla_lite.IYahboomDogzillaLiteDevice|null);
+
+            /** DeviceState status */
+            status?: (yahboom_dogzilla_lite.IYahboomDogzillaLiteStatus|null);
+
+            /** DeviceState monotonicStampNs */
+            monotonicStampNs?: (Long|null);
+
+            /** DeviceState systemStampNs */
+            systemStampNs?: (Long|null);
+
+            /** DeviceState isConnected */
+            isConnected?: (boolean|null);
+        }
+
+        /** Represents a DeviceState. */
+        class DeviceState implements IDeviceState {
+
+            /**
+             * Constructs a new DeviceState.
+             * @param [properties] Properties to set
+             */
+            constructor(properties?: yahboom_dogzilla_lite.InferenceState.IDeviceState);
+
+            /** DeviceState device. */
+            public device?: (yahboom_dogzilla_lite.IYahboomDogzillaLiteDevice|null);
+
+            /** DeviceState status. */
+            public status?: (yahboom_dogzilla_lite.IYahboomDogzillaLiteStatus|null);
+
+            /** DeviceState monotonicStampNs. */
+            public monotonicStampNs: Long;
+
+            /** DeviceState systemStampNs. */
+            public systemStampNs: Long;
+
+            /** DeviceState isConnected. */
+            public isConnected: boolean;
+
+            /**
+             * Creates a new DeviceState instance using the specified properties.
+             * @param [properties] Properties to set
+             * @returns DeviceState instance
+             */
+            public static create(properties?: yahboom_dogzilla_lite.InferenceState.IDeviceState): yahboom_dogzilla_lite.InferenceState.DeviceState;
+
+            /**
+             * Encodes the specified DeviceState message. Does not implicitly {@link yahboom_dogzilla_lite.InferenceState.DeviceState.verify|verify} messages.
+             * @param message DeviceState message or plain object to encode
+             * @param [writer] Writer to encode to
+             * @returns Writer
+             */
+            public static encode(message: yahboom_dogzilla_lite.InferenceState.IDeviceState, writer?: $protobuf.Writer): $protobuf.Writer;
+
+            /**
+             * Encodes the specified DeviceState message, length delimited. Does not implicitly {@link yahboom_dogzilla_lite.InferenceState.DeviceState.verify|verify} messages.
+             * @param message DeviceState message or plain object to encode
+             * @param [writer] Writer to encode to
+             * @returns Writer
+             */
+            public static encodeDelimited(message: yahboom_dogzilla_lite.InferenceState.IDeviceState, writer?: $protobuf.Writer): $protobuf.Writer;
+
+            /**
+             * Decodes a DeviceState message from the specified reader or buffer.
+             * @param reader Reader or buffer to decode from
+             * @param [length] Message length if known beforehand
+             * @returns DeviceState
+             * @throws {Error} If the payload is not a reader or valid buffer
+             * @throws {$protobuf.util.ProtocolError} If required fields are missing
+             */
+            public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): yahboom_dogzilla_lite.InferenceState.DeviceState;
+
+            /**
+             * Decodes a DeviceState message from the specified reader or buffer, length delimited.
+             * @param reader Reader or buffer to decode from
+             * @returns DeviceState
+             * @throws {Error} If the payload is not a reader or valid buffer
+             * @throws {$protobuf.util.ProtocolError} If required fields are missing
+             */
+            public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): yahboom_dogzilla_lite.InferenceState.DeviceState;
+
+            /**
+             * Verifies a DeviceState message.
+             * @param message Plain object to verify
+             * @returns `null` if valid, otherwise the reason why it is not
+             */
+            public static verify(message: { [k: string]: any }): (string|null);
+
+            /**
+             * Creates a DeviceState message from a plain object. Also converts values to their respective internal types.
+             * @param object Plain object
+             * @returns DeviceState
+             */
+            public static fromObject(object: { [k: string]: any }): yahboom_dogzilla_lite.InferenceState.DeviceState;
+
+            /**
+             * Creates a plain object from a DeviceState message. Also converts values to other types if specified.
+             * @param message DeviceState
+             * @param [options] Conversion options
+             * @returns Plain object
+             */
+            public static toObject(message: yahboom_dogzilla_lite.InferenceState.DeviceState, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+            /**
+             * Converts this DeviceState to JSON.
+             * @returns JSON object
+             */
+            public toJSON(): { [k: string]: any };
+
+            /**
+             * Gets the default type url for DeviceState
+             * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+             * @returns The default type url
+             */
+            public static getTypeUrl(typeUrlPrefix?: string): string;
+        }
+    }
+
+    /** CommandResult enum. */
+    enum CommandResult {
+        CR_PROCESSING = 0,
+        CR_SUCCESS = 1,
+        CR_FAILED = 2
     }
 }
 

@@ -1,5 +1,5 @@
 import Long from 'long';
-import { drivers, inference, motors_mirroring, normvla, st3215, sysinfo, usbvideo, vesc_trampa } from '@/api/proto.js';
+import { yahboom_dogzilla_lite, drivers, inference, motors_mirroring, normvla, st3215, sysinfo, usbvideo, vesc_trampa } from '@/api/proto.js';
 import { NormFsClient } from "./normfs.js";
 import { getGlobalTimeAdjustmentNs, isTimeSyncActive } from '@/api/time-sync.js';
 import {
@@ -25,6 +25,7 @@ export interface Frame {
   videoQueues?: FrameEntry<usbvideo.IRxEnvelope>[];
   mirroring?: FrameEntry<motors_mirroring.IRxEnvelope>;
   sysinfo?: FrameEntry<sysinfo.IEnvelope>;
+  yahboom_dogzilla_lite?: FrameEntry<yahboom_dogzilla_lite.IInferenceState>;
   normvla?: FrameEntry<normvla.IFrame>;
 
   // Other entries that weren't decoded (raw bytes with pointers)
@@ -43,7 +44,7 @@ export interface Frame {
 }
 
 // Find entry in previous frame with matching queue and pointer
-type DecodedEntry = st3215.IInferenceState | st3215.ITxEnvelope | vesc_trampa.IInferenceState | vesc_trampa.IRxEnvelope | vesc_trampa.ITxEnvelope | usbvideo.IRxEnvelope | motors_mirroring.IRxEnvelope | sysinfo.IEnvelope | normvla.IFrame | null;
+type DecodedEntry = st3215.IInferenceState | st3215.ITxEnvelope | usbvideo.IRxEnvelope | motors_mirroring.IRxEnvelope | sysinfo.IEnvelope | yahboom_dogzilla_lite.IInferenceState | normvla.IFrame | vesc_trampa.IInferenceState | vesc_trampa.IRxEnvelope | vesc_trampa.ITxEnvelope | null;
 
 interface ParseFrameOptions {
   retainRawData?: boolean;
@@ -113,6 +114,14 @@ function findPreviousEntry(
     const prevPtr = previousFrame.sysinfo.ptr;
     if (prevPtr.length === ptr.length && prevPtr.every((b, i) => b === ptr[i])) {
       return { decoded: previousFrame.sysinfo.data, rawData: previousFrame.sysinfo.rawData ?? null };
+    }
+  }
+
+  // Check yahboom_dogzilla_lite
+  if (previousFrame.yahboom_dogzilla_lite?.queueId === queue) {
+    const prevPtr = previousFrame.yahboom_dogzilla_lite.ptr;
+    if (prevPtr.length === ptr.length && prevPtr.every((b, i) => b === ptr[i])) {
+      return { decoded: previousFrame.yahboom_dogzilla_lite.data, rawData: previousFrame.yahboom_dogzilla_lite.rawData ?? null };
     }
   }
 
@@ -241,6 +250,13 @@ export async function parseFrame(
                 console.error("Failed to decode sysinfo.Envelope:", error);
               }
               break;
+            case drivers.QueueDataType.QDT_YAHBOOM_DOGZILLA_LITE_INFERENCE:
+              try {
+                decoded = yahboom_dogzilla_lite.InferenceState.decode(streamEntry.data);
+              } catch (error) {
+                console.error("Failed to decode yahboom_dogzilla_lite.InferenceState:", error);
+              }
+              break;
             case drivers.QueueDataType.QDT_ST3215_SERIAL_TX:
               try {
                 decoded = st3215.TxEnvelope.decode(streamEntry.data);
@@ -343,6 +359,15 @@ export async function parseFrame(
               ptr: result.ptr,
               data: result.decoded as sysinfo.IEnvelope,
               rawData: retainRawData ? result.rawData ?? null : null,
+              queueType: result.type
+            };
+            break;
+          case drivers.QueueDataType.QDT_YAHBOOM_DOGZILLA_LITE_INFERENCE:
+            frame.yahboom_dogzilla_lite = {
+              queueId: result.queue,
+              ptr: result.ptr,
+              data: result.decoded as yahboom_dogzilla_lite.IInferenceState,
+              rawData: result.rawData ?? null,
               queueType: result.type
             };
             break;

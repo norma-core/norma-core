@@ -1,0 +1,10 @@
+prefix=/Users/gecka/workspace/nova/norma_core/shared/libcamera/../../shared/libcamera/library/0.6.0/usr
+includedir=${prefix}/include
+libdir=${prefix}/lib/aarch64-linux-gnu
+
+Name: libcamera
+Description: Complex Camera Support Library
+Version: 0.6.0
+Requires: libcamera-base
+Libs: -L${libdir} -lcamera
+Cflags: -I${includedir}/libcamera

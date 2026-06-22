@@ -3,6 +3,11 @@ name = "station"
 version.workspace = true
 edition = "2024"
 
+[features]
+default = []
+ov5647 = ["dep:ov5647"]
+yahboom-dogzilla-lite = ["dep:yahboom-dogzilla-lite"]
+
 [dependencies]
 prost = { workspace = true }
 normfs = { workspace = true, features = ["websocket"] }
@@ -12,6 +17,8 @@ tokio = { workspace = true }
 station_iface = { path = "../../shared/station-iface" }
 st3215 = { path = "../../../drivers/st3215" }
 vesc-trampa = { path = "../../../drivers/vesc-trampa" }
+yahboom-dogzilla-lite = { path = "../../../drivers/yahboom-dogzilla-lite", optional = true }
+ov5647 = { path = "../../../drivers/ov5647", optional = true }
 systime = { path = "../../shared/systime-rs" }
 usbvideo = { path = "../../../drivers/usbvideo" }
 sysinfod = { path = "../../../drivers/sysinfod" }

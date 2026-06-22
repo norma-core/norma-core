@@ -23,11 +23,16 @@ enum QueueDataType {
 
     QDT_MOTOR_MIRRORING_MODES = 30;
     QDT_MOTOR_MIRRORING_RX    = 32;
+
+    QDT_YAHBOOM_DOGZILLA_LITE_SERIAL_TX = 40; // yahboom_dogzilla_lite.TxEnvelope
+    QDT_YAHBOOM_DOGZILLA_LITE_SERIAL_RX = 41; // yahboom_dogzilla_lite.RxEnvelope
+    QDT_YAHBOOM_DOGZILLA_LITE_INFERENCE = 42; // yahboom_dogzilla_lite.InferenceState
 }
 
 enum StationCommandType {
-    STC_ST3215_COMMAND          = 0; // st3215.Command
-    STC_MOTOR_MIRRORING_COMMAND = 1; // motors_mirroring.Command
-    STC_INFERENCE_TAG_COMMAND   = 2; // inference_tags.Command
-    STC_VESC_TRAMPA_COMMAND     = 3; // vesc_trampa.Command
+    STC_ST3215_COMMAND                = 0; // st3215.Command
+    STC_MOTOR_MIRRORING_COMMAND       = 1; // motors_mirroring.Command
+    STC_INFERENCE_TAG_COMMAND         = 2; // inference_tags.Command
+    STC_YAHBOOM_DOGZILLA_LITE_COMMAND = 3; // yahboom_dogzilla_lite.Command
+    STC_VESC_TRAMPA_COMMAND           = 4; // vesc_trampa.Command
 }
