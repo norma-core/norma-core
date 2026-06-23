@@ -200,7 +200,7 @@ function HistoryPage() {
                             </div>
                           </div>
                         )}
-                        {parsedFrame.videoQueues?.map((video, idx) => (
+                        {parsedFrame.videoQueues?.map((video) => (
                           <div key={video.queueId} className="flex items-center justify-between">
                             <div className="flex items-center gap-3">
                               <span className="text-accent-warning font-mono">{video.queueId}</span>

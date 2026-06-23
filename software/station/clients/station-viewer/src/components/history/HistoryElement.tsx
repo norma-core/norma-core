@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { usbvideo, st3215, motors_mirroring, sysinfo, yahboom_dogzilla_lite, normvla } from '@/api/proto.js';
+import { usbvideo, st3215, motors_mirroring, sysinfo, yahboom_dogzilla_lite, normvla, vesc_trampa } from '@/api/proto.js';
 import { formatBytes, parseUsbVideoData, parseMirroringData, parseSysinfoData, parseYahboomDogzillaLiteData, parseNormvlaData } from '@/components/history/history-utils';
 import ExpandedView from '@/components/history/ExpandedView';
 
