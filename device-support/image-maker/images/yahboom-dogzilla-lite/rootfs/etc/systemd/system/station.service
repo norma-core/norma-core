@@ -1,0 +1,24 @@
+[Unit]
+Description=NormaCore Station
+Requires=systemd-sysusers.service systemd-tmpfiles-setup.service
+Wants=firstboot-setup.service
+After=systemd-sysusers.service systemd-tmpfiles-setup.service firstboot-setup.service NetworkManager.service
+
+[Service]
+User=station
+Group=station
+SupplementaryGroups=gpio spi netdev dialout video
+WorkingDirectory=/opt/station
+RuntimeDirectory=station
+RuntimeDirectoryMode=0755
+StateDirectory=station
+CacheDirectory=station
+ExecStart=/opt/station/station --web 0.0.0.0:8889 --tcp 127.0.0.1:8888 --normfs-base-folder /var/lib/station/normfs --config /opt/station/config.yaml
+Environment=RUST_LOG=info
+Restart=on-failure
+RestartSec=2
+TimeoutStopSec=60
+KillSignal=SIGTERM
+
+[Install]
+WantedBy=multi-user.target

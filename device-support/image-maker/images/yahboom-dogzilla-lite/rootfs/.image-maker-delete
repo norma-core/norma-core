@@ -1,0 +1,9 @@
+# Raspberry Pi OS base services replaced or disabled by this image.
+/etc/systemd/system/cloud-config.target.wants/cloud-init-hotplugd.socket
+/etc/systemd/system/cloud-init.target.wants/cloud-config.service
+/etc/systemd/system/cloud-init.target.wants/cloud-final.service
+/etc/systemd/system/cloud-init.target.wants/cloud-init-local.service
+/etc/systemd/system/cloud-init.target.wants/cloud-init-main.service
+/etc/systemd/system/cloud-init.target.wants/cloud-init-network.service
+/etc/systemd/system/multi-user.target.wants/userconfig.service
+/etc/systemd/system/network-online.target.wants/NetworkManager-wait-online.service
