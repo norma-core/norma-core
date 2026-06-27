@@ -1,9 +1,9 @@
 import { memo } from 'react';
 import type { FrameEntry } from '@/api/frame-parser';
 import { yahboom_dogzilla_lite, usbvideo } from '@/api/proto.js';
-import YahboomDogzillaLiteCard from '@/yahboom_dogzilla_lite/YahboomDogzillaLiteCard';
+import YahboomDogzillaLiteCard from '@/devices/yahboom-dogzilla-lite/ui/YahboomDogzillaLiteCard';
 
-interface YahboomDogzillaLiteDeviceViewerProps {
+export interface YahboomDogzillaLiteDeviceViewerProps {
   inferenceState: yahboom_dogzilla_lite.IInferenceState;
   videoSources?: FrameEntry<usbvideo.IRxEnvelope>[];
 }

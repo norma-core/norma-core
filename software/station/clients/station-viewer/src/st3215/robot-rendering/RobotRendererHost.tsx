@@ -13,7 +13,7 @@ const RobotRendererHostComponent = forwardRef<BaseRobotRendererRef, St3215RobotR
     // Registry entries are module-scope objects, so this identity is stable
     // while the matched device stays the same.
     const LazyRenderer = useMemo(
-      () => definition ? lazy(definition.load) : null,
+      () => definition ? lazy(definition.loadRenderer) : null,
       [definition],
     );
 

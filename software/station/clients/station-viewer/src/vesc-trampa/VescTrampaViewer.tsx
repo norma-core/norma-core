@@ -2,7 +2,7 @@ import { memo } from 'react';
 import { vesc_trampa } from '@/api/proto.js';
 import VescTrampaCard from './VescTrampaCard';
 
-interface VescTrampaViewerProps {
+export interface VescTrampaViewerProps {
   inferenceState: vesc_trampa.IInferenceState;
 }
 

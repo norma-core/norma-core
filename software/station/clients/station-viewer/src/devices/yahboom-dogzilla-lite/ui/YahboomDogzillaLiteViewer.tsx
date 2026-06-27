@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { yahboom_dogzilla_lite } from '../api/proto.js';
+import { yahboom_dogzilla_lite } from '@/api/proto.js';
 import { useTheme } from '@/hooks/useTheme';
 import { getRendererThemeColors } from '@/utils/theme-colors';
 
