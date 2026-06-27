@@ -36,7 +36,7 @@ src/
   api/            # WebSocket, protobuf, time sync, queue, normfs, commands, clipboard, frame parsing
   components/     # Shared UI components
     history/      # History page detail views (ExpandedView, HistoryElement, etc.)
-  devices/        # Concrete device modules loaded through bundled dynamic imports
+  devices/        # Concrete device modules, live registry, ST3215 model manifests
   hooks/          # Custom React hooks (re-exported from index.ts)
   pages/          # Route components (suffixed with Page)
   st3215/         # Motor driver components, utilities, and robot renderers
@@ -49,14 +49,42 @@ public/
 
 ## Device Modules
 
-Concrete devices live under `src/devices/<device-id>/`. Put device-specific code there, including:
+Concrete device code lives under `src/devices/<device-id>/`. The live page discovers bundled TypeScript device modules via `src/devices/registry.ts`; do not import concrete devices directly from `HomePage` or shared protocol layers.
 
-- React wrappers/views that are only valid for that device
-- URDF paths and device asset paths
-- joint name mappings
-- base position / rotation transforms
-- material-to-motor status mapping
-- device-specific kinematics, visual behavior, or small business rules
+### Live Device Modules
+
+Add a `src/devices/<device-id>/module.ts` file for each live device family. Keep the manifest small and eager-loadable; put heavy React UI under `ui/` and load it lazily through `live.loadView`.
+
+```typescript
+import type { DeviceModule } from '@/devices/types';
+import type { NewDeviceViewerProps } from './ui/NewDeviceViewer';
+
+const newDeviceModule = {
+  id: 'new-device',
+  label: 'New Device',
+  order: 30,
+  live: {
+    select: ({ frame, videoSources }) => {
+      const data = frame.new_device?.data;
+      if (!data) return [];
+
+      return [{
+        key: 'new-device',
+        props: { data, videoSources },
+      }];
+    },
+    loadView: () => import('./ui/NewDeviceViewer'),
+  },
+} satisfies DeviceModule<NewDeviceViewerProps>;
+
+export default newDeviceModule;
+```
+
+`live.select(...)` is a pure selector: no hooks, no JSX, no side effects. It only maps the current `Frame` into `LiveDeviceView` descriptors. `DeviceLiveHost` handles lazy React rendering.
+
+`DeviceModule` also has an optional `history?` slot for future history integration. Current history rendering is still wired through the existing `HistoryPage` / `HistoryElement` / `ExpandedView` path.
+
+### ST3215 Robot Models
 
 Shared ST3215 code stays under `src/st3215/`. Keep this layer about the bus/protocol and reusable UI/rendering shell:
 
@@ -65,24 +93,33 @@ Shared ST3215 code stays under `src/st3215/`. Keep this layer about the bus/prot
 - generic motor tables and camera overlays
 - generic robot rendering host/base renderer in `src/st3215/robot-rendering/`
 
-Do not import concrete device modules directly from `src/st3215/` components. Add devices to `src/devices/registry.ts` and load them through bundled dynamic imports:
+Concrete ST3215 robot models live under `src/devices/<model-id>/` and export `st3215-model.ts`:
 
 ```typescript
-{
-  id: 'new-device',
-  label: 'New Device',
-  protocol: 'st3215',
-  matches: (bus) => (bus.motors?.length ?? 0) === 10,
-  load: () => import('./new-device'),
-}
+import type { St3215RobotModelModule } from '@/devices/types';
+import { NEW_MODEL_MOTOR_COUNT, newModelKinematics } from './config';
+
+const newModel = {
+  id: 'new-model',
+  label: 'New Model',
+  order: 30,
+  motorCount: NEW_MODEL_MOTOR_COUNT,
+  matches: (bus) => (bus.motors?.length ?? 0) === NEW_MODEL_MOTOR_COUNT,
+  kinematics: newModelKinematics,
+  loadRenderer: () => import('./Renderer'),
+} satisfies St3215RobotModelModule;
+
+export default newModel;
 ```
 
-When adding a new physical device:
+Do not import concrete ST3215 models from `src/st3215/`. Use the registry/model interfaces and keep concrete URDF paths, joint names, transforms, material mapping, and kinematic quirks beside the model.
 
-1. Create `src/devices/<device-id>/index.tsx` and `config.ts`.
-2. Put URDF/STL files in `public/devices/<device-id>/`.
-3. Register the device in `src/devices/registry.ts`.
-4. Run `node scripts/generate-asset-hashes.mjs` from this package so `src/assets-manifest.json` includes the new asset paths.
+When adding a new physical device or ST3215 model:
+
+1. Create `src/devices/<device-id>/module.ts` for live device UI, or `src/devices/<model-id>/st3215-model.ts` for an ST3215 robot model.
+2. Put device-only React UI under `src/devices/<device-id>/ui/`.
+3. Put URDF/STL files in `public/devices/<device-id>/`.
+4. Run `node scripts/generate-asset-hashes.mjs` from this package so `src/assets-manifest.json` includes new asset paths.
 
 Avoid hard-coding concrete device names, motor counts, URDF paths, or joint mappings in shared ST3215 components. Use the registry or device module config instead.
 
