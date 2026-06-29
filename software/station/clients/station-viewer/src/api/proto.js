@@ -26143,6 +26143,7 @@ export const sysinfo = $root.sysinfo = (() => {
          * @property {Array.<sysinfo.IDisk>|null} [disks] EnvelopeData disks
          * @property {Array.<sysinfo.INetwork>|null} [networks] EnvelopeData networks
          * @property {Array.<sysinfo.ITemperatureSensor>|null} [temperatures] EnvelopeData temperatures
+         * @property {Array.<sysinfo.IPowerSource>|null} [powerSources] EnvelopeData powerSources
          */
 
         /**
@@ -26159,6 +26160,7 @@ export const sysinfo = $root.sysinfo = (() => {
             this.disks = [];
             this.networks = [];
             this.temperatures = [];
+            this.powerSources = [];
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
                     if (properties[keys[i]] != null && keys[i] !== "__proto__")
@@ -26278,6 +26280,14 @@ export const sysinfo = $root.sysinfo = (() => {
         EnvelopeData.prototype.temperatures = $util.emptyArray;
 
         /**
+         * EnvelopeData powerSources.
+         * @member {Array.<sysinfo.IPowerSource>} powerSources
+         * @memberof sysinfo.EnvelopeData
+         * @instance
+         */
+        EnvelopeData.prototype.powerSources = $util.emptyArray;
+
+        /**
          * Creates a new EnvelopeData instance using the specified properties.
          * @function create
          * @memberof sysinfo.EnvelopeData
@@ -26334,6 +26344,9 @@ export const sysinfo = $root.sysinfo = (() => {
             if (message.temperatures != null && message.temperatures.length)
                 for (let i = 0; i < message.temperatures.length; ++i)
                     $root.sysinfo.TemperatureSensor.encode(message.temperatures[i], writer.uint32(/* id 20, wireType 2 =*/162).fork()).ldelim();
+            if (message.powerSources != null && message.powerSources.length)
+                for (let i = 0; i < message.powerSources.length; ++i)
+                    $root.sysinfo.PowerSource.encode(message.powerSources[i], writer.uint32(/* id 21, wireType 2 =*/170).fork()).ldelim();
             return writer;
         };
 
@@ -26438,6 +26451,12 @@ export const sysinfo = $root.sysinfo = (() => {
                         if (!(message.temperatures && message.temperatures.length))
                             message.temperatures = [];
                         message.temperatures.push($root.sysinfo.TemperatureSensor.decode(reader, reader.uint32(), undefined, long + 1));
+                        break;
+                    }
+                case 21: {
+                        if (!(message.powerSources && message.powerSources.length))
+                            message.powerSources = [];
+                        message.powerSources.push($root.sysinfo.PowerSource.decode(reader, reader.uint32(), undefined, long + 1));
                         break;
                     }
                 default:
@@ -26559,6 +26578,15 @@ export const sysinfo = $root.sysinfo = (() => {
                         return "temperatures." + error;
                 }
             }
+            if (message.powerSources != null && message.hasOwnProperty("powerSources")) {
+                if (!Array.isArray(message.powerSources))
+                    return "powerSources: array expected";
+                for (let i = 0; i < message.powerSources.length; ++i) {
+                    let error = $root.sysinfo.PowerSource.verify(message.powerSources[i], long + 1);
+                    if (error)
+                        return "powerSources." + error;
+                }
+            }
             return null;
         };
 
@@ -26665,6 +26693,16 @@ export const sysinfo = $root.sysinfo = (() => {
                     message.temperatures[i] = $root.sysinfo.TemperatureSensor.fromObject(object.temperatures[i], long + 1);
                 }
             }
+            if (object.powerSources) {
+                if (!Array.isArray(object.powerSources))
+                    throw TypeError(".sysinfo.EnvelopeData.powerSources: array expected");
+                message.powerSources = [];
+                for (let i = 0; i < object.powerSources.length; ++i) {
+                    if (typeof object.powerSources[i] !== "object")
+                        throw TypeError(".sysinfo.EnvelopeData.powerSources: object expected");
+                    message.powerSources[i] = $root.sysinfo.PowerSource.fromObject(object.powerSources[i], long + 1);
+                }
+            }
             return message;
         };
 
@@ -26687,6 +26725,7 @@ export const sysinfo = $root.sysinfo = (() => {
                 object.disks = [];
                 object.networks = [];
                 object.temperatures = [];
+                object.powerSources = [];
             }
             if (options.defaults) {
                 object.os = null;
@@ -26748,6 +26787,11 @@ export const sysinfo = $root.sysinfo = (() => {
                 object.temperatures = [];
                 for (let j = 0; j < message.temperatures.length; ++j)
                     object.temperatures[j] = $root.sysinfo.TemperatureSensor.toObject(message.temperatures[j], options);
+            }
+            if (message.powerSources && message.powerSources.length) {
+                object.powerSources = [];
+                for (let j = 0; j < message.powerSources.length; ++j)
+                    object.powerSources[j] = $root.sysinfo.PowerSource.toObject(message.powerSources[j], options);
             }
             return object;
         };
@@ -30024,6 +30068,509 @@ export const sysinfo = $root.sysinfo = (() => {
         };
 
         return TemperatureSensor;
+    })();
+
+    sysinfo.PowerSourceAttribute = (function() {
+
+        /**
+         * Properties of a PowerSourceAttribute.
+         * @memberof sysinfo
+         * @interface IPowerSourceAttribute
+         * @property {string|null} [key] PowerSourceAttribute key
+         * @property {string|null} [value] PowerSourceAttribute value
+         */
+
+        /**
+         * Constructs a new PowerSourceAttribute.
+         * @memberof sysinfo
+         * @classdesc Represents a PowerSourceAttribute.
+         * @implements IPowerSourceAttribute
+         * @constructor
+         * @param {sysinfo.IPowerSourceAttribute=} [properties] Properties to set
+         */
+        function PowerSourceAttribute(properties) {
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * PowerSourceAttribute key.
+         * @member {string} key
+         * @memberof sysinfo.PowerSourceAttribute
+         * @instance
+         */
+        PowerSourceAttribute.prototype.key = "";
+
+        /**
+         * PowerSourceAttribute value.
+         * @member {string} value
+         * @memberof sysinfo.PowerSourceAttribute
+         * @instance
+         */
+        PowerSourceAttribute.prototype.value = "";
+
+        /**
+         * Creates a new PowerSourceAttribute instance using the specified properties.
+         * @function create
+         * @memberof sysinfo.PowerSourceAttribute
+         * @static
+         * @param {sysinfo.IPowerSourceAttribute=} [properties] Properties to set
+         * @returns {sysinfo.PowerSourceAttribute} PowerSourceAttribute instance
+         */
+        PowerSourceAttribute.create = function create(properties) {
+            return new PowerSourceAttribute(properties);
+        };
+
+        /**
+         * Encodes the specified PowerSourceAttribute message. Does not implicitly {@link sysinfo.PowerSourceAttribute.verify|verify} messages.
+         * @function encode
+         * @memberof sysinfo.PowerSourceAttribute
+         * @static
+         * @param {sysinfo.IPowerSourceAttribute} message PowerSourceAttribute message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        PowerSourceAttribute.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.key != null && Object.hasOwnProperty.call(message, "key"))
+                writer.uint32(/* id 1, wireType 2 =*/10).string(message.key);
+            if (message.value != null && Object.hasOwnProperty.call(message, "value"))
+                writer.uint32(/* id 2, wireType 2 =*/18).string(message.value);
+            return writer;
+        };
+
+        /**
+         * Encodes the specified PowerSourceAttribute message, length delimited. Does not implicitly {@link sysinfo.PowerSourceAttribute.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof sysinfo.PowerSourceAttribute
+         * @static
+         * @param {sysinfo.IPowerSourceAttribute} message PowerSourceAttribute message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        PowerSourceAttribute.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes a PowerSourceAttribute message from the specified reader or buffer.
+         * @function decode
+         * @memberof sysinfo.PowerSourceAttribute
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {sysinfo.PowerSourceAttribute} PowerSourceAttribute
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        PowerSourceAttribute.decode = function decode(reader, length, error, long) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.sysinfo.PowerSourceAttribute();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                if (tag === error)
+                    break;
+                switch (tag >>> 3) {
+                case 1: {
+                        message.key = reader.string();
+                        break;
+                    }
+                case 2: {
+                        message.value = reader.string();
+                        break;
+                    }
+                default:
+                    reader.skipType(tag & 7, long);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes a PowerSourceAttribute message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof sysinfo.PowerSourceAttribute
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {sysinfo.PowerSourceAttribute} PowerSourceAttribute
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        PowerSourceAttribute.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies a PowerSourceAttribute message.
+         * @function verify
+         * @memberof sysinfo.PowerSourceAttribute
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        PowerSourceAttribute.verify = function verify(message, long) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
+            if (message.key != null && message.hasOwnProperty("key"))
+                if (!$util.isString(message.key))
+                    return "key: string expected";
+            if (message.value != null && message.hasOwnProperty("value"))
+                if (!$util.isString(message.value))
+                    return "value: string expected";
+            return null;
+        };
+
+        /**
+         * Creates a PowerSourceAttribute message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof sysinfo.PowerSourceAttribute
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {sysinfo.PowerSourceAttribute} PowerSourceAttribute
+         */
+        PowerSourceAttribute.fromObject = function fromObject(object, long) {
+            if (object instanceof $root.sysinfo.PowerSourceAttribute)
+                return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let message = new $root.sysinfo.PowerSourceAttribute();
+            if (object.key != null)
+                message.key = String(object.key);
+            if (object.value != null)
+                message.value = String(object.value);
+            return message;
+        };
+
+        /**
+         * Creates a plain object from a PowerSourceAttribute message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof sysinfo.PowerSourceAttribute
+         * @static
+         * @param {sysinfo.PowerSourceAttribute} message PowerSourceAttribute
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        PowerSourceAttribute.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.defaults) {
+                object.key = "";
+                object.value = "";
+            }
+            if (message.key != null && message.hasOwnProperty("key"))
+                object.key = message.key;
+            if (message.value != null && message.hasOwnProperty("value"))
+                object.value = message.value;
+            return object;
+        };
+
+        /**
+         * Converts this PowerSourceAttribute to JSON.
+         * @function toJSON
+         * @memberof sysinfo.PowerSourceAttribute
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        PowerSourceAttribute.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for PowerSourceAttribute
+         * @function getTypeUrl
+         * @memberof sysinfo.PowerSourceAttribute
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        PowerSourceAttribute.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+            if (typeUrlPrefix === undefined) {
+                typeUrlPrefix = "type.googleapis.com";
+            }
+            return typeUrlPrefix + "/sysinfo.PowerSourceAttribute";
+        };
+
+        return PowerSourceAttribute;
+    })();
+
+    sysinfo.PowerSource = (function() {
+
+        /**
+         * Properties of a PowerSource.
+         * @memberof sysinfo
+         * @interface IPowerSource
+         * @property {string|null} [name] PowerSource name
+         * @property {Array.<sysinfo.IPowerSourceAttribute>|null} [attributes] PowerSource attributes
+         */
+
+        /**
+         * Constructs a new PowerSource.
+         * @memberof sysinfo
+         * @classdesc Represents a PowerSource.
+         * @implements IPowerSource
+         * @constructor
+         * @param {sysinfo.IPowerSource=} [properties] Properties to set
+         */
+        function PowerSource(properties) {
+            this.attributes = [];
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * PowerSource name.
+         * @member {string} name
+         * @memberof sysinfo.PowerSource
+         * @instance
+         */
+        PowerSource.prototype.name = "";
+
+        /**
+         * PowerSource attributes.
+         * @member {Array.<sysinfo.IPowerSourceAttribute>} attributes
+         * @memberof sysinfo.PowerSource
+         * @instance
+         */
+        PowerSource.prototype.attributes = $util.emptyArray;
+
+        /**
+         * Creates a new PowerSource instance using the specified properties.
+         * @function create
+         * @memberof sysinfo.PowerSource
+         * @static
+         * @param {sysinfo.IPowerSource=} [properties] Properties to set
+         * @returns {sysinfo.PowerSource} PowerSource instance
+         */
+        PowerSource.create = function create(properties) {
+            return new PowerSource(properties);
+        };
+
+        /**
+         * Encodes the specified PowerSource message. Does not implicitly {@link sysinfo.PowerSource.verify|verify} messages.
+         * @function encode
+         * @memberof sysinfo.PowerSource
+         * @static
+         * @param {sysinfo.IPowerSource} message PowerSource message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        PowerSource.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.name != null && Object.hasOwnProperty.call(message, "name"))
+                writer.uint32(/* id 1, wireType 2 =*/10).string(message.name);
+            if (message.attributes != null && message.attributes.length)
+                for (let i = 0; i < message.attributes.length; ++i)
+                    $root.sysinfo.PowerSourceAttribute.encode(message.attributes[i], writer.uint32(/* id 10, wireType 2 =*/82).fork()).ldelim();
+            return writer;
+        };
+
+        /**
+         * Encodes the specified PowerSource message, length delimited. Does not implicitly {@link sysinfo.PowerSource.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof sysinfo.PowerSource
+         * @static
+         * @param {sysinfo.IPowerSource} message PowerSource message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        PowerSource.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes a PowerSource message from the specified reader or buffer.
+         * @function decode
+         * @memberof sysinfo.PowerSource
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {sysinfo.PowerSource} PowerSource
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        PowerSource.decode = function decode(reader, length, error, long) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.sysinfo.PowerSource();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                if (tag === error)
+                    break;
+                switch (tag >>> 3) {
+                case 1: {
+                        message.name = reader.string();
+                        break;
+                    }
+                case 10: {
+                        if (!(message.attributes && message.attributes.length))
+                            message.attributes = [];
+                        message.attributes.push($root.sysinfo.PowerSourceAttribute.decode(reader, reader.uint32(), undefined, long + 1));
+                        break;
+                    }
+                default:
+                    reader.skipType(tag & 7, long);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes a PowerSource message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof sysinfo.PowerSource
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {sysinfo.PowerSource} PowerSource
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        PowerSource.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies a PowerSource message.
+         * @function verify
+         * @memberof sysinfo.PowerSource
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        PowerSource.verify = function verify(message, long) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
+            if (message.name != null && message.hasOwnProperty("name"))
+                if (!$util.isString(message.name))
+                    return "name: string expected";
+            if (message.attributes != null && message.hasOwnProperty("attributes")) {
+                if (!Array.isArray(message.attributes))
+                    return "attributes: array expected";
+                for (let i = 0; i < message.attributes.length; ++i) {
+                    let error = $root.sysinfo.PowerSourceAttribute.verify(message.attributes[i], long + 1);
+                    if (error)
+                        return "attributes." + error;
+                }
+            }
+            return null;
+        };
+
+        /**
+         * Creates a PowerSource message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof sysinfo.PowerSource
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {sysinfo.PowerSource} PowerSource
+         */
+        PowerSource.fromObject = function fromObject(object, long) {
+            if (object instanceof $root.sysinfo.PowerSource)
+                return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let message = new $root.sysinfo.PowerSource();
+            if (object.name != null)
+                message.name = String(object.name);
+            if (object.attributes) {
+                if (!Array.isArray(object.attributes))
+                    throw TypeError(".sysinfo.PowerSource.attributes: array expected");
+                message.attributes = [];
+                for (let i = 0; i < object.attributes.length; ++i) {
+                    if (typeof object.attributes[i] !== "object")
+                        throw TypeError(".sysinfo.PowerSource.attributes: object expected");
+                    message.attributes[i] = $root.sysinfo.PowerSourceAttribute.fromObject(object.attributes[i], long + 1);
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Creates a plain object from a PowerSource message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof sysinfo.PowerSource
+         * @static
+         * @param {sysinfo.PowerSource} message PowerSource
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        PowerSource.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.arrays || options.defaults)
+                object.attributes = [];
+            if (options.defaults)
+                object.name = "";
+            if (message.name != null && message.hasOwnProperty("name"))
+                object.name = message.name;
+            if (message.attributes && message.attributes.length) {
+                object.attributes = [];
+                for (let j = 0; j < message.attributes.length; ++j)
+                    object.attributes[j] = $root.sysinfo.PowerSourceAttribute.toObject(message.attributes[j], options);
+            }
+            return object;
+        };
+
+        /**
+         * Converts this PowerSource to JSON.
+         * @function toJSON
+         * @memberof sysinfo.PowerSource
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        PowerSource.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for PowerSource
+         * @function getTypeUrl
+         * @memberof sysinfo.PowerSource
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        PowerSource.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+            if (typeUrlPrefix === undefined) {
+                typeUrlPrefix = "type.googleapis.com";
+            }
+            return typeUrlPrefix + "/sysinfo.PowerSource";
+        };
+
+        return PowerSource;
     })();
 
     return sysinfo;

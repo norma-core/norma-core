@@ -1,14 +1,14 @@
 use bytes::Bytes;
+use normfs::NormFS;
 use prost::Message;
-use station_iface::iface_proto::drivers::QueueDataType;
 use station_iface::StationEngine;
+use station_iface::iface_proto::drivers::QueueDataType;
 #[cfg(target_os = "linux")]
 use std::fs;
 #[cfg(target_os = "macos")]
 use std::process::Command;
 use std::sync::Arc;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
-use normfs::NormFS;
 use sysinfo::{Components, Disks, Networks, System, Users};
 use tokio::sync::RwLock;
 use tokio::time;
@@ -21,9 +21,11 @@ pub mod sysinfo_proto {
     }
 }
 
+mod power;
+
 use crate::sysinfo_proto::sysinfo::{
     Cpu, Disk, Envelope, EnvelopeData, Memory, Motherboard, Network, NetworkIp, OsInfo,
-    TemperatureSensor, TimeInfo, User,
+    PowerSource, TemperatureSensor, TimeInfo, User,
 };
 
 pub struct SystemMonitor {
@@ -135,6 +137,7 @@ impl SystemMonitor {
             disks: self.collect_disk_data(&disks),
             networks: self.collect_network_data(&networks),
             temperatures: self.collect_temperature_data(&components),
+            power_sources: self.collect_power_sources(),
         };
 
         Ok(Envelope {
@@ -252,6 +255,10 @@ impl SystemMonitor {
                 critical: component.critical().unwrap_or(0.0),
             })
             .collect()
+    }
+
+    fn collect_power_sources(&self) -> Vec<PowerSource> {
+        power::collect_power_sources()
     }
 
     fn get_timezone_offset_seconds() -> i32 {

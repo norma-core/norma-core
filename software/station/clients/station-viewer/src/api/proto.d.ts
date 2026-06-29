@@ -9172,6 +9172,9 @@ export namespace sysinfo {
 
         /** EnvelopeData temperatures */
         temperatures?: (sysinfo.ITemperatureSensor[]|null);
+
+        /** EnvelopeData powerSources */
+        powerSources?: (sysinfo.IPowerSource[]|null);
     }
 
     /** Represents an EnvelopeData. */
@@ -9224,6 +9227,9 @@ export namespace sysinfo {
 
         /** EnvelopeData temperatures. */
         public temperatures: sysinfo.ITemperatureSensor[];
+
+        /** EnvelopeData powerSources. */
+        public powerSources: sysinfo.IPowerSource[];
 
         /**
          * Creates a new EnvelopeData instance using the specified properties.
@@ -10477,6 +10483,212 @@ export namespace sysinfo {
 
         /**
          * Gets the default type url for TemperatureSensor
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
+    /** Properties of a PowerSourceAttribute. */
+    interface IPowerSourceAttribute {
+
+        /** PowerSourceAttribute key */
+        key?: (string|null);
+
+        /** PowerSourceAttribute value */
+        value?: (string|null);
+    }
+
+    /** Represents a PowerSourceAttribute. */
+    class PowerSourceAttribute implements IPowerSourceAttribute {
+
+        /**
+         * Constructs a new PowerSourceAttribute.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: sysinfo.IPowerSourceAttribute);
+
+        /** PowerSourceAttribute key. */
+        public key: string;
+
+        /** PowerSourceAttribute value. */
+        public value: string;
+
+        /**
+         * Creates a new PowerSourceAttribute instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns PowerSourceAttribute instance
+         */
+        public static create(properties?: sysinfo.IPowerSourceAttribute): sysinfo.PowerSourceAttribute;
+
+        /**
+         * Encodes the specified PowerSourceAttribute message. Does not implicitly {@link sysinfo.PowerSourceAttribute.verify|verify} messages.
+         * @param message PowerSourceAttribute message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: sysinfo.IPowerSourceAttribute, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified PowerSourceAttribute message, length delimited. Does not implicitly {@link sysinfo.PowerSourceAttribute.verify|verify} messages.
+         * @param message PowerSourceAttribute message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: sysinfo.IPowerSourceAttribute, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes a PowerSourceAttribute message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns PowerSourceAttribute
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): sysinfo.PowerSourceAttribute;
+
+        /**
+         * Decodes a PowerSourceAttribute message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns PowerSourceAttribute
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): sysinfo.PowerSourceAttribute;
+
+        /**
+         * Verifies a PowerSourceAttribute message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates a PowerSourceAttribute message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns PowerSourceAttribute
+         */
+        public static fromObject(object: { [k: string]: any }): sysinfo.PowerSourceAttribute;
+
+        /**
+         * Creates a plain object from a PowerSourceAttribute message. Also converts values to other types if specified.
+         * @param message PowerSourceAttribute
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: sysinfo.PowerSourceAttribute, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this PowerSourceAttribute to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for PowerSourceAttribute
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
+    /** Properties of a PowerSource. */
+    interface IPowerSource {
+
+        /** PowerSource name */
+        name?: (string|null);
+
+        /** PowerSource attributes */
+        attributes?: (sysinfo.IPowerSourceAttribute[]|null);
+    }
+
+    /** Represents a PowerSource. */
+    class PowerSource implements IPowerSource {
+
+        /**
+         * Constructs a new PowerSource.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: sysinfo.IPowerSource);
+
+        /** PowerSource name. */
+        public name: string;
+
+        /** PowerSource attributes. */
+        public attributes: sysinfo.IPowerSourceAttribute[];
+
+        /**
+         * Creates a new PowerSource instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns PowerSource instance
+         */
+        public static create(properties?: sysinfo.IPowerSource): sysinfo.PowerSource;
+
+        /**
+         * Encodes the specified PowerSource message. Does not implicitly {@link sysinfo.PowerSource.verify|verify} messages.
+         * @param message PowerSource message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: sysinfo.IPowerSource, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified PowerSource message, length delimited. Does not implicitly {@link sysinfo.PowerSource.verify|verify} messages.
+         * @param message PowerSource message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: sysinfo.IPowerSource, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes a PowerSource message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns PowerSource
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): sysinfo.PowerSource;
+
+        /**
+         * Decodes a PowerSource message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns PowerSource
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): sysinfo.PowerSource;
+
+        /**
+         * Verifies a PowerSource message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates a PowerSource message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns PowerSource
+         */
+        public static fromObject(object: { [k: string]: any }): sysinfo.PowerSource;
+
+        /**
+         * Creates a plain object from a PowerSource message. Also converts values to other types if specified.
+         * @param message PowerSource
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: sysinfo.PowerSource, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this PowerSource to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for PowerSource
          * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
          * @returns The default type url
          */

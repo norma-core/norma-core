@@ -31,6 +31,7 @@ message EnvelopeData {
     repeated Network networks = 13;
     
     repeated TemperatureSensor temperatures = 20;
+    repeated PowerSource       power_sources = 21;
 }
 
 message OsInfo {
@@ -114,4 +115,15 @@ message TemperatureSensor {
     
     float  max      = 10;
     float  critical = 11;
+}
+
+message PowerSourceAttribute {
+    string key   = 1;
+    string value = 2;
+}
+
+message PowerSource {
+    string name = 1;
+
+    repeated PowerSourceAttribute attributes = 10;
 }
