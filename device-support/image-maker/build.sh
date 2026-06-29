@@ -5,14 +5,8 @@ program_name="$(basename "$0")"
 image_maker_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 repo_root="$(cd "$image_maker_dir/../.." && pwd)"
 
-die() {
-  printf '[image-maker] ERROR: %s\n' "$*" >&2
-  exit 1
-}
-
-log() {
-  printf '[image-maker] %s\n' "$*" >&2
-}
+# shellcheck source=lib/common.sh
+. "$image_maker_dir/lib/common.sh"
 
 usage() {
   cat >&2 <<EOF
@@ -20,195 +14,14 @@ Usage:
   $program_name build --image <name> [--base <raw-image>] [--output <image>]
   $program_name build --config <path> [--base <raw-image>] [--output <image>]
 
-The build command prompts for Wi-Fi, Tailscale, and SSH user details.
+Builds a credential-free "golden" image with all software and drivers baked in.
+End users add their Wi-Fi, SSH, and Tailscale credentials afterwards with
+\`image-maker customize\` — this command does not prompt for them.
 
 Supported SOURCE_TYPE values:
   disk-image       apply an overlay to an existing partitioned image
   rootfs-container export a container rootfs and pack it as an image
 EOF
-}
-
-require_command() {
-  command -v "$1" >/dev/null 2>&1 || die "missing command: $1"
-}
-
-shell_quote() {
-  printf '%q' "$1"
-}
-
-require_interactive_cli() {
-  [ -r /dev/tty ] && [ -w /dev/tty ] ||
-    die "image builds require an interactive terminal for custom values"
-}
-
-prompt_line() {
-  local default input prompt var_name
-  var_name="$1"
-  prompt="$2"
-  default="${3:-}"
-
-  if [ -n "$default" ]; then
-    printf '%s [%s]: ' "$prompt" "$default" >/dev/tty
-  else
-    printf '%s: ' "$prompt" >/dev/tty
-  fi
-
-  IFS= read -r input </dev/tty || die "failed to read $prompt"
-  [ -n "$input" ] || input="$default"
-  printf -v "$var_name" '%s' "$input"
-}
-
-prompt_secret() {
-  local input prompt var_name
-  var_name="$1"
-  prompt="$2"
-
-  printf '%s: ' "$prompt" >/dev/tty
-  IFS= read -rs input </dev/tty || die "failed to read $prompt"
-  printf '\n' >/dev/tty
-  printf -v "$var_name" '%s' "$input"
-}
-
-prompt_required_line() {
-  local prompt result var_name
-  var_name="$1"
-  prompt="$2"
-
-  while true; do
-    prompt_line result "$prompt"
-    if [ -n "$result" ]; then
-      printf -v "$var_name" '%s' "$result"
-      return
-    fi
-    printf '%s is required.\n' "$prompt" >/dev/tty
-  done
-}
-
-prompt_required_secret() {
-  local prompt result var_name
-  var_name="$1"
-  prompt="$2"
-
-  while true; do
-    prompt_secret result "$prompt"
-    if [ -n "$result" ]; then
-      printf -v "$var_name" '%s' "$result"
-      return
-    fi
-    printf '%s is required.\n' "$prompt" >/dev/tty
-  done
-}
-
-normalize_country_code() {
-  local country
-  country="$(printf '%s' "$1" | tr '[:lower:]' '[:upper:]')"
-
-  case "$country" in
-    [A-Z][A-Z]) printf '%s' "$country" ;;
-    *) return 1 ;;
-  esac
-}
-
-country_from_locale() {
-  local value
-  value="${1%%.*}"
-  value="${value%%@*}"
-
-  case "$value" in
-    *_??) normalize_country_code "${value##*_}" ;;
-    *) return 1 ;;
-  esac
-}
-
-detect_default_wifi_country() {
-  local name value
-
-  if command -v defaults >/dev/null 2>&1; then
-    value="$(defaults read -g AppleLocale 2>/dev/null || true)"
-    if [ -n "$value" ] && country_from_locale "$value"; then
-      return
-    fi
-  fi
-
-  for name in LC_ALL LC_CTYPE LANG; do
-    value="${!name:-}"
-    [ "$value" != "C" ] && [ "$value" != "POSIX" ] || continue
-    if [ -n "$value" ] && country_from_locale "$value"; then
-      return
-    fi
-  done
-
-  printf 'US'
-}
-
-validate_custom_user_name() {
-  [[ "$1" =~ ^[a-z_][a-z0-9_-]{0,30}$ ]]
-}
-
-is_reserved_custom_user_name() {
-  case "$1" in
-    root|station) return 0 ;;
-    *) return 1 ;;
-  esac
-}
-
-prompt_custom_user_name() {
-  local user_name
-
-  while true; do
-    prompt_line user_name "SSH username" "norma"
-    if validate_custom_user_name "$user_name" && ! is_reserved_custom_user_name "$user_name"; then
-      IMAGE_CUSTOM_USER="$user_name"
-      return
-    fi
-    printf 'SSH username must be a valid non-reserved Linux login name.\n' >/dev/tty
-  done
-}
-
-prompt_custom_user_ssh_key() {
-  local ssh_key
-
-  while true; do
-    prompt_required_line ssh_key "SSH public key"
-    case "$ssh_key" in
-      ssh-rsa\ *|ssh-ed25519\ *|ecdsa-sha2-nistp256\ *|ecdsa-sha2-nistp384\ *|ecdsa-sha2-nistp521\ *|sk-ssh-ed25519@openssh.com\ *|sk-ecdsa-sha2-nistp256@openssh.com\ *)
-        IMAGE_CUSTOM_USER_SSH_KEY="$ssh_key"
-        return
-        ;;
-      *)
-        printf 'SSH public key must be a single OpenSSH public key line.\n' >/dev/tty
-        ;;
-    esac
-  done
-}
-
-prompt_image_custom_values() {
-  local country default_country
-
-  require_interactive_cli
-  printf 'Image custom values\n' >/dev/tty
-
-  prompt_required_line IMAGE_WIFI_SSID "Wi-Fi SSID"
-  prompt_required_secret IMAGE_WIFI_PASSWORD "Wi-Fi password"
-
-  default_country="$(detect_default_wifi_country)"
-  while true; do
-    prompt_line country "Wi-Fi country" "$default_country"
-    if IMAGE_WIFI_COUNTRY="$(normalize_country_code "$country")"; then
-      break
-    fi
-    printf 'Wi-Fi country must be a two-letter country code.\n' >/dev/tty
-  done
-
-  prompt_secret IMAGE_TAILSCALE_AUTH_KEY "Tailscale auth key (empty to skip)"
-  if [ -n "$IMAGE_TAILSCALE_AUTH_KEY" ]; then
-    prompt_line IMAGE_TAILSCALE_AUTH_SERVER "Tailscale login server (empty for default)"
-  else
-    IMAGE_TAILSCALE_AUTH_SERVER=""
-  fi
-
-  prompt_custom_user_name
-  prompt_custom_user_ssh_key
 }
 
 abs_path() {
@@ -218,46 +31,8 @@ abs_path() {
   esac
 }
 
-sha256_file() {
-  local file
-  file="$1"
-
-  if command -v sha256sum >/dev/null 2>&1; then
-    sha256sum "$file" | awk '{ print $1 }'
-    return
-  fi
-  if command -v shasum >/dev/null 2>&1; then
-    shasum -a 256 "$file" | awk '{ print $1 }'
-    return
-  fi
-
-  die "missing sha256sum or shasum"
-}
-
-verify_sha256() {
-  local expected actual file
-  expected="$1"
-  file="$2"
-
-  [ -n "$expected" ] || return 0
-  actual="$(sha256_file "$file")"
-  [ "$actual" = "$expected" ] || die "sha256 mismatch for $file: expected $expected, got $actual"
-}
-
-docker_image_exists() {
-  docker image inspect "$1" >/dev/null 2>&1
-}
-
-host_is_wsl() {
-  grep -qiE 'microsoft|wsl' /proc/version 2>/dev/null
-}
-
 preflight_checks() {
-  require_command docker
-
-  if ! docker info >/dev/null 2>&1; then
-    die "cannot reach the Docker daemon — start Docker Desktop (macOS/Windows) or dockerd (Linux) and retry"
-  fi
+  require_docker
 
   # The packer and overlay run as $IMAGE_PLATFORM. If that differs from the host
   # architecture, Docker needs QEMU/binfmt emulation. Docker Desktop ships it;
@@ -313,27 +88,6 @@ stage_image() {
     # shellcheck disable=SC1090
     . "$PACK_SCRIPT"
   fi
-}
-
-build_packer_image() {
-  require_command docker
-
-  log "building image-maker packer"
-  if docker buildx version >/dev/null 2>&1; then
-    docker buildx build \
-      --load \
-      -f "$image_maker_dir/packer/Dockerfile" \
-      -t "$PACKER_IMAGE" \
-      "$image_maker_dir/packer"
-  else
-    docker build \
-      -f "$image_maker_dir/packer/Dockerfile" \
-      -t "$PACKER_IMAGE" \
-      "$image_maker_dir/packer"
-  fi
-
-  docker_image_exists "$PACKER_IMAGE" ||
-    die "packer image was not loaded into the local Docker daemon: $PACKER_IMAGE"
 }
 
 build_image_overlay() {
@@ -528,16 +282,6 @@ run_build() {
   esac
 }
 
-require_build_arg_value() {
-  local option value
-  option="$1"
-  value="${2:-}"
-
-  case "$value" in
-    ""|-*) die "$option requires a value" ;;
-  esac
-}
-
 build_command() {
   local base_override config image output_override
   base_override=""
@@ -582,7 +326,6 @@ build_command() {
   preflight_checks
   [ -z "$base_override" ] || BASE_OVERRIDE="$base_override"
   [ -z "$output_override" ] || OUTPUT_IMAGE="$output_override"
-  prompt_image_custom_values
   run_build
 }
 

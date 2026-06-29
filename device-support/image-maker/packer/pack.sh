@@ -260,8 +260,92 @@ pack_rootfs() {
   sync
 }
 
+# debugfs exits 0 even when a path is absent, so detect existence from output.
+debugfs_path_exists() {
+  debugfs -R "stat $2" "$1" 2>/dev/null | grep -q '^Inode:'
+}
+
+verify_firstboot_conf() {
+  local image stat
+  image="$1"
+
+  debugfs_path_exists "$image" /etc/firstboot.conf ||
+    die "firstboot.conf is missing after write"
+  stat="$(debugfs -R "stat /etc/firstboot.conf" "$image" 2>/dev/null)"
+  printf '%s\n' "$stat" | grep -qE 'Mode:[[:space:]]+0600' ||
+    die "firstboot.conf mode is not 0600 after write"
+  printf '%s\n' "$stat" | grep -qE 'User:[[:space:]]+0[[:space:]]' ||
+    die "firstboot.conf owner is not root after write"
+}
+
+# inject-firstboot: write /etc/firstboot.conf into the ext4 root partition of a
+# golden image, unprivileged (debugfs, no mount, no loop device). I/O matches
+# apply-overlay (extract the root partition, modify, write it back).
+inject_firstboot() {
+  local cmdfile config image rc reset_firstboot root_image root_part
+  config=""
+  image=""
+  reset_firstboot=0
+  root_part=2
+
+  while [ "$#" -gt 0 ]; do
+    case "$1" in
+      --config) config="${2:-}"; shift 2 ;;
+      --image) image="${2:-}"; shift 2 ;;
+      --reset-firstboot) reset_firstboot=1; shift ;;
+      --root-partition-number) root_part="${2:-}"; shift 2 ;;
+      *) die "unknown inject-firstboot argument: $1" ;;
+    esac
+  done
+
+  [ -f "$image" ] || die "image not found: $image"
+  [ -f "$config" ] || die "firstboot config not found: $config"
+
+  make_tmp_dir
+  root_image="$tmp_dir/root.img"
+
+  extract_partition "$image" "$root_part" "$root_image"
+
+  # Confirm this is a NormaCore golden rootfs (also proves debugfs can open it).
+  if ! debugfs_path_exists "$root_image" /usr/local/bin/firstboot.sh; then
+    die "input does not look like a NormaCore golden image (no /usr/local/bin/firstboot.sh on partition $root_part)"
+  fi
+
+  cmdfile="$tmp_dir/debugfs.cmds"
+  : > "$cmdfile"
+  if debugfs_path_exists "$root_image" /etc/firstboot.conf; then
+    printf 'rm /etc/firstboot.conf\n' >> "$cmdfile"
+  fi
+  {
+    printf 'write %s /etc/firstboot.conf\n' "$config"
+    printf 'sif /etc/firstboot.conf mode 0100600\n'
+    printf 'sif /etc/firstboot.conf uid 0\n'
+    printf 'sif /etc/firstboot.conf gid 0\n'
+  } >> "$cmdfile"
+  if [ "$reset_firstboot" = 1 ] &&
+    debugfs_path_exists "$root_image" /etc/.firstboot_done; then
+    printf 'rm /etc/.firstboot_done\n' >> "$cmdfile"
+  fi
+
+  log "writing /etc/firstboot.conf"
+  debugfs -w -f "$cmdfile" "$root_image"
+
+  verify_firstboot_conf "$root_image"
+
+  log "checking filesystem consistency"
+  set +e
+  e2fsck -fy "$root_image" >/dev/null
+  rc=$?
+  set -e
+  [ "$rc" -le 2 ] || die "e2fsck reported uncorrected errors (exit $rc)"
+
+  write_partition "$image" "$root_part" "$root_image"
+  sync
+}
+
 case "${1:-}" in
   apply-overlay) shift; apply_overlay "$@" ;;
   pack-rootfs) shift; pack_rootfs "$@" ;;
-  *) die "usage: pack apply-overlay|pack-rootfs ..." ;;
+  inject-firstboot) shift; inject_firstboot "$@" ;;
+  *) die "usage: pack apply-overlay|pack-rootfs|inject-firstboot ..." ;;
 esac
