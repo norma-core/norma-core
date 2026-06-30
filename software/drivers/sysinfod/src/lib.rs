@@ -14,6 +14,8 @@ use tokio::sync::RwLock;
 use tokio::time;
 
 const QUEUE_ID: &str = "system/rx";
+const CELLULAR_REFRESH_INTERVAL_SECS: u64 = 5;
+const CELLULAR_REFRESH_INTERVAL_NS: u64 = CELLULAR_REFRESH_INTERVAL_SECS * 1_000_000_000;
 
 pub mod sysinfo_proto {
     pub mod sysinfo {
@@ -21,11 +23,12 @@ pub mod sysinfo_proto {
     }
 }
 
+mod cellular;
 mod power;
 
 use crate::sysinfo_proto::sysinfo::{
-    Cpu, Disk, Envelope, EnvelopeData, Memory, Motherboard, Network, NetworkIp, OsInfo,
-    PowerSource, TemperatureSensor, TimeInfo, User,
+    CellularModem, Cpu, Disk, Envelope, EnvelopeData, Memory, Motherboard, Network, NetworkIp,
+    OsInfo, PowerSource, TemperatureSensor, TimeInfo, User,
 };
 
 pub struct SystemMonitor {
@@ -37,6 +40,13 @@ pub struct SystemMonitor {
     components: Arc<RwLock<Components>>,
     users: Arc<RwLock<Users>>,
     static_data: Arc<StaticSystemData>,
+    cellular_cache: Arc<RwLock<CellularCache>>,
+}
+
+#[derive(Default)]
+struct CellularCache {
+    next_refresh_monotonic_stamp_ns: u64,
+    modems: Vec<CellularModem>,
 }
 
 struct StaticSystemData {
@@ -81,6 +91,7 @@ impl SystemMonitor {
             components: Arc::new(RwLock::new(components)),
             users: Arc::new(RwLock::new(users)),
             static_data,
+            cellular_cache: Arc::new(RwLock::new(CellularCache::default())),
         })
     }
 
@@ -110,6 +121,7 @@ impl SystemMonitor {
     }
 
     async fn collect_system_data(&self) -> Result<Envelope, Box<dyn std::error::Error>> {
+        let cellular_modems = self.collect_cellular_modems().await;
         let mut system = self.system.write().await;
         let mut disks = self.disks.write().await;
         let mut networks = self.networks.write().await;
@@ -138,6 +150,7 @@ impl SystemMonitor {
             networks: self.collect_network_data(&networks),
             temperatures: self.collect_temperature_data(&components),
             power_sources: self.collect_power_sources(),
+            cellular_modems,
         };
 
         Ok(Envelope {
@@ -259,6 +272,23 @@ impl SystemMonitor {
 
     fn collect_power_sources(&self) -> Vec<PowerSource> {
         power::collect_power_sources()
+    }
+
+    async fn collect_cellular_modems(&self) -> Vec<CellularModem> {
+        let mut cache = self.cellular_cache.write().await;
+        let now_ns = systime::get_monotonic_stamp_ns();
+        if now_ns < cache.next_refresh_monotonic_stamp_ns {
+            return cache.modems.clone();
+        }
+
+        let modems = tokio::task::spawn_blocking(cellular::collect_cellular_modems)
+            .await
+            .unwrap_or_default();
+
+        cache.next_refresh_monotonic_stamp_ns =
+            systime::get_monotonic_stamp_ns().saturating_add(CELLULAR_REFRESH_INTERVAL_NS);
+        cache.modems = modems;
+        cache.modems.clone()
     }
 
     fn get_timezone_offset_seconds() -> i32 {

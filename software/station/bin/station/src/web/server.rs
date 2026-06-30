@@ -4,12 +4,12 @@ use http_body_util::{BodyExt, Empty, Full, combinators::BoxBody};
 use hyper::{Request, Response, body::Incoming};
 use hyper_util::rt::{TokioExecutor, TokioIo};
 use hyper_util::server::conn::auto;
+use normfs::NormFS;
 use rust_embed::RustEmbed;
 use std::error::Error;
 use std::net::SocketAddr;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
-use normfs::NormFS;
 use tokio::net::TcpListener;
 
 #[derive(RustEmbed)]
@@ -74,7 +74,9 @@ impl WebServer {
 
                 static CLIENT_COUNTER: AtomicU64 = AtomicU64::new(1);
                 let client_id = format!("ws-{}", CLIENT_COUNTER.fetch_add(1, Ordering::Relaxed));
-                if let Err(e) = normfs::server::websocket::handle_websocket(upgraded, normfs, client_id).await {
+                if let Err(e) =
+                    normfs::server::websocket::handle_websocket(upgraded, normfs, client_id).await
+                {
                     log::error!("NormFS WebSocket error: {e:#}");
                 }
             });
@@ -161,7 +163,8 @@ impl WebServer {
 
         let is_get_or_head =
             req.method() == hyper::Method::GET || req.method() == hyper::Method::HEAD;
-        if is_get_or_head && Self::is_spa_route(uri_path)
+        if is_get_or_head
+            && Self::is_spa_route(uri_path)
             && let Some(content) = Asset::get("index.html")
         {
             let mime = mime_guess::from_path("index.html").first_or_octet_stream();
@@ -190,9 +193,7 @@ pub async fn start_server(
 ) -> Result<(), Box<dyn Error + Send + Sync>> {
     let listener = TcpListener::bind(addr).await?;
     log::info!("WebSocket server listening on {}", addr);
-    let server = Arc::new(WebServer {
-        normfs,
-    });
+    let server = Arc::new(WebServer { normfs });
 
     loop {
         tokio::select! {

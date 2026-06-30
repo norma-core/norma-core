@@ -1,12 +1,12 @@
 import { useState } from 'react';
-import { usbvideo, st3215, motors_mirroring, sysinfo, yahboom_dogzilla_lite, normvla, vesc_trampa } from '@/api/proto.js';
-import { formatBytes, parseUsbVideoData, parseMirroringData, parseSysinfoData, parseYahboomDogzillaLiteData, parseNormvlaData } from '@/components/history/history-utils';
+import { arduino_nicla_sense_env, usbvideo, st3215, motors_mirroring, sysinfo, yahboom_dogzilla_lite, normvla, vesc_trampa } from '@/api/proto.js';
+import { formatBytes, parseUsbVideoData, parseMirroringData, parseSysinfoData, parseArduinoNiclaSenseEnvData, parseYahboomDogzillaLiteData, parseNormvlaData } from '@/components/history/history-utils';
 import ExpandedView from '@/components/history/ExpandedView';
 
 export interface HistoryElementData {
   queueId: string;
   entryId: Uint8Array;
-  data: Uint8Array | usbvideo.IRxEnvelope | st3215.IInferenceState | st3215.ITxEnvelope | motors_mirroring.IRxEnvelope | sysinfo.IEnvelope | yahboom_dogzilla_lite.IInferenceState | vesc_trampa.IInferenceState | vesc_trampa.IRxEnvelope | vesc_trampa.ITxEnvelope | normvla.IFrame | null;
+  data: Uint8Array | usbvideo.IRxEnvelope | st3215.IInferenceState | st3215.ITxEnvelope | motors_mirroring.IRxEnvelope | sysinfo.IEnvelope | arduino_nicla_sense_env.IRxEnvelope | yahboom_dogzilla_lite.IInferenceState | vesc_trampa.IInferenceState | vesc_trampa.IRxEnvelope | vesc_trampa.ITxEnvelope | normvla.IFrame | null;
   rawData?: Uint8Array | null;
   error?: string;
   type?: string;
@@ -38,13 +38,42 @@ function formatQueueIdForDisplay(queueId: string): string {
   return hasLeadingSlash ? `/${withoutPrefix}` : withoutPrefix;
 }
 
+function readFloat32LE(bytes: Uint8Array | null | undefined, offset: number): number | null {
+  if (!bytes || offset < 0 || offset + 4 > bytes.length) {
+    return null;
+  }
+  return new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength).getFloat32(offset, true);
+}
+
+function readUint16LE(bytes: Uint8Array | null | undefined, offset: number): number | null {
+  if (!bytes || offset < 0 || offset + 2 > bytes.length) {
+    return null;
+  }
+  return new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength).getUint16(offset, true);
+}
+
+function formatSensorValue(value: number | null, unit = ''): string | null {
+  if (value === null || !Number.isFinite(value)) {
+    return null;
+  }
+  return `${value.toFixed(2)}${unit}`;
+}
+
 function HistoryElement({ element, index, dataQueueType, dataQueueId }: HistoryElementProps) {
-  const [isExpanded, setIsExpanded] = useState(element.type === 'usbvideo' || element.type === 'st3215' || element.type === 'yahboom_dogzilla_lite' || element.type === 'normvla' || element.type === 'st3215tx' || element.type === 'vesc-trampa' || element.type === 'vesc-trampa-rx' || element.type === 'vesc-trampa-tx');
+  const [isExpanded, setIsExpanded] = useState(element.type === 'usbvideo' || element.type === 'st3215' || element.type === 'yahboom_dogzilla_lite' || element.type === 'arduino-nicla-sense-env' || element.type === 'normvla' || element.type === 'st3215tx' || element.type === 'vesc-trampa' || element.type === 'vesc-trampa-rx' || element.type === 'vesc-trampa-tx');
   const displayQueueId = formatQueueIdForDisplay(element.queueId);
 
   const usbVideoData = element.type === 'usbvideo' && element.data ? parseUsbVideoData(element.data) : null;
   const mirroringData = element.type === 'mirroring' && element.data ? parseMirroringData(element.data) : null;
   const sysinfoData = element.type === 'sysinfo' && element.data ? parseSysinfoData(element.data) : null;
+  const arduinoNiclaSenseEnvData = element.type === 'arduino-nicla-sense-env' && element.data ? parseArduinoNiclaSenseEnvData(element.data) : null;
+  const arduinoNiclaSenseEnvBytes = arduinoNiclaSenseEnvData?.data ?? null;
+  const arduinoNiclaSenseEnvTemperature = formatSensorValue(readFloat32LE(arduinoNiclaSenseEnvBytes, 0x18), 'C');
+  const arduinoNiclaSenseEnvHumidity = formatSensorValue(readFloat32LE(arduinoNiclaSenseEnvBytes, 0x1c), '%');
+  const arduinoNiclaSenseEnvEpaAqi = readUint16LE(arduinoNiclaSenseEnvBytes, 0x28);
+  const arduinoNiclaSenseEnvIaq = formatSensorValue(readFloat32LE(arduinoNiclaSenseEnvBytes, 0x70));
+  const arduinoNiclaSenseEnvTvoc = formatSensorValue(readFloat32LE(arduinoNiclaSenseEnvBytes, 0x74), 'mg/m^3');
+  const arduinoNiclaSenseEnvEco2 = formatSensorValue(readFloat32LE(arduinoNiclaSenseEnvBytes, 0x78), 'ppm');
   const yahboom_dogzilla_liteData = element.type === 'yahboom_dogzilla_lite' && element.data ? parseYahboomDogzillaLiteData(element.data) : null;
   const normvlaData = element.type === 'normvla' && element.data ? parseNormvlaData(element.data as Uint8Array | normvla.IFrame) : null;
   const st3215TxData = element.type === 'st3215tx' && element.data && !(element.data instanceof Uint8Array) ? element.data as st3215.ITxEnvelope : null;
@@ -162,6 +191,39 @@ function HistoryElement({ element, index, dataQueueType, dataQueueId }: HistoryE
                 <span className="text-text-label">
                   {sysinfoData.data.hostname}
                 </span>
+              )}
+            </div>
+          )}
+
+          {arduinoNiclaSenseEnvData && (
+            <div className="flex items-center gap-3 text-xs">
+              <span className="text-accent-success">
+                {arduino_nicla_sense_env.ArduinoNiclaSenseEnvSignalType[arduinoNiclaSenseEnvData.signalType]
+                  ?.replace(/^ARDUINO_NICLA_SENSE_ENV_/, '')
+                  .replace(/_/g, ' ') ?? arduinoNiclaSenseEnvData.signalType}
+              </span>
+              {arduinoNiclaSenseEnvData.device && (
+                <span className="text-accent-info">
+                  {arduinoNiclaSenseEnvData.device.id || `i2c-${arduinoNiclaSenseEnvData.device.i2cBus}`}
+                </span>
+              )}
+              {arduinoNiclaSenseEnvTemperature && (
+                <span className="text-accent-danger">Temp: {arduinoNiclaSenseEnvTemperature}</span>
+              )}
+              {arduinoNiclaSenseEnvHumidity && (
+                <span className="text-accent-info">RH: {arduinoNiclaSenseEnvHumidity}</span>
+              )}
+              {arduinoNiclaSenseEnvEpaAqi !== null && (
+                <span className="text-accent-warning">AQI: {arduinoNiclaSenseEnvEpaAqi}</span>
+              )}
+              {arduinoNiclaSenseEnvIaq && (
+                <span className="text-accent-secondary">IAQ: {arduinoNiclaSenseEnvIaq}</span>
+              )}
+              {arduinoNiclaSenseEnvTvoc && (
+                <span className="text-accent-data">TVOC: {arduinoNiclaSenseEnvTvoc}</span>
+              )}
+              {arduinoNiclaSenseEnvEco2 && (
+                <span className="text-accent-success">eCO2: {arduinoNiclaSenseEnvEco2}</span>
               )}
             </div>
           )}

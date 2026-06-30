@@ -116,14 +116,14 @@ ping -I <interface> -c 1 -W 2 <target>
 The daemon also enforces a hard five-second timeout around each `ping` process
 and kills a stuck helper.
 
-Current targets:
+Current targets, defined in `src/health.c` as `x8_health_targets`:
 
-- `1.1.1.1`
-- `8.8.8.8`
-- `9.9.9.9`
-- `208.67.222.222`
-- `1.0.0.1`
-- `8.8.4.4`
+- `1.1.1.1` - Cloudflare
+- `8.8.8.8` - Google
+- `9.9.9.9` - Quad9
+- `208.67.222.222` - Cisco OpenDNS
+- `1.0.0.1` - Cloudflare secondary
+- `8.8.4.4` - Google secondary
 
 One successful target makes that slot healthy. If a slot fails every target,
 the daemon stops its PPP process, disconnects its bearer, disables the modem,

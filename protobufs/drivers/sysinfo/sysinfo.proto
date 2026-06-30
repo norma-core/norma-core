@@ -32,6 +32,7 @@ message EnvelopeData {
     
     repeated TemperatureSensor temperatures = 20;
     repeated PowerSource       power_sources = 21;
+    repeated CellularModem     cellular_modems = 30;
 }
 
 message OsInfo {
@@ -126,4 +127,107 @@ message PowerSource {
     string name = 1;
 
     repeated PowerSourceAttribute attributes = 10;
+}
+
+message CellularAttribute {
+    string key   = 1;
+    string value = 2;
+}
+
+message CellularError {
+    uint64 monotonic_stamp_ns = 1;
+    uint64 local_stamp_ns     = 2;
+    uint64 app_start_id       = 3;
+
+    string scope   = 10;
+    string path    = 11;
+    string message = 12;
+    int32  exit_code = 13;
+    bool   timed_out = 14;
+}
+
+message CellularIpConfig {
+    string family  = 1;
+    string method  = 2;
+    string address = 3;
+    uint32 prefix  = 4;
+    string gateway = 5;
+    repeated string dns = 6;
+
+    repeated CellularAttribute attributes = 100;
+}
+
+message CellularBearer {
+    uint64 monotonic_stamp_ns = 1;
+    uint64 local_stamp_ns     = 2;
+    uint64 app_start_id       = 3;
+
+    string path        = 10;
+    string bearer_id   = 11;
+    string type        = 12;
+    bool   connected   = 13;
+    bool   suspended   = 14;
+    bool   multiplexed = 15;
+    string interface   = 16;
+    uint32 ip_timeout_seconds = 17;
+    int32  profile_id  = 18;
+
+    string apn      = 20;
+    string apn_type = 21;
+    string roaming  = 22;
+
+    repeated CellularIpConfig ip = 30;
+    repeated CellularAttribute attributes = 100;
+}
+
+message CellularSignal {
+    uint64 monotonic_stamp_ns = 1;
+    uint64 local_stamp_ns     = 2;
+    uint64 app_start_id       = 3;
+
+    string access_tech = 10;
+    repeated CellularAttribute metrics = 20;
+}
+
+message CellularModem {
+    uint64 monotonic_stamp_ns = 1;
+    uint64 local_stamp_ns     = 2;
+    uint64 app_start_id       = 3;
+
+    string path        = 10;
+    string modem_id    = 11;
+    string manufacturer = 12;
+    string model       = 13;
+    string firmware_revision = 14;
+    string hardware_revision = 15;
+    string carrier_config = 16;
+    string equipment_id = 17;
+    string device_id   = 18;
+
+    string device      = 20;
+    string physdev     = 21;
+    string drivers     = 22;
+    string plugin      = 23;
+    string primary_port = 24;
+    string ports       = 25;
+
+    string state       = 30;
+    string failed_reason = 31;
+    string power_state = 32;
+    string access_tech = 33;
+    uint32 signal_quality_percent = 34;
+    bool signal_quality_recent = 35;
+
+    string imei        = 40;
+    string operator_id = 41;
+    string operator_name = 42;
+    string registration = 43;
+    string packet_service_state = 44;
+    string primary_sim_path = 45;
+    string own_numbers = 46;
+
+    repeated CellularBearer bearers = 60;
+    repeated CellularSignal signals = 61;
+    repeated CellularAttribute attributes = 100;
+    repeated CellularError errors = 101;
 }

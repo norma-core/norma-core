@@ -1,0 +1,9 @@
+# short-description: Portenta X8 eMMC image with a large rootfs partition
+# long-description:
+# Keep Arduino/NXP's X8 single-rootfs boot layout, but make the root
+# partition large enough to use nearly all of the 16 GB Portenta X8 eMMC.
+
+part u-boot --source rawcopy --sourceparams="file=imx-boot.tagged" --ondisk mmcblk --no-table --align ${IMX_BOOT_SEEK}
+part / --source rootfs --ondisk mmcblk --fstype=ext4 --label root --align 8192 --fixed-size 14336M
+
+bootloader --ptable msdos

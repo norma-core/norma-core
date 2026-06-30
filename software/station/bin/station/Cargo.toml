@@ -4,7 +4,8 @@ version.workspace = true
 edition = "2024"
 
 [features]
-default = []
+default = ["arduino"]
+arduino = ["dep:arduino-nicla-sense-env"]
 ov5647 = ["dep:ov5647"]
 yahboom-dogzilla-lite = ["dep:yahboom-dogzilla-lite"]
 
@@ -36,6 +37,9 @@ rust-embed = "8.9.0"
 mime_guess = "2.0.5"
 parking_lot = { workspace = true }
 dashmap = "6.1"
+
+[target.'cfg(target_os = "linux")'.dependencies]
+arduino-nicla-sense-env = { path = "../../../drivers/arduino-nicla-sense-env", optional = true }
 
 [build-dependencies]
 prost-build = { workspace = true }

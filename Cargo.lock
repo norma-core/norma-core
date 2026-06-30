@@ -112,6 +112,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "arduino-nicla-sense-env"
+version = "0.1.0-beta.10"
+dependencies = [
+ "bytes",
+ "i2cdev",
+ "log",
+ "normfs",
+ "prost",
+ "prost-build",
+ "station_iface",
+ "systime",
+ "tokio",
+]
+
+[[package]]
 name = "atomic-waker"
 version = "1.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -197,6 +212,12 @@ name = "bumpalo"
 version = "3.19.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "46c5e41b57b8bba42a04676d81cb89e9ee8e859a1a66f80a5a72e1cb76b34d43"
+
+[[package]]
+name = "byteorder"
+version = "1.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1fd0f2584146f6f2ef48085050886acf353beff7305ebd1ae69500e27c67f64b"
 
 [[package]]
 name = "bytes"
@@ -954,6 +975,18 @@ dependencies = [
  "tower-service",
  "tracing",
  "windows-registry",
+]
+
+[[package]]
+name = "i2cdev"
+version = "0.6.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9b940f7497c4f95b863b21cd34c3737b53a67d80d94cf29055d7f7eeca6ffdb4"
+dependencies = [
+ "bitflags 2.9.4",
+ "byteorder",
+ "libc",
+ "nix 0.26.4",
 ]
 
 [[package]]
@@ -2410,6 +2443,7 @@ name = "station"
 version = "0.1.0-beta.10"
 dependencies = [
  "anyhow",
+ "arduino-nicla-sense-env",
  "bytes",
  "clap",
  "dashmap",

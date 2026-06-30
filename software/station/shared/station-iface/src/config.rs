@@ -40,7 +40,6 @@ pub struct CloudOffloadConfig {
     pub endpoint: Option<String>,
 }
 
-
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Drivers {
     /// ST3215 servo bus configuration
@@ -58,11 +57,20 @@ pub struct Drivers {
     #[serde(rename = "usb-video", skip_serializing_if = "Option::is_none")]
     pub usb_video: Option<UsbVideoConfig>,
 
-    #[serde(rename = "yahboom-dogzilla-lite", skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "yahboom-dogzilla-lite",
+        skip_serializing_if = "Option::is_none"
+    )]
     pub yahboom_dogzilla_lite: Option<YahboomDogzillaLiteConfig>,
 
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub ov5647: Option<Ov5647Config>,
+
+    #[serde(
+        rename = "arduino-nicla-sense-env",
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub arduino_nicla_sense_env: Option<ArduinoNiclaSenseEnvConfig>,
 }
 
 /// ST3215 servo bus configuration
@@ -85,7 +93,11 @@ pub struct St3215Config {
     ///   8: 40   # Motor 8 has stricter limit
     ///   5: 60   # Motor 5 has more relaxed limit
     /// ```
-    #[serde(rename = "motor-current-thresholds", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "motor-current-thresholds",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
     pub motor_current_thresholds: Option<std::collections::HashMap<u8, u16>>,
 
     /// Deadband for mirroring. Minimum distance between current position
@@ -125,7 +137,10 @@ pub struct VescTrampaConfig {
     pub enabled: bool,
 
     /// Serial baud rate used for matching VESC board ports.
-    #[serde(rename = "port-baud-rate", default = "default_vesc_trampa_port_baud_rate")]
+    #[serde(
+        rename = "port-baud-rate",
+        default = "default_vesc_trampa_port_baud_rate"
+    )]
     pub port_baud_rate: u32,
 }
 
@@ -168,7 +183,11 @@ pub struct Inference {
     pub st3215_bus: String,
 
     /// Update interval for publishing (e.g., "100ms")
-    #[serde(rename = "update-interval", with = "humantime_serde", default = "default_update_interval")]
+    #[serde(
+        rename = "update-interval",
+        with = "humantime_serde",
+        default = "default_update_interval"
+    )]
     pub update_interval: std::time::Duration,
 }
 
@@ -261,6 +280,42 @@ pub struct Ov5647Config {
     pub frames_per_second: u16,
 }
 
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct ArduinoNiclaSenseEnvConfig {
+    #[serde(default)]
+    pub enabled: bool,
+
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub boards: Vec<ArduinoNiclaSenseEnvBoardConfig>,
+
+    #[serde(
+        default = "default_arduino_nicla_sense_env_poll_interval",
+        rename = "poll-interval",
+        with = "humantime_serde"
+    )]
+    pub poll_interval: std::time::Duration,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct ArduinoNiclaSenseEnvBoardConfig {
+    #[serde(rename = "i2c-bus")]
+    pub i2c_bus: u32,
+}
+
+fn default_arduino_nicla_sense_env_poll_interval() -> std::time::Duration {
+    std::time::Duration::from_secs(1)
+}
+
+impl Default for ArduinoNiclaSenseEnvConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            boards: Vec::new(),
+            poll_interval: default_arduino_nicla_sense_env_poll_interval(),
+        }
+    }
+}
+
 fn default_ov5647_dimension() -> String {
     "320x240".to_string()
 }
@@ -293,6 +348,7 @@ impl Default for Drivers {
             usb_video: Some(UsbVideoConfig::default()),
             yahboom_dogzilla_lite: None,
             ov5647: None,
+            arduino_nicla_sense_env: None,
         }
     }
 }

@@ -1,13 +1,13 @@
-use std::sync::Arc;
-use bytes::Bytes;
-use dashmap::DashMap;
-use parking_lot::{Mutex, Condvar};
-use prost::Message;
-use normfs::NormFS;
-use tokio::sync::mpsc;
-use normfs::UintN;
 use crate::station_proto::inference::{InferenceRx, inference_rx};
 use crate::station_proto::startups::StationStartup;
+use bytes::Bytes;
+use dashmap::DashMap;
+use normfs::NormFS;
+use normfs::UintN;
+use parking_lot::{Condvar, Mutex};
+use prost::Message;
+use std::sync::Arc;
+use tokio::sync::mpsc;
 
 const QUEUE_ID: &str = "inference-states";
 const STARTUPS_QUEUE_ID: &str = "startups";
@@ -38,7 +38,9 @@ impl Inference {
         normfs.ensure_queue_exists_for_write(&queue_id).await?;
 
         let startups_queue_id = normfs.resolve(STARTUPS_QUEUE_ID);
-        normfs.ensure_queue_exists_for_write(&startups_queue_id).await?;
+        normfs
+            .ensure_queue_exists_for_write(&startups_queue_id)
+            .await?;
 
         Ok(())
     }
@@ -65,9 +67,7 @@ impl Inference {
         Ok(())
     }
 
-    pub fn start(
-        normfs: Arc<NormFS>,
-    ) -> Self {
+    pub fn start(normfs: Arc<NormFS>) -> Self {
         if let Err(e) = Self::notify_startup(&normfs) {
             log::error!("Failed to publish station startup: {:?}", e);
         }
@@ -106,7 +106,8 @@ impl Inference {
                 drop(signaled);
 
                 // Snapshot all latest pointers
-                let entries: Vec<inference_rx::Entry> = worker_pointers.iter()
+                let entries: Vec<inference_rx::Entry> = worker_pointers
+                    .iter()
                     .map(|entry| inference_rx::Entry {
                         queue: entry.key().clone(),
                         r#type: entry.value().1,
@@ -124,8 +125,7 @@ impl Inference {
                     };
 
                     match worker_normfs.enqueue(&worker_queue_id, Bytes::from(rx.encode_to_vec())) {
-                        Ok(_) => {
-                        }
+                        Ok(_) => {}
                         Err(e) => {
                             log::error!("Failed to enqueue inference state to NormFS: {:?}", e);
                         }
@@ -152,7 +152,11 @@ impl Inference {
         let latest_pointers = self.latest_pointers.clone();
         let signal = self.signal.clone();
 
-        log::info!("Inference: registering queue '{}' with type {}", queue_id, queue_data_type);
+        log::info!(
+            "Inference: registering queue '{}' with type {}",
+            queue_id,
+            queue_data_type
+        );
 
         let callback = Box::new(move |entries: &[(UintN, Bytes)]| {
             if let Some((id, _bytes)) = entries.last() {
@@ -169,7 +173,11 @@ impl Inference {
 
         match self.normfs.subscribe(queue_id, callback) {
             Ok(subscriber_id) => {
-                log::info!("Inference: subscribed to queue '{}' with subscriber_id {}", queue_id, subscriber_id);
+                log::info!(
+                    "Inference: subscribed to queue '{}' with subscriber_id {}",
+                    queue_id,
+                    subscriber_id
+                );
             }
             Err(e) => {
                 log::error!("Failed to subscribe to queue '{}': {:?}", queue_id, e);

@@ -41,6 +41,8 @@ export function getQueueType(queueType: drivers.QueueDataType): string | undefin
       return 'sysinfo';
     case drivers.QueueDataType.QDT_YAHBOOM_DOGZILLA_LITE_INFERENCE:
       return 'yahboom_dogzilla_lite';
+    case drivers.QueueDataType.QDT_ARDUINO_NICLA_SENSE_ENV_RX:
+      return 'arduino-nicla-sense-env';
     default:
       return undefined;
   }

@@ -27,9 +27,26 @@ IMAGE_INSTALL = "\
     \
     m-bq24195 \
     m-cs42l52 \
+    firmware-imx-sdma-imx7d \
+    linux-firmware-cyw-fmac-fw \
+    linux-firmware-cyw-fmac-nvram \
+    linux-firmware-cyw-bt-patch \
     \
     iproute2 \
     ethtool \
+    \
+    dbus \
+    modemmanager \
+    modemmanager-init \
+    x8-cellulard \
+    x8-watchdogd \
+    mobile-broadband-provider-info \
+    libqmi \
+    libmbim \
+    glib-2.0 \
+    libgpiod \
+    libnl \
+    libnl-route \
     \
     ppp \
     picocom \
@@ -42,13 +59,14 @@ IMAGE_INSTALL = "\
     util-linux \
     e2fsprogs \
     dosfstools \
+    x8-sdcard-automount \
     \
     v4l-utils \
     alsa-utils \
     \
     wpa-supplicant \
     iw \
-    wireless-regdb \
+    wireless-regdb-static \
     bluez5 \
     \
     tailscale \
@@ -64,6 +82,8 @@ IMAGE_INSTALL = "\
 "
 
 IMAGE_FSTYPES += "wic.zst"
+WKS_FILE = "x8-normacore-emmc.wks.in"
+WKS_FILE:mx8mm-nxp-bsp = "x8-normacore-emmc.wks.in"
 
 ROOTFS_POSTPROCESS_COMMAND += "x8_patch_uenv_for_max_carrier;"
 
@@ -98,7 +118,18 @@ x8_validate_root_access() {
 
 x8_set_root_password() {
     if [ -n "${X8_ROOT_HASH}" ] && [ -f "${IMAGE_ROOTFS}/etc/shadow" ]; then
-        sed -i "s|^root:[^:]*:|root:${X8_ROOT_HASH}:|" "${IMAGE_ROOTFS}/etc/shadow"
+        root_hash='${X8_ROOT_HASH}'
+        root_hash="$(printf '%s' "$root_hash" | sed 's/\\\$/\$/g')"
+
+        case "$root_hash" in
+            \$[156y]\$*|\$2[aby]\$*) ;;
+            *)
+                echo 'Unsupported X8_ROOT_HASH format. Expected a crypt hash like $6$...' >&2
+                exit 1
+                ;;
+        esac
+
+        sed -i "s|^root:[^:]*:|root:${root_hash}:|" "${IMAGE_ROOTFS}/etc/shadow"
     fi
 }
 

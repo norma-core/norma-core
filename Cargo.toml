@@ -1,6 +1,7 @@
 [workspace]
 resolver = "3"
 members = [
+  "software/drivers/arduino-nicla-sense-env",
   "software/drivers/inferences",
   "software/drivers/motors-mirroring",
   "software/drivers/st3215",

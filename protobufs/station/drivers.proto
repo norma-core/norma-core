@@ -27,6 +27,9 @@ enum QueueDataType {
     QDT_YAHBOOM_DOGZILLA_LITE_SERIAL_TX = 40; // yahboom_dogzilla_lite.TxEnvelope
     QDT_YAHBOOM_DOGZILLA_LITE_SERIAL_RX = 41; // yahboom_dogzilla_lite.RxEnvelope
     QDT_YAHBOOM_DOGZILLA_LITE_INFERENCE = 42; // yahboom_dogzilla_lite.InferenceState
+
+    QDT_ARDUINO_NICLA_SENSE_ENV_TX = 50; // arduino_nicla_sense_env.TxEnvelope
+    QDT_ARDUINO_NICLA_SENSE_ENV_RX = 51; // arduino_nicla_sense_env.RxEnvelope
 }
 
 enum StationCommandType {
@@ -35,4 +38,5 @@ enum StationCommandType {
     STC_INFERENCE_TAG_COMMAND         = 2; // inference_tags.Command
     STC_YAHBOOM_DOGZILLA_LITE_COMMAND = 3; // yahboom_dogzilla_lite.Command
     STC_VESC_TRAMPA_COMMAND           = 4; // vesc_trampa.Command
+    STC_ARDUINO_NICLA_SENSE_ENV_COMMAND = 5; // arduino_nicla_sense_env.Command
 }

@@ -1,5 +1,5 @@
 import Long from 'long';
-import { yahboom_dogzilla_lite, drivers, inference, motors_mirroring, normvla, st3215, sysinfo, usbvideo, vesc_trampa } from '@/api/proto.js';
+import { arduino_nicla_sense_env, yahboom_dogzilla_lite, drivers, inference, motors_mirroring, normvla, st3215, sysinfo, usbvideo, vesc_trampa } from '@/api/proto.js';
 import { NormFsClient } from "./normfs.js";
 import { getGlobalTimeAdjustmentNs, isTimeSyncActive } from '@/api/time-sync.js';
 import {
@@ -25,6 +25,7 @@ export interface Frame {
   videoQueues?: FrameEntry<usbvideo.IRxEnvelope>[];
   mirroring?: FrameEntry<motors_mirroring.IRxEnvelope>;
   sysinfo?: FrameEntry<sysinfo.IEnvelope>;
+  arduinoNiclaSenseEnv?: FrameEntry<arduino_nicla_sense_env.IRxEnvelope>;
   yahboom_dogzilla_lite?: FrameEntry<yahboom_dogzilla_lite.IInferenceState>;
   normvla?: FrameEntry<normvla.IFrame>;
 
@@ -44,7 +45,7 @@ export interface Frame {
 }
 
 // Find entry in previous frame with matching queue and pointer
-type DecodedEntry = st3215.IInferenceState | st3215.ITxEnvelope | usbvideo.IRxEnvelope | motors_mirroring.IRxEnvelope | sysinfo.IEnvelope | yahboom_dogzilla_lite.IInferenceState | normvla.IFrame | vesc_trampa.IInferenceState | vesc_trampa.IRxEnvelope | vesc_trampa.ITxEnvelope | null;
+type DecodedEntry = st3215.IInferenceState | st3215.ITxEnvelope | usbvideo.IRxEnvelope | motors_mirroring.IRxEnvelope | sysinfo.IEnvelope | arduino_nicla_sense_env.IRxEnvelope | yahboom_dogzilla_lite.IInferenceState | normvla.IFrame | vesc_trampa.IInferenceState | vesc_trampa.IRxEnvelope | vesc_trampa.ITxEnvelope | null;
 
 interface ParseFrameOptions {
   retainRawData?: boolean;
@@ -114,6 +115,14 @@ function findPreviousEntry(
     const prevPtr = previousFrame.sysinfo.ptr;
     if (prevPtr.length === ptr.length && prevPtr.every((b, i) => b === ptr[i])) {
       return { decoded: previousFrame.sysinfo.data, rawData: previousFrame.sysinfo.rawData ?? null };
+    }
+  }
+
+  // Check Arduino Nicla Sense Env
+  if (previousFrame.arduinoNiclaSenseEnv?.queueId === queue) {
+    const prevPtr = previousFrame.arduinoNiclaSenseEnv.ptr;
+    if (prevPtr.length === ptr.length && prevPtr.every((b, i) => b === ptr[i])) {
+      return { decoded: previousFrame.arduinoNiclaSenseEnv.data, rawData: previousFrame.arduinoNiclaSenseEnv.rawData ?? null };
     }
   }
 
@@ -250,6 +259,13 @@ export async function parseFrame(
                 console.error("Failed to decode sysinfo.Envelope:", error);
               }
               break;
+            case drivers.QueueDataType.QDT_ARDUINO_NICLA_SENSE_ENV_RX:
+              try {
+                decoded = arduino_nicla_sense_env.RxEnvelope.decode(streamEntry.data);
+              } catch (error) {
+                console.error("Failed to decode arduino_nicla_sense_env.RxEnvelope:", error);
+              }
+              break;
             case drivers.QueueDataType.QDT_YAHBOOM_DOGZILLA_LITE_INFERENCE:
               try {
                 decoded = yahboom_dogzilla_lite.InferenceState.decode(streamEntry.data);
@@ -358,6 +374,15 @@ export async function parseFrame(
               queueId: result.queue,
               ptr: result.ptr,
               data: result.decoded as sysinfo.IEnvelope,
+              rawData: retainRawData ? result.rawData ?? null : null,
+              queueType: result.type
+            };
+            break;
+          case drivers.QueueDataType.QDT_ARDUINO_NICLA_SENSE_ENV_RX:
+            frame.arduinoNiclaSenseEnv = {
+              queueId: result.queue,
+              ptr: result.ptr,
+              data: result.decoded as arduino_nicla_sense_env.IRxEnvelope,
               rawData: retainRawData ? result.rawData ?? null : null,
               queueType: result.type
             };
