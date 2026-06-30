@@ -1,214 +1,153 @@
-# x8-cellulard model
+# x8-cellulard
 
-This directory contains the Lean 4 policy model for the Portenta cellular
-supervisor. The production daemon can be implemented later, likely in Rust, but
-this model is the current executable specification for dual-cellular failover,
-recovery, and reboot decisions.
+Plain C cellular supervisor for the Arduino Portenta X8 with the Max Carrier.
 
-The model is intentionally board-specific. It assumes two cellular slots:
+The daemon is board-specific and manages two known modem slots:
 
-- `external`: primary LTE/GNSS modem on the Max Carrier expansion path
-- `sara`: onboard SARA-R4 backup/control modem
+- `external`: Max Carrier LTE/GNSS modem, matched as `[Quectel] EC200A`
+- `sara`: onboard Portenta X8 SARA-R4 modem, matched as `[u-blox] SARA-R412M-02B`
 
-The model does not try to prove a Linux implementation. It defines the policy
-shape the daemon should follow when it observes modem, Linux, resource, and
-platform states.
+There is no external runtime config file. The command-line APN parameters are
+the source of truth: a slot is managed only when its APN is provided.
 
 ## Build
 
 ```sh
-lake build
+cmake -S . -B build
+cmake --build build
 ```
 
-Expected result:
+Run one supervisor cycle:
+
+```sh
+./build/x8-cellulard --once --external-apn internet
+```
+
+Run continuously:
+
+```sh
+./build/x8-cellulard --external-apn internet
+./build/x8-cellulard --external-apn internet --sara-apn backup.apn
+```
+
+Options:
+
+- `--external-apn APN`: enable and manage the Max Carrier external modem
+- `--sara-apn APN`: enable and manage the onboard SARA modem
+- `--interval-sec SECONDS`: supervisor interval for continuous mode
+- `--once`: run one supervisor cycle and exit
+
+At least one APN must be provided.
+
+## Supervisor Flow
+
+Each supervisor cycle applies the same recovery chain:
+
+1. Reconcile board GPIO power for enabled and disabled slots.
+2. Ask ModemManager for the configured modems.
+3. Enable configured modems when ModemManager reports them disabled.
+4. Connect each configured modem with its explicit APN.
+5. Start or maintain per-slot PPP when the bearer requires PPP.
+6. Ensure an IPv4 default route through ready PPP interfaces.
+7. Check internet reachability over each ready PPP interface.
+
+Failures are logged and the next supervisor cycle retries the recovery chain.
+
+## GPIO Ownership
+
+The daemon owns and reapplies these board GPIO outputs:
+
+- `/dev/gpiochip5` line `29`: external LTE power
+- `/dev/gpiochip5` line `4`: SARA-R4 power
+- `/dev/gpiochip5` line `2`: SARA-R4 reset
+
+Configured slots are powered on. Slots without an APN are powered down.
+
+## ModemManager
+
+ModemManager is accessed through `libmm-glib`, not `mmcli`.
+
+For each configured slot, the daemon:
+
+- matches the fixed manufacturer/model pair
+- enables the modem if needed
+- lists 3GPP profiles for diagnostics
+- connects with the APN from the command line
+- records the connected bearer, interface, APN, and IPv4 method
+
+SIM-missing and similar non-actionable modem states are held and logged instead
+of reset-looped.
+
+## PPP
+
+PPP is used when ModemManager reports a bearer with IPv4 method `ppp`.
+
+Per-slot interfaces are fixed:
+
+- `external` -> `ppp0`
+- `sara` -> `ppp1`
+
+The daemon starts `pppd` directly with:
 
 ```text
-Build completed successfully
+noauth nodetach debug noipdefault novj noccp noipv6 nodefaultroute
 ```
 
-The project is pinned by `lean-toolchain`. Lake build artifacts are ignored via
-`.gitignore`.
+It also creates `/var/run/pppd/lock` if needed. If PPP does not obtain IPv4,
+the daemon stops `pppd`, disconnects the failed bearer, and lets the next
+supervisor cycle reconnect it.
 
-## File Map
+## Routes
 
-- `X8Cellulard/Types.lean`: core enums for slots, services, modem layers,
-  faults, recoverability, platform state, and reboot reasons.
-- `X8Cellulard/State.lean`: modem, system, and world state plus derived
-  predicates such as usable link, all-links-down, and recovery exhaustion.
-- `X8Cellulard/Policy.lean`: one-step policy decisions: route repair, modem
-  recovery, service restart, clock sync, and forced reboot.
-- `X8Cellulard/Invariants.lean`: general properties checked by Lean.
-- `X8Cellulard/Scenarios.lean`: small baseline scenarios.
-- `X8Cellulard/FaultMatrix.lean`: one-shot fault matrix.
-- `X8Cellulard/Transition.lean`: event/time observation model.
-- `X8Cellulard/TraceScenarios.lean`: multi-event traces.
-- `X8Cellulard/Actuation.lean`: simplified action effects.
-- `X8Cellulard/ClosedLoopScenarios.lean`: observe, decide, apply scenarios.
-- `X8Cellulard/ActionFailure.lean`: failed action effects.
-- `X8Cellulard/ActionFailureScenarios.lean`: action failure coverage.
+Routes are managed through `libnl`.
 
-## Modeled State
+When one or more PPP interfaces have IPv4, the daemon ensures an IPv4 default
+route through the ready PPP nexthop set.
 
-The modem model is layered. It does not treat "connected" as sufficient for a
-working link.
+## Health Checks
 
-Each modem tracks:
+Health checks use the system `ping` binary. Each ready PPP interface is checked
+with:
 
-- board power state
-- USB / ModemManager presence
-- SIM state
-- radio registration
-- data bearer state
-- IP and route state
-- health-check state
-- route metric
-- recovery attempts
-- power-cycle count
-- cooldown flag
+```text
+ping -I <interface> -c 1 -W 2 <target>
+```
 
-The system model tracks:
+The daemon also enforces a hard five-second timeout around each `ping` process
+and kills a stuck helper.
 
-- `dbus`
-- `modemManager`
-- `tailscaled`
-- `ntpClient`
-- stale route state
-- resource state: normal, storage full, `/run` unavailable, OOM pressure,
-  cannot fork
-- platform state: normal, low power suspected, thermal stress, USB controller
-  wedged, fatal
-- clock state: unknown, sync needed, syncing, valid, failed
+Current targets:
 
-## Policy Defaults
+- `1.1.1.1`
+- `8.8.8.8`
+- `9.9.9.9`
+- `208.67.222.222`
+- `1.0.0.1`
+- `8.8.4.4`
 
-The default policy is conservative:
+One successful target makes that slot healthy. If a slot fails every target,
+the daemon stops its PPP process, disconnects its bearer, disables the modem,
+and lets the next supervisor cycle re-enable and reconnect it.
 
-- external LTE is preferred when healthy
-- SARA-R4 is backup when healthy
-- no SIM, PUK, denied registration, and rejected APN are held instead of
-  reset-looped
-- only one modem is hard power-cycled at a time
-- no forced reboot happens while any modem has a usable route
-- if every path is unusable and budgets are exhausted, forced reboot is allowed
-  after boot grace and reboot-rate guards
-- clock sync is started after cellular connectivity is usable, but clock sync
-  failure does not make cellular connectivity unusable
+## Recovery Contract
 
-## Modeled Decisions
+The runtime recovery policy is reconnect-only:
 
-The policy can emit these actions:
+- GPIO failures are retried on the next cycle.
+- ModemManager connection or modem enable/connect failures are retried.
+- PPP failures disconnect the bearer and retry later.
+- Route installation failures are retried.
+- Health failures reset the slot data path by stopping PPP, disconnecting the
+  bearer, and disabling the modem.
 
-- `hold slot fault`
-- `powerOn slot`
-- `reconnect slot`
-- `connect slot`
-- `configureIp slot`
-- `installRoute slot metric`
-- `removeRoute slot`
-- `powerCycle slot`
-- `restartService service`
-- `reconcileRoutes`
-- `syncClock`
-- `forceReboot reason`
+## Lean Model
 
-## Coverage
+This directory still contains a Lean 4 policy model under `X8Cellulard/`.
+That model is useful for policy experiments, but it is not the current runtime
+contract for the C daemon.
 
-The one-shot fault matrix covers:
+Build it with:
 
-- SIM missing
-- SIM PIN required
-- SIM PUK required
-- SIM failure
-- APN rejected
-- registration denied
-- no signal
-- bearer lost
-- IP configuration failure
-- route missing
-- failed health checks
-- USB vanished
-- USB present but not seen by ModemManager
-- dbus restart
-- ModemManager restart
-- tailscaled restart
-- NTP client restart
-- stale route reconciliation
-- cannot fork
-- `/run` unavailable
-- storage full
-- OOM pressure
-- low power suspected
-- thermal stress
-- USB controller wedged
-- fatal platform state
-- boot grace reboot guard
-- short outage reboot guard
-- max reboots per hour guard
-- both modems no SIM
-- external broken while SARA has no SIM
-
-The trace model covers:
-
-- route metric repair
-- stale route reconciliation
-- helper timeouts for `mmcli`, `ip`, `udhcpc`, `gpioset`, and health checks
-- link flapping and primary restoration
-- all-links-down timer crossing reboot threshold
-- daemon restart reconciliation
-- ModemManager modem ID changes
-- reboot guard counter behavior
-- external modem physically absent while SARA works
-- long no-coverage outage on both modems
-- NTP sync after a route becomes usable
-
-The closed-loop model covers simplified action effects:
-
-- route plans repair metrics
-- route actions clear stale-route state
-- `syncClock` moves clock to `syncing`
-- service restart actions set modeled services back to `running`
-- forced reboot resets volatile state and increments the reboot guard counter
-- dual power-cycle requests still actuate only one modem
-- a boot-to-healthy trace converges to external preferred
-
-The action-failure model covers:
-
-- failed route installation
-- failed IP / DHCP configuration
-- failed ModemManager connect
-- failed ModemManager reconnect
-- failed GPIO power-cycle
-- failed clock sync
-- failed service restart
-- failed reboot
-- partial success when one action in a plan fails and another succeeds
-
-## Checked Invariants
-
-Lean currently checks these general properties:
-
-- external is preferred whenever external is usable
-- SARA is preferred when external is not usable and SARA is usable
-- no reboot reason is produced while any usable link exists
-- `decide` never emits forced reboot while any usable link exists
-- non-recoverable modem faults do not produce power-cycle actions
-- `recoverBoth` never hard power-cycles both modems in the same plan
-
-## Deliberately Not Modeled Yet
-
-These are intentionally outside the current model:
-
-- exact ModemManager DBus object semantics
-- QMI vs MBIM vs PPP bearer details
-- exact GPIO electrical truth or power-good feedback
-- cooldown expiry as real time counters
-- persistent reboot history stored on disk
-- DNS resolver state
-- detailed Tailscale DERP/direct/login state
-- signal quality thresholds and roaming policy
-- Tokio task races, locks, and command cancellation
-- invalid SIM PIN retry counters and PUK lockout behavior
-- status-file and logging write failures
-
-The next high-value additions are cooldown/backoff counters, watchdog-feed
-policy, DNS state, and QMI/MBIM/PPP mode distinctions.
+```sh
+lake build
+```
