@@ -1,12 +1,14 @@
 import { useState } from 'react';
-import { arduino_nicla_sense_env, usbvideo, st3215, motors_mirroring, sysinfo, yahboom_dogzilla_lite, normvla, vesc_trampa } from '@/api/proto.js';
-import { formatBytes, parseUsbVideoData, parseMirroringData, parseSysinfoData, parseArduinoNiclaSenseEnvData, parseYahboomDogzillaLiteData, parseNormvlaData } from '@/components/history/history-utils';
+import { arduino_nicla_sense_env, ina226, usbvideo, st3215, motors_mirroring, sysinfo, yahboom_dogzilla_lite, normvla, vesc_trampa } from '@/api/proto.js';
+import { formatBytes, parseUsbVideoData, parseMirroringData, parseSysinfoData, parseArduinoNiclaSenseEnvData, parseIna226Data, parseYahboomDogzillaLiteData, parseNormvlaData } from '@/components/history/history-utils';
 import ExpandedView from '@/components/history/ExpandedView';
+import { readArduinoNiclaSenseEnvMainValues } from '@/utils/arduino-nicla-sense-env';
+import { formatIna226Current, readIna226CurrentAmps, readIna226ShuntMillivolts } from '@/utils/ina226';
 
 export interface HistoryElementData {
   queueId: string;
   entryId: Uint8Array;
-  data: Uint8Array | usbvideo.IRxEnvelope | st3215.IInferenceState | st3215.ITxEnvelope | motors_mirroring.IRxEnvelope | sysinfo.IEnvelope | arduino_nicla_sense_env.IRxEnvelope | yahboom_dogzilla_lite.IInferenceState | vesc_trampa.IInferenceState | vesc_trampa.IRxEnvelope | vesc_trampa.ITxEnvelope | normvla.IFrame | null;
+  data: Uint8Array | usbvideo.IRxEnvelope | st3215.IInferenceState | st3215.ITxEnvelope | motors_mirroring.IRxEnvelope | sysinfo.IEnvelope | arduino_nicla_sense_env.IRxEnvelope | ina226.IRxEnvelope | yahboom_dogzilla_lite.IInferenceState | vesc_trampa.IInferenceState | vesc_trampa.IRxEnvelope | vesc_trampa.ITxEnvelope | normvla.IFrame | null;
   rawData?: Uint8Array | null;
   error?: string;
   type?: string;
@@ -38,42 +40,32 @@ function formatQueueIdForDisplay(queueId: string): string {
   return hasLeadingSlash ? `/${withoutPrefix}` : withoutPrefix;
 }
 
-function readFloat32LE(bytes: Uint8Array | null | undefined, offset: number): number | null {
-  if (!bytes || offset < 0 || offset + 4 > bytes.length) {
-    return null;
-  }
-  return new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength).getFloat32(offset, true);
-}
-
-function readUint16LE(bytes: Uint8Array | null | undefined, offset: number): number | null {
-  if (!bytes || offset < 0 || offset + 2 > bytes.length) {
-    return null;
-  }
-  return new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength).getUint16(offset, true);
-}
-
-function formatSensorValue(value: number | null, unit = ''): string | null {
+function formatSensorValue(value: number | null, unit = '', decimals = 2): string | null {
   if (value === null || !Number.isFinite(value)) {
     return null;
   }
-  return `${value.toFixed(2)}${unit}`;
+  return `${value.toFixed(decimals)}${unit}`;
 }
 
 function HistoryElement({ element, index, dataQueueType, dataQueueId }: HistoryElementProps) {
-  const [isExpanded, setIsExpanded] = useState(element.type === 'usbvideo' || element.type === 'st3215' || element.type === 'yahboom_dogzilla_lite' || element.type === 'arduino-nicla-sense-env' || element.type === 'normvla' || element.type === 'st3215tx' || element.type === 'vesc-trampa' || element.type === 'vesc-trampa-rx' || element.type === 'vesc-trampa-tx');
+  const [isExpanded, setIsExpanded] = useState(element.type === 'usbvideo' || element.type === 'st3215' || element.type === 'yahboom_dogzilla_lite' || element.type === 'arduino-nicla-sense-env' || element.type === 'ina226' || element.type === 'normvla' || element.type === 'st3215tx' || element.type === 'vesc-trampa' || element.type === 'vesc-trampa-rx' || element.type === 'vesc-trampa-tx');
   const displayQueueId = formatQueueIdForDisplay(element.queueId);
 
   const usbVideoData = element.type === 'usbvideo' && element.data ? parseUsbVideoData(element.data) : null;
   const mirroringData = element.type === 'mirroring' && element.data ? parseMirroringData(element.data) : null;
   const sysinfoData = element.type === 'sysinfo' && element.data ? parseSysinfoData(element.data) : null;
   const arduinoNiclaSenseEnvData = element.type === 'arduino-nicla-sense-env' && element.data ? parseArduinoNiclaSenseEnvData(element.data) : null;
-  const arduinoNiclaSenseEnvBytes = arduinoNiclaSenseEnvData?.data ?? null;
-  const arduinoNiclaSenseEnvTemperature = formatSensorValue(readFloat32LE(arduinoNiclaSenseEnvBytes, 0x18), 'C');
-  const arduinoNiclaSenseEnvHumidity = formatSensorValue(readFloat32LE(arduinoNiclaSenseEnvBytes, 0x1c), '%');
-  const arduinoNiclaSenseEnvEpaAqi = readUint16LE(arduinoNiclaSenseEnvBytes, 0x28);
-  const arduinoNiclaSenseEnvIaq = formatSensorValue(readFloat32LE(arduinoNiclaSenseEnvBytes, 0x70));
-  const arduinoNiclaSenseEnvTvoc = formatSensorValue(readFloat32LE(arduinoNiclaSenseEnvBytes, 0x74), 'mg/m^3');
-  const arduinoNiclaSenseEnvEco2 = formatSensorValue(readFloat32LE(arduinoNiclaSenseEnvBytes, 0x78), 'ppm');
+  const arduinoNiclaSenseEnvValues = readArduinoNiclaSenseEnvMainValues(arduinoNiclaSenseEnvData?.data);
+  const arduinoNiclaSenseEnvTemperature = formatSensorValue(arduinoNiclaSenseEnvValues.temperatureC, 'C');
+  const arduinoNiclaSenseEnvHumidity = formatSensorValue(arduinoNiclaSenseEnvValues.humidityPercent, '%');
+  const arduinoNiclaSenseEnvEpaAqi = arduinoNiclaSenseEnvValues.epaAqi;
+  const arduinoNiclaSenseEnvIaq = formatSensorValue(arduinoNiclaSenseEnvValues.iaq);
+  const arduinoNiclaSenseEnvTvoc = formatSensorValue(arduinoNiclaSenseEnvValues.tvocMgM3, 'mg/m^3');
+  const arduinoNiclaSenseEnvEco2 = formatSensorValue(arduinoNiclaSenseEnvValues.eco2Ppm, 'ppm');
+  const ina226Data = element.type === 'ina226' && element.data ? parseIna226Data(element.data) : null;
+  const ina226ShuntVoltage = formatSensorValue(readIna226ShuntMillivolts(ina226Data?.data), 'mV', 4);
+  const ina226CurrentValue = readIna226CurrentAmps(ina226Data?.data, ina226Data?.device?.info?.shuntResistanceOhms);
+  const ina226Current = ina226CurrentValue === null ? null : formatIna226Current(ina226CurrentValue).text;
   const yahboom_dogzilla_liteData = element.type === 'yahboom_dogzilla_lite' && element.data ? parseYahboomDogzillaLiteData(element.data) : null;
   const normvlaData = element.type === 'normvla' && element.data ? parseNormvlaData(element.data as Uint8Array | normvla.IFrame) : null;
   const st3215TxData = element.type === 'st3215tx' && element.data && !(element.data instanceof Uint8Array) ? element.data as st3215.ITxEnvelope : null;
@@ -224,6 +216,27 @@ function HistoryElement({ element, index, dataQueueType, dataQueueId }: HistoryE
               )}
               {arduinoNiclaSenseEnvEco2 && (
                 <span className="text-accent-success">eCO2: {arduinoNiclaSenseEnvEco2}</span>
+              )}
+            </div>
+          )}
+
+          {ina226Data && (
+            <div className="flex items-center gap-3 text-xs">
+              <span className="text-accent-success">
+                {ina226.Ina226SignalType[ina226Data.signalType]
+                  ?.replace(/^INA226_/, '')
+                  .replace(/_/g, ' ') ?? ina226Data.signalType}
+              </span>
+              {ina226Data.device && (
+                <span className="text-accent-info">
+                  {ina226Data.device.id || `i2c-${ina226Data.device.i2cBus}`}
+                </span>
+              )}
+              {ina226Current && (
+                <span className="text-accent-success">Current: {ina226Current}</span>
+              )}
+              {!ina226Current && ina226ShuntVoltage && (
+                <span className="text-accent-warning">Shunt: {ina226ShuntVoltage}</span>
               )}
             </div>
           )}

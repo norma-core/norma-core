@@ -1,5 +1,5 @@
 [package]
-name = "arduino-nicla-sense-env"
+name = "ina226"
 version.workspace = true
 edition = "2024"
 

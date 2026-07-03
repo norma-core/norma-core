@@ -1,0 +1,119 @@
+syntax = "proto3";
+
+package hikmicro;
+
+message UsbDeviceInfo {
+    uint32 vendor_id = 1;
+    uint32 product_id = 2;
+    uint32 bus_number = 3;
+    uint32 device_number = 4;
+    repeated uint32 port_numbers = 5;
+    string unique_id = 6;
+    string manufacturer = 7;
+    string product = 8;
+    string serial_number = 9;
+
+    uint32 usb_bcd = 20;
+    uint32 device_bcd = 21;
+    uint32 device_class = 22;
+    uint32 device_subclass = 23;
+    uint32 device_protocol = 24;
+    uint32 max_packet_size0 = 25;
+    uint32 num_configurations = 26;
+
+    bytes device_descriptor = 40;
+    repeated bytes config_descriptors = 41;
+}
+
+message CompactStreamFormat {
+    uint32 fourcc = 1; // Big-endian FourCC, YUY2 for the tested Mini2.
+    uint32 format_index = 2;
+    uint32 frame_index = 3;
+    uint32 uvc_width = 4; // 256.
+    uint32 uvc_height = 5; // 196.
+    float frames_per_second = 6; // 25.
+    bytes guid = 7;
+    uint32 source_format = 8; // Native driver enum, e.g. libuvc uvc_frame_format.
+}
+
+message CompactPayloadLayout {
+    uint32 sensor_width = 1; // 256.
+    uint32 sensor_height = 2; // 192.
+    uint32 payload_length = 3; // 100352.
+
+    uint32 thermal_y16_offset = 10; // 0.
+    uint32 thermal_y16_length = 11; // 256 * 192 * 2.
+    uint32 runtime_block_offset = 12; // thermal_y16_length.
+    uint32 runtime_block_length = 13; // 2048.
+}
+
+message RuntimeBlockInfo {
+    bool marker_ok = 1;
+    uint32 marker = 2; // 0xaabbccdd at runtime_block + 512.
+    uint32 raw_sensor = 3; // 0xc0 on Mini2.
+    uint32 mtlib_sensor = 4; // 0x53 after MicroTA mapping.
+    uint32 inter_param_0 = 5; // runtime_block + 512 + 0x38.
+    uint32 inter_param_1 = 6; // runtime_block + 512 + 0x3c.
+    uint32 inter_param_2 = 7; // runtime_block + 512 + 0x40.
+
+    uint32 frame_height = 20; // runtime_block word 8.
+    uint32 frame_width = 21; // runtime_block word 9.
+    uint32 raw_sensor_header = 22; // runtime_block word 10.
+    uint32 mode = 23; // runtime_block word 5 masked to 14 bits.
+    uint32 range = 24; // runtime_block word 13 masked to 14 bits.
+}
+
+message CalibrationChunk {
+    uint32 index = 1;
+    bytes header = 2; // Five-byte SDK chunk header: type + little-endian index.
+    bytes payload = 3;
+}
+
+message CalibrationData {
+    bool attempted = 1;
+    bool ok = 2;
+    string error = 3;
+
+    bytes length_header = 10; // First selector-3 response, e.g. 01 44 38 00 00.
+    uint32 declared_length = 11;
+    bytes container = 12; // Full SDK container, 14404 bytes on the tested Mini2.
+    uint32 factory_blob_offset = 14;
+    uint32 factory_blob_length = 15;
+
+    repeated CalibrationChunk chunks = 30; // Chunks exactly as read from the device.
+}
+
+message DeviceInfo {
+    string driver = 1;
+    UsbDeviceInfo usb = 2;
+    CompactStreamFormat stream_format = 3;
+    CompactPayloadLayout layout = 4;
+    CalibrationData calibration = 5;
+}
+
+message ThermalFrame {
+    uint32 sequence = 1;
+    uint64 monotonic_stamp_ns = 2;
+    uint64 local_stamp_ns = 3;
+    RuntimeBlockInfo runtime = 6;
+
+    bytes payload = 10; // Complete original 256x196 UVC payload.
+}
+
+message ThermalFramesBlock {
+    uint32 sequence = 1;
+    uint32 frame_count = 2;
+    uint64 monotonic_start_ns = 3;
+    uint64 monotonic_end_ns = 4;
+    uint64 local_start_ns = 5;
+    uint64 local_end_ns = 6;
+    CompactStreamFormat stream_format = 7;
+    CompactPayloadLayout layout = 8;
+
+    repeated ThermalFrame frames = 10;
+}
+
+message RxEnvelope {
+    DeviceInfo device_info = 1;
+    ThermalFramesBlock frames = 2;
+}

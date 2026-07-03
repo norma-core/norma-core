@@ -711,6 +711,7 @@ export const drivers = $root.drivers = (() => {
      * @property {number} QDT_FFMPEG_VIDEO_STREAM_RX=20 QDT_FFMPEG_VIDEO_STREAM_RX value
      * @property {number} QDT_USB_VIDEO_FRAMES=21 QDT_USB_VIDEO_FRAMES value
      * @property {number} QDT_INFERENCE_FRAMES=22 QDT_INFERENCE_FRAMES value
+     * @property {number} QDT_HIKMICRO_THERMAL=23 QDT_HIKMICRO_THERMAL value
      * @property {number} QDT_MOTOR_MIRRORING_MODES=30 QDT_MOTOR_MIRRORING_MODES value
      * @property {number} QDT_MOTOR_MIRRORING_RX=32 QDT_MOTOR_MIRRORING_RX value
      * @property {number} QDT_YAHBOOM_DOGZILLA_LITE_SERIAL_TX=40 QDT_YAHBOOM_DOGZILLA_LITE_SERIAL_TX value
@@ -718,6 +719,7 @@ export const drivers = $root.drivers = (() => {
      * @property {number} QDT_YAHBOOM_DOGZILLA_LITE_INFERENCE=42 QDT_YAHBOOM_DOGZILLA_LITE_INFERENCE value
      * @property {number} QDT_ARDUINO_NICLA_SENSE_ENV_TX=50 QDT_ARDUINO_NICLA_SENSE_ENV_TX value
      * @property {number} QDT_ARDUINO_NICLA_SENSE_ENV_RX=51 QDT_ARDUINO_NICLA_SENSE_ENV_RX value
+     * @property {number} QDT_INA226_RX=52 QDT_INA226_RX value
      */
     drivers.QueueDataType = (function() {
         const valuesById = {}, values = Object.create(valuesById);
@@ -735,6 +737,7 @@ export const drivers = $root.drivers = (() => {
         values[valuesById[20] = "QDT_FFMPEG_VIDEO_STREAM_RX"] = 20;
         values[valuesById[21] = "QDT_USB_VIDEO_FRAMES"] = 21;
         values[valuesById[22] = "QDT_INFERENCE_FRAMES"] = 22;
+        values[valuesById[23] = "QDT_HIKMICRO_THERMAL"] = 23;
         values[valuesById[30] = "QDT_MOTOR_MIRRORING_MODES"] = 30;
         values[valuesById[32] = "QDT_MOTOR_MIRRORING_RX"] = 32;
         values[valuesById[40] = "QDT_YAHBOOM_DOGZILLA_LITE_SERIAL_TX"] = 40;
@@ -742,6 +745,7 @@ export const drivers = $root.drivers = (() => {
         values[valuesById[42] = "QDT_YAHBOOM_DOGZILLA_LITE_INFERENCE"] = 42;
         values[valuesById[50] = "QDT_ARDUINO_NICLA_SENSE_ENV_TX"] = 50;
         values[valuesById[51] = "QDT_ARDUINO_NICLA_SENSE_ENV_RX"] = 51;
+        values[valuesById[52] = "QDT_INA226_RX"] = 52;
         return values;
     })();
 
@@ -1322,6 +1326,7 @@ export const inference = $root.inference = (() => {
                     case 20:
                     case 21:
                     case 22:
+                    case 23:
                     case 30:
                     case 32:
                     case 40:
@@ -1329,6 +1334,7 @@ export const inference = $root.inference = (() => {
                     case 42:
                     case 50:
                     case 51:
+                    case 52:
                         break;
                     }
                 return null;
@@ -1420,6 +1426,10 @@ export const inference = $root.inference = (() => {
                 case 22:
                     message.type = 22;
                     break;
+                case "QDT_HIKMICRO_THERMAL":
+                case 23:
+                    message.type = 23;
+                    break;
                 case "QDT_MOTOR_MIRRORING_MODES":
                 case 30:
                     message.type = 30;
@@ -1447,6 +1457,10 @@ export const inference = $root.inference = (() => {
                 case "QDT_ARDUINO_NICLA_SENSE_ENV_RX":
                 case 51:
                     message.type = 51;
+                    break;
+                case "QDT_INA226_RX":
+                case 52:
+                    message.type = 52;
                     break;
                 }
                 return message;
@@ -35854,6 +35868,1063 @@ export const arduino_nicla_sense_env = $root.arduino_nicla_sense_env = (() => {
     })();
 
     return arduino_nicla_sense_env;
+})();
+
+export const ina226 = $root.ina226 = (() => {
+
+    /**
+     * Namespace ina226.
+     * @exports ina226
+     * @namespace
+     */
+    const ina226 = {};
+
+    /**
+     * Ina226SignalType enum.
+     * @name ina226.Ina226SignalType
+     * @enum {number}
+     * @property {number} INA226_SIGNAL_TYPE_UNSPECIFIED=0 INA226_SIGNAL_TYPE_UNSPECIFIED value
+     * @property {number} INA226_CONNECTED=1 INA226_CONNECTED value
+     * @property {number} INA226_DISCONNECTED=2 INA226_DISCONNECTED value
+     * @property {number} INA226_REGISTERS_SNAPSHOT=3 INA226_REGISTERS_SNAPSHOT value
+     * @property {number} INA226_ERROR=4 INA226_ERROR value
+     */
+    ina226.Ina226SignalType = (function() {
+        const valuesById = {}, values = Object.create(valuesById);
+        values[valuesById[0] = "INA226_SIGNAL_TYPE_UNSPECIFIED"] = 0;
+        values[valuesById[1] = "INA226_CONNECTED"] = 1;
+        values[valuesById[2] = "INA226_DISCONNECTED"] = 2;
+        values[valuesById[3] = "INA226_REGISTERS_SNAPSHOT"] = 3;
+        values[valuesById[4] = "INA226_ERROR"] = 4;
+        return values;
+    })();
+
+    ina226.Ina226DeviceInfo = (function() {
+
+        /**
+         * Properties of an Ina226DeviceInfo.
+         * @memberof ina226
+         * @interface IIna226DeviceInfo
+         * @property {number|null} [manufacturerId] Ina226DeviceInfo manufacturerId
+         * @property {number|null} [dieId] Ina226DeviceInfo dieId
+         * @property {number|null} [revisionId] Ina226DeviceInfo revisionId
+         * @property {number|null} [shuntResistanceOhms] Ina226DeviceInfo shuntResistanceOhms
+         */
+
+        /**
+         * Constructs a new Ina226DeviceInfo.
+         * @memberof ina226
+         * @classdesc Represents an Ina226DeviceInfo.
+         * @implements IIna226DeviceInfo
+         * @constructor
+         * @param {ina226.IIna226DeviceInfo=} [properties] Properties to set
+         */
+        function Ina226DeviceInfo(properties) {
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * Ina226DeviceInfo manufacturerId.
+         * @member {number} manufacturerId
+         * @memberof ina226.Ina226DeviceInfo
+         * @instance
+         */
+        Ina226DeviceInfo.prototype.manufacturerId = 0;
+
+        /**
+         * Ina226DeviceInfo dieId.
+         * @member {number} dieId
+         * @memberof ina226.Ina226DeviceInfo
+         * @instance
+         */
+        Ina226DeviceInfo.prototype.dieId = 0;
+
+        /**
+         * Ina226DeviceInfo revisionId.
+         * @member {number} revisionId
+         * @memberof ina226.Ina226DeviceInfo
+         * @instance
+         */
+        Ina226DeviceInfo.prototype.revisionId = 0;
+
+        /**
+         * Ina226DeviceInfo shuntResistanceOhms.
+         * @member {number} shuntResistanceOhms
+         * @memberof ina226.Ina226DeviceInfo
+         * @instance
+         */
+        Ina226DeviceInfo.prototype.shuntResistanceOhms = 0;
+
+        /**
+         * Creates a new Ina226DeviceInfo instance using the specified properties.
+         * @function create
+         * @memberof ina226.Ina226DeviceInfo
+         * @static
+         * @param {ina226.IIna226DeviceInfo=} [properties] Properties to set
+         * @returns {ina226.Ina226DeviceInfo} Ina226DeviceInfo instance
+         */
+        Ina226DeviceInfo.create = function create(properties) {
+            return new Ina226DeviceInfo(properties);
+        };
+
+        /**
+         * Encodes the specified Ina226DeviceInfo message. Does not implicitly {@link ina226.Ina226DeviceInfo.verify|verify} messages.
+         * @function encode
+         * @memberof ina226.Ina226DeviceInfo
+         * @static
+         * @param {ina226.IIna226DeviceInfo} message Ina226DeviceInfo message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        Ina226DeviceInfo.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.manufacturerId != null && Object.hasOwnProperty.call(message, "manufacturerId"))
+                writer.uint32(/* id 1, wireType 0 =*/8).uint32(message.manufacturerId);
+            if (message.dieId != null && Object.hasOwnProperty.call(message, "dieId"))
+                writer.uint32(/* id 2, wireType 0 =*/16).uint32(message.dieId);
+            if (message.revisionId != null && Object.hasOwnProperty.call(message, "revisionId"))
+                writer.uint32(/* id 3, wireType 0 =*/24).uint32(message.revisionId);
+            if (message.shuntResistanceOhms != null && Object.hasOwnProperty.call(message, "shuntResistanceOhms"))
+                writer.uint32(/* id 4, wireType 1 =*/33).double(message.shuntResistanceOhms);
+            return writer;
+        };
+
+        /**
+         * Encodes the specified Ina226DeviceInfo message, length delimited. Does not implicitly {@link ina226.Ina226DeviceInfo.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof ina226.Ina226DeviceInfo
+         * @static
+         * @param {ina226.IIna226DeviceInfo} message Ina226DeviceInfo message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        Ina226DeviceInfo.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes an Ina226DeviceInfo message from the specified reader or buffer.
+         * @function decode
+         * @memberof ina226.Ina226DeviceInfo
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {ina226.Ina226DeviceInfo} Ina226DeviceInfo
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        Ina226DeviceInfo.decode = function decode(reader, length, error, long) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.ina226.Ina226DeviceInfo();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                if (tag === error)
+                    break;
+                switch (tag >>> 3) {
+                case 1: {
+                        message.manufacturerId = reader.uint32();
+                        break;
+                    }
+                case 2: {
+                        message.dieId = reader.uint32();
+                        break;
+                    }
+                case 3: {
+                        message.revisionId = reader.uint32();
+                        break;
+                    }
+                case 4: {
+                        message.shuntResistanceOhms = reader.double();
+                        break;
+                    }
+                default:
+                    reader.skipType(tag & 7, long);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes an Ina226DeviceInfo message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof ina226.Ina226DeviceInfo
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {ina226.Ina226DeviceInfo} Ina226DeviceInfo
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        Ina226DeviceInfo.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies an Ina226DeviceInfo message.
+         * @function verify
+         * @memberof ina226.Ina226DeviceInfo
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        Ina226DeviceInfo.verify = function verify(message, long) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
+            if (message.manufacturerId != null && message.hasOwnProperty("manufacturerId"))
+                if (!$util.isInteger(message.manufacturerId))
+                    return "manufacturerId: integer expected";
+            if (message.dieId != null && message.hasOwnProperty("dieId"))
+                if (!$util.isInteger(message.dieId))
+                    return "dieId: integer expected";
+            if (message.revisionId != null && message.hasOwnProperty("revisionId"))
+                if (!$util.isInteger(message.revisionId))
+                    return "revisionId: integer expected";
+            if (message.shuntResistanceOhms != null && message.hasOwnProperty("shuntResistanceOhms"))
+                if (typeof message.shuntResistanceOhms !== "number")
+                    return "shuntResistanceOhms: number expected";
+            return null;
+        };
+
+        /**
+         * Creates an Ina226DeviceInfo message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof ina226.Ina226DeviceInfo
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {ina226.Ina226DeviceInfo} Ina226DeviceInfo
+         */
+        Ina226DeviceInfo.fromObject = function fromObject(object, long) {
+            if (object instanceof $root.ina226.Ina226DeviceInfo)
+                return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let message = new $root.ina226.Ina226DeviceInfo();
+            if (object.manufacturerId != null)
+                message.manufacturerId = object.manufacturerId >>> 0;
+            if (object.dieId != null)
+                message.dieId = object.dieId >>> 0;
+            if (object.revisionId != null)
+                message.revisionId = object.revisionId >>> 0;
+            if (object.shuntResistanceOhms != null)
+                message.shuntResistanceOhms = Number(object.shuntResistanceOhms);
+            return message;
+        };
+
+        /**
+         * Creates a plain object from an Ina226DeviceInfo message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof ina226.Ina226DeviceInfo
+         * @static
+         * @param {ina226.Ina226DeviceInfo} message Ina226DeviceInfo
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        Ina226DeviceInfo.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.defaults) {
+                object.manufacturerId = 0;
+                object.dieId = 0;
+                object.revisionId = 0;
+                object.shuntResistanceOhms = 0;
+            }
+            if (message.manufacturerId != null && message.hasOwnProperty("manufacturerId"))
+                object.manufacturerId = message.manufacturerId;
+            if (message.dieId != null && message.hasOwnProperty("dieId"))
+                object.dieId = message.dieId;
+            if (message.revisionId != null && message.hasOwnProperty("revisionId"))
+                object.revisionId = message.revisionId;
+            if (message.shuntResistanceOhms != null && message.hasOwnProperty("shuntResistanceOhms"))
+                object.shuntResistanceOhms = options.json && !isFinite(message.shuntResistanceOhms) ? String(message.shuntResistanceOhms) : message.shuntResistanceOhms;
+            return object;
+        };
+
+        /**
+         * Converts this Ina226DeviceInfo to JSON.
+         * @function toJSON
+         * @memberof ina226.Ina226DeviceInfo
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        Ina226DeviceInfo.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for Ina226DeviceInfo
+         * @function getTypeUrl
+         * @memberof ina226.Ina226DeviceInfo
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        Ina226DeviceInfo.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+            if (typeUrlPrefix === undefined) {
+                typeUrlPrefix = "type.googleapis.com";
+            }
+            return typeUrlPrefix + "/ina226.Ina226DeviceInfo";
+        };
+
+        return Ina226DeviceInfo;
+    })();
+
+    ina226.Ina226Device = (function() {
+
+        /**
+         * Properties of an Ina226Device.
+         * @memberof ina226
+         * @interface IIna226Device
+         * @property {string|null} [id] Ina226Device id
+         * @property {number|null} [i2cBus] Ina226Device i2cBus
+         * @property {number|null} [i2cAddress] Ina226Device i2cAddress
+         * @property {ina226.IIna226DeviceInfo|null} [info] Ina226Device info
+         */
+
+        /**
+         * Constructs a new Ina226Device.
+         * @memberof ina226
+         * @classdesc Represents an Ina226Device.
+         * @implements IIna226Device
+         * @constructor
+         * @param {ina226.IIna226Device=} [properties] Properties to set
+         */
+        function Ina226Device(properties) {
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * Ina226Device id.
+         * @member {string} id
+         * @memberof ina226.Ina226Device
+         * @instance
+         */
+        Ina226Device.prototype.id = "";
+
+        /**
+         * Ina226Device i2cBus.
+         * @member {number} i2cBus
+         * @memberof ina226.Ina226Device
+         * @instance
+         */
+        Ina226Device.prototype.i2cBus = 0;
+
+        /**
+         * Ina226Device i2cAddress.
+         * @member {number} i2cAddress
+         * @memberof ina226.Ina226Device
+         * @instance
+         */
+        Ina226Device.prototype.i2cAddress = 0;
+
+        /**
+         * Ina226Device info.
+         * @member {ina226.IIna226DeviceInfo|null|undefined} info
+         * @memberof ina226.Ina226Device
+         * @instance
+         */
+        Ina226Device.prototype.info = null;
+
+        /**
+         * Creates a new Ina226Device instance using the specified properties.
+         * @function create
+         * @memberof ina226.Ina226Device
+         * @static
+         * @param {ina226.IIna226Device=} [properties] Properties to set
+         * @returns {ina226.Ina226Device} Ina226Device instance
+         */
+        Ina226Device.create = function create(properties) {
+            return new Ina226Device(properties);
+        };
+
+        /**
+         * Encodes the specified Ina226Device message. Does not implicitly {@link ina226.Ina226Device.verify|verify} messages.
+         * @function encode
+         * @memberof ina226.Ina226Device
+         * @static
+         * @param {ina226.IIna226Device} message Ina226Device message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        Ina226Device.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.id != null && Object.hasOwnProperty.call(message, "id"))
+                writer.uint32(/* id 1, wireType 2 =*/10).string(message.id);
+            if (message.i2cBus != null && Object.hasOwnProperty.call(message, "i2cBus"))
+                writer.uint32(/* id 2, wireType 0 =*/16).uint32(message.i2cBus);
+            if (message.i2cAddress != null && Object.hasOwnProperty.call(message, "i2cAddress"))
+                writer.uint32(/* id 3, wireType 0 =*/24).uint32(message.i2cAddress);
+            if (message.info != null && Object.hasOwnProperty.call(message, "info"))
+                $root.ina226.Ina226DeviceInfo.encode(message.info, writer.uint32(/* id 10, wireType 2 =*/82).fork()).ldelim();
+            return writer;
+        };
+
+        /**
+         * Encodes the specified Ina226Device message, length delimited. Does not implicitly {@link ina226.Ina226Device.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof ina226.Ina226Device
+         * @static
+         * @param {ina226.IIna226Device} message Ina226Device message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        Ina226Device.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes an Ina226Device message from the specified reader or buffer.
+         * @function decode
+         * @memberof ina226.Ina226Device
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {ina226.Ina226Device} Ina226Device
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        Ina226Device.decode = function decode(reader, length, error, long) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.ina226.Ina226Device();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                if (tag === error)
+                    break;
+                switch (tag >>> 3) {
+                case 1: {
+                        message.id = reader.string();
+                        break;
+                    }
+                case 2: {
+                        message.i2cBus = reader.uint32();
+                        break;
+                    }
+                case 3: {
+                        message.i2cAddress = reader.uint32();
+                        break;
+                    }
+                case 10: {
+                        message.info = $root.ina226.Ina226DeviceInfo.decode(reader, reader.uint32(), undefined, long + 1);
+                        break;
+                    }
+                default:
+                    reader.skipType(tag & 7, long);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes an Ina226Device message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof ina226.Ina226Device
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {ina226.Ina226Device} Ina226Device
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        Ina226Device.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies an Ina226Device message.
+         * @function verify
+         * @memberof ina226.Ina226Device
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        Ina226Device.verify = function verify(message, long) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
+            if (message.id != null && message.hasOwnProperty("id"))
+                if (!$util.isString(message.id))
+                    return "id: string expected";
+            if (message.i2cBus != null && message.hasOwnProperty("i2cBus"))
+                if (!$util.isInteger(message.i2cBus))
+                    return "i2cBus: integer expected";
+            if (message.i2cAddress != null && message.hasOwnProperty("i2cAddress"))
+                if (!$util.isInteger(message.i2cAddress))
+                    return "i2cAddress: integer expected";
+            if (message.info != null && message.hasOwnProperty("info")) {
+                let error = $root.ina226.Ina226DeviceInfo.verify(message.info, long + 1);
+                if (error)
+                    return "info." + error;
+            }
+            return null;
+        };
+
+        /**
+         * Creates an Ina226Device message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof ina226.Ina226Device
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {ina226.Ina226Device} Ina226Device
+         */
+        Ina226Device.fromObject = function fromObject(object, long) {
+            if (object instanceof $root.ina226.Ina226Device)
+                return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let message = new $root.ina226.Ina226Device();
+            if (object.id != null)
+                message.id = String(object.id);
+            if (object.i2cBus != null)
+                message.i2cBus = object.i2cBus >>> 0;
+            if (object.i2cAddress != null)
+                message.i2cAddress = object.i2cAddress >>> 0;
+            if (object.info != null) {
+                if (typeof object.info !== "object")
+                    throw TypeError(".ina226.Ina226Device.info: object expected");
+                message.info = $root.ina226.Ina226DeviceInfo.fromObject(object.info, long + 1);
+            }
+            return message;
+        };
+
+        /**
+         * Creates a plain object from an Ina226Device message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof ina226.Ina226Device
+         * @static
+         * @param {ina226.Ina226Device} message Ina226Device
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        Ina226Device.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.defaults) {
+                object.id = "";
+                object.i2cBus = 0;
+                object.i2cAddress = 0;
+                object.info = null;
+            }
+            if (message.id != null && message.hasOwnProperty("id"))
+                object.id = message.id;
+            if (message.i2cBus != null && message.hasOwnProperty("i2cBus"))
+                object.i2cBus = message.i2cBus;
+            if (message.i2cAddress != null && message.hasOwnProperty("i2cAddress"))
+                object.i2cAddress = message.i2cAddress;
+            if (message.info != null && message.hasOwnProperty("info"))
+                object.info = $root.ina226.Ina226DeviceInfo.toObject(message.info, options);
+            return object;
+        };
+
+        /**
+         * Converts this Ina226Device to JSON.
+         * @function toJSON
+         * @memberof ina226.Ina226Device
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        Ina226Device.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for Ina226Device
+         * @function getTypeUrl
+         * @memberof ina226.Ina226Device
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        Ina226Device.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+            if (typeUrlPrefix === undefined) {
+                typeUrlPrefix = "type.googleapis.com";
+            }
+            return typeUrlPrefix + "/ina226.Ina226Device";
+        };
+
+        return Ina226Device;
+    })();
+
+    ina226.RxEnvelope = (function() {
+
+        /**
+         * Properties of a RxEnvelope.
+         * @memberof ina226
+         * @interface IRxEnvelope
+         * @property {Long|null} [monotonicStampNs] RxEnvelope monotonicStampNs
+         * @property {Long|null} [localStampNs] RxEnvelope localStampNs
+         * @property {Long|null} [appStartId] RxEnvelope appStartId
+         * @property {ina226.Ina226SignalType|null} [signalType] RxEnvelope signalType
+         * @property {ina226.IIna226Device|null} [device] RxEnvelope device
+         * @property {Uint8Array|null} [data] RxEnvelope data
+         * @property {string|null} [error] RxEnvelope error
+         */
+
+        /**
+         * Constructs a new RxEnvelope.
+         * @memberof ina226
+         * @classdesc Represents a RxEnvelope.
+         * @implements IRxEnvelope
+         * @constructor
+         * @param {ina226.IRxEnvelope=} [properties] Properties to set
+         */
+        function RxEnvelope(properties) {
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * RxEnvelope monotonicStampNs.
+         * @member {Long} monotonicStampNs
+         * @memberof ina226.RxEnvelope
+         * @instance
+         */
+        RxEnvelope.prototype.monotonicStampNs = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+
+        /**
+         * RxEnvelope localStampNs.
+         * @member {Long} localStampNs
+         * @memberof ina226.RxEnvelope
+         * @instance
+         */
+        RxEnvelope.prototype.localStampNs = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+
+        /**
+         * RxEnvelope appStartId.
+         * @member {Long} appStartId
+         * @memberof ina226.RxEnvelope
+         * @instance
+         */
+        RxEnvelope.prototype.appStartId = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+
+        /**
+         * RxEnvelope signalType.
+         * @member {ina226.Ina226SignalType} signalType
+         * @memberof ina226.RxEnvelope
+         * @instance
+         */
+        RxEnvelope.prototype.signalType = 0;
+
+        /**
+         * RxEnvelope device.
+         * @member {ina226.IIna226Device|null|undefined} device
+         * @memberof ina226.RxEnvelope
+         * @instance
+         */
+        RxEnvelope.prototype.device = null;
+
+        /**
+         * RxEnvelope data.
+         * @member {Uint8Array} data
+         * @memberof ina226.RxEnvelope
+         * @instance
+         */
+        RxEnvelope.prototype.data = $util.newBuffer([]);
+
+        /**
+         * RxEnvelope error.
+         * @member {string} error
+         * @memberof ina226.RxEnvelope
+         * @instance
+         */
+        RxEnvelope.prototype.error = "";
+
+        /**
+         * Creates a new RxEnvelope instance using the specified properties.
+         * @function create
+         * @memberof ina226.RxEnvelope
+         * @static
+         * @param {ina226.IRxEnvelope=} [properties] Properties to set
+         * @returns {ina226.RxEnvelope} RxEnvelope instance
+         */
+        RxEnvelope.create = function create(properties) {
+            return new RxEnvelope(properties);
+        };
+
+        /**
+         * Encodes the specified RxEnvelope message. Does not implicitly {@link ina226.RxEnvelope.verify|verify} messages.
+         * @function encode
+         * @memberof ina226.RxEnvelope
+         * @static
+         * @param {ina226.IRxEnvelope} message RxEnvelope message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        RxEnvelope.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.monotonicStampNs != null && Object.hasOwnProperty.call(message, "monotonicStampNs"))
+                writer.uint32(/* id 1, wireType 0 =*/8).uint64(message.monotonicStampNs);
+            if (message.localStampNs != null && Object.hasOwnProperty.call(message, "localStampNs"))
+                writer.uint32(/* id 2, wireType 0 =*/16).uint64(message.localStampNs);
+            if (message.appStartId != null && Object.hasOwnProperty.call(message, "appStartId"))
+                writer.uint32(/* id 3, wireType 0 =*/24).uint64(message.appStartId);
+            if (message.signalType != null && Object.hasOwnProperty.call(message, "signalType"))
+                writer.uint32(/* id 10, wireType 0 =*/80).int32(message.signalType);
+            if (message.device != null && Object.hasOwnProperty.call(message, "device"))
+                $root.ina226.Ina226Device.encode(message.device, writer.uint32(/* id 11, wireType 2 =*/90).fork()).ldelim();
+            if (message.data != null && Object.hasOwnProperty.call(message, "data"))
+                writer.uint32(/* id 20, wireType 2 =*/162).bytes(message.data);
+            if (message.error != null && Object.hasOwnProperty.call(message, "error"))
+                writer.uint32(/* id 50, wireType 2 =*/402).string(message.error);
+            return writer;
+        };
+
+        /**
+         * Encodes the specified RxEnvelope message, length delimited. Does not implicitly {@link ina226.RxEnvelope.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof ina226.RxEnvelope
+         * @static
+         * @param {ina226.IRxEnvelope} message RxEnvelope message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        RxEnvelope.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes a RxEnvelope message from the specified reader or buffer.
+         * @function decode
+         * @memberof ina226.RxEnvelope
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {ina226.RxEnvelope} RxEnvelope
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        RxEnvelope.decode = function decode(reader, length, error, long) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.ina226.RxEnvelope();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                if (tag === error)
+                    break;
+                switch (tag >>> 3) {
+                case 1: {
+                        message.monotonicStampNs = reader.uint64();
+                        break;
+                    }
+                case 2: {
+                        message.localStampNs = reader.uint64();
+                        break;
+                    }
+                case 3: {
+                        message.appStartId = reader.uint64();
+                        break;
+                    }
+                case 10: {
+                        message.signalType = reader.int32();
+                        break;
+                    }
+                case 11: {
+                        message.device = $root.ina226.Ina226Device.decode(reader, reader.uint32(), undefined, long + 1);
+                        break;
+                    }
+                case 20: {
+                        message.data = reader.bytes();
+                        break;
+                    }
+                case 50: {
+                        message.error = reader.string();
+                        break;
+                    }
+                default:
+                    reader.skipType(tag & 7, long);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes a RxEnvelope message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof ina226.RxEnvelope
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {ina226.RxEnvelope} RxEnvelope
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        RxEnvelope.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies a RxEnvelope message.
+         * @function verify
+         * @memberof ina226.RxEnvelope
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        RxEnvelope.verify = function verify(message, long) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
+            if (message.monotonicStampNs != null && message.hasOwnProperty("monotonicStampNs"))
+                if (!$util.isInteger(message.monotonicStampNs) && !(message.monotonicStampNs && $util.isInteger(message.monotonicStampNs.low) && $util.isInteger(message.monotonicStampNs.high)))
+                    return "monotonicStampNs: integer|Long expected";
+            if (message.localStampNs != null && message.hasOwnProperty("localStampNs"))
+                if (!$util.isInteger(message.localStampNs) && !(message.localStampNs && $util.isInteger(message.localStampNs.low) && $util.isInteger(message.localStampNs.high)))
+                    return "localStampNs: integer|Long expected";
+            if (message.appStartId != null && message.hasOwnProperty("appStartId"))
+                if (!$util.isInteger(message.appStartId) && !(message.appStartId && $util.isInteger(message.appStartId.low) && $util.isInteger(message.appStartId.high)))
+                    return "appStartId: integer|Long expected";
+            if (message.signalType != null && message.hasOwnProperty("signalType"))
+                switch (message.signalType) {
+                default:
+                    return "signalType: enum value expected";
+                case 0:
+                case 1:
+                case 2:
+                case 3:
+                case 4:
+                    break;
+                }
+            if (message.device != null && message.hasOwnProperty("device")) {
+                let error = $root.ina226.Ina226Device.verify(message.device, long + 1);
+                if (error)
+                    return "device." + error;
+            }
+            if (message.data != null && message.hasOwnProperty("data"))
+                if (!(message.data && typeof message.data.length === "number" || $util.isString(message.data)))
+                    return "data: buffer expected";
+            if (message.error != null && message.hasOwnProperty("error"))
+                if (!$util.isString(message.error))
+                    return "error: string expected";
+            return null;
+        };
+
+        /**
+         * Creates a RxEnvelope message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof ina226.RxEnvelope
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {ina226.RxEnvelope} RxEnvelope
+         */
+        RxEnvelope.fromObject = function fromObject(object, long) {
+            if (object instanceof $root.ina226.RxEnvelope)
+                return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let message = new $root.ina226.RxEnvelope();
+            if (object.monotonicStampNs != null)
+                if ($util.Long)
+                    (message.monotonicStampNs = $util.Long.fromValue(object.monotonicStampNs)).unsigned = true;
+                else if (typeof object.monotonicStampNs === "string")
+                    message.monotonicStampNs = parseInt(object.monotonicStampNs, 10);
+                else if (typeof object.monotonicStampNs === "number")
+                    message.monotonicStampNs = object.monotonicStampNs;
+                else if (typeof object.monotonicStampNs === "object")
+                    message.monotonicStampNs = new $util.LongBits(object.monotonicStampNs.low >>> 0, object.monotonicStampNs.high >>> 0).toNumber(true);
+            if (object.localStampNs != null)
+                if ($util.Long)
+                    (message.localStampNs = $util.Long.fromValue(object.localStampNs)).unsigned = true;
+                else if (typeof object.localStampNs === "string")
+                    message.localStampNs = parseInt(object.localStampNs, 10);
+                else if (typeof object.localStampNs === "number")
+                    message.localStampNs = object.localStampNs;
+                else if (typeof object.localStampNs === "object")
+                    message.localStampNs = new $util.LongBits(object.localStampNs.low >>> 0, object.localStampNs.high >>> 0).toNumber(true);
+            if (object.appStartId != null)
+                if ($util.Long)
+                    (message.appStartId = $util.Long.fromValue(object.appStartId)).unsigned = true;
+                else if (typeof object.appStartId === "string")
+                    message.appStartId = parseInt(object.appStartId, 10);
+                else if (typeof object.appStartId === "number")
+                    message.appStartId = object.appStartId;
+                else if (typeof object.appStartId === "object")
+                    message.appStartId = new $util.LongBits(object.appStartId.low >>> 0, object.appStartId.high >>> 0).toNumber(true);
+            switch (object.signalType) {
+            default:
+                if (typeof object.signalType === "number") {
+                    message.signalType = object.signalType;
+                    break;
+                }
+                break;
+            case "INA226_SIGNAL_TYPE_UNSPECIFIED":
+            case 0:
+                message.signalType = 0;
+                break;
+            case "INA226_CONNECTED":
+            case 1:
+                message.signalType = 1;
+                break;
+            case "INA226_DISCONNECTED":
+            case 2:
+                message.signalType = 2;
+                break;
+            case "INA226_REGISTERS_SNAPSHOT":
+            case 3:
+                message.signalType = 3;
+                break;
+            case "INA226_ERROR":
+            case 4:
+                message.signalType = 4;
+                break;
+            }
+            if (object.device != null) {
+                if (typeof object.device !== "object")
+                    throw TypeError(".ina226.RxEnvelope.device: object expected");
+                message.device = $root.ina226.Ina226Device.fromObject(object.device, long + 1);
+            }
+            if (object.data != null)
+                if (typeof object.data === "string")
+                    $util.base64.decode(object.data, message.data = $util.newBuffer($util.base64.length(object.data)), 0);
+                else if (object.data.length >= 0)
+                    message.data = object.data;
+            if (object.error != null)
+                message.error = String(object.error);
+            return message;
+        };
+
+        /**
+         * Creates a plain object from a RxEnvelope message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof ina226.RxEnvelope
+         * @static
+         * @param {ina226.RxEnvelope} message RxEnvelope
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        RxEnvelope.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.defaults) {
+                if ($util.Long) {
+                    let long = new $util.Long(0, 0, true);
+                    object.monotonicStampNs = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+                } else
+                    object.monotonicStampNs = options.longs === String ? "0" : 0;
+                if ($util.Long) {
+                    let long = new $util.Long(0, 0, true);
+                    object.localStampNs = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+                } else
+                    object.localStampNs = options.longs === String ? "0" : 0;
+                if ($util.Long) {
+                    let long = new $util.Long(0, 0, true);
+                    object.appStartId = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+                } else
+                    object.appStartId = options.longs === String ? "0" : 0;
+                object.signalType = options.enums === String ? "INA226_SIGNAL_TYPE_UNSPECIFIED" : 0;
+                object.device = null;
+                if (options.bytes === String)
+                    object.data = "";
+                else {
+                    object.data = [];
+                    if (options.bytes !== Array)
+                        object.data = $util.newBuffer(object.data);
+                }
+                object.error = "";
+            }
+            if (message.monotonicStampNs != null && message.hasOwnProperty("monotonicStampNs"))
+                if (typeof message.monotonicStampNs === "number")
+                    object.monotonicStampNs = options.longs === String ? String(message.monotonicStampNs) : message.monotonicStampNs;
+                else
+                    object.monotonicStampNs = options.longs === String ? $util.Long.prototype.toString.call(message.monotonicStampNs) : options.longs === Number ? new $util.LongBits(message.monotonicStampNs.low >>> 0, message.monotonicStampNs.high >>> 0).toNumber(true) : message.monotonicStampNs;
+            if (message.localStampNs != null && message.hasOwnProperty("localStampNs"))
+                if (typeof message.localStampNs === "number")
+                    object.localStampNs = options.longs === String ? String(message.localStampNs) : message.localStampNs;
+                else
+                    object.localStampNs = options.longs === String ? $util.Long.prototype.toString.call(message.localStampNs) : options.longs === Number ? new $util.LongBits(message.localStampNs.low >>> 0, message.localStampNs.high >>> 0).toNumber(true) : message.localStampNs;
+            if (message.appStartId != null && message.hasOwnProperty("appStartId"))
+                if (typeof message.appStartId === "number")
+                    object.appStartId = options.longs === String ? String(message.appStartId) : message.appStartId;
+                else
+                    object.appStartId = options.longs === String ? $util.Long.prototype.toString.call(message.appStartId) : options.longs === Number ? new $util.LongBits(message.appStartId.low >>> 0, message.appStartId.high >>> 0).toNumber(true) : message.appStartId;
+            if (message.signalType != null && message.hasOwnProperty("signalType"))
+                object.signalType = options.enums === String ? $root.ina226.Ina226SignalType[message.signalType] === undefined ? message.signalType : $root.ina226.Ina226SignalType[message.signalType] : message.signalType;
+            if (message.device != null && message.hasOwnProperty("device"))
+                object.device = $root.ina226.Ina226Device.toObject(message.device, options);
+            if (message.data != null && message.hasOwnProperty("data"))
+                object.data = options.bytes === String ? $util.base64.encode(message.data, 0, message.data.length) : options.bytes === Array ? Array.prototype.slice.call(message.data) : message.data;
+            if (message.error != null && message.hasOwnProperty("error"))
+                object.error = message.error;
+            return object;
+        };
+
+        /**
+         * Converts this RxEnvelope to JSON.
+         * @function toJSON
+         * @memberof ina226.RxEnvelope
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        RxEnvelope.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for RxEnvelope
+         * @function getTypeUrl
+         * @memberof ina226.RxEnvelope
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        RxEnvelope.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+            if (typeUrlPrefix === undefined) {
+                typeUrlPrefix = "type.googleapis.com";
+            }
+            return typeUrlPrefix + "/ina226.RxEnvelope";
+        };
+
+        return RxEnvelope;
+    })();
+
+    return ina226;
 })();
 
 export const normvla = $root.normvla = (() => {

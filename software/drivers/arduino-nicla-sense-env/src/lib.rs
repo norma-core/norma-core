@@ -3,7 +3,6 @@ pub mod arduino_nicla_sense_env_proto {
 }
 
 mod driver;
-mod i2c;
 
 pub use driver::{
     ArduinoNiclaSenseEnvBoardConfig, ArduinoNiclaSenseEnvDriver, ArduinoNiclaSenseEnvDriverConfig,

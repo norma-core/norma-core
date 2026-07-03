@@ -3,12 +3,12 @@ use crate::sysinfo_proto::sysinfo::{PowerSource, PowerSourceAttribute};
 #[cfg(target_os = "linux")]
 mod bq24190;
 
-pub fn collect_power_sources() -> Vec<PowerSource> {
-    collect_power_sources_impl()
+pub async fn collect_power_sources() -> Vec<PowerSource> {
+    collect_power_sources_impl().await
 }
 
 #[cfg(target_os = "linux")]
-fn collect_power_sources_impl() -> Vec<PowerSource> {
+async fn collect_power_sources_impl() -> Vec<PowerSource> {
     use std::fs;
     use std::path::Path;
 
@@ -17,25 +17,30 @@ fn collect_power_sources_impl() -> Vec<PowerSource> {
         return Vec::new();
     };
 
-    let mut sources: Vec<PowerSource> = entries
+    let entries = entries
         .filter_map(Result::ok)
         .map(|entry| {
             let name = entry.file_name().to_string_lossy().into_owned();
             let path = entry.path();
-            let mut attributes = collect_power_source_attributes(&path);
-            bq24190::append_attributes(&name, &path, &mut attributes);
-            attributes.sort_by(|a, b| a.key.cmp(&b.key));
-
-            PowerSource { name, attributes }
+            (name, path)
         })
-        .collect();
+        .collect::<Vec<_>>();
+
+    let mut sources = Vec::with_capacity(entries.len());
+    for (name, path) in entries {
+        let mut attributes = collect_power_source_attributes(&path);
+        bq24190::append_attributes(&name, &path, &mut attributes).await;
+        attributes.sort_by(|a, b| a.key.cmp(&b.key));
+
+        sources.push(PowerSource { name, attributes });
+    }
 
     sources.sort_by(|a, b| a.name.cmp(&b.name));
     sources
 }
 
 #[cfg(not(target_os = "linux"))]
-fn collect_power_sources_impl() -> Vec<PowerSource> {
+async fn collect_power_sources_impl() -> Vec<PowerSource> {
     Vec::new()
 }
 

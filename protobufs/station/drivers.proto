@@ -20,6 +20,7 @@ enum QueueDataType {
     QDT_FFMPEG_VIDEO_STREAM_RX = 20; // FFMPEGQueueHeader
     QDT_USB_VIDEO_FRAMES       = 21;
     QDT_INFERENCE_FRAMES       = 22; // inference frames (normvla, etc)
+    QDT_HIKMICRO_THERMAL       = 23; // hikmicro.RxEnvelope
 
     QDT_MOTOR_MIRRORING_MODES = 30;
     QDT_MOTOR_MIRRORING_RX    = 32;
@@ -30,6 +31,7 @@ enum QueueDataType {
 
     QDT_ARDUINO_NICLA_SENSE_ENV_TX = 50; // arduino_nicla_sense_env.TxEnvelope
     QDT_ARDUINO_NICLA_SENSE_ENV_RX = 51; // arduino_nicla_sense_env.RxEnvelope
+    QDT_INA226_RX                  = 52; // ina226.RxEnvelope
 }
 
 enum StationCommandType {

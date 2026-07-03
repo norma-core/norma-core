@@ -60,6 +60,7 @@ function HistoryPage() {
   const mirroringCount = parsedFrame?.mirroring ? 1 : 0;
   const sysinfoCount = parsedFrame?.sysinfo ? 1 : 0;
   const arduinoNiclaSenseEnvCount = parsedFrame?.arduinoNiclaSenseEnv ? 1 : 0;
+  const ina226Count = parsedFrame?.ina226 ? 1 : 0;
   const yahboomDogzillaLiteCount = parsedFrame?.yahboom_dogzilla_lite ? 1 : 0;
   const normvlaCount = parsedFrame?.normvla ? 1 : 0;
   const st3215TxCount = parsedFrame?.st3215Tx ? 1 : 0;
@@ -70,7 +71,8 @@ function HistoryPage() {
   const mirroringIndex = videoQueuesIndex + videoQueueCount;
   const sysinfoIndex = mirroringIndex + mirroringCount;
   const arduinoNiclaSenseEnvIndex = sysinfoIndex + sysinfoCount;
-  const yahboomDogzillaLiteIndex = arduinoNiclaSenseEnvIndex + arduinoNiclaSenseEnvCount;
+  const ina226Index = arduinoNiclaSenseEnvIndex + arduinoNiclaSenseEnvCount;
+  const yahboomDogzillaLiteIndex = ina226Index + ina226Count;
   const normvlaIndex = yahboomDogzillaLiteIndex + yahboomDogzillaLiteCount;
   const st3215TxIndex = normvlaIndex + normvlaCount;
   const otherEntriesIndex = st3215TxIndex + st3215TxCount;
@@ -276,6 +278,17 @@ function HistoryPage() {
                             </div>
                           </div>
                         )}
+                        {parsedFrame.ina226 && (
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <span className="text-accent-warning font-mono">{parsedFrame.ina226.queueId}</span>
+                              <span className="text-accent-warning text-xs px-1 py-0.5 bg-accent-warning/10 rounded">INA226</span>
+                            </div>
+                            <div className="text-text-label font-mono">
+                              {formatPtrBytes(parsedFrame.ina226.ptr)}
+                            </div>
+                          </div>
+                        )}
                         {parsedFrame.yahboom_dogzilla_lite && (
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3">
@@ -434,6 +447,21 @@ function HistoryPage() {
                       index={arduinoNiclaSenseEnvIndex}
                       dataQueueType="arduino-nicla-sense-env"
                       dataQueueId={parsedFrame.arduinoNiclaSenseEnv.queueId}
+                    />
+                  )}
+                  {parsedFrame.ina226 && (
+                    <HistoryElement
+                      element={{
+                        queueId: parsedFrame.ina226.queueId,
+                        entryId: parsedFrame.ina226.ptr,
+                        data: parsedFrame.ina226.data,
+                        rawData: parsedFrame.ina226.rawData ?? null,
+                        type: getQueueType(parsedFrame.ina226.queueType),
+                        queueType: parsedFrame.ina226.queueType,
+                      }}
+                      index={ina226Index}
+                      dataQueueType="ina226"
+                      dataQueueId={parsedFrame.ina226.queueId}
                     />
                   )}
                   {parsedFrame.yahboom_dogzilla_lite && (

@@ -1,4 +1,4 @@
-import { arduino_nicla_sense_env, usbvideo, frame, st3215, motors_mirroring, sysinfo, yahboom_dogzilla_lite, normvla } from '@/api/proto.js';
+import { arduino_nicla_sense_env, usbvideo, frame, st3215, motors_mirroring, sysinfo, yahboom_dogzilla_lite, normvla, ina226 } from '@/api/proto.js';
 import { serverToLocal } from '@/api/timestamp-utils';
 
 type ParsedHistoryData =
@@ -7,6 +7,7 @@ type ParsedHistoryData =
   | motors_mirroring.IRxEnvelope
   | sysinfo.IEnvelope
   | arduino_nicla_sense_env.IRxEnvelope
+  | ina226.IRxEnvelope
   | yahboom_dogzilla_lite.IInferenceState
   | normvla.IFrame;
 
@@ -183,6 +184,18 @@ export function parseArduinoNiclaSenseEnvData(data: Uint8Array | ParsedHistoryDa
     return arduino_nicla_sense_env.RxEnvelope.decode(data);
   } catch (error) {
     console.error('Failed to parse arduino_nicla_sense_env.RxEnvelope:', error);
+    return null;
+  }
+}
+
+export function parseIna226Data(data: Uint8Array | ParsedHistoryData): ina226.RxEnvelope | null {
+  if (!(data instanceof Uint8Array)) {
+    return data as ina226.RxEnvelope;
+  }
+  try {
+    return ina226.RxEnvelope.decode(data);
+  } catch (error) {
+    console.error('Failed to parse ina226.RxEnvelope:', error);
     return null;
   }
 }

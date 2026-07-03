@@ -78,6 +78,9 @@ struct Station {
         Vec<Arc<usbvideo::pipeline::USBVideoManager<usbvideo::linux::CameraLinuxDriver>>>,
     >,
 
+    #[cfg(target_os = "linux")]
+    hikmicro_thermal_handle: Mutex<Option<hikmicro_thermal::HikmicroThermalHandle>>,
+
     #[cfg(feature = "ov5647")]
     ov5647_handle: Mutex<Option<ov5647::Ov5647Handle>>,
 }
@@ -134,6 +137,8 @@ impl Station {
                 inference: Mutex::new(None),
             }),
             usbvideo_instances: parking_lot::Mutex::new(Vec::new()),
+            #[cfg(target_os = "linux")]
+            hikmicro_thermal_handle: Mutex::new(None),
             #[cfg(feature = "ov5647")]
             ov5647_handle: Mutex::new(None),
         })
@@ -234,6 +239,7 @@ impl Station {
                         .iter()
                         .map(
                             |board| arduino_nicla_sense_env::ArduinoNiclaSenseEnvBoardConfig {
+                                id: board.id.clone(),
                                 i2c_bus: board.i2c_bus,
                             },
                         )
@@ -276,6 +282,55 @@ impl Station {
             .is_some_and(|config| config.enabled)
         {
             log::warn!("Arduino Nicla Sense Env driver requested but is Linux-only");
+        }
+
+        #[cfg(all(target_os = "linux", feature = "ina226"))]
+        if let Some(ina226_config) = &self.config.drivers.ina226 {
+            if ina226_config.enabled {
+                let config = ina226::Ina226DriverConfig {
+                    devices: ina226_config
+                        .devices
+                        .iter()
+                        .map(|device| ina226::Ina226DeviceConfig {
+                            id: device.id.clone(),
+                            i2c_bus: device.i2c_bus,
+                            i2c_address: device.i2c_address,
+                            shunt_resistance_ohms: device.shunt_resistance_ohms,
+                        })
+                        .collect(),
+                };
+
+                if let Err(error) =
+                    ina226::start_ina226_driver(self.normfs.clone(), self.engine.clone(), config)
+                        .await
+                {
+                    log::error!("Failed to start INA226 driver: {}", error);
+                }
+            } else {
+                log::info!("INA226 driver disabled by configuration");
+            }
+        }
+
+        #[cfg(all(target_os = "linux", not(feature = "ina226")))]
+        if self
+            .config
+            .drivers
+            .ina226
+            .as_ref()
+            .is_some_and(|config| config.enabled)
+        {
+            log::warn!("INA226 driver requested but not compiled (missing 'ina226' feature)");
+        }
+
+        #[cfg(not(target_os = "linux"))]
+        if self
+            .config
+            .drivers
+            .ina226
+            .as_ref()
+            .is_some_and(|config| config.enabled)
+        {
+            log::warn!("INA226 driver requested but is Linux-only");
         }
 
         // Start ST3215 bus if configured
@@ -342,6 +397,44 @@ impl Station {
             }
         } else {
             log::info!("No USB video configuration found");
+        }
+
+        #[cfg(target_os = "linux")]
+        if let Some(hikmicro_config) = &self.config.drivers.hikmicro_thermal {
+            if hikmicro_config.enabled {
+                let config = hikmicro_thermal::HikmicroThermalConfig {
+                    frame_timeout: hikmicro_config.frame_timeout,
+                };
+
+                match hikmicro_thermal::start_hikmicro_thermal(
+                    self.normfs.clone(),
+                    self.engine.clone(),
+                    config,
+                )
+                .await
+                {
+                    Ok(handle) => {
+                        *self.hikmicro_thermal_handle.lock() = Some(handle);
+                        log::info!("HIKMICRO thermal driver started");
+                    }
+                    Err(e) => log::warn!("Failed to start HIKMICRO thermal driver: {}", e),
+                }
+            } else {
+                log::info!("HIKMICRO thermal driver disabled by configuration");
+            }
+        } else {
+            log::info!("No HIKMICRO thermal configuration found");
+        }
+
+        #[cfg(not(target_os = "linux"))]
+        if self
+            .config
+            .drivers
+            .hikmicro_thermal
+            .as_ref()
+            .is_some_and(|config| config.enabled)
+        {
+            log::warn!("HIKMICRO thermal driver requested but is Linux-only");
         }
 
         #[cfg(feature = "yahboom-dogzilla-lite")]

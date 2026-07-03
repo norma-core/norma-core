@@ -116,7 +116,7 @@ name = "arduino-nicla-sense-env"
 version = "0.1.0-beta.10"
 dependencies = [
  "bytes",
- "i2cdev",
+ "i2c-async",
  "log",
  "normfs",
  "prost",
@@ -832,6 +832,24 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7f24254aa9a54b5c858eaee2f5bccdb46aaf0e486a595ed5fd8f86ba55232a70"
 
 [[package]]
+name = "hikmicro-thermal"
+version = "0.1.0-beta.10"
+dependencies = [
+ "bytes",
+ "libc",
+ "libusb1-sys",
+ "log",
+ "md5",
+ "norm-uvc-sys",
+ "normfs",
+ "prost",
+ "prost-build",
+ "station_iface",
+ "systime",
+ "tokio",
+]
+
+[[package]]
 name = "hkdf"
 version = "0.12.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -978,6 +996,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "i2c-async"
+version = "0.1.0"
+dependencies = [
+ "bytes",
+ "i2cdev",
+ "libc",
+ "tokio",
+]
+
+[[package]]
 name = "i2cdev"
 version = "0.6.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1094,6 +1122,21 @@ checksum = "3acae9609540aa318d1bc588455225fb2085b9ed0c4f6bd0d9d5bcd86f1a0344"
 dependencies = [
  "icu_normalizer",
  "icu_properties",
+]
+
+[[package]]
+name = "ina226"
+version = "0.1.0-beta.10"
+dependencies = [
+ "bytes",
+ "i2c-async",
+ "log",
+ "normfs",
+ "prost",
+ "prost-build",
+ "station_iface",
+ "systime",
+ "tokio",
 ]
 
 [[package]]
@@ -2449,9 +2492,11 @@ dependencies = [
  "dashmap",
  "env_logger",
  "fastwebsockets",
+ "hikmicro-thermal",
  "http-body-util",
  "hyper",
  "hyper-util",
+ "ina226",
  "inferences",
  "log",
  "mime_guess",
@@ -2547,6 +2592,7 @@ name = "sysinfod"
 version = "0.1.0-beta.10"
 dependencies = [
  "bytes",
+ "i2c-async",
  "libc",
  "normfs",
  "prost",

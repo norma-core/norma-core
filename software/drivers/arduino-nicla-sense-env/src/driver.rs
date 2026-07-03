@@ -2,14 +2,14 @@ use crate::arduino_nicla_sense_env_proto::{
     ArduinoNiclaSenseEnvDevice, ArduinoNiclaSenseEnvDeviceInfo, ArduinoNiclaSenseEnvSignalType,
     RxEnvelope,
 };
-use crate::i2c::AsyncI2cDevice;
 use bytes::Bytes;
+use i2c_async::AsyncI2cDevice;
 use log::{error, info, warn};
 use normfs::{NormFS, QueueId, UintN};
 use prost::Message;
 use station_iface::StationEngine;
 use station_iface::iface_proto::drivers::QueueDataType;
-use std::collections::BTreeSet;
+use std::collections::BTreeMap;
 use std::sync::Arc;
 use std::time::Duration;
 use tokio::task::JoinHandle;
@@ -35,6 +35,7 @@ pub struct ArduinoNiclaSenseEnvDriverConfig {
 
 #[derive(Debug, Clone)]
 pub struct ArduinoNiclaSenseEnvBoardConfig {
+    pub id: Option<String>,
     pub i2c_bus: u32,
 }
 
@@ -58,10 +59,14 @@ struct Board {
 }
 
 impl Board {
-    fn from_bus(i2c_bus: u32) -> Self {
+    fn from_config(config: &ArduinoNiclaSenseEnvBoardConfig) -> Self {
         Self {
-            id: format!("i2c-{i2c_bus}"),
-            i2c_bus,
+            id: config
+                .id
+                .clone()
+                .filter(|id| !id.trim().is_empty())
+                .unwrap_or_else(|| format!("i2c-{}", config.i2c_bus)),
+            i2c_bus: config.i2c_bus,
         }
     }
 
@@ -96,19 +101,19 @@ impl ArduinoNiclaSenseEnvDriver {
             config.poll_interval
         };
 
-        let i2c_buses = config
+        let boards = config
             .boards
             .iter()
-            .map(|board| board.i2c_bus)
-            .collect::<BTreeSet<_>>();
-        if i2c_buses.is_empty() {
+            .map(|board| (board.i2c_bus, Board::from_config(board)))
+            .collect::<BTreeMap<_, _>>();
+        if boards.is_empty() {
             warn!("Arduino Nicla Sense Env driver enabled with no i2c-buses configured");
         }
 
-        let tasks = i2c_buses
-            .iter()
-            .map(|i2c_bus| {
-                let board = Board::from_bus(*i2c_bus);
+        let tasks = boards
+            .values()
+            .map(|board| {
+                let board = board.clone();
                 tokio::spawn(run_board_worker(
                     normfs.clone(),
                     rx_queue_id.clone(),
@@ -120,7 +125,7 @@ impl ArduinoNiclaSenseEnvDriver {
 
         info!(
             "Started Arduino Nicla Sense Env driver for {} I2C bus(es)",
-            i2c_buses.len()
+            boards.len()
         );
 
         Ok(Self { _tasks: tasks })
@@ -144,7 +149,7 @@ async fn run_board_worker(
 ) {
     let i2c = AsyncI2cDevice::new(board.i2c_bus, DEFAULT_I2C_ADDRESS);
     let mut connected = false;
-    let mut last_data = None::<Vec<u8>>;
+    let mut last_data = None::<Bytes>;
     let mut last_error = None::<String>;
     let mut tick = interval(poll_interval);
     tick.set_missed_tick_behavior(MissedTickBehavior::Skip);
@@ -153,7 +158,7 @@ async fn run_board_worker(
         tick.tick().await;
 
         match i2c
-            .read_registers(RAW_REGISTER_START, RAW_REGISTER_LENGTH)
+            .read_smbus_i2c_block_registers(RAW_REGISTER_START, RAW_REGISTER_LENGTH)
             .await
         {
             Ok(data) => {
@@ -163,7 +168,7 @@ async fn run_board_worker(
                         &rx_queue_id,
                         &board,
                         ArduinoNiclaSenseEnvSignalType::ArduinoNiclaSenseEnvConnected,
-                        Some(data.as_slice()),
+                        Some(&data),
                         None,
                     );
                     connected = true;
@@ -174,7 +179,7 @@ async fn run_board_worker(
                     &rx_queue_id,
                     &board,
                     ArduinoNiclaSenseEnvSignalType::ArduinoNiclaSenseEnvRegistersSnapshot,
-                    Some(data.as_slice()),
+                    Some(&data),
                     None,
                 );
                 last_data = Some(data);
@@ -187,7 +192,7 @@ async fn run_board_worker(
                         &rx_queue_id,
                         &board,
                         ArduinoNiclaSenseEnvSignalType::ArduinoNiclaSenseEnvDisconnected,
-                        last_data.as_deref(),
+                        last_data.as_ref(),
                         Some(error.clone()),
                     );
                     connected = false;
@@ -199,7 +204,7 @@ async fn run_board_worker(
                         &rx_queue_id,
                         &board,
                         ArduinoNiclaSenseEnvSignalType::ArduinoNiclaSenseEnvError,
-                        last_data.as_deref(),
+                        last_data.as_ref(),
                         Some(error.clone()),
                     );
                     last_error = Some(error);
@@ -227,7 +232,7 @@ fn send_board_signal(
     rx_queue_id: &QueueId,
     board: &Board,
     signal_type: ArduinoNiclaSenseEnvSignalType,
-    data: Option<&[u8]>,
+    data: Option<&Bytes>,
     error_message: Option<String>,
 ) {
     let envelope = RxEnvelope {
@@ -235,8 +240,8 @@ fn send_board_signal(
         local_stamp_ns: systime::get_local_stamp_ns(),
         app_start_id: systime::get_app_start_id(),
         signal_type: signal_type as i32,
-        device: Some(board.proto(data)),
-        data: data.map(Bytes::copy_from_slice).unwrap_or_default(),
+        device: Some(board.proto(data.map(|data| data.as_ref()))),
+        data: data.cloned().unwrap_or_default(),
         command: None,
         error: error_message.unwrap_or_default(),
     };

@@ -122,6 +122,7 @@ impl SystemMonitor {
 
     async fn collect_system_data(&self) -> Result<Envelope, Box<dyn std::error::Error>> {
         let cellular_modems = self.collect_cellular_modems().await;
+        let power_sources = self.collect_power_sources().await;
         let mut system = self.system.write().await;
         let mut disks = self.disks.write().await;
         let mut networks = self.networks.write().await;
@@ -149,7 +150,7 @@ impl SystemMonitor {
             disks: self.collect_disk_data(&disks),
             networks: self.collect_network_data(&networks),
             temperatures: self.collect_temperature_data(&components),
-            power_sources: self.collect_power_sources(),
+            power_sources,
             cellular_modems,
         };
 
@@ -270,8 +271,8 @@ impl SystemMonitor {
             .collect()
     }
 
-    fn collect_power_sources(&self) -> Vec<PowerSource> {
-        power::collect_power_sources()
+    async fn collect_power_sources(&self) -> Vec<PowerSource> {
+        power::collect_power_sources().await
     }
 
     async fn collect_cellular_modems(&self) -> Vec<CellularModem> {

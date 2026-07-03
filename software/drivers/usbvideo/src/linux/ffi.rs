@@ -1,7 +1,13 @@
-use norm_uvc_sys::*;
 use crate::usbvideo_proto::usbvideo;
-use std::ffi::CStr;
 use bytes::Bytes;
+use norm_uvc_sys::*;
+use std::ffi::CStr;
+
+const HIKMICRO_VENDOR_ID: u16 = 0x2bdf;
+
+fn is_reserved_uvc_vendor(vendor_id: u16) -> bool {
+    vendor_id == HIKMICRO_VENDOR_ID
+}
 
 #[derive(Debug, Clone)]
 pub struct FrameInfo {
@@ -38,7 +44,12 @@ fn uvc_format_to_fourcc(uvc_format: u32) -> u32 {
         _ => {
             let fourcc_bytes = uvc_format.to_be_bytes();
             let fourcc_str = String::from_utf8_lossy(&fourcc_bytes);
-            log::warn!("Unknown UVC frame format: {} (0x{:08X}, '{}')", uvc_format, uvc_format, fourcc_str);
+            log::warn!(
+                "Unknown UVC frame format: {} (0x{:08X}, '{}')",
+                uvc_format,
+                uvc_format,
+                fourcc_str
+            );
             0
         }
     }
@@ -66,7 +77,7 @@ pub fn drop_uvc_context(context: *mut uvc_context) {
 
 pub fn get_available_cameras(context: *mut uvc_context) -> Vec<usbvideo::Camera> {
     let mut cameras = Vec::new();
-    
+
     if context.is_null() {
         log::warn!("UVC context is null");
         return cameras;
@@ -75,7 +86,7 @@ pub fn get_available_cameras(context: *mut uvc_context) -> Vec<usbvideo::Camera>
     unsafe {
         let mut device_list = std::mem::MaybeUninit::<*mut *mut uvc_device>::uninit();
         let err = uvc_get_device_list(context, device_list.as_mut_ptr());
-        
+
         if err != uvc_error_UVC_SUCCESS {
             log::warn!("Failed to get device list: {}", err);
             return cameras;
@@ -95,7 +106,7 @@ pub fn get_available_cameras(context: *mut uvc_context) -> Vec<usbvideo::Camera>
 
             let mut desc = std::mem::MaybeUninit::<*mut uvc_device_descriptor>::uninit();
             let desc_err = uvc_get_device_descriptor(device_ptr, desc.as_mut_ptr());
-            
+
             if desc_err != uvc_error_UVC_SUCCESS {
                 log::warn!("Failed to get device descriptor: {}", desc_err);
                 i += 1;
@@ -111,6 +122,18 @@ pub fn get_available_cameras(context: *mut uvc_context) -> Vec<usbvideo::Camera>
             let desc_ref = &*desc;
             let bus_number = uvc_get_bus_number(device_ptr) as u32;
             let device_number = uvc_get_device_address(device_ptr) as u32;
+
+            if is_reserved_uvc_vendor(desc_ref.idVendor) {
+                log::debug!(
+                    "Skipping reserved UVC vendor {:04x} on bus {} device {}",
+                    desc_ref.idVendor,
+                    bus_number,
+                    device_number
+                );
+                uvc_free_device_descriptor(desc);
+                i += 1;
+                continue;
+            }
 
             let serial_number = if desc_ref.serialNumber.is_null() {
                 "".to_string()
@@ -138,10 +161,7 @@ pub fn get_available_cameras(context: *mut uvc_context) -> Vec<usbvideo::Camera>
 
             let unique_id = format!(
                 "{}:{}:{}:{}",
-                desc_ref.idVendor,
-                desc_ref.idProduct,
-                bus_number,
-                device_number
+                desc_ref.idVendor, desc_ref.idProduct, bus_number, device_number
             );
 
             let camera = usbvideo::Camera {
@@ -166,7 +186,10 @@ pub fn get_available_cameras(context: *mut uvc_context) -> Vec<usbvideo::Camera>
     cameras
 }
 
-pub fn find_device_by_camera(context: *mut uvc_context, camera: &usbvideo::Camera) -> *mut uvc_device {
+pub fn find_device_by_camera(
+    context: *mut uvc_context,
+    camera: &usbvideo::Camera,
+) -> *mut uvc_device {
     if context.is_null() {
         return std::ptr::null_mut();
     }
@@ -174,7 +197,7 @@ pub fn find_device_by_camera(context: *mut uvc_context, camera: &usbvideo::Camer
     unsafe {
         let mut device_list = std::mem::MaybeUninit::<*mut *mut uvc_device>::uninit();
         let err = uvc_get_device_list(context, device_list.as_mut_ptr());
-        
+
         if err != uvc_error_UVC_SUCCESS {
             return std::ptr::null_mut();
         }
@@ -194,7 +217,7 @@ pub fn find_device_by_camera(context: *mut uvc_context, camera: &usbvideo::Camer
 
             let mut desc = std::mem::MaybeUninit::<*mut uvc_device_descriptor>::uninit();
             let desc_err = uvc_get_device_descriptor(device_ptr, desc.as_mut_ptr());
-            
+
             if desc_err == uvc_error_UVC_SUCCESS {
                 let desc = desc.assume_init();
                 if !desc.is_null() {
@@ -232,14 +255,12 @@ unsafe fn get_format_fourcc(format_desc: *const uvc_format_desc) -> u32 {
         match format_desc_ref.bDescriptorSubtype {
             uvc_vs_desc_subtype_UVC_VS_FORMAT_MJPEG => {
                 u32::from_be_bytes(format_desc_ref.__bindgen_anon_1.fourccFormat)
-            },
+            }
             uvc_vs_desc_subtype_UVC_VS_FORMAT_UNCOMPRESSED => {
                 let guid = format_desc_ref.__bindgen_anon_1.guidFormat;
                 u32::from_be_bytes([guid[0], guid[1], guid[2], guid[3]])
-            },
-            _ => {
-                u32::from_be_bytes(format_desc_ref.__bindgen_anon_1.fourccFormat)
             }
+            _ => u32::from_be_bytes(format_desc_ref.__bindgen_anon_1.fourccFormat),
         }
     }
 }
@@ -247,7 +268,7 @@ unsafe fn get_format_fourcc(format_desc: *const uvc_format_desc) -> u32 {
 unsafe fn get_frame_fps_values(frame_desc: *const uvc_frame_desc) -> Vec<f32> {
     let frame_desc_ref = unsafe { &*frame_desc };
     let mut fps_values = Vec::new();
-    
+
     if !frame_desc_ref.intervals.is_null() {
         let mut interval_idx = 0;
         loop {
@@ -255,7 +276,7 @@ unsafe fn get_frame_fps_values(frame_desc: *const uvc_frame_desc) -> Vec<f32> {
             if interval == 0 {
                 break;
             }
-            
+
             let fps = 10_000_000.0 / interval as f32;
             fps_values.push(fps);
             interval_idx += 1;
@@ -264,13 +285,16 @@ unsafe fn get_frame_fps_values(frame_desc: *const uvc_frame_desc) -> Vec<f32> {
         let fps = 10_000_000.0 / frame_desc_ref.dwDefaultFrameInterval as f32;
         fps_values.push(fps);
     }
-    
+
     fps_values
 }
 
-pub fn get_camera_formats(context: *mut uvc_context, camera: &usbvideo::Camera) -> Vec<usbvideo::CameraFormat> {
+pub fn get_camera_formats(
+    context: *mut uvc_context,
+    camera: &usbvideo::Camera,
+) -> Vec<usbvideo::CameraFormat> {
     let mut formats = Vec::new();
-    
+
     if context.is_null() {
         log::warn!("UVC context is null");
         return formats;
@@ -285,9 +309,13 @@ pub fn get_camera_formats(context: *mut uvc_context, camera: &usbvideo::Camera) 
 
         let mut device_handle = std::ptr::null_mut();
         let open_err = uvc_open(device_ptr, &mut device_handle);
-        
+
         if open_err != uvc_error_UVC_SUCCESS || device_handle.is_null() {
-            log::warn!("Failed to open device for camera {}: {}", camera.unique_id, open_err);
+            log::warn!(
+                "Failed to open device for camera {}: {}",
+                camera.unique_id,
+                open_err
+            );
             uvc_unref_device(device_ptr);
             return formats;
         }
@@ -300,7 +328,9 @@ pub fn get_camera_formats(context: *mut uvc_context, camera: &usbvideo::Camera) 
 
             if fourcc != 0 {
                 let format_index = format_desc_ref.bFormatIndex as u32;
-                let guid = if format_desc_ref.bDescriptorSubtype == uvc_vs_desc_subtype_UVC_VS_FORMAT_UNCOMPRESSED {
+                let guid = if format_desc_ref.bDescriptorSubtype
+                    == uvc_vs_desc_subtype_UVC_VS_FORMAT_UNCOMPRESSED
+                {
                     format_desc_ref.__bindgen_anon_1.guidFormat.to_vec()
                 } else {
                     vec![]
@@ -310,7 +340,7 @@ pub fn get_camera_formats(context: *mut uvc_context, camera: &usbvideo::Camera) 
                 let mut current_frame = format_desc_ref.frame_descs;
                 while !current_frame.is_null() {
                     let frame_desc_ref = &*current_frame;
-                    
+
                     let width = frame_desc_ref.wWidth as u32;
                     let height = frame_desc_ref.wHeight as u32;
                     let frame_index = frame_desc_ref.bFrameIndex as u32;
@@ -325,7 +355,7 @@ pub fn get_camera_formats(context: *mut uvc_context, camera: &usbvideo::Camera) 
                             frames_per_second: fps,
                             guid: guid.clone(),
                         };
-                        
+
                         formats.push(camera_format);
                     }
 
@@ -358,12 +388,12 @@ impl Drop for StreamHandle {
                 uvc_stream_close(self.stream_handle);
                 self.stream_handle = std::ptr::null_mut();
             }
-            
+
             if !self.device_handle.is_null() {
                 uvc_close(self.device_handle);
                 self.device_handle = std::ptr::null_mut();
             }
-            
+
             if !self.device_ptr.is_null() {
                 uvc_unref_device(self.device_ptr);
                 self.device_ptr = std::ptr::null_mut();
@@ -375,7 +405,7 @@ impl Drop for StreamHandle {
 pub fn get_stream_handle(
     context: *mut uvc_context,
     camera: &usbvideo::Camera,
-    format: &usbvideo::CameraFormat
+    format: &usbvideo::CameraFormat,
 ) -> Result<StreamHandle, uvc_error> {
     if context.is_null() {
         return Err(uvc_error_UVC_ERROR_INVALID_PARAM);
@@ -389,9 +419,13 @@ pub fn get_stream_handle(
 
         let mut device_handle = std::ptr::null_mut();
         let open_err = uvc_open(device_ptr, &mut device_handle);
-        
+
         if open_err != uvc_error_UVC_SUCCESS || device_handle.is_null() {
-            log::warn!("Failed to open device for camera {}: {}", camera.unique_id, open_err);
+            log::warn!(
+                "Failed to open device for camera {}: {}",
+                camera.unique_id,
+                open_err
+            );
             uvc_unref_device(device_ptr);
             return Err(open_err);
         }
@@ -405,13 +439,17 @@ pub fn get_stream_handle(
             _ => {
                 let fourcc_bytes = format.fourcc.to_be_bytes();
                 let fourcc_str = String::from_utf8_lossy(&fourcc_bytes);
-                log::warn!("Unknown fourcc format 0x{:08X} ('{}'), trying MJPEG as fallback", format.fourcc, fourcc_str);
+                log::warn!(
+                    "Unknown fourcc format 0x{:08X} ('{}'), trying MJPEG as fallback",
+                    format.fourcc,
+                    fourcc_str
+                );
                 uvc_frame_format_UVC_FRAME_FORMAT_MJPEG
             }
         };
-        
+
         let mut stream_ctrl = std::mem::zeroed::<uvc_stream_ctrl_t>();
-        
+
         let ctrl_err = uvc_get_stream_ctrl_format_size(
             device_handle,
             &mut stream_ctrl,
@@ -443,32 +481,27 @@ pub fn start_streaming(stream_handle: &mut StreamHandle) -> Result<(), uvc_error
             uvc_stream_close(stream_handle.stream_handle);
             stream_handle.stream_handle = std::ptr::null_mut();
         }
-        
+
         let mut stream_hdl: *mut uvc_stream_handle = std::ptr::null_mut();
         let err = uvc_stream_open_ctrl(
             stream_handle.device_handle,
             &mut stream_hdl,
             &mut stream_handle.stream_ctrl,
         );
-        
+
         if err != uvc_error_UVC_SUCCESS {
             return Err(err);
         }
-        
-        let start_err = uvc_stream_start(
-            stream_hdl,
-            None,
-            std::ptr::null_mut(),
-            0,
-        );
-        
+
+        let start_err = uvc_stream_start(stream_hdl, None, std::ptr::null_mut(), 0);
+
         if start_err != uvc_error_UVC_SUCCESS {
             uvc_stream_close(stream_hdl);
             return Err(start_err);
         }
-        
+
         stream_handle.stream_handle = stream_hdl;
-        
+
         Ok(())
     }
 }
@@ -484,15 +517,18 @@ pub fn stop_streaming(stream_handle: &mut StreamHandle) {
 }
 
 /// Get raw UVC frame pointer without copying data
-pub fn get_uvc_frame(stream_handle: &StreamHandle, timeout_us: u32) -> Result<*mut uvc_frame, uvc_error> {
+pub fn get_uvc_frame(
+    stream_handle: &StreamHandle,
+    timeout_us: u32,
+) -> Result<*mut uvc_frame, uvc_error> {
     if stream_handle.stream_handle.is_null() {
         return Err(uvc_error_UVC_ERROR_INVALID_PARAM);
     }
-    
+
     unsafe {
         let mut frame: *mut uvc_frame = std::ptr::null_mut();
         let err = uvc_stream_get_frame(stream_handle.stream_handle, &mut frame, timeout_us as i32);
-        
+
         if err != uvc_error_UVC_SUCCESS {
             Err(err)
         } else if frame.is_null() {
@@ -503,10 +539,13 @@ pub fn get_uvc_frame(stream_handle: &StreamHandle, timeout_us: u32) -> Result<*m
     }
 }
 
-pub fn get_last_frame(stream_handle: &StreamHandle, timeout_us: u32) -> Result<FrameInfo, uvc_error> {
+pub fn get_last_frame(
+    stream_handle: &StreamHandle,
+    timeout_us: u32,
+) -> Result<FrameInfo, uvc_error> {
     // Get the first frame pointer without copying data
     let mut latest_frame_ptr = get_uvc_frame(stream_handle, timeout_us)?;
-    
+
     // Drain remaining frames without copying data, just count them
     let mut drained_count = 0;
     loop {
@@ -526,19 +565,17 @@ pub fn get_last_frame(stream_handle: &StreamHandle, timeout_us: u32) -> Result<F
             }
         }
     }
-    
+
     // Now copy data only once from the final latest frame
     let latest_frame_info = unsafe {
         let frame_ref = &*latest_frame_ptr;
-        
+
         // Copy frame data into owned Bytes for the latest frame
-        let frame_data = std::slice::from_raw_parts(
-            frame_ref.data as *const u8,
-            frame_ref.data_bytes
-        );
+        let frame_data =
+            std::slice::from_raw_parts(frame_ref.data as *const u8, frame_ref.data_bytes);
         let data = Bytes::copy_from_slice(frame_data);
         let fourcc = uvc_format_to_fourcc(frame_ref.frame_format);
-        
+
         FrameInfo {
             width: frame_ref.width,
             height: frame_ref.height,
@@ -550,11 +587,15 @@ pub fn get_last_frame(stream_handle: &StreamHandle, timeout_us: u32) -> Result<F
             data,
         }
     };
-    
+
     // Log info about skipped frames if any were drained
     if drained_count > 0 {
-        log::info!("Drained {} frames to get latest frame (sequence: {})", drained_count, latest_frame_info.sequence);
+        log::info!(
+            "Drained {} frames to get latest frame (sequence: {})",
+            drained_count,
+            latest_frame_info.sequence
+        );
     }
-    
+
     Ok(latest_frame_info)
 }
