@@ -1,10 +1,12 @@
 import { useState, useEffect, useCallback, type ReactNode } from 'react';
 import Long from 'long';
+import { Tag as TagIcon } from 'lucide-react';
 import { useInferenceState, useConnectionStatsWithUptime, useLatestEntryId, useWakeLock, invalidateTagsCache } from "@/hooks";
 import BusViewer from "@/st3215/BusViewer";
 import VescTrampaViewer from "@/vesc-trampa/VescTrampaViewer";
 import YahboomDogzillaLiteDeviceViewer from "@/yahboom_dogzilla_lite/YahboomDogzillaLiteDeviceViewer";
 import AsciiRobot from "@/components/AsciiRobot";
+import TagDialog from "@/components/TagDialog";
 import { copyToClipboard } from "@/api/clipboard-utils";
 import { commandManager } from "@/api/commands";
 import { arduino_nicla_sense_env, ina226, inference_tags } from "@/api/proto.js";
@@ -16,6 +18,11 @@ import {
   readIna226CurrentAmps,
   readIna226ShuntMillivolts,
 } from '@/utils/ina226';
+
+interface TagDialogState {
+  entryId: number | null;
+  defaultValue: string;
+}
 
 function formatBytes(bytes: number): string {
   if (bytes === 0) return '0 B';
@@ -220,6 +227,9 @@ function HomePage() {
   const latestEntryId = useLatestEntryId();
   const connectionStats = useConnectionStatsWithUptime();
   const [copied, setCopied] = useState(false);
+  const [tagDialog, setTagDialog] = useState<TagDialogState | null>(null);
+  const [isTagSubmitting, setIsTagSubmitting] = useState(false);
+  const [tagError, setTagError] = useState<string | null>(null);
   const hasSt3215Data = Boolean(inferenceState?.st3215?.data?.buses?.length);
   const hasVescTrampaData = Boolean(inferenceState?.vescTrampa?.data?.boards?.length);
   const hasRobotData = hasSt3215Data || hasVescTrampaData;
@@ -244,11 +254,31 @@ function HomePage() {
     }
   };
 
-  const handleAddTag = useCallback(async () => {
-    if (latestEntryId === null) return;
-    const tag = window.prompt('Tag for current pointer:', defaultTag());
-    if (!tag) return;
-    const ptrBytes = new Uint8Array(Long.fromNumber(latestEntryId).toBytesLE());
+  const handleAddTag = useCallback(() => {
+    setTagDialog({
+      entryId: latestEntryId,
+      defaultValue: defaultTag(),
+    });
+    setTagError(null);
+  }, [latestEntryId]);
+
+  const handleCloseTagDialog = useCallback(() => {
+    if (isTagSubmitting) return;
+    setTagDialog(null);
+    setTagError(null);
+  }, [isTagSubmitting]);
+
+  const handleSubmitTag = useCallback(async (tag: string) => {
+    if (tagDialog === null || isTagSubmitting) return;
+    if (tagDialog.entryId === null) {
+      setTagError('No inference pointer available');
+      return;
+    }
+
+    const ptrBytes = new Uint8Array(Long.fromNumber(tagDialog.entryId).toBytesLE());
+    setIsTagSubmitting(true);
+    setTagError(null);
+
     try {
       await commandManager.sendInferenceTagCommand({
         type: inference_tags.CommandType.CT_ADD_TAG,
@@ -256,10 +286,15 @@ function HomePage() {
         inferenceQueuePtr: ptrBytes,
       });
       invalidateTagsCache();
+      setTagDialog(null);
     } catch (err) {
       console.error('Failed to send tag command:', err);
+      setTagError('Failed to save tag');
+    } finally {
+      setIsTagSubmitting(false);
     }
-  }, [latestEntryId]);
+  }, [isTagSubmitting, tagDialog]);
+
   return (
     <div className="flex-1 flex flex-col">
       <div className="relative z-20 bg-surface-primary border-b-2 border-border-default">
@@ -298,12 +333,14 @@ function HomePage() {
                   </div>
                 </div>
                 <button
+                  type="button"
                   onClick={handleAddTag}
-                  disabled={latestEntryId === null}
-                  className="px-3 py-1 bg-accent-secondary-bg hover:bg-accent-secondary-deep disabled:bg-surface-elevated disabled:text-text-muted disabled:cursor-not-allowed text-text-primary text-xs font-bold uppercase tracking-wide rounded border border-accent-secondary"
+                  className="inline-flex h-7 cursor-pointer items-center gap-1.5 px-3 py-1 bg-accent-secondary-bg hover:bg-accent-secondary-deep disabled:bg-surface-elevated disabled:text-text-muted disabled:cursor-not-allowed text-text-primary text-xs font-bold uppercase tracking-wide rounded border border-accent-secondary"
                   title="Tag the current inference queue pointer"
+                  aria-label="Tag the current inference queue pointer"
                 >
-                  TAG
+                  <TagIcon size={13} aria-hidden />
+                  <span>TAG</span>
                 </button>
               </div>
               <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs font-mono">
@@ -328,6 +365,16 @@ function HomePage() {
           )}
         </div>
       </div>
+      {tagDialog && (
+        <TagDialog
+          entryId={tagDialog.entryId}
+          defaultValue={tagDialog.defaultValue}
+          error={tagError}
+          isSubmitting={isTagSubmitting}
+          onClose={handleCloseTagDialog}
+          onSubmit={handleSubmitTag}
+        />
+      )}
       <div className="flex-1 min-h-0 overflow-auto p-4">
         <div className="flex min-h-full w-full flex-col gap-4">
           {hasSensorData && (
