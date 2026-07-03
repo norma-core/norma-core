@@ -96,12 +96,18 @@ class Client:
                     await asyncio.sleep(5)
                     continue
 
-            await asyncio.gather(
-                self.read_loop(),
-                self.write_loop(),
-                self.keep_alive_loop(),
-                self.process_responses()
-            )
+            tasks = [
+                asyncio.ensure_future(self.read_loop()),
+                asyncio.ensure_future(self.write_loop()),
+                asyncio.ensure_future(self.keep_alive_loop()),
+                asyncio.ensure_future(self.process_responses()),
+            ]
+            try:
+                await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
+            finally:
+                for task in tasks:
+                    task.cancel()
+                await asyncio.gather(*tasks, return_exceptions=True)
             self.logger.info("Connection loops terminated, attempting to reconnect...")
             self.connected = False
             self.setup_done = False
