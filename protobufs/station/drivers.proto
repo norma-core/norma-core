@@ -32,6 +32,8 @@ enum QueueDataType {
     QDT_ARDUINO_NICLA_SENSE_ENV_TX = 50; // arduino_nicla_sense_env.TxEnvelope
     QDT_ARDUINO_NICLA_SENSE_ENV_RX = 51; // arduino_nicla_sense_env.RxEnvelope
     QDT_INA226_RX                  = 52; // ina226.RxEnvelope
+
+    QDT_AIRGRADIENT_OPEN_AIR_O_1PST_RX = 53; // airgradient_open_air_o_1pst.RxEnvelope
 }
 
 enum StationCommandType {

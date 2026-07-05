@@ -9,8 +9,9 @@ import AsciiRobot from "@/components/AsciiRobot";
 import TagDialog from "@/components/TagDialog";
 import { copyToClipboard } from "@/api/clipboard-utils";
 import { commandManager } from "@/api/commands";
-import { arduino_nicla_sense_env, ina226, inference_tags } from "@/api/proto.js";
+import { airgradient_open_air_o_1pst, arduino_nicla_sense_env, ina226, inference_tags } from "@/api/proto.js";
 import { readArduinoNiclaSenseEnvMainValues } from "@/utils/arduino-nicla-sense-env";
+import { airGradientDeviceLabel, readAirGradientValues } from "@/utils/airgradient-open-air-o-1pst";
 import { defaultTag } from "@/utils/tag-phrases";
 import { getFPSColor } from '@/utils/color-utils';
 import {
@@ -221,6 +222,41 @@ function Ina226HomePanel({ data }: { data: ina226.IRxEnvelope }) {
   );
 }
 
+function AirGradientHomePanel({ data }: { data: airgradient_open_air_o_1pst.IRxEnvelope }) {
+  const values = readAirGradientValues(data.data);
+  return (
+    <WidgetShell
+      title={airGradientDeviceLabel(data.device)}
+      subtitle="AirGradient Open Air O-1PST"
+      error={data.error}
+    >
+      <div className="flex items-end gap-2">
+        <div className="min-w-0">
+          <div className="text-[10px] uppercase text-text-label">PM2.5</div>
+          <div className="font-mono text-2xl font-semibold leading-none text-accent-warning">
+            {formatInteger(values.pm25)}
+            <span className="ml-1 text-sm text-text-muted">ug/m3</span>
+          </div>
+        </div>
+        <div className="ml-auto min-w-0 text-right">
+          <div className="text-[10px] uppercase text-text-label">CO2</div>
+          <div className="font-mono text-lg font-semibold leading-none text-accent-success">
+            {formatInteger(values.co2Ppm)}
+            <span className="ml-1 text-xs text-text-muted">ppm</span>
+          </div>
+        </div>
+      </div>
+      <div className="mt-2 flex min-w-0 flex-wrap gap-1.5">
+        <WidgetPill label="Temp" value={formatMeasured(values.temperatureC, 'C', 1)} tone="text-accent-danger" />
+        <WidgetPill label="Humidity" value={formatMeasured(values.humidityPercent, '%', 0)} tone="text-accent-info" />
+        <WidgetPill label="PM10" value={formatMeasured(values.pm10, 'ug/m3', 0)} tone="text-accent-data" />
+        <WidgetPill label="VOC" value={formatInteger(values.vocIndex)} tone="text-accent-secondary" />
+        <WidgetPill label="NOx" value={formatInteger(values.noxIndex)} tone="text-accent-secondary" />
+      </div>
+    </WidgetShell>
+  );
+}
+
 function HomePage() {
   useWakeLock();
   const inferenceState = useInferenceState();
@@ -237,7 +273,8 @@ function HomePage() {
   const hasYahboomDogzillaLiteData = Boolean(inferenceState?.yahboom_dogzilla_lite?.data?.devices?.length);
   const hasArduinoNiclaSenseEnvData = Boolean(inferenceState?.arduinoNiclaSenseEnv?.data);
   const hasIna226Data = Boolean(inferenceState?.ina226?.data);
-  const hasSensorData = hasArduinoNiclaSenseEnvData || hasIna226Data;
+  const hasAirGradientData = Boolean(inferenceState?.airgradientOpenAir?.data);
+  const hasSensorData = hasArduinoNiclaSenseEnvData || hasIna226Data || hasAirGradientData;
 
   useEffect(() => {
     if (copied) {
@@ -384,6 +421,9 @@ function HomePage() {
               )}
               {inferenceState?.ina226?.data && (
                 <Ina226HomePanel data={inferenceState.ina226.data} />
+              )}
+              {inferenceState?.airgradientOpenAir?.data && (
+                <AirGradientHomePanel data={inferenceState.airgradientOpenAir.data} />
               )}
             </div>
           )}

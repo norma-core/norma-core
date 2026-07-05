@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { arduino_nicla_sense_env, ina226, usbvideo, st3215, motors_mirroring, sysinfo, yahboom_dogzilla_lite, normvla, vesc_trampa } from '@/api/proto.js';
+import { airgradient_open_air_o_1pst, arduino_nicla_sense_env, ina226, usbvideo, st3215, motors_mirroring, sysinfo, yahboom_dogzilla_lite, normvla, vesc_trampa } from '@/api/proto.js';
 import ArduinoNiclaSenseEnvExpanded from '@/components/history/ArduinoNiclaSenseEnvExpanded';
 import Ina226Expanded from '@/components/history/Ina226Expanded';
+import { airGradientDeviceLabel, airGradientLineText, readAirGradientValues } from '@/utils/airgradient-open-air-o-1pst';
 import { createCroppedJson } from '@/components/history/history-utils';
 import RawBytesExpanded from '@/components/history/RawBytesExpanded';
 import MirroringExpanded from '@/components/history/MirroringExpanded';
@@ -16,7 +17,7 @@ import FullscreenImageViewer from '@/components/FullscreenImageViewer';
 type DataTab = 'visual' | 'json' | 'raw';
 
 interface ExpandedViewProps {
-  data: usbvideo.IRxEnvelope | st3215.IInferenceState | st3215.ITxEnvelope | motors_mirroring.IRxEnvelope | sysinfo.IEnvelope | arduino_nicla_sense_env.IRxEnvelope | ina226.IRxEnvelope | yahboom_dogzilla_lite.IInferenceState | vesc_trampa.IInferenceState | vesc_trampa.IRxEnvelope | vesc_trampa.ITxEnvelope | normvla.IFrame | Uint8Array;
+  data: usbvideo.IRxEnvelope | st3215.IInferenceState | st3215.ITxEnvelope | motors_mirroring.IRxEnvelope | sysinfo.IEnvelope | arduino_nicla_sense_env.IRxEnvelope | ina226.IRxEnvelope | airgradient_open_air_o_1pst.IRxEnvelope | yahboom_dogzilla_lite.IInferenceState | vesc_trampa.IInferenceState | vesc_trampa.IRxEnvelope | vesc_trampa.ITxEnvelope | normvla.IFrame | Uint8Array;
   type: string | undefined;
   rawData?: Uint8Array | null;
 }
@@ -38,6 +39,7 @@ function tryDecodeProtobuf(rawData: Uint8Array): { decoded: unknown; typeName: s
     { name: 'sysinfo.Envelope', decode: () => sysinfo.Envelope.decode(rawData) },
     { name: 'arduino_nicla_sense_env.RxEnvelope', decode: () => arduino_nicla_sense_env.RxEnvelope.decode(rawData) },
     { name: 'ina226.RxEnvelope', decode: () => ina226.RxEnvelope.decode(rawData) },
+    { name: 'airgradient_open_air_o_1pst.RxEnvelope', decode: () => airgradient_open_air_o_1pst.RxEnvelope.decode(rawData) },
     { name: 'yahboom_dogzilla_lite.InferenceState', decode: () => yahboom_dogzilla_lite.InferenceState.decode(rawData) },
     { name: 'st3215.InferenceState', decode: () => st3215.InferenceState.decode(rawData) },
     { name: 'normvla.Frame', decode: () => normvla.Frame.decode(rawData) },
@@ -76,11 +78,12 @@ function getAvailableTabs(
   const isSysinfo = type === 'sysinfo' && data instanceof sysinfo.Envelope;
   const isArduinoNiclaSenseEnv = type === 'arduino-nicla-sense-env' && data instanceof arduino_nicla_sense_env.RxEnvelope;
   const isIna226 = type === 'ina226' && data instanceof ina226.RxEnvelope;
+  const isAirGradient = type === 'airgradient-open-air-o-1pst' && data instanceof airgradient_open_air_o_1pst.RxEnvelope;
   const isYahboomDogzillaLite = type === 'yahboom_dogzilla_lite' && data instanceof yahboom_dogzilla_lite.InferenceState;
   const isNormvla = type === 'normvla' && data instanceof normvla.Frame;
   const isVescTrampa = type === 'vesc-trampa-rx' && data instanceof vesc_trampa.RxEnvelope;
 
-  if (isUsbVideo || isSt3215 || isSt3215Tx || isMirroring || isVescTrampaTx || isSysinfo || isArduinoNiclaSenseEnv || isIna226 || isYahboomDogzillaLite || isNormvla) {
+  if (isUsbVideo || isSt3215 || isSt3215Tx || isMirroring || isVescTrampaTx || isSysinfo || isArduinoNiclaSenseEnv || isIna226 || isAirGradient || isYahboomDogzillaLite || isNormvla) {
     return ['visual', 'json', 'raw'];
   }
 
@@ -158,6 +161,36 @@ export default function ExpandedView({ data, type, rawData }: ExpandedViewProps)
     }
     if (type === 'ina226' && data instanceof ina226.RxEnvelope) {
       return <Ina226Expanded data={data} />;
+    }
+    if (type === 'airgradient-open-air-o-1pst' && data instanceof airgradient_open_air_o_1pst.RxEnvelope) {
+      const values = readAirGradientValues(data.data);
+      const cells: { label: string; value: number | null; unit: string }[] = [
+        { label: 'PM1', value: values.pm1, unit: 'ug/m3' },
+        { label: 'PM2.5', value: values.pm25, unit: 'ug/m3' },
+        { label: 'PM10', value: values.pm10, unit: 'ug/m3' },
+        { label: 'Temp', value: values.temperatureC, unit: 'C' },
+        { label: 'Humidity', value: values.humidityPercent, unit: '%' },
+        { label: 'CO2', value: values.co2Ppm, unit: 'ppm' },
+        { label: 'VOC', value: values.vocIndex, unit: '' },
+        { label: 'NOx', value: values.noxIndex, unit: '' },
+      ];
+      return (
+        <div className="space-y-2">
+          <div className="text-xs text-text-label">{airGradientDeviceLabel(data.device)}</div>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+            {cells.map((cell) => (
+              <div key={cell.label} className="bg-surface-primary p-2 rounded">
+                <div className="text-[10px] uppercase text-text-label">{cell.label}</div>
+                <div className="font-mono text-sm text-accent-data">
+                  {cell.value === null || !Number.isFinite(cell.value)
+                    ? 'N/A'
+                    : `${cell.value}${cell.unit ? ` ${cell.unit}` : ''}`}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
     }
     if (type === 'normvla' && data instanceof normvla.Frame) {
       return (
@@ -326,6 +359,24 @@ export default function ExpandedView({ data, type, rawData }: ExpandedViewProps)
           <div className="text-xs text-text-label mb-1">INA226 RxEnvelope JSON:</div>
           <div className="bg-surface-primary p-2 rounded text-xs font-mono text-accent-data overflow-x-auto max-h-64 overflow-y-auto">
             <pre>{JSON.stringify(ina226Data, null, 2)}</pre>
+          </div>
+        </div>
+      );
+    }
+    if (type === 'airgradient-open-air-o-1pst' && data instanceof airgradient_open_air_o_1pst.RxEnvelope) {
+      const airgradientData = airgradient_open_air_o_1pst.RxEnvelope.toObject(data, {
+        longs: String,
+        enums: String,
+        bytes: String,
+        defaults: true
+      });
+      const view = { ...airgradientData, data: airGradientLineText(data.data) };
+
+      return (
+        <div>
+          <div className="text-xs text-text-label mb-1">AirGradient Open Air O-1PST RxEnvelope JSON:</div>
+          <div className="bg-surface-primary p-2 rounded text-xs font-mono text-accent-data overflow-x-auto max-h-64 overflow-y-auto">
+            <pre>{JSON.stringify(view, null, 2)}</pre>
           </div>
         </div>
       );

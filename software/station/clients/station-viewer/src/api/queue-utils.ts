@@ -45,6 +45,8 @@ export function getQueueType(queueType: drivers.QueueDataType): string | undefin
       return 'arduino-nicla-sense-env';
     case drivers.QueueDataType.QDT_INA226_RX:
       return 'ina226';
+    case drivers.QueueDataType.QDT_AIRGRADIENT_OPEN_AIR_O_1PST_RX:
+      return 'airgradient-open-air-o-1pst';
     default:
       return undefined;
   }

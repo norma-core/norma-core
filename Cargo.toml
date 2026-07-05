@@ -2,6 +2,7 @@
 resolver = "3"
 members = [
   "shared/i2c-async",
+  "software/drivers/airgradient-open-air-o-1pst",
   "software/drivers/arduino-nicla-sense-env",
   "software/drivers/ina226",
   "software/drivers/inferences",

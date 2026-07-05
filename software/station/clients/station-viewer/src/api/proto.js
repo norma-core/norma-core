@@ -720,6 +720,7 @@ export const drivers = $root.drivers = (() => {
      * @property {number} QDT_ARDUINO_NICLA_SENSE_ENV_TX=50 QDT_ARDUINO_NICLA_SENSE_ENV_TX value
      * @property {number} QDT_ARDUINO_NICLA_SENSE_ENV_RX=51 QDT_ARDUINO_NICLA_SENSE_ENV_RX value
      * @property {number} QDT_INA226_RX=52 QDT_INA226_RX value
+     * @property {number} QDT_AIRGRADIENT_OPEN_AIR_O_1PST_RX=53 QDT_AIRGRADIENT_OPEN_AIR_O_1PST_RX value
      */
     drivers.QueueDataType = (function() {
         const valuesById = {}, values = Object.create(valuesById);
@@ -746,6 +747,7 @@ export const drivers = $root.drivers = (() => {
         values[valuesById[50] = "QDT_ARDUINO_NICLA_SENSE_ENV_TX"] = 50;
         values[valuesById[51] = "QDT_ARDUINO_NICLA_SENSE_ENV_RX"] = 51;
         values[valuesById[52] = "QDT_INA226_RX"] = 52;
+        values[valuesById[53] = "QDT_AIRGRADIENT_OPEN_AIR_O_1PST_RX"] = 53;
         return values;
     })();
 
@@ -1335,6 +1337,7 @@ export const inference = $root.inference = (() => {
                     case 50:
                     case 51:
                     case 52:
+                    case 53:
                         break;
                     }
                 return null;
@@ -1461,6 +1464,10 @@ export const inference = $root.inference = (() => {
                 case "QDT_INA226_RX":
                 case 52:
                     message.type = 52;
+                    break;
+                case "QDT_AIRGRADIENT_OPEN_AIR_O_1PST_RX":
+                case 53:
+                    message.type = 53;
                     break;
                 }
                 return message;
@@ -36925,6 +36932,840 @@ export const ina226 = $root.ina226 = (() => {
     })();
 
     return ina226;
+})();
+
+export const airgradient_open_air_o_1pst = $root.airgradient_open_air_o_1pst = (() => {
+
+    /**
+     * Namespace airgradient_open_air_o_1pst.
+     * @exports airgradient_open_air_o_1pst
+     * @namespace
+     */
+    const airgradient_open_air_o_1pst = {};
+
+    /**
+     * AirGradientSignalType enum.
+     * @name airgradient_open_air_o_1pst.AirGradientSignalType
+     * @enum {number}
+     * @property {number} AIRGRADIENT_SIGNAL_TYPE_UNSPECIFIED=0 AIRGRADIENT_SIGNAL_TYPE_UNSPECIFIED value
+     * @property {number} AIRGRADIENT_CONNECTED=1 AIRGRADIENT_CONNECTED value
+     * @property {number} AIRGRADIENT_DISCONNECTED=2 AIRGRADIENT_DISCONNECTED value
+     * @property {number} AIRGRADIENT_MEASUREMENT=3 AIRGRADIENT_MEASUREMENT value
+     * @property {number} AIRGRADIENT_ERROR=4 AIRGRADIENT_ERROR value
+     */
+    airgradient_open_air_o_1pst.AirGradientSignalType = (function() {
+        const valuesById = {}, values = Object.create(valuesById);
+        values[valuesById[0] = "AIRGRADIENT_SIGNAL_TYPE_UNSPECIFIED"] = 0;
+        values[valuesById[1] = "AIRGRADIENT_CONNECTED"] = 1;
+        values[valuesById[2] = "AIRGRADIENT_DISCONNECTED"] = 2;
+        values[valuesById[3] = "AIRGRADIENT_MEASUREMENT"] = 3;
+        values[valuesById[4] = "AIRGRADIENT_ERROR"] = 4;
+        return values;
+    })();
+
+    airgradient_open_air_o_1pst.AirGradientDevice = (function() {
+
+        /**
+         * Properties of an AirGradientDevice.
+         * @memberof airgradient_open_air_o_1pst
+         * @interface IAirGradientDevice
+         * @property {string|null} [portName] AirGradientDevice portName
+         * @property {number|null} [vid] AirGradientDevice vid
+         * @property {number|null} [pid] AirGradientDevice pid
+         * @property {string|null} [serialNumber] AirGradientDevice serialNumber
+         * @property {string|null} [manufacturer] AirGradientDevice manufacturer
+         * @property {string|null} [product] AirGradientDevice product
+         * @property {number|null} [portBaudRate] AirGradientDevice portBaudRate
+         */
+
+        /**
+         * Constructs a new AirGradientDevice.
+         * @memberof airgradient_open_air_o_1pst
+         * @classdesc Represents an AirGradientDevice.
+         * @implements IAirGradientDevice
+         * @constructor
+         * @param {airgradient_open_air_o_1pst.IAirGradientDevice=} [properties] Properties to set
+         */
+        function AirGradientDevice(properties) {
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * AirGradientDevice portName.
+         * @member {string} portName
+         * @memberof airgradient_open_air_o_1pst.AirGradientDevice
+         * @instance
+         */
+        AirGradientDevice.prototype.portName = "";
+
+        /**
+         * AirGradientDevice vid.
+         * @member {number} vid
+         * @memberof airgradient_open_air_o_1pst.AirGradientDevice
+         * @instance
+         */
+        AirGradientDevice.prototype.vid = 0;
+
+        /**
+         * AirGradientDevice pid.
+         * @member {number} pid
+         * @memberof airgradient_open_air_o_1pst.AirGradientDevice
+         * @instance
+         */
+        AirGradientDevice.prototype.pid = 0;
+
+        /**
+         * AirGradientDevice serialNumber.
+         * @member {string} serialNumber
+         * @memberof airgradient_open_air_o_1pst.AirGradientDevice
+         * @instance
+         */
+        AirGradientDevice.prototype.serialNumber = "";
+
+        /**
+         * AirGradientDevice manufacturer.
+         * @member {string} manufacturer
+         * @memberof airgradient_open_air_o_1pst.AirGradientDevice
+         * @instance
+         */
+        AirGradientDevice.prototype.manufacturer = "";
+
+        /**
+         * AirGradientDevice product.
+         * @member {string} product
+         * @memberof airgradient_open_air_o_1pst.AirGradientDevice
+         * @instance
+         */
+        AirGradientDevice.prototype.product = "";
+
+        /**
+         * AirGradientDevice portBaudRate.
+         * @member {number} portBaudRate
+         * @memberof airgradient_open_air_o_1pst.AirGradientDevice
+         * @instance
+         */
+        AirGradientDevice.prototype.portBaudRate = 0;
+
+        /**
+         * Creates a new AirGradientDevice instance using the specified properties.
+         * @function create
+         * @memberof airgradient_open_air_o_1pst.AirGradientDevice
+         * @static
+         * @param {airgradient_open_air_o_1pst.IAirGradientDevice=} [properties] Properties to set
+         * @returns {airgradient_open_air_o_1pst.AirGradientDevice} AirGradientDevice instance
+         */
+        AirGradientDevice.create = function create(properties) {
+            return new AirGradientDevice(properties);
+        };
+
+        /**
+         * Encodes the specified AirGradientDevice message. Does not implicitly {@link airgradient_open_air_o_1pst.AirGradientDevice.verify|verify} messages.
+         * @function encode
+         * @memberof airgradient_open_air_o_1pst.AirGradientDevice
+         * @static
+         * @param {airgradient_open_air_o_1pst.IAirGradientDevice} message AirGradientDevice message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        AirGradientDevice.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.portName != null && Object.hasOwnProperty.call(message, "portName"))
+                writer.uint32(/* id 1, wireType 2 =*/10).string(message.portName);
+            if (message.vid != null && Object.hasOwnProperty.call(message, "vid"))
+                writer.uint32(/* id 2, wireType 0 =*/16).uint32(message.vid);
+            if (message.pid != null && Object.hasOwnProperty.call(message, "pid"))
+                writer.uint32(/* id 3, wireType 0 =*/24).uint32(message.pid);
+            if (message.serialNumber != null && Object.hasOwnProperty.call(message, "serialNumber"))
+                writer.uint32(/* id 4, wireType 2 =*/34).string(message.serialNumber);
+            if (message.manufacturer != null && Object.hasOwnProperty.call(message, "manufacturer"))
+                writer.uint32(/* id 5, wireType 2 =*/42).string(message.manufacturer);
+            if (message.product != null && Object.hasOwnProperty.call(message, "product"))
+                writer.uint32(/* id 6, wireType 2 =*/50).string(message.product);
+            if (message.portBaudRate != null && Object.hasOwnProperty.call(message, "portBaudRate"))
+                writer.uint32(/* id 7, wireType 0 =*/56).uint32(message.portBaudRate);
+            return writer;
+        };
+
+        /**
+         * Encodes the specified AirGradientDevice message, length delimited. Does not implicitly {@link airgradient_open_air_o_1pst.AirGradientDevice.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof airgradient_open_air_o_1pst.AirGradientDevice
+         * @static
+         * @param {airgradient_open_air_o_1pst.IAirGradientDevice} message AirGradientDevice message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        AirGradientDevice.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes an AirGradientDevice message from the specified reader or buffer.
+         * @function decode
+         * @memberof airgradient_open_air_o_1pst.AirGradientDevice
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {airgradient_open_air_o_1pst.AirGradientDevice} AirGradientDevice
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        AirGradientDevice.decode = function decode(reader, length, error, long) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.airgradient_open_air_o_1pst.AirGradientDevice();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                if (tag === error)
+                    break;
+                switch (tag >>> 3) {
+                case 1: {
+                        message.portName = reader.string();
+                        break;
+                    }
+                case 2: {
+                        message.vid = reader.uint32();
+                        break;
+                    }
+                case 3: {
+                        message.pid = reader.uint32();
+                        break;
+                    }
+                case 4: {
+                        message.serialNumber = reader.string();
+                        break;
+                    }
+                case 5: {
+                        message.manufacturer = reader.string();
+                        break;
+                    }
+                case 6: {
+                        message.product = reader.string();
+                        break;
+                    }
+                case 7: {
+                        message.portBaudRate = reader.uint32();
+                        break;
+                    }
+                default:
+                    reader.skipType(tag & 7, long);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes an AirGradientDevice message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof airgradient_open_air_o_1pst.AirGradientDevice
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {airgradient_open_air_o_1pst.AirGradientDevice} AirGradientDevice
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        AirGradientDevice.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies an AirGradientDevice message.
+         * @function verify
+         * @memberof airgradient_open_air_o_1pst.AirGradientDevice
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        AirGradientDevice.verify = function verify(message, long) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
+            if (message.portName != null && message.hasOwnProperty("portName"))
+                if (!$util.isString(message.portName))
+                    return "portName: string expected";
+            if (message.vid != null && message.hasOwnProperty("vid"))
+                if (!$util.isInteger(message.vid))
+                    return "vid: integer expected";
+            if (message.pid != null && message.hasOwnProperty("pid"))
+                if (!$util.isInteger(message.pid))
+                    return "pid: integer expected";
+            if (message.serialNumber != null && message.hasOwnProperty("serialNumber"))
+                if (!$util.isString(message.serialNumber))
+                    return "serialNumber: string expected";
+            if (message.manufacturer != null && message.hasOwnProperty("manufacturer"))
+                if (!$util.isString(message.manufacturer))
+                    return "manufacturer: string expected";
+            if (message.product != null && message.hasOwnProperty("product"))
+                if (!$util.isString(message.product))
+                    return "product: string expected";
+            if (message.portBaudRate != null && message.hasOwnProperty("portBaudRate"))
+                if (!$util.isInteger(message.portBaudRate))
+                    return "portBaudRate: integer expected";
+            return null;
+        };
+
+        /**
+         * Creates an AirGradientDevice message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof airgradient_open_air_o_1pst.AirGradientDevice
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {airgradient_open_air_o_1pst.AirGradientDevice} AirGradientDevice
+         */
+        AirGradientDevice.fromObject = function fromObject(object, long) {
+            if (object instanceof $root.airgradient_open_air_o_1pst.AirGradientDevice)
+                return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let message = new $root.airgradient_open_air_o_1pst.AirGradientDevice();
+            if (object.portName != null)
+                message.portName = String(object.portName);
+            if (object.vid != null)
+                message.vid = object.vid >>> 0;
+            if (object.pid != null)
+                message.pid = object.pid >>> 0;
+            if (object.serialNumber != null)
+                message.serialNumber = String(object.serialNumber);
+            if (object.manufacturer != null)
+                message.manufacturer = String(object.manufacturer);
+            if (object.product != null)
+                message.product = String(object.product);
+            if (object.portBaudRate != null)
+                message.portBaudRate = object.portBaudRate >>> 0;
+            return message;
+        };
+
+        /**
+         * Creates a plain object from an AirGradientDevice message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof airgradient_open_air_o_1pst.AirGradientDevice
+         * @static
+         * @param {airgradient_open_air_o_1pst.AirGradientDevice} message AirGradientDevice
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        AirGradientDevice.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.defaults) {
+                object.portName = "";
+                object.vid = 0;
+                object.pid = 0;
+                object.serialNumber = "";
+                object.manufacturer = "";
+                object.product = "";
+                object.portBaudRate = 0;
+            }
+            if (message.portName != null && message.hasOwnProperty("portName"))
+                object.portName = message.portName;
+            if (message.vid != null && message.hasOwnProperty("vid"))
+                object.vid = message.vid;
+            if (message.pid != null && message.hasOwnProperty("pid"))
+                object.pid = message.pid;
+            if (message.serialNumber != null && message.hasOwnProperty("serialNumber"))
+                object.serialNumber = message.serialNumber;
+            if (message.manufacturer != null && message.hasOwnProperty("manufacturer"))
+                object.manufacturer = message.manufacturer;
+            if (message.product != null && message.hasOwnProperty("product"))
+                object.product = message.product;
+            if (message.portBaudRate != null && message.hasOwnProperty("portBaudRate"))
+                object.portBaudRate = message.portBaudRate;
+            return object;
+        };
+
+        /**
+         * Converts this AirGradientDevice to JSON.
+         * @function toJSON
+         * @memberof airgradient_open_air_o_1pst.AirGradientDevice
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        AirGradientDevice.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for AirGradientDevice
+         * @function getTypeUrl
+         * @memberof airgradient_open_air_o_1pst.AirGradientDevice
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        AirGradientDevice.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+            if (typeUrlPrefix === undefined) {
+                typeUrlPrefix = "type.googleapis.com";
+            }
+            return typeUrlPrefix + "/airgradient_open_air_o_1pst.AirGradientDevice";
+        };
+
+        return AirGradientDevice;
+    })();
+
+    airgradient_open_air_o_1pst.RxEnvelope = (function() {
+
+        /**
+         * Properties of a RxEnvelope.
+         * @memberof airgradient_open_air_o_1pst
+         * @interface IRxEnvelope
+         * @property {Long|null} [monotonicStampNs] RxEnvelope monotonicStampNs
+         * @property {Long|null} [localStampNs] RxEnvelope localStampNs
+         * @property {Long|null} [appStartId] RxEnvelope appStartId
+         * @property {airgradient_open_air_o_1pst.AirGradientSignalType|null} [signalType] RxEnvelope signalType
+         * @property {airgradient_open_air_o_1pst.IAirGradientDevice|null} [device] RxEnvelope device
+         * @property {Uint8Array|null} [data] RxEnvelope data
+         * @property {string|null} [error] RxEnvelope error
+         */
+
+        /**
+         * Constructs a new RxEnvelope.
+         * @memberof airgradient_open_air_o_1pst
+         * @classdesc Represents a RxEnvelope.
+         * @implements IRxEnvelope
+         * @constructor
+         * @param {airgradient_open_air_o_1pst.IRxEnvelope=} [properties] Properties to set
+         */
+        function RxEnvelope(properties) {
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * RxEnvelope monotonicStampNs.
+         * @member {Long} monotonicStampNs
+         * @memberof airgradient_open_air_o_1pst.RxEnvelope
+         * @instance
+         */
+        RxEnvelope.prototype.monotonicStampNs = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+
+        /**
+         * RxEnvelope localStampNs.
+         * @member {Long} localStampNs
+         * @memberof airgradient_open_air_o_1pst.RxEnvelope
+         * @instance
+         */
+        RxEnvelope.prototype.localStampNs = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+
+        /**
+         * RxEnvelope appStartId.
+         * @member {Long} appStartId
+         * @memberof airgradient_open_air_o_1pst.RxEnvelope
+         * @instance
+         */
+        RxEnvelope.prototype.appStartId = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+
+        /**
+         * RxEnvelope signalType.
+         * @member {airgradient_open_air_o_1pst.AirGradientSignalType} signalType
+         * @memberof airgradient_open_air_o_1pst.RxEnvelope
+         * @instance
+         */
+        RxEnvelope.prototype.signalType = 0;
+
+        /**
+         * RxEnvelope device.
+         * @member {airgradient_open_air_o_1pst.IAirGradientDevice|null|undefined} device
+         * @memberof airgradient_open_air_o_1pst.RxEnvelope
+         * @instance
+         */
+        RxEnvelope.prototype.device = null;
+
+        /**
+         * RxEnvelope data.
+         * @member {Uint8Array} data
+         * @memberof airgradient_open_air_o_1pst.RxEnvelope
+         * @instance
+         */
+        RxEnvelope.prototype.data = $util.newBuffer([]);
+
+        /**
+         * RxEnvelope error.
+         * @member {string} error
+         * @memberof airgradient_open_air_o_1pst.RxEnvelope
+         * @instance
+         */
+        RxEnvelope.prototype.error = "";
+
+        /**
+         * Creates a new RxEnvelope instance using the specified properties.
+         * @function create
+         * @memberof airgradient_open_air_o_1pst.RxEnvelope
+         * @static
+         * @param {airgradient_open_air_o_1pst.IRxEnvelope=} [properties] Properties to set
+         * @returns {airgradient_open_air_o_1pst.RxEnvelope} RxEnvelope instance
+         */
+        RxEnvelope.create = function create(properties) {
+            return new RxEnvelope(properties);
+        };
+
+        /**
+         * Encodes the specified RxEnvelope message. Does not implicitly {@link airgradient_open_air_o_1pst.RxEnvelope.verify|verify} messages.
+         * @function encode
+         * @memberof airgradient_open_air_o_1pst.RxEnvelope
+         * @static
+         * @param {airgradient_open_air_o_1pst.IRxEnvelope} message RxEnvelope message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        RxEnvelope.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.monotonicStampNs != null && Object.hasOwnProperty.call(message, "monotonicStampNs"))
+                writer.uint32(/* id 1, wireType 0 =*/8).uint64(message.monotonicStampNs);
+            if (message.localStampNs != null && Object.hasOwnProperty.call(message, "localStampNs"))
+                writer.uint32(/* id 2, wireType 0 =*/16).uint64(message.localStampNs);
+            if (message.appStartId != null && Object.hasOwnProperty.call(message, "appStartId"))
+                writer.uint32(/* id 3, wireType 0 =*/24).uint64(message.appStartId);
+            if (message.signalType != null && Object.hasOwnProperty.call(message, "signalType"))
+                writer.uint32(/* id 10, wireType 0 =*/80).int32(message.signalType);
+            if (message.device != null && Object.hasOwnProperty.call(message, "device"))
+                $root.airgradient_open_air_o_1pst.AirGradientDevice.encode(message.device, writer.uint32(/* id 11, wireType 2 =*/90).fork()).ldelim();
+            if (message.data != null && Object.hasOwnProperty.call(message, "data"))
+                writer.uint32(/* id 20, wireType 2 =*/162).bytes(message.data);
+            if (message.error != null && Object.hasOwnProperty.call(message, "error"))
+                writer.uint32(/* id 50, wireType 2 =*/402).string(message.error);
+            return writer;
+        };
+
+        /**
+         * Encodes the specified RxEnvelope message, length delimited. Does not implicitly {@link airgradient_open_air_o_1pst.RxEnvelope.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof airgradient_open_air_o_1pst.RxEnvelope
+         * @static
+         * @param {airgradient_open_air_o_1pst.IRxEnvelope} message RxEnvelope message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        RxEnvelope.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes a RxEnvelope message from the specified reader or buffer.
+         * @function decode
+         * @memberof airgradient_open_air_o_1pst.RxEnvelope
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {airgradient_open_air_o_1pst.RxEnvelope} RxEnvelope
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        RxEnvelope.decode = function decode(reader, length, error, long) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.airgradient_open_air_o_1pst.RxEnvelope();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                if (tag === error)
+                    break;
+                switch (tag >>> 3) {
+                case 1: {
+                        message.monotonicStampNs = reader.uint64();
+                        break;
+                    }
+                case 2: {
+                        message.localStampNs = reader.uint64();
+                        break;
+                    }
+                case 3: {
+                        message.appStartId = reader.uint64();
+                        break;
+                    }
+                case 10: {
+                        message.signalType = reader.int32();
+                        break;
+                    }
+                case 11: {
+                        message.device = $root.airgradient_open_air_o_1pst.AirGradientDevice.decode(reader, reader.uint32(), undefined, long + 1);
+                        break;
+                    }
+                case 20: {
+                        message.data = reader.bytes();
+                        break;
+                    }
+                case 50: {
+                        message.error = reader.string();
+                        break;
+                    }
+                default:
+                    reader.skipType(tag & 7, long);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes a RxEnvelope message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof airgradient_open_air_o_1pst.RxEnvelope
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {airgradient_open_air_o_1pst.RxEnvelope} RxEnvelope
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        RxEnvelope.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies a RxEnvelope message.
+         * @function verify
+         * @memberof airgradient_open_air_o_1pst.RxEnvelope
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        RxEnvelope.verify = function verify(message, long) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
+            if (message.monotonicStampNs != null && message.hasOwnProperty("monotonicStampNs"))
+                if (!$util.isInteger(message.monotonicStampNs) && !(message.monotonicStampNs && $util.isInteger(message.monotonicStampNs.low) && $util.isInteger(message.monotonicStampNs.high)))
+                    return "monotonicStampNs: integer|Long expected";
+            if (message.localStampNs != null && message.hasOwnProperty("localStampNs"))
+                if (!$util.isInteger(message.localStampNs) && !(message.localStampNs && $util.isInteger(message.localStampNs.low) && $util.isInteger(message.localStampNs.high)))
+                    return "localStampNs: integer|Long expected";
+            if (message.appStartId != null && message.hasOwnProperty("appStartId"))
+                if (!$util.isInteger(message.appStartId) && !(message.appStartId && $util.isInteger(message.appStartId.low) && $util.isInteger(message.appStartId.high)))
+                    return "appStartId: integer|Long expected";
+            if (message.signalType != null && message.hasOwnProperty("signalType"))
+                switch (message.signalType) {
+                default:
+                    return "signalType: enum value expected";
+                case 0:
+                case 1:
+                case 2:
+                case 3:
+                case 4:
+                    break;
+                }
+            if (message.device != null && message.hasOwnProperty("device")) {
+                let error = $root.airgradient_open_air_o_1pst.AirGradientDevice.verify(message.device, long + 1);
+                if (error)
+                    return "device." + error;
+            }
+            if (message.data != null && message.hasOwnProperty("data"))
+                if (!(message.data && typeof message.data.length === "number" || $util.isString(message.data)))
+                    return "data: buffer expected";
+            if (message.error != null && message.hasOwnProperty("error"))
+                if (!$util.isString(message.error))
+                    return "error: string expected";
+            return null;
+        };
+
+        /**
+         * Creates a RxEnvelope message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof airgradient_open_air_o_1pst.RxEnvelope
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {airgradient_open_air_o_1pst.RxEnvelope} RxEnvelope
+         */
+        RxEnvelope.fromObject = function fromObject(object, long) {
+            if (object instanceof $root.airgradient_open_air_o_1pst.RxEnvelope)
+                return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let message = new $root.airgradient_open_air_o_1pst.RxEnvelope();
+            if (object.monotonicStampNs != null)
+                if ($util.Long)
+                    (message.monotonicStampNs = $util.Long.fromValue(object.monotonicStampNs)).unsigned = true;
+                else if (typeof object.monotonicStampNs === "string")
+                    message.monotonicStampNs = parseInt(object.monotonicStampNs, 10);
+                else if (typeof object.monotonicStampNs === "number")
+                    message.monotonicStampNs = object.monotonicStampNs;
+                else if (typeof object.monotonicStampNs === "object")
+                    message.monotonicStampNs = new $util.LongBits(object.monotonicStampNs.low >>> 0, object.monotonicStampNs.high >>> 0).toNumber(true);
+            if (object.localStampNs != null)
+                if ($util.Long)
+                    (message.localStampNs = $util.Long.fromValue(object.localStampNs)).unsigned = true;
+                else if (typeof object.localStampNs === "string")
+                    message.localStampNs = parseInt(object.localStampNs, 10);
+                else if (typeof object.localStampNs === "number")
+                    message.localStampNs = object.localStampNs;
+                else if (typeof object.localStampNs === "object")
+                    message.localStampNs = new $util.LongBits(object.localStampNs.low >>> 0, object.localStampNs.high >>> 0).toNumber(true);
+            if (object.appStartId != null)
+                if ($util.Long)
+                    (message.appStartId = $util.Long.fromValue(object.appStartId)).unsigned = true;
+                else if (typeof object.appStartId === "string")
+                    message.appStartId = parseInt(object.appStartId, 10);
+                else if (typeof object.appStartId === "number")
+                    message.appStartId = object.appStartId;
+                else if (typeof object.appStartId === "object")
+                    message.appStartId = new $util.LongBits(object.appStartId.low >>> 0, object.appStartId.high >>> 0).toNumber(true);
+            switch (object.signalType) {
+            default:
+                if (typeof object.signalType === "number") {
+                    message.signalType = object.signalType;
+                    break;
+                }
+                break;
+            case "AIRGRADIENT_SIGNAL_TYPE_UNSPECIFIED":
+            case 0:
+                message.signalType = 0;
+                break;
+            case "AIRGRADIENT_CONNECTED":
+            case 1:
+                message.signalType = 1;
+                break;
+            case "AIRGRADIENT_DISCONNECTED":
+            case 2:
+                message.signalType = 2;
+                break;
+            case "AIRGRADIENT_MEASUREMENT":
+            case 3:
+                message.signalType = 3;
+                break;
+            case "AIRGRADIENT_ERROR":
+            case 4:
+                message.signalType = 4;
+                break;
+            }
+            if (object.device != null) {
+                if (typeof object.device !== "object")
+                    throw TypeError(".airgradient_open_air_o_1pst.RxEnvelope.device: object expected");
+                message.device = $root.airgradient_open_air_o_1pst.AirGradientDevice.fromObject(object.device, long + 1);
+            }
+            if (object.data != null)
+                if (typeof object.data === "string")
+                    $util.base64.decode(object.data, message.data = $util.newBuffer($util.base64.length(object.data)), 0);
+                else if (object.data.length >= 0)
+                    message.data = object.data;
+            if (object.error != null)
+                message.error = String(object.error);
+            return message;
+        };
+
+        /**
+         * Creates a plain object from a RxEnvelope message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof airgradient_open_air_o_1pst.RxEnvelope
+         * @static
+         * @param {airgradient_open_air_o_1pst.RxEnvelope} message RxEnvelope
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        RxEnvelope.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.defaults) {
+                if ($util.Long) {
+                    let long = new $util.Long(0, 0, true);
+                    object.monotonicStampNs = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+                } else
+                    object.monotonicStampNs = options.longs === String ? "0" : 0;
+                if ($util.Long) {
+                    let long = new $util.Long(0, 0, true);
+                    object.localStampNs = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+                } else
+                    object.localStampNs = options.longs === String ? "0" : 0;
+                if ($util.Long) {
+                    let long = new $util.Long(0, 0, true);
+                    object.appStartId = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+                } else
+                    object.appStartId = options.longs === String ? "0" : 0;
+                object.signalType = options.enums === String ? "AIRGRADIENT_SIGNAL_TYPE_UNSPECIFIED" : 0;
+                object.device = null;
+                if (options.bytes === String)
+                    object.data = "";
+                else {
+                    object.data = [];
+                    if (options.bytes !== Array)
+                        object.data = $util.newBuffer(object.data);
+                }
+                object.error = "";
+            }
+            if (message.monotonicStampNs != null && message.hasOwnProperty("monotonicStampNs"))
+                if (typeof message.monotonicStampNs === "number")
+                    object.monotonicStampNs = options.longs === String ? String(message.monotonicStampNs) : message.monotonicStampNs;
+                else
+                    object.monotonicStampNs = options.longs === String ? $util.Long.prototype.toString.call(message.monotonicStampNs) : options.longs === Number ? new $util.LongBits(message.monotonicStampNs.low >>> 0, message.monotonicStampNs.high >>> 0).toNumber(true) : message.monotonicStampNs;
+            if (message.localStampNs != null && message.hasOwnProperty("localStampNs"))
+                if (typeof message.localStampNs === "number")
+                    object.localStampNs = options.longs === String ? String(message.localStampNs) : message.localStampNs;
+                else
+                    object.localStampNs = options.longs === String ? $util.Long.prototype.toString.call(message.localStampNs) : options.longs === Number ? new $util.LongBits(message.localStampNs.low >>> 0, message.localStampNs.high >>> 0).toNumber(true) : message.localStampNs;
+            if (message.appStartId != null && message.hasOwnProperty("appStartId"))
+                if (typeof message.appStartId === "number")
+                    object.appStartId = options.longs === String ? String(message.appStartId) : message.appStartId;
+                else
+                    object.appStartId = options.longs === String ? $util.Long.prototype.toString.call(message.appStartId) : options.longs === Number ? new $util.LongBits(message.appStartId.low >>> 0, message.appStartId.high >>> 0).toNumber(true) : message.appStartId;
+            if (message.signalType != null && message.hasOwnProperty("signalType"))
+                object.signalType = options.enums === String ? $root.airgradient_open_air_o_1pst.AirGradientSignalType[message.signalType] === undefined ? message.signalType : $root.airgradient_open_air_o_1pst.AirGradientSignalType[message.signalType] : message.signalType;
+            if (message.device != null && message.hasOwnProperty("device"))
+                object.device = $root.airgradient_open_air_o_1pst.AirGradientDevice.toObject(message.device, options);
+            if (message.data != null && message.hasOwnProperty("data"))
+                object.data = options.bytes === String ? $util.base64.encode(message.data, 0, message.data.length) : options.bytes === Array ? Array.prototype.slice.call(message.data) : message.data;
+            if (message.error != null && message.hasOwnProperty("error"))
+                object.error = message.error;
+            return object;
+        };
+
+        /**
+         * Converts this RxEnvelope to JSON.
+         * @function toJSON
+         * @memberof airgradient_open_air_o_1pst.RxEnvelope
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        RxEnvelope.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for RxEnvelope
+         * @function getTypeUrl
+         * @memberof airgradient_open_air_o_1pst.RxEnvelope
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        RxEnvelope.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+            if (typeUrlPrefix === undefined) {
+                typeUrlPrefix = "type.googleapis.com";
+            }
+            return typeUrlPrefix + "/airgradient_open_air_o_1pst.RxEnvelope";
+        };
+
+        return RxEnvelope;
+    })();
+
+    return airgradient_open_air_o_1pst;
 })();
 
 export const normvla = $root.normvla = (() => {

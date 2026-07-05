@@ -1,4 +1,4 @@
-import { arduino_nicla_sense_env, usbvideo, frame, st3215, motors_mirroring, sysinfo, yahboom_dogzilla_lite, normvla, ina226 } from '@/api/proto.js';
+import { airgradient_open_air_o_1pst, arduino_nicla_sense_env, usbvideo, frame, st3215, motors_mirroring, sysinfo, yahboom_dogzilla_lite, normvla, ina226 } from '@/api/proto.js';
 import { serverToLocal } from '@/api/timestamp-utils';
 
 type ParsedHistoryData =
@@ -8,6 +8,7 @@ type ParsedHistoryData =
   | sysinfo.IEnvelope
   | arduino_nicla_sense_env.IRxEnvelope
   | ina226.IRxEnvelope
+  | airgradient_open_air_o_1pst.IRxEnvelope
   | yahboom_dogzilla_lite.IInferenceState
   | normvla.IFrame;
 
@@ -196,6 +197,18 @@ export function parseIna226Data(data: Uint8Array | ParsedHistoryData): ina226.Rx
     return ina226.RxEnvelope.decode(data);
   } catch (error) {
     console.error('Failed to parse ina226.RxEnvelope:', error);
+    return null;
+  }
+}
+
+export function parseAirGradientData(data: Uint8Array | ParsedHistoryData): airgradient_open_air_o_1pst.RxEnvelope | null {
+  if (!(data instanceof Uint8Array)) {
+    return data as airgradient_open_air_o_1pst.RxEnvelope;
+  }
+  try {
+    return airgradient_open_air_o_1pst.RxEnvelope.decode(data);
+  } catch (error) {
+    console.error('Failed to parse airgradient_open_air_o_1pst.RxEnvelope:', error);
     return null;
   }
 }
