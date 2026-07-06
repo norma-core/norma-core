@@ -137,8 +137,9 @@ fn read_smbus_i2c_block_registers_blocking(
 
     while offset < length {
         let chunk_length = (length - offset).min(MAX_I2C_BLOCK_LENGTH);
-        let register = start_register
-            .checked_add(offset as u8)
+        let register = u8::try_from(offset)
+            .ok()
+            .and_then(|offset| start_register.checked_add(offset))
             .ok_or_else(|| "I2C read range exceeds one-byte register space".to_string())?;
         let chunk = device
             .smbus_read_i2c_block_data(register, chunk_length as u8)
