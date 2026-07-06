@@ -1,8 +1,15 @@
 use bytes::Bytes;
+
+#[cfg(target_os = "linux")]
 use i2cdev::core::{I2CDevice, I2CMessage, I2CTransfer};
+#[cfg(target_os = "linux")]
 use i2cdev::linux::{LinuxI2CDevice, LinuxI2CError, LinuxI2CMessage};
 
+#[cfg(target_os = "linux")]
 const MAX_I2C_BLOCK_LENGTH: usize = 32;
+
+#[cfg(not(target_os = "linux"))]
+const UNSUPPORTED: &str = "I2C is only supported on Linux targets";
 
 #[derive(Debug, Clone, Copy)]
 pub struct AsyncI2cDevice {
@@ -22,7 +29,10 @@ impl AsyncI2cDevice {
     pub fn address(&self) -> u16 {
         self.address
     }
+}
 
+#[cfg(target_os = "linux")]
+impl AsyncI2cDevice {
     pub async fn read_smbus_byte_data(&self, register: u8) -> Result<u8, String> {
         let bus = self.bus;
         let address = self.address;
@@ -106,6 +116,42 @@ impl AsyncI2cDevice {
     }
 }
 
+#[cfg(not(target_os = "linux"))]
+impl AsyncI2cDevice {
+    pub async fn read_smbus_byte_data(&self, _register: u8) -> Result<u8, String> {
+        Err(UNSUPPORTED.to_string())
+    }
+
+    pub async fn write_smbus_byte_data(&self, _register: u8, _value: u8) -> Result<(), String> {
+        Err(UNSUPPORTED.to_string())
+    }
+
+    pub async fn read_smbus_i2c_block_registers(
+        &self,
+        _start_register: u8,
+        _length: usize,
+    ) -> Result<Bytes, String> {
+        Err(UNSUPPORTED.to_string())
+    }
+
+    pub async fn read_register_bytes(
+        &self,
+        _register: u8,
+        _length: usize,
+    ) -> Result<Bytes, String> {
+        Err(UNSUPPORTED.to_string())
+    }
+
+    pub async fn read_register_bytes_bulk(
+        &self,
+        _registers: Vec<u8>,
+        _length: usize,
+    ) -> Result<Vec<(u8, Result<Bytes, String>)>, String> {
+        Err(UNSUPPORTED.to_string())
+    }
+}
+
+#[cfg(target_os = "linux")]
 fn open_device(bus: u32, address: u16) -> Result<LinuxI2CDevice, String> {
     let path = format!("/dev/i2c-{bus}");
     match LinuxI2CDevice::new(&path, address) {
@@ -123,10 +169,12 @@ fn open_device(bus: u32, address: u16) -> Result<LinuxI2CDevice, String> {
     }
 }
 
+#[cfg(target_os = "linux")]
 fn is_busy_error(error: &LinuxI2CError) -> bool {
     matches!(error, LinuxI2CError::Errno(errno) if *errno == libc::EBUSY)
 }
 
+#[cfg(target_os = "linux")]
 fn read_smbus_i2c_block_registers_blocking(
     device: &mut LinuxI2CDevice,
     start_register: u8,
@@ -165,6 +213,7 @@ fn read_smbus_i2c_block_registers_blocking(
     Ok(Bytes::from(data))
 }
 
+#[cfg(target_os = "linux")]
 fn read_register_bytes_blocking(
     device: &mut LinuxI2CDevice,
     register: u8,

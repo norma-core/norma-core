@@ -5,6 +5,8 @@ edition = "2024"
 
 [dependencies]
 bytes = { workspace = true }
+tokio = { workspace = true }
+
+[target.'cfg(target_os = "linux")'.dependencies]
 i2cdev = "0.6.2"
 libc = "0.2"
-tokio = { workspace = true }
