@@ -60,7 +60,7 @@ function HistoryPage() {
   const mirroringCount = parsedFrame?.mirroring ? 1 : 0;
   const sysinfoCount = parsedFrame?.sysinfo ? 1 : 0;
   const arduinoNiclaSenseEnvCount = parsedFrame?.arduinoNiclaSenseEnv ? 1 : 0;
-  const ina226Count = parsedFrame?.ina226 ? 1 : 0;
+  const ina226Count = parsedFrame?.ina226?.length ?? 0;
   const yahboomDogzillaLiteCount = parsedFrame?.yahboom_dogzilla_lite ? 1 : 0;
   const normvlaCount = parsedFrame?.normvla ? 1 : 0;
   const st3215TxCount = parsedFrame?.st3215Tx ? 1 : 0;
@@ -278,17 +278,17 @@ function HistoryPage() {
                             </div>
                           </div>
                         )}
-                        {parsedFrame.ina226 && (
-                          <div className="flex items-center justify-between">
+                        {parsedFrame.ina226?.map((entry) => (
+                          <div key={entry.queueId} className="flex items-center justify-between">
                             <div className="flex items-center gap-3">
-                              <span className="text-accent-warning font-mono">{parsedFrame.ina226.queueId}</span>
+                              <span className="text-accent-warning font-mono">{entry.queueId}</span>
                               <span className="text-accent-warning text-xs px-1 py-0.5 bg-accent-warning/10 rounded">INA226</span>
                             </div>
                             <div className="text-text-label font-mono">
-                              {formatPtrBytes(parsedFrame.ina226.ptr)}
+                              {formatPtrBytes(entry.ptr)}
                             </div>
                           </div>
-                        )}
+                        ))}
                         {parsedFrame.yahboom_dogzilla_lite && (
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3">
@@ -449,21 +449,22 @@ function HistoryPage() {
                       dataQueueId={parsedFrame.arduinoNiclaSenseEnv.queueId}
                     />
                   )}
-                  {parsedFrame.ina226 && (
+                  {parsedFrame.ina226?.map((entry, idx) => (
                     <HistoryElement
+                      key={entry.queueId}
                       element={{
-                        queueId: parsedFrame.ina226.queueId,
-                        entryId: parsedFrame.ina226.ptr,
-                        data: parsedFrame.ina226.data,
-                        rawData: parsedFrame.ina226.rawData ?? null,
-                        type: getQueueType(parsedFrame.ina226.queueType),
-                        queueType: parsedFrame.ina226.queueType,
+                        queueId: entry.queueId,
+                        entryId: entry.ptr,
+                        data: entry.data,
+                        rawData: entry.rawData ?? null,
+                        type: getQueueType(entry.queueType),
+                        queueType: entry.queueType,
                       }}
-                      index={ina226Index}
+                      index={ina226Index + idx}
                       dataQueueType="ina226"
-                      dataQueueId={parsedFrame.ina226.queueId}
+                      dataQueueId={entry.queueId}
                     />
-                  )}
+                  ))}
                   {parsedFrame.yahboom_dogzilla_lite && (
                     <HistoryElement
                       element={{

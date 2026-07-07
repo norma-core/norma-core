@@ -236,7 +236,7 @@ function HomePage() {
   const isDesktopApp = window.stationDesktop?.isDesktop === true;
   const hasYahboomDogzillaLiteData = Boolean(inferenceState?.yahboom_dogzilla_lite?.data?.devices?.length);
   const hasArduinoNiclaSenseEnvData = Boolean(inferenceState?.arduinoNiclaSenseEnv?.data);
-  const hasIna226Data = Boolean(inferenceState?.ina226?.data);
+  const hasIna226Data = Boolean(inferenceState?.ina226?.length);
   const hasSensorData = hasArduinoNiclaSenseEnvData || hasIna226Data;
 
   useEffect(() => {
@@ -382,9 +382,9 @@ function HomePage() {
               {inferenceState?.arduinoNiclaSenseEnv?.data && (
                 <ArduinoNiclaSenseEnvHomePanel data={inferenceState.arduinoNiclaSenseEnv.data} />
               )}
-              {inferenceState?.ina226?.data && (
-                <Ina226HomePanel data={inferenceState.ina226.data} />
-              )}
+              {inferenceState?.ina226?.map((entry) => (
+                <Ina226HomePanel key={entry.queueId} data={entry.data} />
+              ))}
             </div>
           )}
           {hasYahboomDogzillaLiteData && inferenceState?.yahboom_dogzilla_lite?.data && (

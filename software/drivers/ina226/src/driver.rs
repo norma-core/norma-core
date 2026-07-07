@@ -104,10 +104,6 @@ impl Ina226Driver {
         station_engine: Arc<T>,
         config: Ina226DriverConfig,
     ) -> DriverResult<Self> {
-        let rx_queue_id = normfs.resolve(RX_QUEUE_ID);
-        normfs.ensure_queue_exists_for_write(&rx_queue_id).await?;
-        station_engine.register_queue(&rx_queue_id, QueueDataType::QdtIna226Rx, vec![]);
-
         let devices = config
             .devices
             .iter()
@@ -125,23 +121,29 @@ impl Ina226Driver {
             warn!("INA226 driver enabled with no devices configured");
         }
 
-        let tasks = devices
-            .values()
-            .map(|device| {
-                let device = device.clone();
-                tokio::spawn(run_device_worker(
-                    normfs.clone(),
-                    rx_queue_id.clone(),
-                    device,
-                    DEFAULT_POLL_INTERVAL,
-                ))
-            })
-            .collect::<Vec<_>>();
+        let mut tasks = Vec::with_capacity(devices.len());
+        for device in devices.values() {
+            let rx_queue_path = device_rx_queue_path(device.key);
+            let rx_queue_id = normfs.resolve(&rx_queue_path);
+            normfs.ensure_queue_exists_for_write(&rx_queue_id).await?;
+            station_engine.register_queue(&rx_queue_id, QueueDataType::QdtIna226Rx, vec![]);
+
+            tasks.push(tokio::spawn(run_device_worker(
+                normfs.clone(),
+                rx_queue_id,
+                device.clone(),
+                DEFAULT_POLL_INTERVAL,
+            )));
+        }
 
         info!("Started INA226 driver for {} device(s)", devices.len());
 
         Ok(Self { _tasks: tasks })
     }
+}
+
+fn device_rx_queue_path(key: DeviceKey) -> String {
+    format!("ina226/i2c-{}-0x{:02x}/rx", key.i2c_bus, key.i2c_address)
 }
 
 pub async fn start_ina226_driver<T: StationEngine>(

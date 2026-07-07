@@ -26,7 +26,7 @@ export interface Frame {
   mirroring?: FrameEntry<motors_mirroring.IRxEnvelope>;
   sysinfo?: FrameEntry<sysinfo.IEnvelope>;
   arduinoNiclaSenseEnv?: FrameEntry<arduino_nicla_sense_env.IRxEnvelope>;
-  ina226?: FrameEntry<ina226.IRxEnvelope>;
+  ina226?: FrameEntry<ina226.IRxEnvelope>[];
   yahboom_dogzilla_lite?: FrameEntry<yahboom_dogzilla_lite.IInferenceState>;
   normvla?: FrameEntry<normvla.IFrame>;
 
@@ -128,10 +128,13 @@ function findPreviousEntry(
   }
 
   // Check INA226
-  if (previousFrame.ina226?.queueId === queue) {
-    const prevPtr = previousFrame.ina226.ptr;
-    if (prevPtr.length === ptr.length && prevPtr.every((b, i) => b === ptr[i])) {
-      return { decoded: previousFrame.ina226.data, rawData: previousFrame.ina226.rawData ?? null };
+  if (previousFrame.ina226) {
+    const match = previousFrame.ina226.find(entry => entry.queueId === queue);
+    if (match) {
+      const prevPtr = match.ptr;
+      if (prevPtr.length === ptr.length && prevPtr.every((b, i) => b === ptr[i])) {
+        return { decoded: match.data, rawData: match.rawData ?? null };
+      }
     }
   }
 
@@ -183,6 +186,7 @@ export async function parseFrame(
   const frame: Frame = {
     stateId: new Uint8Array(Array.from(entryIdBytes)),
     videoQueues: [],
+    ina226: [],
     otherEntries: retainRawData ? {} : undefined
   };
 
@@ -404,13 +408,13 @@ export async function parseFrame(
             };
             break;
           case drivers.QueueDataType.QDT_INA226_RX:
-            frame.ina226 = {
+            frame.ina226!.push({
               queueId: result.queue,
               ptr: result.ptr,
               data: result.decoded as ina226.IRxEnvelope,
               rawData: retainRawData ? result.rawData ?? null : null,
               queueType: result.type
-            };
+            });
             break;
           case drivers.QueueDataType.QDT_YAHBOOM_DOGZILLA_LITE_INFERENCE:
             frame.yahboom_dogzilla_lite = {
