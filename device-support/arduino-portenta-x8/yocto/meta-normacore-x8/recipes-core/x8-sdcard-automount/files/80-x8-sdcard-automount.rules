@@ -1,0 +1,7 @@
+ACTION=="add", SUBSYSTEM=="block", KERNEL=="mmcblk[0-9]", ENV{ID_FS_USAGE}=="filesystem", RUN+="/usr/sbin/x8-sdcard-automount add /dev/%k"
+ACTION=="change", SUBSYSTEM=="block", KERNEL=="mmcblk[0-9]", ENV{ID_FS_USAGE}=="filesystem", RUN+="/usr/sbin/x8-sdcard-automount add /dev/%k"
+ACTION=="remove", SUBSYSTEM=="block", KERNEL=="mmcblk[0-9]", RUN+="/usr/sbin/x8-sdcard-automount remove /dev/%k"
+
+ACTION=="add", SUBSYSTEM=="block", KERNEL=="mmcblk[0-9]p[0-9]*", ENV{ID_FS_USAGE}=="filesystem", RUN+="/usr/sbin/x8-sdcard-automount add /dev/%k"
+ACTION=="change", SUBSYSTEM=="block", KERNEL=="mmcblk[0-9]p[0-9]*", ENV{ID_FS_USAGE}=="filesystem", RUN+="/usr/sbin/x8-sdcard-automount add /dev/%k"
+ACTION=="remove", SUBSYSTEM=="block", KERNEL=="mmcblk[0-9]p[0-9]*", RUN+="/usr/sbin/x8-sdcard-automount remove /dev/%k"

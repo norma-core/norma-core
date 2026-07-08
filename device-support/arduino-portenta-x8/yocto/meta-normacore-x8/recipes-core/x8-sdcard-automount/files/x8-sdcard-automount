@@ -1,0 +1,99 @@
+#!/bin/sh
+
+PATH=/sbin:/bin:/usr/sbin:/usr/bin
+
+MOUNTPOINT=/media/sdcard
+TAG=x8-sdcard-automount
+
+log() {
+    logger -t "$TAG" "$*" 2>/dev/null || echo "$TAG: $*"
+}
+
+device_name() {
+    case "$1" in
+        /dev/*) basename "$1" ;;
+        *) basename "/dev/$1" ;;
+    esac
+}
+
+disk_name() {
+    dev="$1"
+    sys="/sys/class/block/$dev"
+
+    if [ -e "$sys/partition" ]; then
+        basename "$(dirname "$(readlink -f "$sys")")"
+    else
+        echo "$dev"
+    fi
+}
+
+is_sdcard() {
+    disk="$1"
+
+    case "$disk" in
+        mmcblk[0-9]*) ;;
+        *) return 1 ;;
+    esac
+
+    mmc_type="$(cat "/sys/class/block/$disk/device/type" 2>/dev/null || true)"
+    removable="$(cat "/sys/class/block/$disk/removable" 2>/dev/null || true)"
+
+    [ "$mmc_type" = "SD" ] || [ "$removable" = "1" ]
+}
+
+mount_sdcard() {
+    devnode="$1"
+    dev="$(device_name "$devnode")"
+    disk="$(disk_name "$dev")"
+
+    if ! is_sdcard "$disk"; then
+        exit 0
+    fi
+
+    devnode="/dev/$dev"
+
+    if mountpoint -q "$MOUNTPOINT"; then
+        current="$(awk -v mp="$MOUNTPOINT" '$2 == mp { print $1; exit }' /proc/mounts)"
+        if [ "$current" = "$devnode" ]; then
+            exit 0
+        fi
+
+        log "$MOUNTPOINT is already mounted from $current; ignoring $devnode"
+        exit 0
+    fi
+
+    mkdir -p "$MOUNTPOINT"
+
+    if mount -o rw,noatime "$devnode" "$MOUNTPOINT"; then
+        log "mounted $devnode at $MOUNTPOINT"
+    else
+        rmdir "$MOUNTPOINT" 2>/dev/null || true
+        log "failed to mount $devnode at $MOUNTPOINT"
+        exit 1
+    fi
+}
+
+unmount_sdcard() {
+    if mountpoint -q "$MOUNTPOINT"; then
+        if umount "$MOUNTPOINT"; then
+            log "unmounted $MOUNTPOINT"
+        else
+            log "failed to unmount $MOUNTPOINT"
+            exit 1
+        fi
+    fi
+}
+
+case "$1" in
+    add)
+        [ -n "$2" ] || exit 0
+        mount_sdcard "$2"
+        ;;
+    remove)
+        unmount_sdcard
+        ;;
+    *)
+        echo "usage: $0 add|remove /dev/mmcblkXpY" >&2
+        exit 2
+        ;;
+esac

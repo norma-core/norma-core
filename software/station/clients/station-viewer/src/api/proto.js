@@ -198,6 +198,8 @@ export const commands = $root.commands = (() => {
                 case 1:
                 case 2:
                 case 3:
+                case 4:
+                case 5:
                     break;
                 }
             if (message.body != null && message.hasOwnProperty("body"))
@@ -249,6 +251,14 @@ export const commands = $root.commands = (() => {
             case "STC_YAHBOOM_DOGZILLA_LITE_COMMAND":
             case 3:
                 message.type = 3;
+                break;
+            case "STC_VESC_TRAMPA_COMMAND":
+            case 4:
+                message.type = 4;
+                break;
+            case "STC_ARDUINO_NICLA_SENSE_ENV_COMMAND":
+            case 5:
+                message.type = 5;
                 break;
             }
             if (object.body != null)
@@ -695,14 +705,21 @@ export const drivers = $root.drivers = (() => {
      * @property {number} QDT_ST3215_SERIAL_RX=11 QDT_ST3215_SERIAL_RX value
      * @property {number} QDT_ST3215_META=12 QDT_ST3215_META value
      * @property {number} QDT_ST3215_INFERENCE=13 QDT_ST3215_INFERENCE value
+     * @property {number} QDT_VESC_TRAMPA_SERIAL_RX=14 QDT_VESC_TRAMPA_SERIAL_RX value
+     * @property {number} QDT_VESC_TRAMPA_SERIAL_TX=15 QDT_VESC_TRAMPA_SERIAL_TX value
+     * @property {number} QDT_VESC_TRAMPA_INFERENCE=16 QDT_VESC_TRAMPA_INFERENCE value
      * @property {number} QDT_FFMPEG_VIDEO_STREAM_RX=20 QDT_FFMPEG_VIDEO_STREAM_RX value
      * @property {number} QDT_USB_VIDEO_FRAMES=21 QDT_USB_VIDEO_FRAMES value
      * @property {number} QDT_INFERENCE_FRAMES=22 QDT_INFERENCE_FRAMES value
+     * @property {number} QDT_HIKMICRO_THERMAL=23 QDT_HIKMICRO_THERMAL value
      * @property {number} QDT_MOTOR_MIRRORING_MODES=30 QDT_MOTOR_MIRRORING_MODES value
      * @property {number} QDT_MOTOR_MIRRORING_RX=32 QDT_MOTOR_MIRRORING_RX value
      * @property {number} QDT_YAHBOOM_DOGZILLA_LITE_SERIAL_TX=40 QDT_YAHBOOM_DOGZILLA_LITE_SERIAL_TX value
      * @property {number} QDT_YAHBOOM_DOGZILLA_LITE_SERIAL_RX=41 QDT_YAHBOOM_DOGZILLA_LITE_SERIAL_RX value
      * @property {number} QDT_YAHBOOM_DOGZILLA_LITE_INFERENCE=42 QDT_YAHBOOM_DOGZILLA_LITE_INFERENCE value
+     * @property {number} QDT_ARDUINO_NICLA_SENSE_ENV_TX=50 QDT_ARDUINO_NICLA_SENSE_ENV_TX value
+     * @property {number} QDT_ARDUINO_NICLA_SENSE_ENV_RX=51 QDT_ARDUINO_NICLA_SENSE_ENV_RX value
+     * @property {number} QDT_INA226_RX=52 QDT_INA226_RX value
      */
     drivers.QueueDataType = (function() {
         const valuesById = {}, values = Object.create(valuesById);
@@ -714,14 +731,21 @@ export const drivers = $root.drivers = (() => {
         values[valuesById[11] = "QDT_ST3215_SERIAL_RX"] = 11;
         values[valuesById[12] = "QDT_ST3215_META"] = 12;
         values[valuesById[13] = "QDT_ST3215_INFERENCE"] = 13;
+        values[valuesById[14] = "QDT_VESC_TRAMPA_SERIAL_RX"] = 14;
+        values[valuesById[15] = "QDT_VESC_TRAMPA_SERIAL_TX"] = 15;
+        values[valuesById[16] = "QDT_VESC_TRAMPA_INFERENCE"] = 16;
         values[valuesById[20] = "QDT_FFMPEG_VIDEO_STREAM_RX"] = 20;
         values[valuesById[21] = "QDT_USB_VIDEO_FRAMES"] = 21;
         values[valuesById[22] = "QDT_INFERENCE_FRAMES"] = 22;
+        values[valuesById[23] = "QDT_HIKMICRO_THERMAL"] = 23;
         values[valuesById[30] = "QDT_MOTOR_MIRRORING_MODES"] = 30;
         values[valuesById[32] = "QDT_MOTOR_MIRRORING_RX"] = 32;
         values[valuesById[40] = "QDT_YAHBOOM_DOGZILLA_LITE_SERIAL_TX"] = 40;
         values[valuesById[41] = "QDT_YAHBOOM_DOGZILLA_LITE_SERIAL_RX"] = 41;
         values[valuesById[42] = "QDT_YAHBOOM_DOGZILLA_LITE_INFERENCE"] = 42;
+        values[valuesById[50] = "QDT_ARDUINO_NICLA_SENSE_ENV_TX"] = 50;
+        values[valuesById[51] = "QDT_ARDUINO_NICLA_SENSE_ENV_RX"] = 51;
+        values[valuesById[52] = "QDT_INA226_RX"] = 52;
         return values;
     })();
 
@@ -733,6 +757,8 @@ export const drivers = $root.drivers = (() => {
      * @property {number} STC_MOTOR_MIRRORING_COMMAND=1 STC_MOTOR_MIRRORING_COMMAND value
      * @property {number} STC_INFERENCE_TAG_COMMAND=2 STC_INFERENCE_TAG_COMMAND value
      * @property {number} STC_YAHBOOM_DOGZILLA_LITE_COMMAND=3 STC_YAHBOOM_DOGZILLA_LITE_COMMAND value
+     * @property {number} STC_VESC_TRAMPA_COMMAND=4 STC_VESC_TRAMPA_COMMAND value
+     * @property {number} STC_ARDUINO_NICLA_SENSE_ENV_COMMAND=5 STC_ARDUINO_NICLA_SENSE_ENV_COMMAND value
      */
     drivers.StationCommandType = (function() {
         const valuesById = {}, values = Object.create(valuesById);
@@ -740,6 +766,8 @@ export const drivers = $root.drivers = (() => {
         values[valuesById[1] = "STC_MOTOR_MIRRORING_COMMAND"] = 1;
         values[valuesById[2] = "STC_INFERENCE_TAG_COMMAND"] = 2;
         values[valuesById[3] = "STC_YAHBOOM_DOGZILLA_LITE_COMMAND"] = 3;
+        values[valuesById[4] = "STC_VESC_TRAMPA_COMMAND"] = 4;
+        values[valuesById[5] = "STC_ARDUINO_NICLA_SENSE_ENV_COMMAND"] = 5;
         return values;
     })();
 
@@ -1292,14 +1320,21 @@ export const inference = $root.inference = (() => {
                     case 11:
                     case 12:
                     case 13:
+                    case 14:
+                    case 15:
+                    case 16:
                     case 20:
                     case 21:
                     case 22:
+                    case 23:
                     case 30:
                     case 32:
                     case 40:
                     case 41:
                     case 42:
+                    case 50:
+                    case 51:
+                    case 52:
                         break;
                     }
                 return null;
@@ -1367,6 +1402,18 @@ export const inference = $root.inference = (() => {
                 case 13:
                     message.type = 13;
                     break;
+                case "QDT_VESC_TRAMPA_SERIAL_RX":
+                case 14:
+                    message.type = 14;
+                    break;
+                case "QDT_VESC_TRAMPA_SERIAL_TX":
+                case 15:
+                    message.type = 15;
+                    break;
+                case "QDT_VESC_TRAMPA_INFERENCE":
+                case 16:
+                    message.type = 16;
+                    break;
                 case "QDT_FFMPEG_VIDEO_STREAM_RX":
                 case 20:
                     message.type = 20;
@@ -1378,6 +1425,10 @@ export const inference = $root.inference = (() => {
                 case "QDT_INFERENCE_FRAMES":
                 case 22:
                     message.type = 22;
+                    break;
+                case "QDT_HIKMICRO_THERMAL":
+                case 23:
+                    message.type = 23;
                     break;
                 case "QDT_MOTOR_MIRRORING_MODES":
                 case 30:
@@ -1398,6 +1449,18 @@ export const inference = $root.inference = (() => {
                 case "QDT_YAHBOOM_DOGZILLA_LITE_INFERENCE":
                 case 42:
                     message.type = 42;
+                    break;
+                case "QDT_ARDUINO_NICLA_SENSE_ENV_TX":
+                case 50:
+                    message.type = 50;
+                    break;
+                case "QDT_ARDUINO_NICLA_SENSE_ENV_RX":
+                case 51:
+                    message.type = 51;
+                    break;
+                case "QDT_INA226_RX":
+                case 52:
+                    message.type = 52;
                     break;
                 }
                 return message;
@@ -10878,6 +10941,3653 @@ export const st3215 = $root.st3215 = (() => {
     })();
 
     return st3215;
+})();
+
+export const vesc_trampa = $root.vesc_trampa = (() => {
+
+    /**
+     * Namespace vesc_trampa.
+     * @exports vesc_trampa
+     * @namespace
+     */
+    const vesc_trampa = {};
+
+    /**
+     * VescTrampaSignalType enum.
+     * @name vesc_trampa.VescTrampaSignalType
+     * @enum {number}
+     * @property {number} VESC_TRAMPA_SIGNAL_TYPE_UNSPECIFIED=0 VESC_TRAMPA_SIGNAL_TYPE_UNSPECIFIED value
+     * @property {number} VESC_TRAMPA_BOARD_CONNECT=1 VESC_TRAMPA_BOARD_CONNECT value
+     * @property {number} VESC_TRAMPA_BOARD_DISCONNECT=2 VESC_TRAMPA_BOARD_DISCONNECT value
+     * @property {number} VESC_TRAMPA_BOARD_PACKET=3 VESC_TRAMPA_BOARD_PACKET value
+     * @property {number} VESC_TRAMPA_COMMAND=4 VESC_TRAMPA_COMMAND value
+     * @property {number} VESC_TRAMPA_COMMAND_SUCCESS=5 VESC_TRAMPA_COMMAND_SUCCESS value
+     * @property {number} VESC_TRAMPA_COMMAND_REJECTED=6 VESC_TRAMPA_COMMAND_REJECTED value
+     * @property {number} VESC_TRAMPA_COMMAND_FAILED=7 VESC_TRAMPA_COMMAND_FAILED value
+     */
+    vesc_trampa.VescTrampaSignalType = (function() {
+        const valuesById = {}, values = Object.create(valuesById);
+        values[valuesById[0] = "VESC_TRAMPA_SIGNAL_TYPE_UNSPECIFIED"] = 0;
+        values[valuesById[1] = "VESC_TRAMPA_BOARD_CONNECT"] = 1;
+        values[valuesById[2] = "VESC_TRAMPA_BOARD_DISCONNECT"] = 2;
+        values[valuesById[3] = "VESC_TRAMPA_BOARD_PACKET"] = 3;
+        values[valuesById[4] = "VESC_TRAMPA_COMMAND"] = 4;
+        values[valuesById[5] = "VESC_TRAMPA_COMMAND_SUCCESS"] = 5;
+        values[valuesById[6] = "VESC_TRAMPA_COMMAND_REJECTED"] = 6;
+        values[valuesById[7] = "VESC_TRAMPA_COMMAND_FAILED"] = 7;
+        return values;
+    })();
+
+    vesc_trampa.RxEnvelope = (function() {
+
+        /**
+         * Properties of a RxEnvelope.
+         * @memberof vesc_trampa
+         * @interface IRxEnvelope
+         * @property {Long|null} [monotonicStampNs] RxEnvelope monotonicStampNs
+         * @property {Long|null} [localStampNs] RxEnvelope localStampNs
+         * @property {Long|null} [appStartId] RxEnvelope appStartId
+         * @property {vesc_trampa.VescTrampaSignalType|null} [signalType] RxEnvelope signalType
+         * @property {vesc_trampa.IVescTrampaBoard|null} [board] RxEnvelope board
+         * @property {vesc_trampa.IVescTrampaBoardPacket|null} [boardPacket] RxEnvelope boardPacket
+         * @property {vesc_trampa.ITxEnvelope|null} [command] RxEnvelope command
+         * @property {string|null} [error] RxEnvelope error
+         */
+
+        /**
+         * Constructs a new RxEnvelope.
+         * @memberof vesc_trampa
+         * @classdesc Represents a RxEnvelope.
+         * @implements IRxEnvelope
+         * @constructor
+         * @param {vesc_trampa.IRxEnvelope=} [properties] Properties to set
+         */
+        function RxEnvelope(properties) {
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * RxEnvelope monotonicStampNs.
+         * @member {Long} monotonicStampNs
+         * @memberof vesc_trampa.RxEnvelope
+         * @instance
+         */
+        RxEnvelope.prototype.monotonicStampNs = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+
+        /**
+         * RxEnvelope localStampNs.
+         * @member {Long} localStampNs
+         * @memberof vesc_trampa.RxEnvelope
+         * @instance
+         */
+        RxEnvelope.prototype.localStampNs = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+
+        /**
+         * RxEnvelope appStartId.
+         * @member {Long} appStartId
+         * @memberof vesc_trampa.RxEnvelope
+         * @instance
+         */
+        RxEnvelope.prototype.appStartId = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+
+        /**
+         * RxEnvelope signalType.
+         * @member {vesc_trampa.VescTrampaSignalType} signalType
+         * @memberof vesc_trampa.RxEnvelope
+         * @instance
+         */
+        RxEnvelope.prototype.signalType = 0;
+
+        /**
+         * RxEnvelope board.
+         * @member {vesc_trampa.IVescTrampaBoard|null|undefined} board
+         * @memberof vesc_trampa.RxEnvelope
+         * @instance
+         */
+        RxEnvelope.prototype.board = null;
+
+        /**
+         * RxEnvelope boardPacket.
+         * @member {vesc_trampa.IVescTrampaBoardPacket|null|undefined} boardPacket
+         * @memberof vesc_trampa.RxEnvelope
+         * @instance
+         */
+        RxEnvelope.prototype.boardPacket = null;
+
+        /**
+         * RxEnvelope command.
+         * @member {vesc_trampa.ITxEnvelope|null|undefined} command
+         * @memberof vesc_trampa.RxEnvelope
+         * @instance
+         */
+        RxEnvelope.prototype.command = null;
+
+        /**
+         * RxEnvelope error.
+         * @member {string} error
+         * @memberof vesc_trampa.RxEnvelope
+         * @instance
+         */
+        RxEnvelope.prototype.error = "";
+
+        /**
+         * Creates a new RxEnvelope instance using the specified properties.
+         * @function create
+         * @memberof vesc_trampa.RxEnvelope
+         * @static
+         * @param {vesc_trampa.IRxEnvelope=} [properties] Properties to set
+         * @returns {vesc_trampa.RxEnvelope} RxEnvelope instance
+         */
+        RxEnvelope.create = function create(properties) {
+            return new RxEnvelope(properties);
+        };
+
+        /**
+         * Encodes the specified RxEnvelope message. Does not implicitly {@link vesc_trampa.RxEnvelope.verify|verify} messages.
+         * @function encode
+         * @memberof vesc_trampa.RxEnvelope
+         * @static
+         * @param {vesc_trampa.IRxEnvelope} message RxEnvelope message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        RxEnvelope.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.monotonicStampNs != null && Object.hasOwnProperty.call(message, "monotonicStampNs"))
+                writer.uint32(/* id 1, wireType 0 =*/8).uint64(message.monotonicStampNs);
+            if (message.localStampNs != null && Object.hasOwnProperty.call(message, "localStampNs"))
+                writer.uint32(/* id 2, wireType 0 =*/16).uint64(message.localStampNs);
+            if (message.appStartId != null && Object.hasOwnProperty.call(message, "appStartId"))
+                writer.uint32(/* id 3, wireType 0 =*/24).uint64(message.appStartId);
+            if (message.signalType != null && Object.hasOwnProperty.call(message, "signalType"))
+                writer.uint32(/* id 10, wireType 0 =*/80).int32(message.signalType);
+            if (message.board != null && Object.hasOwnProperty.call(message, "board"))
+                $root.vesc_trampa.VescTrampaBoard.encode(message.board, writer.uint32(/* id 11, wireType 2 =*/90).fork()).ldelim();
+            if (message.boardPacket != null && Object.hasOwnProperty.call(message, "boardPacket"))
+                $root.vesc_trampa.VescTrampaBoardPacket.encode(message.boardPacket, writer.uint32(/* id 20, wireType 2 =*/162).fork()).ldelim();
+            if (message.command != null && Object.hasOwnProperty.call(message, "command"))
+                $root.vesc_trampa.TxEnvelope.encode(message.command, writer.uint32(/* id 30, wireType 2 =*/242).fork()).ldelim();
+            if (message.error != null && Object.hasOwnProperty.call(message, "error"))
+                writer.uint32(/* id 50, wireType 2 =*/402).string(message.error);
+            return writer;
+        };
+
+        /**
+         * Encodes the specified RxEnvelope message, length delimited. Does not implicitly {@link vesc_trampa.RxEnvelope.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof vesc_trampa.RxEnvelope
+         * @static
+         * @param {vesc_trampa.IRxEnvelope} message RxEnvelope message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        RxEnvelope.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes a RxEnvelope message from the specified reader or buffer.
+         * @function decode
+         * @memberof vesc_trampa.RxEnvelope
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {vesc_trampa.RxEnvelope} RxEnvelope
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        RxEnvelope.decode = function decode(reader, length, error, long) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.vesc_trampa.RxEnvelope();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                if (tag === error)
+                    break;
+                switch (tag >>> 3) {
+                case 1: {
+                        message.monotonicStampNs = reader.uint64();
+                        break;
+                    }
+                case 2: {
+                        message.localStampNs = reader.uint64();
+                        break;
+                    }
+                case 3: {
+                        message.appStartId = reader.uint64();
+                        break;
+                    }
+                case 10: {
+                        message.signalType = reader.int32();
+                        break;
+                    }
+                case 11: {
+                        message.board = $root.vesc_trampa.VescTrampaBoard.decode(reader, reader.uint32(), undefined, long + 1);
+                        break;
+                    }
+                case 20: {
+                        message.boardPacket = $root.vesc_trampa.VescTrampaBoardPacket.decode(reader, reader.uint32(), undefined, long + 1);
+                        break;
+                    }
+                case 30: {
+                        message.command = $root.vesc_trampa.TxEnvelope.decode(reader, reader.uint32(), undefined, long + 1);
+                        break;
+                    }
+                case 50: {
+                        message.error = reader.string();
+                        break;
+                    }
+                default:
+                    reader.skipType(tag & 7, long);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes a RxEnvelope message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof vesc_trampa.RxEnvelope
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {vesc_trampa.RxEnvelope} RxEnvelope
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        RxEnvelope.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies a RxEnvelope message.
+         * @function verify
+         * @memberof vesc_trampa.RxEnvelope
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        RxEnvelope.verify = function verify(message, long) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
+            if (message.monotonicStampNs != null && message.hasOwnProperty("monotonicStampNs"))
+                if (!$util.isInteger(message.monotonicStampNs) && !(message.monotonicStampNs && $util.isInteger(message.monotonicStampNs.low) && $util.isInteger(message.monotonicStampNs.high)))
+                    return "monotonicStampNs: integer|Long expected";
+            if (message.localStampNs != null && message.hasOwnProperty("localStampNs"))
+                if (!$util.isInteger(message.localStampNs) && !(message.localStampNs && $util.isInteger(message.localStampNs.low) && $util.isInteger(message.localStampNs.high)))
+                    return "localStampNs: integer|Long expected";
+            if (message.appStartId != null && message.hasOwnProperty("appStartId"))
+                if (!$util.isInteger(message.appStartId) && !(message.appStartId && $util.isInteger(message.appStartId.low) && $util.isInteger(message.appStartId.high)))
+                    return "appStartId: integer|Long expected";
+            if (message.signalType != null && message.hasOwnProperty("signalType"))
+                switch (message.signalType) {
+                default:
+                    return "signalType: enum value expected";
+                case 0:
+                case 1:
+                case 2:
+                case 3:
+                case 4:
+                case 5:
+                case 6:
+                case 7:
+                    break;
+                }
+            if (message.board != null && message.hasOwnProperty("board")) {
+                let error = $root.vesc_trampa.VescTrampaBoard.verify(message.board, long + 1);
+                if (error)
+                    return "board." + error;
+            }
+            if (message.boardPacket != null && message.hasOwnProperty("boardPacket")) {
+                let error = $root.vesc_trampa.VescTrampaBoardPacket.verify(message.boardPacket, long + 1);
+                if (error)
+                    return "boardPacket." + error;
+            }
+            if (message.command != null && message.hasOwnProperty("command")) {
+                let error = $root.vesc_trampa.TxEnvelope.verify(message.command, long + 1);
+                if (error)
+                    return "command." + error;
+            }
+            if (message.error != null && message.hasOwnProperty("error"))
+                if (!$util.isString(message.error))
+                    return "error: string expected";
+            return null;
+        };
+
+        /**
+         * Creates a RxEnvelope message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof vesc_trampa.RxEnvelope
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {vesc_trampa.RxEnvelope} RxEnvelope
+         */
+        RxEnvelope.fromObject = function fromObject(object, long) {
+            if (object instanceof $root.vesc_trampa.RxEnvelope)
+                return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let message = new $root.vesc_trampa.RxEnvelope();
+            if (object.monotonicStampNs != null)
+                if ($util.Long)
+                    (message.monotonicStampNs = $util.Long.fromValue(object.monotonicStampNs)).unsigned = true;
+                else if (typeof object.monotonicStampNs === "string")
+                    message.monotonicStampNs = parseInt(object.monotonicStampNs, 10);
+                else if (typeof object.monotonicStampNs === "number")
+                    message.monotonicStampNs = object.monotonicStampNs;
+                else if (typeof object.monotonicStampNs === "object")
+                    message.monotonicStampNs = new $util.LongBits(object.monotonicStampNs.low >>> 0, object.monotonicStampNs.high >>> 0).toNumber(true);
+            if (object.localStampNs != null)
+                if ($util.Long)
+                    (message.localStampNs = $util.Long.fromValue(object.localStampNs)).unsigned = true;
+                else if (typeof object.localStampNs === "string")
+                    message.localStampNs = parseInt(object.localStampNs, 10);
+                else if (typeof object.localStampNs === "number")
+                    message.localStampNs = object.localStampNs;
+                else if (typeof object.localStampNs === "object")
+                    message.localStampNs = new $util.LongBits(object.localStampNs.low >>> 0, object.localStampNs.high >>> 0).toNumber(true);
+            if (object.appStartId != null)
+                if ($util.Long)
+                    (message.appStartId = $util.Long.fromValue(object.appStartId)).unsigned = true;
+                else if (typeof object.appStartId === "string")
+                    message.appStartId = parseInt(object.appStartId, 10);
+                else if (typeof object.appStartId === "number")
+                    message.appStartId = object.appStartId;
+                else if (typeof object.appStartId === "object")
+                    message.appStartId = new $util.LongBits(object.appStartId.low >>> 0, object.appStartId.high >>> 0).toNumber(true);
+            switch (object.signalType) {
+            default:
+                if (typeof object.signalType === "number") {
+                    message.signalType = object.signalType;
+                    break;
+                }
+                break;
+            case "VESC_TRAMPA_SIGNAL_TYPE_UNSPECIFIED":
+            case 0:
+                message.signalType = 0;
+                break;
+            case "VESC_TRAMPA_BOARD_CONNECT":
+            case 1:
+                message.signalType = 1;
+                break;
+            case "VESC_TRAMPA_BOARD_DISCONNECT":
+            case 2:
+                message.signalType = 2;
+                break;
+            case "VESC_TRAMPA_BOARD_PACKET":
+            case 3:
+                message.signalType = 3;
+                break;
+            case "VESC_TRAMPA_COMMAND":
+            case 4:
+                message.signalType = 4;
+                break;
+            case "VESC_TRAMPA_COMMAND_SUCCESS":
+            case 5:
+                message.signalType = 5;
+                break;
+            case "VESC_TRAMPA_COMMAND_REJECTED":
+            case 6:
+                message.signalType = 6;
+                break;
+            case "VESC_TRAMPA_COMMAND_FAILED":
+            case 7:
+                message.signalType = 7;
+                break;
+            }
+            if (object.board != null) {
+                if (typeof object.board !== "object")
+                    throw TypeError(".vesc_trampa.RxEnvelope.board: object expected");
+                message.board = $root.vesc_trampa.VescTrampaBoard.fromObject(object.board, long + 1);
+            }
+            if (object.boardPacket != null) {
+                if (typeof object.boardPacket !== "object")
+                    throw TypeError(".vesc_trampa.RxEnvelope.boardPacket: object expected");
+                message.boardPacket = $root.vesc_trampa.VescTrampaBoardPacket.fromObject(object.boardPacket, long + 1);
+            }
+            if (object.command != null) {
+                if (typeof object.command !== "object")
+                    throw TypeError(".vesc_trampa.RxEnvelope.command: object expected");
+                message.command = $root.vesc_trampa.TxEnvelope.fromObject(object.command, long + 1);
+            }
+            if (object.error != null)
+                message.error = String(object.error);
+            return message;
+        };
+
+        /**
+         * Creates a plain object from a RxEnvelope message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof vesc_trampa.RxEnvelope
+         * @static
+         * @param {vesc_trampa.RxEnvelope} message RxEnvelope
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        RxEnvelope.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.defaults) {
+                if ($util.Long) {
+                    let long = new $util.Long(0, 0, true);
+                    object.monotonicStampNs = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+                } else
+                    object.monotonicStampNs = options.longs === String ? "0" : 0;
+                if ($util.Long) {
+                    let long = new $util.Long(0, 0, true);
+                    object.localStampNs = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+                } else
+                    object.localStampNs = options.longs === String ? "0" : 0;
+                if ($util.Long) {
+                    let long = new $util.Long(0, 0, true);
+                    object.appStartId = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+                } else
+                    object.appStartId = options.longs === String ? "0" : 0;
+                object.signalType = options.enums === String ? "VESC_TRAMPA_SIGNAL_TYPE_UNSPECIFIED" : 0;
+                object.board = null;
+                object.boardPacket = null;
+                object.command = null;
+                object.error = "";
+            }
+            if (message.monotonicStampNs != null && message.hasOwnProperty("monotonicStampNs"))
+                if (typeof message.monotonicStampNs === "number")
+                    object.monotonicStampNs = options.longs === String ? String(message.monotonicStampNs) : message.monotonicStampNs;
+                else
+                    object.monotonicStampNs = options.longs === String ? $util.Long.prototype.toString.call(message.monotonicStampNs) : options.longs === Number ? new $util.LongBits(message.monotonicStampNs.low >>> 0, message.monotonicStampNs.high >>> 0).toNumber(true) : message.monotonicStampNs;
+            if (message.localStampNs != null && message.hasOwnProperty("localStampNs"))
+                if (typeof message.localStampNs === "number")
+                    object.localStampNs = options.longs === String ? String(message.localStampNs) : message.localStampNs;
+                else
+                    object.localStampNs = options.longs === String ? $util.Long.prototype.toString.call(message.localStampNs) : options.longs === Number ? new $util.LongBits(message.localStampNs.low >>> 0, message.localStampNs.high >>> 0).toNumber(true) : message.localStampNs;
+            if (message.appStartId != null && message.hasOwnProperty("appStartId"))
+                if (typeof message.appStartId === "number")
+                    object.appStartId = options.longs === String ? String(message.appStartId) : message.appStartId;
+                else
+                    object.appStartId = options.longs === String ? $util.Long.prototype.toString.call(message.appStartId) : options.longs === Number ? new $util.LongBits(message.appStartId.low >>> 0, message.appStartId.high >>> 0).toNumber(true) : message.appStartId;
+            if (message.signalType != null && message.hasOwnProperty("signalType"))
+                object.signalType = options.enums === String ? $root.vesc_trampa.VescTrampaSignalType[message.signalType] === undefined ? message.signalType : $root.vesc_trampa.VescTrampaSignalType[message.signalType] : message.signalType;
+            if (message.board != null && message.hasOwnProperty("board"))
+                object.board = $root.vesc_trampa.VescTrampaBoard.toObject(message.board, options);
+            if (message.boardPacket != null && message.hasOwnProperty("boardPacket"))
+                object.boardPacket = $root.vesc_trampa.VescTrampaBoardPacket.toObject(message.boardPacket, options);
+            if (message.command != null && message.hasOwnProperty("command"))
+                object.command = $root.vesc_trampa.TxEnvelope.toObject(message.command, options);
+            if (message.error != null && message.hasOwnProperty("error"))
+                object.error = message.error;
+            return object;
+        };
+
+        /**
+         * Converts this RxEnvelope to JSON.
+         * @function toJSON
+         * @memberof vesc_trampa.RxEnvelope
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        RxEnvelope.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for RxEnvelope
+         * @function getTypeUrl
+         * @memberof vesc_trampa.RxEnvelope
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        RxEnvelope.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+            if (typeUrlPrefix === undefined) {
+                typeUrlPrefix = "type.googleapis.com";
+            }
+            return typeUrlPrefix + "/vesc_trampa.RxEnvelope";
+        };
+
+        return RxEnvelope;
+    })();
+
+    vesc_trampa.TxEnvelope = (function() {
+
+        /**
+         * Properties of a TxEnvelope.
+         * @memberof vesc_trampa
+         * @interface ITxEnvelope
+         * @property {Long|null} [monotonicStampNs] TxEnvelope monotonicStampNs
+         * @property {Long|null} [localStampNs] TxEnvelope localStampNs
+         * @property {Long|null} [appStartId] TxEnvelope appStartId
+         * @property {Uint8Array|null} [targetBoardUuid] TxEnvelope targetBoardUuid
+         * @property {Uint8Array|null} [commandId] TxEnvelope commandId
+         * @property {vesc_trampa.IVescTrampaBoardCommand|null} [boardCommand] TxEnvelope boardCommand
+         * @property {vesc_trampa.IVescTrampaMotorModeCommand|null} [motorMode] TxEnvelope motorMode
+         */
+
+        /**
+         * Constructs a new TxEnvelope.
+         * @memberof vesc_trampa
+         * @classdesc Represents a TxEnvelope.
+         * @implements ITxEnvelope
+         * @constructor
+         * @param {vesc_trampa.ITxEnvelope=} [properties] Properties to set
+         */
+        function TxEnvelope(properties) {
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * TxEnvelope monotonicStampNs.
+         * @member {Long} monotonicStampNs
+         * @memberof vesc_trampa.TxEnvelope
+         * @instance
+         */
+        TxEnvelope.prototype.monotonicStampNs = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+
+        /**
+         * TxEnvelope localStampNs.
+         * @member {Long} localStampNs
+         * @memberof vesc_trampa.TxEnvelope
+         * @instance
+         */
+        TxEnvelope.prototype.localStampNs = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+
+        /**
+         * TxEnvelope appStartId.
+         * @member {Long} appStartId
+         * @memberof vesc_trampa.TxEnvelope
+         * @instance
+         */
+        TxEnvelope.prototype.appStartId = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+
+        /**
+         * TxEnvelope targetBoardUuid.
+         * @member {Uint8Array} targetBoardUuid
+         * @memberof vesc_trampa.TxEnvelope
+         * @instance
+         */
+        TxEnvelope.prototype.targetBoardUuid = $util.newBuffer([]);
+
+        /**
+         * TxEnvelope commandId.
+         * @member {Uint8Array} commandId
+         * @memberof vesc_trampa.TxEnvelope
+         * @instance
+         */
+        TxEnvelope.prototype.commandId = $util.newBuffer([]);
+
+        /**
+         * TxEnvelope boardCommand.
+         * @member {vesc_trampa.IVescTrampaBoardCommand|null|undefined} boardCommand
+         * @memberof vesc_trampa.TxEnvelope
+         * @instance
+         */
+        TxEnvelope.prototype.boardCommand = null;
+
+        /**
+         * TxEnvelope motorMode.
+         * @member {vesc_trampa.IVescTrampaMotorModeCommand|null|undefined} motorMode
+         * @memberof vesc_trampa.TxEnvelope
+         * @instance
+         */
+        TxEnvelope.prototype.motorMode = null;
+
+        /**
+         * Creates a new TxEnvelope instance using the specified properties.
+         * @function create
+         * @memberof vesc_trampa.TxEnvelope
+         * @static
+         * @param {vesc_trampa.ITxEnvelope=} [properties] Properties to set
+         * @returns {vesc_trampa.TxEnvelope} TxEnvelope instance
+         */
+        TxEnvelope.create = function create(properties) {
+            return new TxEnvelope(properties);
+        };
+
+        /**
+         * Encodes the specified TxEnvelope message. Does not implicitly {@link vesc_trampa.TxEnvelope.verify|verify} messages.
+         * @function encode
+         * @memberof vesc_trampa.TxEnvelope
+         * @static
+         * @param {vesc_trampa.ITxEnvelope} message TxEnvelope message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        TxEnvelope.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.monotonicStampNs != null && Object.hasOwnProperty.call(message, "monotonicStampNs"))
+                writer.uint32(/* id 1, wireType 0 =*/8).uint64(message.monotonicStampNs);
+            if (message.localStampNs != null && Object.hasOwnProperty.call(message, "localStampNs"))
+                writer.uint32(/* id 2, wireType 0 =*/16).uint64(message.localStampNs);
+            if (message.targetBoardUuid != null && Object.hasOwnProperty.call(message, "targetBoardUuid"))
+                writer.uint32(/* id 3, wireType 2 =*/26).bytes(message.targetBoardUuid);
+            if (message.commandId != null && Object.hasOwnProperty.call(message, "commandId"))
+                writer.uint32(/* id 4, wireType 2 =*/34).bytes(message.commandId);
+            if (message.appStartId != null && Object.hasOwnProperty.call(message, "appStartId"))
+                writer.uint32(/* id 5, wireType 0 =*/40).uint64(message.appStartId);
+            if (message.boardCommand != null && Object.hasOwnProperty.call(message, "boardCommand"))
+                $root.vesc_trampa.VescTrampaBoardCommand.encode(message.boardCommand, writer.uint32(/* id 10, wireType 2 =*/82).fork()).ldelim();
+            if (message.motorMode != null && Object.hasOwnProperty.call(message, "motorMode"))
+                $root.vesc_trampa.VescTrampaMotorModeCommand.encode(message.motorMode, writer.uint32(/* id 11, wireType 2 =*/90).fork()).ldelim();
+            return writer;
+        };
+
+        /**
+         * Encodes the specified TxEnvelope message, length delimited. Does not implicitly {@link vesc_trampa.TxEnvelope.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof vesc_trampa.TxEnvelope
+         * @static
+         * @param {vesc_trampa.ITxEnvelope} message TxEnvelope message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        TxEnvelope.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes a TxEnvelope message from the specified reader or buffer.
+         * @function decode
+         * @memberof vesc_trampa.TxEnvelope
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {vesc_trampa.TxEnvelope} TxEnvelope
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        TxEnvelope.decode = function decode(reader, length, error, long) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.vesc_trampa.TxEnvelope();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                if (tag === error)
+                    break;
+                switch (tag >>> 3) {
+                case 1: {
+                        message.monotonicStampNs = reader.uint64();
+                        break;
+                    }
+                case 2: {
+                        message.localStampNs = reader.uint64();
+                        break;
+                    }
+                case 5: {
+                        message.appStartId = reader.uint64();
+                        break;
+                    }
+                case 3: {
+                        message.targetBoardUuid = reader.bytes();
+                        break;
+                    }
+                case 4: {
+                        message.commandId = reader.bytes();
+                        break;
+                    }
+                case 10: {
+                        message.boardCommand = $root.vesc_trampa.VescTrampaBoardCommand.decode(reader, reader.uint32(), undefined, long + 1);
+                        break;
+                    }
+                case 11: {
+                        message.motorMode = $root.vesc_trampa.VescTrampaMotorModeCommand.decode(reader, reader.uint32(), undefined, long + 1);
+                        break;
+                    }
+                default:
+                    reader.skipType(tag & 7, long);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes a TxEnvelope message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof vesc_trampa.TxEnvelope
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {vesc_trampa.TxEnvelope} TxEnvelope
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        TxEnvelope.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies a TxEnvelope message.
+         * @function verify
+         * @memberof vesc_trampa.TxEnvelope
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        TxEnvelope.verify = function verify(message, long) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
+            if (message.monotonicStampNs != null && message.hasOwnProperty("monotonicStampNs"))
+                if (!$util.isInteger(message.monotonicStampNs) && !(message.monotonicStampNs && $util.isInteger(message.monotonicStampNs.low) && $util.isInteger(message.monotonicStampNs.high)))
+                    return "monotonicStampNs: integer|Long expected";
+            if (message.localStampNs != null && message.hasOwnProperty("localStampNs"))
+                if (!$util.isInteger(message.localStampNs) && !(message.localStampNs && $util.isInteger(message.localStampNs.low) && $util.isInteger(message.localStampNs.high)))
+                    return "localStampNs: integer|Long expected";
+            if (message.appStartId != null && message.hasOwnProperty("appStartId"))
+                if (!$util.isInteger(message.appStartId) && !(message.appStartId && $util.isInteger(message.appStartId.low) && $util.isInteger(message.appStartId.high)))
+                    return "appStartId: integer|Long expected";
+            if (message.targetBoardUuid != null && message.hasOwnProperty("targetBoardUuid"))
+                if (!(message.targetBoardUuid && typeof message.targetBoardUuid.length === "number" || $util.isString(message.targetBoardUuid)))
+                    return "targetBoardUuid: buffer expected";
+            if (message.commandId != null && message.hasOwnProperty("commandId"))
+                if (!(message.commandId && typeof message.commandId.length === "number" || $util.isString(message.commandId)))
+                    return "commandId: buffer expected";
+            if (message.boardCommand != null && message.hasOwnProperty("boardCommand")) {
+                let error = $root.vesc_trampa.VescTrampaBoardCommand.verify(message.boardCommand, long + 1);
+                if (error)
+                    return "boardCommand." + error;
+            }
+            if (message.motorMode != null && message.hasOwnProperty("motorMode")) {
+                let error = $root.vesc_trampa.VescTrampaMotorModeCommand.verify(message.motorMode, long + 1);
+                if (error)
+                    return "motorMode." + error;
+            }
+            return null;
+        };
+
+        /**
+         * Creates a TxEnvelope message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof vesc_trampa.TxEnvelope
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {vesc_trampa.TxEnvelope} TxEnvelope
+         */
+        TxEnvelope.fromObject = function fromObject(object, long) {
+            if (object instanceof $root.vesc_trampa.TxEnvelope)
+                return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let message = new $root.vesc_trampa.TxEnvelope();
+            if (object.monotonicStampNs != null)
+                if ($util.Long)
+                    (message.monotonicStampNs = $util.Long.fromValue(object.monotonicStampNs)).unsigned = true;
+                else if (typeof object.monotonicStampNs === "string")
+                    message.monotonicStampNs = parseInt(object.monotonicStampNs, 10);
+                else if (typeof object.monotonicStampNs === "number")
+                    message.monotonicStampNs = object.monotonicStampNs;
+                else if (typeof object.monotonicStampNs === "object")
+                    message.monotonicStampNs = new $util.LongBits(object.monotonicStampNs.low >>> 0, object.monotonicStampNs.high >>> 0).toNumber(true);
+            if (object.localStampNs != null)
+                if ($util.Long)
+                    (message.localStampNs = $util.Long.fromValue(object.localStampNs)).unsigned = true;
+                else if (typeof object.localStampNs === "string")
+                    message.localStampNs = parseInt(object.localStampNs, 10);
+                else if (typeof object.localStampNs === "number")
+                    message.localStampNs = object.localStampNs;
+                else if (typeof object.localStampNs === "object")
+                    message.localStampNs = new $util.LongBits(object.localStampNs.low >>> 0, object.localStampNs.high >>> 0).toNumber(true);
+            if (object.appStartId != null)
+                if ($util.Long)
+                    (message.appStartId = $util.Long.fromValue(object.appStartId)).unsigned = true;
+                else if (typeof object.appStartId === "string")
+                    message.appStartId = parseInt(object.appStartId, 10);
+                else if (typeof object.appStartId === "number")
+                    message.appStartId = object.appStartId;
+                else if (typeof object.appStartId === "object")
+                    message.appStartId = new $util.LongBits(object.appStartId.low >>> 0, object.appStartId.high >>> 0).toNumber(true);
+            if (object.targetBoardUuid != null)
+                if (typeof object.targetBoardUuid === "string")
+                    $util.base64.decode(object.targetBoardUuid, message.targetBoardUuid = $util.newBuffer($util.base64.length(object.targetBoardUuid)), 0);
+                else if (object.targetBoardUuid.length >= 0)
+                    message.targetBoardUuid = object.targetBoardUuid;
+            if (object.commandId != null)
+                if (typeof object.commandId === "string")
+                    $util.base64.decode(object.commandId, message.commandId = $util.newBuffer($util.base64.length(object.commandId)), 0);
+                else if (object.commandId.length >= 0)
+                    message.commandId = object.commandId;
+            if (object.boardCommand != null) {
+                if (typeof object.boardCommand !== "object")
+                    throw TypeError(".vesc_trampa.TxEnvelope.boardCommand: object expected");
+                message.boardCommand = $root.vesc_trampa.VescTrampaBoardCommand.fromObject(object.boardCommand, long + 1);
+            }
+            if (object.motorMode != null) {
+                if (typeof object.motorMode !== "object")
+                    throw TypeError(".vesc_trampa.TxEnvelope.motorMode: object expected");
+                message.motorMode = $root.vesc_trampa.VescTrampaMotorModeCommand.fromObject(object.motorMode, long + 1);
+            }
+            return message;
+        };
+
+        /**
+         * Creates a plain object from a TxEnvelope message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof vesc_trampa.TxEnvelope
+         * @static
+         * @param {vesc_trampa.TxEnvelope} message TxEnvelope
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        TxEnvelope.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.defaults) {
+                if ($util.Long) {
+                    let long = new $util.Long(0, 0, true);
+                    object.monotonicStampNs = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+                } else
+                    object.monotonicStampNs = options.longs === String ? "0" : 0;
+                if ($util.Long) {
+                    let long = new $util.Long(0, 0, true);
+                    object.localStampNs = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+                } else
+                    object.localStampNs = options.longs === String ? "0" : 0;
+                if (options.bytes === String)
+                    object.targetBoardUuid = "";
+                else {
+                    object.targetBoardUuid = [];
+                    if (options.bytes !== Array)
+                        object.targetBoardUuid = $util.newBuffer(object.targetBoardUuid);
+                }
+                if (options.bytes === String)
+                    object.commandId = "";
+                else {
+                    object.commandId = [];
+                    if (options.bytes !== Array)
+                        object.commandId = $util.newBuffer(object.commandId);
+                }
+                if ($util.Long) {
+                    let long = new $util.Long(0, 0, true);
+                    object.appStartId = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+                } else
+                    object.appStartId = options.longs === String ? "0" : 0;
+                object.boardCommand = null;
+                object.motorMode = null;
+            }
+            if (message.monotonicStampNs != null && message.hasOwnProperty("monotonicStampNs"))
+                if (typeof message.monotonicStampNs === "number")
+                    object.monotonicStampNs = options.longs === String ? String(message.monotonicStampNs) : message.monotonicStampNs;
+                else
+                    object.monotonicStampNs = options.longs === String ? $util.Long.prototype.toString.call(message.monotonicStampNs) : options.longs === Number ? new $util.LongBits(message.monotonicStampNs.low >>> 0, message.monotonicStampNs.high >>> 0).toNumber(true) : message.monotonicStampNs;
+            if (message.localStampNs != null && message.hasOwnProperty("localStampNs"))
+                if (typeof message.localStampNs === "number")
+                    object.localStampNs = options.longs === String ? String(message.localStampNs) : message.localStampNs;
+                else
+                    object.localStampNs = options.longs === String ? $util.Long.prototype.toString.call(message.localStampNs) : options.longs === Number ? new $util.LongBits(message.localStampNs.low >>> 0, message.localStampNs.high >>> 0).toNumber(true) : message.localStampNs;
+            if (message.targetBoardUuid != null && message.hasOwnProperty("targetBoardUuid"))
+                object.targetBoardUuid = options.bytes === String ? $util.base64.encode(message.targetBoardUuid, 0, message.targetBoardUuid.length) : options.bytes === Array ? Array.prototype.slice.call(message.targetBoardUuid) : message.targetBoardUuid;
+            if (message.commandId != null && message.hasOwnProperty("commandId"))
+                object.commandId = options.bytes === String ? $util.base64.encode(message.commandId, 0, message.commandId.length) : options.bytes === Array ? Array.prototype.slice.call(message.commandId) : message.commandId;
+            if (message.appStartId != null && message.hasOwnProperty("appStartId"))
+                if (typeof message.appStartId === "number")
+                    object.appStartId = options.longs === String ? String(message.appStartId) : message.appStartId;
+                else
+                    object.appStartId = options.longs === String ? $util.Long.prototype.toString.call(message.appStartId) : options.longs === Number ? new $util.LongBits(message.appStartId.low >>> 0, message.appStartId.high >>> 0).toNumber(true) : message.appStartId;
+            if (message.boardCommand != null && message.hasOwnProperty("boardCommand"))
+                object.boardCommand = $root.vesc_trampa.VescTrampaBoardCommand.toObject(message.boardCommand, options);
+            if (message.motorMode != null && message.hasOwnProperty("motorMode"))
+                object.motorMode = $root.vesc_trampa.VescTrampaMotorModeCommand.toObject(message.motorMode, options);
+            return object;
+        };
+
+        /**
+         * Converts this TxEnvelope to JSON.
+         * @function toJSON
+         * @memberof vesc_trampa.TxEnvelope
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        TxEnvelope.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for TxEnvelope
+         * @function getTypeUrl
+         * @memberof vesc_trampa.TxEnvelope
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        TxEnvelope.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+            if (typeUrlPrefix === undefined) {
+                typeUrlPrefix = "type.googleapis.com";
+            }
+            return typeUrlPrefix + "/vesc_trampa.TxEnvelope";
+        };
+
+        return TxEnvelope;
+    })();
+
+    vesc_trampa.Command = (function() {
+
+        /**
+         * Properties of a Command.
+         * @memberof vesc_trampa
+         * @interface ICommand
+         * @property {Uint8Array|null} [targetBoardUuid] Command targetBoardUuid
+         * @property {vesc_trampa.IVescTrampaBoardCommand|null} [boardCommand] Command boardCommand
+         * @property {vesc_trampa.IVescTrampaMotorModeCommand|null} [motorMode] Command motorMode
+         */
+
+        /**
+         * Constructs a new Command.
+         * @memberof vesc_trampa
+         * @classdesc Represents a Command.
+         * @implements ICommand
+         * @constructor
+         * @param {vesc_trampa.ICommand=} [properties] Properties to set
+         */
+        function Command(properties) {
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * Command targetBoardUuid.
+         * @member {Uint8Array} targetBoardUuid
+         * @memberof vesc_trampa.Command
+         * @instance
+         */
+        Command.prototype.targetBoardUuid = $util.newBuffer([]);
+
+        /**
+         * Command boardCommand.
+         * @member {vesc_trampa.IVescTrampaBoardCommand|null|undefined} boardCommand
+         * @memberof vesc_trampa.Command
+         * @instance
+         */
+        Command.prototype.boardCommand = null;
+
+        /**
+         * Command motorMode.
+         * @member {vesc_trampa.IVescTrampaMotorModeCommand|null|undefined} motorMode
+         * @memberof vesc_trampa.Command
+         * @instance
+         */
+        Command.prototype.motorMode = null;
+
+        /**
+         * Creates a new Command instance using the specified properties.
+         * @function create
+         * @memberof vesc_trampa.Command
+         * @static
+         * @param {vesc_trampa.ICommand=} [properties] Properties to set
+         * @returns {vesc_trampa.Command} Command instance
+         */
+        Command.create = function create(properties) {
+            return new Command(properties);
+        };
+
+        /**
+         * Encodes the specified Command message. Does not implicitly {@link vesc_trampa.Command.verify|verify} messages.
+         * @function encode
+         * @memberof vesc_trampa.Command
+         * @static
+         * @param {vesc_trampa.ICommand} message Command message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        Command.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.targetBoardUuid != null && Object.hasOwnProperty.call(message, "targetBoardUuid"))
+                writer.uint32(/* id 1, wireType 2 =*/10).bytes(message.targetBoardUuid);
+            if (message.boardCommand != null && Object.hasOwnProperty.call(message, "boardCommand"))
+                $root.vesc_trampa.VescTrampaBoardCommand.encode(message.boardCommand, writer.uint32(/* id 10, wireType 2 =*/82).fork()).ldelim();
+            if (message.motorMode != null && Object.hasOwnProperty.call(message, "motorMode"))
+                $root.vesc_trampa.VescTrampaMotorModeCommand.encode(message.motorMode, writer.uint32(/* id 11, wireType 2 =*/90).fork()).ldelim();
+            return writer;
+        };
+
+        /**
+         * Encodes the specified Command message, length delimited. Does not implicitly {@link vesc_trampa.Command.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof vesc_trampa.Command
+         * @static
+         * @param {vesc_trampa.ICommand} message Command message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        Command.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes a Command message from the specified reader or buffer.
+         * @function decode
+         * @memberof vesc_trampa.Command
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {vesc_trampa.Command} Command
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        Command.decode = function decode(reader, length, error, long) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.vesc_trampa.Command();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                if (tag === error)
+                    break;
+                switch (tag >>> 3) {
+                case 1: {
+                        message.targetBoardUuid = reader.bytes();
+                        break;
+                    }
+                case 10: {
+                        message.boardCommand = $root.vesc_trampa.VescTrampaBoardCommand.decode(reader, reader.uint32(), undefined, long + 1);
+                        break;
+                    }
+                case 11: {
+                        message.motorMode = $root.vesc_trampa.VescTrampaMotorModeCommand.decode(reader, reader.uint32(), undefined, long + 1);
+                        break;
+                    }
+                default:
+                    reader.skipType(tag & 7, long);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes a Command message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof vesc_trampa.Command
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {vesc_trampa.Command} Command
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        Command.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies a Command message.
+         * @function verify
+         * @memberof vesc_trampa.Command
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        Command.verify = function verify(message, long) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
+            if (message.targetBoardUuid != null && message.hasOwnProperty("targetBoardUuid"))
+                if (!(message.targetBoardUuid && typeof message.targetBoardUuid.length === "number" || $util.isString(message.targetBoardUuid)))
+                    return "targetBoardUuid: buffer expected";
+            if (message.boardCommand != null && message.hasOwnProperty("boardCommand")) {
+                let error = $root.vesc_trampa.VescTrampaBoardCommand.verify(message.boardCommand, long + 1);
+                if (error)
+                    return "boardCommand." + error;
+            }
+            if (message.motorMode != null && message.hasOwnProperty("motorMode")) {
+                let error = $root.vesc_trampa.VescTrampaMotorModeCommand.verify(message.motorMode, long + 1);
+                if (error)
+                    return "motorMode." + error;
+            }
+            return null;
+        };
+
+        /**
+         * Creates a Command message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof vesc_trampa.Command
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {vesc_trampa.Command} Command
+         */
+        Command.fromObject = function fromObject(object, long) {
+            if (object instanceof $root.vesc_trampa.Command)
+                return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let message = new $root.vesc_trampa.Command();
+            if (object.targetBoardUuid != null)
+                if (typeof object.targetBoardUuid === "string")
+                    $util.base64.decode(object.targetBoardUuid, message.targetBoardUuid = $util.newBuffer($util.base64.length(object.targetBoardUuid)), 0);
+                else if (object.targetBoardUuid.length >= 0)
+                    message.targetBoardUuid = object.targetBoardUuid;
+            if (object.boardCommand != null) {
+                if (typeof object.boardCommand !== "object")
+                    throw TypeError(".vesc_trampa.Command.boardCommand: object expected");
+                message.boardCommand = $root.vesc_trampa.VescTrampaBoardCommand.fromObject(object.boardCommand, long + 1);
+            }
+            if (object.motorMode != null) {
+                if (typeof object.motorMode !== "object")
+                    throw TypeError(".vesc_trampa.Command.motorMode: object expected");
+                message.motorMode = $root.vesc_trampa.VescTrampaMotorModeCommand.fromObject(object.motorMode, long + 1);
+            }
+            return message;
+        };
+
+        /**
+         * Creates a plain object from a Command message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof vesc_trampa.Command
+         * @static
+         * @param {vesc_trampa.Command} message Command
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        Command.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.defaults) {
+                if (options.bytes === String)
+                    object.targetBoardUuid = "";
+                else {
+                    object.targetBoardUuid = [];
+                    if (options.bytes !== Array)
+                        object.targetBoardUuid = $util.newBuffer(object.targetBoardUuid);
+                }
+                object.boardCommand = null;
+                object.motorMode = null;
+            }
+            if (message.targetBoardUuid != null && message.hasOwnProperty("targetBoardUuid"))
+                object.targetBoardUuid = options.bytes === String ? $util.base64.encode(message.targetBoardUuid, 0, message.targetBoardUuid.length) : options.bytes === Array ? Array.prototype.slice.call(message.targetBoardUuid) : message.targetBoardUuid;
+            if (message.boardCommand != null && message.hasOwnProperty("boardCommand"))
+                object.boardCommand = $root.vesc_trampa.VescTrampaBoardCommand.toObject(message.boardCommand, options);
+            if (message.motorMode != null && message.hasOwnProperty("motorMode"))
+                object.motorMode = $root.vesc_trampa.VescTrampaMotorModeCommand.toObject(message.motorMode, options);
+            return object;
+        };
+
+        /**
+         * Converts this Command to JSON.
+         * @function toJSON
+         * @memberof vesc_trampa.Command
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        Command.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for Command
+         * @function getTypeUrl
+         * @memberof vesc_trampa.Command
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        Command.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+            if (typeUrlPrefix === undefined) {
+                typeUrlPrefix = "type.googleapis.com";
+            }
+            return typeUrlPrefix + "/vesc_trampa.Command";
+        };
+
+        return Command;
+    })();
+
+    vesc_trampa.VescTrampaBoardCommand = (function() {
+
+        /**
+         * Properties of a VescTrampaBoardCommand.
+         * @memberof vesc_trampa
+         * @interface IVescTrampaBoardCommand
+         * @property {Uint8Array|null} [payload] VescTrampaBoardCommand payload
+         * @property {boolean|null} [responseExpected] VescTrampaBoardCommand responseExpected
+         */
+
+        /**
+         * Constructs a new VescTrampaBoardCommand.
+         * @memberof vesc_trampa
+         * @classdesc Represents a VescTrampaBoardCommand.
+         * @implements IVescTrampaBoardCommand
+         * @constructor
+         * @param {vesc_trampa.IVescTrampaBoardCommand=} [properties] Properties to set
+         */
+        function VescTrampaBoardCommand(properties) {
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * VescTrampaBoardCommand payload.
+         * @member {Uint8Array} payload
+         * @memberof vesc_trampa.VescTrampaBoardCommand
+         * @instance
+         */
+        VescTrampaBoardCommand.prototype.payload = $util.newBuffer([]);
+
+        /**
+         * VescTrampaBoardCommand responseExpected.
+         * @member {boolean} responseExpected
+         * @memberof vesc_trampa.VescTrampaBoardCommand
+         * @instance
+         */
+        VescTrampaBoardCommand.prototype.responseExpected = false;
+
+        /**
+         * Creates a new VescTrampaBoardCommand instance using the specified properties.
+         * @function create
+         * @memberof vesc_trampa.VescTrampaBoardCommand
+         * @static
+         * @param {vesc_trampa.IVescTrampaBoardCommand=} [properties] Properties to set
+         * @returns {vesc_trampa.VescTrampaBoardCommand} VescTrampaBoardCommand instance
+         */
+        VescTrampaBoardCommand.create = function create(properties) {
+            return new VescTrampaBoardCommand(properties);
+        };
+
+        /**
+         * Encodes the specified VescTrampaBoardCommand message. Does not implicitly {@link vesc_trampa.VescTrampaBoardCommand.verify|verify} messages.
+         * @function encode
+         * @memberof vesc_trampa.VescTrampaBoardCommand
+         * @static
+         * @param {vesc_trampa.IVescTrampaBoardCommand} message VescTrampaBoardCommand message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        VescTrampaBoardCommand.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.payload != null && Object.hasOwnProperty.call(message, "payload"))
+                writer.uint32(/* id 1, wireType 2 =*/10).bytes(message.payload);
+            if (message.responseExpected != null && Object.hasOwnProperty.call(message, "responseExpected"))
+                writer.uint32(/* id 2, wireType 0 =*/16).bool(message.responseExpected);
+            return writer;
+        };
+
+        /**
+         * Encodes the specified VescTrampaBoardCommand message, length delimited. Does not implicitly {@link vesc_trampa.VescTrampaBoardCommand.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof vesc_trampa.VescTrampaBoardCommand
+         * @static
+         * @param {vesc_trampa.IVescTrampaBoardCommand} message VescTrampaBoardCommand message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        VescTrampaBoardCommand.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes a VescTrampaBoardCommand message from the specified reader or buffer.
+         * @function decode
+         * @memberof vesc_trampa.VescTrampaBoardCommand
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {vesc_trampa.VescTrampaBoardCommand} VescTrampaBoardCommand
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        VescTrampaBoardCommand.decode = function decode(reader, length, error, long) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.vesc_trampa.VescTrampaBoardCommand();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                if (tag === error)
+                    break;
+                switch (tag >>> 3) {
+                case 1: {
+                        message.payload = reader.bytes();
+                        break;
+                    }
+                case 2: {
+                        message.responseExpected = reader.bool();
+                        break;
+                    }
+                default:
+                    reader.skipType(tag & 7, long);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes a VescTrampaBoardCommand message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof vesc_trampa.VescTrampaBoardCommand
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {vesc_trampa.VescTrampaBoardCommand} VescTrampaBoardCommand
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        VescTrampaBoardCommand.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies a VescTrampaBoardCommand message.
+         * @function verify
+         * @memberof vesc_trampa.VescTrampaBoardCommand
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        VescTrampaBoardCommand.verify = function verify(message, long) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
+            if (message.payload != null && message.hasOwnProperty("payload"))
+                if (!(message.payload && typeof message.payload.length === "number" || $util.isString(message.payload)))
+                    return "payload: buffer expected";
+            if (message.responseExpected != null && message.hasOwnProperty("responseExpected"))
+                if (typeof message.responseExpected !== "boolean")
+                    return "responseExpected: boolean expected";
+            return null;
+        };
+
+        /**
+         * Creates a VescTrampaBoardCommand message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof vesc_trampa.VescTrampaBoardCommand
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {vesc_trampa.VescTrampaBoardCommand} VescTrampaBoardCommand
+         */
+        VescTrampaBoardCommand.fromObject = function fromObject(object, long) {
+            if (object instanceof $root.vesc_trampa.VescTrampaBoardCommand)
+                return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let message = new $root.vesc_trampa.VescTrampaBoardCommand();
+            if (object.payload != null)
+                if (typeof object.payload === "string")
+                    $util.base64.decode(object.payload, message.payload = $util.newBuffer($util.base64.length(object.payload)), 0);
+                else if (object.payload.length >= 0)
+                    message.payload = object.payload;
+            if (object.responseExpected != null)
+                message.responseExpected = Boolean(object.responseExpected);
+            return message;
+        };
+
+        /**
+         * Creates a plain object from a VescTrampaBoardCommand message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof vesc_trampa.VescTrampaBoardCommand
+         * @static
+         * @param {vesc_trampa.VescTrampaBoardCommand} message VescTrampaBoardCommand
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        VescTrampaBoardCommand.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.defaults) {
+                if (options.bytes === String)
+                    object.payload = "";
+                else {
+                    object.payload = [];
+                    if (options.bytes !== Array)
+                        object.payload = $util.newBuffer(object.payload);
+                }
+                object.responseExpected = false;
+            }
+            if (message.payload != null && message.hasOwnProperty("payload"))
+                object.payload = options.bytes === String ? $util.base64.encode(message.payload, 0, message.payload.length) : options.bytes === Array ? Array.prototype.slice.call(message.payload) : message.payload;
+            if (message.responseExpected != null && message.hasOwnProperty("responseExpected"))
+                object.responseExpected = message.responseExpected;
+            return object;
+        };
+
+        /**
+         * Converts this VescTrampaBoardCommand to JSON.
+         * @function toJSON
+         * @memberof vesc_trampa.VescTrampaBoardCommand
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        VescTrampaBoardCommand.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for VescTrampaBoardCommand
+         * @function getTypeUrl
+         * @memberof vesc_trampa.VescTrampaBoardCommand
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        VescTrampaBoardCommand.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+            if (typeUrlPrefix === undefined) {
+                typeUrlPrefix = "type.googleapis.com";
+            }
+            return typeUrlPrefix + "/vesc_trampa.VescTrampaBoardCommand";
+        };
+
+        return VescTrampaBoardCommand;
+    })();
+
+    /**
+     * VescTrampaMotorMode enum.
+     * @name vesc_trampa.VescTrampaMotorMode
+     * @enum {number}
+     * @property {number} VESC_TRAMPA_MOTOR_MODE_UNSPECIFIED=0 VESC_TRAMPA_MOTOR_MODE_UNSPECIFIED value
+     * @property {number} VESC_TRAMPA_MOTOR_MODE_HOLD=1 VESC_TRAMPA_MOTOR_MODE_HOLD value
+     */
+    vesc_trampa.VescTrampaMotorMode = (function() {
+        const valuesById = {}, values = Object.create(valuesById);
+        values[valuesById[0] = "VESC_TRAMPA_MOTOR_MODE_UNSPECIFIED"] = 0;
+        values[valuesById[1] = "VESC_TRAMPA_MOTOR_MODE_HOLD"] = 1;
+        return values;
+    })();
+
+    vesc_trampa.VescTrampaMotorModeCommand = (function() {
+
+        /**
+         * Properties of a VescTrampaMotorModeCommand.
+         * @memberof vesc_trampa
+         * @interface IVescTrampaMotorModeCommand
+         * @property {vesc_trampa.VescTrampaMotorMode|null} [mode] VescTrampaMotorModeCommand mode
+         */
+
+        /**
+         * Constructs a new VescTrampaMotorModeCommand.
+         * @memberof vesc_trampa
+         * @classdesc Represents a VescTrampaMotorModeCommand.
+         * @implements IVescTrampaMotorModeCommand
+         * @constructor
+         * @param {vesc_trampa.IVescTrampaMotorModeCommand=} [properties] Properties to set
+         */
+        function VescTrampaMotorModeCommand(properties) {
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * VescTrampaMotorModeCommand mode.
+         * @member {vesc_trampa.VescTrampaMotorMode} mode
+         * @memberof vesc_trampa.VescTrampaMotorModeCommand
+         * @instance
+         */
+        VescTrampaMotorModeCommand.prototype.mode = 0;
+
+        /**
+         * Creates a new VescTrampaMotorModeCommand instance using the specified properties.
+         * @function create
+         * @memberof vesc_trampa.VescTrampaMotorModeCommand
+         * @static
+         * @param {vesc_trampa.IVescTrampaMotorModeCommand=} [properties] Properties to set
+         * @returns {vesc_trampa.VescTrampaMotorModeCommand} VescTrampaMotorModeCommand instance
+         */
+        VescTrampaMotorModeCommand.create = function create(properties) {
+            return new VescTrampaMotorModeCommand(properties);
+        };
+
+        /**
+         * Encodes the specified VescTrampaMotorModeCommand message. Does not implicitly {@link vesc_trampa.VescTrampaMotorModeCommand.verify|verify} messages.
+         * @function encode
+         * @memberof vesc_trampa.VescTrampaMotorModeCommand
+         * @static
+         * @param {vesc_trampa.IVescTrampaMotorModeCommand} message VescTrampaMotorModeCommand message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        VescTrampaMotorModeCommand.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.mode != null && Object.hasOwnProperty.call(message, "mode"))
+                writer.uint32(/* id 1, wireType 0 =*/8).int32(message.mode);
+            return writer;
+        };
+
+        /**
+         * Encodes the specified VescTrampaMotorModeCommand message, length delimited. Does not implicitly {@link vesc_trampa.VescTrampaMotorModeCommand.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof vesc_trampa.VescTrampaMotorModeCommand
+         * @static
+         * @param {vesc_trampa.IVescTrampaMotorModeCommand} message VescTrampaMotorModeCommand message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        VescTrampaMotorModeCommand.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes a VescTrampaMotorModeCommand message from the specified reader or buffer.
+         * @function decode
+         * @memberof vesc_trampa.VescTrampaMotorModeCommand
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {vesc_trampa.VescTrampaMotorModeCommand} VescTrampaMotorModeCommand
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        VescTrampaMotorModeCommand.decode = function decode(reader, length, error, long) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.vesc_trampa.VescTrampaMotorModeCommand();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                if (tag === error)
+                    break;
+                switch (tag >>> 3) {
+                case 1: {
+                        message.mode = reader.int32();
+                        break;
+                    }
+                default:
+                    reader.skipType(tag & 7, long);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes a VescTrampaMotorModeCommand message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof vesc_trampa.VescTrampaMotorModeCommand
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {vesc_trampa.VescTrampaMotorModeCommand} VescTrampaMotorModeCommand
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        VescTrampaMotorModeCommand.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies a VescTrampaMotorModeCommand message.
+         * @function verify
+         * @memberof vesc_trampa.VescTrampaMotorModeCommand
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        VescTrampaMotorModeCommand.verify = function verify(message, long) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
+            if (message.mode != null && message.hasOwnProperty("mode"))
+                switch (message.mode) {
+                default:
+                    return "mode: enum value expected";
+                case 0:
+                case 1:
+                    break;
+                }
+            return null;
+        };
+
+        /**
+         * Creates a VescTrampaMotorModeCommand message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof vesc_trampa.VescTrampaMotorModeCommand
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {vesc_trampa.VescTrampaMotorModeCommand} VescTrampaMotorModeCommand
+         */
+        VescTrampaMotorModeCommand.fromObject = function fromObject(object, long) {
+            if (object instanceof $root.vesc_trampa.VescTrampaMotorModeCommand)
+                return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let message = new $root.vesc_trampa.VescTrampaMotorModeCommand();
+            switch (object.mode) {
+            default:
+                if (typeof object.mode === "number") {
+                    message.mode = object.mode;
+                    break;
+                }
+                break;
+            case "VESC_TRAMPA_MOTOR_MODE_UNSPECIFIED":
+            case 0:
+                message.mode = 0;
+                break;
+            case "VESC_TRAMPA_MOTOR_MODE_HOLD":
+            case 1:
+                message.mode = 1;
+                break;
+            }
+            return message;
+        };
+
+        /**
+         * Creates a plain object from a VescTrampaMotorModeCommand message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof vesc_trampa.VescTrampaMotorModeCommand
+         * @static
+         * @param {vesc_trampa.VescTrampaMotorModeCommand} message VescTrampaMotorModeCommand
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        VescTrampaMotorModeCommand.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.defaults)
+                object.mode = options.enums === String ? "VESC_TRAMPA_MOTOR_MODE_UNSPECIFIED" : 0;
+            if (message.mode != null && message.hasOwnProperty("mode"))
+                object.mode = options.enums === String ? $root.vesc_trampa.VescTrampaMotorMode[message.mode] === undefined ? message.mode : $root.vesc_trampa.VescTrampaMotorMode[message.mode] : message.mode;
+            return object;
+        };
+
+        /**
+         * Converts this VescTrampaMotorModeCommand to JSON.
+         * @function toJSON
+         * @memberof vesc_trampa.VescTrampaMotorModeCommand
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        VescTrampaMotorModeCommand.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for VescTrampaMotorModeCommand
+         * @function getTypeUrl
+         * @memberof vesc_trampa.VescTrampaMotorModeCommand
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        VescTrampaMotorModeCommand.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+            if (typeUrlPrefix === undefined) {
+                typeUrlPrefix = "type.googleapis.com";
+            }
+            return typeUrlPrefix + "/vesc_trampa.VescTrampaMotorModeCommand";
+        };
+
+        return VescTrampaMotorModeCommand;
+    })();
+
+    vesc_trampa.VescTrampaBoardPacket = (function() {
+
+        /**
+         * Properties of a VescTrampaBoardPacket.
+         * @memberof vesc_trampa
+         * @interface IVescTrampaBoardPacket
+         * @property {number|null} [startByte] VescTrampaBoardPacket startByte
+         * @property {number|null} [payloadLen] VescTrampaBoardPacket payloadLen
+         * @property {number|null} [commandId] VescTrampaBoardPacket commandId
+         * @property {Uint8Array|null} [payload] VescTrampaBoardPacket payload
+         * @property {number|null} [crc] VescTrampaBoardPacket crc
+         * @property {number|null} [endByte] VescTrampaBoardPacket endByte
+         */
+
+        /**
+         * Constructs a new VescTrampaBoardPacket.
+         * @memberof vesc_trampa
+         * @classdesc Represents a VescTrampaBoardPacket.
+         * @implements IVescTrampaBoardPacket
+         * @constructor
+         * @param {vesc_trampa.IVescTrampaBoardPacket=} [properties] Properties to set
+         */
+        function VescTrampaBoardPacket(properties) {
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * VescTrampaBoardPacket startByte.
+         * @member {number} startByte
+         * @memberof vesc_trampa.VescTrampaBoardPacket
+         * @instance
+         */
+        VescTrampaBoardPacket.prototype.startByte = 0;
+
+        /**
+         * VescTrampaBoardPacket payloadLen.
+         * @member {number} payloadLen
+         * @memberof vesc_trampa.VescTrampaBoardPacket
+         * @instance
+         */
+        VescTrampaBoardPacket.prototype.payloadLen = 0;
+
+        /**
+         * VescTrampaBoardPacket commandId.
+         * @member {number} commandId
+         * @memberof vesc_trampa.VescTrampaBoardPacket
+         * @instance
+         */
+        VescTrampaBoardPacket.prototype.commandId = 0;
+
+        /**
+         * VescTrampaBoardPacket payload.
+         * @member {Uint8Array} payload
+         * @memberof vesc_trampa.VescTrampaBoardPacket
+         * @instance
+         */
+        VescTrampaBoardPacket.prototype.payload = $util.newBuffer([]);
+
+        /**
+         * VescTrampaBoardPacket crc.
+         * @member {number} crc
+         * @memberof vesc_trampa.VescTrampaBoardPacket
+         * @instance
+         */
+        VescTrampaBoardPacket.prototype.crc = 0;
+
+        /**
+         * VescTrampaBoardPacket endByte.
+         * @member {number} endByte
+         * @memberof vesc_trampa.VescTrampaBoardPacket
+         * @instance
+         */
+        VescTrampaBoardPacket.prototype.endByte = 0;
+
+        /**
+         * Creates a new VescTrampaBoardPacket instance using the specified properties.
+         * @function create
+         * @memberof vesc_trampa.VescTrampaBoardPacket
+         * @static
+         * @param {vesc_trampa.IVescTrampaBoardPacket=} [properties] Properties to set
+         * @returns {vesc_trampa.VescTrampaBoardPacket} VescTrampaBoardPacket instance
+         */
+        VescTrampaBoardPacket.create = function create(properties) {
+            return new VescTrampaBoardPacket(properties);
+        };
+
+        /**
+         * Encodes the specified VescTrampaBoardPacket message. Does not implicitly {@link vesc_trampa.VescTrampaBoardPacket.verify|verify} messages.
+         * @function encode
+         * @memberof vesc_trampa.VescTrampaBoardPacket
+         * @static
+         * @param {vesc_trampa.IVescTrampaBoardPacket} message VescTrampaBoardPacket message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        VescTrampaBoardPacket.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.startByte != null && Object.hasOwnProperty.call(message, "startByte"))
+                writer.uint32(/* id 1, wireType 0 =*/8).uint32(message.startByte);
+            if (message.payloadLen != null && Object.hasOwnProperty.call(message, "payloadLen"))
+                writer.uint32(/* id 2, wireType 0 =*/16).uint32(message.payloadLen);
+            if (message.commandId != null && Object.hasOwnProperty.call(message, "commandId"))
+                writer.uint32(/* id 3, wireType 0 =*/24).uint32(message.commandId);
+            if (message.payload != null && Object.hasOwnProperty.call(message, "payload"))
+                writer.uint32(/* id 4, wireType 2 =*/34).bytes(message.payload);
+            if (message.crc != null && Object.hasOwnProperty.call(message, "crc"))
+                writer.uint32(/* id 5, wireType 0 =*/40).uint32(message.crc);
+            if (message.endByte != null && Object.hasOwnProperty.call(message, "endByte"))
+                writer.uint32(/* id 6, wireType 0 =*/48).uint32(message.endByte);
+            return writer;
+        };
+
+        /**
+         * Encodes the specified VescTrampaBoardPacket message, length delimited. Does not implicitly {@link vesc_trampa.VescTrampaBoardPacket.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof vesc_trampa.VescTrampaBoardPacket
+         * @static
+         * @param {vesc_trampa.IVescTrampaBoardPacket} message VescTrampaBoardPacket message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        VescTrampaBoardPacket.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes a VescTrampaBoardPacket message from the specified reader or buffer.
+         * @function decode
+         * @memberof vesc_trampa.VescTrampaBoardPacket
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {vesc_trampa.VescTrampaBoardPacket} VescTrampaBoardPacket
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        VescTrampaBoardPacket.decode = function decode(reader, length, error, long) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.vesc_trampa.VescTrampaBoardPacket();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                if (tag === error)
+                    break;
+                switch (tag >>> 3) {
+                case 1: {
+                        message.startByte = reader.uint32();
+                        break;
+                    }
+                case 2: {
+                        message.payloadLen = reader.uint32();
+                        break;
+                    }
+                case 3: {
+                        message.commandId = reader.uint32();
+                        break;
+                    }
+                case 4: {
+                        message.payload = reader.bytes();
+                        break;
+                    }
+                case 5: {
+                        message.crc = reader.uint32();
+                        break;
+                    }
+                case 6: {
+                        message.endByte = reader.uint32();
+                        break;
+                    }
+                default:
+                    reader.skipType(tag & 7, long);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes a VescTrampaBoardPacket message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof vesc_trampa.VescTrampaBoardPacket
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {vesc_trampa.VescTrampaBoardPacket} VescTrampaBoardPacket
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        VescTrampaBoardPacket.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies a VescTrampaBoardPacket message.
+         * @function verify
+         * @memberof vesc_trampa.VescTrampaBoardPacket
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        VescTrampaBoardPacket.verify = function verify(message, long) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
+            if (message.startByte != null && message.hasOwnProperty("startByte"))
+                if (!$util.isInteger(message.startByte))
+                    return "startByte: integer expected";
+            if (message.payloadLen != null && message.hasOwnProperty("payloadLen"))
+                if (!$util.isInteger(message.payloadLen))
+                    return "payloadLen: integer expected";
+            if (message.commandId != null && message.hasOwnProperty("commandId"))
+                if (!$util.isInteger(message.commandId))
+                    return "commandId: integer expected";
+            if (message.payload != null && message.hasOwnProperty("payload"))
+                if (!(message.payload && typeof message.payload.length === "number" || $util.isString(message.payload)))
+                    return "payload: buffer expected";
+            if (message.crc != null && message.hasOwnProperty("crc"))
+                if (!$util.isInteger(message.crc))
+                    return "crc: integer expected";
+            if (message.endByte != null && message.hasOwnProperty("endByte"))
+                if (!$util.isInteger(message.endByte))
+                    return "endByte: integer expected";
+            return null;
+        };
+
+        /**
+         * Creates a VescTrampaBoardPacket message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof vesc_trampa.VescTrampaBoardPacket
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {vesc_trampa.VescTrampaBoardPacket} VescTrampaBoardPacket
+         */
+        VescTrampaBoardPacket.fromObject = function fromObject(object, long) {
+            if (object instanceof $root.vesc_trampa.VescTrampaBoardPacket)
+                return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let message = new $root.vesc_trampa.VescTrampaBoardPacket();
+            if (object.startByte != null)
+                message.startByte = object.startByte >>> 0;
+            if (object.payloadLen != null)
+                message.payloadLen = object.payloadLen >>> 0;
+            if (object.commandId != null)
+                message.commandId = object.commandId >>> 0;
+            if (object.payload != null)
+                if (typeof object.payload === "string")
+                    $util.base64.decode(object.payload, message.payload = $util.newBuffer($util.base64.length(object.payload)), 0);
+                else if (object.payload.length >= 0)
+                    message.payload = object.payload;
+            if (object.crc != null)
+                message.crc = object.crc >>> 0;
+            if (object.endByte != null)
+                message.endByte = object.endByte >>> 0;
+            return message;
+        };
+
+        /**
+         * Creates a plain object from a VescTrampaBoardPacket message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof vesc_trampa.VescTrampaBoardPacket
+         * @static
+         * @param {vesc_trampa.VescTrampaBoardPacket} message VescTrampaBoardPacket
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        VescTrampaBoardPacket.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.defaults) {
+                object.startByte = 0;
+                object.payloadLen = 0;
+                object.commandId = 0;
+                if (options.bytes === String)
+                    object.payload = "";
+                else {
+                    object.payload = [];
+                    if (options.bytes !== Array)
+                        object.payload = $util.newBuffer(object.payload);
+                }
+                object.crc = 0;
+                object.endByte = 0;
+            }
+            if (message.startByte != null && message.hasOwnProperty("startByte"))
+                object.startByte = message.startByte;
+            if (message.payloadLen != null && message.hasOwnProperty("payloadLen"))
+                object.payloadLen = message.payloadLen;
+            if (message.commandId != null && message.hasOwnProperty("commandId"))
+                object.commandId = message.commandId;
+            if (message.payload != null && message.hasOwnProperty("payload"))
+                object.payload = options.bytes === String ? $util.base64.encode(message.payload, 0, message.payload.length) : options.bytes === Array ? Array.prototype.slice.call(message.payload) : message.payload;
+            if (message.crc != null && message.hasOwnProperty("crc"))
+                object.crc = message.crc;
+            if (message.endByte != null && message.hasOwnProperty("endByte"))
+                object.endByte = message.endByte;
+            return object;
+        };
+
+        /**
+         * Converts this VescTrampaBoardPacket to JSON.
+         * @function toJSON
+         * @memberof vesc_trampa.VescTrampaBoardPacket
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        VescTrampaBoardPacket.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for VescTrampaBoardPacket
+         * @function getTypeUrl
+         * @memberof vesc_trampa.VescTrampaBoardPacket
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        VescTrampaBoardPacket.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+            if (typeUrlPrefix === undefined) {
+                typeUrlPrefix = "type.googleapis.com";
+            }
+            return typeUrlPrefix + "/vesc_trampa.VescTrampaBoardPacket";
+        };
+
+        return VescTrampaBoardPacket;
+    })();
+
+    vesc_trampa.InferenceState = (function() {
+
+        /**
+         * Properties of an InferenceState.
+         * @memberof vesc_trampa
+         * @interface IInferenceState
+         * @property {Uint8Array|null} [lastInferenceQueuePtr] InferenceState lastInferenceQueuePtr
+         * @property {Array.<vesc_trampa.InferenceState.IBoardState>|null} [boards] InferenceState boards
+         */
+
+        /**
+         * Constructs a new InferenceState.
+         * @memberof vesc_trampa
+         * @classdesc Represents an InferenceState.
+         * @implements IInferenceState
+         * @constructor
+         * @param {vesc_trampa.IInferenceState=} [properties] Properties to set
+         */
+        function InferenceState(properties) {
+            this.boards = [];
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * InferenceState lastInferenceQueuePtr.
+         * @member {Uint8Array} lastInferenceQueuePtr
+         * @memberof vesc_trampa.InferenceState
+         * @instance
+         */
+        InferenceState.prototype.lastInferenceQueuePtr = $util.newBuffer([]);
+
+        /**
+         * InferenceState boards.
+         * @member {Array.<vesc_trampa.InferenceState.IBoardState>} boards
+         * @memberof vesc_trampa.InferenceState
+         * @instance
+         */
+        InferenceState.prototype.boards = $util.emptyArray;
+
+        /**
+         * Creates a new InferenceState instance using the specified properties.
+         * @function create
+         * @memberof vesc_trampa.InferenceState
+         * @static
+         * @param {vesc_trampa.IInferenceState=} [properties] Properties to set
+         * @returns {vesc_trampa.InferenceState} InferenceState instance
+         */
+        InferenceState.create = function create(properties) {
+            return new InferenceState(properties);
+        };
+
+        /**
+         * Encodes the specified InferenceState message. Does not implicitly {@link vesc_trampa.InferenceState.verify|verify} messages.
+         * @function encode
+         * @memberof vesc_trampa.InferenceState
+         * @static
+         * @param {vesc_trampa.IInferenceState} message InferenceState message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        InferenceState.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.lastInferenceQueuePtr != null && Object.hasOwnProperty.call(message, "lastInferenceQueuePtr"))
+                writer.uint32(/* id 1, wireType 2 =*/10).bytes(message.lastInferenceQueuePtr);
+            if (message.boards != null && message.boards.length)
+                for (let i = 0; i < message.boards.length; ++i)
+                    $root.vesc_trampa.InferenceState.BoardState.encode(message.boards[i], writer.uint32(/* id 10, wireType 2 =*/82).fork()).ldelim();
+            return writer;
+        };
+
+        /**
+         * Encodes the specified InferenceState message, length delimited. Does not implicitly {@link vesc_trampa.InferenceState.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof vesc_trampa.InferenceState
+         * @static
+         * @param {vesc_trampa.IInferenceState} message InferenceState message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        InferenceState.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes an InferenceState message from the specified reader or buffer.
+         * @function decode
+         * @memberof vesc_trampa.InferenceState
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {vesc_trampa.InferenceState} InferenceState
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        InferenceState.decode = function decode(reader, length, error, long) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.vesc_trampa.InferenceState();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                if (tag === error)
+                    break;
+                switch (tag >>> 3) {
+                case 1: {
+                        message.lastInferenceQueuePtr = reader.bytes();
+                        break;
+                    }
+                case 10: {
+                        if (!(message.boards && message.boards.length))
+                            message.boards = [];
+                        message.boards.push($root.vesc_trampa.InferenceState.BoardState.decode(reader, reader.uint32(), undefined, long + 1));
+                        break;
+                    }
+                default:
+                    reader.skipType(tag & 7, long);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes an InferenceState message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof vesc_trampa.InferenceState
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {vesc_trampa.InferenceState} InferenceState
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        InferenceState.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies an InferenceState message.
+         * @function verify
+         * @memberof vesc_trampa.InferenceState
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        InferenceState.verify = function verify(message, long) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
+            if (message.lastInferenceQueuePtr != null && message.hasOwnProperty("lastInferenceQueuePtr"))
+                if (!(message.lastInferenceQueuePtr && typeof message.lastInferenceQueuePtr.length === "number" || $util.isString(message.lastInferenceQueuePtr)))
+                    return "lastInferenceQueuePtr: buffer expected";
+            if (message.boards != null && message.hasOwnProperty("boards")) {
+                if (!Array.isArray(message.boards))
+                    return "boards: array expected";
+                for (let i = 0; i < message.boards.length; ++i) {
+                    let error = $root.vesc_trampa.InferenceState.BoardState.verify(message.boards[i], long + 1);
+                    if (error)
+                        return "boards." + error;
+                }
+            }
+            return null;
+        };
+
+        /**
+         * Creates an InferenceState message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof vesc_trampa.InferenceState
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {vesc_trampa.InferenceState} InferenceState
+         */
+        InferenceState.fromObject = function fromObject(object, long) {
+            if (object instanceof $root.vesc_trampa.InferenceState)
+                return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let message = new $root.vesc_trampa.InferenceState();
+            if (object.lastInferenceQueuePtr != null)
+                if (typeof object.lastInferenceQueuePtr === "string")
+                    $util.base64.decode(object.lastInferenceQueuePtr, message.lastInferenceQueuePtr = $util.newBuffer($util.base64.length(object.lastInferenceQueuePtr)), 0);
+                else if (object.lastInferenceQueuePtr.length >= 0)
+                    message.lastInferenceQueuePtr = object.lastInferenceQueuePtr;
+            if (object.boards) {
+                if (!Array.isArray(object.boards))
+                    throw TypeError(".vesc_trampa.InferenceState.boards: array expected");
+                message.boards = [];
+                for (let i = 0; i < object.boards.length; ++i) {
+                    if (typeof object.boards[i] !== "object")
+                        throw TypeError(".vesc_trampa.InferenceState.boards: object expected");
+                    message.boards[i] = $root.vesc_trampa.InferenceState.BoardState.fromObject(object.boards[i], long + 1);
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Creates a plain object from an InferenceState message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof vesc_trampa.InferenceState
+         * @static
+         * @param {vesc_trampa.InferenceState} message InferenceState
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        InferenceState.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.arrays || options.defaults)
+                object.boards = [];
+            if (options.defaults)
+                if (options.bytes === String)
+                    object.lastInferenceQueuePtr = "";
+                else {
+                    object.lastInferenceQueuePtr = [];
+                    if (options.bytes !== Array)
+                        object.lastInferenceQueuePtr = $util.newBuffer(object.lastInferenceQueuePtr);
+                }
+            if (message.lastInferenceQueuePtr != null && message.hasOwnProperty("lastInferenceQueuePtr"))
+                object.lastInferenceQueuePtr = options.bytes === String ? $util.base64.encode(message.lastInferenceQueuePtr, 0, message.lastInferenceQueuePtr.length) : options.bytes === Array ? Array.prototype.slice.call(message.lastInferenceQueuePtr) : message.lastInferenceQueuePtr;
+            if (message.boards && message.boards.length) {
+                object.boards = [];
+                for (let j = 0; j < message.boards.length; ++j)
+                    object.boards[j] = $root.vesc_trampa.InferenceState.BoardState.toObject(message.boards[j], options);
+            }
+            return object;
+        };
+
+        /**
+         * Converts this InferenceState to JSON.
+         * @function toJSON
+         * @memberof vesc_trampa.InferenceState
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        InferenceState.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for InferenceState
+         * @function getTypeUrl
+         * @memberof vesc_trampa.InferenceState
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        InferenceState.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+            if (typeUrlPrefix === undefined) {
+                typeUrlPrefix = "type.googleapis.com";
+            }
+            return typeUrlPrefix + "/vesc_trampa.InferenceState";
+        };
+
+        InferenceState.BoardState = (function() {
+
+            /**
+             * Properties of a BoardState.
+             * @memberof vesc_trampa.InferenceState
+             * @interface IBoardState
+             * @property {vesc_trampa.IVescTrampaBoard|null} [board] BoardState board
+             * @property {vesc_trampa.VescTrampaMotorMode|null} [motorMode] BoardState motorMode
+             * @property {Long|null} [monotonicStampNs] BoardState monotonicStampNs
+             * @property {Long|null} [localStampNs] BoardState localStampNs
+             * @property {Long|null} [appStartId] BoardState appStartId
+             * @property {Uint8Array|null} [valuesPayload] BoardState valuesPayload
+             * @property {Uint8Array|null} [valuesRxPointer] BoardState valuesRxPointer
+             * @property {Long|null} [valuesMonotonicStampNs] BoardState valuesMonotonicStampNs
+             * @property {Long|null} [valuesLocalStampNs] BoardState valuesLocalStampNs
+             * @property {Long|null} [valuesAppStartId] BoardState valuesAppStartId
+             */
+
+            /**
+             * Constructs a new BoardState.
+             * @memberof vesc_trampa.InferenceState
+             * @classdesc Represents a BoardState.
+             * @implements IBoardState
+             * @constructor
+             * @param {vesc_trampa.InferenceState.IBoardState=} [properties] Properties to set
+             */
+            function BoardState(properties) {
+                if (properties)
+                    for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                        if (properties[keys[i]] != null && keys[i] !== "__proto__")
+                            this[keys[i]] = properties[keys[i]];
+            }
+
+            /**
+             * BoardState board.
+             * @member {vesc_trampa.IVescTrampaBoard|null|undefined} board
+             * @memberof vesc_trampa.InferenceState.BoardState
+             * @instance
+             */
+            BoardState.prototype.board = null;
+
+            /**
+             * BoardState motorMode.
+             * @member {vesc_trampa.VescTrampaMotorMode} motorMode
+             * @memberof vesc_trampa.InferenceState.BoardState
+             * @instance
+             */
+            BoardState.prototype.motorMode = 0;
+
+            /**
+             * BoardState monotonicStampNs.
+             * @member {Long} monotonicStampNs
+             * @memberof vesc_trampa.InferenceState.BoardState
+             * @instance
+             */
+            BoardState.prototype.monotonicStampNs = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+
+            /**
+             * BoardState localStampNs.
+             * @member {Long} localStampNs
+             * @memberof vesc_trampa.InferenceState.BoardState
+             * @instance
+             */
+            BoardState.prototype.localStampNs = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+
+            /**
+             * BoardState appStartId.
+             * @member {Long} appStartId
+             * @memberof vesc_trampa.InferenceState.BoardState
+             * @instance
+             */
+            BoardState.prototype.appStartId = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+
+            /**
+             * BoardState valuesPayload.
+             * @member {Uint8Array} valuesPayload
+             * @memberof vesc_trampa.InferenceState.BoardState
+             * @instance
+             */
+            BoardState.prototype.valuesPayload = $util.newBuffer([]);
+
+            /**
+             * BoardState valuesRxPointer.
+             * @member {Uint8Array} valuesRxPointer
+             * @memberof vesc_trampa.InferenceState.BoardState
+             * @instance
+             */
+            BoardState.prototype.valuesRxPointer = $util.newBuffer([]);
+
+            /**
+             * BoardState valuesMonotonicStampNs.
+             * @member {Long} valuesMonotonicStampNs
+             * @memberof vesc_trampa.InferenceState.BoardState
+             * @instance
+             */
+            BoardState.prototype.valuesMonotonicStampNs = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+
+            /**
+             * BoardState valuesLocalStampNs.
+             * @member {Long} valuesLocalStampNs
+             * @memberof vesc_trampa.InferenceState.BoardState
+             * @instance
+             */
+            BoardState.prototype.valuesLocalStampNs = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+
+            /**
+             * BoardState valuesAppStartId.
+             * @member {Long} valuesAppStartId
+             * @memberof vesc_trampa.InferenceState.BoardState
+             * @instance
+             */
+            BoardState.prototype.valuesAppStartId = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+
+            /**
+             * Creates a new BoardState instance using the specified properties.
+             * @function create
+             * @memberof vesc_trampa.InferenceState.BoardState
+             * @static
+             * @param {vesc_trampa.InferenceState.IBoardState=} [properties] Properties to set
+             * @returns {vesc_trampa.InferenceState.BoardState} BoardState instance
+             */
+            BoardState.create = function create(properties) {
+                return new BoardState(properties);
+            };
+
+            /**
+             * Encodes the specified BoardState message. Does not implicitly {@link vesc_trampa.InferenceState.BoardState.verify|verify} messages.
+             * @function encode
+             * @memberof vesc_trampa.InferenceState.BoardState
+             * @static
+             * @param {vesc_trampa.InferenceState.IBoardState} message BoardState message or plain object to encode
+             * @param {$protobuf.Writer} [writer] Writer to encode to
+             * @returns {$protobuf.Writer} Writer
+             */
+            BoardState.encode = function encode(message, writer) {
+                if (!writer)
+                    writer = $Writer.create();
+                if (message.board != null && Object.hasOwnProperty.call(message, "board"))
+                    $root.vesc_trampa.VescTrampaBoard.encode(message.board, writer.uint32(/* id 1, wireType 2 =*/10).fork()).ldelim();
+                if (message.motorMode != null && Object.hasOwnProperty.call(message, "motorMode"))
+                    writer.uint32(/* id 2, wireType 0 =*/16).int32(message.motorMode);
+                if (message.monotonicStampNs != null && Object.hasOwnProperty.call(message, "monotonicStampNs"))
+                    writer.uint32(/* id 3, wireType 0 =*/24).uint64(message.monotonicStampNs);
+                if (message.localStampNs != null && Object.hasOwnProperty.call(message, "localStampNs"))
+                    writer.uint32(/* id 4, wireType 0 =*/32).uint64(message.localStampNs);
+                if (message.appStartId != null && Object.hasOwnProperty.call(message, "appStartId"))
+                    writer.uint32(/* id 5, wireType 0 =*/40).uint64(message.appStartId);
+                if (message.valuesPayload != null && Object.hasOwnProperty.call(message, "valuesPayload"))
+                    writer.uint32(/* id 10, wireType 2 =*/82).bytes(message.valuesPayload);
+                if (message.valuesRxPointer != null && Object.hasOwnProperty.call(message, "valuesRxPointer"))
+                    writer.uint32(/* id 11, wireType 2 =*/90).bytes(message.valuesRxPointer);
+                if (message.valuesMonotonicStampNs != null && Object.hasOwnProperty.call(message, "valuesMonotonicStampNs"))
+                    writer.uint32(/* id 12, wireType 0 =*/96).uint64(message.valuesMonotonicStampNs);
+                if (message.valuesLocalStampNs != null && Object.hasOwnProperty.call(message, "valuesLocalStampNs"))
+                    writer.uint32(/* id 13, wireType 0 =*/104).uint64(message.valuesLocalStampNs);
+                if (message.valuesAppStartId != null && Object.hasOwnProperty.call(message, "valuesAppStartId"))
+                    writer.uint32(/* id 14, wireType 0 =*/112).uint64(message.valuesAppStartId);
+                return writer;
+            };
+
+            /**
+             * Encodes the specified BoardState message, length delimited. Does not implicitly {@link vesc_trampa.InferenceState.BoardState.verify|verify} messages.
+             * @function encodeDelimited
+             * @memberof vesc_trampa.InferenceState.BoardState
+             * @static
+             * @param {vesc_trampa.InferenceState.IBoardState} message BoardState message or plain object to encode
+             * @param {$protobuf.Writer} [writer] Writer to encode to
+             * @returns {$protobuf.Writer} Writer
+             */
+            BoardState.encodeDelimited = function encodeDelimited(message, writer) {
+                return this.encode(message, writer).ldelim();
+            };
+
+            /**
+             * Decodes a BoardState message from the specified reader or buffer.
+             * @function decode
+             * @memberof vesc_trampa.InferenceState.BoardState
+             * @static
+             * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+             * @param {number} [length] Message length if known beforehand
+             * @returns {vesc_trampa.InferenceState.BoardState} BoardState
+             * @throws {Error} If the payload is not a reader or valid buffer
+             * @throws {$protobuf.util.ProtocolError} If required fields are missing
+             */
+            BoardState.decode = function decode(reader, length, error, long) {
+                if (!(reader instanceof $Reader))
+                    reader = $Reader.create(reader);
+                if (long === undefined)
+                    long = 0;
+                if (long > $Reader.recursionLimit)
+                    throw Error("maximum nesting depth exceeded");
+                let end = length === undefined ? reader.len : reader.pos + length, message = new $root.vesc_trampa.InferenceState.BoardState();
+                while (reader.pos < end) {
+                    let tag = reader.uint32();
+                    if (tag === error)
+                        break;
+                    switch (tag >>> 3) {
+                    case 1: {
+                            message.board = $root.vesc_trampa.VescTrampaBoard.decode(reader, reader.uint32(), undefined, long + 1);
+                            break;
+                        }
+                    case 2: {
+                            message.motorMode = reader.int32();
+                            break;
+                        }
+                    case 3: {
+                            message.monotonicStampNs = reader.uint64();
+                            break;
+                        }
+                    case 4: {
+                            message.localStampNs = reader.uint64();
+                            break;
+                        }
+                    case 5: {
+                            message.appStartId = reader.uint64();
+                            break;
+                        }
+                    case 10: {
+                            message.valuesPayload = reader.bytes();
+                            break;
+                        }
+                    case 11: {
+                            message.valuesRxPointer = reader.bytes();
+                            break;
+                        }
+                    case 12: {
+                            message.valuesMonotonicStampNs = reader.uint64();
+                            break;
+                        }
+                    case 13: {
+                            message.valuesLocalStampNs = reader.uint64();
+                            break;
+                        }
+                    case 14: {
+                            message.valuesAppStartId = reader.uint64();
+                            break;
+                        }
+                    default:
+                        reader.skipType(tag & 7, long);
+                        break;
+                    }
+                }
+                return message;
+            };
+
+            /**
+             * Decodes a BoardState message from the specified reader or buffer, length delimited.
+             * @function decodeDelimited
+             * @memberof vesc_trampa.InferenceState.BoardState
+             * @static
+             * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+             * @returns {vesc_trampa.InferenceState.BoardState} BoardState
+             * @throws {Error} If the payload is not a reader or valid buffer
+             * @throws {$protobuf.util.ProtocolError} If required fields are missing
+             */
+            BoardState.decodeDelimited = function decodeDelimited(reader) {
+                if (!(reader instanceof $Reader))
+                    reader = new $Reader(reader);
+                return this.decode(reader, reader.uint32());
+            };
+
+            /**
+             * Verifies a BoardState message.
+             * @function verify
+             * @memberof vesc_trampa.InferenceState.BoardState
+             * @static
+             * @param {Object.<string,*>} message Plain object to verify
+             * @returns {string|null} `null` if valid, otherwise the reason why it is not
+             */
+            BoardState.verify = function verify(message, long) {
+                if (typeof message !== "object" || message === null)
+                    return "object expected";
+                if (long === undefined)
+                    long = 0;
+                if (long > $util.recursionLimit)
+                    return "maximum nesting depth exceeded";
+                if (message.board != null && message.hasOwnProperty("board")) {
+                    let error = $root.vesc_trampa.VescTrampaBoard.verify(message.board, long + 1);
+                    if (error)
+                        return "board." + error;
+                }
+                if (message.motorMode != null && message.hasOwnProperty("motorMode"))
+                    switch (message.motorMode) {
+                    default:
+                        return "motorMode: enum value expected";
+                    case 0:
+                    case 1:
+                        break;
+                    }
+                if (message.monotonicStampNs != null && message.hasOwnProperty("monotonicStampNs"))
+                    if (!$util.isInteger(message.monotonicStampNs) && !(message.monotonicStampNs && $util.isInteger(message.monotonicStampNs.low) && $util.isInteger(message.monotonicStampNs.high)))
+                        return "monotonicStampNs: integer|Long expected";
+                if (message.localStampNs != null && message.hasOwnProperty("localStampNs"))
+                    if (!$util.isInteger(message.localStampNs) && !(message.localStampNs && $util.isInteger(message.localStampNs.low) && $util.isInteger(message.localStampNs.high)))
+                        return "localStampNs: integer|Long expected";
+                if (message.appStartId != null && message.hasOwnProperty("appStartId"))
+                    if (!$util.isInteger(message.appStartId) && !(message.appStartId && $util.isInteger(message.appStartId.low) && $util.isInteger(message.appStartId.high)))
+                        return "appStartId: integer|Long expected";
+                if (message.valuesPayload != null && message.hasOwnProperty("valuesPayload"))
+                    if (!(message.valuesPayload && typeof message.valuesPayload.length === "number" || $util.isString(message.valuesPayload)))
+                        return "valuesPayload: buffer expected";
+                if (message.valuesRxPointer != null && message.hasOwnProperty("valuesRxPointer"))
+                    if (!(message.valuesRxPointer && typeof message.valuesRxPointer.length === "number" || $util.isString(message.valuesRxPointer)))
+                        return "valuesRxPointer: buffer expected";
+                if (message.valuesMonotonicStampNs != null && message.hasOwnProperty("valuesMonotonicStampNs"))
+                    if (!$util.isInteger(message.valuesMonotonicStampNs) && !(message.valuesMonotonicStampNs && $util.isInteger(message.valuesMonotonicStampNs.low) && $util.isInteger(message.valuesMonotonicStampNs.high)))
+                        return "valuesMonotonicStampNs: integer|Long expected";
+                if (message.valuesLocalStampNs != null && message.hasOwnProperty("valuesLocalStampNs"))
+                    if (!$util.isInteger(message.valuesLocalStampNs) && !(message.valuesLocalStampNs && $util.isInteger(message.valuesLocalStampNs.low) && $util.isInteger(message.valuesLocalStampNs.high)))
+                        return "valuesLocalStampNs: integer|Long expected";
+                if (message.valuesAppStartId != null && message.hasOwnProperty("valuesAppStartId"))
+                    if (!$util.isInteger(message.valuesAppStartId) && !(message.valuesAppStartId && $util.isInteger(message.valuesAppStartId.low) && $util.isInteger(message.valuesAppStartId.high)))
+                        return "valuesAppStartId: integer|Long expected";
+                return null;
+            };
+
+            /**
+             * Creates a BoardState message from a plain object. Also converts values to their respective internal types.
+             * @function fromObject
+             * @memberof vesc_trampa.InferenceState.BoardState
+             * @static
+             * @param {Object.<string,*>} object Plain object
+             * @returns {vesc_trampa.InferenceState.BoardState} BoardState
+             */
+            BoardState.fromObject = function fromObject(object, long) {
+                if (object instanceof $root.vesc_trampa.InferenceState.BoardState)
+                    return object;
+                if (long === undefined)
+                    long = 0;
+                if (long > $util.recursionLimit)
+                    throw Error("maximum nesting depth exceeded");
+                let message = new $root.vesc_trampa.InferenceState.BoardState();
+                if (object.board != null) {
+                    if (typeof object.board !== "object")
+                        throw TypeError(".vesc_trampa.InferenceState.BoardState.board: object expected");
+                    message.board = $root.vesc_trampa.VescTrampaBoard.fromObject(object.board, long + 1);
+                }
+                switch (object.motorMode) {
+                default:
+                    if (typeof object.motorMode === "number") {
+                        message.motorMode = object.motorMode;
+                        break;
+                    }
+                    break;
+                case "VESC_TRAMPA_MOTOR_MODE_UNSPECIFIED":
+                case 0:
+                    message.motorMode = 0;
+                    break;
+                case "VESC_TRAMPA_MOTOR_MODE_HOLD":
+                case 1:
+                    message.motorMode = 1;
+                    break;
+                }
+                if (object.monotonicStampNs != null)
+                    if ($util.Long)
+                        (message.monotonicStampNs = $util.Long.fromValue(object.monotonicStampNs)).unsigned = true;
+                    else if (typeof object.monotonicStampNs === "string")
+                        message.monotonicStampNs = parseInt(object.monotonicStampNs, 10);
+                    else if (typeof object.monotonicStampNs === "number")
+                        message.monotonicStampNs = object.monotonicStampNs;
+                    else if (typeof object.monotonicStampNs === "object")
+                        message.monotonicStampNs = new $util.LongBits(object.monotonicStampNs.low >>> 0, object.monotonicStampNs.high >>> 0).toNumber(true);
+                if (object.localStampNs != null)
+                    if ($util.Long)
+                        (message.localStampNs = $util.Long.fromValue(object.localStampNs)).unsigned = true;
+                    else if (typeof object.localStampNs === "string")
+                        message.localStampNs = parseInt(object.localStampNs, 10);
+                    else if (typeof object.localStampNs === "number")
+                        message.localStampNs = object.localStampNs;
+                    else if (typeof object.localStampNs === "object")
+                        message.localStampNs = new $util.LongBits(object.localStampNs.low >>> 0, object.localStampNs.high >>> 0).toNumber(true);
+                if (object.appStartId != null)
+                    if ($util.Long)
+                        (message.appStartId = $util.Long.fromValue(object.appStartId)).unsigned = true;
+                    else if (typeof object.appStartId === "string")
+                        message.appStartId = parseInt(object.appStartId, 10);
+                    else if (typeof object.appStartId === "number")
+                        message.appStartId = object.appStartId;
+                    else if (typeof object.appStartId === "object")
+                        message.appStartId = new $util.LongBits(object.appStartId.low >>> 0, object.appStartId.high >>> 0).toNumber(true);
+                if (object.valuesPayload != null)
+                    if (typeof object.valuesPayload === "string")
+                        $util.base64.decode(object.valuesPayload, message.valuesPayload = $util.newBuffer($util.base64.length(object.valuesPayload)), 0);
+                    else if (object.valuesPayload.length >= 0)
+                        message.valuesPayload = object.valuesPayload;
+                if (object.valuesRxPointer != null)
+                    if (typeof object.valuesRxPointer === "string")
+                        $util.base64.decode(object.valuesRxPointer, message.valuesRxPointer = $util.newBuffer($util.base64.length(object.valuesRxPointer)), 0);
+                    else if (object.valuesRxPointer.length >= 0)
+                        message.valuesRxPointer = object.valuesRxPointer;
+                if (object.valuesMonotonicStampNs != null)
+                    if ($util.Long)
+                        (message.valuesMonotonicStampNs = $util.Long.fromValue(object.valuesMonotonicStampNs)).unsigned = true;
+                    else if (typeof object.valuesMonotonicStampNs === "string")
+                        message.valuesMonotonicStampNs = parseInt(object.valuesMonotonicStampNs, 10);
+                    else if (typeof object.valuesMonotonicStampNs === "number")
+                        message.valuesMonotonicStampNs = object.valuesMonotonicStampNs;
+                    else if (typeof object.valuesMonotonicStampNs === "object")
+                        message.valuesMonotonicStampNs = new $util.LongBits(object.valuesMonotonicStampNs.low >>> 0, object.valuesMonotonicStampNs.high >>> 0).toNumber(true);
+                if (object.valuesLocalStampNs != null)
+                    if ($util.Long)
+                        (message.valuesLocalStampNs = $util.Long.fromValue(object.valuesLocalStampNs)).unsigned = true;
+                    else if (typeof object.valuesLocalStampNs === "string")
+                        message.valuesLocalStampNs = parseInt(object.valuesLocalStampNs, 10);
+                    else if (typeof object.valuesLocalStampNs === "number")
+                        message.valuesLocalStampNs = object.valuesLocalStampNs;
+                    else if (typeof object.valuesLocalStampNs === "object")
+                        message.valuesLocalStampNs = new $util.LongBits(object.valuesLocalStampNs.low >>> 0, object.valuesLocalStampNs.high >>> 0).toNumber(true);
+                if (object.valuesAppStartId != null)
+                    if ($util.Long)
+                        (message.valuesAppStartId = $util.Long.fromValue(object.valuesAppStartId)).unsigned = true;
+                    else if (typeof object.valuesAppStartId === "string")
+                        message.valuesAppStartId = parseInt(object.valuesAppStartId, 10);
+                    else if (typeof object.valuesAppStartId === "number")
+                        message.valuesAppStartId = object.valuesAppStartId;
+                    else if (typeof object.valuesAppStartId === "object")
+                        message.valuesAppStartId = new $util.LongBits(object.valuesAppStartId.low >>> 0, object.valuesAppStartId.high >>> 0).toNumber(true);
+                return message;
+            };
+
+            /**
+             * Creates a plain object from a BoardState message. Also converts values to other types if specified.
+             * @function toObject
+             * @memberof vesc_trampa.InferenceState.BoardState
+             * @static
+             * @param {vesc_trampa.InferenceState.BoardState} message BoardState
+             * @param {$protobuf.IConversionOptions} [options] Conversion options
+             * @returns {Object.<string,*>} Plain object
+             */
+            BoardState.toObject = function toObject(message, options) {
+                if (!options)
+                    options = {};
+                let object = {};
+                if (options.defaults) {
+                    object.board = null;
+                    object.motorMode = options.enums === String ? "VESC_TRAMPA_MOTOR_MODE_UNSPECIFIED" : 0;
+                    if ($util.Long) {
+                        let long = new $util.Long(0, 0, true);
+                        object.monotonicStampNs = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+                    } else
+                        object.monotonicStampNs = options.longs === String ? "0" : 0;
+                    if ($util.Long) {
+                        let long = new $util.Long(0, 0, true);
+                        object.localStampNs = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+                    } else
+                        object.localStampNs = options.longs === String ? "0" : 0;
+                    if ($util.Long) {
+                        let long = new $util.Long(0, 0, true);
+                        object.appStartId = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+                    } else
+                        object.appStartId = options.longs === String ? "0" : 0;
+                    if (options.bytes === String)
+                        object.valuesPayload = "";
+                    else {
+                        object.valuesPayload = [];
+                        if (options.bytes !== Array)
+                            object.valuesPayload = $util.newBuffer(object.valuesPayload);
+                    }
+                    if (options.bytes === String)
+                        object.valuesRxPointer = "";
+                    else {
+                        object.valuesRxPointer = [];
+                        if (options.bytes !== Array)
+                            object.valuesRxPointer = $util.newBuffer(object.valuesRxPointer);
+                    }
+                    if ($util.Long) {
+                        let long = new $util.Long(0, 0, true);
+                        object.valuesMonotonicStampNs = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+                    } else
+                        object.valuesMonotonicStampNs = options.longs === String ? "0" : 0;
+                    if ($util.Long) {
+                        let long = new $util.Long(0, 0, true);
+                        object.valuesLocalStampNs = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+                    } else
+                        object.valuesLocalStampNs = options.longs === String ? "0" : 0;
+                    if ($util.Long) {
+                        let long = new $util.Long(0, 0, true);
+                        object.valuesAppStartId = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+                    } else
+                        object.valuesAppStartId = options.longs === String ? "0" : 0;
+                }
+                if (message.board != null && message.hasOwnProperty("board"))
+                    object.board = $root.vesc_trampa.VescTrampaBoard.toObject(message.board, options);
+                if (message.motorMode != null && message.hasOwnProperty("motorMode"))
+                    object.motorMode = options.enums === String ? $root.vesc_trampa.VescTrampaMotorMode[message.motorMode] === undefined ? message.motorMode : $root.vesc_trampa.VescTrampaMotorMode[message.motorMode] : message.motorMode;
+                if (message.monotonicStampNs != null && message.hasOwnProperty("monotonicStampNs"))
+                    if (typeof message.monotonicStampNs === "number")
+                        object.monotonicStampNs = options.longs === String ? String(message.monotonicStampNs) : message.monotonicStampNs;
+                    else
+                        object.monotonicStampNs = options.longs === String ? $util.Long.prototype.toString.call(message.monotonicStampNs) : options.longs === Number ? new $util.LongBits(message.monotonicStampNs.low >>> 0, message.monotonicStampNs.high >>> 0).toNumber(true) : message.monotonicStampNs;
+                if (message.localStampNs != null && message.hasOwnProperty("localStampNs"))
+                    if (typeof message.localStampNs === "number")
+                        object.localStampNs = options.longs === String ? String(message.localStampNs) : message.localStampNs;
+                    else
+                        object.localStampNs = options.longs === String ? $util.Long.prototype.toString.call(message.localStampNs) : options.longs === Number ? new $util.LongBits(message.localStampNs.low >>> 0, message.localStampNs.high >>> 0).toNumber(true) : message.localStampNs;
+                if (message.appStartId != null && message.hasOwnProperty("appStartId"))
+                    if (typeof message.appStartId === "number")
+                        object.appStartId = options.longs === String ? String(message.appStartId) : message.appStartId;
+                    else
+                        object.appStartId = options.longs === String ? $util.Long.prototype.toString.call(message.appStartId) : options.longs === Number ? new $util.LongBits(message.appStartId.low >>> 0, message.appStartId.high >>> 0).toNumber(true) : message.appStartId;
+                if (message.valuesPayload != null && message.hasOwnProperty("valuesPayload"))
+                    object.valuesPayload = options.bytes === String ? $util.base64.encode(message.valuesPayload, 0, message.valuesPayload.length) : options.bytes === Array ? Array.prototype.slice.call(message.valuesPayload) : message.valuesPayload;
+                if (message.valuesRxPointer != null && message.hasOwnProperty("valuesRxPointer"))
+                    object.valuesRxPointer = options.bytes === String ? $util.base64.encode(message.valuesRxPointer, 0, message.valuesRxPointer.length) : options.bytes === Array ? Array.prototype.slice.call(message.valuesRxPointer) : message.valuesRxPointer;
+                if (message.valuesMonotonicStampNs != null && message.hasOwnProperty("valuesMonotonicStampNs"))
+                    if (typeof message.valuesMonotonicStampNs === "number")
+                        object.valuesMonotonicStampNs = options.longs === String ? String(message.valuesMonotonicStampNs) : message.valuesMonotonicStampNs;
+                    else
+                        object.valuesMonotonicStampNs = options.longs === String ? $util.Long.prototype.toString.call(message.valuesMonotonicStampNs) : options.longs === Number ? new $util.LongBits(message.valuesMonotonicStampNs.low >>> 0, message.valuesMonotonicStampNs.high >>> 0).toNumber(true) : message.valuesMonotonicStampNs;
+                if (message.valuesLocalStampNs != null && message.hasOwnProperty("valuesLocalStampNs"))
+                    if (typeof message.valuesLocalStampNs === "number")
+                        object.valuesLocalStampNs = options.longs === String ? String(message.valuesLocalStampNs) : message.valuesLocalStampNs;
+                    else
+                        object.valuesLocalStampNs = options.longs === String ? $util.Long.prototype.toString.call(message.valuesLocalStampNs) : options.longs === Number ? new $util.LongBits(message.valuesLocalStampNs.low >>> 0, message.valuesLocalStampNs.high >>> 0).toNumber(true) : message.valuesLocalStampNs;
+                if (message.valuesAppStartId != null && message.hasOwnProperty("valuesAppStartId"))
+                    if (typeof message.valuesAppStartId === "number")
+                        object.valuesAppStartId = options.longs === String ? String(message.valuesAppStartId) : message.valuesAppStartId;
+                    else
+                        object.valuesAppStartId = options.longs === String ? $util.Long.prototype.toString.call(message.valuesAppStartId) : options.longs === Number ? new $util.LongBits(message.valuesAppStartId.low >>> 0, message.valuesAppStartId.high >>> 0).toNumber(true) : message.valuesAppStartId;
+                return object;
+            };
+
+            /**
+             * Converts this BoardState to JSON.
+             * @function toJSON
+             * @memberof vesc_trampa.InferenceState.BoardState
+             * @instance
+             * @returns {Object.<string,*>} JSON object
+             */
+            BoardState.prototype.toJSON = function toJSON() {
+                return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+            };
+
+            /**
+             * Gets the default type url for BoardState
+             * @function getTypeUrl
+             * @memberof vesc_trampa.InferenceState.BoardState
+             * @static
+             * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+             * @returns {string} The default type url
+             */
+            BoardState.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+                if (typeUrlPrefix === undefined) {
+                    typeUrlPrefix = "type.googleapis.com";
+                }
+                return typeUrlPrefix + "/vesc_trampa.InferenceState.BoardState";
+            };
+
+            return BoardState;
+        })();
+
+        return InferenceState;
+    })();
+
+    vesc_trampa.VescTrampaBoard = (function() {
+
+        /**
+         * Properties of a VescTrampaBoard.
+         * @memberof vesc_trampa
+         * @interface IVescTrampaBoard
+         * @property {string|null} [portName] VescTrampaBoard portName
+         * @property {number|null} [vid] VescTrampaBoard vid
+         * @property {number|null} [pid] VescTrampaBoard pid
+         * @property {string|null} [serialNumber] VescTrampaBoard serialNumber
+         * @property {string|null} [manufacturer] VescTrampaBoard manufacturer
+         * @property {string|null} [product] VescTrampaBoard product
+         * @property {number|null} [portBaudRate] VescTrampaBoard portBaudRate
+         * @property {number|null} [firmwareMajor] VescTrampaBoard firmwareMajor
+         * @property {number|null} [firmwareMinor] VescTrampaBoard firmwareMinor
+         * @property {string|null} [hardwareName] VescTrampaBoard hardwareName
+         * @property {Uint8Array|null} [uuid] VescTrampaBoard uuid
+         * @property {boolean|null} [pairingDone] VescTrampaBoard pairingDone
+         * @property {number|null} [testVersionNumber] VescTrampaBoard testVersionNumber
+         * @property {number|null} [hardwareType] VescTrampaBoard hardwareType
+         * @property {number|null} [customConfigCount] VescTrampaBoard customConfigCount
+         * @property {boolean|null} [hasPhaseFilters] VescTrampaBoard hasPhaseFilters
+         * @property {number|null} [qmlHw] VescTrampaBoard qmlHw
+         * @property {number|null} [qmlApp] VescTrampaBoard qmlApp
+         * @property {number|null} [nrfFlags] VescTrampaBoard nrfFlags
+         * @property {string|null} [firmwareName] VescTrampaBoard firmwareName
+         * @property {number|null} [hardwareConfigCrc] VescTrampaBoard hardwareConfigCrc
+         * @property {Uint8Array|null} [firmwareInfoExtraBytes] VescTrampaBoard firmwareInfoExtraBytes
+         * @property {Uint8Array|null} [firmwareInfoRawPayload] VescTrampaBoard firmwareInfoRawPayload
+         */
+
+        /**
+         * Constructs a new VescTrampaBoard.
+         * @memberof vesc_trampa
+         * @classdesc Represents a VescTrampaBoard.
+         * @implements IVescTrampaBoard
+         * @constructor
+         * @param {vesc_trampa.IVescTrampaBoard=} [properties] Properties to set
+         */
+        function VescTrampaBoard(properties) {
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * VescTrampaBoard portName.
+         * @member {string} portName
+         * @memberof vesc_trampa.VescTrampaBoard
+         * @instance
+         */
+        VescTrampaBoard.prototype.portName = "";
+
+        /**
+         * VescTrampaBoard vid.
+         * @member {number} vid
+         * @memberof vesc_trampa.VescTrampaBoard
+         * @instance
+         */
+        VescTrampaBoard.prototype.vid = 0;
+
+        /**
+         * VescTrampaBoard pid.
+         * @member {number} pid
+         * @memberof vesc_trampa.VescTrampaBoard
+         * @instance
+         */
+        VescTrampaBoard.prototype.pid = 0;
+
+        /**
+         * VescTrampaBoard serialNumber.
+         * @member {string} serialNumber
+         * @memberof vesc_trampa.VescTrampaBoard
+         * @instance
+         */
+        VescTrampaBoard.prototype.serialNumber = "";
+
+        /**
+         * VescTrampaBoard manufacturer.
+         * @member {string} manufacturer
+         * @memberof vesc_trampa.VescTrampaBoard
+         * @instance
+         */
+        VescTrampaBoard.prototype.manufacturer = "";
+
+        /**
+         * VescTrampaBoard product.
+         * @member {string} product
+         * @memberof vesc_trampa.VescTrampaBoard
+         * @instance
+         */
+        VescTrampaBoard.prototype.product = "";
+
+        /**
+         * VescTrampaBoard portBaudRate.
+         * @member {number} portBaudRate
+         * @memberof vesc_trampa.VescTrampaBoard
+         * @instance
+         */
+        VescTrampaBoard.prototype.portBaudRate = 0;
+
+        /**
+         * VescTrampaBoard firmwareMajor.
+         * @member {number} firmwareMajor
+         * @memberof vesc_trampa.VescTrampaBoard
+         * @instance
+         */
+        VescTrampaBoard.prototype.firmwareMajor = 0;
+
+        /**
+         * VescTrampaBoard firmwareMinor.
+         * @member {number} firmwareMinor
+         * @memberof vesc_trampa.VescTrampaBoard
+         * @instance
+         */
+        VescTrampaBoard.prototype.firmwareMinor = 0;
+
+        /**
+         * VescTrampaBoard hardwareName.
+         * @member {string} hardwareName
+         * @memberof vesc_trampa.VescTrampaBoard
+         * @instance
+         */
+        VescTrampaBoard.prototype.hardwareName = "";
+
+        /**
+         * VescTrampaBoard uuid.
+         * @member {Uint8Array} uuid
+         * @memberof vesc_trampa.VescTrampaBoard
+         * @instance
+         */
+        VescTrampaBoard.prototype.uuid = $util.newBuffer([]);
+
+        /**
+         * VescTrampaBoard pairingDone.
+         * @member {boolean} pairingDone
+         * @memberof vesc_trampa.VescTrampaBoard
+         * @instance
+         */
+        VescTrampaBoard.prototype.pairingDone = false;
+
+        /**
+         * VescTrampaBoard testVersionNumber.
+         * @member {number} testVersionNumber
+         * @memberof vesc_trampa.VescTrampaBoard
+         * @instance
+         */
+        VescTrampaBoard.prototype.testVersionNumber = 0;
+
+        /**
+         * VescTrampaBoard hardwareType.
+         * @member {number} hardwareType
+         * @memberof vesc_trampa.VescTrampaBoard
+         * @instance
+         */
+        VescTrampaBoard.prototype.hardwareType = 0;
+
+        /**
+         * VescTrampaBoard customConfigCount.
+         * @member {number} customConfigCount
+         * @memberof vesc_trampa.VescTrampaBoard
+         * @instance
+         */
+        VescTrampaBoard.prototype.customConfigCount = 0;
+
+        /**
+         * VescTrampaBoard hasPhaseFilters.
+         * @member {boolean} hasPhaseFilters
+         * @memberof vesc_trampa.VescTrampaBoard
+         * @instance
+         */
+        VescTrampaBoard.prototype.hasPhaseFilters = false;
+
+        /**
+         * VescTrampaBoard qmlHw.
+         * @member {number} qmlHw
+         * @memberof vesc_trampa.VescTrampaBoard
+         * @instance
+         */
+        VescTrampaBoard.prototype.qmlHw = 0;
+
+        /**
+         * VescTrampaBoard qmlApp.
+         * @member {number} qmlApp
+         * @memberof vesc_trampa.VescTrampaBoard
+         * @instance
+         */
+        VescTrampaBoard.prototype.qmlApp = 0;
+
+        /**
+         * VescTrampaBoard nrfFlags.
+         * @member {number} nrfFlags
+         * @memberof vesc_trampa.VescTrampaBoard
+         * @instance
+         */
+        VescTrampaBoard.prototype.nrfFlags = 0;
+
+        /**
+         * VescTrampaBoard firmwareName.
+         * @member {string} firmwareName
+         * @memberof vesc_trampa.VescTrampaBoard
+         * @instance
+         */
+        VescTrampaBoard.prototype.firmwareName = "";
+
+        /**
+         * VescTrampaBoard hardwareConfigCrc.
+         * @member {number} hardwareConfigCrc
+         * @memberof vesc_trampa.VescTrampaBoard
+         * @instance
+         */
+        VescTrampaBoard.prototype.hardwareConfigCrc = 0;
+
+        /**
+         * VescTrampaBoard firmwareInfoExtraBytes.
+         * @member {Uint8Array} firmwareInfoExtraBytes
+         * @memberof vesc_trampa.VescTrampaBoard
+         * @instance
+         */
+        VescTrampaBoard.prototype.firmwareInfoExtraBytes = $util.newBuffer([]);
+
+        /**
+         * VescTrampaBoard firmwareInfoRawPayload.
+         * @member {Uint8Array} firmwareInfoRawPayload
+         * @memberof vesc_trampa.VescTrampaBoard
+         * @instance
+         */
+        VescTrampaBoard.prototype.firmwareInfoRawPayload = $util.newBuffer([]);
+
+        /**
+         * Creates a new VescTrampaBoard instance using the specified properties.
+         * @function create
+         * @memberof vesc_trampa.VescTrampaBoard
+         * @static
+         * @param {vesc_trampa.IVescTrampaBoard=} [properties] Properties to set
+         * @returns {vesc_trampa.VescTrampaBoard} VescTrampaBoard instance
+         */
+        VescTrampaBoard.create = function create(properties) {
+            return new VescTrampaBoard(properties);
+        };
+
+        /**
+         * Encodes the specified VescTrampaBoard message. Does not implicitly {@link vesc_trampa.VescTrampaBoard.verify|verify} messages.
+         * @function encode
+         * @memberof vesc_trampa.VescTrampaBoard
+         * @static
+         * @param {vesc_trampa.IVescTrampaBoard} message VescTrampaBoard message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        VescTrampaBoard.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.portName != null && Object.hasOwnProperty.call(message, "portName"))
+                writer.uint32(/* id 1, wireType 2 =*/10).string(message.portName);
+            if (message.vid != null && Object.hasOwnProperty.call(message, "vid"))
+                writer.uint32(/* id 2, wireType 0 =*/16).uint32(message.vid);
+            if (message.pid != null && Object.hasOwnProperty.call(message, "pid"))
+                writer.uint32(/* id 3, wireType 0 =*/24).uint32(message.pid);
+            if (message.serialNumber != null && Object.hasOwnProperty.call(message, "serialNumber"))
+                writer.uint32(/* id 4, wireType 2 =*/34).string(message.serialNumber);
+            if (message.manufacturer != null && Object.hasOwnProperty.call(message, "manufacturer"))
+                writer.uint32(/* id 5, wireType 2 =*/42).string(message.manufacturer);
+            if (message.product != null && Object.hasOwnProperty.call(message, "product"))
+                writer.uint32(/* id 6, wireType 2 =*/50).string(message.product);
+            if (message.portBaudRate != null && Object.hasOwnProperty.call(message, "portBaudRate"))
+                writer.uint32(/* id 7, wireType 0 =*/56).uint32(message.portBaudRate);
+            if (message.firmwareMajor != null && Object.hasOwnProperty.call(message, "firmwareMajor"))
+                writer.uint32(/* id 20, wireType 0 =*/160).uint32(message.firmwareMajor);
+            if (message.firmwareMinor != null && Object.hasOwnProperty.call(message, "firmwareMinor"))
+                writer.uint32(/* id 21, wireType 0 =*/168).uint32(message.firmwareMinor);
+            if (message.hardwareName != null && Object.hasOwnProperty.call(message, "hardwareName"))
+                writer.uint32(/* id 22, wireType 2 =*/178).string(message.hardwareName);
+            if (message.uuid != null && Object.hasOwnProperty.call(message, "uuid"))
+                writer.uint32(/* id 23, wireType 2 =*/186).bytes(message.uuid);
+            if (message.pairingDone != null && Object.hasOwnProperty.call(message, "pairingDone"))
+                writer.uint32(/* id 24, wireType 0 =*/192).bool(message.pairingDone);
+            if (message.testVersionNumber != null && Object.hasOwnProperty.call(message, "testVersionNumber"))
+                writer.uint32(/* id 25, wireType 0 =*/200).uint32(message.testVersionNumber);
+            if (message.hardwareType != null && Object.hasOwnProperty.call(message, "hardwareType"))
+                writer.uint32(/* id 26, wireType 0 =*/208).uint32(message.hardwareType);
+            if (message.customConfigCount != null && Object.hasOwnProperty.call(message, "customConfigCount"))
+                writer.uint32(/* id 27, wireType 0 =*/216).uint32(message.customConfigCount);
+            if (message.hasPhaseFilters != null && Object.hasOwnProperty.call(message, "hasPhaseFilters"))
+                writer.uint32(/* id 28, wireType 0 =*/224).bool(message.hasPhaseFilters);
+            if (message.qmlHw != null && Object.hasOwnProperty.call(message, "qmlHw"))
+                writer.uint32(/* id 29, wireType 0 =*/232).uint32(message.qmlHw);
+            if (message.qmlApp != null && Object.hasOwnProperty.call(message, "qmlApp"))
+                writer.uint32(/* id 30, wireType 0 =*/240).uint32(message.qmlApp);
+            if (message.nrfFlags != null && Object.hasOwnProperty.call(message, "nrfFlags"))
+                writer.uint32(/* id 31, wireType 0 =*/248).uint32(message.nrfFlags);
+            if (message.firmwareName != null && Object.hasOwnProperty.call(message, "firmwareName"))
+                writer.uint32(/* id 32, wireType 2 =*/258).string(message.firmwareName);
+            if (message.hardwareConfigCrc != null && Object.hasOwnProperty.call(message, "hardwareConfigCrc"))
+                writer.uint32(/* id 33, wireType 0 =*/264).uint32(message.hardwareConfigCrc);
+            if (message.firmwareInfoExtraBytes != null && Object.hasOwnProperty.call(message, "firmwareInfoExtraBytes"))
+                writer.uint32(/* id 34, wireType 2 =*/274).bytes(message.firmwareInfoExtraBytes);
+            if (message.firmwareInfoRawPayload != null && Object.hasOwnProperty.call(message, "firmwareInfoRawPayload"))
+                writer.uint32(/* id 35, wireType 2 =*/282).bytes(message.firmwareInfoRawPayload);
+            return writer;
+        };
+
+        /**
+         * Encodes the specified VescTrampaBoard message, length delimited. Does not implicitly {@link vesc_trampa.VescTrampaBoard.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof vesc_trampa.VescTrampaBoard
+         * @static
+         * @param {vesc_trampa.IVescTrampaBoard} message VescTrampaBoard message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        VescTrampaBoard.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes a VescTrampaBoard message from the specified reader or buffer.
+         * @function decode
+         * @memberof vesc_trampa.VescTrampaBoard
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {vesc_trampa.VescTrampaBoard} VescTrampaBoard
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        VescTrampaBoard.decode = function decode(reader, length, error, long) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.vesc_trampa.VescTrampaBoard();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                if (tag === error)
+                    break;
+                switch (tag >>> 3) {
+                case 1: {
+                        message.portName = reader.string();
+                        break;
+                    }
+                case 2: {
+                        message.vid = reader.uint32();
+                        break;
+                    }
+                case 3: {
+                        message.pid = reader.uint32();
+                        break;
+                    }
+                case 4: {
+                        message.serialNumber = reader.string();
+                        break;
+                    }
+                case 5: {
+                        message.manufacturer = reader.string();
+                        break;
+                    }
+                case 6: {
+                        message.product = reader.string();
+                        break;
+                    }
+                case 7: {
+                        message.portBaudRate = reader.uint32();
+                        break;
+                    }
+                case 20: {
+                        message.firmwareMajor = reader.uint32();
+                        break;
+                    }
+                case 21: {
+                        message.firmwareMinor = reader.uint32();
+                        break;
+                    }
+                case 22: {
+                        message.hardwareName = reader.string();
+                        break;
+                    }
+                case 23: {
+                        message.uuid = reader.bytes();
+                        break;
+                    }
+                case 24: {
+                        message.pairingDone = reader.bool();
+                        break;
+                    }
+                case 25: {
+                        message.testVersionNumber = reader.uint32();
+                        break;
+                    }
+                case 26: {
+                        message.hardwareType = reader.uint32();
+                        break;
+                    }
+                case 27: {
+                        message.customConfigCount = reader.uint32();
+                        break;
+                    }
+                case 28: {
+                        message.hasPhaseFilters = reader.bool();
+                        break;
+                    }
+                case 29: {
+                        message.qmlHw = reader.uint32();
+                        break;
+                    }
+                case 30: {
+                        message.qmlApp = reader.uint32();
+                        break;
+                    }
+                case 31: {
+                        message.nrfFlags = reader.uint32();
+                        break;
+                    }
+                case 32: {
+                        message.firmwareName = reader.string();
+                        break;
+                    }
+                case 33: {
+                        message.hardwareConfigCrc = reader.uint32();
+                        break;
+                    }
+                case 34: {
+                        message.firmwareInfoExtraBytes = reader.bytes();
+                        break;
+                    }
+                case 35: {
+                        message.firmwareInfoRawPayload = reader.bytes();
+                        break;
+                    }
+                default:
+                    reader.skipType(tag & 7, long);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes a VescTrampaBoard message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof vesc_trampa.VescTrampaBoard
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {vesc_trampa.VescTrampaBoard} VescTrampaBoard
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        VescTrampaBoard.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies a VescTrampaBoard message.
+         * @function verify
+         * @memberof vesc_trampa.VescTrampaBoard
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        VescTrampaBoard.verify = function verify(message, long) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
+            if (message.portName != null && message.hasOwnProperty("portName"))
+                if (!$util.isString(message.portName))
+                    return "portName: string expected";
+            if (message.vid != null && message.hasOwnProperty("vid"))
+                if (!$util.isInteger(message.vid))
+                    return "vid: integer expected";
+            if (message.pid != null && message.hasOwnProperty("pid"))
+                if (!$util.isInteger(message.pid))
+                    return "pid: integer expected";
+            if (message.serialNumber != null && message.hasOwnProperty("serialNumber"))
+                if (!$util.isString(message.serialNumber))
+                    return "serialNumber: string expected";
+            if (message.manufacturer != null && message.hasOwnProperty("manufacturer"))
+                if (!$util.isString(message.manufacturer))
+                    return "manufacturer: string expected";
+            if (message.product != null && message.hasOwnProperty("product"))
+                if (!$util.isString(message.product))
+                    return "product: string expected";
+            if (message.portBaudRate != null && message.hasOwnProperty("portBaudRate"))
+                if (!$util.isInteger(message.portBaudRate))
+                    return "portBaudRate: integer expected";
+            if (message.firmwareMajor != null && message.hasOwnProperty("firmwareMajor"))
+                if (!$util.isInteger(message.firmwareMajor))
+                    return "firmwareMajor: integer expected";
+            if (message.firmwareMinor != null && message.hasOwnProperty("firmwareMinor"))
+                if (!$util.isInteger(message.firmwareMinor))
+                    return "firmwareMinor: integer expected";
+            if (message.hardwareName != null && message.hasOwnProperty("hardwareName"))
+                if (!$util.isString(message.hardwareName))
+                    return "hardwareName: string expected";
+            if (message.uuid != null && message.hasOwnProperty("uuid"))
+                if (!(message.uuid && typeof message.uuid.length === "number" || $util.isString(message.uuid)))
+                    return "uuid: buffer expected";
+            if (message.pairingDone != null && message.hasOwnProperty("pairingDone"))
+                if (typeof message.pairingDone !== "boolean")
+                    return "pairingDone: boolean expected";
+            if (message.testVersionNumber != null && message.hasOwnProperty("testVersionNumber"))
+                if (!$util.isInteger(message.testVersionNumber))
+                    return "testVersionNumber: integer expected";
+            if (message.hardwareType != null && message.hasOwnProperty("hardwareType"))
+                if (!$util.isInteger(message.hardwareType))
+                    return "hardwareType: integer expected";
+            if (message.customConfigCount != null && message.hasOwnProperty("customConfigCount"))
+                if (!$util.isInteger(message.customConfigCount))
+                    return "customConfigCount: integer expected";
+            if (message.hasPhaseFilters != null && message.hasOwnProperty("hasPhaseFilters"))
+                if (typeof message.hasPhaseFilters !== "boolean")
+                    return "hasPhaseFilters: boolean expected";
+            if (message.qmlHw != null && message.hasOwnProperty("qmlHw"))
+                if (!$util.isInteger(message.qmlHw))
+                    return "qmlHw: integer expected";
+            if (message.qmlApp != null && message.hasOwnProperty("qmlApp"))
+                if (!$util.isInteger(message.qmlApp))
+                    return "qmlApp: integer expected";
+            if (message.nrfFlags != null && message.hasOwnProperty("nrfFlags"))
+                if (!$util.isInteger(message.nrfFlags))
+                    return "nrfFlags: integer expected";
+            if (message.firmwareName != null && message.hasOwnProperty("firmwareName"))
+                if (!$util.isString(message.firmwareName))
+                    return "firmwareName: string expected";
+            if (message.hardwareConfigCrc != null && message.hasOwnProperty("hardwareConfigCrc"))
+                if (!$util.isInteger(message.hardwareConfigCrc))
+                    return "hardwareConfigCrc: integer expected";
+            if (message.firmwareInfoExtraBytes != null && message.hasOwnProperty("firmwareInfoExtraBytes"))
+                if (!(message.firmwareInfoExtraBytes && typeof message.firmwareInfoExtraBytes.length === "number" || $util.isString(message.firmwareInfoExtraBytes)))
+                    return "firmwareInfoExtraBytes: buffer expected";
+            if (message.firmwareInfoRawPayload != null && message.hasOwnProperty("firmwareInfoRawPayload"))
+                if (!(message.firmwareInfoRawPayload && typeof message.firmwareInfoRawPayload.length === "number" || $util.isString(message.firmwareInfoRawPayload)))
+                    return "firmwareInfoRawPayload: buffer expected";
+            return null;
+        };
+
+        /**
+         * Creates a VescTrampaBoard message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof vesc_trampa.VescTrampaBoard
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {vesc_trampa.VescTrampaBoard} VescTrampaBoard
+         */
+        VescTrampaBoard.fromObject = function fromObject(object, long) {
+            if (object instanceof $root.vesc_trampa.VescTrampaBoard)
+                return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let message = new $root.vesc_trampa.VescTrampaBoard();
+            if (object.portName != null)
+                message.portName = String(object.portName);
+            if (object.vid != null)
+                message.vid = object.vid >>> 0;
+            if (object.pid != null)
+                message.pid = object.pid >>> 0;
+            if (object.serialNumber != null)
+                message.serialNumber = String(object.serialNumber);
+            if (object.manufacturer != null)
+                message.manufacturer = String(object.manufacturer);
+            if (object.product != null)
+                message.product = String(object.product);
+            if (object.portBaudRate != null)
+                message.portBaudRate = object.portBaudRate >>> 0;
+            if (object.firmwareMajor != null)
+                message.firmwareMajor = object.firmwareMajor >>> 0;
+            if (object.firmwareMinor != null)
+                message.firmwareMinor = object.firmwareMinor >>> 0;
+            if (object.hardwareName != null)
+                message.hardwareName = String(object.hardwareName);
+            if (object.uuid != null)
+                if (typeof object.uuid === "string")
+                    $util.base64.decode(object.uuid, message.uuid = $util.newBuffer($util.base64.length(object.uuid)), 0);
+                else if (object.uuid.length >= 0)
+                    message.uuid = object.uuid;
+            if (object.pairingDone != null)
+                message.pairingDone = Boolean(object.pairingDone);
+            if (object.testVersionNumber != null)
+                message.testVersionNumber = object.testVersionNumber >>> 0;
+            if (object.hardwareType != null)
+                message.hardwareType = object.hardwareType >>> 0;
+            if (object.customConfigCount != null)
+                message.customConfigCount = object.customConfigCount >>> 0;
+            if (object.hasPhaseFilters != null)
+                message.hasPhaseFilters = Boolean(object.hasPhaseFilters);
+            if (object.qmlHw != null)
+                message.qmlHw = object.qmlHw >>> 0;
+            if (object.qmlApp != null)
+                message.qmlApp = object.qmlApp >>> 0;
+            if (object.nrfFlags != null)
+                message.nrfFlags = object.nrfFlags >>> 0;
+            if (object.firmwareName != null)
+                message.firmwareName = String(object.firmwareName);
+            if (object.hardwareConfigCrc != null)
+                message.hardwareConfigCrc = object.hardwareConfigCrc >>> 0;
+            if (object.firmwareInfoExtraBytes != null)
+                if (typeof object.firmwareInfoExtraBytes === "string")
+                    $util.base64.decode(object.firmwareInfoExtraBytes, message.firmwareInfoExtraBytes = $util.newBuffer($util.base64.length(object.firmwareInfoExtraBytes)), 0);
+                else if (object.firmwareInfoExtraBytes.length >= 0)
+                    message.firmwareInfoExtraBytes = object.firmwareInfoExtraBytes;
+            if (object.firmwareInfoRawPayload != null)
+                if (typeof object.firmwareInfoRawPayload === "string")
+                    $util.base64.decode(object.firmwareInfoRawPayload, message.firmwareInfoRawPayload = $util.newBuffer($util.base64.length(object.firmwareInfoRawPayload)), 0);
+                else if (object.firmwareInfoRawPayload.length >= 0)
+                    message.firmwareInfoRawPayload = object.firmwareInfoRawPayload;
+            return message;
+        };
+
+        /**
+         * Creates a plain object from a VescTrampaBoard message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof vesc_trampa.VescTrampaBoard
+         * @static
+         * @param {vesc_trampa.VescTrampaBoard} message VescTrampaBoard
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        VescTrampaBoard.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.defaults) {
+                object.portName = "";
+                object.vid = 0;
+                object.pid = 0;
+                object.serialNumber = "";
+                object.manufacturer = "";
+                object.product = "";
+                object.portBaudRate = 0;
+                object.firmwareMajor = 0;
+                object.firmwareMinor = 0;
+                object.hardwareName = "";
+                if (options.bytes === String)
+                    object.uuid = "";
+                else {
+                    object.uuid = [];
+                    if (options.bytes !== Array)
+                        object.uuid = $util.newBuffer(object.uuid);
+                }
+                object.pairingDone = false;
+                object.testVersionNumber = 0;
+                object.hardwareType = 0;
+                object.customConfigCount = 0;
+                object.hasPhaseFilters = false;
+                object.qmlHw = 0;
+                object.qmlApp = 0;
+                object.nrfFlags = 0;
+                object.firmwareName = "";
+                object.hardwareConfigCrc = 0;
+                if (options.bytes === String)
+                    object.firmwareInfoExtraBytes = "";
+                else {
+                    object.firmwareInfoExtraBytes = [];
+                    if (options.bytes !== Array)
+                        object.firmwareInfoExtraBytes = $util.newBuffer(object.firmwareInfoExtraBytes);
+                }
+                if (options.bytes === String)
+                    object.firmwareInfoRawPayload = "";
+                else {
+                    object.firmwareInfoRawPayload = [];
+                    if (options.bytes !== Array)
+                        object.firmwareInfoRawPayload = $util.newBuffer(object.firmwareInfoRawPayload);
+                }
+            }
+            if (message.portName != null && message.hasOwnProperty("portName"))
+                object.portName = message.portName;
+            if (message.vid != null && message.hasOwnProperty("vid"))
+                object.vid = message.vid;
+            if (message.pid != null && message.hasOwnProperty("pid"))
+                object.pid = message.pid;
+            if (message.serialNumber != null && message.hasOwnProperty("serialNumber"))
+                object.serialNumber = message.serialNumber;
+            if (message.manufacturer != null && message.hasOwnProperty("manufacturer"))
+                object.manufacturer = message.manufacturer;
+            if (message.product != null && message.hasOwnProperty("product"))
+                object.product = message.product;
+            if (message.portBaudRate != null && message.hasOwnProperty("portBaudRate"))
+                object.portBaudRate = message.portBaudRate;
+            if (message.firmwareMajor != null && message.hasOwnProperty("firmwareMajor"))
+                object.firmwareMajor = message.firmwareMajor;
+            if (message.firmwareMinor != null && message.hasOwnProperty("firmwareMinor"))
+                object.firmwareMinor = message.firmwareMinor;
+            if (message.hardwareName != null && message.hasOwnProperty("hardwareName"))
+                object.hardwareName = message.hardwareName;
+            if (message.uuid != null && message.hasOwnProperty("uuid"))
+                object.uuid = options.bytes === String ? $util.base64.encode(message.uuid, 0, message.uuid.length) : options.bytes === Array ? Array.prototype.slice.call(message.uuid) : message.uuid;
+            if (message.pairingDone != null && message.hasOwnProperty("pairingDone"))
+                object.pairingDone = message.pairingDone;
+            if (message.testVersionNumber != null && message.hasOwnProperty("testVersionNumber"))
+                object.testVersionNumber = message.testVersionNumber;
+            if (message.hardwareType != null && message.hasOwnProperty("hardwareType"))
+                object.hardwareType = message.hardwareType;
+            if (message.customConfigCount != null && message.hasOwnProperty("customConfigCount"))
+                object.customConfigCount = message.customConfigCount;
+            if (message.hasPhaseFilters != null && message.hasOwnProperty("hasPhaseFilters"))
+                object.hasPhaseFilters = message.hasPhaseFilters;
+            if (message.qmlHw != null && message.hasOwnProperty("qmlHw"))
+                object.qmlHw = message.qmlHw;
+            if (message.qmlApp != null && message.hasOwnProperty("qmlApp"))
+                object.qmlApp = message.qmlApp;
+            if (message.nrfFlags != null && message.hasOwnProperty("nrfFlags"))
+                object.nrfFlags = message.nrfFlags;
+            if (message.firmwareName != null && message.hasOwnProperty("firmwareName"))
+                object.firmwareName = message.firmwareName;
+            if (message.hardwareConfigCrc != null && message.hasOwnProperty("hardwareConfigCrc"))
+                object.hardwareConfigCrc = message.hardwareConfigCrc;
+            if (message.firmwareInfoExtraBytes != null && message.hasOwnProperty("firmwareInfoExtraBytes"))
+                object.firmwareInfoExtraBytes = options.bytes === String ? $util.base64.encode(message.firmwareInfoExtraBytes, 0, message.firmwareInfoExtraBytes.length) : options.bytes === Array ? Array.prototype.slice.call(message.firmwareInfoExtraBytes) : message.firmwareInfoExtraBytes;
+            if (message.firmwareInfoRawPayload != null && message.hasOwnProperty("firmwareInfoRawPayload"))
+                object.firmwareInfoRawPayload = options.bytes === String ? $util.base64.encode(message.firmwareInfoRawPayload, 0, message.firmwareInfoRawPayload.length) : options.bytes === Array ? Array.prototype.slice.call(message.firmwareInfoRawPayload) : message.firmwareInfoRawPayload;
+            return object;
+        };
+
+        /**
+         * Converts this VescTrampaBoard to JSON.
+         * @function toJSON
+         * @memberof vesc_trampa.VescTrampaBoard
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        VescTrampaBoard.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for VescTrampaBoard
+         * @function getTypeUrl
+         * @memberof vesc_trampa.VescTrampaBoard
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        VescTrampaBoard.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+            if (typeUrlPrefix === undefined) {
+                typeUrlPrefix = "type.googleapis.com";
+            }
+            return typeUrlPrefix + "/vesc_trampa.VescTrampaBoard";
+        };
+
+        return VescTrampaBoard;
+    })();
+
+    return vesc_trampa;
 })();
 
 export const usbvideo = $root.usbvideo = (() => {
@@ -22468,6 +26178,8 @@ export const sysinfo = $root.sysinfo = (() => {
          * @property {Array.<sysinfo.IDisk>|null} [disks] EnvelopeData disks
          * @property {Array.<sysinfo.INetwork>|null} [networks] EnvelopeData networks
          * @property {Array.<sysinfo.ITemperatureSensor>|null} [temperatures] EnvelopeData temperatures
+         * @property {Array.<sysinfo.IPowerSource>|null} [powerSources] EnvelopeData powerSources
+         * @property {Array.<sysinfo.ICellularModem>|null} [cellularModems] EnvelopeData cellularModems
          */
 
         /**
@@ -22484,6 +26196,8 @@ export const sysinfo = $root.sysinfo = (() => {
             this.disks = [];
             this.networks = [];
             this.temperatures = [];
+            this.powerSources = [];
+            this.cellularModems = [];
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
                     if (properties[keys[i]] != null && keys[i] !== "__proto__")
@@ -22603,6 +26317,22 @@ export const sysinfo = $root.sysinfo = (() => {
         EnvelopeData.prototype.temperatures = $util.emptyArray;
 
         /**
+         * EnvelopeData powerSources.
+         * @member {Array.<sysinfo.IPowerSource>} powerSources
+         * @memberof sysinfo.EnvelopeData
+         * @instance
+         */
+        EnvelopeData.prototype.powerSources = $util.emptyArray;
+
+        /**
+         * EnvelopeData cellularModems.
+         * @member {Array.<sysinfo.ICellularModem>} cellularModems
+         * @memberof sysinfo.EnvelopeData
+         * @instance
+         */
+        EnvelopeData.prototype.cellularModems = $util.emptyArray;
+
+        /**
          * Creates a new EnvelopeData instance using the specified properties.
          * @function create
          * @memberof sysinfo.EnvelopeData
@@ -22659,6 +26389,12 @@ export const sysinfo = $root.sysinfo = (() => {
             if (message.temperatures != null && message.temperatures.length)
                 for (let i = 0; i < message.temperatures.length; ++i)
                     $root.sysinfo.TemperatureSensor.encode(message.temperatures[i], writer.uint32(/* id 20, wireType 2 =*/162).fork()).ldelim();
+            if (message.powerSources != null && message.powerSources.length)
+                for (let i = 0; i < message.powerSources.length; ++i)
+                    $root.sysinfo.PowerSource.encode(message.powerSources[i], writer.uint32(/* id 21, wireType 2 =*/170).fork()).ldelim();
+            if (message.cellularModems != null && message.cellularModems.length)
+                for (let i = 0; i < message.cellularModems.length; ++i)
+                    $root.sysinfo.CellularModem.encode(message.cellularModems[i], writer.uint32(/* id 30, wireType 2 =*/242).fork()).ldelim();
             return writer;
         };
 
@@ -22763,6 +26499,18 @@ export const sysinfo = $root.sysinfo = (() => {
                         if (!(message.temperatures && message.temperatures.length))
                             message.temperatures = [];
                         message.temperatures.push($root.sysinfo.TemperatureSensor.decode(reader, reader.uint32(), undefined, long + 1));
+                        break;
+                    }
+                case 21: {
+                        if (!(message.powerSources && message.powerSources.length))
+                            message.powerSources = [];
+                        message.powerSources.push($root.sysinfo.PowerSource.decode(reader, reader.uint32(), undefined, long + 1));
+                        break;
+                    }
+                case 30: {
+                        if (!(message.cellularModems && message.cellularModems.length))
+                            message.cellularModems = [];
+                        message.cellularModems.push($root.sysinfo.CellularModem.decode(reader, reader.uint32(), undefined, long + 1));
                         break;
                     }
                 default:
@@ -22884,6 +26632,24 @@ export const sysinfo = $root.sysinfo = (() => {
                         return "temperatures." + error;
                 }
             }
+            if (message.powerSources != null && message.hasOwnProperty("powerSources")) {
+                if (!Array.isArray(message.powerSources))
+                    return "powerSources: array expected";
+                for (let i = 0; i < message.powerSources.length; ++i) {
+                    let error = $root.sysinfo.PowerSource.verify(message.powerSources[i], long + 1);
+                    if (error)
+                        return "powerSources." + error;
+                }
+            }
+            if (message.cellularModems != null && message.hasOwnProperty("cellularModems")) {
+                if (!Array.isArray(message.cellularModems))
+                    return "cellularModems: array expected";
+                for (let i = 0; i < message.cellularModems.length; ++i) {
+                    let error = $root.sysinfo.CellularModem.verify(message.cellularModems[i], long + 1);
+                    if (error)
+                        return "cellularModems." + error;
+                }
+            }
             return null;
         };
 
@@ -22990,6 +26756,26 @@ export const sysinfo = $root.sysinfo = (() => {
                     message.temperatures[i] = $root.sysinfo.TemperatureSensor.fromObject(object.temperatures[i], long + 1);
                 }
             }
+            if (object.powerSources) {
+                if (!Array.isArray(object.powerSources))
+                    throw TypeError(".sysinfo.EnvelopeData.powerSources: array expected");
+                message.powerSources = [];
+                for (let i = 0; i < object.powerSources.length; ++i) {
+                    if (typeof object.powerSources[i] !== "object")
+                        throw TypeError(".sysinfo.EnvelopeData.powerSources: object expected");
+                    message.powerSources[i] = $root.sysinfo.PowerSource.fromObject(object.powerSources[i], long + 1);
+                }
+            }
+            if (object.cellularModems) {
+                if (!Array.isArray(object.cellularModems))
+                    throw TypeError(".sysinfo.EnvelopeData.cellularModems: array expected");
+                message.cellularModems = [];
+                for (let i = 0; i < object.cellularModems.length; ++i) {
+                    if (typeof object.cellularModems[i] !== "object")
+                        throw TypeError(".sysinfo.EnvelopeData.cellularModems: object expected");
+                    message.cellularModems[i] = $root.sysinfo.CellularModem.fromObject(object.cellularModems[i], long + 1);
+                }
+            }
             return message;
         };
 
@@ -23012,6 +26798,8 @@ export const sysinfo = $root.sysinfo = (() => {
                 object.disks = [];
                 object.networks = [];
                 object.temperatures = [];
+                object.powerSources = [];
+                object.cellularModems = [];
             }
             if (options.defaults) {
                 object.os = null;
@@ -23073,6 +26861,16 @@ export const sysinfo = $root.sysinfo = (() => {
                 object.temperatures = [];
                 for (let j = 0; j < message.temperatures.length; ++j)
                     object.temperatures[j] = $root.sysinfo.TemperatureSensor.toObject(message.temperatures[j], options);
+            }
+            if (message.powerSources && message.powerSources.length) {
+                object.powerSources = [];
+                for (let j = 0; j < message.powerSources.length; ++j)
+                    object.powerSources[j] = $root.sysinfo.PowerSource.toObject(message.powerSources[j], options);
+            }
+            if (message.cellularModems && message.cellularModems.length) {
+                object.cellularModems = [];
+                for (let j = 0; j < message.cellularModems.length; ++j)
+                    object.cellularModems[j] = $root.sysinfo.CellularModem.toObject(message.cellularModems[j], options);
             }
             return object;
         };
@@ -26351,7 +30149,6782 @@ export const sysinfo = $root.sysinfo = (() => {
         return TemperatureSensor;
     })();
 
+    sysinfo.PowerSourceAttribute = (function() {
+
+        /**
+         * Properties of a PowerSourceAttribute.
+         * @memberof sysinfo
+         * @interface IPowerSourceAttribute
+         * @property {string|null} [key] PowerSourceAttribute key
+         * @property {string|null} [value] PowerSourceAttribute value
+         */
+
+        /**
+         * Constructs a new PowerSourceAttribute.
+         * @memberof sysinfo
+         * @classdesc Represents a PowerSourceAttribute.
+         * @implements IPowerSourceAttribute
+         * @constructor
+         * @param {sysinfo.IPowerSourceAttribute=} [properties] Properties to set
+         */
+        function PowerSourceAttribute(properties) {
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * PowerSourceAttribute key.
+         * @member {string} key
+         * @memberof sysinfo.PowerSourceAttribute
+         * @instance
+         */
+        PowerSourceAttribute.prototype.key = "";
+
+        /**
+         * PowerSourceAttribute value.
+         * @member {string} value
+         * @memberof sysinfo.PowerSourceAttribute
+         * @instance
+         */
+        PowerSourceAttribute.prototype.value = "";
+
+        /**
+         * Creates a new PowerSourceAttribute instance using the specified properties.
+         * @function create
+         * @memberof sysinfo.PowerSourceAttribute
+         * @static
+         * @param {sysinfo.IPowerSourceAttribute=} [properties] Properties to set
+         * @returns {sysinfo.PowerSourceAttribute} PowerSourceAttribute instance
+         */
+        PowerSourceAttribute.create = function create(properties) {
+            return new PowerSourceAttribute(properties);
+        };
+
+        /**
+         * Encodes the specified PowerSourceAttribute message. Does not implicitly {@link sysinfo.PowerSourceAttribute.verify|verify} messages.
+         * @function encode
+         * @memberof sysinfo.PowerSourceAttribute
+         * @static
+         * @param {sysinfo.IPowerSourceAttribute} message PowerSourceAttribute message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        PowerSourceAttribute.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.key != null && Object.hasOwnProperty.call(message, "key"))
+                writer.uint32(/* id 1, wireType 2 =*/10).string(message.key);
+            if (message.value != null && Object.hasOwnProperty.call(message, "value"))
+                writer.uint32(/* id 2, wireType 2 =*/18).string(message.value);
+            return writer;
+        };
+
+        /**
+         * Encodes the specified PowerSourceAttribute message, length delimited. Does not implicitly {@link sysinfo.PowerSourceAttribute.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof sysinfo.PowerSourceAttribute
+         * @static
+         * @param {sysinfo.IPowerSourceAttribute} message PowerSourceAttribute message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        PowerSourceAttribute.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes a PowerSourceAttribute message from the specified reader or buffer.
+         * @function decode
+         * @memberof sysinfo.PowerSourceAttribute
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {sysinfo.PowerSourceAttribute} PowerSourceAttribute
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        PowerSourceAttribute.decode = function decode(reader, length, error, long) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.sysinfo.PowerSourceAttribute();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                if (tag === error)
+                    break;
+                switch (tag >>> 3) {
+                case 1: {
+                        message.key = reader.string();
+                        break;
+                    }
+                case 2: {
+                        message.value = reader.string();
+                        break;
+                    }
+                default:
+                    reader.skipType(tag & 7, long);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes a PowerSourceAttribute message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof sysinfo.PowerSourceAttribute
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {sysinfo.PowerSourceAttribute} PowerSourceAttribute
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        PowerSourceAttribute.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies a PowerSourceAttribute message.
+         * @function verify
+         * @memberof sysinfo.PowerSourceAttribute
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        PowerSourceAttribute.verify = function verify(message, long) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
+            if (message.key != null && message.hasOwnProperty("key"))
+                if (!$util.isString(message.key))
+                    return "key: string expected";
+            if (message.value != null && message.hasOwnProperty("value"))
+                if (!$util.isString(message.value))
+                    return "value: string expected";
+            return null;
+        };
+
+        /**
+         * Creates a PowerSourceAttribute message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof sysinfo.PowerSourceAttribute
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {sysinfo.PowerSourceAttribute} PowerSourceAttribute
+         */
+        PowerSourceAttribute.fromObject = function fromObject(object, long) {
+            if (object instanceof $root.sysinfo.PowerSourceAttribute)
+                return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let message = new $root.sysinfo.PowerSourceAttribute();
+            if (object.key != null)
+                message.key = String(object.key);
+            if (object.value != null)
+                message.value = String(object.value);
+            return message;
+        };
+
+        /**
+         * Creates a plain object from a PowerSourceAttribute message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof sysinfo.PowerSourceAttribute
+         * @static
+         * @param {sysinfo.PowerSourceAttribute} message PowerSourceAttribute
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        PowerSourceAttribute.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.defaults) {
+                object.key = "";
+                object.value = "";
+            }
+            if (message.key != null && message.hasOwnProperty("key"))
+                object.key = message.key;
+            if (message.value != null && message.hasOwnProperty("value"))
+                object.value = message.value;
+            return object;
+        };
+
+        /**
+         * Converts this PowerSourceAttribute to JSON.
+         * @function toJSON
+         * @memberof sysinfo.PowerSourceAttribute
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        PowerSourceAttribute.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for PowerSourceAttribute
+         * @function getTypeUrl
+         * @memberof sysinfo.PowerSourceAttribute
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        PowerSourceAttribute.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+            if (typeUrlPrefix === undefined) {
+                typeUrlPrefix = "type.googleapis.com";
+            }
+            return typeUrlPrefix + "/sysinfo.PowerSourceAttribute";
+        };
+
+        return PowerSourceAttribute;
+    })();
+
+    sysinfo.PowerSource = (function() {
+
+        /**
+         * Properties of a PowerSource.
+         * @memberof sysinfo
+         * @interface IPowerSource
+         * @property {string|null} [name] PowerSource name
+         * @property {Array.<sysinfo.IPowerSourceAttribute>|null} [attributes] PowerSource attributes
+         */
+
+        /**
+         * Constructs a new PowerSource.
+         * @memberof sysinfo
+         * @classdesc Represents a PowerSource.
+         * @implements IPowerSource
+         * @constructor
+         * @param {sysinfo.IPowerSource=} [properties] Properties to set
+         */
+        function PowerSource(properties) {
+            this.attributes = [];
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * PowerSource name.
+         * @member {string} name
+         * @memberof sysinfo.PowerSource
+         * @instance
+         */
+        PowerSource.prototype.name = "";
+
+        /**
+         * PowerSource attributes.
+         * @member {Array.<sysinfo.IPowerSourceAttribute>} attributes
+         * @memberof sysinfo.PowerSource
+         * @instance
+         */
+        PowerSource.prototype.attributes = $util.emptyArray;
+
+        /**
+         * Creates a new PowerSource instance using the specified properties.
+         * @function create
+         * @memberof sysinfo.PowerSource
+         * @static
+         * @param {sysinfo.IPowerSource=} [properties] Properties to set
+         * @returns {sysinfo.PowerSource} PowerSource instance
+         */
+        PowerSource.create = function create(properties) {
+            return new PowerSource(properties);
+        };
+
+        /**
+         * Encodes the specified PowerSource message. Does not implicitly {@link sysinfo.PowerSource.verify|verify} messages.
+         * @function encode
+         * @memberof sysinfo.PowerSource
+         * @static
+         * @param {sysinfo.IPowerSource} message PowerSource message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        PowerSource.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.name != null && Object.hasOwnProperty.call(message, "name"))
+                writer.uint32(/* id 1, wireType 2 =*/10).string(message.name);
+            if (message.attributes != null && message.attributes.length)
+                for (let i = 0; i < message.attributes.length; ++i)
+                    $root.sysinfo.PowerSourceAttribute.encode(message.attributes[i], writer.uint32(/* id 10, wireType 2 =*/82).fork()).ldelim();
+            return writer;
+        };
+
+        /**
+         * Encodes the specified PowerSource message, length delimited. Does not implicitly {@link sysinfo.PowerSource.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof sysinfo.PowerSource
+         * @static
+         * @param {sysinfo.IPowerSource} message PowerSource message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        PowerSource.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes a PowerSource message from the specified reader or buffer.
+         * @function decode
+         * @memberof sysinfo.PowerSource
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {sysinfo.PowerSource} PowerSource
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        PowerSource.decode = function decode(reader, length, error, long) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.sysinfo.PowerSource();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                if (tag === error)
+                    break;
+                switch (tag >>> 3) {
+                case 1: {
+                        message.name = reader.string();
+                        break;
+                    }
+                case 10: {
+                        if (!(message.attributes && message.attributes.length))
+                            message.attributes = [];
+                        message.attributes.push($root.sysinfo.PowerSourceAttribute.decode(reader, reader.uint32(), undefined, long + 1));
+                        break;
+                    }
+                default:
+                    reader.skipType(tag & 7, long);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes a PowerSource message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof sysinfo.PowerSource
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {sysinfo.PowerSource} PowerSource
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        PowerSource.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies a PowerSource message.
+         * @function verify
+         * @memberof sysinfo.PowerSource
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        PowerSource.verify = function verify(message, long) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
+            if (message.name != null && message.hasOwnProperty("name"))
+                if (!$util.isString(message.name))
+                    return "name: string expected";
+            if (message.attributes != null && message.hasOwnProperty("attributes")) {
+                if (!Array.isArray(message.attributes))
+                    return "attributes: array expected";
+                for (let i = 0; i < message.attributes.length; ++i) {
+                    let error = $root.sysinfo.PowerSourceAttribute.verify(message.attributes[i], long + 1);
+                    if (error)
+                        return "attributes." + error;
+                }
+            }
+            return null;
+        };
+
+        /**
+         * Creates a PowerSource message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof sysinfo.PowerSource
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {sysinfo.PowerSource} PowerSource
+         */
+        PowerSource.fromObject = function fromObject(object, long) {
+            if (object instanceof $root.sysinfo.PowerSource)
+                return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let message = new $root.sysinfo.PowerSource();
+            if (object.name != null)
+                message.name = String(object.name);
+            if (object.attributes) {
+                if (!Array.isArray(object.attributes))
+                    throw TypeError(".sysinfo.PowerSource.attributes: array expected");
+                message.attributes = [];
+                for (let i = 0; i < object.attributes.length; ++i) {
+                    if (typeof object.attributes[i] !== "object")
+                        throw TypeError(".sysinfo.PowerSource.attributes: object expected");
+                    message.attributes[i] = $root.sysinfo.PowerSourceAttribute.fromObject(object.attributes[i], long + 1);
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Creates a plain object from a PowerSource message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof sysinfo.PowerSource
+         * @static
+         * @param {sysinfo.PowerSource} message PowerSource
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        PowerSource.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.arrays || options.defaults)
+                object.attributes = [];
+            if (options.defaults)
+                object.name = "";
+            if (message.name != null && message.hasOwnProperty("name"))
+                object.name = message.name;
+            if (message.attributes && message.attributes.length) {
+                object.attributes = [];
+                for (let j = 0; j < message.attributes.length; ++j)
+                    object.attributes[j] = $root.sysinfo.PowerSourceAttribute.toObject(message.attributes[j], options);
+            }
+            return object;
+        };
+
+        /**
+         * Converts this PowerSource to JSON.
+         * @function toJSON
+         * @memberof sysinfo.PowerSource
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        PowerSource.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for PowerSource
+         * @function getTypeUrl
+         * @memberof sysinfo.PowerSource
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        PowerSource.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+            if (typeUrlPrefix === undefined) {
+                typeUrlPrefix = "type.googleapis.com";
+            }
+            return typeUrlPrefix + "/sysinfo.PowerSource";
+        };
+
+        return PowerSource;
+    })();
+
+    sysinfo.CellularAttribute = (function() {
+
+        /**
+         * Properties of a CellularAttribute.
+         * @memberof sysinfo
+         * @interface ICellularAttribute
+         * @property {string|null} [key] CellularAttribute key
+         * @property {string|null} [value] CellularAttribute value
+         */
+
+        /**
+         * Constructs a new CellularAttribute.
+         * @memberof sysinfo
+         * @classdesc Represents a CellularAttribute.
+         * @implements ICellularAttribute
+         * @constructor
+         * @param {sysinfo.ICellularAttribute=} [properties] Properties to set
+         */
+        function CellularAttribute(properties) {
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * CellularAttribute key.
+         * @member {string} key
+         * @memberof sysinfo.CellularAttribute
+         * @instance
+         */
+        CellularAttribute.prototype.key = "";
+
+        /**
+         * CellularAttribute value.
+         * @member {string} value
+         * @memberof sysinfo.CellularAttribute
+         * @instance
+         */
+        CellularAttribute.prototype.value = "";
+
+        /**
+         * Creates a new CellularAttribute instance using the specified properties.
+         * @function create
+         * @memberof sysinfo.CellularAttribute
+         * @static
+         * @param {sysinfo.ICellularAttribute=} [properties] Properties to set
+         * @returns {sysinfo.CellularAttribute} CellularAttribute instance
+         */
+        CellularAttribute.create = function create(properties) {
+            return new CellularAttribute(properties);
+        };
+
+        /**
+         * Encodes the specified CellularAttribute message. Does not implicitly {@link sysinfo.CellularAttribute.verify|verify} messages.
+         * @function encode
+         * @memberof sysinfo.CellularAttribute
+         * @static
+         * @param {sysinfo.ICellularAttribute} message CellularAttribute message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        CellularAttribute.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.key != null && Object.hasOwnProperty.call(message, "key"))
+                writer.uint32(/* id 1, wireType 2 =*/10).string(message.key);
+            if (message.value != null && Object.hasOwnProperty.call(message, "value"))
+                writer.uint32(/* id 2, wireType 2 =*/18).string(message.value);
+            return writer;
+        };
+
+        /**
+         * Encodes the specified CellularAttribute message, length delimited. Does not implicitly {@link sysinfo.CellularAttribute.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof sysinfo.CellularAttribute
+         * @static
+         * @param {sysinfo.ICellularAttribute} message CellularAttribute message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        CellularAttribute.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes a CellularAttribute message from the specified reader or buffer.
+         * @function decode
+         * @memberof sysinfo.CellularAttribute
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {sysinfo.CellularAttribute} CellularAttribute
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        CellularAttribute.decode = function decode(reader, length, error, long) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.sysinfo.CellularAttribute();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                if (tag === error)
+                    break;
+                switch (tag >>> 3) {
+                case 1: {
+                        message.key = reader.string();
+                        break;
+                    }
+                case 2: {
+                        message.value = reader.string();
+                        break;
+                    }
+                default:
+                    reader.skipType(tag & 7, long);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes a CellularAttribute message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof sysinfo.CellularAttribute
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {sysinfo.CellularAttribute} CellularAttribute
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        CellularAttribute.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies a CellularAttribute message.
+         * @function verify
+         * @memberof sysinfo.CellularAttribute
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        CellularAttribute.verify = function verify(message, long) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
+            if (message.key != null && message.hasOwnProperty("key"))
+                if (!$util.isString(message.key))
+                    return "key: string expected";
+            if (message.value != null && message.hasOwnProperty("value"))
+                if (!$util.isString(message.value))
+                    return "value: string expected";
+            return null;
+        };
+
+        /**
+         * Creates a CellularAttribute message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof sysinfo.CellularAttribute
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {sysinfo.CellularAttribute} CellularAttribute
+         */
+        CellularAttribute.fromObject = function fromObject(object, long) {
+            if (object instanceof $root.sysinfo.CellularAttribute)
+                return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let message = new $root.sysinfo.CellularAttribute();
+            if (object.key != null)
+                message.key = String(object.key);
+            if (object.value != null)
+                message.value = String(object.value);
+            return message;
+        };
+
+        /**
+         * Creates a plain object from a CellularAttribute message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof sysinfo.CellularAttribute
+         * @static
+         * @param {sysinfo.CellularAttribute} message CellularAttribute
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        CellularAttribute.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.defaults) {
+                object.key = "";
+                object.value = "";
+            }
+            if (message.key != null && message.hasOwnProperty("key"))
+                object.key = message.key;
+            if (message.value != null && message.hasOwnProperty("value"))
+                object.value = message.value;
+            return object;
+        };
+
+        /**
+         * Converts this CellularAttribute to JSON.
+         * @function toJSON
+         * @memberof sysinfo.CellularAttribute
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        CellularAttribute.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for CellularAttribute
+         * @function getTypeUrl
+         * @memberof sysinfo.CellularAttribute
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        CellularAttribute.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+            if (typeUrlPrefix === undefined) {
+                typeUrlPrefix = "type.googleapis.com";
+            }
+            return typeUrlPrefix + "/sysinfo.CellularAttribute";
+        };
+
+        return CellularAttribute;
+    })();
+
+    sysinfo.CellularError = (function() {
+
+        /**
+         * Properties of a CellularError.
+         * @memberof sysinfo
+         * @interface ICellularError
+         * @property {Long|null} [monotonicStampNs] CellularError monotonicStampNs
+         * @property {Long|null} [localStampNs] CellularError localStampNs
+         * @property {Long|null} [appStartId] CellularError appStartId
+         * @property {string|null} [scope] CellularError scope
+         * @property {string|null} [path] CellularError path
+         * @property {string|null} [message] CellularError message
+         * @property {number|null} [exitCode] CellularError exitCode
+         * @property {boolean|null} [timedOut] CellularError timedOut
+         */
+
+        /**
+         * Constructs a new CellularError.
+         * @memberof sysinfo
+         * @classdesc Represents a CellularError.
+         * @implements ICellularError
+         * @constructor
+         * @param {sysinfo.ICellularError=} [properties] Properties to set
+         */
+        function CellularError(properties) {
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * CellularError monotonicStampNs.
+         * @member {Long} monotonicStampNs
+         * @memberof sysinfo.CellularError
+         * @instance
+         */
+        CellularError.prototype.monotonicStampNs = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+
+        /**
+         * CellularError localStampNs.
+         * @member {Long} localStampNs
+         * @memberof sysinfo.CellularError
+         * @instance
+         */
+        CellularError.prototype.localStampNs = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+
+        /**
+         * CellularError appStartId.
+         * @member {Long} appStartId
+         * @memberof sysinfo.CellularError
+         * @instance
+         */
+        CellularError.prototype.appStartId = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+
+        /**
+         * CellularError scope.
+         * @member {string} scope
+         * @memberof sysinfo.CellularError
+         * @instance
+         */
+        CellularError.prototype.scope = "";
+
+        /**
+         * CellularError path.
+         * @member {string} path
+         * @memberof sysinfo.CellularError
+         * @instance
+         */
+        CellularError.prototype.path = "";
+
+        /**
+         * CellularError message.
+         * @member {string} message
+         * @memberof sysinfo.CellularError
+         * @instance
+         */
+        CellularError.prototype.message = "";
+
+        /**
+         * CellularError exitCode.
+         * @member {number} exitCode
+         * @memberof sysinfo.CellularError
+         * @instance
+         */
+        CellularError.prototype.exitCode = 0;
+
+        /**
+         * CellularError timedOut.
+         * @member {boolean} timedOut
+         * @memberof sysinfo.CellularError
+         * @instance
+         */
+        CellularError.prototype.timedOut = false;
+
+        /**
+         * Creates a new CellularError instance using the specified properties.
+         * @function create
+         * @memberof sysinfo.CellularError
+         * @static
+         * @param {sysinfo.ICellularError=} [properties] Properties to set
+         * @returns {sysinfo.CellularError} CellularError instance
+         */
+        CellularError.create = function create(properties) {
+            return new CellularError(properties);
+        };
+
+        /**
+         * Encodes the specified CellularError message. Does not implicitly {@link sysinfo.CellularError.verify|verify} messages.
+         * @function encode
+         * @memberof sysinfo.CellularError
+         * @static
+         * @param {sysinfo.ICellularError} message CellularError message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        CellularError.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.monotonicStampNs != null && Object.hasOwnProperty.call(message, "monotonicStampNs"))
+                writer.uint32(/* id 1, wireType 0 =*/8).uint64(message.monotonicStampNs);
+            if (message.localStampNs != null && Object.hasOwnProperty.call(message, "localStampNs"))
+                writer.uint32(/* id 2, wireType 0 =*/16).uint64(message.localStampNs);
+            if (message.appStartId != null && Object.hasOwnProperty.call(message, "appStartId"))
+                writer.uint32(/* id 3, wireType 0 =*/24).uint64(message.appStartId);
+            if (message.scope != null && Object.hasOwnProperty.call(message, "scope"))
+                writer.uint32(/* id 10, wireType 2 =*/82).string(message.scope);
+            if (message.path != null && Object.hasOwnProperty.call(message, "path"))
+                writer.uint32(/* id 11, wireType 2 =*/90).string(message.path);
+            if (message.message != null && Object.hasOwnProperty.call(message, "message"))
+                writer.uint32(/* id 12, wireType 2 =*/98).string(message.message);
+            if (message.exitCode != null && Object.hasOwnProperty.call(message, "exitCode"))
+                writer.uint32(/* id 13, wireType 0 =*/104).int32(message.exitCode);
+            if (message.timedOut != null && Object.hasOwnProperty.call(message, "timedOut"))
+                writer.uint32(/* id 14, wireType 0 =*/112).bool(message.timedOut);
+            return writer;
+        };
+
+        /**
+         * Encodes the specified CellularError message, length delimited. Does not implicitly {@link sysinfo.CellularError.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof sysinfo.CellularError
+         * @static
+         * @param {sysinfo.ICellularError} message CellularError message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        CellularError.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes a CellularError message from the specified reader or buffer.
+         * @function decode
+         * @memberof sysinfo.CellularError
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {sysinfo.CellularError} CellularError
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        CellularError.decode = function decode(reader, length, error, long) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.sysinfo.CellularError();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                if (tag === error)
+                    break;
+                switch (tag >>> 3) {
+                case 1: {
+                        message.monotonicStampNs = reader.uint64();
+                        break;
+                    }
+                case 2: {
+                        message.localStampNs = reader.uint64();
+                        break;
+                    }
+                case 3: {
+                        message.appStartId = reader.uint64();
+                        break;
+                    }
+                case 10: {
+                        message.scope = reader.string();
+                        break;
+                    }
+                case 11: {
+                        message.path = reader.string();
+                        break;
+                    }
+                case 12: {
+                        message.message = reader.string();
+                        break;
+                    }
+                case 13: {
+                        message.exitCode = reader.int32();
+                        break;
+                    }
+                case 14: {
+                        message.timedOut = reader.bool();
+                        break;
+                    }
+                default:
+                    reader.skipType(tag & 7, long);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes a CellularError message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof sysinfo.CellularError
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {sysinfo.CellularError} CellularError
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        CellularError.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies a CellularError message.
+         * @function verify
+         * @memberof sysinfo.CellularError
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        CellularError.verify = function verify(message, long) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
+            if (message.monotonicStampNs != null && message.hasOwnProperty("monotonicStampNs"))
+                if (!$util.isInteger(message.monotonicStampNs) && !(message.monotonicStampNs && $util.isInteger(message.monotonicStampNs.low) && $util.isInteger(message.monotonicStampNs.high)))
+                    return "monotonicStampNs: integer|Long expected";
+            if (message.localStampNs != null && message.hasOwnProperty("localStampNs"))
+                if (!$util.isInteger(message.localStampNs) && !(message.localStampNs && $util.isInteger(message.localStampNs.low) && $util.isInteger(message.localStampNs.high)))
+                    return "localStampNs: integer|Long expected";
+            if (message.appStartId != null && message.hasOwnProperty("appStartId"))
+                if (!$util.isInteger(message.appStartId) && !(message.appStartId && $util.isInteger(message.appStartId.low) && $util.isInteger(message.appStartId.high)))
+                    return "appStartId: integer|Long expected";
+            if (message.scope != null && message.hasOwnProperty("scope"))
+                if (!$util.isString(message.scope))
+                    return "scope: string expected";
+            if (message.path != null && message.hasOwnProperty("path"))
+                if (!$util.isString(message.path))
+                    return "path: string expected";
+            if (message.message != null && message.hasOwnProperty("message"))
+                if (!$util.isString(message.message))
+                    return "message: string expected";
+            if (message.exitCode != null && message.hasOwnProperty("exitCode"))
+                if (!$util.isInteger(message.exitCode))
+                    return "exitCode: integer expected";
+            if (message.timedOut != null && message.hasOwnProperty("timedOut"))
+                if (typeof message.timedOut !== "boolean")
+                    return "timedOut: boolean expected";
+            return null;
+        };
+
+        /**
+         * Creates a CellularError message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof sysinfo.CellularError
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {sysinfo.CellularError} CellularError
+         */
+        CellularError.fromObject = function fromObject(object, long) {
+            if (object instanceof $root.sysinfo.CellularError)
+                return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let message = new $root.sysinfo.CellularError();
+            if (object.monotonicStampNs != null)
+                if ($util.Long)
+                    (message.monotonicStampNs = $util.Long.fromValue(object.monotonicStampNs)).unsigned = true;
+                else if (typeof object.monotonicStampNs === "string")
+                    message.monotonicStampNs = parseInt(object.monotonicStampNs, 10);
+                else if (typeof object.monotonicStampNs === "number")
+                    message.monotonicStampNs = object.monotonicStampNs;
+                else if (typeof object.monotonicStampNs === "object")
+                    message.monotonicStampNs = new $util.LongBits(object.monotonicStampNs.low >>> 0, object.monotonicStampNs.high >>> 0).toNumber(true);
+            if (object.localStampNs != null)
+                if ($util.Long)
+                    (message.localStampNs = $util.Long.fromValue(object.localStampNs)).unsigned = true;
+                else if (typeof object.localStampNs === "string")
+                    message.localStampNs = parseInt(object.localStampNs, 10);
+                else if (typeof object.localStampNs === "number")
+                    message.localStampNs = object.localStampNs;
+                else if (typeof object.localStampNs === "object")
+                    message.localStampNs = new $util.LongBits(object.localStampNs.low >>> 0, object.localStampNs.high >>> 0).toNumber(true);
+            if (object.appStartId != null)
+                if ($util.Long)
+                    (message.appStartId = $util.Long.fromValue(object.appStartId)).unsigned = true;
+                else if (typeof object.appStartId === "string")
+                    message.appStartId = parseInt(object.appStartId, 10);
+                else if (typeof object.appStartId === "number")
+                    message.appStartId = object.appStartId;
+                else if (typeof object.appStartId === "object")
+                    message.appStartId = new $util.LongBits(object.appStartId.low >>> 0, object.appStartId.high >>> 0).toNumber(true);
+            if (object.scope != null)
+                message.scope = String(object.scope);
+            if (object.path != null)
+                message.path = String(object.path);
+            if (object.message != null)
+                message.message = String(object.message);
+            if (object.exitCode != null)
+                message.exitCode = object.exitCode | 0;
+            if (object.timedOut != null)
+                message.timedOut = Boolean(object.timedOut);
+            return message;
+        };
+
+        /**
+         * Creates a plain object from a CellularError message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof sysinfo.CellularError
+         * @static
+         * @param {sysinfo.CellularError} message CellularError
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        CellularError.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.defaults) {
+                if ($util.Long) {
+                    let long = new $util.Long(0, 0, true);
+                    object.monotonicStampNs = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+                } else
+                    object.monotonicStampNs = options.longs === String ? "0" : 0;
+                if ($util.Long) {
+                    let long = new $util.Long(0, 0, true);
+                    object.localStampNs = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+                } else
+                    object.localStampNs = options.longs === String ? "0" : 0;
+                if ($util.Long) {
+                    let long = new $util.Long(0, 0, true);
+                    object.appStartId = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+                } else
+                    object.appStartId = options.longs === String ? "0" : 0;
+                object.scope = "";
+                object.path = "";
+                object.message = "";
+                object.exitCode = 0;
+                object.timedOut = false;
+            }
+            if (message.monotonicStampNs != null && message.hasOwnProperty("monotonicStampNs"))
+                if (typeof message.monotonicStampNs === "number")
+                    object.monotonicStampNs = options.longs === String ? String(message.monotonicStampNs) : message.monotonicStampNs;
+                else
+                    object.monotonicStampNs = options.longs === String ? $util.Long.prototype.toString.call(message.monotonicStampNs) : options.longs === Number ? new $util.LongBits(message.monotonicStampNs.low >>> 0, message.monotonicStampNs.high >>> 0).toNumber(true) : message.monotonicStampNs;
+            if (message.localStampNs != null && message.hasOwnProperty("localStampNs"))
+                if (typeof message.localStampNs === "number")
+                    object.localStampNs = options.longs === String ? String(message.localStampNs) : message.localStampNs;
+                else
+                    object.localStampNs = options.longs === String ? $util.Long.prototype.toString.call(message.localStampNs) : options.longs === Number ? new $util.LongBits(message.localStampNs.low >>> 0, message.localStampNs.high >>> 0).toNumber(true) : message.localStampNs;
+            if (message.appStartId != null && message.hasOwnProperty("appStartId"))
+                if (typeof message.appStartId === "number")
+                    object.appStartId = options.longs === String ? String(message.appStartId) : message.appStartId;
+                else
+                    object.appStartId = options.longs === String ? $util.Long.prototype.toString.call(message.appStartId) : options.longs === Number ? new $util.LongBits(message.appStartId.low >>> 0, message.appStartId.high >>> 0).toNumber(true) : message.appStartId;
+            if (message.scope != null && message.hasOwnProperty("scope"))
+                object.scope = message.scope;
+            if (message.path != null && message.hasOwnProperty("path"))
+                object.path = message.path;
+            if (message.message != null && message.hasOwnProperty("message"))
+                object.message = message.message;
+            if (message.exitCode != null && message.hasOwnProperty("exitCode"))
+                object.exitCode = message.exitCode;
+            if (message.timedOut != null && message.hasOwnProperty("timedOut"))
+                object.timedOut = message.timedOut;
+            return object;
+        };
+
+        /**
+         * Converts this CellularError to JSON.
+         * @function toJSON
+         * @memberof sysinfo.CellularError
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        CellularError.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for CellularError
+         * @function getTypeUrl
+         * @memberof sysinfo.CellularError
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        CellularError.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+            if (typeUrlPrefix === undefined) {
+                typeUrlPrefix = "type.googleapis.com";
+            }
+            return typeUrlPrefix + "/sysinfo.CellularError";
+        };
+
+        return CellularError;
+    })();
+
+    sysinfo.CellularIpConfig = (function() {
+
+        /**
+         * Properties of a CellularIpConfig.
+         * @memberof sysinfo
+         * @interface ICellularIpConfig
+         * @property {string|null} [family] CellularIpConfig family
+         * @property {string|null} [method] CellularIpConfig method
+         * @property {string|null} [address] CellularIpConfig address
+         * @property {number|null} [prefix] CellularIpConfig prefix
+         * @property {string|null} [gateway] CellularIpConfig gateway
+         * @property {Array.<string>|null} [dns] CellularIpConfig dns
+         * @property {Array.<sysinfo.ICellularAttribute>|null} [attributes] CellularIpConfig attributes
+         */
+
+        /**
+         * Constructs a new CellularIpConfig.
+         * @memberof sysinfo
+         * @classdesc Represents a CellularIpConfig.
+         * @implements ICellularIpConfig
+         * @constructor
+         * @param {sysinfo.ICellularIpConfig=} [properties] Properties to set
+         */
+        function CellularIpConfig(properties) {
+            this.dns = [];
+            this.attributes = [];
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * CellularIpConfig family.
+         * @member {string} family
+         * @memberof sysinfo.CellularIpConfig
+         * @instance
+         */
+        CellularIpConfig.prototype.family = "";
+
+        /**
+         * CellularIpConfig method.
+         * @member {string} method
+         * @memberof sysinfo.CellularIpConfig
+         * @instance
+         */
+        CellularIpConfig.prototype.method = "";
+
+        /**
+         * CellularIpConfig address.
+         * @member {string} address
+         * @memberof sysinfo.CellularIpConfig
+         * @instance
+         */
+        CellularIpConfig.prototype.address = "";
+
+        /**
+         * CellularIpConfig prefix.
+         * @member {number} prefix
+         * @memberof sysinfo.CellularIpConfig
+         * @instance
+         */
+        CellularIpConfig.prototype.prefix = 0;
+
+        /**
+         * CellularIpConfig gateway.
+         * @member {string} gateway
+         * @memberof sysinfo.CellularIpConfig
+         * @instance
+         */
+        CellularIpConfig.prototype.gateway = "";
+
+        /**
+         * CellularIpConfig dns.
+         * @member {Array.<string>} dns
+         * @memberof sysinfo.CellularIpConfig
+         * @instance
+         */
+        CellularIpConfig.prototype.dns = $util.emptyArray;
+
+        /**
+         * CellularIpConfig attributes.
+         * @member {Array.<sysinfo.ICellularAttribute>} attributes
+         * @memberof sysinfo.CellularIpConfig
+         * @instance
+         */
+        CellularIpConfig.prototype.attributes = $util.emptyArray;
+
+        /**
+         * Creates a new CellularIpConfig instance using the specified properties.
+         * @function create
+         * @memberof sysinfo.CellularIpConfig
+         * @static
+         * @param {sysinfo.ICellularIpConfig=} [properties] Properties to set
+         * @returns {sysinfo.CellularIpConfig} CellularIpConfig instance
+         */
+        CellularIpConfig.create = function create(properties) {
+            return new CellularIpConfig(properties);
+        };
+
+        /**
+         * Encodes the specified CellularIpConfig message. Does not implicitly {@link sysinfo.CellularIpConfig.verify|verify} messages.
+         * @function encode
+         * @memberof sysinfo.CellularIpConfig
+         * @static
+         * @param {sysinfo.ICellularIpConfig} message CellularIpConfig message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        CellularIpConfig.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.family != null && Object.hasOwnProperty.call(message, "family"))
+                writer.uint32(/* id 1, wireType 2 =*/10).string(message.family);
+            if (message.method != null && Object.hasOwnProperty.call(message, "method"))
+                writer.uint32(/* id 2, wireType 2 =*/18).string(message.method);
+            if (message.address != null && Object.hasOwnProperty.call(message, "address"))
+                writer.uint32(/* id 3, wireType 2 =*/26).string(message.address);
+            if (message.prefix != null && Object.hasOwnProperty.call(message, "prefix"))
+                writer.uint32(/* id 4, wireType 0 =*/32).uint32(message.prefix);
+            if (message.gateway != null && Object.hasOwnProperty.call(message, "gateway"))
+                writer.uint32(/* id 5, wireType 2 =*/42).string(message.gateway);
+            if (message.dns != null && message.dns.length)
+                for (let i = 0; i < message.dns.length; ++i)
+                    writer.uint32(/* id 6, wireType 2 =*/50).string(message.dns[i]);
+            if (message.attributes != null && message.attributes.length)
+                for (let i = 0; i < message.attributes.length; ++i)
+                    $root.sysinfo.CellularAttribute.encode(message.attributes[i], writer.uint32(/* id 100, wireType 2 =*/802).fork()).ldelim();
+            return writer;
+        };
+
+        /**
+         * Encodes the specified CellularIpConfig message, length delimited. Does not implicitly {@link sysinfo.CellularIpConfig.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof sysinfo.CellularIpConfig
+         * @static
+         * @param {sysinfo.ICellularIpConfig} message CellularIpConfig message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        CellularIpConfig.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes a CellularIpConfig message from the specified reader or buffer.
+         * @function decode
+         * @memberof sysinfo.CellularIpConfig
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {sysinfo.CellularIpConfig} CellularIpConfig
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        CellularIpConfig.decode = function decode(reader, length, error, long) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.sysinfo.CellularIpConfig();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                if (tag === error)
+                    break;
+                switch (tag >>> 3) {
+                case 1: {
+                        message.family = reader.string();
+                        break;
+                    }
+                case 2: {
+                        message.method = reader.string();
+                        break;
+                    }
+                case 3: {
+                        message.address = reader.string();
+                        break;
+                    }
+                case 4: {
+                        message.prefix = reader.uint32();
+                        break;
+                    }
+                case 5: {
+                        message.gateway = reader.string();
+                        break;
+                    }
+                case 6: {
+                        if (!(message.dns && message.dns.length))
+                            message.dns = [];
+                        message.dns.push(reader.string());
+                        break;
+                    }
+                case 100: {
+                        if (!(message.attributes && message.attributes.length))
+                            message.attributes = [];
+                        message.attributes.push($root.sysinfo.CellularAttribute.decode(reader, reader.uint32(), undefined, long + 1));
+                        break;
+                    }
+                default:
+                    reader.skipType(tag & 7, long);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes a CellularIpConfig message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof sysinfo.CellularIpConfig
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {sysinfo.CellularIpConfig} CellularIpConfig
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        CellularIpConfig.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies a CellularIpConfig message.
+         * @function verify
+         * @memberof sysinfo.CellularIpConfig
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        CellularIpConfig.verify = function verify(message, long) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
+            if (message.family != null && message.hasOwnProperty("family"))
+                if (!$util.isString(message.family))
+                    return "family: string expected";
+            if (message.method != null && message.hasOwnProperty("method"))
+                if (!$util.isString(message.method))
+                    return "method: string expected";
+            if (message.address != null && message.hasOwnProperty("address"))
+                if (!$util.isString(message.address))
+                    return "address: string expected";
+            if (message.prefix != null && message.hasOwnProperty("prefix"))
+                if (!$util.isInteger(message.prefix))
+                    return "prefix: integer expected";
+            if (message.gateway != null && message.hasOwnProperty("gateway"))
+                if (!$util.isString(message.gateway))
+                    return "gateway: string expected";
+            if (message.dns != null && message.hasOwnProperty("dns")) {
+                if (!Array.isArray(message.dns))
+                    return "dns: array expected";
+                for (let i = 0; i < message.dns.length; ++i)
+                    if (!$util.isString(message.dns[i]))
+                        return "dns: string[] expected";
+            }
+            if (message.attributes != null && message.hasOwnProperty("attributes")) {
+                if (!Array.isArray(message.attributes))
+                    return "attributes: array expected";
+                for (let i = 0; i < message.attributes.length; ++i) {
+                    let error = $root.sysinfo.CellularAttribute.verify(message.attributes[i], long + 1);
+                    if (error)
+                        return "attributes." + error;
+                }
+            }
+            return null;
+        };
+
+        /**
+         * Creates a CellularIpConfig message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof sysinfo.CellularIpConfig
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {sysinfo.CellularIpConfig} CellularIpConfig
+         */
+        CellularIpConfig.fromObject = function fromObject(object, long) {
+            if (object instanceof $root.sysinfo.CellularIpConfig)
+                return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let message = new $root.sysinfo.CellularIpConfig();
+            if (object.family != null)
+                message.family = String(object.family);
+            if (object.method != null)
+                message.method = String(object.method);
+            if (object.address != null)
+                message.address = String(object.address);
+            if (object.prefix != null)
+                message.prefix = object.prefix >>> 0;
+            if (object.gateway != null)
+                message.gateway = String(object.gateway);
+            if (object.dns) {
+                if (!Array.isArray(object.dns))
+                    throw TypeError(".sysinfo.CellularIpConfig.dns: array expected");
+                message.dns = [];
+                for (let i = 0; i < object.dns.length; ++i)
+                    message.dns[i] = String(object.dns[i]);
+            }
+            if (object.attributes) {
+                if (!Array.isArray(object.attributes))
+                    throw TypeError(".sysinfo.CellularIpConfig.attributes: array expected");
+                message.attributes = [];
+                for (let i = 0; i < object.attributes.length; ++i) {
+                    if (typeof object.attributes[i] !== "object")
+                        throw TypeError(".sysinfo.CellularIpConfig.attributes: object expected");
+                    message.attributes[i] = $root.sysinfo.CellularAttribute.fromObject(object.attributes[i], long + 1);
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Creates a plain object from a CellularIpConfig message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof sysinfo.CellularIpConfig
+         * @static
+         * @param {sysinfo.CellularIpConfig} message CellularIpConfig
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        CellularIpConfig.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.arrays || options.defaults) {
+                object.dns = [];
+                object.attributes = [];
+            }
+            if (options.defaults) {
+                object.family = "";
+                object.method = "";
+                object.address = "";
+                object.prefix = 0;
+                object.gateway = "";
+            }
+            if (message.family != null && message.hasOwnProperty("family"))
+                object.family = message.family;
+            if (message.method != null && message.hasOwnProperty("method"))
+                object.method = message.method;
+            if (message.address != null && message.hasOwnProperty("address"))
+                object.address = message.address;
+            if (message.prefix != null && message.hasOwnProperty("prefix"))
+                object.prefix = message.prefix;
+            if (message.gateway != null && message.hasOwnProperty("gateway"))
+                object.gateway = message.gateway;
+            if (message.dns && message.dns.length) {
+                object.dns = [];
+                for (let j = 0; j < message.dns.length; ++j)
+                    object.dns[j] = message.dns[j];
+            }
+            if (message.attributes && message.attributes.length) {
+                object.attributes = [];
+                for (let j = 0; j < message.attributes.length; ++j)
+                    object.attributes[j] = $root.sysinfo.CellularAttribute.toObject(message.attributes[j], options);
+            }
+            return object;
+        };
+
+        /**
+         * Converts this CellularIpConfig to JSON.
+         * @function toJSON
+         * @memberof sysinfo.CellularIpConfig
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        CellularIpConfig.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for CellularIpConfig
+         * @function getTypeUrl
+         * @memberof sysinfo.CellularIpConfig
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        CellularIpConfig.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+            if (typeUrlPrefix === undefined) {
+                typeUrlPrefix = "type.googleapis.com";
+            }
+            return typeUrlPrefix + "/sysinfo.CellularIpConfig";
+        };
+
+        return CellularIpConfig;
+    })();
+
+    sysinfo.CellularBearer = (function() {
+
+        /**
+         * Properties of a CellularBearer.
+         * @memberof sysinfo
+         * @interface ICellularBearer
+         * @property {Long|null} [monotonicStampNs] CellularBearer monotonicStampNs
+         * @property {Long|null} [localStampNs] CellularBearer localStampNs
+         * @property {Long|null} [appStartId] CellularBearer appStartId
+         * @property {string|null} [path] CellularBearer path
+         * @property {string|null} [bearerId] CellularBearer bearerId
+         * @property {string|null} [type] CellularBearer type
+         * @property {boolean|null} [connected] CellularBearer connected
+         * @property {boolean|null} [suspended] CellularBearer suspended
+         * @property {boolean|null} [multiplexed] CellularBearer multiplexed
+         * @property {string|null} ["interface"] CellularBearer interface
+         * @property {number|null} [ipTimeoutSeconds] CellularBearer ipTimeoutSeconds
+         * @property {number|null} [profileId] CellularBearer profileId
+         * @property {string|null} [apn] CellularBearer apn
+         * @property {string|null} [apnType] CellularBearer apnType
+         * @property {string|null} [roaming] CellularBearer roaming
+         * @property {Array.<sysinfo.ICellularIpConfig>|null} [ip] CellularBearer ip
+         * @property {Array.<sysinfo.ICellularAttribute>|null} [attributes] CellularBearer attributes
+         */
+
+        /**
+         * Constructs a new CellularBearer.
+         * @memberof sysinfo
+         * @classdesc Represents a CellularBearer.
+         * @implements ICellularBearer
+         * @constructor
+         * @param {sysinfo.ICellularBearer=} [properties] Properties to set
+         */
+        function CellularBearer(properties) {
+            this.ip = [];
+            this.attributes = [];
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * CellularBearer monotonicStampNs.
+         * @member {Long} monotonicStampNs
+         * @memberof sysinfo.CellularBearer
+         * @instance
+         */
+        CellularBearer.prototype.monotonicStampNs = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+
+        /**
+         * CellularBearer localStampNs.
+         * @member {Long} localStampNs
+         * @memberof sysinfo.CellularBearer
+         * @instance
+         */
+        CellularBearer.prototype.localStampNs = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+
+        /**
+         * CellularBearer appStartId.
+         * @member {Long} appStartId
+         * @memberof sysinfo.CellularBearer
+         * @instance
+         */
+        CellularBearer.prototype.appStartId = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+
+        /**
+         * CellularBearer path.
+         * @member {string} path
+         * @memberof sysinfo.CellularBearer
+         * @instance
+         */
+        CellularBearer.prototype.path = "";
+
+        /**
+         * CellularBearer bearerId.
+         * @member {string} bearerId
+         * @memberof sysinfo.CellularBearer
+         * @instance
+         */
+        CellularBearer.prototype.bearerId = "";
+
+        /**
+         * CellularBearer type.
+         * @member {string} type
+         * @memberof sysinfo.CellularBearer
+         * @instance
+         */
+        CellularBearer.prototype.type = "";
+
+        /**
+         * CellularBearer connected.
+         * @member {boolean} connected
+         * @memberof sysinfo.CellularBearer
+         * @instance
+         */
+        CellularBearer.prototype.connected = false;
+
+        /**
+         * CellularBearer suspended.
+         * @member {boolean} suspended
+         * @memberof sysinfo.CellularBearer
+         * @instance
+         */
+        CellularBearer.prototype.suspended = false;
+
+        /**
+         * CellularBearer multiplexed.
+         * @member {boolean} multiplexed
+         * @memberof sysinfo.CellularBearer
+         * @instance
+         */
+        CellularBearer.prototype.multiplexed = false;
+
+        /**
+         * CellularBearer interface.
+         * @member {string} interface
+         * @memberof sysinfo.CellularBearer
+         * @instance
+         */
+        CellularBearer.prototype["interface"] = "";
+
+        /**
+         * CellularBearer ipTimeoutSeconds.
+         * @member {number} ipTimeoutSeconds
+         * @memberof sysinfo.CellularBearer
+         * @instance
+         */
+        CellularBearer.prototype.ipTimeoutSeconds = 0;
+
+        /**
+         * CellularBearer profileId.
+         * @member {number} profileId
+         * @memberof sysinfo.CellularBearer
+         * @instance
+         */
+        CellularBearer.prototype.profileId = 0;
+
+        /**
+         * CellularBearer apn.
+         * @member {string} apn
+         * @memberof sysinfo.CellularBearer
+         * @instance
+         */
+        CellularBearer.prototype.apn = "";
+
+        /**
+         * CellularBearer apnType.
+         * @member {string} apnType
+         * @memberof sysinfo.CellularBearer
+         * @instance
+         */
+        CellularBearer.prototype.apnType = "";
+
+        /**
+         * CellularBearer roaming.
+         * @member {string} roaming
+         * @memberof sysinfo.CellularBearer
+         * @instance
+         */
+        CellularBearer.prototype.roaming = "";
+
+        /**
+         * CellularBearer ip.
+         * @member {Array.<sysinfo.ICellularIpConfig>} ip
+         * @memberof sysinfo.CellularBearer
+         * @instance
+         */
+        CellularBearer.prototype.ip = $util.emptyArray;
+
+        /**
+         * CellularBearer attributes.
+         * @member {Array.<sysinfo.ICellularAttribute>} attributes
+         * @memberof sysinfo.CellularBearer
+         * @instance
+         */
+        CellularBearer.prototype.attributes = $util.emptyArray;
+
+        /**
+         * Creates a new CellularBearer instance using the specified properties.
+         * @function create
+         * @memberof sysinfo.CellularBearer
+         * @static
+         * @param {sysinfo.ICellularBearer=} [properties] Properties to set
+         * @returns {sysinfo.CellularBearer} CellularBearer instance
+         */
+        CellularBearer.create = function create(properties) {
+            return new CellularBearer(properties);
+        };
+
+        /**
+         * Encodes the specified CellularBearer message. Does not implicitly {@link sysinfo.CellularBearer.verify|verify} messages.
+         * @function encode
+         * @memberof sysinfo.CellularBearer
+         * @static
+         * @param {sysinfo.ICellularBearer} message CellularBearer message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        CellularBearer.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.monotonicStampNs != null && Object.hasOwnProperty.call(message, "monotonicStampNs"))
+                writer.uint32(/* id 1, wireType 0 =*/8).uint64(message.monotonicStampNs);
+            if (message.localStampNs != null && Object.hasOwnProperty.call(message, "localStampNs"))
+                writer.uint32(/* id 2, wireType 0 =*/16).uint64(message.localStampNs);
+            if (message.appStartId != null && Object.hasOwnProperty.call(message, "appStartId"))
+                writer.uint32(/* id 3, wireType 0 =*/24).uint64(message.appStartId);
+            if (message.path != null && Object.hasOwnProperty.call(message, "path"))
+                writer.uint32(/* id 10, wireType 2 =*/82).string(message.path);
+            if (message.bearerId != null && Object.hasOwnProperty.call(message, "bearerId"))
+                writer.uint32(/* id 11, wireType 2 =*/90).string(message.bearerId);
+            if (message.type != null && Object.hasOwnProperty.call(message, "type"))
+                writer.uint32(/* id 12, wireType 2 =*/98).string(message.type);
+            if (message.connected != null && Object.hasOwnProperty.call(message, "connected"))
+                writer.uint32(/* id 13, wireType 0 =*/104).bool(message.connected);
+            if (message.suspended != null && Object.hasOwnProperty.call(message, "suspended"))
+                writer.uint32(/* id 14, wireType 0 =*/112).bool(message.suspended);
+            if (message.multiplexed != null && Object.hasOwnProperty.call(message, "multiplexed"))
+                writer.uint32(/* id 15, wireType 0 =*/120).bool(message.multiplexed);
+            if (message["interface"] != null && Object.hasOwnProperty.call(message, "interface"))
+                writer.uint32(/* id 16, wireType 2 =*/130).string(message["interface"]);
+            if (message.ipTimeoutSeconds != null && Object.hasOwnProperty.call(message, "ipTimeoutSeconds"))
+                writer.uint32(/* id 17, wireType 0 =*/136).uint32(message.ipTimeoutSeconds);
+            if (message.profileId != null && Object.hasOwnProperty.call(message, "profileId"))
+                writer.uint32(/* id 18, wireType 0 =*/144).int32(message.profileId);
+            if (message.apn != null && Object.hasOwnProperty.call(message, "apn"))
+                writer.uint32(/* id 20, wireType 2 =*/162).string(message.apn);
+            if (message.apnType != null && Object.hasOwnProperty.call(message, "apnType"))
+                writer.uint32(/* id 21, wireType 2 =*/170).string(message.apnType);
+            if (message.roaming != null && Object.hasOwnProperty.call(message, "roaming"))
+                writer.uint32(/* id 22, wireType 2 =*/178).string(message.roaming);
+            if (message.ip != null && message.ip.length)
+                for (let i = 0; i < message.ip.length; ++i)
+                    $root.sysinfo.CellularIpConfig.encode(message.ip[i], writer.uint32(/* id 30, wireType 2 =*/242).fork()).ldelim();
+            if (message.attributes != null && message.attributes.length)
+                for (let i = 0; i < message.attributes.length; ++i)
+                    $root.sysinfo.CellularAttribute.encode(message.attributes[i], writer.uint32(/* id 100, wireType 2 =*/802).fork()).ldelim();
+            return writer;
+        };
+
+        /**
+         * Encodes the specified CellularBearer message, length delimited. Does not implicitly {@link sysinfo.CellularBearer.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof sysinfo.CellularBearer
+         * @static
+         * @param {sysinfo.ICellularBearer} message CellularBearer message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        CellularBearer.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes a CellularBearer message from the specified reader or buffer.
+         * @function decode
+         * @memberof sysinfo.CellularBearer
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {sysinfo.CellularBearer} CellularBearer
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        CellularBearer.decode = function decode(reader, length, error, long) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.sysinfo.CellularBearer();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                if (tag === error)
+                    break;
+                switch (tag >>> 3) {
+                case 1: {
+                        message.monotonicStampNs = reader.uint64();
+                        break;
+                    }
+                case 2: {
+                        message.localStampNs = reader.uint64();
+                        break;
+                    }
+                case 3: {
+                        message.appStartId = reader.uint64();
+                        break;
+                    }
+                case 10: {
+                        message.path = reader.string();
+                        break;
+                    }
+                case 11: {
+                        message.bearerId = reader.string();
+                        break;
+                    }
+                case 12: {
+                        message.type = reader.string();
+                        break;
+                    }
+                case 13: {
+                        message.connected = reader.bool();
+                        break;
+                    }
+                case 14: {
+                        message.suspended = reader.bool();
+                        break;
+                    }
+                case 15: {
+                        message.multiplexed = reader.bool();
+                        break;
+                    }
+                case 16: {
+                        message["interface"] = reader.string();
+                        break;
+                    }
+                case 17: {
+                        message.ipTimeoutSeconds = reader.uint32();
+                        break;
+                    }
+                case 18: {
+                        message.profileId = reader.int32();
+                        break;
+                    }
+                case 20: {
+                        message.apn = reader.string();
+                        break;
+                    }
+                case 21: {
+                        message.apnType = reader.string();
+                        break;
+                    }
+                case 22: {
+                        message.roaming = reader.string();
+                        break;
+                    }
+                case 30: {
+                        if (!(message.ip && message.ip.length))
+                            message.ip = [];
+                        message.ip.push($root.sysinfo.CellularIpConfig.decode(reader, reader.uint32(), undefined, long + 1));
+                        break;
+                    }
+                case 100: {
+                        if (!(message.attributes && message.attributes.length))
+                            message.attributes = [];
+                        message.attributes.push($root.sysinfo.CellularAttribute.decode(reader, reader.uint32(), undefined, long + 1));
+                        break;
+                    }
+                default:
+                    reader.skipType(tag & 7, long);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes a CellularBearer message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof sysinfo.CellularBearer
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {sysinfo.CellularBearer} CellularBearer
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        CellularBearer.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies a CellularBearer message.
+         * @function verify
+         * @memberof sysinfo.CellularBearer
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        CellularBearer.verify = function verify(message, long) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
+            if (message.monotonicStampNs != null && message.hasOwnProperty("monotonicStampNs"))
+                if (!$util.isInteger(message.monotonicStampNs) && !(message.monotonicStampNs && $util.isInteger(message.monotonicStampNs.low) && $util.isInteger(message.monotonicStampNs.high)))
+                    return "monotonicStampNs: integer|Long expected";
+            if (message.localStampNs != null && message.hasOwnProperty("localStampNs"))
+                if (!$util.isInteger(message.localStampNs) && !(message.localStampNs && $util.isInteger(message.localStampNs.low) && $util.isInteger(message.localStampNs.high)))
+                    return "localStampNs: integer|Long expected";
+            if (message.appStartId != null && message.hasOwnProperty("appStartId"))
+                if (!$util.isInteger(message.appStartId) && !(message.appStartId && $util.isInteger(message.appStartId.low) && $util.isInteger(message.appStartId.high)))
+                    return "appStartId: integer|Long expected";
+            if (message.path != null && message.hasOwnProperty("path"))
+                if (!$util.isString(message.path))
+                    return "path: string expected";
+            if (message.bearerId != null && message.hasOwnProperty("bearerId"))
+                if (!$util.isString(message.bearerId))
+                    return "bearerId: string expected";
+            if (message.type != null && message.hasOwnProperty("type"))
+                if (!$util.isString(message.type))
+                    return "type: string expected";
+            if (message.connected != null && message.hasOwnProperty("connected"))
+                if (typeof message.connected !== "boolean")
+                    return "connected: boolean expected";
+            if (message.suspended != null && message.hasOwnProperty("suspended"))
+                if (typeof message.suspended !== "boolean")
+                    return "suspended: boolean expected";
+            if (message.multiplexed != null && message.hasOwnProperty("multiplexed"))
+                if (typeof message.multiplexed !== "boolean")
+                    return "multiplexed: boolean expected";
+            if (message["interface"] != null && message.hasOwnProperty("interface"))
+                if (!$util.isString(message["interface"]))
+                    return "interface: string expected";
+            if (message.ipTimeoutSeconds != null && message.hasOwnProperty("ipTimeoutSeconds"))
+                if (!$util.isInteger(message.ipTimeoutSeconds))
+                    return "ipTimeoutSeconds: integer expected";
+            if (message.profileId != null && message.hasOwnProperty("profileId"))
+                if (!$util.isInteger(message.profileId))
+                    return "profileId: integer expected";
+            if (message.apn != null && message.hasOwnProperty("apn"))
+                if (!$util.isString(message.apn))
+                    return "apn: string expected";
+            if (message.apnType != null && message.hasOwnProperty("apnType"))
+                if (!$util.isString(message.apnType))
+                    return "apnType: string expected";
+            if (message.roaming != null && message.hasOwnProperty("roaming"))
+                if (!$util.isString(message.roaming))
+                    return "roaming: string expected";
+            if (message.ip != null && message.hasOwnProperty("ip")) {
+                if (!Array.isArray(message.ip))
+                    return "ip: array expected";
+                for (let i = 0; i < message.ip.length; ++i) {
+                    let error = $root.sysinfo.CellularIpConfig.verify(message.ip[i], long + 1);
+                    if (error)
+                        return "ip." + error;
+                }
+            }
+            if (message.attributes != null && message.hasOwnProperty("attributes")) {
+                if (!Array.isArray(message.attributes))
+                    return "attributes: array expected";
+                for (let i = 0; i < message.attributes.length; ++i) {
+                    let error = $root.sysinfo.CellularAttribute.verify(message.attributes[i], long + 1);
+                    if (error)
+                        return "attributes." + error;
+                }
+            }
+            return null;
+        };
+
+        /**
+         * Creates a CellularBearer message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof sysinfo.CellularBearer
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {sysinfo.CellularBearer} CellularBearer
+         */
+        CellularBearer.fromObject = function fromObject(object, long) {
+            if (object instanceof $root.sysinfo.CellularBearer)
+                return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let message = new $root.sysinfo.CellularBearer();
+            if (object.monotonicStampNs != null)
+                if ($util.Long)
+                    (message.monotonicStampNs = $util.Long.fromValue(object.monotonicStampNs)).unsigned = true;
+                else if (typeof object.monotonicStampNs === "string")
+                    message.monotonicStampNs = parseInt(object.monotonicStampNs, 10);
+                else if (typeof object.monotonicStampNs === "number")
+                    message.monotonicStampNs = object.monotonicStampNs;
+                else if (typeof object.monotonicStampNs === "object")
+                    message.monotonicStampNs = new $util.LongBits(object.monotonicStampNs.low >>> 0, object.monotonicStampNs.high >>> 0).toNumber(true);
+            if (object.localStampNs != null)
+                if ($util.Long)
+                    (message.localStampNs = $util.Long.fromValue(object.localStampNs)).unsigned = true;
+                else if (typeof object.localStampNs === "string")
+                    message.localStampNs = parseInt(object.localStampNs, 10);
+                else if (typeof object.localStampNs === "number")
+                    message.localStampNs = object.localStampNs;
+                else if (typeof object.localStampNs === "object")
+                    message.localStampNs = new $util.LongBits(object.localStampNs.low >>> 0, object.localStampNs.high >>> 0).toNumber(true);
+            if (object.appStartId != null)
+                if ($util.Long)
+                    (message.appStartId = $util.Long.fromValue(object.appStartId)).unsigned = true;
+                else if (typeof object.appStartId === "string")
+                    message.appStartId = parseInt(object.appStartId, 10);
+                else if (typeof object.appStartId === "number")
+                    message.appStartId = object.appStartId;
+                else if (typeof object.appStartId === "object")
+                    message.appStartId = new $util.LongBits(object.appStartId.low >>> 0, object.appStartId.high >>> 0).toNumber(true);
+            if (object.path != null)
+                message.path = String(object.path);
+            if (object.bearerId != null)
+                message.bearerId = String(object.bearerId);
+            if (object.type != null)
+                message.type = String(object.type);
+            if (object.connected != null)
+                message.connected = Boolean(object.connected);
+            if (object.suspended != null)
+                message.suspended = Boolean(object.suspended);
+            if (object.multiplexed != null)
+                message.multiplexed = Boolean(object.multiplexed);
+            if (object["interface"] != null)
+                message["interface"] = String(object["interface"]);
+            if (object.ipTimeoutSeconds != null)
+                message.ipTimeoutSeconds = object.ipTimeoutSeconds >>> 0;
+            if (object.profileId != null)
+                message.profileId = object.profileId | 0;
+            if (object.apn != null)
+                message.apn = String(object.apn);
+            if (object.apnType != null)
+                message.apnType = String(object.apnType);
+            if (object.roaming != null)
+                message.roaming = String(object.roaming);
+            if (object.ip) {
+                if (!Array.isArray(object.ip))
+                    throw TypeError(".sysinfo.CellularBearer.ip: array expected");
+                message.ip = [];
+                for (let i = 0; i < object.ip.length; ++i) {
+                    if (typeof object.ip[i] !== "object")
+                        throw TypeError(".sysinfo.CellularBearer.ip: object expected");
+                    message.ip[i] = $root.sysinfo.CellularIpConfig.fromObject(object.ip[i], long + 1);
+                }
+            }
+            if (object.attributes) {
+                if (!Array.isArray(object.attributes))
+                    throw TypeError(".sysinfo.CellularBearer.attributes: array expected");
+                message.attributes = [];
+                for (let i = 0; i < object.attributes.length; ++i) {
+                    if (typeof object.attributes[i] !== "object")
+                        throw TypeError(".sysinfo.CellularBearer.attributes: object expected");
+                    message.attributes[i] = $root.sysinfo.CellularAttribute.fromObject(object.attributes[i], long + 1);
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Creates a plain object from a CellularBearer message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof sysinfo.CellularBearer
+         * @static
+         * @param {sysinfo.CellularBearer} message CellularBearer
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        CellularBearer.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.arrays || options.defaults) {
+                object.ip = [];
+                object.attributes = [];
+            }
+            if (options.defaults) {
+                if ($util.Long) {
+                    let long = new $util.Long(0, 0, true);
+                    object.monotonicStampNs = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+                } else
+                    object.monotonicStampNs = options.longs === String ? "0" : 0;
+                if ($util.Long) {
+                    let long = new $util.Long(0, 0, true);
+                    object.localStampNs = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+                } else
+                    object.localStampNs = options.longs === String ? "0" : 0;
+                if ($util.Long) {
+                    let long = new $util.Long(0, 0, true);
+                    object.appStartId = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+                } else
+                    object.appStartId = options.longs === String ? "0" : 0;
+                object.path = "";
+                object.bearerId = "";
+                object.type = "";
+                object.connected = false;
+                object.suspended = false;
+                object.multiplexed = false;
+                object["interface"] = "";
+                object.ipTimeoutSeconds = 0;
+                object.profileId = 0;
+                object.apn = "";
+                object.apnType = "";
+                object.roaming = "";
+            }
+            if (message.monotonicStampNs != null && message.hasOwnProperty("monotonicStampNs"))
+                if (typeof message.monotonicStampNs === "number")
+                    object.monotonicStampNs = options.longs === String ? String(message.monotonicStampNs) : message.monotonicStampNs;
+                else
+                    object.monotonicStampNs = options.longs === String ? $util.Long.prototype.toString.call(message.monotonicStampNs) : options.longs === Number ? new $util.LongBits(message.monotonicStampNs.low >>> 0, message.monotonicStampNs.high >>> 0).toNumber(true) : message.monotonicStampNs;
+            if (message.localStampNs != null && message.hasOwnProperty("localStampNs"))
+                if (typeof message.localStampNs === "number")
+                    object.localStampNs = options.longs === String ? String(message.localStampNs) : message.localStampNs;
+                else
+                    object.localStampNs = options.longs === String ? $util.Long.prototype.toString.call(message.localStampNs) : options.longs === Number ? new $util.LongBits(message.localStampNs.low >>> 0, message.localStampNs.high >>> 0).toNumber(true) : message.localStampNs;
+            if (message.appStartId != null && message.hasOwnProperty("appStartId"))
+                if (typeof message.appStartId === "number")
+                    object.appStartId = options.longs === String ? String(message.appStartId) : message.appStartId;
+                else
+                    object.appStartId = options.longs === String ? $util.Long.prototype.toString.call(message.appStartId) : options.longs === Number ? new $util.LongBits(message.appStartId.low >>> 0, message.appStartId.high >>> 0).toNumber(true) : message.appStartId;
+            if (message.path != null && message.hasOwnProperty("path"))
+                object.path = message.path;
+            if (message.bearerId != null && message.hasOwnProperty("bearerId"))
+                object.bearerId = message.bearerId;
+            if (message.type != null && message.hasOwnProperty("type"))
+                object.type = message.type;
+            if (message.connected != null && message.hasOwnProperty("connected"))
+                object.connected = message.connected;
+            if (message.suspended != null && message.hasOwnProperty("suspended"))
+                object.suspended = message.suspended;
+            if (message.multiplexed != null && message.hasOwnProperty("multiplexed"))
+                object.multiplexed = message.multiplexed;
+            if (message["interface"] != null && message.hasOwnProperty("interface"))
+                object["interface"] = message["interface"];
+            if (message.ipTimeoutSeconds != null && message.hasOwnProperty("ipTimeoutSeconds"))
+                object.ipTimeoutSeconds = message.ipTimeoutSeconds;
+            if (message.profileId != null && message.hasOwnProperty("profileId"))
+                object.profileId = message.profileId;
+            if (message.apn != null && message.hasOwnProperty("apn"))
+                object.apn = message.apn;
+            if (message.apnType != null && message.hasOwnProperty("apnType"))
+                object.apnType = message.apnType;
+            if (message.roaming != null && message.hasOwnProperty("roaming"))
+                object.roaming = message.roaming;
+            if (message.ip && message.ip.length) {
+                object.ip = [];
+                for (let j = 0; j < message.ip.length; ++j)
+                    object.ip[j] = $root.sysinfo.CellularIpConfig.toObject(message.ip[j], options);
+            }
+            if (message.attributes && message.attributes.length) {
+                object.attributes = [];
+                for (let j = 0; j < message.attributes.length; ++j)
+                    object.attributes[j] = $root.sysinfo.CellularAttribute.toObject(message.attributes[j], options);
+            }
+            return object;
+        };
+
+        /**
+         * Converts this CellularBearer to JSON.
+         * @function toJSON
+         * @memberof sysinfo.CellularBearer
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        CellularBearer.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for CellularBearer
+         * @function getTypeUrl
+         * @memberof sysinfo.CellularBearer
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        CellularBearer.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+            if (typeUrlPrefix === undefined) {
+                typeUrlPrefix = "type.googleapis.com";
+            }
+            return typeUrlPrefix + "/sysinfo.CellularBearer";
+        };
+
+        return CellularBearer;
+    })();
+
+    sysinfo.CellularSignal = (function() {
+
+        /**
+         * Properties of a CellularSignal.
+         * @memberof sysinfo
+         * @interface ICellularSignal
+         * @property {Long|null} [monotonicStampNs] CellularSignal monotonicStampNs
+         * @property {Long|null} [localStampNs] CellularSignal localStampNs
+         * @property {Long|null} [appStartId] CellularSignal appStartId
+         * @property {string|null} [accessTech] CellularSignal accessTech
+         * @property {Array.<sysinfo.ICellularAttribute>|null} [metrics] CellularSignal metrics
+         */
+
+        /**
+         * Constructs a new CellularSignal.
+         * @memberof sysinfo
+         * @classdesc Represents a CellularSignal.
+         * @implements ICellularSignal
+         * @constructor
+         * @param {sysinfo.ICellularSignal=} [properties] Properties to set
+         */
+        function CellularSignal(properties) {
+            this.metrics = [];
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * CellularSignal monotonicStampNs.
+         * @member {Long} monotonicStampNs
+         * @memberof sysinfo.CellularSignal
+         * @instance
+         */
+        CellularSignal.prototype.monotonicStampNs = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+
+        /**
+         * CellularSignal localStampNs.
+         * @member {Long} localStampNs
+         * @memberof sysinfo.CellularSignal
+         * @instance
+         */
+        CellularSignal.prototype.localStampNs = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+
+        /**
+         * CellularSignal appStartId.
+         * @member {Long} appStartId
+         * @memberof sysinfo.CellularSignal
+         * @instance
+         */
+        CellularSignal.prototype.appStartId = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+
+        /**
+         * CellularSignal accessTech.
+         * @member {string} accessTech
+         * @memberof sysinfo.CellularSignal
+         * @instance
+         */
+        CellularSignal.prototype.accessTech = "";
+
+        /**
+         * CellularSignal metrics.
+         * @member {Array.<sysinfo.ICellularAttribute>} metrics
+         * @memberof sysinfo.CellularSignal
+         * @instance
+         */
+        CellularSignal.prototype.metrics = $util.emptyArray;
+
+        /**
+         * Creates a new CellularSignal instance using the specified properties.
+         * @function create
+         * @memberof sysinfo.CellularSignal
+         * @static
+         * @param {sysinfo.ICellularSignal=} [properties] Properties to set
+         * @returns {sysinfo.CellularSignal} CellularSignal instance
+         */
+        CellularSignal.create = function create(properties) {
+            return new CellularSignal(properties);
+        };
+
+        /**
+         * Encodes the specified CellularSignal message. Does not implicitly {@link sysinfo.CellularSignal.verify|verify} messages.
+         * @function encode
+         * @memberof sysinfo.CellularSignal
+         * @static
+         * @param {sysinfo.ICellularSignal} message CellularSignal message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        CellularSignal.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.monotonicStampNs != null && Object.hasOwnProperty.call(message, "monotonicStampNs"))
+                writer.uint32(/* id 1, wireType 0 =*/8).uint64(message.monotonicStampNs);
+            if (message.localStampNs != null && Object.hasOwnProperty.call(message, "localStampNs"))
+                writer.uint32(/* id 2, wireType 0 =*/16).uint64(message.localStampNs);
+            if (message.appStartId != null && Object.hasOwnProperty.call(message, "appStartId"))
+                writer.uint32(/* id 3, wireType 0 =*/24).uint64(message.appStartId);
+            if (message.accessTech != null && Object.hasOwnProperty.call(message, "accessTech"))
+                writer.uint32(/* id 10, wireType 2 =*/82).string(message.accessTech);
+            if (message.metrics != null && message.metrics.length)
+                for (let i = 0; i < message.metrics.length; ++i)
+                    $root.sysinfo.CellularAttribute.encode(message.metrics[i], writer.uint32(/* id 20, wireType 2 =*/162).fork()).ldelim();
+            return writer;
+        };
+
+        /**
+         * Encodes the specified CellularSignal message, length delimited. Does not implicitly {@link sysinfo.CellularSignal.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof sysinfo.CellularSignal
+         * @static
+         * @param {sysinfo.ICellularSignal} message CellularSignal message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        CellularSignal.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes a CellularSignal message from the specified reader or buffer.
+         * @function decode
+         * @memberof sysinfo.CellularSignal
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {sysinfo.CellularSignal} CellularSignal
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        CellularSignal.decode = function decode(reader, length, error, long) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.sysinfo.CellularSignal();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                if (tag === error)
+                    break;
+                switch (tag >>> 3) {
+                case 1: {
+                        message.monotonicStampNs = reader.uint64();
+                        break;
+                    }
+                case 2: {
+                        message.localStampNs = reader.uint64();
+                        break;
+                    }
+                case 3: {
+                        message.appStartId = reader.uint64();
+                        break;
+                    }
+                case 10: {
+                        message.accessTech = reader.string();
+                        break;
+                    }
+                case 20: {
+                        if (!(message.metrics && message.metrics.length))
+                            message.metrics = [];
+                        message.metrics.push($root.sysinfo.CellularAttribute.decode(reader, reader.uint32(), undefined, long + 1));
+                        break;
+                    }
+                default:
+                    reader.skipType(tag & 7, long);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes a CellularSignal message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof sysinfo.CellularSignal
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {sysinfo.CellularSignal} CellularSignal
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        CellularSignal.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies a CellularSignal message.
+         * @function verify
+         * @memberof sysinfo.CellularSignal
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        CellularSignal.verify = function verify(message, long) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
+            if (message.monotonicStampNs != null && message.hasOwnProperty("monotonicStampNs"))
+                if (!$util.isInteger(message.monotonicStampNs) && !(message.monotonicStampNs && $util.isInteger(message.monotonicStampNs.low) && $util.isInteger(message.monotonicStampNs.high)))
+                    return "monotonicStampNs: integer|Long expected";
+            if (message.localStampNs != null && message.hasOwnProperty("localStampNs"))
+                if (!$util.isInteger(message.localStampNs) && !(message.localStampNs && $util.isInteger(message.localStampNs.low) && $util.isInteger(message.localStampNs.high)))
+                    return "localStampNs: integer|Long expected";
+            if (message.appStartId != null && message.hasOwnProperty("appStartId"))
+                if (!$util.isInteger(message.appStartId) && !(message.appStartId && $util.isInteger(message.appStartId.low) && $util.isInteger(message.appStartId.high)))
+                    return "appStartId: integer|Long expected";
+            if (message.accessTech != null && message.hasOwnProperty("accessTech"))
+                if (!$util.isString(message.accessTech))
+                    return "accessTech: string expected";
+            if (message.metrics != null && message.hasOwnProperty("metrics")) {
+                if (!Array.isArray(message.metrics))
+                    return "metrics: array expected";
+                for (let i = 0; i < message.metrics.length; ++i) {
+                    let error = $root.sysinfo.CellularAttribute.verify(message.metrics[i], long + 1);
+                    if (error)
+                        return "metrics." + error;
+                }
+            }
+            return null;
+        };
+
+        /**
+         * Creates a CellularSignal message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof sysinfo.CellularSignal
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {sysinfo.CellularSignal} CellularSignal
+         */
+        CellularSignal.fromObject = function fromObject(object, long) {
+            if (object instanceof $root.sysinfo.CellularSignal)
+                return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let message = new $root.sysinfo.CellularSignal();
+            if (object.monotonicStampNs != null)
+                if ($util.Long)
+                    (message.monotonicStampNs = $util.Long.fromValue(object.monotonicStampNs)).unsigned = true;
+                else if (typeof object.monotonicStampNs === "string")
+                    message.monotonicStampNs = parseInt(object.monotonicStampNs, 10);
+                else if (typeof object.monotonicStampNs === "number")
+                    message.monotonicStampNs = object.monotonicStampNs;
+                else if (typeof object.monotonicStampNs === "object")
+                    message.monotonicStampNs = new $util.LongBits(object.monotonicStampNs.low >>> 0, object.monotonicStampNs.high >>> 0).toNumber(true);
+            if (object.localStampNs != null)
+                if ($util.Long)
+                    (message.localStampNs = $util.Long.fromValue(object.localStampNs)).unsigned = true;
+                else if (typeof object.localStampNs === "string")
+                    message.localStampNs = parseInt(object.localStampNs, 10);
+                else if (typeof object.localStampNs === "number")
+                    message.localStampNs = object.localStampNs;
+                else if (typeof object.localStampNs === "object")
+                    message.localStampNs = new $util.LongBits(object.localStampNs.low >>> 0, object.localStampNs.high >>> 0).toNumber(true);
+            if (object.appStartId != null)
+                if ($util.Long)
+                    (message.appStartId = $util.Long.fromValue(object.appStartId)).unsigned = true;
+                else if (typeof object.appStartId === "string")
+                    message.appStartId = parseInt(object.appStartId, 10);
+                else if (typeof object.appStartId === "number")
+                    message.appStartId = object.appStartId;
+                else if (typeof object.appStartId === "object")
+                    message.appStartId = new $util.LongBits(object.appStartId.low >>> 0, object.appStartId.high >>> 0).toNumber(true);
+            if (object.accessTech != null)
+                message.accessTech = String(object.accessTech);
+            if (object.metrics) {
+                if (!Array.isArray(object.metrics))
+                    throw TypeError(".sysinfo.CellularSignal.metrics: array expected");
+                message.metrics = [];
+                for (let i = 0; i < object.metrics.length; ++i) {
+                    if (typeof object.metrics[i] !== "object")
+                        throw TypeError(".sysinfo.CellularSignal.metrics: object expected");
+                    message.metrics[i] = $root.sysinfo.CellularAttribute.fromObject(object.metrics[i], long + 1);
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Creates a plain object from a CellularSignal message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof sysinfo.CellularSignal
+         * @static
+         * @param {sysinfo.CellularSignal} message CellularSignal
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        CellularSignal.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.arrays || options.defaults)
+                object.metrics = [];
+            if (options.defaults) {
+                if ($util.Long) {
+                    let long = new $util.Long(0, 0, true);
+                    object.monotonicStampNs = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+                } else
+                    object.monotonicStampNs = options.longs === String ? "0" : 0;
+                if ($util.Long) {
+                    let long = new $util.Long(0, 0, true);
+                    object.localStampNs = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+                } else
+                    object.localStampNs = options.longs === String ? "0" : 0;
+                if ($util.Long) {
+                    let long = new $util.Long(0, 0, true);
+                    object.appStartId = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+                } else
+                    object.appStartId = options.longs === String ? "0" : 0;
+                object.accessTech = "";
+            }
+            if (message.monotonicStampNs != null && message.hasOwnProperty("monotonicStampNs"))
+                if (typeof message.monotonicStampNs === "number")
+                    object.monotonicStampNs = options.longs === String ? String(message.monotonicStampNs) : message.monotonicStampNs;
+                else
+                    object.monotonicStampNs = options.longs === String ? $util.Long.prototype.toString.call(message.monotonicStampNs) : options.longs === Number ? new $util.LongBits(message.monotonicStampNs.low >>> 0, message.monotonicStampNs.high >>> 0).toNumber(true) : message.monotonicStampNs;
+            if (message.localStampNs != null && message.hasOwnProperty("localStampNs"))
+                if (typeof message.localStampNs === "number")
+                    object.localStampNs = options.longs === String ? String(message.localStampNs) : message.localStampNs;
+                else
+                    object.localStampNs = options.longs === String ? $util.Long.prototype.toString.call(message.localStampNs) : options.longs === Number ? new $util.LongBits(message.localStampNs.low >>> 0, message.localStampNs.high >>> 0).toNumber(true) : message.localStampNs;
+            if (message.appStartId != null && message.hasOwnProperty("appStartId"))
+                if (typeof message.appStartId === "number")
+                    object.appStartId = options.longs === String ? String(message.appStartId) : message.appStartId;
+                else
+                    object.appStartId = options.longs === String ? $util.Long.prototype.toString.call(message.appStartId) : options.longs === Number ? new $util.LongBits(message.appStartId.low >>> 0, message.appStartId.high >>> 0).toNumber(true) : message.appStartId;
+            if (message.accessTech != null && message.hasOwnProperty("accessTech"))
+                object.accessTech = message.accessTech;
+            if (message.metrics && message.metrics.length) {
+                object.metrics = [];
+                for (let j = 0; j < message.metrics.length; ++j)
+                    object.metrics[j] = $root.sysinfo.CellularAttribute.toObject(message.metrics[j], options);
+            }
+            return object;
+        };
+
+        /**
+         * Converts this CellularSignal to JSON.
+         * @function toJSON
+         * @memberof sysinfo.CellularSignal
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        CellularSignal.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for CellularSignal
+         * @function getTypeUrl
+         * @memberof sysinfo.CellularSignal
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        CellularSignal.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+            if (typeUrlPrefix === undefined) {
+                typeUrlPrefix = "type.googleapis.com";
+            }
+            return typeUrlPrefix + "/sysinfo.CellularSignal";
+        };
+
+        return CellularSignal;
+    })();
+
+    sysinfo.CellularModem = (function() {
+
+        /**
+         * Properties of a CellularModem.
+         * @memberof sysinfo
+         * @interface ICellularModem
+         * @property {Long|null} [monotonicStampNs] CellularModem monotonicStampNs
+         * @property {Long|null} [localStampNs] CellularModem localStampNs
+         * @property {Long|null} [appStartId] CellularModem appStartId
+         * @property {string|null} [path] CellularModem path
+         * @property {string|null} [modemId] CellularModem modemId
+         * @property {string|null} [manufacturer] CellularModem manufacturer
+         * @property {string|null} [model] CellularModem model
+         * @property {string|null} [firmwareRevision] CellularModem firmwareRevision
+         * @property {string|null} [hardwareRevision] CellularModem hardwareRevision
+         * @property {string|null} [carrierConfig] CellularModem carrierConfig
+         * @property {string|null} [equipmentId] CellularModem equipmentId
+         * @property {string|null} [deviceId] CellularModem deviceId
+         * @property {string|null} [device] CellularModem device
+         * @property {string|null} [physdev] CellularModem physdev
+         * @property {string|null} [drivers] CellularModem drivers
+         * @property {string|null} [plugin] CellularModem plugin
+         * @property {string|null} [primaryPort] CellularModem primaryPort
+         * @property {string|null} [ports] CellularModem ports
+         * @property {string|null} [state] CellularModem state
+         * @property {string|null} [failedReason] CellularModem failedReason
+         * @property {string|null} [powerState] CellularModem powerState
+         * @property {string|null} [accessTech] CellularModem accessTech
+         * @property {number|null} [signalQualityPercent] CellularModem signalQualityPercent
+         * @property {boolean|null} [signalQualityRecent] CellularModem signalQualityRecent
+         * @property {string|null} [imei] CellularModem imei
+         * @property {string|null} [operatorId] CellularModem operatorId
+         * @property {string|null} [operatorName] CellularModem operatorName
+         * @property {string|null} [registration] CellularModem registration
+         * @property {string|null} [packetServiceState] CellularModem packetServiceState
+         * @property {string|null} [primarySimPath] CellularModem primarySimPath
+         * @property {string|null} [ownNumbers] CellularModem ownNumbers
+         * @property {Array.<sysinfo.ICellularBearer>|null} [bearers] CellularModem bearers
+         * @property {Array.<sysinfo.ICellularSignal>|null} [signals] CellularModem signals
+         * @property {Array.<sysinfo.ICellularAttribute>|null} [attributes] CellularModem attributes
+         * @property {Array.<sysinfo.ICellularError>|null} [errors] CellularModem errors
+         */
+
+        /**
+         * Constructs a new CellularModem.
+         * @memberof sysinfo
+         * @classdesc Represents a CellularModem.
+         * @implements ICellularModem
+         * @constructor
+         * @param {sysinfo.ICellularModem=} [properties] Properties to set
+         */
+        function CellularModem(properties) {
+            this.bearers = [];
+            this.signals = [];
+            this.attributes = [];
+            this.errors = [];
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * CellularModem monotonicStampNs.
+         * @member {Long} monotonicStampNs
+         * @memberof sysinfo.CellularModem
+         * @instance
+         */
+        CellularModem.prototype.monotonicStampNs = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+
+        /**
+         * CellularModem localStampNs.
+         * @member {Long} localStampNs
+         * @memberof sysinfo.CellularModem
+         * @instance
+         */
+        CellularModem.prototype.localStampNs = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+
+        /**
+         * CellularModem appStartId.
+         * @member {Long} appStartId
+         * @memberof sysinfo.CellularModem
+         * @instance
+         */
+        CellularModem.prototype.appStartId = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+
+        /**
+         * CellularModem path.
+         * @member {string} path
+         * @memberof sysinfo.CellularModem
+         * @instance
+         */
+        CellularModem.prototype.path = "";
+
+        /**
+         * CellularModem modemId.
+         * @member {string} modemId
+         * @memberof sysinfo.CellularModem
+         * @instance
+         */
+        CellularModem.prototype.modemId = "";
+
+        /**
+         * CellularModem manufacturer.
+         * @member {string} manufacturer
+         * @memberof sysinfo.CellularModem
+         * @instance
+         */
+        CellularModem.prototype.manufacturer = "";
+
+        /**
+         * CellularModem model.
+         * @member {string} model
+         * @memberof sysinfo.CellularModem
+         * @instance
+         */
+        CellularModem.prototype.model = "";
+
+        /**
+         * CellularModem firmwareRevision.
+         * @member {string} firmwareRevision
+         * @memberof sysinfo.CellularModem
+         * @instance
+         */
+        CellularModem.prototype.firmwareRevision = "";
+
+        /**
+         * CellularModem hardwareRevision.
+         * @member {string} hardwareRevision
+         * @memberof sysinfo.CellularModem
+         * @instance
+         */
+        CellularModem.prototype.hardwareRevision = "";
+
+        /**
+         * CellularModem carrierConfig.
+         * @member {string} carrierConfig
+         * @memberof sysinfo.CellularModem
+         * @instance
+         */
+        CellularModem.prototype.carrierConfig = "";
+
+        /**
+         * CellularModem equipmentId.
+         * @member {string} equipmentId
+         * @memberof sysinfo.CellularModem
+         * @instance
+         */
+        CellularModem.prototype.equipmentId = "";
+
+        /**
+         * CellularModem deviceId.
+         * @member {string} deviceId
+         * @memberof sysinfo.CellularModem
+         * @instance
+         */
+        CellularModem.prototype.deviceId = "";
+
+        /**
+         * CellularModem device.
+         * @member {string} device
+         * @memberof sysinfo.CellularModem
+         * @instance
+         */
+        CellularModem.prototype.device = "";
+
+        /**
+         * CellularModem physdev.
+         * @member {string} physdev
+         * @memberof sysinfo.CellularModem
+         * @instance
+         */
+        CellularModem.prototype.physdev = "";
+
+        /**
+         * CellularModem drivers.
+         * @member {string} drivers
+         * @memberof sysinfo.CellularModem
+         * @instance
+         */
+        CellularModem.prototype.drivers = "";
+
+        /**
+         * CellularModem plugin.
+         * @member {string} plugin
+         * @memberof sysinfo.CellularModem
+         * @instance
+         */
+        CellularModem.prototype.plugin = "";
+
+        /**
+         * CellularModem primaryPort.
+         * @member {string} primaryPort
+         * @memberof sysinfo.CellularModem
+         * @instance
+         */
+        CellularModem.prototype.primaryPort = "";
+
+        /**
+         * CellularModem ports.
+         * @member {string} ports
+         * @memberof sysinfo.CellularModem
+         * @instance
+         */
+        CellularModem.prototype.ports = "";
+
+        /**
+         * CellularModem state.
+         * @member {string} state
+         * @memberof sysinfo.CellularModem
+         * @instance
+         */
+        CellularModem.prototype.state = "";
+
+        /**
+         * CellularModem failedReason.
+         * @member {string} failedReason
+         * @memberof sysinfo.CellularModem
+         * @instance
+         */
+        CellularModem.prototype.failedReason = "";
+
+        /**
+         * CellularModem powerState.
+         * @member {string} powerState
+         * @memberof sysinfo.CellularModem
+         * @instance
+         */
+        CellularModem.prototype.powerState = "";
+
+        /**
+         * CellularModem accessTech.
+         * @member {string} accessTech
+         * @memberof sysinfo.CellularModem
+         * @instance
+         */
+        CellularModem.prototype.accessTech = "";
+
+        /**
+         * CellularModem signalQualityPercent.
+         * @member {number} signalQualityPercent
+         * @memberof sysinfo.CellularModem
+         * @instance
+         */
+        CellularModem.prototype.signalQualityPercent = 0;
+
+        /**
+         * CellularModem signalQualityRecent.
+         * @member {boolean} signalQualityRecent
+         * @memberof sysinfo.CellularModem
+         * @instance
+         */
+        CellularModem.prototype.signalQualityRecent = false;
+
+        /**
+         * CellularModem imei.
+         * @member {string} imei
+         * @memberof sysinfo.CellularModem
+         * @instance
+         */
+        CellularModem.prototype.imei = "";
+
+        /**
+         * CellularModem operatorId.
+         * @member {string} operatorId
+         * @memberof sysinfo.CellularModem
+         * @instance
+         */
+        CellularModem.prototype.operatorId = "";
+
+        /**
+         * CellularModem operatorName.
+         * @member {string} operatorName
+         * @memberof sysinfo.CellularModem
+         * @instance
+         */
+        CellularModem.prototype.operatorName = "";
+
+        /**
+         * CellularModem registration.
+         * @member {string} registration
+         * @memberof sysinfo.CellularModem
+         * @instance
+         */
+        CellularModem.prototype.registration = "";
+
+        /**
+         * CellularModem packetServiceState.
+         * @member {string} packetServiceState
+         * @memberof sysinfo.CellularModem
+         * @instance
+         */
+        CellularModem.prototype.packetServiceState = "";
+
+        /**
+         * CellularModem primarySimPath.
+         * @member {string} primarySimPath
+         * @memberof sysinfo.CellularModem
+         * @instance
+         */
+        CellularModem.prototype.primarySimPath = "";
+
+        /**
+         * CellularModem ownNumbers.
+         * @member {string} ownNumbers
+         * @memberof sysinfo.CellularModem
+         * @instance
+         */
+        CellularModem.prototype.ownNumbers = "";
+
+        /**
+         * CellularModem bearers.
+         * @member {Array.<sysinfo.ICellularBearer>} bearers
+         * @memberof sysinfo.CellularModem
+         * @instance
+         */
+        CellularModem.prototype.bearers = $util.emptyArray;
+
+        /**
+         * CellularModem signals.
+         * @member {Array.<sysinfo.ICellularSignal>} signals
+         * @memberof sysinfo.CellularModem
+         * @instance
+         */
+        CellularModem.prototype.signals = $util.emptyArray;
+
+        /**
+         * CellularModem attributes.
+         * @member {Array.<sysinfo.ICellularAttribute>} attributes
+         * @memberof sysinfo.CellularModem
+         * @instance
+         */
+        CellularModem.prototype.attributes = $util.emptyArray;
+
+        /**
+         * CellularModem errors.
+         * @member {Array.<sysinfo.ICellularError>} errors
+         * @memberof sysinfo.CellularModem
+         * @instance
+         */
+        CellularModem.prototype.errors = $util.emptyArray;
+
+        /**
+         * Creates a new CellularModem instance using the specified properties.
+         * @function create
+         * @memberof sysinfo.CellularModem
+         * @static
+         * @param {sysinfo.ICellularModem=} [properties] Properties to set
+         * @returns {sysinfo.CellularModem} CellularModem instance
+         */
+        CellularModem.create = function create(properties) {
+            return new CellularModem(properties);
+        };
+
+        /**
+         * Encodes the specified CellularModem message. Does not implicitly {@link sysinfo.CellularModem.verify|verify} messages.
+         * @function encode
+         * @memberof sysinfo.CellularModem
+         * @static
+         * @param {sysinfo.ICellularModem} message CellularModem message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        CellularModem.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.monotonicStampNs != null && Object.hasOwnProperty.call(message, "monotonicStampNs"))
+                writer.uint32(/* id 1, wireType 0 =*/8).uint64(message.monotonicStampNs);
+            if (message.localStampNs != null && Object.hasOwnProperty.call(message, "localStampNs"))
+                writer.uint32(/* id 2, wireType 0 =*/16).uint64(message.localStampNs);
+            if (message.appStartId != null && Object.hasOwnProperty.call(message, "appStartId"))
+                writer.uint32(/* id 3, wireType 0 =*/24).uint64(message.appStartId);
+            if (message.path != null && Object.hasOwnProperty.call(message, "path"))
+                writer.uint32(/* id 10, wireType 2 =*/82).string(message.path);
+            if (message.modemId != null && Object.hasOwnProperty.call(message, "modemId"))
+                writer.uint32(/* id 11, wireType 2 =*/90).string(message.modemId);
+            if (message.manufacturer != null && Object.hasOwnProperty.call(message, "manufacturer"))
+                writer.uint32(/* id 12, wireType 2 =*/98).string(message.manufacturer);
+            if (message.model != null && Object.hasOwnProperty.call(message, "model"))
+                writer.uint32(/* id 13, wireType 2 =*/106).string(message.model);
+            if (message.firmwareRevision != null && Object.hasOwnProperty.call(message, "firmwareRevision"))
+                writer.uint32(/* id 14, wireType 2 =*/114).string(message.firmwareRevision);
+            if (message.hardwareRevision != null && Object.hasOwnProperty.call(message, "hardwareRevision"))
+                writer.uint32(/* id 15, wireType 2 =*/122).string(message.hardwareRevision);
+            if (message.carrierConfig != null && Object.hasOwnProperty.call(message, "carrierConfig"))
+                writer.uint32(/* id 16, wireType 2 =*/130).string(message.carrierConfig);
+            if (message.equipmentId != null && Object.hasOwnProperty.call(message, "equipmentId"))
+                writer.uint32(/* id 17, wireType 2 =*/138).string(message.equipmentId);
+            if (message.deviceId != null && Object.hasOwnProperty.call(message, "deviceId"))
+                writer.uint32(/* id 18, wireType 2 =*/146).string(message.deviceId);
+            if (message.device != null && Object.hasOwnProperty.call(message, "device"))
+                writer.uint32(/* id 20, wireType 2 =*/162).string(message.device);
+            if (message.physdev != null && Object.hasOwnProperty.call(message, "physdev"))
+                writer.uint32(/* id 21, wireType 2 =*/170).string(message.physdev);
+            if (message.drivers != null && Object.hasOwnProperty.call(message, "drivers"))
+                writer.uint32(/* id 22, wireType 2 =*/178).string(message.drivers);
+            if (message.plugin != null && Object.hasOwnProperty.call(message, "plugin"))
+                writer.uint32(/* id 23, wireType 2 =*/186).string(message.plugin);
+            if (message.primaryPort != null && Object.hasOwnProperty.call(message, "primaryPort"))
+                writer.uint32(/* id 24, wireType 2 =*/194).string(message.primaryPort);
+            if (message.ports != null && Object.hasOwnProperty.call(message, "ports"))
+                writer.uint32(/* id 25, wireType 2 =*/202).string(message.ports);
+            if (message.state != null && Object.hasOwnProperty.call(message, "state"))
+                writer.uint32(/* id 30, wireType 2 =*/242).string(message.state);
+            if (message.failedReason != null && Object.hasOwnProperty.call(message, "failedReason"))
+                writer.uint32(/* id 31, wireType 2 =*/250).string(message.failedReason);
+            if (message.powerState != null && Object.hasOwnProperty.call(message, "powerState"))
+                writer.uint32(/* id 32, wireType 2 =*/258).string(message.powerState);
+            if (message.accessTech != null && Object.hasOwnProperty.call(message, "accessTech"))
+                writer.uint32(/* id 33, wireType 2 =*/266).string(message.accessTech);
+            if (message.signalQualityPercent != null && Object.hasOwnProperty.call(message, "signalQualityPercent"))
+                writer.uint32(/* id 34, wireType 0 =*/272).uint32(message.signalQualityPercent);
+            if (message.signalQualityRecent != null && Object.hasOwnProperty.call(message, "signalQualityRecent"))
+                writer.uint32(/* id 35, wireType 0 =*/280).bool(message.signalQualityRecent);
+            if (message.imei != null && Object.hasOwnProperty.call(message, "imei"))
+                writer.uint32(/* id 40, wireType 2 =*/322).string(message.imei);
+            if (message.operatorId != null && Object.hasOwnProperty.call(message, "operatorId"))
+                writer.uint32(/* id 41, wireType 2 =*/330).string(message.operatorId);
+            if (message.operatorName != null && Object.hasOwnProperty.call(message, "operatorName"))
+                writer.uint32(/* id 42, wireType 2 =*/338).string(message.operatorName);
+            if (message.registration != null && Object.hasOwnProperty.call(message, "registration"))
+                writer.uint32(/* id 43, wireType 2 =*/346).string(message.registration);
+            if (message.packetServiceState != null && Object.hasOwnProperty.call(message, "packetServiceState"))
+                writer.uint32(/* id 44, wireType 2 =*/354).string(message.packetServiceState);
+            if (message.primarySimPath != null && Object.hasOwnProperty.call(message, "primarySimPath"))
+                writer.uint32(/* id 45, wireType 2 =*/362).string(message.primarySimPath);
+            if (message.ownNumbers != null && Object.hasOwnProperty.call(message, "ownNumbers"))
+                writer.uint32(/* id 46, wireType 2 =*/370).string(message.ownNumbers);
+            if (message.bearers != null && message.bearers.length)
+                for (let i = 0; i < message.bearers.length; ++i)
+                    $root.sysinfo.CellularBearer.encode(message.bearers[i], writer.uint32(/* id 60, wireType 2 =*/482).fork()).ldelim();
+            if (message.signals != null && message.signals.length)
+                for (let i = 0; i < message.signals.length; ++i)
+                    $root.sysinfo.CellularSignal.encode(message.signals[i], writer.uint32(/* id 61, wireType 2 =*/490).fork()).ldelim();
+            if (message.attributes != null && message.attributes.length)
+                for (let i = 0; i < message.attributes.length; ++i)
+                    $root.sysinfo.CellularAttribute.encode(message.attributes[i], writer.uint32(/* id 100, wireType 2 =*/802).fork()).ldelim();
+            if (message.errors != null && message.errors.length)
+                for (let i = 0; i < message.errors.length; ++i)
+                    $root.sysinfo.CellularError.encode(message.errors[i], writer.uint32(/* id 101, wireType 2 =*/810).fork()).ldelim();
+            return writer;
+        };
+
+        /**
+         * Encodes the specified CellularModem message, length delimited. Does not implicitly {@link sysinfo.CellularModem.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof sysinfo.CellularModem
+         * @static
+         * @param {sysinfo.ICellularModem} message CellularModem message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        CellularModem.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes a CellularModem message from the specified reader or buffer.
+         * @function decode
+         * @memberof sysinfo.CellularModem
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {sysinfo.CellularModem} CellularModem
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        CellularModem.decode = function decode(reader, length, error, long) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.sysinfo.CellularModem();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                if (tag === error)
+                    break;
+                switch (tag >>> 3) {
+                case 1: {
+                        message.monotonicStampNs = reader.uint64();
+                        break;
+                    }
+                case 2: {
+                        message.localStampNs = reader.uint64();
+                        break;
+                    }
+                case 3: {
+                        message.appStartId = reader.uint64();
+                        break;
+                    }
+                case 10: {
+                        message.path = reader.string();
+                        break;
+                    }
+                case 11: {
+                        message.modemId = reader.string();
+                        break;
+                    }
+                case 12: {
+                        message.manufacturer = reader.string();
+                        break;
+                    }
+                case 13: {
+                        message.model = reader.string();
+                        break;
+                    }
+                case 14: {
+                        message.firmwareRevision = reader.string();
+                        break;
+                    }
+                case 15: {
+                        message.hardwareRevision = reader.string();
+                        break;
+                    }
+                case 16: {
+                        message.carrierConfig = reader.string();
+                        break;
+                    }
+                case 17: {
+                        message.equipmentId = reader.string();
+                        break;
+                    }
+                case 18: {
+                        message.deviceId = reader.string();
+                        break;
+                    }
+                case 20: {
+                        message.device = reader.string();
+                        break;
+                    }
+                case 21: {
+                        message.physdev = reader.string();
+                        break;
+                    }
+                case 22: {
+                        message.drivers = reader.string();
+                        break;
+                    }
+                case 23: {
+                        message.plugin = reader.string();
+                        break;
+                    }
+                case 24: {
+                        message.primaryPort = reader.string();
+                        break;
+                    }
+                case 25: {
+                        message.ports = reader.string();
+                        break;
+                    }
+                case 30: {
+                        message.state = reader.string();
+                        break;
+                    }
+                case 31: {
+                        message.failedReason = reader.string();
+                        break;
+                    }
+                case 32: {
+                        message.powerState = reader.string();
+                        break;
+                    }
+                case 33: {
+                        message.accessTech = reader.string();
+                        break;
+                    }
+                case 34: {
+                        message.signalQualityPercent = reader.uint32();
+                        break;
+                    }
+                case 35: {
+                        message.signalQualityRecent = reader.bool();
+                        break;
+                    }
+                case 40: {
+                        message.imei = reader.string();
+                        break;
+                    }
+                case 41: {
+                        message.operatorId = reader.string();
+                        break;
+                    }
+                case 42: {
+                        message.operatorName = reader.string();
+                        break;
+                    }
+                case 43: {
+                        message.registration = reader.string();
+                        break;
+                    }
+                case 44: {
+                        message.packetServiceState = reader.string();
+                        break;
+                    }
+                case 45: {
+                        message.primarySimPath = reader.string();
+                        break;
+                    }
+                case 46: {
+                        message.ownNumbers = reader.string();
+                        break;
+                    }
+                case 60: {
+                        if (!(message.bearers && message.bearers.length))
+                            message.bearers = [];
+                        message.bearers.push($root.sysinfo.CellularBearer.decode(reader, reader.uint32(), undefined, long + 1));
+                        break;
+                    }
+                case 61: {
+                        if (!(message.signals && message.signals.length))
+                            message.signals = [];
+                        message.signals.push($root.sysinfo.CellularSignal.decode(reader, reader.uint32(), undefined, long + 1));
+                        break;
+                    }
+                case 100: {
+                        if (!(message.attributes && message.attributes.length))
+                            message.attributes = [];
+                        message.attributes.push($root.sysinfo.CellularAttribute.decode(reader, reader.uint32(), undefined, long + 1));
+                        break;
+                    }
+                case 101: {
+                        if (!(message.errors && message.errors.length))
+                            message.errors = [];
+                        message.errors.push($root.sysinfo.CellularError.decode(reader, reader.uint32(), undefined, long + 1));
+                        break;
+                    }
+                default:
+                    reader.skipType(tag & 7, long);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes a CellularModem message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof sysinfo.CellularModem
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {sysinfo.CellularModem} CellularModem
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        CellularModem.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies a CellularModem message.
+         * @function verify
+         * @memberof sysinfo.CellularModem
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        CellularModem.verify = function verify(message, long) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
+            if (message.monotonicStampNs != null && message.hasOwnProperty("monotonicStampNs"))
+                if (!$util.isInteger(message.monotonicStampNs) && !(message.monotonicStampNs && $util.isInteger(message.monotonicStampNs.low) && $util.isInteger(message.monotonicStampNs.high)))
+                    return "monotonicStampNs: integer|Long expected";
+            if (message.localStampNs != null && message.hasOwnProperty("localStampNs"))
+                if (!$util.isInteger(message.localStampNs) && !(message.localStampNs && $util.isInteger(message.localStampNs.low) && $util.isInteger(message.localStampNs.high)))
+                    return "localStampNs: integer|Long expected";
+            if (message.appStartId != null && message.hasOwnProperty("appStartId"))
+                if (!$util.isInteger(message.appStartId) && !(message.appStartId && $util.isInteger(message.appStartId.low) && $util.isInteger(message.appStartId.high)))
+                    return "appStartId: integer|Long expected";
+            if (message.path != null && message.hasOwnProperty("path"))
+                if (!$util.isString(message.path))
+                    return "path: string expected";
+            if (message.modemId != null && message.hasOwnProperty("modemId"))
+                if (!$util.isString(message.modemId))
+                    return "modemId: string expected";
+            if (message.manufacturer != null && message.hasOwnProperty("manufacturer"))
+                if (!$util.isString(message.manufacturer))
+                    return "manufacturer: string expected";
+            if (message.model != null && message.hasOwnProperty("model"))
+                if (!$util.isString(message.model))
+                    return "model: string expected";
+            if (message.firmwareRevision != null && message.hasOwnProperty("firmwareRevision"))
+                if (!$util.isString(message.firmwareRevision))
+                    return "firmwareRevision: string expected";
+            if (message.hardwareRevision != null && message.hasOwnProperty("hardwareRevision"))
+                if (!$util.isString(message.hardwareRevision))
+                    return "hardwareRevision: string expected";
+            if (message.carrierConfig != null && message.hasOwnProperty("carrierConfig"))
+                if (!$util.isString(message.carrierConfig))
+                    return "carrierConfig: string expected";
+            if (message.equipmentId != null && message.hasOwnProperty("equipmentId"))
+                if (!$util.isString(message.equipmentId))
+                    return "equipmentId: string expected";
+            if (message.deviceId != null && message.hasOwnProperty("deviceId"))
+                if (!$util.isString(message.deviceId))
+                    return "deviceId: string expected";
+            if (message.device != null && message.hasOwnProperty("device"))
+                if (!$util.isString(message.device))
+                    return "device: string expected";
+            if (message.physdev != null && message.hasOwnProperty("physdev"))
+                if (!$util.isString(message.physdev))
+                    return "physdev: string expected";
+            if (message.drivers != null && message.hasOwnProperty("drivers"))
+                if (!$util.isString(message.drivers))
+                    return "drivers: string expected";
+            if (message.plugin != null && message.hasOwnProperty("plugin"))
+                if (!$util.isString(message.plugin))
+                    return "plugin: string expected";
+            if (message.primaryPort != null && message.hasOwnProperty("primaryPort"))
+                if (!$util.isString(message.primaryPort))
+                    return "primaryPort: string expected";
+            if (message.ports != null && message.hasOwnProperty("ports"))
+                if (!$util.isString(message.ports))
+                    return "ports: string expected";
+            if (message.state != null && message.hasOwnProperty("state"))
+                if (!$util.isString(message.state))
+                    return "state: string expected";
+            if (message.failedReason != null && message.hasOwnProperty("failedReason"))
+                if (!$util.isString(message.failedReason))
+                    return "failedReason: string expected";
+            if (message.powerState != null && message.hasOwnProperty("powerState"))
+                if (!$util.isString(message.powerState))
+                    return "powerState: string expected";
+            if (message.accessTech != null && message.hasOwnProperty("accessTech"))
+                if (!$util.isString(message.accessTech))
+                    return "accessTech: string expected";
+            if (message.signalQualityPercent != null && message.hasOwnProperty("signalQualityPercent"))
+                if (!$util.isInteger(message.signalQualityPercent))
+                    return "signalQualityPercent: integer expected";
+            if (message.signalQualityRecent != null && message.hasOwnProperty("signalQualityRecent"))
+                if (typeof message.signalQualityRecent !== "boolean")
+                    return "signalQualityRecent: boolean expected";
+            if (message.imei != null && message.hasOwnProperty("imei"))
+                if (!$util.isString(message.imei))
+                    return "imei: string expected";
+            if (message.operatorId != null && message.hasOwnProperty("operatorId"))
+                if (!$util.isString(message.operatorId))
+                    return "operatorId: string expected";
+            if (message.operatorName != null && message.hasOwnProperty("operatorName"))
+                if (!$util.isString(message.operatorName))
+                    return "operatorName: string expected";
+            if (message.registration != null && message.hasOwnProperty("registration"))
+                if (!$util.isString(message.registration))
+                    return "registration: string expected";
+            if (message.packetServiceState != null && message.hasOwnProperty("packetServiceState"))
+                if (!$util.isString(message.packetServiceState))
+                    return "packetServiceState: string expected";
+            if (message.primarySimPath != null && message.hasOwnProperty("primarySimPath"))
+                if (!$util.isString(message.primarySimPath))
+                    return "primarySimPath: string expected";
+            if (message.ownNumbers != null && message.hasOwnProperty("ownNumbers"))
+                if (!$util.isString(message.ownNumbers))
+                    return "ownNumbers: string expected";
+            if (message.bearers != null && message.hasOwnProperty("bearers")) {
+                if (!Array.isArray(message.bearers))
+                    return "bearers: array expected";
+                for (let i = 0; i < message.bearers.length; ++i) {
+                    let error = $root.sysinfo.CellularBearer.verify(message.bearers[i], long + 1);
+                    if (error)
+                        return "bearers." + error;
+                }
+            }
+            if (message.signals != null && message.hasOwnProperty("signals")) {
+                if (!Array.isArray(message.signals))
+                    return "signals: array expected";
+                for (let i = 0; i < message.signals.length; ++i) {
+                    let error = $root.sysinfo.CellularSignal.verify(message.signals[i], long + 1);
+                    if (error)
+                        return "signals." + error;
+                }
+            }
+            if (message.attributes != null && message.hasOwnProperty("attributes")) {
+                if (!Array.isArray(message.attributes))
+                    return "attributes: array expected";
+                for (let i = 0; i < message.attributes.length; ++i) {
+                    let error = $root.sysinfo.CellularAttribute.verify(message.attributes[i], long + 1);
+                    if (error)
+                        return "attributes." + error;
+                }
+            }
+            if (message.errors != null && message.hasOwnProperty("errors")) {
+                if (!Array.isArray(message.errors))
+                    return "errors: array expected";
+                for (let i = 0; i < message.errors.length; ++i) {
+                    let error = $root.sysinfo.CellularError.verify(message.errors[i], long + 1);
+                    if (error)
+                        return "errors." + error;
+                }
+            }
+            return null;
+        };
+
+        /**
+         * Creates a CellularModem message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof sysinfo.CellularModem
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {sysinfo.CellularModem} CellularModem
+         */
+        CellularModem.fromObject = function fromObject(object, long) {
+            if (object instanceof $root.sysinfo.CellularModem)
+                return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let message = new $root.sysinfo.CellularModem();
+            if (object.monotonicStampNs != null)
+                if ($util.Long)
+                    (message.monotonicStampNs = $util.Long.fromValue(object.monotonicStampNs)).unsigned = true;
+                else if (typeof object.monotonicStampNs === "string")
+                    message.monotonicStampNs = parseInt(object.monotonicStampNs, 10);
+                else if (typeof object.monotonicStampNs === "number")
+                    message.monotonicStampNs = object.monotonicStampNs;
+                else if (typeof object.monotonicStampNs === "object")
+                    message.monotonicStampNs = new $util.LongBits(object.monotonicStampNs.low >>> 0, object.monotonicStampNs.high >>> 0).toNumber(true);
+            if (object.localStampNs != null)
+                if ($util.Long)
+                    (message.localStampNs = $util.Long.fromValue(object.localStampNs)).unsigned = true;
+                else if (typeof object.localStampNs === "string")
+                    message.localStampNs = parseInt(object.localStampNs, 10);
+                else if (typeof object.localStampNs === "number")
+                    message.localStampNs = object.localStampNs;
+                else if (typeof object.localStampNs === "object")
+                    message.localStampNs = new $util.LongBits(object.localStampNs.low >>> 0, object.localStampNs.high >>> 0).toNumber(true);
+            if (object.appStartId != null)
+                if ($util.Long)
+                    (message.appStartId = $util.Long.fromValue(object.appStartId)).unsigned = true;
+                else if (typeof object.appStartId === "string")
+                    message.appStartId = parseInt(object.appStartId, 10);
+                else if (typeof object.appStartId === "number")
+                    message.appStartId = object.appStartId;
+                else if (typeof object.appStartId === "object")
+                    message.appStartId = new $util.LongBits(object.appStartId.low >>> 0, object.appStartId.high >>> 0).toNumber(true);
+            if (object.path != null)
+                message.path = String(object.path);
+            if (object.modemId != null)
+                message.modemId = String(object.modemId);
+            if (object.manufacturer != null)
+                message.manufacturer = String(object.manufacturer);
+            if (object.model != null)
+                message.model = String(object.model);
+            if (object.firmwareRevision != null)
+                message.firmwareRevision = String(object.firmwareRevision);
+            if (object.hardwareRevision != null)
+                message.hardwareRevision = String(object.hardwareRevision);
+            if (object.carrierConfig != null)
+                message.carrierConfig = String(object.carrierConfig);
+            if (object.equipmentId != null)
+                message.equipmentId = String(object.equipmentId);
+            if (object.deviceId != null)
+                message.deviceId = String(object.deviceId);
+            if (object.device != null)
+                message.device = String(object.device);
+            if (object.physdev != null)
+                message.physdev = String(object.physdev);
+            if (object.drivers != null)
+                message.drivers = String(object.drivers);
+            if (object.plugin != null)
+                message.plugin = String(object.plugin);
+            if (object.primaryPort != null)
+                message.primaryPort = String(object.primaryPort);
+            if (object.ports != null)
+                message.ports = String(object.ports);
+            if (object.state != null)
+                message.state = String(object.state);
+            if (object.failedReason != null)
+                message.failedReason = String(object.failedReason);
+            if (object.powerState != null)
+                message.powerState = String(object.powerState);
+            if (object.accessTech != null)
+                message.accessTech = String(object.accessTech);
+            if (object.signalQualityPercent != null)
+                message.signalQualityPercent = object.signalQualityPercent >>> 0;
+            if (object.signalQualityRecent != null)
+                message.signalQualityRecent = Boolean(object.signalQualityRecent);
+            if (object.imei != null)
+                message.imei = String(object.imei);
+            if (object.operatorId != null)
+                message.operatorId = String(object.operatorId);
+            if (object.operatorName != null)
+                message.operatorName = String(object.operatorName);
+            if (object.registration != null)
+                message.registration = String(object.registration);
+            if (object.packetServiceState != null)
+                message.packetServiceState = String(object.packetServiceState);
+            if (object.primarySimPath != null)
+                message.primarySimPath = String(object.primarySimPath);
+            if (object.ownNumbers != null)
+                message.ownNumbers = String(object.ownNumbers);
+            if (object.bearers) {
+                if (!Array.isArray(object.bearers))
+                    throw TypeError(".sysinfo.CellularModem.bearers: array expected");
+                message.bearers = [];
+                for (let i = 0; i < object.bearers.length; ++i) {
+                    if (typeof object.bearers[i] !== "object")
+                        throw TypeError(".sysinfo.CellularModem.bearers: object expected");
+                    message.bearers[i] = $root.sysinfo.CellularBearer.fromObject(object.bearers[i], long + 1);
+                }
+            }
+            if (object.signals) {
+                if (!Array.isArray(object.signals))
+                    throw TypeError(".sysinfo.CellularModem.signals: array expected");
+                message.signals = [];
+                for (let i = 0; i < object.signals.length; ++i) {
+                    if (typeof object.signals[i] !== "object")
+                        throw TypeError(".sysinfo.CellularModem.signals: object expected");
+                    message.signals[i] = $root.sysinfo.CellularSignal.fromObject(object.signals[i], long + 1);
+                }
+            }
+            if (object.attributes) {
+                if (!Array.isArray(object.attributes))
+                    throw TypeError(".sysinfo.CellularModem.attributes: array expected");
+                message.attributes = [];
+                for (let i = 0; i < object.attributes.length; ++i) {
+                    if (typeof object.attributes[i] !== "object")
+                        throw TypeError(".sysinfo.CellularModem.attributes: object expected");
+                    message.attributes[i] = $root.sysinfo.CellularAttribute.fromObject(object.attributes[i], long + 1);
+                }
+            }
+            if (object.errors) {
+                if (!Array.isArray(object.errors))
+                    throw TypeError(".sysinfo.CellularModem.errors: array expected");
+                message.errors = [];
+                for (let i = 0; i < object.errors.length; ++i) {
+                    if (typeof object.errors[i] !== "object")
+                        throw TypeError(".sysinfo.CellularModem.errors: object expected");
+                    message.errors[i] = $root.sysinfo.CellularError.fromObject(object.errors[i], long + 1);
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Creates a plain object from a CellularModem message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof sysinfo.CellularModem
+         * @static
+         * @param {sysinfo.CellularModem} message CellularModem
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        CellularModem.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.arrays || options.defaults) {
+                object.bearers = [];
+                object.signals = [];
+                object.attributes = [];
+                object.errors = [];
+            }
+            if (options.defaults) {
+                if ($util.Long) {
+                    let long = new $util.Long(0, 0, true);
+                    object.monotonicStampNs = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+                } else
+                    object.monotonicStampNs = options.longs === String ? "0" : 0;
+                if ($util.Long) {
+                    let long = new $util.Long(0, 0, true);
+                    object.localStampNs = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+                } else
+                    object.localStampNs = options.longs === String ? "0" : 0;
+                if ($util.Long) {
+                    let long = new $util.Long(0, 0, true);
+                    object.appStartId = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+                } else
+                    object.appStartId = options.longs === String ? "0" : 0;
+                object.path = "";
+                object.modemId = "";
+                object.manufacturer = "";
+                object.model = "";
+                object.firmwareRevision = "";
+                object.hardwareRevision = "";
+                object.carrierConfig = "";
+                object.equipmentId = "";
+                object.deviceId = "";
+                object.device = "";
+                object.physdev = "";
+                object.drivers = "";
+                object.plugin = "";
+                object.primaryPort = "";
+                object.ports = "";
+                object.state = "";
+                object.failedReason = "";
+                object.powerState = "";
+                object.accessTech = "";
+                object.signalQualityPercent = 0;
+                object.signalQualityRecent = false;
+                object.imei = "";
+                object.operatorId = "";
+                object.operatorName = "";
+                object.registration = "";
+                object.packetServiceState = "";
+                object.primarySimPath = "";
+                object.ownNumbers = "";
+            }
+            if (message.monotonicStampNs != null && message.hasOwnProperty("monotonicStampNs"))
+                if (typeof message.monotonicStampNs === "number")
+                    object.monotonicStampNs = options.longs === String ? String(message.monotonicStampNs) : message.monotonicStampNs;
+                else
+                    object.monotonicStampNs = options.longs === String ? $util.Long.prototype.toString.call(message.monotonicStampNs) : options.longs === Number ? new $util.LongBits(message.monotonicStampNs.low >>> 0, message.monotonicStampNs.high >>> 0).toNumber(true) : message.monotonicStampNs;
+            if (message.localStampNs != null && message.hasOwnProperty("localStampNs"))
+                if (typeof message.localStampNs === "number")
+                    object.localStampNs = options.longs === String ? String(message.localStampNs) : message.localStampNs;
+                else
+                    object.localStampNs = options.longs === String ? $util.Long.prototype.toString.call(message.localStampNs) : options.longs === Number ? new $util.LongBits(message.localStampNs.low >>> 0, message.localStampNs.high >>> 0).toNumber(true) : message.localStampNs;
+            if (message.appStartId != null && message.hasOwnProperty("appStartId"))
+                if (typeof message.appStartId === "number")
+                    object.appStartId = options.longs === String ? String(message.appStartId) : message.appStartId;
+                else
+                    object.appStartId = options.longs === String ? $util.Long.prototype.toString.call(message.appStartId) : options.longs === Number ? new $util.LongBits(message.appStartId.low >>> 0, message.appStartId.high >>> 0).toNumber(true) : message.appStartId;
+            if (message.path != null && message.hasOwnProperty("path"))
+                object.path = message.path;
+            if (message.modemId != null && message.hasOwnProperty("modemId"))
+                object.modemId = message.modemId;
+            if (message.manufacturer != null && message.hasOwnProperty("manufacturer"))
+                object.manufacturer = message.manufacturer;
+            if (message.model != null && message.hasOwnProperty("model"))
+                object.model = message.model;
+            if (message.firmwareRevision != null && message.hasOwnProperty("firmwareRevision"))
+                object.firmwareRevision = message.firmwareRevision;
+            if (message.hardwareRevision != null && message.hasOwnProperty("hardwareRevision"))
+                object.hardwareRevision = message.hardwareRevision;
+            if (message.carrierConfig != null && message.hasOwnProperty("carrierConfig"))
+                object.carrierConfig = message.carrierConfig;
+            if (message.equipmentId != null && message.hasOwnProperty("equipmentId"))
+                object.equipmentId = message.equipmentId;
+            if (message.deviceId != null && message.hasOwnProperty("deviceId"))
+                object.deviceId = message.deviceId;
+            if (message.device != null && message.hasOwnProperty("device"))
+                object.device = message.device;
+            if (message.physdev != null && message.hasOwnProperty("physdev"))
+                object.physdev = message.physdev;
+            if (message.drivers != null && message.hasOwnProperty("drivers"))
+                object.drivers = message.drivers;
+            if (message.plugin != null && message.hasOwnProperty("plugin"))
+                object.plugin = message.plugin;
+            if (message.primaryPort != null && message.hasOwnProperty("primaryPort"))
+                object.primaryPort = message.primaryPort;
+            if (message.ports != null && message.hasOwnProperty("ports"))
+                object.ports = message.ports;
+            if (message.state != null && message.hasOwnProperty("state"))
+                object.state = message.state;
+            if (message.failedReason != null && message.hasOwnProperty("failedReason"))
+                object.failedReason = message.failedReason;
+            if (message.powerState != null && message.hasOwnProperty("powerState"))
+                object.powerState = message.powerState;
+            if (message.accessTech != null && message.hasOwnProperty("accessTech"))
+                object.accessTech = message.accessTech;
+            if (message.signalQualityPercent != null && message.hasOwnProperty("signalQualityPercent"))
+                object.signalQualityPercent = message.signalQualityPercent;
+            if (message.signalQualityRecent != null && message.hasOwnProperty("signalQualityRecent"))
+                object.signalQualityRecent = message.signalQualityRecent;
+            if (message.imei != null && message.hasOwnProperty("imei"))
+                object.imei = message.imei;
+            if (message.operatorId != null && message.hasOwnProperty("operatorId"))
+                object.operatorId = message.operatorId;
+            if (message.operatorName != null && message.hasOwnProperty("operatorName"))
+                object.operatorName = message.operatorName;
+            if (message.registration != null && message.hasOwnProperty("registration"))
+                object.registration = message.registration;
+            if (message.packetServiceState != null && message.hasOwnProperty("packetServiceState"))
+                object.packetServiceState = message.packetServiceState;
+            if (message.primarySimPath != null && message.hasOwnProperty("primarySimPath"))
+                object.primarySimPath = message.primarySimPath;
+            if (message.ownNumbers != null && message.hasOwnProperty("ownNumbers"))
+                object.ownNumbers = message.ownNumbers;
+            if (message.bearers && message.bearers.length) {
+                object.bearers = [];
+                for (let j = 0; j < message.bearers.length; ++j)
+                    object.bearers[j] = $root.sysinfo.CellularBearer.toObject(message.bearers[j], options);
+            }
+            if (message.signals && message.signals.length) {
+                object.signals = [];
+                for (let j = 0; j < message.signals.length; ++j)
+                    object.signals[j] = $root.sysinfo.CellularSignal.toObject(message.signals[j], options);
+            }
+            if (message.attributes && message.attributes.length) {
+                object.attributes = [];
+                for (let j = 0; j < message.attributes.length; ++j)
+                    object.attributes[j] = $root.sysinfo.CellularAttribute.toObject(message.attributes[j], options);
+            }
+            if (message.errors && message.errors.length) {
+                object.errors = [];
+                for (let j = 0; j < message.errors.length; ++j)
+                    object.errors[j] = $root.sysinfo.CellularError.toObject(message.errors[j], options);
+            }
+            return object;
+        };
+
+        /**
+         * Converts this CellularModem to JSON.
+         * @function toJSON
+         * @memberof sysinfo.CellularModem
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        CellularModem.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for CellularModem
+         * @function getTypeUrl
+         * @memberof sysinfo.CellularModem
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        CellularModem.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+            if (typeUrlPrefix === undefined) {
+                typeUrlPrefix = "type.googleapis.com";
+            }
+            return typeUrlPrefix + "/sysinfo.CellularModem";
+        };
+
+        return CellularModem;
+    })();
+
     return sysinfo;
+})();
+
+export const arduino_nicla_sense_env = $root.arduino_nicla_sense_env = (() => {
+
+    /**
+     * Namespace arduino_nicla_sense_env.
+     * @exports arduino_nicla_sense_env
+     * @namespace
+     */
+    const arduino_nicla_sense_env = {};
+
+    /**
+     * ArduinoNiclaSenseEnvSignalType enum.
+     * @name arduino_nicla_sense_env.ArduinoNiclaSenseEnvSignalType
+     * @enum {number}
+     * @property {number} ARDUINO_NICLA_SENSE_ENV_SIGNAL_TYPE_UNSPECIFIED=0 ARDUINO_NICLA_SENSE_ENV_SIGNAL_TYPE_UNSPECIFIED value
+     * @property {number} ARDUINO_NICLA_SENSE_ENV_CONNECTED=1 ARDUINO_NICLA_SENSE_ENV_CONNECTED value
+     * @property {number} ARDUINO_NICLA_SENSE_ENV_DISCONNECTED=2 ARDUINO_NICLA_SENSE_ENV_DISCONNECTED value
+     * @property {number} ARDUINO_NICLA_SENSE_ENV_REGISTERS_SNAPSHOT=3 ARDUINO_NICLA_SENSE_ENV_REGISTERS_SNAPSHOT value
+     * @property {number} ARDUINO_NICLA_SENSE_ENV_COMMAND=4 ARDUINO_NICLA_SENSE_ENV_COMMAND value
+     * @property {number} ARDUINO_NICLA_SENSE_ENV_COMMAND_SUCCESS=5 ARDUINO_NICLA_SENSE_ENV_COMMAND_SUCCESS value
+     * @property {number} ARDUINO_NICLA_SENSE_ENV_COMMAND_REJECTED=6 ARDUINO_NICLA_SENSE_ENV_COMMAND_REJECTED value
+     * @property {number} ARDUINO_NICLA_SENSE_ENV_COMMAND_FAILED=7 ARDUINO_NICLA_SENSE_ENV_COMMAND_FAILED value
+     * @property {number} ARDUINO_NICLA_SENSE_ENV_ERROR=8 ARDUINO_NICLA_SENSE_ENV_ERROR value
+     */
+    arduino_nicla_sense_env.ArduinoNiclaSenseEnvSignalType = (function() {
+        const valuesById = {}, values = Object.create(valuesById);
+        values[valuesById[0] = "ARDUINO_NICLA_SENSE_ENV_SIGNAL_TYPE_UNSPECIFIED"] = 0;
+        values[valuesById[1] = "ARDUINO_NICLA_SENSE_ENV_CONNECTED"] = 1;
+        values[valuesById[2] = "ARDUINO_NICLA_SENSE_ENV_DISCONNECTED"] = 2;
+        values[valuesById[3] = "ARDUINO_NICLA_SENSE_ENV_REGISTERS_SNAPSHOT"] = 3;
+        values[valuesById[4] = "ARDUINO_NICLA_SENSE_ENV_COMMAND"] = 4;
+        values[valuesById[5] = "ARDUINO_NICLA_SENSE_ENV_COMMAND_SUCCESS"] = 5;
+        values[valuesById[6] = "ARDUINO_NICLA_SENSE_ENV_COMMAND_REJECTED"] = 6;
+        values[valuesById[7] = "ARDUINO_NICLA_SENSE_ENV_COMMAND_FAILED"] = 7;
+        values[valuesById[8] = "ARDUINO_NICLA_SENSE_ENV_ERROR"] = 8;
+        return values;
+    })();
+
+    arduino_nicla_sense_env.ArduinoNiclaSenseEnvDeviceInfo = (function() {
+
+        /**
+         * Properties of an ArduinoNiclaSenseEnvDeviceInfo.
+         * @memberof arduino_nicla_sense_env
+         * @interface IArduinoNiclaSenseEnvDeviceInfo
+         * @property {number|null} [softwareRevision] ArduinoNiclaSenseEnvDeviceInfo softwareRevision
+         * @property {number|null} [productId] ArduinoNiclaSenseEnvDeviceInfo productId
+         * @property {Uint8Array|null} [serialNumber] ArduinoNiclaSenseEnvDeviceInfo serialNumber
+         */
+
+        /**
+         * Constructs a new ArduinoNiclaSenseEnvDeviceInfo.
+         * @memberof arduino_nicla_sense_env
+         * @classdesc Represents an ArduinoNiclaSenseEnvDeviceInfo.
+         * @implements IArduinoNiclaSenseEnvDeviceInfo
+         * @constructor
+         * @param {arduino_nicla_sense_env.IArduinoNiclaSenseEnvDeviceInfo=} [properties] Properties to set
+         */
+        function ArduinoNiclaSenseEnvDeviceInfo(properties) {
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * ArduinoNiclaSenseEnvDeviceInfo softwareRevision.
+         * @member {number} softwareRevision
+         * @memberof arduino_nicla_sense_env.ArduinoNiclaSenseEnvDeviceInfo
+         * @instance
+         */
+        ArduinoNiclaSenseEnvDeviceInfo.prototype.softwareRevision = 0;
+
+        /**
+         * ArduinoNiclaSenseEnvDeviceInfo productId.
+         * @member {number} productId
+         * @memberof arduino_nicla_sense_env.ArduinoNiclaSenseEnvDeviceInfo
+         * @instance
+         */
+        ArduinoNiclaSenseEnvDeviceInfo.prototype.productId = 0;
+
+        /**
+         * ArduinoNiclaSenseEnvDeviceInfo serialNumber.
+         * @member {Uint8Array} serialNumber
+         * @memberof arduino_nicla_sense_env.ArduinoNiclaSenseEnvDeviceInfo
+         * @instance
+         */
+        ArduinoNiclaSenseEnvDeviceInfo.prototype.serialNumber = $util.newBuffer([]);
+
+        /**
+         * Creates a new ArduinoNiclaSenseEnvDeviceInfo instance using the specified properties.
+         * @function create
+         * @memberof arduino_nicla_sense_env.ArduinoNiclaSenseEnvDeviceInfo
+         * @static
+         * @param {arduino_nicla_sense_env.IArduinoNiclaSenseEnvDeviceInfo=} [properties] Properties to set
+         * @returns {arduino_nicla_sense_env.ArduinoNiclaSenseEnvDeviceInfo} ArduinoNiclaSenseEnvDeviceInfo instance
+         */
+        ArduinoNiclaSenseEnvDeviceInfo.create = function create(properties) {
+            return new ArduinoNiclaSenseEnvDeviceInfo(properties);
+        };
+
+        /**
+         * Encodes the specified ArduinoNiclaSenseEnvDeviceInfo message. Does not implicitly {@link arduino_nicla_sense_env.ArduinoNiclaSenseEnvDeviceInfo.verify|verify} messages.
+         * @function encode
+         * @memberof arduino_nicla_sense_env.ArduinoNiclaSenseEnvDeviceInfo
+         * @static
+         * @param {arduino_nicla_sense_env.IArduinoNiclaSenseEnvDeviceInfo} message ArduinoNiclaSenseEnvDeviceInfo message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        ArduinoNiclaSenseEnvDeviceInfo.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.softwareRevision != null && Object.hasOwnProperty.call(message, "softwareRevision"))
+                writer.uint32(/* id 1, wireType 0 =*/8).uint32(message.softwareRevision);
+            if (message.productId != null && Object.hasOwnProperty.call(message, "productId"))
+                writer.uint32(/* id 2, wireType 0 =*/16).uint32(message.productId);
+            if (message.serialNumber != null && Object.hasOwnProperty.call(message, "serialNumber"))
+                writer.uint32(/* id 3, wireType 2 =*/26).bytes(message.serialNumber);
+            return writer;
+        };
+
+        /**
+         * Encodes the specified ArduinoNiclaSenseEnvDeviceInfo message, length delimited. Does not implicitly {@link arduino_nicla_sense_env.ArduinoNiclaSenseEnvDeviceInfo.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof arduino_nicla_sense_env.ArduinoNiclaSenseEnvDeviceInfo
+         * @static
+         * @param {arduino_nicla_sense_env.IArduinoNiclaSenseEnvDeviceInfo} message ArduinoNiclaSenseEnvDeviceInfo message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        ArduinoNiclaSenseEnvDeviceInfo.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes an ArduinoNiclaSenseEnvDeviceInfo message from the specified reader or buffer.
+         * @function decode
+         * @memberof arduino_nicla_sense_env.ArduinoNiclaSenseEnvDeviceInfo
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {arduino_nicla_sense_env.ArduinoNiclaSenseEnvDeviceInfo} ArduinoNiclaSenseEnvDeviceInfo
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        ArduinoNiclaSenseEnvDeviceInfo.decode = function decode(reader, length, error, long) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.arduino_nicla_sense_env.ArduinoNiclaSenseEnvDeviceInfo();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                if (tag === error)
+                    break;
+                switch (tag >>> 3) {
+                case 1: {
+                        message.softwareRevision = reader.uint32();
+                        break;
+                    }
+                case 2: {
+                        message.productId = reader.uint32();
+                        break;
+                    }
+                case 3: {
+                        message.serialNumber = reader.bytes();
+                        break;
+                    }
+                default:
+                    reader.skipType(tag & 7, long);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes an ArduinoNiclaSenseEnvDeviceInfo message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof arduino_nicla_sense_env.ArduinoNiclaSenseEnvDeviceInfo
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {arduino_nicla_sense_env.ArduinoNiclaSenseEnvDeviceInfo} ArduinoNiclaSenseEnvDeviceInfo
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        ArduinoNiclaSenseEnvDeviceInfo.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies an ArduinoNiclaSenseEnvDeviceInfo message.
+         * @function verify
+         * @memberof arduino_nicla_sense_env.ArduinoNiclaSenseEnvDeviceInfo
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        ArduinoNiclaSenseEnvDeviceInfo.verify = function verify(message, long) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
+            if (message.softwareRevision != null && message.hasOwnProperty("softwareRevision"))
+                if (!$util.isInteger(message.softwareRevision))
+                    return "softwareRevision: integer expected";
+            if (message.productId != null && message.hasOwnProperty("productId"))
+                if (!$util.isInteger(message.productId))
+                    return "productId: integer expected";
+            if (message.serialNumber != null && message.hasOwnProperty("serialNumber"))
+                if (!(message.serialNumber && typeof message.serialNumber.length === "number" || $util.isString(message.serialNumber)))
+                    return "serialNumber: buffer expected";
+            return null;
+        };
+
+        /**
+         * Creates an ArduinoNiclaSenseEnvDeviceInfo message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof arduino_nicla_sense_env.ArduinoNiclaSenseEnvDeviceInfo
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {arduino_nicla_sense_env.ArduinoNiclaSenseEnvDeviceInfo} ArduinoNiclaSenseEnvDeviceInfo
+         */
+        ArduinoNiclaSenseEnvDeviceInfo.fromObject = function fromObject(object, long) {
+            if (object instanceof $root.arduino_nicla_sense_env.ArduinoNiclaSenseEnvDeviceInfo)
+                return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let message = new $root.arduino_nicla_sense_env.ArduinoNiclaSenseEnvDeviceInfo();
+            if (object.softwareRevision != null)
+                message.softwareRevision = object.softwareRevision >>> 0;
+            if (object.productId != null)
+                message.productId = object.productId >>> 0;
+            if (object.serialNumber != null)
+                if (typeof object.serialNumber === "string")
+                    $util.base64.decode(object.serialNumber, message.serialNumber = $util.newBuffer($util.base64.length(object.serialNumber)), 0);
+                else if (object.serialNumber.length >= 0)
+                    message.serialNumber = object.serialNumber;
+            return message;
+        };
+
+        /**
+         * Creates a plain object from an ArduinoNiclaSenseEnvDeviceInfo message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof arduino_nicla_sense_env.ArduinoNiclaSenseEnvDeviceInfo
+         * @static
+         * @param {arduino_nicla_sense_env.ArduinoNiclaSenseEnvDeviceInfo} message ArduinoNiclaSenseEnvDeviceInfo
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        ArduinoNiclaSenseEnvDeviceInfo.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.defaults) {
+                object.softwareRevision = 0;
+                object.productId = 0;
+                if (options.bytes === String)
+                    object.serialNumber = "";
+                else {
+                    object.serialNumber = [];
+                    if (options.bytes !== Array)
+                        object.serialNumber = $util.newBuffer(object.serialNumber);
+                }
+            }
+            if (message.softwareRevision != null && message.hasOwnProperty("softwareRevision"))
+                object.softwareRevision = message.softwareRevision;
+            if (message.productId != null && message.hasOwnProperty("productId"))
+                object.productId = message.productId;
+            if (message.serialNumber != null && message.hasOwnProperty("serialNumber"))
+                object.serialNumber = options.bytes === String ? $util.base64.encode(message.serialNumber, 0, message.serialNumber.length) : options.bytes === Array ? Array.prototype.slice.call(message.serialNumber) : message.serialNumber;
+            return object;
+        };
+
+        /**
+         * Converts this ArduinoNiclaSenseEnvDeviceInfo to JSON.
+         * @function toJSON
+         * @memberof arduino_nicla_sense_env.ArduinoNiclaSenseEnvDeviceInfo
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        ArduinoNiclaSenseEnvDeviceInfo.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for ArduinoNiclaSenseEnvDeviceInfo
+         * @function getTypeUrl
+         * @memberof arduino_nicla_sense_env.ArduinoNiclaSenseEnvDeviceInfo
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        ArduinoNiclaSenseEnvDeviceInfo.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+            if (typeUrlPrefix === undefined) {
+                typeUrlPrefix = "type.googleapis.com";
+            }
+            return typeUrlPrefix + "/arduino_nicla_sense_env.ArduinoNiclaSenseEnvDeviceInfo";
+        };
+
+        return ArduinoNiclaSenseEnvDeviceInfo;
+    })();
+
+    arduino_nicla_sense_env.ArduinoNiclaSenseEnvDevice = (function() {
+
+        /**
+         * Properties of an ArduinoNiclaSenseEnvDevice.
+         * @memberof arduino_nicla_sense_env
+         * @interface IArduinoNiclaSenseEnvDevice
+         * @property {string|null} [id] ArduinoNiclaSenseEnvDevice id
+         * @property {number|null} [i2cBus] ArduinoNiclaSenseEnvDevice i2cBus
+         * @property {number|null} [i2cAddress] ArduinoNiclaSenseEnvDevice i2cAddress
+         * @property {arduino_nicla_sense_env.IArduinoNiclaSenseEnvDeviceInfo|null} [info] ArduinoNiclaSenseEnvDevice info
+         */
+
+        /**
+         * Constructs a new ArduinoNiclaSenseEnvDevice.
+         * @memberof arduino_nicla_sense_env
+         * @classdesc Represents an ArduinoNiclaSenseEnvDevice.
+         * @implements IArduinoNiclaSenseEnvDevice
+         * @constructor
+         * @param {arduino_nicla_sense_env.IArduinoNiclaSenseEnvDevice=} [properties] Properties to set
+         */
+        function ArduinoNiclaSenseEnvDevice(properties) {
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * ArduinoNiclaSenseEnvDevice id.
+         * @member {string} id
+         * @memberof arduino_nicla_sense_env.ArduinoNiclaSenseEnvDevice
+         * @instance
+         */
+        ArduinoNiclaSenseEnvDevice.prototype.id = "";
+
+        /**
+         * ArduinoNiclaSenseEnvDevice i2cBus.
+         * @member {number} i2cBus
+         * @memberof arduino_nicla_sense_env.ArduinoNiclaSenseEnvDevice
+         * @instance
+         */
+        ArduinoNiclaSenseEnvDevice.prototype.i2cBus = 0;
+
+        /**
+         * ArduinoNiclaSenseEnvDevice i2cAddress.
+         * @member {number} i2cAddress
+         * @memberof arduino_nicla_sense_env.ArduinoNiclaSenseEnvDevice
+         * @instance
+         */
+        ArduinoNiclaSenseEnvDevice.prototype.i2cAddress = 0;
+
+        /**
+         * ArduinoNiclaSenseEnvDevice info.
+         * @member {arduino_nicla_sense_env.IArduinoNiclaSenseEnvDeviceInfo|null|undefined} info
+         * @memberof arduino_nicla_sense_env.ArduinoNiclaSenseEnvDevice
+         * @instance
+         */
+        ArduinoNiclaSenseEnvDevice.prototype.info = null;
+
+        /**
+         * Creates a new ArduinoNiclaSenseEnvDevice instance using the specified properties.
+         * @function create
+         * @memberof arduino_nicla_sense_env.ArduinoNiclaSenseEnvDevice
+         * @static
+         * @param {arduino_nicla_sense_env.IArduinoNiclaSenseEnvDevice=} [properties] Properties to set
+         * @returns {arduino_nicla_sense_env.ArduinoNiclaSenseEnvDevice} ArduinoNiclaSenseEnvDevice instance
+         */
+        ArduinoNiclaSenseEnvDevice.create = function create(properties) {
+            return new ArduinoNiclaSenseEnvDevice(properties);
+        };
+
+        /**
+         * Encodes the specified ArduinoNiclaSenseEnvDevice message. Does not implicitly {@link arduino_nicla_sense_env.ArduinoNiclaSenseEnvDevice.verify|verify} messages.
+         * @function encode
+         * @memberof arduino_nicla_sense_env.ArduinoNiclaSenseEnvDevice
+         * @static
+         * @param {arduino_nicla_sense_env.IArduinoNiclaSenseEnvDevice} message ArduinoNiclaSenseEnvDevice message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        ArduinoNiclaSenseEnvDevice.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.id != null && Object.hasOwnProperty.call(message, "id"))
+                writer.uint32(/* id 1, wireType 2 =*/10).string(message.id);
+            if (message.i2cBus != null && Object.hasOwnProperty.call(message, "i2cBus"))
+                writer.uint32(/* id 2, wireType 0 =*/16).uint32(message.i2cBus);
+            if (message.i2cAddress != null && Object.hasOwnProperty.call(message, "i2cAddress"))
+                writer.uint32(/* id 3, wireType 0 =*/24).uint32(message.i2cAddress);
+            if (message.info != null && Object.hasOwnProperty.call(message, "info"))
+                $root.arduino_nicla_sense_env.ArduinoNiclaSenseEnvDeviceInfo.encode(message.info, writer.uint32(/* id 10, wireType 2 =*/82).fork()).ldelim();
+            return writer;
+        };
+
+        /**
+         * Encodes the specified ArduinoNiclaSenseEnvDevice message, length delimited. Does not implicitly {@link arduino_nicla_sense_env.ArduinoNiclaSenseEnvDevice.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof arduino_nicla_sense_env.ArduinoNiclaSenseEnvDevice
+         * @static
+         * @param {arduino_nicla_sense_env.IArduinoNiclaSenseEnvDevice} message ArduinoNiclaSenseEnvDevice message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        ArduinoNiclaSenseEnvDevice.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes an ArduinoNiclaSenseEnvDevice message from the specified reader or buffer.
+         * @function decode
+         * @memberof arduino_nicla_sense_env.ArduinoNiclaSenseEnvDevice
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {arduino_nicla_sense_env.ArduinoNiclaSenseEnvDevice} ArduinoNiclaSenseEnvDevice
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        ArduinoNiclaSenseEnvDevice.decode = function decode(reader, length, error, long) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.arduino_nicla_sense_env.ArduinoNiclaSenseEnvDevice();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                if (tag === error)
+                    break;
+                switch (tag >>> 3) {
+                case 1: {
+                        message.id = reader.string();
+                        break;
+                    }
+                case 2: {
+                        message.i2cBus = reader.uint32();
+                        break;
+                    }
+                case 3: {
+                        message.i2cAddress = reader.uint32();
+                        break;
+                    }
+                case 10: {
+                        message.info = $root.arduino_nicla_sense_env.ArduinoNiclaSenseEnvDeviceInfo.decode(reader, reader.uint32(), undefined, long + 1);
+                        break;
+                    }
+                default:
+                    reader.skipType(tag & 7, long);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes an ArduinoNiclaSenseEnvDevice message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof arduino_nicla_sense_env.ArduinoNiclaSenseEnvDevice
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {arduino_nicla_sense_env.ArduinoNiclaSenseEnvDevice} ArduinoNiclaSenseEnvDevice
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        ArduinoNiclaSenseEnvDevice.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies an ArduinoNiclaSenseEnvDevice message.
+         * @function verify
+         * @memberof arduino_nicla_sense_env.ArduinoNiclaSenseEnvDevice
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        ArduinoNiclaSenseEnvDevice.verify = function verify(message, long) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
+            if (message.id != null && message.hasOwnProperty("id"))
+                if (!$util.isString(message.id))
+                    return "id: string expected";
+            if (message.i2cBus != null && message.hasOwnProperty("i2cBus"))
+                if (!$util.isInteger(message.i2cBus))
+                    return "i2cBus: integer expected";
+            if (message.i2cAddress != null && message.hasOwnProperty("i2cAddress"))
+                if (!$util.isInteger(message.i2cAddress))
+                    return "i2cAddress: integer expected";
+            if (message.info != null && message.hasOwnProperty("info")) {
+                let error = $root.arduino_nicla_sense_env.ArduinoNiclaSenseEnvDeviceInfo.verify(message.info, long + 1);
+                if (error)
+                    return "info." + error;
+            }
+            return null;
+        };
+
+        /**
+         * Creates an ArduinoNiclaSenseEnvDevice message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof arduino_nicla_sense_env.ArduinoNiclaSenseEnvDevice
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {arduino_nicla_sense_env.ArduinoNiclaSenseEnvDevice} ArduinoNiclaSenseEnvDevice
+         */
+        ArduinoNiclaSenseEnvDevice.fromObject = function fromObject(object, long) {
+            if (object instanceof $root.arduino_nicla_sense_env.ArduinoNiclaSenseEnvDevice)
+                return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let message = new $root.arduino_nicla_sense_env.ArduinoNiclaSenseEnvDevice();
+            if (object.id != null)
+                message.id = String(object.id);
+            if (object.i2cBus != null)
+                message.i2cBus = object.i2cBus >>> 0;
+            if (object.i2cAddress != null)
+                message.i2cAddress = object.i2cAddress >>> 0;
+            if (object.info != null) {
+                if (typeof object.info !== "object")
+                    throw TypeError(".arduino_nicla_sense_env.ArduinoNiclaSenseEnvDevice.info: object expected");
+                message.info = $root.arduino_nicla_sense_env.ArduinoNiclaSenseEnvDeviceInfo.fromObject(object.info, long + 1);
+            }
+            return message;
+        };
+
+        /**
+         * Creates a plain object from an ArduinoNiclaSenseEnvDevice message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof arduino_nicla_sense_env.ArduinoNiclaSenseEnvDevice
+         * @static
+         * @param {arduino_nicla_sense_env.ArduinoNiclaSenseEnvDevice} message ArduinoNiclaSenseEnvDevice
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        ArduinoNiclaSenseEnvDevice.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.defaults) {
+                object.id = "";
+                object.i2cBus = 0;
+                object.i2cAddress = 0;
+                object.info = null;
+            }
+            if (message.id != null && message.hasOwnProperty("id"))
+                object.id = message.id;
+            if (message.i2cBus != null && message.hasOwnProperty("i2cBus"))
+                object.i2cBus = message.i2cBus;
+            if (message.i2cAddress != null && message.hasOwnProperty("i2cAddress"))
+                object.i2cAddress = message.i2cAddress;
+            if (message.info != null && message.hasOwnProperty("info"))
+                object.info = $root.arduino_nicla_sense_env.ArduinoNiclaSenseEnvDeviceInfo.toObject(message.info, options);
+            return object;
+        };
+
+        /**
+         * Converts this ArduinoNiclaSenseEnvDevice to JSON.
+         * @function toJSON
+         * @memberof arduino_nicla_sense_env.ArduinoNiclaSenseEnvDevice
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        ArduinoNiclaSenseEnvDevice.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for ArduinoNiclaSenseEnvDevice
+         * @function getTypeUrl
+         * @memberof arduino_nicla_sense_env.ArduinoNiclaSenseEnvDevice
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        ArduinoNiclaSenseEnvDevice.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+            if (typeUrlPrefix === undefined) {
+                typeUrlPrefix = "type.googleapis.com";
+            }
+            return typeUrlPrefix + "/arduino_nicla_sense_env.ArduinoNiclaSenseEnvDevice";
+        };
+
+        return ArduinoNiclaSenseEnvDevice;
+    })();
+
+    arduino_nicla_sense_env.WriteRegistersCommand = (function() {
+
+        /**
+         * Properties of a WriteRegistersCommand.
+         * @memberof arduino_nicla_sense_env
+         * @interface IWriteRegistersCommand
+         * @property {number|null} [startRegister] WriteRegistersCommand startRegister
+         * @property {Uint8Array|null} [data] WriteRegistersCommand data
+         */
+
+        /**
+         * Constructs a new WriteRegistersCommand.
+         * @memberof arduino_nicla_sense_env
+         * @classdesc Represents a WriteRegistersCommand.
+         * @implements IWriteRegistersCommand
+         * @constructor
+         * @param {arduino_nicla_sense_env.IWriteRegistersCommand=} [properties] Properties to set
+         */
+        function WriteRegistersCommand(properties) {
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * WriteRegistersCommand startRegister.
+         * @member {number} startRegister
+         * @memberof arduino_nicla_sense_env.WriteRegistersCommand
+         * @instance
+         */
+        WriteRegistersCommand.prototype.startRegister = 0;
+
+        /**
+         * WriteRegistersCommand data.
+         * @member {Uint8Array} data
+         * @memberof arduino_nicla_sense_env.WriteRegistersCommand
+         * @instance
+         */
+        WriteRegistersCommand.prototype.data = $util.newBuffer([]);
+
+        /**
+         * Creates a new WriteRegistersCommand instance using the specified properties.
+         * @function create
+         * @memberof arduino_nicla_sense_env.WriteRegistersCommand
+         * @static
+         * @param {arduino_nicla_sense_env.IWriteRegistersCommand=} [properties] Properties to set
+         * @returns {arduino_nicla_sense_env.WriteRegistersCommand} WriteRegistersCommand instance
+         */
+        WriteRegistersCommand.create = function create(properties) {
+            return new WriteRegistersCommand(properties);
+        };
+
+        /**
+         * Encodes the specified WriteRegistersCommand message. Does not implicitly {@link arduino_nicla_sense_env.WriteRegistersCommand.verify|verify} messages.
+         * @function encode
+         * @memberof arduino_nicla_sense_env.WriteRegistersCommand
+         * @static
+         * @param {arduino_nicla_sense_env.IWriteRegistersCommand} message WriteRegistersCommand message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        WriteRegistersCommand.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.startRegister != null && Object.hasOwnProperty.call(message, "startRegister"))
+                writer.uint32(/* id 1, wireType 0 =*/8).uint32(message.startRegister);
+            if (message.data != null && Object.hasOwnProperty.call(message, "data"))
+                writer.uint32(/* id 2, wireType 2 =*/18).bytes(message.data);
+            return writer;
+        };
+
+        /**
+         * Encodes the specified WriteRegistersCommand message, length delimited. Does not implicitly {@link arduino_nicla_sense_env.WriteRegistersCommand.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof arduino_nicla_sense_env.WriteRegistersCommand
+         * @static
+         * @param {arduino_nicla_sense_env.IWriteRegistersCommand} message WriteRegistersCommand message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        WriteRegistersCommand.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes a WriteRegistersCommand message from the specified reader or buffer.
+         * @function decode
+         * @memberof arduino_nicla_sense_env.WriteRegistersCommand
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {arduino_nicla_sense_env.WriteRegistersCommand} WriteRegistersCommand
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        WriteRegistersCommand.decode = function decode(reader, length, error, long) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.arduino_nicla_sense_env.WriteRegistersCommand();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                if (tag === error)
+                    break;
+                switch (tag >>> 3) {
+                case 1: {
+                        message.startRegister = reader.uint32();
+                        break;
+                    }
+                case 2: {
+                        message.data = reader.bytes();
+                        break;
+                    }
+                default:
+                    reader.skipType(tag & 7, long);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes a WriteRegistersCommand message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof arduino_nicla_sense_env.WriteRegistersCommand
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {arduino_nicla_sense_env.WriteRegistersCommand} WriteRegistersCommand
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        WriteRegistersCommand.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies a WriteRegistersCommand message.
+         * @function verify
+         * @memberof arduino_nicla_sense_env.WriteRegistersCommand
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        WriteRegistersCommand.verify = function verify(message, long) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
+            if (message.startRegister != null && message.hasOwnProperty("startRegister"))
+                if (!$util.isInteger(message.startRegister))
+                    return "startRegister: integer expected";
+            if (message.data != null && message.hasOwnProperty("data"))
+                if (!(message.data && typeof message.data.length === "number" || $util.isString(message.data)))
+                    return "data: buffer expected";
+            return null;
+        };
+
+        /**
+         * Creates a WriteRegistersCommand message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof arduino_nicla_sense_env.WriteRegistersCommand
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {arduino_nicla_sense_env.WriteRegistersCommand} WriteRegistersCommand
+         */
+        WriteRegistersCommand.fromObject = function fromObject(object, long) {
+            if (object instanceof $root.arduino_nicla_sense_env.WriteRegistersCommand)
+                return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let message = new $root.arduino_nicla_sense_env.WriteRegistersCommand();
+            if (object.startRegister != null)
+                message.startRegister = object.startRegister >>> 0;
+            if (object.data != null)
+                if (typeof object.data === "string")
+                    $util.base64.decode(object.data, message.data = $util.newBuffer($util.base64.length(object.data)), 0);
+                else if (object.data.length >= 0)
+                    message.data = object.data;
+            return message;
+        };
+
+        /**
+         * Creates a plain object from a WriteRegistersCommand message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof arduino_nicla_sense_env.WriteRegistersCommand
+         * @static
+         * @param {arduino_nicla_sense_env.WriteRegistersCommand} message WriteRegistersCommand
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        WriteRegistersCommand.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.defaults) {
+                object.startRegister = 0;
+                if (options.bytes === String)
+                    object.data = "";
+                else {
+                    object.data = [];
+                    if (options.bytes !== Array)
+                        object.data = $util.newBuffer(object.data);
+                }
+            }
+            if (message.startRegister != null && message.hasOwnProperty("startRegister"))
+                object.startRegister = message.startRegister;
+            if (message.data != null && message.hasOwnProperty("data"))
+                object.data = options.bytes === String ? $util.base64.encode(message.data, 0, message.data.length) : options.bytes === Array ? Array.prototype.slice.call(message.data) : message.data;
+            return object;
+        };
+
+        /**
+         * Converts this WriteRegistersCommand to JSON.
+         * @function toJSON
+         * @memberof arduino_nicla_sense_env.WriteRegistersCommand
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        WriteRegistersCommand.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for WriteRegistersCommand
+         * @function getTypeUrl
+         * @memberof arduino_nicla_sense_env.WriteRegistersCommand
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        WriteRegistersCommand.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+            if (typeUrlPrefix === undefined) {
+                typeUrlPrefix = "type.googleapis.com";
+            }
+            return typeUrlPrefix + "/arduino_nicla_sense_env.WriteRegistersCommand";
+        };
+
+        return WriteRegistersCommand;
+    })();
+
+    arduino_nicla_sense_env.Command = (function() {
+
+        /**
+         * Properties of a Command.
+         * @memberof arduino_nicla_sense_env
+         * @interface ICommand
+         * @property {string|null} [targetDeviceId] Command targetDeviceId
+         * @property {arduino_nicla_sense_env.IWriteRegistersCommand|null} [writeRegisters] Command writeRegisters
+         */
+
+        /**
+         * Constructs a new Command.
+         * @memberof arduino_nicla_sense_env
+         * @classdesc Represents a Command.
+         * @implements ICommand
+         * @constructor
+         * @param {arduino_nicla_sense_env.ICommand=} [properties] Properties to set
+         */
+        function Command(properties) {
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * Command targetDeviceId.
+         * @member {string} targetDeviceId
+         * @memberof arduino_nicla_sense_env.Command
+         * @instance
+         */
+        Command.prototype.targetDeviceId = "";
+
+        /**
+         * Command writeRegisters.
+         * @member {arduino_nicla_sense_env.IWriteRegistersCommand|null|undefined} writeRegisters
+         * @memberof arduino_nicla_sense_env.Command
+         * @instance
+         */
+        Command.prototype.writeRegisters = null;
+
+        /**
+         * Creates a new Command instance using the specified properties.
+         * @function create
+         * @memberof arduino_nicla_sense_env.Command
+         * @static
+         * @param {arduino_nicla_sense_env.ICommand=} [properties] Properties to set
+         * @returns {arduino_nicla_sense_env.Command} Command instance
+         */
+        Command.create = function create(properties) {
+            return new Command(properties);
+        };
+
+        /**
+         * Encodes the specified Command message. Does not implicitly {@link arduino_nicla_sense_env.Command.verify|verify} messages.
+         * @function encode
+         * @memberof arduino_nicla_sense_env.Command
+         * @static
+         * @param {arduino_nicla_sense_env.ICommand} message Command message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        Command.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.targetDeviceId != null && Object.hasOwnProperty.call(message, "targetDeviceId"))
+                writer.uint32(/* id 1, wireType 2 =*/10).string(message.targetDeviceId);
+            if (message.writeRegisters != null && Object.hasOwnProperty.call(message, "writeRegisters"))
+                $root.arduino_nicla_sense_env.WriteRegistersCommand.encode(message.writeRegisters, writer.uint32(/* id 10, wireType 2 =*/82).fork()).ldelim();
+            return writer;
+        };
+
+        /**
+         * Encodes the specified Command message, length delimited. Does not implicitly {@link arduino_nicla_sense_env.Command.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof arduino_nicla_sense_env.Command
+         * @static
+         * @param {arduino_nicla_sense_env.ICommand} message Command message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        Command.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes a Command message from the specified reader or buffer.
+         * @function decode
+         * @memberof arduino_nicla_sense_env.Command
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {arduino_nicla_sense_env.Command} Command
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        Command.decode = function decode(reader, length, error, long) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.arduino_nicla_sense_env.Command();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                if (tag === error)
+                    break;
+                switch (tag >>> 3) {
+                case 1: {
+                        message.targetDeviceId = reader.string();
+                        break;
+                    }
+                case 10: {
+                        message.writeRegisters = $root.arduino_nicla_sense_env.WriteRegistersCommand.decode(reader, reader.uint32(), undefined, long + 1);
+                        break;
+                    }
+                default:
+                    reader.skipType(tag & 7, long);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes a Command message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof arduino_nicla_sense_env.Command
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {arduino_nicla_sense_env.Command} Command
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        Command.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies a Command message.
+         * @function verify
+         * @memberof arduino_nicla_sense_env.Command
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        Command.verify = function verify(message, long) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
+            if (message.targetDeviceId != null && message.hasOwnProperty("targetDeviceId"))
+                if (!$util.isString(message.targetDeviceId))
+                    return "targetDeviceId: string expected";
+            if (message.writeRegisters != null && message.hasOwnProperty("writeRegisters")) {
+                let error = $root.arduino_nicla_sense_env.WriteRegistersCommand.verify(message.writeRegisters, long + 1);
+                if (error)
+                    return "writeRegisters." + error;
+            }
+            return null;
+        };
+
+        /**
+         * Creates a Command message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof arduino_nicla_sense_env.Command
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {arduino_nicla_sense_env.Command} Command
+         */
+        Command.fromObject = function fromObject(object, long) {
+            if (object instanceof $root.arduino_nicla_sense_env.Command)
+                return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let message = new $root.arduino_nicla_sense_env.Command();
+            if (object.targetDeviceId != null)
+                message.targetDeviceId = String(object.targetDeviceId);
+            if (object.writeRegisters != null) {
+                if (typeof object.writeRegisters !== "object")
+                    throw TypeError(".arduino_nicla_sense_env.Command.writeRegisters: object expected");
+                message.writeRegisters = $root.arduino_nicla_sense_env.WriteRegistersCommand.fromObject(object.writeRegisters, long + 1);
+            }
+            return message;
+        };
+
+        /**
+         * Creates a plain object from a Command message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof arduino_nicla_sense_env.Command
+         * @static
+         * @param {arduino_nicla_sense_env.Command} message Command
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        Command.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.defaults) {
+                object.targetDeviceId = "";
+                object.writeRegisters = null;
+            }
+            if (message.targetDeviceId != null && message.hasOwnProperty("targetDeviceId"))
+                object.targetDeviceId = message.targetDeviceId;
+            if (message.writeRegisters != null && message.hasOwnProperty("writeRegisters"))
+                object.writeRegisters = $root.arduino_nicla_sense_env.WriteRegistersCommand.toObject(message.writeRegisters, options);
+            return object;
+        };
+
+        /**
+         * Converts this Command to JSON.
+         * @function toJSON
+         * @memberof arduino_nicla_sense_env.Command
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        Command.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for Command
+         * @function getTypeUrl
+         * @memberof arduino_nicla_sense_env.Command
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        Command.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+            if (typeUrlPrefix === undefined) {
+                typeUrlPrefix = "type.googleapis.com";
+            }
+            return typeUrlPrefix + "/arduino_nicla_sense_env.Command";
+        };
+
+        return Command;
+    })();
+
+    arduino_nicla_sense_env.TxEnvelope = (function() {
+
+        /**
+         * Properties of a TxEnvelope.
+         * @memberof arduino_nicla_sense_env
+         * @interface ITxEnvelope
+         * @property {Long|null} [monotonicStampNs] TxEnvelope monotonicStampNs
+         * @property {Long|null} [localStampNs] TxEnvelope localStampNs
+         * @property {Long|null} [appStartId] TxEnvelope appStartId
+         * @property {Uint8Array|null} [commandId] TxEnvelope commandId
+         * @property {string|null} [targetDeviceId] TxEnvelope targetDeviceId
+         * @property {arduino_nicla_sense_env.ICommand|null} [command] TxEnvelope command
+         */
+
+        /**
+         * Constructs a new TxEnvelope.
+         * @memberof arduino_nicla_sense_env
+         * @classdesc Represents a TxEnvelope.
+         * @implements ITxEnvelope
+         * @constructor
+         * @param {arduino_nicla_sense_env.ITxEnvelope=} [properties] Properties to set
+         */
+        function TxEnvelope(properties) {
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * TxEnvelope monotonicStampNs.
+         * @member {Long} monotonicStampNs
+         * @memberof arduino_nicla_sense_env.TxEnvelope
+         * @instance
+         */
+        TxEnvelope.prototype.monotonicStampNs = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+
+        /**
+         * TxEnvelope localStampNs.
+         * @member {Long} localStampNs
+         * @memberof arduino_nicla_sense_env.TxEnvelope
+         * @instance
+         */
+        TxEnvelope.prototype.localStampNs = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+
+        /**
+         * TxEnvelope appStartId.
+         * @member {Long} appStartId
+         * @memberof arduino_nicla_sense_env.TxEnvelope
+         * @instance
+         */
+        TxEnvelope.prototype.appStartId = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+
+        /**
+         * TxEnvelope commandId.
+         * @member {Uint8Array} commandId
+         * @memberof arduino_nicla_sense_env.TxEnvelope
+         * @instance
+         */
+        TxEnvelope.prototype.commandId = $util.newBuffer([]);
+
+        /**
+         * TxEnvelope targetDeviceId.
+         * @member {string} targetDeviceId
+         * @memberof arduino_nicla_sense_env.TxEnvelope
+         * @instance
+         */
+        TxEnvelope.prototype.targetDeviceId = "";
+
+        /**
+         * TxEnvelope command.
+         * @member {arduino_nicla_sense_env.ICommand|null|undefined} command
+         * @memberof arduino_nicla_sense_env.TxEnvelope
+         * @instance
+         */
+        TxEnvelope.prototype.command = null;
+
+        /**
+         * Creates a new TxEnvelope instance using the specified properties.
+         * @function create
+         * @memberof arduino_nicla_sense_env.TxEnvelope
+         * @static
+         * @param {arduino_nicla_sense_env.ITxEnvelope=} [properties] Properties to set
+         * @returns {arduino_nicla_sense_env.TxEnvelope} TxEnvelope instance
+         */
+        TxEnvelope.create = function create(properties) {
+            return new TxEnvelope(properties);
+        };
+
+        /**
+         * Encodes the specified TxEnvelope message. Does not implicitly {@link arduino_nicla_sense_env.TxEnvelope.verify|verify} messages.
+         * @function encode
+         * @memberof arduino_nicla_sense_env.TxEnvelope
+         * @static
+         * @param {arduino_nicla_sense_env.ITxEnvelope} message TxEnvelope message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        TxEnvelope.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.monotonicStampNs != null && Object.hasOwnProperty.call(message, "monotonicStampNs"))
+                writer.uint32(/* id 1, wireType 0 =*/8).uint64(message.monotonicStampNs);
+            if (message.localStampNs != null && Object.hasOwnProperty.call(message, "localStampNs"))
+                writer.uint32(/* id 2, wireType 0 =*/16).uint64(message.localStampNs);
+            if (message.appStartId != null && Object.hasOwnProperty.call(message, "appStartId"))
+                writer.uint32(/* id 3, wireType 0 =*/24).uint64(message.appStartId);
+            if (message.commandId != null && Object.hasOwnProperty.call(message, "commandId"))
+                writer.uint32(/* id 4, wireType 2 =*/34).bytes(message.commandId);
+            if (message.targetDeviceId != null && Object.hasOwnProperty.call(message, "targetDeviceId"))
+                writer.uint32(/* id 5, wireType 2 =*/42).string(message.targetDeviceId);
+            if (message.command != null && Object.hasOwnProperty.call(message, "command"))
+                $root.arduino_nicla_sense_env.Command.encode(message.command, writer.uint32(/* id 10, wireType 2 =*/82).fork()).ldelim();
+            return writer;
+        };
+
+        /**
+         * Encodes the specified TxEnvelope message, length delimited. Does not implicitly {@link arduino_nicla_sense_env.TxEnvelope.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof arduino_nicla_sense_env.TxEnvelope
+         * @static
+         * @param {arduino_nicla_sense_env.ITxEnvelope} message TxEnvelope message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        TxEnvelope.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes a TxEnvelope message from the specified reader or buffer.
+         * @function decode
+         * @memberof arduino_nicla_sense_env.TxEnvelope
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {arduino_nicla_sense_env.TxEnvelope} TxEnvelope
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        TxEnvelope.decode = function decode(reader, length, error, long) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.arduino_nicla_sense_env.TxEnvelope();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                if (tag === error)
+                    break;
+                switch (tag >>> 3) {
+                case 1: {
+                        message.monotonicStampNs = reader.uint64();
+                        break;
+                    }
+                case 2: {
+                        message.localStampNs = reader.uint64();
+                        break;
+                    }
+                case 3: {
+                        message.appStartId = reader.uint64();
+                        break;
+                    }
+                case 4: {
+                        message.commandId = reader.bytes();
+                        break;
+                    }
+                case 5: {
+                        message.targetDeviceId = reader.string();
+                        break;
+                    }
+                case 10: {
+                        message.command = $root.arduino_nicla_sense_env.Command.decode(reader, reader.uint32(), undefined, long + 1);
+                        break;
+                    }
+                default:
+                    reader.skipType(tag & 7, long);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes a TxEnvelope message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof arduino_nicla_sense_env.TxEnvelope
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {arduino_nicla_sense_env.TxEnvelope} TxEnvelope
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        TxEnvelope.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies a TxEnvelope message.
+         * @function verify
+         * @memberof arduino_nicla_sense_env.TxEnvelope
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        TxEnvelope.verify = function verify(message, long) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
+            if (message.monotonicStampNs != null && message.hasOwnProperty("monotonicStampNs"))
+                if (!$util.isInteger(message.monotonicStampNs) && !(message.monotonicStampNs && $util.isInteger(message.monotonicStampNs.low) && $util.isInteger(message.monotonicStampNs.high)))
+                    return "monotonicStampNs: integer|Long expected";
+            if (message.localStampNs != null && message.hasOwnProperty("localStampNs"))
+                if (!$util.isInteger(message.localStampNs) && !(message.localStampNs && $util.isInteger(message.localStampNs.low) && $util.isInteger(message.localStampNs.high)))
+                    return "localStampNs: integer|Long expected";
+            if (message.appStartId != null && message.hasOwnProperty("appStartId"))
+                if (!$util.isInteger(message.appStartId) && !(message.appStartId && $util.isInteger(message.appStartId.low) && $util.isInteger(message.appStartId.high)))
+                    return "appStartId: integer|Long expected";
+            if (message.commandId != null && message.hasOwnProperty("commandId"))
+                if (!(message.commandId && typeof message.commandId.length === "number" || $util.isString(message.commandId)))
+                    return "commandId: buffer expected";
+            if (message.targetDeviceId != null && message.hasOwnProperty("targetDeviceId"))
+                if (!$util.isString(message.targetDeviceId))
+                    return "targetDeviceId: string expected";
+            if (message.command != null && message.hasOwnProperty("command")) {
+                let error = $root.arduino_nicla_sense_env.Command.verify(message.command, long + 1);
+                if (error)
+                    return "command." + error;
+            }
+            return null;
+        };
+
+        /**
+         * Creates a TxEnvelope message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof arduino_nicla_sense_env.TxEnvelope
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {arduino_nicla_sense_env.TxEnvelope} TxEnvelope
+         */
+        TxEnvelope.fromObject = function fromObject(object, long) {
+            if (object instanceof $root.arduino_nicla_sense_env.TxEnvelope)
+                return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let message = new $root.arduino_nicla_sense_env.TxEnvelope();
+            if (object.monotonicStampNs != null)
+                if ($util.Long)
+                    (message.monotonicStampNs = $util.Long.fromValue(object.monotonicStampNs)).unsigned = true;
+                else if (typeof object.monotonicStampNs === "string")
+                    message.monotonicStampNs = parseInt(object.monotonicStampNs, 10);
+                else if (typeof object.monotonicStampNs === "number")
+                    message.monotonicStampNs = object.monotonicStampNs;
+                else if (typeof object.monotonicStampNs === "object")
+                    message.monotonicStampNs = new $util.LongBits(object.monotonicStampNs.low >>> 0, object.monotonicStampNs.high >>> 0).toNumber(true);
+            if (object.localStampNs != null)
+                if ($util.Long)
+                    (message.localStampNs = $util.Long.fromValue(object.localStampNs)).unsigned = true;
+                else if (typeof object.localStampNs === "string")
+                    message.localStampNs = parseInt(object.localStampNs, 10);
+                else if (typeof object.localStampNs === "number")
+                    message.localStampNs = object.localStampNs;
+                else if (typeof object.localStampNs === "object")
+                    message.localStampNs = new $util.LongBits(object.localStampNs.low >>> 0, object.localStampNs.high >>> 0).toNumber(true);
+            if (object.appStartId != null)
+                if ($util.Long)
+                    (message.appStartId = $util.Long.fromValue(object.appStartId)).unsigned = true;
+                else if (typeof object.appStartId === "string")
+                    message.appStartId = parseInt(object.appStartId, 10);
+                else if (typeof object.appStartId === "number")
+                    message.appStartId = object.appStartId;
+                else if (typeof object.appStartId === "object")
+                    message.appStartId = new $util.LongBits(object.appStartId.low >>> 0, object.appStartId.high >>> 0).toNumber(true);
+            if (object.commandId != null)
+                if (typeof object.commandId === "string")
+                    $util.base64.decode(object.commandId, message.commandId = $util.newBuffer($util.base64.length(object.commandId)), 0);
+                else if (object.commandId.length >= 0)
+                    message.commandId = object.commandId;
+            if (object.targetDeviceId != null)
+                message.targetDeviceId = String(object.targetDeviceId);
+            if (object.command != null) {
+                if (typeof object.command !== "object")
+                    throw TypeError(".arduino_nicla_sense_env.TxEnvelope.command: object expected");
+                message.command = $root.arduino_nicla_sense_env.Command.fromObject(object.command, long + 1);
+            }
+            return message;
+        };
+
+        /**
+         * Creates a plain object from a TxEnvelope message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof arduino_nicla_sense_env.TxEnvelope
+         * @static
+         * @param {arduino_nicla_sense_env.TxEnvelope} message TxEnvelope
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        TxEnvelope.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.defaults) {
+                if ($util.Long) {
+                    let long = new $util.Long(0, 0, true);
+                    object.monotonicStampNs = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+                } else
+                    object.monotonicStampNs = options.longs === String ? "0" : 0;
+                if ($util.Long) {
+                    let long = new $util.Long(0, 0, true);
+                    object.localStampNs = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+                } else
+                    object.localStampNs = options.longs === String ? "0" : 0;
+                if ($util.Long) {
+                    let long = new $util.Long(0, 0, true);
+                    object.appStartId = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+                } else
+                    object.appStartId = options.longs === String ? "0" : 0;
+                if (options.bytes === String)
+                    object.commandId = "";
+                else {
+                    object.commandId = [];
+                    if (options.bytes !== Array)
+                        object.commandId = $util.newBuffer(object.commandId);
+                }
+                object.targetDeviceId = "";
+                object.command = null;
+            }
+            if (message.monotonicStampNs != null && message.hasOwnProperty("monotonicStampNs"))
+                if (typeof message.monotonicStampNs === "number")
+                    object.monotonicStampNs = options.longs === String ? String(message.monotonicStampNs) : message.monotonicStampNs;
+                else
+                    object.monotonicStampNs = options.longs === String ? $util.Long.prototype.toString.call(message.monotonicStampNs) : options.longs === Number ? new $util.LongBits(message.monotonicStampNs.low >>> 0, message.monotonicStampNs.high >>> 0).toNumber(true) : message.monotonicStampNs;
+            if (message.localStampNs != null && message.hasOwnProperty("localStampNs"))
+                if (typeof message.localStampNs === "number")
+                    object.localStampNs = options.longs === String ? String(message.localStampNs) : message.localStampNs;
+                else
+                    object.localStampNs = options.longs === String ? $util.Long.prototype.toString.call(message.localStampNs) : options.longs === Number ? new $util.LongBits(message.localStampNs.low >>> 0, message.localStampNs.high >>> 0).toNumber(true) : message.localStampNs;
+            if (message.appStartId != null && message.hasOwnProperty("appStartId"))
+                if (typeof message.appStartId === "number")
+                    object.appStartId = options.longs === String ? String(message.appStartId) : message.appStartId;
+                else
+                    object.appStartId = options.longs === String ? $util.Long.prototype.toString.call(message.appStartId) : options.longs === Number ? new $util.LongBits(message.appStartId.low >>> 0, message.appStartId.high >>> 0).toNumber(true) : message.appStartId;
+            if (message.commandId != null && message.hasOwnProperty("commandId"))
+                object.commandId = options.bytes === String ? $util.base64.encode(message.commandId, 0, message.commandId.length) : options.bytes === Array ? Array.prototype.slice.call(message.commandId) : message.commandId;
+            if (message.targetDeviceId != null && message.hasOwnProperty("targetDeviceId"))
+                object.targetDeviceId = message.targetDeviceId;
+            if (message.command != null && message.hasOwnProperty("command"))
+                object.command = $root.arduino_nicla_sense_env.Command.toObject(message.command, options);
+            return object;
+        };
+
+        /**
+         * Converts this TxEnvelope to JSON.
+         * @function toJSON
+         * @memberof arduino_nicla_sense_env.TxEnvelope
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        TxEnvelope.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for TxEnvelope
+         * @function getTypeUrl
+         * @memberof arduino_nicla_sense_env.TxEnvelope
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        TxEnvelope.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+            if (typeUrlPrefix === undefined) {
+                typeUrlPrefix = "type.googleapis.com";
+            }
+            return typeUrlPrefix + "/arduino_nicla_sense_env.TxEnvelope";
+        };
+
+        return TxEnvelope;
+    })();
+
+    arduino_nicla_sense_env.RxEnvelope = (function() {
+
+        /**
+         * Properties of a RxEnvelope.
+         * @memberof arduino_nicla_sense_env
+         * @interface IRxEnvelope
+         * @property {Long|null} [monotonicStampNs] RxEnvelope monotonicStampNs
+         * @property {Long|null} [localStampNs] RxEnvelope localStampNs
+         * @property {Long|null} [appStartId] RxEnvelope appStartId
+         * @property {arduino_nicla_sense_env.ArduinoNiclaSenseEnvSignalType|null} [signalType] RxEnvelope signalType
+         * @property {arduino_nicla_sense_env.IArduinoNiclaSenseEnvDevice|null} [device] RxEnvelope device
+         * @property {Uint8Array|null} [data] RxEnvelope data
+         * @property {arduino_nicla_sense_env.ITxEnvelope|null} [command] RxEnvelope command
+         * @property {string|null} [error] RxEnvelope error
+         */
+
+        /**
+         * Constructs a new RxEnvelope.
+         * @memberof arduino_nicla_sense_env
+         * @classdesc Represents a RxEnvelope.
+         * @implements IRxEnvelope
+         * @constructor
+         * @param {arduino_nicla_sense_env.IRxEnvelope=} [properties] Properties to set
+         */
+        function RxEnvelope(properties) {
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * RxEnvelope monotonicStampNs.
+         * @member {Long} monotonicStampNs
+         * @memberof arduino_nicla_sense_env.RxEnvelope
+         * @instance
+         */
+        RxEnvelope.prototype.monotonicStampNs = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+
+        /**
+         * RxEnvelope localStampNs.
+         * @member {Long} localStampNs
+         * @memberof arduino_nicla_sense_env.RxEnvelope
+         * @instance
+         */
+        RxEnvelope.prototype.localStampNs = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+
+        /**
+         * RxEnvelope appStartId.
+         * @member {Long} appStartId
+         * @memberof arduino_nicla_sense_env.RxEnvelope
+         * @instance
+         */
+        RxEnvelope.prototype.appStartId = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+
+        /**
+         * RxEnvelope signalType.
+         * @member {arduino_nicla_sense_env.ArduinoNiclaSenseEnvSignalType} signalType
+         * @memberof arduino_nicla_sense_env.RxEnvelope
+         * @instance
+         */
+        RxEnvelope.prototype.signalType = 0;
+
+        /**
+         * RxEnvelope device.
+         * @member {arduino_nicla_sense_env.IArduinoNiclaSenseEnvDevice|null|undefined} device
+         * @memberof arduino_nicla_sense_env.RxEnvelope
+         * @instance
+         */
+        RxEnvelope.prototype.device = null;
+
+        /**
+         * RxEnvelope data.
+         * @member {Uint8Array} data
+         * @memberof arduino_nicla_sense_env.RxEnvelope
+         * @instance
+         */
+        RxEnvelope.prototype.data = $util.newBuffer([]);
+
+        /**
+         * RxEnvelope command.
+         * @member {arduino_nicla_sense_env.ITxEnvelope|null|undefined} command
+         * @memberof arduino_nicla_sense_env.RxEnvelope
+         * @instance
+         */
+        RxEnvelope.prototype.command = null;
+
+        /**
+         * RxEnvelope error.
+         * @member {string} error
+         * @memberof arduino_nicla_sense_env.RxEnvelope
+         * @instance
+         */
+        RxEnvelope.prototype.error = "";
+
+        /**
+         * Creates a new RxEnvelope instance using the specified properties.
+         * @function create
+         * @memberof arduino_nicla_sense_env.RxEnvelope
+         * @static
+         * @param {arduino_nicla_sense_env.IRxEnvelope=} [properties] Properties to set
+         * @returns {arduino_nicla_sense_env.RxEnvelope} RxEnvelope instance
+         */
+        RxEnvelope.create = function create(properties) {
+            return new RxEnvelope(properties);
+        };
+
+        /**
+         * Encodes the specified RxEnvelope message. Does not implicitly {@link arduino_nicla_sense_env.RxEnvelope.verify|verify} messages.
+         * @function encode
+         * @memberof arduino_nicla_sense_env.RxEnvelope
+         * @static
+         * @param {arduino_nicla_sense_env.IRxEnvelope} message RxEnvelope message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        RxEnvelope.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.monotonicStampNs != null && Object.hasOwnProperty.call(message, "monotonicStampNs"))
+                writer.uint32(/* id 1, wireType 0 =*/8).uint64(message.monotonicStampNs);
+            if (message.localStampNs != null && Object.hasOwnProperty.call(message, "localStampNs"))
+                writer.uint32(/* id 2, wireType 0 =*/16).uint64(message.localStampNs);
+            if (message.appStartId != null && Object.hasOwnProperty.call(message, "appStartId"))
+                writer.uint32(/* id 3, wireType 0 =*/24).uint64(message.appStartId);
+            if (message.signalType != null && Object.hasOwnProperty.call(message, "signalType"))
+                writer.uint32(/* id 10, wireType 0 =*/80).int32(message.signalType);
+            if (message.device != null && Object.hasOwnProperty.call(message, "device"))
+                $root.arduino_nicla_sense_env.ArduinoNiclaSenseEnvDevice.encode(message.device, writer.uint32(/* id 11, wireType 2 =*/90).fork()).ldelim();
+            if (message.data != null && Object.hasOwnProperty.call(message, "data"))
+                writer.uint32(/* id 20, wireType 2 =*/162).bytes(message.data);
+            if (message.command != null && Object.hasOwnProperty.call(message, "command"))
+                $root.arduino_nicla_sense_env.TxEnvelope.encode(message.command, writer.uint32(/* id 30, wireType 2 =*/242).fork()).ldelim();
+            if (message.error != null && Object.hasOwnProperty.call(message, "error"))
+                writer.uint32(/* id 50, wireType 2 =*/402).string(message.error);
+            return writer;
+        };
+
+        /**
+         * Encodes the specified RxEnvelope message, length delimited. Does not implicitly {@link arduino_nicla_sense_env.RxEnvelope.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof arduino_nicla_sense_env.RxEnvelope
+         * @static
+         * @param {arduino_nicla_sense_env.IRxEnvelope} message RxEnvelope message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        RxEnvelope.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes a RxEnvelope message from the specified reader or buffer.
+         * @function decode
+         * @memberof arduino_nicla_sense_env.RxEnvelope
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {arduino_nicla_sense_env.RxEnvelope} RxEnvelope
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        RxEnvelope.decode = function decode(reader, length, error, long) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.arduino_nicla_sense_env.RxEnvelope();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                if (tag === error)
+                    break;
+                switch (tag >>> 3) {
+                case 1: {
+                        message.monotonicStampNs = reader.uint64();
+                        break;
+                    }
+                case 2: {
+                        message.localStampNs = reader.uint64();
+                        break;
+                    }
+                case 3: {
+                        message.appStartId = reader.uint64();
+                        break;
+                    }
+                case 10: {
+                        message.signalType = reader.int32();
+                        break;
+                    }
+                case 11: {
+                        message.device = $root.arduino_nicla_sense_env.ArduinoNiclaSenseEnvDevice.decode(reader, reader.uint32(), undefined, long + 1);
+                        break;
+                    }
+                case 20: {
+                        message.data = reader.bytes();
+                        break;
+                    }
+                case 30: {
+                        message.command = $root.arduino_nicla_sense_env.TxEnvelope.decode(reader, reader.uint32(), undefined, long + 1);
+                        break;
+                    }
+                case 50: {
+                        message.error = reader.string();
+                        break;
+                    }
+                default:
+                    reader.skipType(tag & 7, long);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes a RxEnvelope message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof arduino_nicla_sense_env.RxEnvelope
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {arduino_nicla_sense_env.RxEnvelope} RxEnvelope
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        RxEnvelope.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies a RxEnvelope message.
+         * @function verify
+         * @memberof arduino_nicla_sense_env.RxEnvelope
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        RxEnvelope.verify = function verify(message, long) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
+            if (message.monotonicStampNs != null && message.hasOwnProperty("monotonicStampNs"))
+                if (!$util.isInteger(message.monotonicStampNs) && !(message.monotonicStampNs && $util.isInteger(message.monotonicStampNs.low) && $util.isInteger(message.monotonicStampNs.high)))
+                    return "monotonicStampNs: integer|Long expected";
+            if (message.localStampNs != null && message.hasOwnProperty("localStampNs"))
+                if (!$util.isInteger(message.localStampNs) && !(message.localStampNs && $util.isInteger(message.localStampNs.low) && $util.isInteger(message.localStampNs.high)))
+                    return "localStampNs: integer|Long expected";
+            if (message.appStartId != null && message.hasOwnProperty("appStartId"))
+                if (!$util.isInteger(message.appStartId) && !(message.appStartId && $util.isInteger(message.appStartId.low) && $util.isInteger(message.appStartId.high)))
+                    return "appStartId: integer|Long expected";
+            if (message.signalType != null && message.hasOwnProperty("signalType"))
+                switch (message.signalType) {
+                default:
+                    return "signalType: enum value expected";
+                case 0:
+                case 1:
+                case 2:
+                case 3:
+                case 4:
+                case 5:
+                case 6:
+                case 7:
+                case 8:
+                    break;
+                }
+            if (message.device != null && message.hasOwnProperty("device")) {
+                let error = $root.arduino_nicla_sense_env.ArduinoNiclaSenseEnvDevice.verify(message.device, long + 1);
+                if (error)
+                    return "device." + error;
+            }
+            if (message.data != null && message.hasOwnProperty("data"))
+                if (!(message.data && typeof message.data.length === "number" || $util.isString(message.data)))
+                    return "data: buffer expected";
+            if (message.command != null && message.hasOwnProperty("command")) {
+                let error = $root.arduino_nicla_sense_env.TxEnvelope.verify(message.command, long + 1);
+                if (error)
+                    return "command." + error;
+            }
+            if (message.error != null && message.hasOwnProperty("error"))
+                if (!$util.isString(message.error))
+                    return "error: string expected";
+            return null;
+        };
+
+        /**
+         * Creates a RxEnvelope message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof arduino_nicla_sense_env.RxEnvelope
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {arduino_nicla_sense_env.RxEnvelope} RxEnvelope
+         */
+        RxEnvelope.fromObject = function fromObject(object, long) {
+            if (object instanceof $root.arduino_nicla_sense_env.RxEnvelope)
+                return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let message = new $root.arduino_nicla_sense_env.RxEnvelope();
+            if (object.monotonicStampNs != null)
+                if ($util.Long)
+                    (message.monotonicStampNs = $util.Long.fromValue(object.monotonicStampNs)).unsigned = true;
+                else if (typeof object.monotonicStampNs === "string")
+                    message.monotonicStampNs = parseInt(object.monotonicStampNs, 10);
+                else if (typeof object.monotonicStampNs === "number")
+                    message.monotonicStampNs = object.monotonicStampNs;
+                else if (typeof object.monotonicStampNs === "object")
+                    message.monotonicStampNs = new $util.LongBits(object.monotonicStampNs.low >>> 0, object.monotonicStampNs.high >>> 0).toNumber(true);
+            if (object.localStampNs != null)
+                if ($util.Long)
+                    (message.localStampNs = $util.Long.fromValue(object.localStampNs)).unsigned = true;
+                else if (typeof object.localStampNs === "string")
+                    message.localStampNs = parseInt(object.localStampNs, 10);
+                else if (typeof object.localStampNs === "number")
+                    message.localStampNs = object.localStampNs;
+                else if (typeof object.localStampNs === "object")
+                    message.localStampNs = new $util.LongBits(object.localStampNs.low >>> 0, object.localStampNs.high >>> 0).toNumber(true);
+            if (object.appStartId != null)
+                if ($util.Long)
+                    (message.appStartId = $util.Long.fromValue(object.appStartId)).unsigned = true;
+                else if (typeof object.appStartId === "string")
+                    message.appStartId = parseInt(object.appStartId, 10);
+                else if (typeof object.appStartId === "number")
+                    message.appStartId = object.appStartId;
+                else if (typeof object.appStartId === "object")
+                    message.appStartId = new $util.LongBits(object.appStartId.low >>> 0, object.appStartId.high >>> 0).toNumber(true);
+            switch (object.signalType) {
+            default:
+                if (typeof object.signalType === "number") {
+                    message.signalType = object.signalType;
+                    break;
+                }
+                break;
+            case "ARDUINO_NICLA_SENSE_ENV_SIGNAL_TYPE_UNSPECIFIED":
+            case 0:
+                message.signalType = 0;
+                break;
+            case "ARDUINO_NICLA_SENSE_ENV_CONNECTED":
+            case 1:
+                message.signalType = 1;
+                break;
+            case "ARDUINO_NICLA_SENSE_ENV_DISCONNECTED":
+            case 2:
+                message.signalType = 2;
+                break;
+            case "ARDUINO_NICLA_SENSE_ENV_REGISTERS_SNAPSHOT":
+            case 3:
+                message.signalType = 3;
+                break;
+            case "ARDUINO_NICLA_SENSE_ENV_COMMAND":
+            case 4:
+                message.signalType = 4;
+                break;
+            case "ARDUINO_NICLA_SENSE_ENV_COMMAND_SUCCESS":
+            case 5:
+                message.signalType = 5;
+                break;
+            case "ARDUINO_NICLA_SENSE_ENV_COMMAND_REJECTED":
+            case 6:
+                message.signalType = 6;
+                break;
+            case "ARDUINO_NICLA_SENSE_ENV_COMMAND_FAILED":
+            case 7:
+                message.signalType = 7;
+                break;
+            case "ARDUINO_NICLA_SENSE_ENV_ERROR":
+            case 8:
+                message.signalType = 8;
+                break;
+            }
+            if (object.device != null) {
+                if (typeof object.device !== "object")
+                    throw TypeError(".arduino_nicla_sense_env.RxEnvelope.device: object expected");
+                message.device = $root.arduino_nicla_sense_env.ArduinoNiclaSenseEnvDevice.fromObject(object.device, long + 1);
+            }
+            if (object.data != null)
+                if (typeof object.data === "string")
+                    $util.base64.decode(object.data, message.data = $util.newBuffer($util.base64.length(object.data)), 0);
+                else if (object.data.length >= 0)
+                    message.data = object.data;
+            if (object.command != null) {
+                if (typeof object.command !== "object")
+                    throw TypeError(".arduino_nicla_sense_env.RxEnvelope.command: object expected");
+                message.command = $root.arduino_nicla_sense_env.TxEnvelope.fromObject(object.command, long + 1);
+            }
+            if (object.error != null)
+                message.error = String(object.error);
+            return message;
+        };
+
+        /**
+         * Creates a plain object from a RxEnvelope message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof arduino_nicla_sense_env.RxEnvelope
+         * @static
+         * @param {arduino_nicla_sense_env.RxEnvelope} message RxEnvelope
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        RxEnvelope.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.defaults) {
+                if ($util.Long) {
+                    let long = new $util.Long(0, 0, true);
+                    object.monotonicStampNs = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+                } else
+                    object.monotonicStampNs = options.longs === String ? "0" : 0;
+                if ($util.Long) {
+                    let long = new $util.Long(0, 0, true);
+                    object.localStampNs = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+                } else
+                    object.localStampNs = options.longs === String ? "0" : 0;
+                if ($util.Long) {
+                    let long = new $util.Long(0, 0, true);
+                    object.appStartId = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+                } else
+                    object.appStartId = options.longs === String ? "0" : 0;
+                object.signalType = options.enums === String ? "ARDUINO_NICLA_SENSE_ENV_SIGNAL_TYPE_UNSPECIFIED" : 0;
+                object.device = null;
+                if (options.bytes === String)
+                    object.data = "";
+                else {
+                    object.data = [];
+                    if (options.bytes !== Array)
+                        object.data = $util.newBuffer(object.data);
+                }
+                object.command = null;
+                object.error = "";
+            }
+            if (message.monotonicStampNs != null && message.hasOwnProperty("monotonicStampNs"))
+                if (typeof message.monotonicStampNs === "number")
+                    object.monotonicStampNs = options.longs === String ? String(message.monotonicStampNs) : message.monotonicStampNs;
+                else
+                    object.monotonicStampNs = options.longs === String ? $util.Long.prototype.toString.call(message.monotonicStampNs) : options.longs === Number ? new $util.LongBits(message.monotonicStampNs.low >>> 0, message.monotonicStampNs.high >>> 0).toNumber(true) : message.monotonicStampNs;
+            if (message.localStampNs != null && message.hasOwnProperty("localStampNs"))
+                if (typeof message.localStampNs === "number")
+                    object.localStampNs = options.longs === String ? String(message.localStampNs) : message.localStampNs;
+                else
+                    object.localStampNs = options.longs === String ? $util.Long.prototype.toString.call(message.localStampNs) : options.longs === Number ? new $util.LongBits(message.localStampNs.low >>> 0, message.localStampNs.high >>> 0).toNumber(true) : message.localStampNs;
+            if (message.appStartId != null && message.hasOwnProperty("appStartId"))
+                if (typeof message.appStartId === "number")
+                    object.appStartId = options.longs === String ? String(message.appStartId) : message.appStartId;
+                else
+                    object.appStartId = options.longs === String ? $util.Long.prototype.toString.call(message.appStartId) : options.longs === Number ? new $util.LongBits(message.appStartId.low >>> 0, message.appStartId.high >>> 0).toNumber(true) : message.appStartId;
+            if (message.signalType != null && message.hasOwnProperty("signalType"))
+                object.signalType = options.enums === String ? $root.arduino_nicla_sense_env.ArduinoNiclaSenseEnvSignalType[message.signalType] === undefined ? message.signalType : $root.arduino_nicla_sense_env.ArduinoNiclaSenseEnvSignalType[message.signalType] : message.signalType;
+            if (message.device != null && message.hasOwnProperty("device"))
+                object.device = $root.arduino_nicla_sense_env.ArduinoNiclaSenseEnvDevice.toObject(message.device, options);
+            if (message.data != null && message.hasOwnProperty("data"))
+                object.data = options.bytes === String ? $util.base64.encode(message.data, 0, message.data.length) : options.bytes === Array ? Array.prototype.slice.call(message.data) : message.data;
+            if (message.command != null && message.hasOwnProperty("command"))
+                object.command = $root.arduino_nicla_sense_env.TxEnvelope.toObject(message.command, options);
+            if (message.error != null && message.hasOwnProperty("error"))
+                object.error = message.error;
+            return object;
+        };
+
+        /**
+         * Converts this RxEnvelope to JSON.
+         * @function toJSON
+         * @memberof arduino_nicla_sense_env.RxEnvelope
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        RxEnvelope.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for RxEnvelope
+         * @function getTypeUrl
+         * @memberof arduino_nicla_sense_env.RxEnvelope
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        RxEnvelope.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+            if (typeUrlPrefix === undefined) {
+                typeUrlPrefix = "type.googleapis.com";
+            }
+            return typeUrlPrefix + "/arduino_nicla_sense_env.RxEnvelope";
+        };
+
+        return RxEnvelope;
+    })();
+
+    return arduino_nicla_sense_env;
+})();
+
+export const ina226 = $root.ina226 = (() => {
+
+    /**
+     * Namespace ina226.
+     * @exports ina226
+     * @namespace
+     */
+    const ina226 = {};
+
+    /**
+     * Ina226SignalType enum.
+     * @name ina226.Ina226SignalType
+     * @enum {number}
+     * @property {number} INA226_SIGNAL_TYPE_UNSPECIFIED=0 INA226_SIGNAL_TYPE_UNSPECIFIED value
+     * @property {number} INA226_CONNECTED=1 INA226_CONNECTED value
+     * @property {number} INA226_DISCONNECTED=2 INA226_DISCONNECTED value
+     * @property {number} INA226_REGISTERS_SNAPSHOT=3 INA226_REGISTERS_SNAPSHOT value
+     * @property {number} INA226_ERROR=4 INA226_ERROR value
+     */
+    ina226.Ina226SignalType = (function() {
+        const valuesById = {}, values = Object.create(valuesById);
+        values[valuesById[0] = "INA226_SIGNAL_TYPE_UNSPECIFIED"] = 0;
+        values[valuesById[1] = "INA226_CONNECTED"] = 1;
+        values[valuesById[2] = "INA226_DISCONNECTED"] = 2;
+        values[valuesById[3] = "INA226_REGISTERS_SNAPSHOT"] = 3;
+        values[valuesById[4] = "INA226_ERROR"] = 4;
+        return values;
+    })();
+
+    ina226.Ina226DeviceInfo = (function() {
+
+        /**
+         * Properties of an Ina226DeviceInfo.
+         * @memberof ina226
+         * @interface IIna226DeviceInfo
+         * @property {number|null} [manufacturerId] Ina226DeviceInfo manufacturerId
+         * @property {number|null} [dieId] Ina226DeviceInfo dieId
+         * @property {number|null} [revisionId] Ina226DeviceInfo revisionId
+         * @property {number|null} [shuntResistanceOhms] Ina226DeviceInfo shuntResistanceOhms
+         */
+
+        /**
+         * Constructs a new Ina226DeviceInfo.
+         * @memberof ina226
+         * @classdesc Represents an Ina226DeviceInfo.
+         * @implements IIna226DeviceInfo
+         * @constructor
+         * @param {ina226.IIna226DeviceInfo=} [properties] Properties to set
+         */
+        function Ina226DeviceInfo(properties) {
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * Ina226DeviceInfo manufacturerId.
+         * @member {number} manufacturerId
+         * @memberof ina226.Ina226DeviceInfo
+         * @instance
+         */
+        Ina226DeviceInfo.prototype.manufacturerId = 0;
+
+        /**
+         * Ina226DeviceInfo dieId.
+         * @member {number} dieId
+         * @memberof ina226.Ina226DeviceInfo
+         * @instance
+         */
+        Ina226DeviceInfo.prototype.dieId = 0;
+
+        /**
+         * Ina226DeviceInfo revisionId.
+         * @member {number} revisionId
+         * @memberof ina226.Ina226DeviceInfo
+         * @instance
+         */
+        Ina226DeviceInfo.prototype.revisionId = 0;
+
+        /**
+         * Ina226DeviceInfo shuntResistanceOhms.
+         * @member {number} shuntResistanceOhms
+         * @memberof ina226.Ina226DeviceInfo
+         * @instance
+         */
+        Ina226DeviceInfo.prototype.shuntResistanceOhms = 0;
+
+        /**
+         * Creates a new Ina226DeviceInfo instance using the specified properties.
+         * @function create
+         * @memberof ina226.Ina226DeviceInfo
+         * @static
+         * @param {ina226.IIna226DeviceInfo=} [properties] Properties to set
+         * @returns {ina226.Ina226DeviceInfo} Ina226DeviceInfo instance
+         */
+        Ina226DeviceInfo.create = function create(properties) {
+            return new Ina226DeviceInfo(properties);
+        };
+
+        /**
+         * Encodes the specified Ina226DeviceInfo message. Does not implicitly {@link ina226.Ina226DeviceInfo.verify|verify} messages.
+         * @function encode
+         * @memberof ina226.Ina226DeviceInfo
+         * @static
+         * @param {ina226.IIna226DeviceInfo} message Ina226DeviceInfo message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        Ina226DeviceInfo.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.manufacturerId != null && Object.hasOwnProperty.call(message, "manufacturerId"))
+                writer.uint32(/* id 1, wireType 0 =*/8).uint32(message.manufacturerId);
+            if (message.dieId != null && Object.hasOwnProperty.call(message, "dieId"))
+                writer.uint32(/* id 2, wireType 0 =*/16).uint32(message.dieId);
+            if (message.revisionId != null && Object.hasOwnProperty.call(message, "revisionId"))
+                writer.uint32(/* id 3, wireType 0 =*/24).uint32(message.revisionId);
+            if (message.shuntResistanceOhms != null && Object.hasOwnProperty.call(message, "shuntResistanceOhms"))
+                writer.uint32(/* id 4, wireType 1 =*/33).double(message.shuntResistanceOhms);
+            return writer;
+        };
+
+        /**
+         * Encodes the specified Ina226DeviceInfo message, length delimited. Does not implicitly {@link ina226.Ina226DeviceInfo.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof ina226.Ina226DeviceInfo
+         * @static
+         * @param {ina226.IIna226DeviceInfo} message Ina226DeviceInfo message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        Ina226DeviceInfo.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes an Ina226DeviceInfo message from the specified reader or buffer.
+         * @function decode
+         * @memberof ina226.Ina226DeviceInfo
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {ina226.Ina226DeviceInfo} Ina226DeviceInfo
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        Ina226DeviceInfo.decode = function decode(reader, length, error, long) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.ina226.Ina226DeviceInfo();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                if (tag === error)
+                    break;
+                switch (tag >>> 3) {
+                case 1: {
+                        message.manufacturerId = reader.uint32();
+                        break;
+                    }
+                case 2: {
+                        message.dieId = reader.uint32();
+                        break;
+                    }
+                case 3: {
+                        message.revisionId = reader.uint32();
+                        break;
+                    }
+                case 4: {
+                        message.shuntResistanceOhms = reader.double();
+                        break;
+                    }
+                default:
+                    reader.skipType(tag & 7, long);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes an Ina226DeviceInfo message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof ina226.Ina226DeviceInfo
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {ina226.Ina226DeviceInfo} Ina226DeviceInfo
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        Ina226DeviceInfo.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies an Ina226DeviceInfo message.
+         * @function verify
+         * @memberof ina226.Ina226DeviceInfo
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        Ina226DeviceInfo.verify = function verify(message, long) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
+            if (message.manufacturerId != null && message.hasOwnProperty("manufacturerId"))
+                if (!$util.isInteger(message.manufacturerId))
+                    return "manufacturerId: integer expected";
+            if (message.dieId != null && message.hasOwnProperty("dieId"))
+                if (!$util.isInteger(message.dieId))
+                    return "dieId: integer expected";
+            if (message.revisionId != null && message.hasOwnProperty("revisionId"))
+                if (!$util.isInteger(message.revisionId))
+                    return "revisionId: integer expected";
+            if (message.shuntResistanceOhms != null && message.hasOwnProperty("shuntResistanceOhms"))
+                if (typeof message.shuntResistanceOhms !== "number")
+                    return "shuntResistanceOhms: number expected";
+            return null;
+        };
+
+        /**
+         * Creates an Ina226DeviceInfo message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof ina226.Ina226DeviceInfo
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {ina226.Ina226DeviceInfo} Ina226DeviceInfo
+         */
+        Ina226DeviceInfo.fromObject = function fromObject(object, long) {
+            if (object instanceof $root.ina226.Ina226DeviceInfo)
+                return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let message = new $root.ina226.Ina226DeviceInfo();
+            if (object.manufacturerId != null)
+                message.manufacturerId = object.manufacturerId >>> 0;
+            if (object.dieId != null)
+                message.dieId = object.dieId >>> 0;
+            if (object.revisionId != null)
+                message.revisionId = object.revisionId >>> 0;
+            if (object.shuntResistanceOhms != null)
+                message.shuntResistanceOhms = Number(object.shuntResistanceOhms);
+            return message;
+        };
+
+        /**
+         * Creates a plain object from an Ina226DeviceInfo message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof ina226.Ina226DeviceInfo
+         * @static
+         * @param {ina226.Ina226DeviceInfo} message Ina226DeviceInfo
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        Ina226DeviceInfo.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.defaults) {
+                object.manufacturerId = 0;
+                object.dieId = 0;
+                object.revisionId = 0;
+                object.shuntResistanceOhms = 0;
+            }
+            if (message.manufacturerId != null && message.hasOwnProperty("manufacturerId"))
+                object.manufacturerId = message.manufacturerId;
+            if (message.dieId != null && message.hasOwnProperty("dieId"))
+                object.dieId = message.dieId;
+            if (message.revisionId != null && message.hasOwnProperty("revisionId"))
+                object.revisionId = message.revisionId;
+            if (message.shuntResistanceOhms != null && message.hasOwnProperty("shuntResistanceOhms"))
+                object.shuntResistanceOhms = options.json && !isFinite(message.shuntResistanceOhms) ? String(message.shuntResistanceOhms) : message.shuntResistanceOhms;
+            return object;
+        };
+
+        /**
+         * Converts this Ina226DeviceInfo to JSON.
+         * @function toJSON
+         * @memberof ina226.Ina226DeviceInfo
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        Ina226DeviceInfo.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for Ina226DeviceInfo
+         * @function getTypeUrl
+         * @memberof ina226.Ina226DeviceInfo
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        Ina226DeviceInfo.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+            if (typeUrlPrefix === undefined) {
+                typeUrlPrefix = "type.googleapis.com";
+            }
+            return typeUrlPrefix + "/ina226.Ina226DeviceInfo";
+        };
+
+        return Ina226DeviceInfo;
+    })();
+
+    ina226.Ina226Device = (function() {
+
+        /**
+         * Properties of an Ina226Device.
+         * @memberof ina226
+         * @interface IIna226Device
+         * @property {string|null} [id] Ina226Device id
+         * @property {number|null} [i2cBus] Ina226Device i2cBus
+         * @property {number|null} [i2cAddress] Ina226Device i2cAddress
+         * @property {ina226.IIna226DeviceInfo|null} [info] Ina226Device info
+         */
+
+        /**
+         * Constructs a new Ina226Device.
+         * @memberof ina226
+         * @classdesc Represents an Ina226Device.
+         * @implements IIna226Device
+         * @constructor
+         * @param {ina226.IIna226Device=} [properties] Properties to set
+         */
+        function Ina226Device(properties) {
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * Ina226Device id.
+         * @member {string} id
+         * @memberof ina226.Ina226Device
+         * @instance
+         */
+        Ina226Device.prototype.id = "";
+
+        /**
+         * Ina226Device i2cBus.
+         * @member {number} i2cBus
+         * @memberof ina226.Ina226Device
+         * @instance
+         */
+        Ina226Device.prototype.i2cBus = 0;
+
+        /**
+         * Ina226Device i2cAddress.
+         * @member {number} i2cAddress
+         * @memberof ina226.Ina226Device
+         * @instance
+         */
+        Ina226Device.prototype.i2cAddress = 0;
+
+        /**
+         * Ina226Device info.
+         * @member {ina226.IIna226DeviceInfo|null|undefined} info
+         * @memberof ina226.Ina226Device
+         * @instance
+         */
+        Ina226Device.prototype.info = null;
+
+        /**
+         * Creates a new Ina226Device instance using the specified properties.
+         * @function create
+         * @memberof ina226.Ina226Device
+         * @static
+         * @param {ina226.IIna226Device=} [properties] Properties to set
+         * @returns {ina226.Ina226Device} Ina226Device instance
+         */
+        Ina226Device.create = function create(properties) {
+            return new Ina226Device(properties);
+        };
+
+        /**
+         * Encodes the specified Ina226Device message. Does not implicitly {@link ina226.Ina226Device.verify|verify} messages.
+         * @function encode
+         * @memberof ina226.Ina226Device
+         * @static
+         * @param {ina226.IIna226Device} message Ina226Device message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        Ina226Device.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.id != null && Object.hasOwnProperty.call(message, "id"))
+                writer.uint32(/* id 1, wireType 2 =*/10).string(message.id);
+            if (message.i2cBus != null && Object.hasOwnProperty.call(message, "i2cBus"))
+                writer.uint32(/* id 2, wireType 0 =*/16).uint32(message.i2cBus);
+            if (message.i2cAddress != null && Object.hasOwnProperty.call(message, "i2cAddress"))
+                writer.uint32(/* id 3, wireType 0 =*/24).uint32(message.i2cAddress);
+            if (message.info != null && Object.hasOwnProperty.call(message, "info"))
+                $root.ina226.Ina226DeviceInfo.encode(message.info, writer.uint32(/* id 10, wireType 2 =*/82).fork()).ldelim();
+            return writer;
+        };
+
+        /**
+         * Encodes the specified Ina226Device message, length delimited. Does not implicitly {@link ina226.Ina226Device.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof ina226.Ina226Device
+         * @static
+         * @param {ina226.IIna226Device} message Ina226Device message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        Ina226Device.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes an Ina226Device message from the specified reader or buffer.
+         * @function decode
+         * @memberof ina226.Ina226Device
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {ina226.Ina226Device} Ina226Device
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        Ina226Device.decode = function decode(reader, length, error, long) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.ina226.Ina226Device();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                if (tag === error)
+                    break;
+                switch (tag >>> 3) {
+                case 1: {
+                        message.id = reader.string();
+                        break;
+                    }
+                case 2: {
+                        message.i2cBus = reader.uint32();
+                        break;
+                    }
+                case 3: {
+                        message.i2cAddress = reader.uint32();
+                        break;
+                    }
+                case 10: {
+                        message.info = $root.ina226.Ina226DeviceInfo.decode(reader, reader.uint32(), undefined, long + 1);
+                        break;
+                    }
+                default:
+                    reader.skipType(tag & 7, long);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes an Ina226Device message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof ina226.Ina226Device
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {ina226.Ina226Device} Ina226Device
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        Ina226Device.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies an Ina226Device message.
+         * @function verify
+         * @memberof ina226.Ina226Device
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        Ina226Device.verify = function verify(message, long) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
+            if (message.id != null && message.hasOwnProperty("id"))
+                if (!$util.isString(message.id))
+                    return "id: string expected";
+            if (message.i2cBus != null && message.hasOwnProperty("i2cBus"))
+                if (!$util.isInteger(message.i2cBus))
+                    return "i2cBus: integer expected";
+            if (message.i2cAddress != null && message.hasOwnProperty("i2cAddress"))
+                if (!$util.isInteger(message.i2cAddress))
+                    return "i2cAddress: integer expected";
+            if (message.info != null && message.hasOwnProperty("info")) {
+                let error = $root.ina226.Ina226DeviceInfo.verify(message.info, long + 1);
+                if (error)
+                    return "info." + error;
+            }
+            return null;
+        };
+
+        /**
+         * Creates an Ina226Device message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof ina226.Ina226Device
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {ina226.Ina226Device} Ina226Device
+         */
+        Ina226Device.fromObject = function fromObject(object, long) {
+            if (object instanceof $root.ina226.Ina226Device)
+                return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let message = new $root.ina226.Ina226Device();
+            if (object.id != null)
+                message.id = String(object.id);
+            if (object.i2cBus != null)
+                message.i2cBus = object.i2cBus >>> 0;
+            if (object.i2cAddress != null)
+                message.i2cAddress = object.i2cAddress >>> 0;
+            if (object.info != null) {
+                if (typeof object.info !== "object")
+                    throw TypeError(".ina226.Ina226Device.info: object expected");
+                message.info = $root.ina226.Ina226DeviceInfo.fromObject(object.info, long + 1);
+            }
+            return message;
+        };
+
+        /**
+         * Creates a plain object from an Ina226Device message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof ina226.Ina226Device
+         * @static
+         * @param {ina226.Ina226Device} message Ina226Device
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        Ina226Device.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.defaults) {
+                object.id = "";
+                object.i2cBus = 0;
+                object.i2cAddress = 0;
+                object.info = null;
+            }
+            if (message.id != null && message.hasOwnProperty("id"))
+                object.id = message.id;
+            if (message.i2cBus != null && message.hasOwnProperty("i2cBus"))
+                object.i2cBus = message.i2cBus;
+            if (message.i2cAddress != null && message.hasOwnProperty("i2cAddress"))
+                object.i2cAddress = message.i2cAddress;
+            if (message.info != null && message.hasOwnProperty("info"))
+                object.info = $root.ina226.Ina226DeviceInfo.toObject(message.info, options);
+            return object;
+        };
+
+        /**
+         * Converts this Ina226Device to JSON.
+         * @function toJSON
+         * @memberof ina226.Ina226Device
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        Ina226Device.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for Ina226Device
+         * @function getTypeUrl
+         * @memberof ina226.Ina226Device
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        Ina226Device.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+            if (typeUrlPrefix === undefined) {
+                typeUrlPrefix = "type.googleapis.com";
+            }
+            return typeUrlPrefix + "/ina226.Ina226Device";
+        };
+
+        return Ina226Device;
+    })();
+
+    ina226.RxEnvelope = (function() {
+
+        /**
+         * Properties of a RxEnvelope.
+         * @memberof ina226
+         * @interface IRxEnvelope
+         * @property {Long|null} [monotonicStampNs] RxEnvelope monotonicStampNs
+         * @property {Long|null} [localStampNs] RxEnvelope localStampNs
+         * @property {Long|null} [appStartId] RxEnvelope appStartId
+         * @property {ina226.Ina226SignalType|null} [signalType] RxEnvelope signalType
+         * @property {ina226.IIna226Device|null} [device] RxEnvelope device
+         * @property {Uint8Array|null} [data] RxEnvelope data
+         * @property {string|null} [error] RxEnvelope error
+         */
+
+        /**
+         * Constructs a new RxEnvelope.
+         * @memberof ina226
+         * @classdesc Represents a RxEnvelope.
+         * @implements IRxEnvelope
+         * @constructor
+         * @param {ina226.IRxEnvelope=} [properties] Properties to set
+         */
+        function RxEnvelope(properties) {
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * RxEnvelope monotonicStampNs.
+         * @member {Long} monotonicStampNs
+         * @memberof ina226.RxEnvelope
+         * @instance
+         */
+        RxEnvelope.prototype.monotonicStampNs = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+
+        /**
+         * RxEnvelope localStampNs.
+         * @member {Long} localStampNs
+         * @memberof ina226.RxEnvelope
+         * @instance
+         */
+        RxEnvelope.prototype.localStampNs = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+
+        /**
+         * RxEnvelope appStartId.
+         * @member {Long} appStartId
+         * @memberof ina226.RxEnvelope
+         * @instance
+         */
+        RxEnvelope.prototype.appStartId = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+
+        /**
+         * RxEnvelope signalType.
+         * @member {ina226.Ina226SignalType} signalType
+         * @memberof ina226.RxEnvelope
+         * @instance
+         */
+        RxEnvelope.prototype.signalType = 0;
+
+        /**
+         * RxEnvelope device.
+         * @member {ina226.IIna226Device|null|undefined} device
+         * @memberof ina226.RxEnvelope
+         * @instance
+         */
+        RxEnvelope.prototype.device = null;
+
+        /**
+         * RxEnvelope data.
+         * @member {Uint8Array} data
+         * @memberof ina226.RxEnvelope
+         * @instance
+         */
+        RxEnvelope.prototype.data = $util.newBuffer([]);
+
+        /**
+         * RxEnvelope error.
+         * @member {string} error
+         * @memberof ina226.RxEnvelope
+         * @instance
+         */
+        RxEnvelope.prototype.error = "";
+
+        /**
+         * Creates a new RxEnvelope instance using the specified properties.
+         * @function create
+         * @memberof ina226.RxEnvelope
+         * @static
+         * @param {ina226.IRxEnvelope=} [properties] Properties to set
+         * @returns {ina226.RxEnvelope} RxEnvelope instance
+         */
+        RxEnvelope.create = function create(properties) {
+            return new RxEnvelope(properties);
+        };
+
+        /**
+         * Encodes the specified RxEnvelope message. Does not implicitly {@link ina226.RxEnvelope.verify|verify} messages.
+         * @function encode
+         * @memberof ina226.RxEnvelope
+         * @static
+         * @param {ina226.IRxEnvelope} message RxEnvelope message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        RxEnvelope.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.monotonicStampNs != null && Object.hasOwnProperty.call(message, "monotonicStampNs"))
+                writer.uint32(/* id 1, wireType 0 =*/8).uint64(message.monotonicStampNs);
+            if (message.localStampNs != null && Object.hasOwnProperty.call(message, "localStampNs"))
+                writer.uint32(/* id 2, wireType 0 =*/16).uint64(message.localStampNs);
+            if (message.appStartId != null && Object.hasOwnProperty.call(message, "appStartId"))
+                writer.uint32(/* id 3, wireType 0 =*/24).uint64(message.appStartId);
+            if (message.signalType != null && Object.hasOwnProperty.call(message, "signalType"))
+                writer.uint32(/* id 10, wireType 0 =*/80).int32(message.signalType);
+            if (message.device != null && Object.hasOwnProperty.call(message, "device"))
+                $root.ina226.Ina226Device.encode(message.device, writer.uint32(/* id 11, wireType 2 =*/90).fork()).ldelim();
+            if (message.data != null && Object.hasOwnProperty.call(message, "data"))
+                writer.uint32(/* id 20, wireType 2 =*/162).bytes(message.data);
+            if (message.error != null && Object.hasOwnProperty.call(message, "error"))
+                writer.uint32(/* id 50, wireType 2 =*/402).string(message.error);
+            return writer;
+        };
+
+        /**
+         * Encodes the specified RxEnvelope message, length delimited. Does not implicitly {@link ina226.RxEnvelope.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof ina226.RxEnvelope
+         * @static
+         * @param {ina226.IRxEnvelope} message RxEnvelope message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        RxEnvelope.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes a RxEnvelope message from the specified reader or buffer.
+         * @function decode
+         * @memberof ina226.RxEnvelope
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {ina226.RxEnvelope} RxEnvelope
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        RxEnvelope.decode = function decode(reader, length, error, long) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.ina226.RxEnvelope();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                if (tag === error)
+                    break;
+                switch (tag >>> 3) {
+                case 1: {
+                        message.monotonicStampNs = reader.uint64();
+                        break;
+                    }
+                case 2: {
+                        message.localStampNs = reader.uint64();
+                        break;
+                    }
+                case 3: {
+                        message.appStartId = reader.uint64();
+                        break;
+                    }
+                case 10: {
+                        message.signalType = reader.int32();
+                        break;
+                    }
+                case 11: {
+                        message.device = $root.ina226.Ina226Device.decode(reader, reader.uint32(), undefined, long + 1);
+                        break;
+                    }
+                case 20: {
+                        message.data = reader.bytes();
+                        break;
+                    }
+                case 50: {
+                        message.error = reader.string();
+                        break;
+                    }
+                default:
+                    reader.skipType(tag & 7, long);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes a RxEnvelope message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof ina226.RxEnvelope
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {ina226.RxEnvelope} RxEnvelope
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        RxEnvelope.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies a RxEnvelope message.
+         * @function verify
+         * @memberof ina226.RxEnvelope
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        RxEnvelope.verify = function verify(message, long) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
+            if (message.monotonicStampNs != null && message.hasOwnProperty("monotonicStampNs"))
+                if (!$util.isInteger(message.monotonicStampNs) && !(message.monotonicStampNs && $util.isInteger(message.monotonicStampNs.low) && $util.isInteger(message.monotonicStampNs.high)))
+                    return "monotonicStampNs: integer|Long expected";
+            if (message.localStampNs != null && message.hasOwnProperty("localStampNs"))
+                if (!$util.isInteger(message.localStampNs) && !(message.localStampNs && $util.isInteger(message.localStampNs.low) && $util.isInteger(message.localStampNs.high)))
+                    return "localStampNs: integer|Long expected";
+            if (message.appStartId != null && message.hasOwnProperty("appStartId"))
+                if (!$util.isInteger(message.appStartId) && !(message.appStartId && $util.isInteger(message.appStartId.low) && $util.isInteger(message.appStartId.high)))
+                    return "appStartId: integer|Long expected";
+            if (message.signalType != null && message.hasOwnProperty("signalType"))
+                switch (message.signalType) {
+                default:
+                    return "signalType: enum value expected";
+                case 0:
+                case 1:
+                case 2:
+                case 3:
+                case 4:
+                    break;
+                }
+            if (message.device != null && message.hasOwnProperty("device")) {
+                let error = $root.ina226.Ina226Device.verify(message.device, long + 1);
+                if (error)
+                    return "device." + error;
+            }
+            if (message.data != null && message.hasOwnProperty("data"))
+                if (!(message.data && typeof message.data.length === "number" || $util.isString(message.data)))
+                    return "data: buffer expected";
+            if (message.error != null && message.hasOwnProperty("error"))
+                if (!$util.isString(message.error))
+                    return "error: string expected";
+            return null;
+        };
+
+        /**
+         * Creates a RxEnvelope message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof ina226.RxEnvelope
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {ina226.RxEnvelope} RxEnvelope
+         */
+        RxEnvelope.fromObject = function fromObject(object, long) {
+            if (object instanceof $root.ina226.RxEnvelope)
+                return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let message = new $root.ina226.RxEnvelope();
+            if (object.monotonicStampNs != null)
+                if ($util.Long)
+                    (message.monotonicStampNs = $util.Long.fromValue(object.monotonicStampNs)).unsigned = true;
+                else if (typeof object.monotonicStampNs === "string")
+                    message.monotonicStampNs = parseInt(object.monotonicStampNs, 10);
+                else if (typeof object.monotonicStampNs === "number")
+                    message.monotonicStampNs = object.monotonicStampNs;
+                else if (typeof object.monotonicStampNs === "object")
+                    message.monotonicStampNs = new $util.LongBits(object.monotonicStampNs.low >>> 0, object.monotonicStampNs.high >>> 0).toNumber(true);
+            if (object.localStampNs != null)
+                if ($util.Long)
+                    (message.localStampNs = $util.Long.fromValue(object.localStampNs)).unsigned = true;
+                else if (typeof object.localStampNs === "string")
+                    message.localStampNs = parseInt(object.localStampNs, 10);
+                else if (typeof object.localStampNs === "number")
+                    message.localStampNs = object.localStampNs;
+                else if (typeof object.localStampNs === "object")
+                    message.localStampNs = new $util.LongBits(object.localStampNs.low >>> 0, object.localStampNs.high >>> 0).toNumber(true);
+            if (object.appStartId != null)
+                if ($util.Long)
+                    (message.appStartId = $util.Long.fromValue(object.appStartId)).unsigned = true;
+                else if (typeof object.appStartId === "string")
+                    message.appStartId = parseInt(object.appStartId, 10);
+                else if (typeof object.appStartId === "number")
+                    message.appStartId = object.appStartId;
+                else if (typeof object.appStartId === "object")
+                    message.appStartId = new $util.LongBits(object.appStartId.low >>> 0, object.appStartId.high >>> 0).toNumber(true);
+            switch (object.signalType) {
+            default:
+                if (typeof object.signalType === "number") {
+                    message.signalType = object.signalType;
+                    break;
+                }
+                break;
+            case "INA226_SIGNAL_TYPE_UNSPECIFIED":
+            case 0:
+                message.signalType = 0;
+                break;
+            case "INA226_CONNECTED":
+            case 1:
+                message.signalType = 1;
+                break;
+            case "INA226_DISCONNECTED":
+            case 2:
+                message.signalType = 2;
+                break;
+            case "INA226_REGISTERS_SNAPSHOT":
+            case 3:
+                message.signalType = 3;
+                break;
+            case "INA226_ERROR":
+            case 4:
+                message.signalType = 4;
+                break;
+            }
+            if (object.device != null) {
+                if (typeof object.device !== "object")
+                    throw TypeError(".ina226.RxEnvelope.device: object expected");
+                message.device = $root.ina226.Ina226Device.fromObject(object.device, long + 1);
+            }
+            if (object.data != null)
+                if (typeof object.data === "string")
+                    $util.base64.decode(object.data, message.data = $util.newBuffer($util.base64.length(object.data)), 0);
+                else if (object.data.length >= 0)
+                    message.data = object.data;
+            if (object.error != null)
+                message.error = String(object.error);
+            return message;
+        };
+
+        /**
+         * Creates a plain object from a RxEnvelope message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof ina226.RxEnvelope
+         * @static
+         * @param {ina226.RxEnvelope} message RxEnvelope
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        RxEnvelope.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.defaults) {
+                if ($util.Long) {
+                    let long = new $util.Long(0, 0, true);
+                    object.monotonicStampNs = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+                } else
+                    object.monotonicStampNs = options.longs === String ? "0" : 0;
+                if ($util.Long) {
+                    let long = new $util.Long(0, 0, true);
+                    object.localStampNs = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+                } else
+                    object.localStampNs = options.longs === String ? "0" : 0;
+                if ($util.Long) {
+                    let long = new $util.Long(0, 0, true);
+                    object.appStartId = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+                } else
+                    object.appStartId = options.longs === String ? "0" : 0;
+                object.signalType = options.enums === String ? "INA226_SIGNAL_TYPE_UNSPECIFIED" : 0;
+                object.device = null;
+                if (options.bytes === String)
+                    object.data = "";
+                else {
+                    object.data = [];
+                    if (options.bytes !== Array)
+                        object.data = $util.newBuffer(object.data);
+                }
+                object.error = "";
+            }
+            if (message.monotonicStampNs != null && message.hasOwnProperty("monotonicStampNs"))
+                if (typeof message.monotonicStampNs === "number")
+                    object.monotonicStampNs = options.longs === String ? String(message.monotonicStampNs) : message.monotonicStampNs;
+                else
+                    object.monotonicStampNs = options.longs === String ? $util.Long.prototype.toString.call(message.monotonicStampNs) : options.longs === Number ? new $util.LongBits(message.monotonicStampNs.low >>> 0, message.monotonicStampNs.high >>> 0).toNumber(true) : message.monotonicStampNs;
+            if (message.localStampNs != null && message.hasOwnProperty("localStampNs"))
+                if (typeof message.localStampNs === "number")
+                    object.localStampNs = options.longs === String ? String(message.localStampNs) : message.localStampNs;
+                else
+                    object.localStampNs = options.longs === String ? $util.Long.prototype.toString.call(message.localStampNs) : options.longs === Number ? new $util.LongBits(message.localStampNs.low >>> 0, message.localStampNs.high >>> 0).toNumber(true) : message.localStampNs;
+            if (message.appStartId != null && message.hasOwnProperty("appStartId"))
+                if (typeof message.appStartId === "number")
+                    object.appStartId = options.longs === String ? String(message.appStartId) : message.appStartId;
+                else
+                    object.appStartId = options.longs === String ? $util.Long.prototype.toString.call(message.appStartId) : options.longs === Number ? new $util.LongBits(message.appStartId.low >>> 0, message.appStartId.high >>> 0).toNumber(true) : message.appStartId;
+            if (message.signalType != null && message.hasOwnProperty("signalType"))
+                object.signalType = options.enums === String ? $root.ina226.Ina226SignalType[message.signalType] === undefined ? message.signalType : $root.ina226.Ina226SignalType[message.signalType] : message.signalType;
+            if (message.device != null && message.hasOwnProperty("device"))
+                object.device = $root.ina226.Ina226Device.toObject(message.device, options);
+            if (message.data != null && message.hasOwnProperty("data"))
+                object.data = options.bytes === String ? $util.base64.encode(message.data, 0, message.data.length) : options.bytes === Array ? Array.prototype.slice.call(message.data) : message.data;
+            if (message.error != null && message.hasOwnProperty("error"))
+                object.error = message.error;
+            return object;
+        };
+
+        /**
+         * Converts this RxEnvelope to JSON.
+         * @function toJSON
+         * @memberof ina226.RxEnvelope
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        RxEnvelope.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for RxEnvelope
+         * @function getTypeUrl
+         * @memberof ina226.RxEnvelope
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        RxEnvelope.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+            if (typeUrlPrefix === undefined) {
+                typeUrlPrefix = "type.googleapis.com";
+            }
+            return typeUrlPrefix + "/ina226.RxEnvelope";
+        };
+
+        return RxEnvelope;
+    })();
+
+    return ina226;
 })();
 
 export const normvla = $root.normvla = (() => {

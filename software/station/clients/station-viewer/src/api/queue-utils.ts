@@ -29,12 +29,22 @@ export function getQueueType(queueType: drivers.QueueDataType): string | undefin
       return 'st3215';
     case drivers.QueueDataType.QDT_ST3215_SERIAL_TX:
       return 'st3215tx';
+    case drivers.QueueDataType.QDT_VESC_TRAMPA_INFERENCE:
+      return 'vesc-trampa';
+    case drivers.QueueDataType.QDT_VESC_TRAMPA_SERIAL_RX:
+      return 'vesc-trampa-rx';
+    case drivers.QueueDataType.QDT_VESC_TRAMPA_SERIAL_TX:
+      return 'vesc-trampa-tx';
     case drivers.QueueDataType.QDT_MOTOR_MIRRORING_RX:
       return 'mirroring';
     case drivers.QueueDataType.QDT_SYSTEM:
       return 'sysinfo';
     case drivers.QueueDataType.QDT_YAHBOOM_DOGZILLA_LITE_INFERENCE:
       return 'yahboom_dogzilla_lite';
+    case drivers.QueueDataType.QDT_ARDUINO_NICLA_SENSE_ENV_RX:
+      return 'arduino-nicla-sense-env';
+    case drivers.QueueDataType.QDT_INA226_RX:
+      return 'ina226';
     default:
       return undefined;
   }

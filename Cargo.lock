@@ -112,6 +112,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "arduino-nicla-sense-env"
+version = "0.1.0-beta.10"
+dependencies = [
+ "bytes",
+ "i2c-async",
+ "log",
+ "normfs",
+ "prost",
+ "prost-build",
+ "station_iface",
+ "systime",
+ "tokio",
+]
+
+[[package]]
 name = "atomic-waker"
 version = "1.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -197,6 +212,12 @@ name = "bumpalo"
 version = "3.19.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "46c5e41b57b8bba42a04676d81cb89e9ee8e859a1a66f80a5a72e1cb76b34d43"
+
+[[package]]
+name = "byteorder"
+version = "1.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1fd0f2584146f6f2ef48085050886acf353beff7305ebd1ae69500e27c67f64b"
 
 [[package]]
 name = "bytes"
@@ -811,6 +832,24 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7f24254aa9a54b5c858eaee2f5bccdb46aaf0e486a595ed5fd8f86ba55232a70"
 
 [[package]]
+name = "hikmicro-thermal"
+version = "0.1.0-beta.10"
+dependencies = [
+ "bytes",
+ "libc",
+ "libusb1-sys",
+ "log",
+ "md5",
+ "norm-uvc-sys",
+ "normfs",
+ "prost",
+ "prost-build",
+ "station_iface",
+ "systime",
+ "tokio",
+]
+
+[[package]]
 name = "hkdf"
 version = "0.12.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -957,6 +996,28 @@ dependencies = [
 ]
 
 [[package]]
+name = "i2c-async"
+version = "0.1.0"
+dependencies = [
+ "bytes",
+ "i2cdev",
+ "libc",
+ "tokio",
+]
+
+[[package]]
+name = "i2cdev"
+version = "0.6.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9b940f7497c4f95b863b21cd34c3737b53a67d80d94cf29055d7f7eeca6ffdb4"
+dependencies = [
+ "bitflags 2.9.4",
+ "byteorder",
+ "libc",
+ "nix 0.26.4",
+]
+
+[[package]]
 name = "icu_collections"
 version = "2.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1064,6 +1125,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "ina226"
+version = "0.1.0-beta.10"
+dependencies = [
+ "bytes",
+ "i2c-async",
+ "log",
+ "normfs",
+ "prost",
+ "prost-build",
+ "station_iface",
+ "systime",
+ "tokio",
+]
+
+[[package]]
 name = "indexmap"
 version = "2.11.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1075,7 +1151,7 @@ dependencies = [
 
 [[package]]
 name = "inferences"
-version = "0.1.0-beta.8"
+version = "0.1.0-beta.10"
 dependencies = [
  "bytes",
  "lazy_static",
@@ -1354,7 +1430,7 @@ dependencies = [
 
 [[package]]
 name = "motors-mirroring"
-version = "0.1.0-beta.8"
+version = "0.1.0-beta.10"
 dependencies = [
  "bytes",
  "log",
@@ -2379,7 +2455,7 @@ dependencies = [
 
 [[package]]
 name = "st3215"
-version = "0.1.0-beta.8"
+version = "0.1.0-beta.10"
 dependencies = [
  "bytes",
  "log",
@@ -2407,17 +2483,20 @@ checksum = "a2eb9349b6444b326872e140eb1cf5e7c522154d69e7a0ffb0fb81c06b37543f"
 
 [[package]]
 name = "station"
-version = "0.1.0-beta.8"
+version = "0.1.0-beta.10"
 dependencies = [
  "anyhow",
+ "arduino-nicla-sense-env",
  "bytes",
  "clap",
  "dashmap",
  "env_logger",
  "fastwebsockets",
+ "hikmicro-thermal",
  "http-body-util",
  "hyper",
  "hyper-util",
+ "ina226",
  "inferences",
  "log",
  "mime_guess",
@@ -2435,12 +2514,13 @@ dependencies = [
  "systime",
  "tokio",
  "usbvideo",
+ "vesc-trampa",
  "yahboom-dogzilla-lite",
 ]
 
 [[package]]
 name = "station_iface"
-version = "0.1.0-beta.8"
+version = "0.1.0-beta.10"
 dependencies = [
  "humantime-serde",
  "normfs",
@@ -2509,9 +2589,10 @@ dependencies = [
 
 [[package]]
 name = "sysinfod"
-version = "0.1.0-beta.8"
+version = "0.1.0-beta.10"
 dependencies = [
  "bytes",
+ "i2c-async",
  "libc",
  "normfs",
  "prost",
@@ -2545,7 +2626,7 @@ dependencies = [
 
 [[package]]
 name = "systime"
-version = "0.1.0-beta.8"
+version = "0.1.0-beta.10"
 dependencies = [
  "libc",
  "log",
@@ -2922,7 +3003,7 @@ checksum = "daf8dba3b7eb870caf1ddeed7bc9d2a049f3cfdfae7cb521b087cc33ae4c49da"
 
 [[package]]
 name = "usbvideo"
-version = "0.1.0-beta.8"
+version = "0.1.0-beta.10"
 dependencies = [
  "bytes",
  "libc",
@@ -2980,6 +3061,22 @@ name = "version_check"
 version = "0.9.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0b928f33d975fc6ad9f86c8f283853ad26bdd5b10b7f1542aa2fa15e2289105a"
+
+[[package]]
+name = "vesc-trampa"
+version = "0.1.0-beta.10"
+dependencies = [
+ "bytes",
+ "log",
+ "normfs",
+ "parking_lot",
+ "prost",
+ "prost-build",
+ "station_iface",
+ "systime",
+ "tokio",
+ "tokio-serial",
+]
 
 [[package]]
 name = "walkdir"

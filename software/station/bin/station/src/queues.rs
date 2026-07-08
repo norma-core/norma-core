@@ -1,9 +1,12 @@
-use bytes::Bytes;
-use prost::Message;
-use station_iface::iface_proto::{drivers::QueueDataType, envelope::{QueueData, QueueOpt, RootQueueEnvelope, RootQueueEnvelopeType}};
-use std::sync::Arc;
-use normfs::NormFS;
 use anyhow::Result;
+use bytes::Bytes;
+use normfs::NormFS;
+use prost::Message;
+use station_iface::iface_proto::{
+    drivers::QueueDataType,
+    envelope::{QueueData, QueueOpt, RootQueueEnvelope, RootQueueEnvelopeType},
+};
+use std::sync::Arc;
 
 pub const MAIN_QUEUE_ID: &str = "main";
 
@@ -62,10 +65,7 @@ impl MainQueue {
         }
     }
 
-    fn send_envelope(
-        &self,
-        envelope: RootQueueEnvelope,
-    ) -> Result<()> {
+    fn send_envelope(&self, envelope: RootQueueEnvelope) -> Result<()> {
         let mut buf = Vec::new();
         envelope.encode(&mut buf)?;
 

@@ -12,6 +12,13 @@ Before building, create local access files in the build directory:
   conf/local-secrets.inc
     X8_ROOT_AUTHORIZED_KEYS_FILE = "${TOPDIR}/conf/root-authorized_keys"
 
+Optional cellular settings:
+
+  conf/local-cellular.inc
+    X8_CELLULARD_EXTERNAL_APN = "movistar.es"
+    X8_CELLULARD_SARA_APN = ""
+    X8_CELLULARD_INTERVAL_SEC = "30"
+
 The image build intentionally fails if either X8_ROOT_HASH or
 X8_ROOT_AUTHORIZED_KEYS_FILE is missing or empty.
 

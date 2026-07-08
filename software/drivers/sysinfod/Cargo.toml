@@ -12,6 +12,7 @@ prost = { workspace = true }
 sysinfo = "0.37.2"
 libc = "0.2"
 bytes = { workspace = true }
+i2c-async = { path = "../../../shared/i2c-async" }
 
 [build-dependencies]
 prost-build = { workspace = true }

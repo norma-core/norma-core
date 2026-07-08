@@ -1,11 +1,16 @@
 [workspace]
 resolver = "3"
 members = [
+  "shared/i2c-async",
+  "software/drivers/arduino-nicla-sense-env",
+  "software/drivers/ina226",
   "software/drivers/inferences",
+  "software/drivers/hikmicro-thermal",
   "software/drivers/motors-mirroring",
   "software/drivers/st3215",
   "software/drivers/sysinfod",
   "software/drivers/usbvideo",
+  "software/drivers/vesc-trampa",
   "software/drivers/yahboom-dogzilla-lite",
   "software/drivers/ov5647",
   "software/station/bin/station",
@@ -14,7 +19,7 @@ members = [
 ]
 
 [workspace.package]
-version = "0.1.0-beta.8"
+version = "0.1.0-beta.10"
 
 [workspace.dependencies]
 normfs = "0.1.0-beta.1"
@@ -25,3 +30,4 @@ bytes = "1.11"
 log = "0.4.28"
 parking_lot = "0.12"
 lazy_static = "1.5"
+tokio-serial = "5.4.5"

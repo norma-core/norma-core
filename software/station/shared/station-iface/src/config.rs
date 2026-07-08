@@ -40,12 +40,15 @@ pub struct CloudOffloadConfig {
     pub endpoint: Option<String>,
 }
 
-
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Drivers {
     /// ST3215 servo bus configuration
     #[serde(skip_serializing_if = "Option::is_none")]
     pub st3215: Option<St3215Config>,
+
+    /// Trampa VESC serial board configuration
+    #[serde(rename = "vesc-trampa", skip_serializing_if = "Option::is_none")]
+    pub vesc_trampa: Option<VescTrampaConfig>,
 
     /// Enable or disable system info monitoring
     #[serde(rename = "system-info")]
@@ -54,11 +57,26 @@ pub struct Drivers {
     #[serde(rename = "usb-video", skip_serializing_if = "Option::is_none")]
     pub usb_video: Option<UsbVideoConfig>,
 
-    #[serde(rename = "yahboom-dogzilla-lite", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "hikmicro-thermal", skip_serializing_if = "Option::is_none")]
+    pub hikmicro_thermal: Option<HikmicroThermalConfig>,
+
+    #[serde(
+        rename = "yahboom-dogzilla-lite",
+        skip_serializing_if = "Option::is_none"
+    )]
     pub yahboom_dogzilla_lite: Option<YahboomDogzillaLiteConfig>,
 
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub ov5647: Option<Ov5647Config>,
+
+    #[serde(
+        rename = "arduino-nicla-sense-env",
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub arduino_nicla_sense_env: Option<ArduinoNiclaSenseEnvConfig>,
+
+    #[serde(rename = "ina226", skip_serializing_if = "Option::is_none")]
+    pub ina226: Option<Ina226Config>,
 }
 
 /// ST3215 servo bus configuration
@@ -81,7 +99,11 @@ pub struct St3215Config {
     ///   8: 40   # Motor 8 has stricter limit
     ///   5: 60   # Motor 5 has more relaxed limit
     /// ```
-    #[serde(rename = "motor-current-thresholds", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "motor-current-thresholds",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
     pub motor_current_thresholds: Option<std::collections::HashMap<u8, u16>>,
 
     /// Deadband for mirroring. Minimum distance between current position
@@ -113,6 +135,38 @@ impl Default for St3215Config {
     }
 }
 
+/// Trampa VESC serial board configuration
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct VescTrampaConfig {
+    /// Enable or disable the VESC Trampa driver
+    #[serde(default = "default_vesc_trampa_enabled")]
+    pub enabled: bool,
+
+    /// Serial baud rate used for matching VESC board ports.
+    #[serde(
+        rename = "port-baud-rate",
+        default = "default_vesc_trampa_port_baud_rate"
+    )]
+    pub port_baud_rate: u32,
+}
+
+fn default_vesc_trampa_enabled() -> bool {
+    true
+}
+
+fn default_vesc_trampa_port_baud_rate() -> u32 {
+    115_200
+}
+
+impl Default for VescTrampaConfig {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            port_baud_rate: default_vesc_trampa_port_baud_rate(),
+        }
+    }
+}
+
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Inference {
     /// Queue ID for inference data (e.g., "inference/normvla")
@@ -135,7 +189,11 @@ pub struct Inference {
     pub st3215_bus: String,
 
     /// Update interval for publishing (e.g., "100ms")
-    #[serde(rename = "update-interval", with = "humantime_serde", default = "default_update_interval")]
+    #[serde(
+        rename = "update-interval",
+        with = "humantime_serde",
+        default = "default_update_interval"
+    )]
     pub update_interval: std::time::Duration,
 }
 
@@ -191,6 +249,32 @@ impl Default for UsbVideoConfig {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct HikmicroThermalConfig {
+    #[serde(default)]
+    pub enabled: bool,
+
+    #[serde(
+        rename = "frame-timeout",
+        with = "humantime_serde",
+        default = "default_hikmicro_thermal_frame_timeout"
+    )]
+    pub frame_timeout: std::time::Duration,
+}
+
+fn default_hikmicro_thermal_frame_timeout() -> std::time::Duration {
+    std::time::Duration::from_secs(5)
+}
+
+impl Default for HikmicroThermalConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            frame_timeout: default_hikmicro_thermal_frame_timeout(),
+        }
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct HikvisionConfig {
     /// List of RTSP URLs for Hikvision cameras
     pub rtsp: Vec<String>,
@@ -228,6 +312,84 @@ pub struct Ov5647Config {
     pub frames_per_second: u16,
 }
 
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct ArduinoNiclaSenseEnvConfig {
+    #[serde(default)]
+    pub enabled: bool,
+
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub boards: Vec<ArduinoNiclaSenseEnvBoardConfig>,
+
+    #[serde(
+        default = "default_arduino_nicla_sense_env_poll_interval",
+        rename = "poll-interval",
+        with = "humantime_serde"
+    )]
+    pub poll_interval: std::time::Duration,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct ArduinoNiclaSenseEnvBoardConfig {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+
+    #[serde(rename = "i2c-bus")]
+    pub i2c_bus: u32,
+}
+
+fn default_arduino_nicla_sense_env_poll_interval() -> std::time::Duration {
+    std::time::Duration::from_secs(1)
+}
+
+impl Default for ArduinoNiclaSenseEnvConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            boards: Vec::new(),
+            poll_interval: default_arduino_nicla_sense_env_poll_interval(),
+        }
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct Ina226Config {
+    #[serde(default)]
+    pub enabled: bool,
+
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub devices: Vec<Ina226DeviceConfig>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct Ina226DeviceConfig {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+
+    #[serde(rename = "i2c-bus")]
+    pub i2c_bus: u32,
+
+    #[serde(rename = "i2c-address")]
+    pub i2c_address: u16,
+
+    #[serde(
+        rename = "shunt-resistance-ohms",
+        alias = "r",
+        alias = "R",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub shunt_resistance_ohms: Option<f64>,
+}
+
+impl Default for Ina226Config {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            devices: Vec::new(),
+        }
+    }
+}
+
 fn default_ov5647_dimension() -> String {
     "320x240".to_string()
 }
@@ -255,10 +417,14 @@ impl Default for Drivers {
     fn default() -> Self {
         Self {
             st3215: Some(St3215Config::default()),
+            vesc_trampa: Some(VescTrampaConfig::default()),
             system_info: true,
             usb_video: Some(UsbVideoConfig::default()),
+            hikmicro_thermal: None,
             yahboom_dogzilla_lite: None,
             ov5647: None,
+            arduino_nicla_sense_env: None,
+            ina226: None,
         }
     }
 }

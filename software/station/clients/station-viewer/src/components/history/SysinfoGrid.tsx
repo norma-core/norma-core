@@ -4,7 +4,20 @@ interface SysinfoGridProps {
   data: sysinfo.IEnvelope;
 }
 
+function modemLabel(modem: sysinfo.ICellularModem): string {
+  return [modem.manufacturer, modem.model].filter(Boolean).join(' ') || modem.path || modem.modemId || 'modem';
+}
+
+function signalMetrics(signal: sysinfo.ICellularSignal): string {
+  return (signal.metrics || [])
+    .slice(0, 3)
+    .map((metric) => `${metric.key}: ${metric.value}`)
+    .join(', ');
+}
+
 export default function SysinfoGrid({ data }: SysinfoGridProps) {
+  const cellularModems = data.data?.cellularModems || [];
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 min-w-[200px]">
       <div className="bg-surface-primary rounded p-2 max-h-48 overflow-y-auto">
@@ -77,6 +90,38 @@ export default function SysinfoGrid({ data }: SysinfoGridProps) {
           <div key={idx} className="flex justify-between text-xs">
             <span className="text-text-secondary">{temp.name || temp.id}</span>
             <span className={temp.value && temp.critical && temp.value > temp.critical ? "text-accent-critical" : "text-accent-danger"}>{temp.value?.toFixed(1)}°C</span>
+          </div>
+        ))}
+      </div>
+
+      <div className="bg-surface-primary rounded p-2 max-h-48 overflow-y-auto">
+        <div className="text-xs text-text-label border-b border-border-default pb-1 mb-1">Cellular ({cellularModems.length})</div>
+        {cellularModems.map((modem, idx) => (
+          <div key={modem.path || modem.modemId || idx} className="text-xs mb-2 last:mb-0">
+            <div className="flex justify-between gap-2">
+              <span className="text-accent-info truncate" title={modemLabel(modem)}>{modemLabel(modem)}</span>
+              <span className="text-accent-data whitespace-nowrap">{modem.signalQualityPercent || 0}%</span>
+            </div>
+            <div className="flex justify-between gap-2 text-[10px]">
+              <span className={modem.state === 'connected' || modem.state === 'registered' ? 'text-accent-success' : 'text-text-label'}>{modem.state || 'unknown'}</span>
+              <span className="text-text-muted truncate">{modem.accessTech || modem.powerState}</span>
+            </div>
+            {modem.operatorName && <div className="text-[10px] text-accent-secondary truncate">{modem.operatorName}</div>}
+            {modem.bearers?.map((bearer) => (
+              <div key={bearer.path || bearer.bearerId} className="text-[10px] text-text-secondary truncate">
+                {bearer.connected ? 'connected' : 'bearer'} {bearer.apn || bearer.profileId || ''} {bearer.interface || ''}
+              </div>
+            ))}
+            {modem.signals?.slice(0, 2).map((signal) => (
+              <div key={signal.accessTech || signal.monotonicStampNs?.toString()} className="text-[10px] text-accent-data truncate">
+                {signal.accessTech}: {signalMetrics(signal)}
+              </div>
+            ))}
+            {modem.errors?.map((error, errorIdx) => (
+              <div key={`${error.scope || 'error'}-${errorIdx}`} className="text-[10px] text-accent-critical truncate" title={error.message || ''}>
+                {error.scope}: {error.message}
+              </div>
+            ))}
           </div>
         ))}
       </div>

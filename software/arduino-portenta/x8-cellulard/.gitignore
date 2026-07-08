@@ -1,0 +1,5 @@
+.lake/
+build/
+cmake-build-*/
+compile_commands.json
+build-arm64

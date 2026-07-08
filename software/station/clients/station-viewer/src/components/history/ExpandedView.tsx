@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { usbvideo, st3215, motors_mirroring, sysinfo, yahboom_dogzilla_lite, normvla } from '@/api/proto.js';
+import { arduino_nicla_sense_env, ina226, usbvideo, st3215, motors_mirroring, sysinfo, yahboom_dogzilla_lite, normvla, vesc_trampa } from '@/api/proto.js';
+import ArduinoNiclaSenseEnvExpanded from '@/components/history/ArduinoNiclaSenseEnvExpanded';
+import Ina226Expanded from '@/components/history/Ina226Expanded';
 import { createCroppedJson } from '@/components/history/history-utils';
 import RawBytesExpanded from '@/components/history/RawBytesExpanded';
 import MirroringExpanded from '@/components/history/MirroringExpanded';
@@ -14,7 +16,7 @@ import FullscreenImageViewer from '@/components/FullscreenImageViewer';
 type DataTab = 'visual' | 'json' | 'raw';
 
 interface ExpandedViewProps {
-  data: usbvideo.IRxEnvelope | st3215.IInferenceState | st3215.ITxEnvelope | motors_mirroring.IRxEnvelope | sysinfo.IEnvelope | yahboom_dogzilla_lite.IInferenceState | normvla.IFrame | Uint8Array;
+  data: usbvideo.IRxEnvelope | st3215.IInferenceState | st3215.ITxEnvelope | motors_mirroring.IRxEnvelope | sysinfo.IEnvelope | arduino_nicla_sense_env.IRxEnvelope | ina226.IRxEnvelope | yahboom_dogzilla_lite.IInferenceState | vesc_trampa.IInferenceState | vesc_trampa.IRxEnvelope | vesc_trampa.ITxEnvelope | normvla.IFrame | Uint8Array;
   type: string | undefined;
   rawData?: Uint8Array | null;
 }
@@ -27,11 +29,15 @@ const TAB_OPTIONS: { id: DataTab; label: string }[] = [
 
 function tryDecodeProtobuf(rawData: Uint8Array): { decoded: unknown; typeName: string } | null {
   const decoders = [
+    { name: 'vesc_trampa.InferenceState', decode: () => vesc_trampa.InferenceState.decode(rawData) },
+    { name: 'vesc_trampa.RxEnvelope', decode: () => vesc_trampa.RxEnvelope.decode(rawData) },
     { name: 'st3215.RxEnvelope', decode: () => st3215.RxEnvelope.decode(rawData) },
     { name: 'st3215.TxEnvelope', decode: () => st3215.TxEnvelope.decode(rawData) },
     { name: 'usbvideo.RxEnvelope', decode: () => usbvideo.RxEnvelope.decode(rawData) },
     { name: 'motors_mirroring.RxEnvelope', decode: () => motors_mirroring.RxEnvelope.decode(rawData) },
     { name: 'sysinfo.Envelope', decode: () => sysinfo.Envelope.decode(rawData) },
+    { name: 'arduino_nicla_sense_env.RxEnvelope', decode: () => arduino_nicla_sense_env.RxEnvelope.decode(rawData) },
+    { name: 'ina226.RxEnvelope', decode: () => ina226.RxEnvelope.decode(rawData) },
     { name: 'yahboom_dogzilla_lite.InferenceState', decode: () => yahboom_dogzilla_lite.InferenceState.decode(rawData) },
     { name: 'st3215.InferenceState', decode: () => st3215.InferenceState.decode(rawData) },
     { name: 'normvla.Frame', decode: () => normvla.Frame.decode(rawData) },
@@ -65,13 +71,21 @@ function getAvailableTabs(
   const isUsbVideo = type === 'usbvideo' && data instanceof usbvideo.RxEnvelope;
   const isSt3215 = type === 'st3215' && data instanceof st3215.InferenceState;
   const isSt3215Tx = type === 'st3215tx' && data instanceof st3215.TxEnvelope;
+  const isVescTrampaTx = type === 'vesc-trampa-tx' && data instanceof vesc_trampa.TxEnvelope;
   const isMirroring = type === 'mirroring' && data instanceof motors_mirroring.RxEnvelope;
   const isSysinfo = type === 'sysinfo' && data instanceof sysinfo.Envelope;
+  const isArduinoNiclaSenseEnv = type === 'arduino-nicla-sense-env' && data instanceof arduino_nicla_sense_env.RxEnvelope;
+  const isIna226 = type === 'ina226' && data instanceof ina226.RxEnvelope;
   const isYahboomDogzillaLite = type === 'yahboom_dogzilla_lite' && data instanceof yahboom_dogzilla_lite.InferenceState;
   const isNormvla = type === 'normvla' && data instanceof normvla.Frame;
+  const isVescTrampa = type === 'vesc-trampa-rx' && data instanceof vesc_trampa.RxEnvelope;
 
-  if (isUsbVideo || isSt3215 || isSt3215Tx || isMirroring || isSysinfo || isYahboomDogzillaLite || isNormvla) {
+  if (isUsbVideo || isSt3215 || isSt3215Tx || isMirroring || isVescTrampaTx || isSysinfo || isArduinoNiclaSenseEnv || isIna226 || isYahboomDogzillaLite || isNormvla) {
     return ['visual', 'json', 'raw'];
+  }
+
+  if (isVescTrampa) {
+    return ['json', 'raw'];
   }
 
   return ['json', 'raw'];
@@ -139,6 +153,12 @@ export default function ExpandedView({ data, type, rawData }: ExpandedViewProps)
     if (type === 'sysinfo' && data instanceof sysinfo.Envelope) {
       return <SysinfoGrid data={data} />;
     }
+    if (type === 'arduino-nicla-sense-env' && data instanceof arduino_nicla_sense_env.RxEnvelope) {
+      return <ArduinoNiclaSenseEnvExpanded data={data} />;
+    }
+    if (type === 'ina226' && data instanceof ina226.RxEnvelope) {
+      return <Ina226Expanded data={data} />;
+    }
     if (type === 'normvla' && data instanceof normvla.Frame) {
       return (
         <div className="space-y-2">
@@ -195,6 +215,23 @@ export default function ExpandedView({ data, type, rawData }: ExpandedViewProps)
           {data.action && (
             <div className="bg-surface-primary p-2 rounded text-xs text-accent-success">
               Action: Motor {data.action.motorId}
+            </div>
+          )}
+        </div>
+      );
+    }
+    if (type === 'vesc-trampa-tx' && data instanceof vesc_trampa.TxEnvelope) {
+      return (
+        <div className="space-y-2">
+          <div className="text-xs text-text-label">
+            UUID: {data.targetBoardUuid ? Array.from(data.targetBoardUuid).map((byte) => byte.toString(16).padStart(2, '0')).join('') : 'N/A'}
+          </div>
+          {data.boardCommand && (
+            <div className="bg-surface-primary p-2 rounded text-xs">
+              <div className="text-accent-data mb-1">Board Command:</div>
+              <div className="text-text-secondary">
+                Payload: {data.boardCommand.payload?.length ?? 0} bytes, Response: {data.boardCommand.responseExpected ? 'yes' : 'no'}
+              </div>
             </div>
           )}
         </div>
@@ -259,6 +296,40 @@ export default function ExpandedView({ data, type, rawData }: ExpandedViewProps)
         </div>
       );
     }
+    if (type === 'arduino-nicla-sense-env' && data instanceof arduino_nicla_sense_env.RxEnvelope) {
+      const niclaData = arduino_nicla_sense_env.RxEnvelope.toObject(data, {
+        longs: String,
+        enums: String,
+        bytes: String,
+        defaults: true
+      });
+
+      return (
+        <div>
+          <div className="text-xs text-text-label mb-1">Arduino Nicla Sense Env RxEnvelope JSON:</div>
+          <div className="bg-surface-primary p-2 rounded text-xs font-mono text-accent-data overflow-x-auto max-h-64 overflow-y-auto">
+            <pre>{JSON.stringify(niclaData, null, 2)}</pre>
+          </div>
+        </div>
+      );
+    }
+    if (type === 'ina226' && data instanceof ina226.RxEnvelope) {
+      const ina226Data = ina226.RxEnvelope.toObject(data, {
+        longs: String,
+        enums: String,
+        bytes: String,
+        defaults: true
+      });
+
+      return (
+        <div>
+          <div className="text-xs text-text-label mb-1">INA226 RxEnvelope JSON:</div>
+          <div className="bg-surface-primary p-2 rounded text-xs font-mono text-accent-data overflow-x-auto max-h-64 overflow-y-auto">
+            <pre>{JSON.stringify(ina226Data, null, 2)}</pre>
+          </div>
+        </div>
+      );
+    }
     if (type === 'normvla' && data instanceof normvla.Frame) {
       const croppedData = normvla.Frame.toObject(data, {
         longs: String,
@@ -289,6 +360,40 @@ export default function ExpandedView({ data, type, rawData }: ExpandedViewProps)
           <div className="text-xs text-text-label mb-1">ST3215 TxEnvelope JSON:</div>
           <div className="bg-surface-primary p-2 rounded text-xs font-mono text-accent-data overflow-x-auto max-h-64 overflow-y-auto">
             <pre>{JSON.stringify(data, null, 2)}</pre>
+          </div>
+        </div>
+      );
+    }
+    if (type === 'vesc-trampa-tx' && data instanceof vesc_trampa.TxEnvelope) {
+      const txData = vesc_trampa.TxEnvelope.toObject(data, {
+        longs: String,
+        enums: String,
+        bytes: String,
+        defaults: true
+      });
+
+      return (
+        <div>
+          <div className="text-xs text-text-label mb-1">VESC Trampa TxEnvelope JSON:</div>
+          <div className="bg-surface-primary p-2 rounded text-xs font-mono text-accent-data overflow-x-auto max-h-64 overflow-y-auto">
+            <pre>{JSON.stringify(txData, null, 2)}</pre>
+          </div>
+        </div>
+      );
+    }
+    if (type === 'vesc-trampa-rx' && data instanceof vesc_trampa.RxEnvelope) {
+      const vescData = vesc_trampa.RxEnvelope.toObject(data, {
+        longs: String,
+        enums: String,
+        bytes: String,
+        defaults: true
+      });
+
+      return (
+        <div>
+          <div className="text-xs text-text-label mb-1">VESC Trampa RxEnvelope JSON:</div>
+          <div className="bg-surface-primary p-2 rounded text-xs font-mono text-accent-data overflow-x-auto max-h-64 overflow-y-auto">
+            <pre>{JSON.stringify(vescData, null, 2)}</pre>
           </div>
         </div>
       );

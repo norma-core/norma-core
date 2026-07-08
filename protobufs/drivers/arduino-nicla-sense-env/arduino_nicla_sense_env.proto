@@ -1,0 +1,72 @@
+syntax = "proto3";
+
+package arduino_nicla_sense_env;
+
+enum ArduinoNiclaSenseEnvSignalType {
+    ARDUINO_NICLA_SENSE_ENV_SIGNAL_TYPE_UNSPECIFIED = 0;
+    ARDUINO_NICLA_SENSE_ENV_CONNECTED               = 1;
+    ARDUINO_NICLA_SENSE_ENV_DISCONNECTED            = 2;
+    ARDUINO_NICLA_SENSE_ENV_REGISTERS_SNAPSHOT      = 3;
+    ARDUINO_NICLA_SENSE_ENV_COMMAND                 = 4;
+    ARDUINO_NICLA_SENSE_ENV_COMMAND_SUCCESS         = 5;
+    ARDUINO_NICLA_SENSE_ENV_COMMAND_REJECTED        = 6;
+    ARDUINO_NICLA_SENSE_ENV_COMMAND_FAILED          = 7;
+    ARDUINO_NICLA_SENSE_ENV_ERROR                   = 8;
+}
+
+message ArduinoNiclaSenseEnvDeviceInfo {
+    // Register 0x0C.
+    uint32 software_revision = 1;
+
+    // Register 0x0D.
+    uint32 product_id = 2;
+
+    // Raw six-byte serial from registers 0x0E..0x13.
+    bytes serial_number = 3;
+}
+
+message ArduinoNiclaSenseEnvDevice {
+    string id          = 1;
+    uint32 i2c_bus     = 2;
+    uint32 i2c_address = 3;
+
+    ArduinoNiclaSenseEnvDeviceInfo info = 10;
+}
+
+message WriteRegistersCommand {
+    uint32 start_register = 1;
+    bytes  data           = 2;
+}
+
+message Command {
+    string target_device_id = 1;
+
+    WriteRegistersCommand write_registers = 10;
+}
+
+message TxEnvelope {
+    uint64 monotonic_stamp_ns = 1;
+    uint64 local_stamp_ns     = 2;
+    uint64 app_start_id       = 3;
+
+    bytes  command_id       = 4;
+    string target_device_id = 5;
+
+    Command command = 10;
+}
+
+message RxEnvelope {
+    uint64 monotonic_stamp_ns = 1;
+    uint64 local_stamp_ns     = 2;
+    uint64 app_start_id       = 3;
+
+    ArduinoNiclaSenseEnvSignalType signal_type = 10;
+    ArduinoNiclaSenseEnvDevice     device      = 11;
+
+    // Full raw register image, always starting at register 0x00.
+    bytes data = 20;
+
+    TxEnvelope command = 30;
+
+    string error = 50;
+}

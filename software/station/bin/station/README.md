@@ -4,9 +4,9 @@ Physical operations platform for robotics - real-time data collection, inference
 
 ## 📥 Download
 
-**Latest Release: [v0.1.0-beta.8](https://github.com/norma-core/norma-core/releases/tag/v0.1.0-beta.8)**
+**Latest Release: [v0.1.0-beta.9](https://github.com/norma-core/norma-core/releases/tag/v0.1.0-beta.9)**
 
-Download pre-built binaries from the [releases page](https://github.com/norma-core/norma-core/releases/tag/v0.1.0-beta.8):
+Download pre-built binaries from the [releases page](https://github.com/norma-core/norma-core/releases/tag/v0.1.0-beta.9):
 
 - **macOS ARM64** (Apple Silicon): `station-macos-arm64.dmg` - Desktop app with bundled station binary
 - **macOS ARM64** (Apple Silicon): `station-macos-arm64.zip` - Command-line binaries archive

@@ -46,6 +46,9 @@ DISTRO_FEATURES:append = " wifi bluetooth alsa"
 include conf/local-rootpw.inc
 include conf/local-secrets.inc
 
+# Optional per-build cellular APN overrides.
+include conf/local-cellular.inc
+
 PACKAGE_EXCLUDE:pn-x8-normacore += "\
     dropbear \
     docker docker-cli docker-compose docker-compose-plugin docker-moby moby \
@@ -58,6 +61,11 @@ PACKAGE_EXCLUDE:pn-x8-normacore += "\
 
 # Keep PPP small; no PAM.
 PACKAGECONFIG:remove:pn-ppp = "pam"
+
+# Cellular daemon APNs. Empty APNs leave the SysV service installed but inactive.
+X8_CELLULARD_EXTERNAL_APN ??= "movistar.es"
+X8_CELLULARD_SARA_APN ??= ""
+X8_CELLULARD_INTERVAL_SEC ??= "30"
 
 # UTF-8 locale for tmux and shell sessions.
 GLIBC_GENERATE_LOCALES = "en_US.UTF-8"

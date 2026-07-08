@@ -100,16 +100,15 @@ const BusCard: React.FC<BusCardProps> = ({
 
     const sources: ActiveVideoSource[] = [
       ...(videoSources ?? []).filter(isFresh).map((entry) => ({
-        id: entry.data.camera?.uniqueId ? `usbvideo:${entry.data.camera.uniqueId}` : '',
+        id: entry.data.camera?.uniqueId || entry.queueId,
         label: `${entry.data.camera?.deviceNumber ?? 'USB'} (${entry.data.camera?.uniqueId ?? 'unknown'})`,
         shortLabel: entry.data.camera?.deviceNumber !== undefined
           ? String(entry.data.camera.deviceNumber)
           : 'Camera',
-        kind: 'usbvideo' as const,
         data: entry.data,
         queueId: entry.queueId,
       })),
-    ].filter((entry) => entry.id);
+    ];
 
     return sources;
   }, [videoSources]);

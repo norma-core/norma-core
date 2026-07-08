@@ -1,6 +1,6 @@
 {
   "name": "@normacore/station-app",
-  "version": "0.1.0-beta.8",
+  "version": "0.1.0-beta.9",
   "description": "Desktop Electron wrapper for NormaCore station-viewer",
   "author": "NormaCore.Dev <hello@normacore.dev>",
   "license": "MIT",
@@ -21,6 +21,7 @@
     "clean:release": "rm -rf release",
     "start": "npm run build:viewer && npm run build:station && npm run build && electron . --load-dist",
     "package:mac": "npm run clean:release && npm run build:viewer && npm run build:station && npm run build && electron-builder --mac --config electron-builder.yml",
+    "package:mac:presigned": "npm run clean:release && npm run build:viewer && npm run build && electron-builder --mac --config electron-builder.yml",
     "package:mac:unsigned": "npm run clean:release && npm run build:viewer && npm run build:station && npm run build && CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --mac --config electron-builder.yml",
     "lint": "oxlint src/",
     "type-check": "node scripts/generate-version.mjs && tsc --noEmit"

@@ -10,6 +10,9 @@ then adds the Arduino, Tailscale, and NormaCore layers on top.
 
 - [Image Profile](#image-profile-)
 - [Max Carrier Setup](#max-carrier-setup-)
+- [Cellular Modem Support](#cellular-modem-support-)
+- [Hardware Network Watchdog](#hardware-network-watchdog-)
+- [SD Card Automount](#sd-card-automount-)
 - [Start Here](#start-here-)
 - [1. Fetch The NXP Base BSP](#1-fetch-the-nxp-base-bsp-)
 - [2. Add Arduino, Tailscale, And NormaCore](#2-add-arduino-tailscale-and-normacore-)
@@ -31,17 +34,26 @@ The target image includes:
 
 - SysVinit as PID 1 and `eudev` for device management.
 - Tailscale and a SysV init script for `tailscaled`.
+- D-Bus, ModemManager, and SysV init scripts for `ModemManager` and
+  `x8-cellulard`.
+- `x8-watchdogd`, an installed hardware watchdog owner that can be enabled
+  manually on devices that should reset after sustained loss of Tailscale DNS
+  reachability.
 - OpenSSH with key-only root login; SSH password login is disabled.
 - A required local root password hash for serial-console access.
+- Default hostname `rover-alpha`; override with `X8_HOSTNAME` in
+  `conf/local.conf`.
 - Max Carrier boot overlay selection and Portenta X8/H7 support packages.
-- Wi-Fi, Bluetooth, ALSA audio, V4L2, CAN, I2C, GPIO, USB, PCI, PPP, and
-  serial-console tools.
+- Wi-Fi, Bluetooth, ALSA audio, V4L2, CAN, I2C, GPIO, USB, PCI, PPP, QMI,
+  MBIM, and serial-console tools.
+- Removable SD-card automounting at `/media/sdcard`.
 - Chrony, Vim, tmux, CA certificates, iproute2, ethtool, and basic filesystem
   utilities.
 
 The target image intentionally does not include:
 
 - systemd as init.
+- NetworkManager or `nmcli`.
 - X11, Wayland, desktop, GPU UI, PulseAudio, PAM, Polkit, or Zeroconf stacks.
 - Docker, containerd, Podman, Kubernetes, aktualizr, or OSTree runtime pieces.
 - Python, compiler toolchains, CMake, Ninja, or build-essential packages.
@@ -59,6 +71,99 @@ Ethernet, set the Max Carrier Ethernet DIP switches to the Portenta X8 mode:
 Arduino documents this as Ethernet enabled for Portenta X8. See the
 [Portenta Max Carrier user manual](https://docs.arduino.cc/tutorials/portenta-max-carrier/user-manual/)
 for the carrier DIP switch table.
+
+## Cellular Modem Support 📡
+
+The image includes basic cellular support for both the Max Carrier onboard
+SARA-R4 modem and an external LTE modem on the carrier expansion path.
+
+`x8-cellulard` owns cellular GPIO power, ModemManager connect/reconnect, PPP,
+routes, and internet health checks. It is installed as a SysV init service.
+The recipe renders `/etc/default/x8-cellulard` from BitBake variables, and the
+service does not start unless at least one APN is configured.
+
+The template defaults the external APN to `movistar.es`:
+
+```bitbake
+X8_CELLULARD_EXTERNAL_APN ??= "movistar.es"
+X8_CELLULARD_SARA_APN ??= ""
+X8_CELLULARD_INTERVAL_SEC ??= "30"
+```
+
+Override these per build in `bld-x8/conf/local-cellular.inc`, similar to the
+local root password and SSH key includes:
+
+```sh
+X8_CELLULARD_EXTERNAL_APN = "movistar.es"
+X8_CELLULARD_SARA_APN = ""
+X8_CELLULARD_INTERVAL_SEC = "30"
+```
+
+Leaving both APNs empty keeps the service installed but inactive at boot.
+
+The image includes ModemManager plus QMI/MBIM tools, but it does not include
+NetworkManager. Modem detection and inspection are available through
+ModemManager, while connection policy is handled by `x8-cellulard`.
+
+## Hardware Network Watchdog ⏱️
+
+The image installs `x8-watchdogd` but does not start it automatically. This is
+intentional because opening `/dev/watchdog0` arms the hardware watchdog on the
+target board.
+
+When enabled manually, it owns `/dev/watchdog0`, feeds the i.MX hardware
+watchdog, and checks only `100.100.100.100` with `ping`.
+
+The watchdog policy is embedded in the daemon source, not exposed as Yocto image
+parameters:
+
+- feed interval: 10 seconds
+- network check interval: 60 seconds
+- ping timeout: 10 seconds
+- hard ping process timeout: 30 seconds
+- continuous offline window before reset: 10800 seconds
+
+If the target is unreachable continuously for 3 hours, the daemon stops feeding
+the hardware watchdog and lets the board reset.
+
+Enable and start it on the device only when ready:
+
+```sh
+update-rc.d x8-watchdogd defaults 80 20
+/etc/init.d/x8-watchdogd start
+```
+
+Disable autostart while leaving the binary installed:
+
+```sh
+update-rc.d -f x8-watchdogd remove
+```
+
+## SD Card Automount 💾
+
+The image expects at most one removable SD card. When eudev sees a filesystem
+on the card, it mounts it at:
+
+```text
+/media/sdcard
+```
+
+The automount helper only accepts removable/SD `mmcblk*` devices, so the
+Portenta X8 internal eMMC is ignored. If the card has one partition, that
+partition is mounted; if the card is formatted without a partition table, the
+whole card device is mounted.
+
+## eMMC Root Filesystem Size 💽
+
+Portenta X8 has a 16 GB onboard eMMC. The image uses a fixed 14336 MiB rootfs
+partition in the generated `.wic` so the flashed system has a large rootfs
+available immediately, without first-boot partition resizing.
+
+Arduino's stock `lmp-factory-image-portenta-x8.wic.gz` reference image uses a
+smaller root partition of about 2.9 GiB. NormaCore intentionally uses the larger
+fixed partition because this image is flashed directly to the X8 eMMC, while
+keeping enough margin for the capacity exposed by Arduino's mfgtool fastboot
+target.
 
 ## Start Here 📍
 
@@ -95,10 +200,14 @@ docker run --rm -it \
   -e USER=builder \
   -v "$YOCTO_WORKSPACE:/workdir:Z" \
   -v "$NORMACORE_ROOT:/norma-core:ro,Z" \
+  -v "$NORMACORE_ROOT:$NORMACORE_ROOT:ro,Z" \
   -w /workdir \
   hub.foundries.io/lmp-sdk:95 \
   bash
 ```
+
+The second NormaCore mount keeps existing build directories working if
+`sources/norma-core` is an absolute symlink to the host checkout path.
 
 Inside the container:
 
