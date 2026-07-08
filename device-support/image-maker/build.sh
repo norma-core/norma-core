@@ -69,7 +69,7 @@ load_config() {
   IMAGE_PLATFORM="${IMAGE_PLATFORM:-linux/arm64}"
   PACKER_IMAGE="norma-image-maker-packer:local"
   WORK_DIR="$repo_root/target/image-maker/$IMAGE_NAME"
-  OUTPUT_IMAGE="$repo_root/target/images/$IMAGE_NAME.img"
+  OUTPUT_IMAGE="$IMAGE_DIR/golden-image.img"
   PACK_SCRIPT="$IMAGE_DIR/pack.sh"
   IMAGE_DOCKERFILE="$IMAGE_DIR/image.dockerfile"
   STAGING_DIR="$WORK_DIR/staging"

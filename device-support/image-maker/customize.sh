@@ -3,6 +3,7 @@ set -euo pipefail
 
 program_name="image-maker customize"
 image_maker_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+repo_root="$(cd "$image_maker_dir/../.." && pwd)"
 
 # shellcheck source=lib/common.sh
 . "$image_maker_dir/lib/common.sh"
@@ -14,7 +15,8 @@ PACKER_IMAGE="norma-image-maker-packer:local"
 usage() {
   cat >&2 <<EOF
 Usage:
-  $program_name --input <golden.img> --output <device.img> [options]
+  $program_name --image <name> [options]
+  $program_name --input-image <golden.img> [--output-image <device.img>] [options]
 
 Writes Wi-Fi, SSH user, and Tailscale credentials into a copy of a golden
 NormaCore image (built with \`image-maker build\`) and writes the personalized
@@ -22,8 +24,12 @@ result to <device.img>, ready to flash. Docker is the only requirement — no
 root, no --privileged, no base-image download.
 
 Options:
-  -i, --input <img>              golden image to read (required)
-  -o, --output <img>             personalized image to write (required)
+  -n, --image <name>             shorthand that reads
+                                 device-support/image-maker/images/<name>/golden-image.img
+                                 and writes target/images/<name>.img
+  -i, --input-image <img>        golden image to read (required unless --image)
+  -o, --output-image <img>       personalized image to write
+                                 (default: target/images/<input filename>)
       --root-partition-number N  ext4 root partition number (default: 2)
       --reset-firstboot          also clear /etc/.firstboot_done so a reused card re-provisions
       --non-interactive          require credentials via env vars; never prompt
@@ -94,9 +100,10 @@ gather_credentials() {
 }
 
 customize_command() {
-  local force input non_interactive output reset_firstboot root_part work_dir
+  local force image_name input non_interactive output reset_firstboot root_part work_dir
   local -a inject_args
   force=0
+  image_name=""
   input=""
   non_interactive=0
   output=""
@@ -105,9 +112,11 @@ customize_command() {
 
   while [ "$#" -gt 0 ]; do
     case "$1" in
-      -i|--input)
+      -n|--image)
+        require_build_arg_value "$1" "${2:-}"; image_name="$2"; shift 2 ;;
+      -i|--input-image)
         require_build_arg_value "$1" "${2:-}"; input="$2"; shift 2 ;;
-      -o|--output)
+      -o|--output-image)
         require_build_arg_value "$1" "${2:-}"; output="$2"; shift 2 ;;
       --root-partition-number)
         require_build_arg_value "$1" "${2:-}"; root_part="$2"; shift 2 ;;
@@ -119,11 +128,18 @@ customize_command() {
     esac
   done
 
-  [ -n "$input" ] || die "customize requires --input"
-  [ -n "$output" ] || die "customize requires --output"
+  if [ -n "$image_name" ]; then
+    [ -n "$input" ] && die "--image cannot be combined with --input-image"
+    input="$repo_root/device-support/image-maker/images/$image_name/golden-image.img"
+    [ -n "$output" ] || output="$repo_root/target/images/$image_name.img"
+  fi
+
+  [ -n "$input" ] || die "customize requires --image or --input-image"
 
   input="$(abs_path_cwd "$input")"
   [ -f "$input" ] || die "input image not found: $input"
+
+  [ -n "$output" ] || output="$repo_root/target/images/$(basename "$input")"
 
   mkdir -p "$(dirname "$output")"
   output="$(abs_path_cwd "$output")"
