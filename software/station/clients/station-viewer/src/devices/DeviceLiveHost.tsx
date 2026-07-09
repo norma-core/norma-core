@@ -23,10 +23,6 @@ function getLazyLiveView(
   return LazyView;
 }
 
-interface DeviceLiveHostProps {
-  views: SelectedLiveDeviceView[];
-}
-
 interface DeviceLiveViewProps {
   selected: SelectedLiveDeviceView;
 }
@@ -49,6 +45,10 @@ function DeviceLiveView({ selected }: DeviceLiveViewProps) {
       <LazyView {...props} />
     </Suspense>
   );
+}
+
+interface DeviceLiveHostProps {
+  views: SelectedLiveDeviceView[];
 }
 
 const DeviceLiveHost = memo(function DeviceLiveHost({ views }: DeviceLiveHostProps) {

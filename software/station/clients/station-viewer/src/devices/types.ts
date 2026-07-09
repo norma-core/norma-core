@@ -1,6 +1,6 @@
-import type { ComponentType, ReactNode } from 'react';
+import type { ComponentType } from 'react';
 import type { Frame, FrameEntry } from '@/api/frame-parser';
-import type { drivers, motors_mirroring, st3215, usbvideo } from '@/api/proto.js';
+import type { motors_mirroring, st3215, usbvideo } from '@/api/proto.js';
 import type {
   JointValueResolver,
   RobotJointNames,
@@ -27,34 +27,11 @@ export interface LiveDeviceSlot<Props> {
   loadView: () => Promise<{ default: ComponentType<Props> }>;
 }
 
-export interface HistoryEntryContext {
-  queueId: string;
-  queueType?: drivers.QueueDataType;
-  rawData?: Uint8Array | null;
-}
-
-export interface HistoryDecodeContext {
-  queueId: string;
-  queueType?: drivers.QueueDataType;
-}
-
-export interface HistoryDeviceSlot<Data> {
-  type: string;
-  isMatch: (entry: HistoryEntryContext) => boolean;
-  decode?: (raw: Uint8Array, context: HistoryDecodeContext) => Data | null;
-  getSummary?: (data: Data) => ReactNode;
-  loadExpandedView?: () => Promise<{
-    default: ComponentType<{ data: Data; rawData?: Uint8Array | null }>;
-  }>;
-  toJson?: (data: Data) => unknown;
-}
-
-export interface DeviceModule<LiveProps = unknown, HistoryData = unknown> {
+export interface DeviceModule<LiveProps = unknown> {
   id: string;
   label: string;
   order: number;
-  live?: LiveDeviceSlot<LiveProps>;
-  history?: HistoryDeviceSlot<HistoryData>;
+  live: LiveDeviceSlot<LiveProps>;
 }
 
 export interface SelectedLiveDeviceView<Props = unknown> {

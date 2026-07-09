@@ -1,5 +1,5 @@
-import type { VescTrampaViewerProps } from '@/vesc-trampa/VescTrampaViewer';
-import type { DeviceModule } from '../types';
+import type { DeviceModule } from '@/devices/types';
+import type { VescTrampaViewerProps } from './ui/VescTrampaViewer';
 
 const vescTrampaModule = {
   id: 'vesc-trampa',
@@ -18,7 +18,7 @@ const vescTrampaModule = {
         props: { inferenceState },
       }];
     },
-    loadView: () => import('@/vesc-trampa/VescTrampaViewer'),
+    loadView: () => import('./ui/VescTrampaViewer'),
   },
 } satisfies DeviceModule<VescTrampaViewerProps>;
 

@@ -1,10 +1,6 @@
 import type { arduino_nicla_sense_env } from '@/api/proto.js';
 import DeviceWidgetShell from '@/components/DeviceWidgetShell';
-import { readArduinoNiclaSenseEnvMainValues } from '@/utils/arduino-nicla-sense-env';
-
-export interface ArduinoNiclaSenseEnvLiveViewProps {
-  data: arduino_nicla_sense_env.IRxEnvelope;
-}
+import { readArduinoNiclaSenseEnvMainValues } from '../values';
 
 function formatMeasured(value: number | null, unit: string, decimals = 2): string {
   if (value === null || !Number.isFinite(value)) {
@@ -38,13 +34,23 @@ function deviceLabel(data: arduino_nicla_sense_env.IRxEnvelope): string {
   return `bus ${data.device.i2cBus ?? 'N/A'} / ${hexByte(data.device.i2cAddress)}`;
 }
 
-function MetricPill({ label, value, tone }: { label: string; value: string; tone: string }) {
+interface MetricPillProps {
+  label: string;
+  value: string;
+  tone: string;
+}
+
+function MetricPill({ label, value, tone }: MetricPillProps) {
   return (
     <div className="min-w-0 rounded bg-surface-primary/70 px-2 py-1">
       <span className="mr-1 text-[10px] uppercase text-text-label">{label}</span>
       <span className={`font-mono text-xs font-semibold ${tone}`} title={value}>{value}</span>
     </div>
   );
+}
+
+export interface ArduinoNiclaSenseEnvLiveViewProps {
+  data: arduino_nicla_sense_env.IRxEnvelope;
 }
 
 function ArduinoNiclaSenseEnvLiveView({ data }: ArduinoNiclaSenseEnvLiveViewProps) {

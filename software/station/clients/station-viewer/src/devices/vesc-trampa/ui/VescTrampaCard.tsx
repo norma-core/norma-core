@@ -11,21 +11,16 @@ import {
   clampVescTrampaCurrent,
   holdVescTrampaMotor,
   setVescTrampaCurrent,
-} from './commands';
+} from '../commands';
 import {
   VescTrampaValues,
   formatVescInteger,
   formatVescNumber,
   parseVescTrampaValuesPayload,
-} from './values-parser';
-import { formatVescTrampaUuid, longToNumber, shortVescTrampaUuid } from './utils';
+} from '../values-parser';
+import { formatVescTrampaUuid, longToNumber, shortVescTrampaUuid } from '../utils';
 
 const CURRENT_HOLD_SEND_INTERVAL_MS = 50;
-
-interface VescTrampaCardProps {
-  boardState: vesc_trampa.InferenceState.IBoardState;
-  boardIndex: number;
-}
 
 interface MetricCellProps {
   label: string;
@@ -72,6 +67,11 @@ function formatLatency(stampNs: Long | number | null | undefined): { label: stri
 
 function formatMode(mode: vesc_trampa.VescTrampaMotorMode | null | undefined): string {
   return mode === vesc_trampa.VescTrampaMotorMode.VESC_TRAMPA_MOTOR_MODE_HOLD ? 'HOLD' : 'ACTIVE';
+}
+
+interface VescTrampaCardProps {
+  boardState: vesc_trampa.InferenceState.IBoardState;
+  boardIndex: number;
 }
 
 const VescTrampaCard = ({ boardState, boardIndex }: VescTrampaCardProps) => {

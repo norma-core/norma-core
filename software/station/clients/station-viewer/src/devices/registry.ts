@@ -42,10 +42,6 @@ export function selectLiveDeviceViews(frame: Frame | null): SelectedLiveDeviceVi
 
   return deviceModules.flatMap((module) => {
     const live = module.live;
-    if (!live) {
-      return [];
-    }
-
     return live.select(context).map((view) => ({
       moduleId: module.id,
       moduleLabel: module.label,

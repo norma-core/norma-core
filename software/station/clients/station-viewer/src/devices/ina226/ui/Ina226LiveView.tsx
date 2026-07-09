@@ -4,11 +4,7 @@ import {
   formatIna226Current,
   readIna226CurrentAmps,
   readIna226ShuntMillivolts,
-} from '@/utils/ina226';
-
-export interface Ina226LiveViewProps {
-  data: ina226.IRxEnvelope;
-}
+} from '../values';
 
 function formatMeasured(value: number | null, unit: string, decimals = 2): string {
   if (value === null || !Number.isFinite(value)) {
@@ -49,13 +45,23 @@ function deviceLabel(data: ina226.IRxEnvelope): string {
   return `bus ${data.device.i2cBus ?? 'N/A'} / ${hexByte(data.device.i2cAddress)}`;
 }
 
-function MetricPill({ label, value, tone }: { label: string; value: string; tone: string }) {
+interface MetricPillProps {
+  label: string;
+  value: string;
+  tone: string;
+}
+
+function MetricPill({ label, value, tone }: MetricPillProps) {
   return (
     <div className="min-w-0 rounded bg-surface-primary/70 px-2 py-1">
       <span className="mr-1 text-[10px] uppercase text-text-label">{label}</span>
       <span className={`font-mono text-xs font-semibold ${tone}`} title={value}>{value}</span>
     </div>
   );
+}
+
+export interface Ina226LiveViewProps {
+  data: ina226.IRxEnvelope;
 }
 
 function Ina226LiveView({ data }: Ina226LiveViewProps) {

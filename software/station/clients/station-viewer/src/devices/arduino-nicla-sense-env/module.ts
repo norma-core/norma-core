@@ -1,4 +1,4 @@
-import type { DeviceModule } from '../types';
+import type { DeviceModule } from '@/devices/types';
 import type { ArduinoNiclaSenseEnvLiveViewProps } from './ui/ArduinoNiclaSenseEnvLiveView';
 
 const arduinoNiclaSenseEnvModule = {

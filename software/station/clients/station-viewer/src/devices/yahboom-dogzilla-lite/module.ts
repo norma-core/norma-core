@@ -1,5 +1,5 @@
 import type { YahboomDogzillaLiteDeviceViewerProps } from './ui/YahboomDogzillaLiteDeviceViewer';
-import type { DeviceModule } from '../types';
+import type { DeviceModule } from '@/devices/types';
 
 const yahboomDogzillaLiteDeviceModule = {
   id: 'yahboom-dogzilla-lite',

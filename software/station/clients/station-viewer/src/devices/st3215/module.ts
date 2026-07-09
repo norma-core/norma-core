@@ -1,5 +1,5 @@
 import type { BusViewerProps } from '@/st3215/BusViewer';
-import type { DeviceModule } from '../types';
+import type { DeviceModule } from '@/devices/types';
 
 const st3215DeviceModule = {
   id: 'st3215',

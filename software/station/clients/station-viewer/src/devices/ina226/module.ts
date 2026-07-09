@@ -1,4 +1,4 @@
-import type { DeviceModule } from '../types';
+import type { DeviceModule } from '@/devices/types';
 import type { Ina226LiveViewProps } from './ui/Ina226LiveView';
 
 const ina226Module = {

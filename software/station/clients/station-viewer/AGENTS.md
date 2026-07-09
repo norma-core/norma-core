@@ -82,7 +82,7 @@ export default newDeviceModule;
 
 `live.select(...)` is a pure selector: no hooks, no JSX, no side effects. It only maps the current `Frame` into `LiveDeviceView` descriptors. `DeviceLiveHost` handles lazy React rendering.
 
-`DeviceModule` also has an optional `history?` slot for future history integration. Current history rendering is still wired through the existing `HistoryPage` / `HistoryElement` / `ExpandedView` path.
+History rendering remains wired through the existing `HistoryPage` / `HistoryElement` / `ExpandedView` path. Add a history seam only when that path is migrated to real module adapters.
 
 ### ST3215 Robot Models
 
