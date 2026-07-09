@@ -9,8 +9,8 @@ import { commandManager } from "@/api/commands";
 import { inference_tags } from "@/api/proto.js";
 import { defaultTag } from "@/utils/tag-phrases";
 import { getFPSColor } from '@/utils/color-utils';
-import DeviceLiveHost from '@/devices/DeviceLiveHost';
-import { selectLiveDeviceViews } from '@/devices/registry';
+import LiveDeviceSurface from '@/devices/LiveDeviceSurface';
+import { resolveLiveDevices } from '@/devices/live-registry';
 
 interface TagDialogState {
   entryId: number | null;
@@ -43,12 +43,11 @@ function HomePage() {
   const [tagDialog, setTagDialog] = useState<TagDialogState | null>(null);
   const [isTagSubmitting, setIsTagSubmitting] = useState(false);
   const [tagError, setTagError] = useState<string | null>(null);
-  const liveDeviceViews = useMemo(
-    () => selectLiveDeviceViews(inferenceState),
+  const liveDevicePlan = useMemo(
+    () => resolveLiveDevices(inferenceState),
     [inferenceState],
   );
-  const hasLiveDeviceViews = liveDeviceViews.length > 0;
-  const hasFrameRateDevice = liveDeviceViews.some(({ view }) => view.tracksFrameRate);
+  const hasLiveDeviceViews = !liveDevicePlan.isEmpty;
   const isDesktopApp = window.stationDesktop?.isDesktop === true;
 
   useEffect(() => {
@@ -127,7 +126,7 @@ function HomePage() {
                     }`} aria-label={connectionStats.status}></span>
                   </div>
                 )}
-                {connectionStats.status === 'connected' && hasFrameRateDevice && (
+                {connectionStats.status === 'connected' && liveDevicePlan.hasRealtimeDevice && (
                   <div className="hidden sm:flex items-center gap-2 px-2 py-1 bg-surface-secondary rounded border border-border-default">
                     <span className="text-text-label text-xs uppercase tracking-wide">FPS</span>
                     <span className={`font-bold text-xs font-mono ${connectionStats.isFpsReady ? getFPSColor(connectionStats.fps) : 'text-text-label'}`}>
@@ -190,7 +189,7 @@ function HomePage() {
       <div className="flex-1 min-h-0 overflow-auto p-4">
         <div className="flex min-h-full w-full flex-col gap-4">
           {hasLiveDeviceViews ? (
-            <DeviceLiveHost views={liveDeviceViews} />
+            <LiveDeviceSurface plan={liveDevicePlan} />
           ) : (
             <div className="flex flex-1 min-h-full w-full items-center justify-center rounded-lg border border-dashed border-border-default bg-surface-primary/40 px-6">
               <AsciiRobot />

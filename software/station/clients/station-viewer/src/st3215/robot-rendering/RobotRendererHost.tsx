@@ -1,5 +1,5 @@
 import { forwardRef, lazy, memo, Suspense, useImperativeHandle, useMemo, useRef } from 'react';
-import { findSt3215DeviceDefinition } from '@/devices/registry';
+import { resolveSt3215Model } from '@/devices/st3215-models';
 import type {
   BaseRobotRendererRef,
   St3215RobotRendererProps,
@@ -9,12 +9,12 @@ const RobotRendererHostComponent = forwardRef<BaseRobotRendererRef, St3215RobotR
   function RobotRendererHost(props, ref) {
     const childRef = useRef<BaseRobotRendererRef>(null);
     const motorCount = props.bus.motors?.length ?? 0;
-    const definition = findSt3215DeviceDefinition(props.bus);
+    const model = resolveSt3215Model(props.bus);
     // Registry entries are module-scope objects, so this identity is stable
     // while the matched device stays the same.
     const LazyRenderer = useMemo(
-      () => definition ? lazy(definition.loadRenderer) : null,
-      [definition],
+      () => model ? lazy(model.loadRenderer) : null,
+      [model],
     );
 
     useImperativeHandle(ref, () => ({

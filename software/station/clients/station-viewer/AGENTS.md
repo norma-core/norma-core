@@ -49,79 +49,124 @@ public/
 
 ## Device Modules
 
-Concrete device code lives under `src/devices/<device-id>/`. The live page discovers bundled TypeScript device modules via `src/devices/registry.ts`; do not import concrete devices directly from `HomePage` or shared protocol layers.
+Concrete device code lives under `src/devices/<device-id>/`. A device module is a **vertical live slice**: its manifest, device-only UI, protocol/formatting helpers, commands, and model-specific assets live together. `HomePage` and shared protocol/rendering code must never import a concrete device.
+
+The shared implementation is deliberately split into two deep modules with different interfaces:
+
+```
+src/devices/
+  live.ts                 # live()/customLive() authoring factories
+  live-registry.ts        # discovers live manifests and resolves a LiveDevicePlan
+  LiveDeviceSurface.tsx   # lazy rendering, slots, and error isolation
+  st3215-model.ts         # st3215Model() authoring factory and model contract
+  st3215-models.ts        # discovers and resolves ST3215 robot models
+  <device-id>/
+    module.ts             # one live-module manifest
+    ui/                   # lazy device UI
+    values.ts             # device-only parsers/formatters when needed
+    commands.ts           # device-only commands when needed
+    st3215-model.ts       # optional ST3215 robot-model manifest
+```
+
+Do not recreate a general plugin framework. Live UI, ST3215 robot models, history, decoding, configuration, and actions are separate concerns. Introduce another seam only when it has a real caller and at least two concrete adapters.
 
 ### Live Device Modules
 
-Add a `src/devices/<device-id>/module.ts` file for each live device family. Keep the manifest small and eager-loadable; put heavy React UI under `ui/` and load it lazily through `live.loadView`.
+`live-registry.ts` discovers `src/devices/*/module.ts` using Vite's bundled `import.meta.glob`. **Never edit a central registration list and never import a concrete module from `HomePage`.** A manifest is eagerly loaded, but its UI must be loaded lazily.
+
+Use `live()` for the normal case: the data lives in one `Frame` field whose value is either one `FrameEntry` or an array of entries. The factory normalizes single/multiple entries, uses `queueId` as the stable key, supplies the typed `{ data }` prop, and creates the lazy React element.
 
 ```typescript
-import type { DeviceModule } from '@/devices/types';
-import type { NewDeviceViewerProps } from './ui/NewDeviceViewer';
+import { live } from '@/devices/live';
 
-const newDeviceModule = {
-  id: 'new-device',
-  label: 'New Device',
-  order: 30,
-  live: {
-    select: ({ frame, videoSources }) => {
-      const data = frame.new_device?.data;
-      if (!data) return [];
-
-      return [{
-        key: 'new-device',
-        props: { data, videoSources },
-      }];
-    },
-    loadView: () => import('./ui/NewDeviceViewer'),
-  },
-} satisfies DeviceModule<NewDeviceViewerProps>;
-
-export default newDeviceModule;
+export default live({
+  id: 'new-sensor',
+  label: 'New Sensor',
+  order: 40,
+  slot: 'summary',
+  field: 'newSensor',
+  when: (data) => data.readings?.length > 0,
+  loadView: () => import('./ui/NewSensorLiveView'),
+});
 ```
 
-`live.select(...)` is a pure selector: no hooks, no JSX, no side effects. It only maps the current `Frame` into `LiveDeviceView` descriptors. `DeviceLiveHost` handles lazy React rendering.
+The UI prop must match the factory convention:
 
-History rendering remains wired through the existing `HistoryPage` / `HistoryElement` / `ExpandedView` path. Add a history seam only when that path is migrated to real module adapters.
+```typescript
+export interface NewSensorLiveViewProps {
+  data: new_sensor.IRxEnvelope;
+}
+```
+
+Use `customLive()` only when `{ data }` is insufficient—for example, ST3215 also needs video and mirroring state. Its `select(frame)` must be pure: no hooks, I/O, mutations, JSX, timers, or subscriptions. It returns only stable keys and typed props; the factory owns lazy rendering.
+
+```typescript
+import { customLive } from '@/devices/live';
+
+export default customLive<NewViewerProps>({
+  id: 'new-device',
+  label: 'New Device',
+  order: 40,
+  select: (frame) => {
+    const data = frame.newDevice?.data;
+    return data ? [{ key: 'new-device', props: { data, videos: frame.videoQueues } }] : [];
+  },
+  loadView: () => import('./ui/NewDeviceViewer'),
+});
+```
+
+Rules and invariants:
+
+- `id` and `order` are globally unique across live manifests. The display order is deterministic: `order`, then `id`, then entry key.
+- A view key must be non-empty and unique within its module. Use `queueId` for multi-instance driver entries.
+- `slot: 'summary'` renders compact cards in the shared sensor grid; the default `primary` slot renders full-width device UI. Do not add ad-hoc layout strings.
+- Use `when(data)` only to suppress an empty but valid entry. If the view needs different props or shared frame data, use `customLive()` instead.
+- Set `isRealtime: true` only for a device that actually supplies the active realtime stream. The resolved plan uses this capability to decide whether to show connection FPS.
+- Selection and lazy-render failures are isolated to the affected device. Do not catch them in `HomePage`.
+- Do not add wrappers that only render another component with identical props. They fail the deletion test; import the shared implementation directly from the manifest. In particular, do not add a `St3215LiveView` pass-through around `BusViewer`.
+- Keep module manifests small. Heavy React UI belongs in `ui/`, and device-only formatting, commands, or parser code stays beside that manifest rather than in generic `src/utils/`.
 
 ### ST3215 Robot Models
 
-Shared ST3215 code stays under `src/st3215/`. Keep this layer about the bus/protocol and reusable UI/rendering shell:
+`st3215-models.ts` is independent from the live-device registry. Shared ST3215 code stays under `src/st3215/` and contains only protocol handling and generic rendering. Concrete URDF paths, transforms, joint names, material mapping, and kinematic quirks belong to the physical model directory.
 
-- motor parsing and ST3215 command helpers
-- bus cards, bus viewer, calibration page, mirroring controls
-- generic motor tables and camera overlays
-- generic robot rendering host/base renderer in `src/st3215/robot-rendering/`
-
-Concrete ST3215 robot models live under `src/devices/<model-id>/` and export `st3215-model.ts`:
+Register a model through `st3215Model()`:
 
 ```typescript
-import type { St3215RobotModelModule } from '@/devices/types';
-import { NEW_MODEL_MOTOR_COUNT, newModelKinematics } from './config';
+import { st3215Model } from '@/devices/st3215-model';
 
-const newModel = {
+export default st3215Model({
   id: 'new-model',
   label: 'New Model',
-  order: 30,
-  motorCount: NEW_MODEL_MOTOR_COUNT,
-  matches: (bus) => (bus.motors?.length ?? 0) === NEW_MODEL_MOTOR_COUNT,
-  kinematics: newModelKinematics,
+  motorCount: 7,
+  kinematics: {
+    urdfPath: 'devices/new-model/robot.urdf',
+    basePos: [0, 0, 0],
+    baseRpy: [0, 0, 0],
+    jointNames: ['joint-1', 'joint-2'],
+  },
   loadRenderer: () => import('./Renderer'),
-} satisfies St3215RobotModelModule;
-
-export default newModel;
+});
 ```
 
-Do not import concrete ST3215 models from `src/st3215/`. Use the registry/model interfaces and keep concrete URDF paths, joint names, transforms, material mapping, and kinematic quirks beside the model.
+Rules and invariants:
 
-When adding a new physical device or ST3215 model:
+- `id` and `motorCount` are globally unique. The normalized-joint renderer has only joint count as its identity, so two models with the same count are ambiguous and rejected at startup.
+- The factory owns the default motor-count match. Add `matchesBus` only for an additional discriminator; it cannot bypass the motor-count requirement.
+- There is no implicit “first model” fallback. An unsupported bus or joint count must render the explicit unsupported state.
+- Do not duplicate `id`, `label`, or `motorCount` inside `kinematics`.
+- Shared ST3215 components may ask `st3215-models.ts` whether a bus is supported, but must not import a concrete model.
 
-1. Create `src/devices/<device-id>/module.ts` for live device UI, or `src/devices/<model-id>/st3215-model.ts` for an ST3215 robot model.
-2. Put device-only React UI under `src/devices/<device-id>/ui/`.
-3. Put URDF/STL files in `public/devices/<device-id>/`.
-4. Run `node scripts/generate-asset-hashes.mjs` from this package so `src/assets-manifest.json` includes new asset paths.
+### Adding or Extending a Device
 
-Avoid hard-coding concrete device names, motor counts, URDF paths, or joint mappings in shared ST3215 components. Use the registry or device module config instead.
+1. Add the backend/protobuf queue type and `Frame` decoding when the driver itself is new. The current module system owns live presentation, not frame decoding.
+2. Create `src/devices/<device-id>/module.ts`; use `live()` unless shared frame data makes `customLive()` necessary.
+3. Put device-only UI under `ui/` and supporting device code beside it.
+4. For a physical ST3215 robot, add `st3215-model.ts`, `Renderer.tsx`, config, and public assets in the same model directory.
+5. Put URDF/STL files in `public/devices/<device-id>/`, then run `node scripts/generate-asset-hashes.mjs` so `src/assets-manifest.json` includes them.
+6. Test through the public seams: `resolveLiveDevices(frame)` for live selection and `resolveSt3215Model(bus)` / `resolveSt3215Kinematics(count)` for robot models. Do not test factory internals or rendering past the module interface.
+
+History rendering remains in `HistoryPage` / `HistoryElement` / `ExpandedView`. When history and decoding are deliberately migrated, introduce a real history/decoder seam with multiple device adapters; do not add speculative optional fields to live manifests now.
 
 ## Code Style
 

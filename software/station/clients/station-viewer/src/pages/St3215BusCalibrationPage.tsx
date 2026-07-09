@@ -6,7 +6,7 @@ import webSocketManager from '../api/websocket';
 import { useInferenceState, useWakeLock } from '../hooks';
 import { useLocation, Link, useNavigate } from 'react-router-dom';
 import { getMotorVoltage } from '../st3215/motor-parser';
-import { supportsSt3215Device } from '@/devices/registry';
+import { supportsSt3215Bus } from '@/devices/st3215-models';
 
 const MIN_CALIBRATED_RANGE = 100;
 const actionButtonClasses = 'inline-flex w-full shrink-0 items-center justify-center whitespace-nowrap rounded-lg px-4 py-2 text-sm font-bold transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto md:px-6 md:py-3 md:text-base';
@@ -68,7 +68,7 @@ const St3215BusCalibrationPage: React.FC = () => {
 
   const calibrationState = currentBusState?.autoCalibration;
   const isCalibrating = calibrationState?.status === st3215.AutoCalibrationState.Status.IN_PROGRESS;
-  const hasValidMotors = currentBusState ? supportsSt3215Device(currentBusState) : false;
+  const hasValidMotors = currentBusState ? supportsSt3215Bus(currentBusState) : false;
   const isSupportedRobot = hasValidMotors;
 
   // Check voltage across all motors (voltage is in 0.1V units, so 70 = 7.0V)
@@ -357,7 +357,7 @@ const St3215BusCalibrationPage: React.FC = () => {
                 </div>
               </div>
             )}
-            {supportsSt3215Device(currentBusState) ? (
+            {supportsSt3215Bus(currentBusState) ? (
               <BusWebGLRenderer
                 busSerialNumber={currentBusState.bus?.serialNumber}
                 bus={currentBusState}

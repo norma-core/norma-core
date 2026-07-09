@@ -4,10 +4,7 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { STLLoader } from 'three/examples/jsm/loaders/STLLoader.js';
 import URDFLoader from 'urdf-loader';
 import { normvla } from '@/api/proto';
-import {
-  defaultSt3215DeviceKinematicConfig,
-  findSt3215DeviceKinematicConfig,
-} from '@/devices/registry';
+import { resolveSt3215Kinematics } from '@/devices/st3215-models';
 import { appendHash } from '@/utils/asset-hashes';
 import { useTheme } from '@/hooks/useTheme';
 import { getRendererThemeColors } from '@/utils/theme-colors';
@@ -121,6 +118,7 @@ class NormvlaArm {
 
 const NormvlaRobotRenderer = ({ joints }: NormvlaRobotRendererProps) => {
   const { theme } = useTheme();
+  const deviceConfig = resolveSt3215Kinematics(joints.length);
   const mountRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<{
     scene: THREE.Scene;
@@ -176,7 +174,7 @@ const NormvlaRobotRenderer = ({ joints }: NormvlaRobotRendererProps) => {
   }, [joints]);
 
   useEffect(() => {
-    if (!mountRef.current || isInitializedRef.current) return;
+    if (!deviceConfig || !mountRef.current || isInitializedRef.current) return;
     isInitializedRef.current = true;
 
     const scene = new THREE.Scene();
@@ -219,9 +217,7 @@ const NormvlaRobotRenderer = ({ joints }: NormvlaRobotRendererProps) => {
 
     applySceneTheme();
 
-    const jointCount = jointsRef.current?.length ?? defaultSt3215DeviceKinematicConfig.motorCount;
-    const deviceConfig =
-      findSt3215DeviceKinematicConfig(jointCount) ?? defaultSt3215DeviceKinematicConfig;
+    const jointCount = jointsRef.current?.length ?? deviceConfig.jointNames.length;
     const urdfPath = deviceConfig.urdfPath;
     const basePos = deviceConfig.basePos;
     const baseRpy = deviceConfig.baseRpy;
@@ -267,7 +263,7 @@ const NormvlaRobotRenderer = ({ joints }: NormvlaRobotRendererProps) => {
         robot.rotation.z = baseRpy[2];
 
         const motorCount = Math.min(
-          jointsRef.current?.length ?? deviceConfig.motorCount,
+          jointsRef.current?.length ?? jointCount,
           jointNames.length,
         );
         sceneRef.current!.arm = new NormvlaArm(
@@ -339,13 +335,21 @@ const NormvlaRobotRenderer = ({ joints }: NormvlaRobotRendererProps) => {
         isInitializedRef.current = false;
       }
     };
-  }, []);
+  }, [deviceConfig]);
 
   useLayoutEffect(() => {
     if (!sceneRef.current || !isInitializedRef.current) return;
     applySceneTheme();
     sceneRef.current.renderer.render(sceneRef.current.scene, sceneRef.current.camera);
   }, [theme]);
+
+  if (!deviceConfig) {
+    return (
+      <div className="flex h-full w-full items-center justify-center bg-surface-primary/20 p-4 text-center text-accent-warning">
+        No ST3215 model is registered for {joints.length} joints.
+      </div>
+    );
+  }
 
   return <div ref={mountRef} className="w-full h-full" />;
 };

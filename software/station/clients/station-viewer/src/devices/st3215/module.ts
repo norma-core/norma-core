@@ -1,29 +1,25 @@
+import { customLive } from '@/devices/live';
 import type { BusViewerProps } from '@/st3215/BusViewer';
-import type { DeviceModule } from '@/devices/types';
 
-const st3215DeviceModule = {
+export default customLive<BusViewerProps>({
   id: 'st3215',
   label: 'ST3215',
   order: 10,
-  live: {
-    select: ({ frame, videoSources, mirroringState }) => {
-      const inferenceState = frame.st3215?.data;
-      if (!inferenceState?.buses?.length) {
-        return [];
-      }
+  isRealtime: true,
+  select: (frame) => {
+    const inferenceState = frame.st3215?.data;
+    if (!inferenceState?.buses?.length) {
+      return [];
+    }
 
-      return [{
-        key: 'st3215',
-        tracksFrameRate: true,
-        props: {
-          inferenceState,
-          videoSources,
-          mirroringState,
-        },
-      }];
-    },
-    loadView: () => import('@/st3215/BusViewer'),
+    return [{
+      key: 'st3215',
+      props: {
+        inferenceState,
+        videoSources: frame.videoQueues,
+        mirroringState: frame.mirroring?.data.state ?? undefined,
+      },
+    }];
   },
-} satisfies DeviceModule<BusViewerProps>;
-
-export default st3215DeviceModule;
+  loadView: () => import('@/st3215/BusViewer'),
+});

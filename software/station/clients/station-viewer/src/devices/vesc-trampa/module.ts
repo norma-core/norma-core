@@ -1,25 +1,11 @@
-import type { DeviceModule } from '@/devices/types';
-import type { VescTrampaViewerProps } from './ui/VescTrampaViewer';
+import { live } from '@/devices/live';
 
-const vescTrampaModule = {
+export default live({
   id: 'vesc-trampa',
   label: 'VESC Trampa',
   order: 30,
-  live: {
-    select: ({ frame }) => {
-      const inferenceState = frame.vescTrampa?.data;
-      if (!inferenceState?.boards?.length) {
-        return [];
-      }
-
-      return [{
-        key: 'vesc-trampa',
-        tracksFrameRate: true,
-        props: { inferenceState },
-      }];
-    },
-    loadView: () => import('./ui/VescTrampaViewer'),
-  },
-} satisfies DeviceModule<VescTrampaViewerProps>;
-
-export default vescTrampaModule;
+  isRealtime: true,
+  field: 'vescTrampa',
+  when: (data) => Boolean(data.boards?.length),
+  loadView: () => import('./ui/VescTrampaViewer'),
+});

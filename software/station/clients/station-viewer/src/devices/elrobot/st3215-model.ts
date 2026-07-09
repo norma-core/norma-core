@@ -1,5 +1,4 @@
-import type { st3215 } from '@/api/proto.js';
-import type { St3215RobotModelModule } from '@/devices/types';
+import { st3215Model } from '@/devices/st3215-model';
 import {
   ELROBOT_DEVICE_ID,
   ELROBOT_MOTOR_COUNT,
@@ -10,17 +9,11 @@ import {
   resolveElrobotJointValue,
 } from './config';
 
-const elrobotSt3215Model = {
+export default st3215Model({
   id: ELROBOT_DEVICE_ID,
   label: 'ElRobot',
-  order: 20,
   motorCount: ELROBOT_MOTOR_COUNT,
-  matches: (bus: st3215.InferenceState.IBusState): boolean =>
-    (bus.motors?.length ?? 0) === ELROBOT_MOTOR_COUNT,
   kinematics: {
-    id: ELROBOT_DEVICE_ID,
-    label: 'ElRobot',
-    motorCount: ELROBOT_MOTOR_COUNT,
     urdfPath: elrobotUrdfPath,
     basePos: elrobotBasePos,
     baseRpy: elrobotBaseRpy,
@@ -28,6 +21,4 @@ const elrobotSt3215Model = {
     resolveJointValue: resolveElrobotJointValue,
   },
   loadRenderer: () => import('./Renderer'),
-} satisfies St3215RobotModelModule;
-
-export default elrobotSt3215Model;
+});

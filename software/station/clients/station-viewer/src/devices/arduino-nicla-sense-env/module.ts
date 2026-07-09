@@ -1,25 +1,10 @@
-import type { DeviceModule } from '@/devices/types';
-import type { ArduinoNiclaSenseEnvLiveViewProps } from './ui/ArduinoNiclaSenseEnvLiveView';
+import { live } from '@/devices/live';
 
-const arduinoNiclaSenseEnvModule = {
+export default live({
   id: 'arduino-nicla-sense-env',
   label: 'Arduino Nicla Sense Env',
   order: 1,
-  live: {
-    select: ({ frame }) => {
-      const entry = frame.arduinoNiclaSenseEnv;
-      if (!entry) {
-        return [];
-      }
-
-      return [{
-        key: entry.queueId,
-        placement: 'widget' as const,
-        props: { data: entry.data },
-      }];
-    },
-    loadView: () => import('./ui/ArduinoNiclaSenseEnvLiveView'),
-  },
-} satisfies DeviceModule<ArduinoNiclaSenseEnvLiveViewProps>;
-
-export default arduinoNiclaSenseEnvModule;
+  slot: 'summary',
+  field: 'arduinoNiclaSenseEnv',
+  loadView: () => import('./ui/ArduinoNiclaSenseEnvLiveView'),
+});

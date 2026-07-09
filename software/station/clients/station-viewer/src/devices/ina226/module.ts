@@ -1,18 +1,10 @@
-import type { DeviceModule } from '@/devices/types';
-import type { Ina226LiveViewProps } from './ui/Ina226LiveView';
+import { live } from '@/devices/live';
 
-const ina226Module = {
+export default live({
   id: 'ina226',
   label: 'INA226',
   order: 2,
-  live: {
-    select: ({ frame }) => (frame.ina226 ?? []).map((entry) => ({
-      key: entry.queueId,
-      placement: 'widget' as const,
-      props: { data: entry.data },
-    })),
-    loadView: () => import('./ui/Ina226LiveView'),
-  },
-} satisfies DeviceModule<Ina226LiveViewProps>;
-
-export default ina226Module;
+  slot: 'summary',
+  field: 'ina226',
+  loadView: () => import('./ui/Ina226LiveView'),
+});
