@@ -550,21 +550,20 @@ impl Station {
         }
 
         match &self.config.inference {
-            Some(inference_configs) => {
-                if !inference_configs.is_empty() {
-                    log::info!(
-                        "Starting inference driver with {} configurations",
-                        inference_configs.len()
-                    );
-                    inferences::start(
-                        self.normfs.clone(),
-                        self.engine.clone(),
-                        inference_configs.clone(),
-                    )
-                    .await?;
-                } else {
-                    log::info!("Inference explicitly disabled (empty config)");
-                }
+            Some(inference_configs) if !inference_configs.is_empty() => {
+                log::info!(
+                    "Starting inference driver with {} configurations",
+                    inference_configs.len()
+                );
+                inferences::start(
+                    self.normfs.clone(),
+                    self.engine.clone(),
+                    inference_configs.clone(),
+                )
+                .await?;
+            }
+            Some(_) => {
+                log::info!("Inference explicitly disabled (empty config)");
             }
             None => {
                 // User did not specify inference config, use default normvla

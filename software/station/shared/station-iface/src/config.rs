@@ -1,15 +1,29 @@
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Deserializer, Serialize};
 use std::path::{Path, PathBuf};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Config {
     pub drivers: Drivers,
 
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(
+        default,
+        deserialize_with = "deserialize_inference_configs",
+        skip_serializing_if = "Option::is_none"
+    )]
     pub inference: Option<Vec<Inference>>,
 
     #[serde(rename = "cloud-offload", skip_serializing_if = "Option::is_none")]
     pub cloud_offload: Option<CloudOffloadConfig>,
+}
+
+fn deserialize_inference_configs<'de, D>(
+    deserializer: D,
+) -> Result<Option<Vec<Inference>>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let inference = Option::<Vec<Inference>>::deserialize(deserializer)?;
+    Ok(Some(inference.unwrap_or_default()))
 }
 
 impl Default for Config {
@@ -232,7 +246,7 @@ pub struct UsbVideoConfig {
 
     /// Target size for resizing frames (shortest dimension). Default: 224
     /// Set to 0 to disable resizing.
-    #[serde(default = "default_resize_target")]
+    #[serde(default = "default_resize_target", alias = "resize-target")]
     pub resize_target: u32,
 
     /// Requested camera capture resolution: "auto" or "<width>x<height>".
@@ -473,6 +487,39 @@ impl Config {
             config.to_file(path)?;
             Ok(config)
         }
+    }
+}
+
+#[cfg(test)]
+mod config_tests {
+    use super::Config;
+
+    const MINIMAL_CONFIG: &str = "drivers:\n  system-info: true\n";
+
+    #[test]
+    fn omitted_inference_config_stays_unspecified() {
+        let cfg: Config = serde_yaml::from_str(MINIMAL_CONFIG).unwrap();
+        assert!(cfg.inference.is_none());
+    }
+
+    #[test]
+    fn bare_inference_config_is_explicitly_empty() {
+        let cfg: Config =
+            serde_yaml::from_str("drivers:\n  system-info: true\ninference:\n").unwrap();
+        assert_eq!(cfg.inference.as_ref().map(Vec::len), Some(0));
+    }
+
+    #[test]
+    fn empty_inference_list_is_explicitly_empty() {
+        let cfg: Config =
+            serde_yaml::from_str("drivers:\n  system-info: true\ninference: []\n").unwrap();
+        assert_eq!(cfg.inference.as_ref().map(Vec::len), Some(0));
+    }
+
+    #[test]
+    fn default_config_still_creates_normvla_inference() {
+        let cfg = Config::default();
+        assert_eq!(cfg.inference.as_ref().map(Vec::len), Some(1));
     }
 }
 
