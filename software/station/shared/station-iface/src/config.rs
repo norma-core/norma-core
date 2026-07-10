@@ -77,13 +77,6 @@ pub struct Drivers {
 
     #[serde(rename = "ina226", skip_serializing_if = "Option::is_none")]
     pub ina226: Option<Ina226Config>,
-
-    #[serde(
-        rename = "airgradient-open-air-o-1pst",
-        default,
-        skip_serializing_if = "Option::is_none"
-    )]
-    pub airgradient_open_air_o_1pst: Option<AirGradientOpenAirO1pstConfig>,
 }
 
 /// ST3215 servo bus configuration
@@ -236,14 +229,31 @@ impl Inference {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct UsbVideoConfig {
     pub enabled: bool,
+
     /// Target size for resizing frames (shortest dimension). Default: 224
     /// Set to 0 to disable resizing.
     #[serde(default = "default_resize_target")]
     pub resize_target: u32,
+
+    /// Requested camera capture resolution: "auto" or "<width>x<height>".
+    /// Selects which camera format to open; does not affect the stored frame
+    /// size, which `resize_target` controls. An unparseable value logs a
+    /// warning at startup and behaves as "auto".
+    #[serde(default = "default_resolution")]
+    pub resolution: String,
+
+    /// Drop this many frames after each frame that is kept, so 1 of every
+    /// `frame_skip + 1` frames is recorded. Default 0 keeps every frame.
+    #[serde(rename = "frame-skip", default)]
+    pub frame_skip: u32,
 }
 
 fn default_resize_target() -> u32 {
     224
+}
+
+fn default_resolution() -> String {
+    "auto".to_string()
 }
 
 impl Default for UsbVideoConfig {
@@ -251,6 +261,8 @@ impl Default for UsbVideoConfig {
         Self {
             enabled: true,
             resize_target: 224,
+            resolution: default_resolution(),
+            frame_skip: 0,
         }
     }
 }
@@ -397,55 +409,6 @@ impl Default for Ina226Config {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct AirGradientOpenAirO1pstConfig {
-    #[serde(default)]
-    pub enabled: bool,
-
-    /// Explicit serial port path (e.g. `/dev/ttyACM0`). When set, USB VID/PID
-    /// scanning is disabled and this port is used directly.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub port: Option<String>,
-
-    #[serde(
-        rename = "port-baud-rate",
-        default = "default_airgradient_open_air_o_1pst_port_baud_rate"
-    )]
-    pub port_baud_rate: u32,
-
-    /// USB `"vid:pid"` hex pairs to auto-match, e.g. `["303a:1001", "1a86:7523"]`.
-    /// Empty uses the built-in defaults.
-    #[serde(rename = "usb-match", default, skip_serializing_if = "Vec::is_empty")]
-    pub usb_match: Vec<String>,
-
-    #[serde(
-        rename = "read-timeout",
-        with = "humantime_serde",
-        default = "default_airgradient_open_air_o_1pst_read_timeout"
-    )]
-    pub read_timeout: std::time::Duration,
-}
-
-fn default_airgradient_open_air_o_1pst_port_baud_rate() -> u32 {
-    115_200
-}
-
-fn default_airgradient_open_air_o_1pst_read_timeout() -> std::time::Duration {
-    std::time::Duration::from_secs(10)
-}
-
-impl Default for AirGradientOpenAirO1pstConfig {
-    fn default() -> Self {
-        Self {
-            enabled: false,
-            port: None,
-            port_baud_rate: default_airgradient_open_air_o_1pst_port_baud_rate(),
-            usb_match: Vec::new(),
-            read_timeout: default_airgradient_open_air_o_1pst_read_timeout(),
-        }
-    }
-}
-
 fn default_ov5647_dimension() -> String {
     "320x240".to_string()
 }
@@ -481,7 +444,6 @@ impl Default for Drivers {
             ov5647: None,
             arduino_nicla_sense_env: None,
             ina226: None,
-            airgradient_open_air_o_1pst: None,
         }
     }
 }
@@ -511,5 +473,47 @@ impl Config {
             config.to_file(path)?;
             Ok(config)
         }
+    }
+}
+
+#[cfg(test)]
+mod usb_video_config_tests {
+    use super::UsbVideoConfig;
+
+    #[test]
+    fn test_defaults_when_only_enabled_is_given() {
+        let cfg: UsbVideoConfig = serde_yaml::from_str("enabled: true").unwrap();
+        assert!(cfg.enabled);
+        assert_eq!(cfg.resize_target, 224);
+        assert_eq!(cfg.resolution, "auto");
+        assert_eq!(cfg.frame_skip, 0);
+    }
+
+    #[test]
+    fn test_parses_resolution_and_frame_skip() {
+        let yaml = "enabled: true\nresolution: \"1280x720\"\nframe-skip: 2\n";
+        let cfg: UsbVideoConfig = serde_yaml::from_str(yaml).unwrap();
+        assert_eq!(cfg.resolution, "1280x720");
+        assert_eq!(cfg.frame_skip, 2);
+    }
+
+    #[test]
+    fn test_resize_target_accepts_both_spellings() {
+        let snake: UsbVideoConfig =
+            serde_yaml::from_str("enabled: true\nresize_target: 128\n").unwrap();
+        assert_eq!(snake.resize_target, 128);
+
+        let kebab: UsbVideoConfig =
+            serde_yaml::from_str("enabled: true\nresize-target: 128\n").unwrap();
+        assert_eq!(kebab.resize_target, 128);
+    }
+
+    #[test]
+    fn test_bad_resolution_string_still_deserializes() {
+        // Validation happens at the usbvideo boundary, not in serde,
+        // so a typo must never block startup.
+        let cfg: UsbVideoConfig =
+            serde_yaml::from_str("enabled: true\nresolution: \"720p\"\n").unwrap();
+        assert_eq!(cfg.resolution, "720p");
     }
 }

@@ -3027,6 +3027,7 @@ dependencies = [
  "md5",
  "norm-uvc-sys",
  "normfs",
+ "parking_lot",
  "prost",
  "prost-build",
  "station_iface",

@@ -1,3 +1,4 @@
+use crate::Resolution;
 use crate::usbvideo_proto::usbvideo;
 
 pub fn fourcc_from_u32(fourcc: u32) -> [u8; 4] {
@@ -8,45 +9,80 @@ pub fn fourcc_to_string(format: &[u8; 4]) -> String {
     String::from_utf8_lossy(format).into()
 }
 
+/// The formats a camera should be tried with, in preference order.
+pub struct FormatSelection {
+    pub formats: Vec<usbvideo::CameraFormat>,
+
+    /// A resolution was requested but no format matched it, so the automatic
+    /// ordering was used instead. Callers log a warning naming the camera.
+    pub resolution_fallback: bool,
+}
+
+/// The automatic preference order: MJPEG first, then highest frame rate,
+/// then lowest pixel count.
+fn format_cmp(a: &usbvideo::CameraFormat, b: &usbvideo::CameraFormat) -> std::cmp::Ordering {
+    let a_fourcc = FourCCFormat::from_fourcc_u32(a.fourcc).unwrap();
+    let b_fourcc = FourCCFormat::from_fourcc_u32(b.fourcc).unwrap();
+
+    let a_is_mjpeg = a_fourcc == FourCCFormat::Mjpeg;
+    let b_is_mjpeg = b_fourcc == FourCCFormat::Mjpeg;
+
+    // First priority: MJPEG format
+    match (a_is_mjpeg, b_is_mjpeg) {
+        (true, false) => return std::cmp::Ordering::Less,
+        (false, true) => return std::cmp::Ordering::Greater,
+        _ => {}
+    }
+
+    // Second priority: Maximum framerate (descending order)
+    match b.frames_per_second.partial_cmp(&a.frames_per_second) {
+        Some(std::cmp::Ordering::Equal) | None => {}
+        Some(other) => return other,
+    }
+
+    // Third priority: Resolution (ascending order - prefer lower resolution)
+    let a_resolution = a.width as u64 * a.height as u64;
+    let b_resolution = b.width as u64 * b.height as u64;
+    a_resolution.cmp(&b_resolution)
+}
+
+/// Filter to convertible formats and order them by preference.
+///
+/// When `resolution` is `Some`, formats matching it exactly are ordered first,
+/// and the remaining formats follow as a fallback tail. The tail matters:
+/// `pipeline.rs` walks this list and stops at the first format that actually
+/// yields frames, so a list containing only the requested resolution could
+/// leave a camera recording nothing if every matching format failed to open.
 pub fn filter_and_sort_cameras_formats(
-    formats: &[usbvideo::CameraFormat]
-) -> Vec<usbvideo::CameraFormat> {
-    let mut suitable_formats: Vec<usbvideo::CameraFormat> = formats
+    formats: &[usbvideo::CameraFormat],
+    resolution: Option<Resolution>,
+) -> FormatSelection {
+    let suitable_formats: Vec<usbvideo::CameraFormat> = formats
         .iter()
-        .filter(|format| {
-            let fourcc = format.fourcc;
-            FourCCFormat::from_fourcc_u32(fourcc).is_some()
-        })
+        .filter(|format| FourCCFormat::from_fourcc_u32(format.fourcc).is_some())
         .cloned()
         .collect();
 
-    suitable_formats.sort_by(|a, b| {
-        let a_fourcc = FourCCFormat::from_fourcc_u32(a.fourcc).unwrap();
-        let b_fourcc = FourCCFormat::from_fourcc_u32(b.fourcc).unwrap();
-        
-        let a_is_mjpeg = a_fourcc == FourCCFormat::Mjpeg;
-        let b_is_mjpeg = b_fourcc == FourCCFormat::Mjpeg;
+    let Some(requested) = resolution else {
+        let mut formats = suitable_formats;
+        formats.sort_by(format_cmp);
+        return FormatSelection { formats, resolution_fallback: false };
+    };
 
-        // First priority: MJPEG format
-        match (a_is_mjpeg, b_is_mjpeg) {
-            (true, false) => return std::cmp::Ordering::Less,
-            (false, true) => return std::cmp::Ordering::Greater,
-            _ => {}
-        }
+    let (mut matched, mut rest): (Vec<_>, Vec<_>) = suitable_formats
+        .into_iter()
+        .partition(|f| f.width == requested.width && f.height == requested.height);
 
-        // Second priority: Maximum framerate (descending order)
-        match b.frames_per_second.partial_cmp(&a.frames_per_second) {
-            Some(std::cmp::Ordering::Equal) | None => {}
-            Some(other) => return other,
-        }
+    if matched.is_empty() {
+        rest.sort_by(format_cmp);
+        return FormatSelection { formats: rest, resolution_fallback: true };
+    }
 
-        // Third priority: Resolution (ascending order - prefer lower resolution)
-        let a_resolution = a.width as u64 * a.height as u64;
-        let b_resolution = b.width as u64 * b.height as u64;
-        a_resolution.cmp(&b_resolution)
-    });
+    matched.sort_by(format_cmp);
+    rest.sort_by(format_cmp);
+    matched.extend(rest);
 
-    suitable_formats
+    FormatSelection { formats: matched, resolution_fallback: false }
 }
 
 /// Supported FourCC formats for conversion
@@ -114,5 +150,102 @@ impl FourCCFormat {
             FourCCFormat::Abgr => "ABGR",
             FourCCFormat::Mjpeg => "MJPG",
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::Resolution;
+
+    fn fmt(fourcc: &[u8; 4], width: u32, height: u32, fps: f32) -> usbvideo::CameraFormat {
+        usbvideo::CameraFormat {
+            fourcc: u32::from_be_bytes(*fourcc),
+            index: 0,
+            width,
+            height,
+            frames_per_second: fps,
+            guid: Default::default(),
+            frame_index: 0,
+        }
+    }
+
+    fn dims(sel: &FormatSelection) -> Vec<(u32, u32)> {
+        sel.formats.iter().map(|f| (f.width, f.height)).collect()
+    }
+
+    #[test]
+    fn test_auto_uses_existing_ordering() {
+        let formats = vec![
+            fmt(b"YUY2", 640, 480, 30.0),
+            fmt(b"MJPG", 1280, 720, 30.0),
+        ];
+        let sel = filter_and_sort_cameras_formats(&formats, None);
+        assert!(!sel.resolution_fallback);
+        // MJPEG wins over YUY2 regardless of resolution
+        assert_eq!(dims(&sel), vec![(1280, 720), (640, 480)]);
+    }
+
+    #[test]
+    fn test_unsupported_fourcc_is_filtered_out() {
+        let formats = vec![fmt(b"XXXX", 640, 480, 30.0), fmt(b"MJPG", 640, 480, 30.0)];
+        let sel = filter_and_sort_cameras_formats(&formats, None);
+        assert_eq!(sel.formats.len(), 1);
+        assert_eq!(sel.formats[0].fourcc, u32::from_be_bytes(*b"MJPG"));
+    }
+
+    #[test]
+    fn test_exact_match_sorts_first() {
+        let formats = vec![
+            fmt(b"MJPG", 640, 480, 60.0),
+            fmt(b"YUY2", 1280, 720, 10.0),
+        ];
+        let res = Some(Resolution { width: 1280, height: 720 });
+        let sel = filter_and_sort_cameras_formats(&formats, res);
+        assert!(!sel.resolution_fallback);
+        // 1280x720 first even though 640x480 MJPEG would win the auto sort
+        assert_eq!(dims(&sel), vec![(1280, 720), (640, 480)]);
+    }
+
+    #[test]
+    fn test_mjpeg_and_fps_ordering_within_matches() {
+        let formats = vec![
+            fmt(b"YUY2", 1280, 720, 30.0),
+            fmt(b"MJPG", 1280, 720, 15.0),
+            fmt(b"MJPG", 1280, 720, 60.0),
+        ];
+        let res = Some(Resolution { width: 1280, height: 720 });
+        let sel = filter_and_sort_cameras_formats(&formats, res);
+        assert!(!sel.resolution_fallback);
+        let fps: Vec<f32> = sel.formats.iter().map(|f| f.frames_per_second).collect();
+        // MJPEG first (60 then 15), then YUY2
+        assert_eq!(fps, vec![60.0, 15.0, 30.0]);
+    }
+
+    #[test]
+    fn test_non_matching_formats_kept_as_tail() {
+        let formats = vec![
+            fmt(b"MJPG", 640, 480, 30.0),
+            fmt(b"MJPG", 1280, 720, 30.0),
+            fmt(b"YUY2", 320, 240, 30.0),
+        ];
+        let res = Some(Resolution { width: 1280, height: 720 });
+        let sel = filter_and_sort_cameras_formats(&formats, res);
+        assert!(!sel.resolution_fallback);
+        // Match first, then the rest in auto order (MJPEG 640x480, then YUY2)
+        assert_eq!(dims(&sel), vec![(1280, 720), (640, 480), (320, 240)]);
+    }
+
+    #[test]
+    fn test_no_match_falls_back_to_auto_and_sets_flag() {
+        let formats = vec![
+            fmt(b"YUY2", 640, 480, 30.0),
+            fmt(b"MJPG", 320, 240, 30.0),
+        ];
+        let res = Some(Resolution { width: 1920, height: 1080 });
+        let sel = filter_and_sort_cameras_formats(&formats, res);
+        assert!(sel.resolution_fallback);
+        // Nothing dropped; auto ordering applied
+        assert_eq!(dims(&sel), vec![(320, 240), (640, 480)]);
     }
 }

@@ -11,6 +11,7 @@ station_iface = { path = "../../station/shared/station-iface" }
 prost = { workspace = true }
 bytes = { workspace = true }
 log = { workspace = true }
+parking_lot = { workspace = true }
 libc = "0.2"
 md5 = "0.5.0"
 zune-jpeg = "0.5.5"
