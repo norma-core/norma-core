@@ -10,8 +10,8 @@ import {
   type PointerEvent
 } from 'react';
 import { commandManager } from '@/api/commands.js';
-import { CONTROL_SLIDER_CLASS_NAME } from '@/yahboom_dogzilla_lite/control-classes';
-import HeadingTape from '@/yahboom_dogzilla_lite/HeadingTape';
+import { CONTROL_SLIDER_CLASS_NAME } from '@/devices/yahboom-dogzilla-lite/ui/control-classes';
+import HeadingTape from '@/devices/yahboom-dogzilla-lite/ui/HeadingTape';
 
 interface MovementPanelProps {
   deviceSerial: string;

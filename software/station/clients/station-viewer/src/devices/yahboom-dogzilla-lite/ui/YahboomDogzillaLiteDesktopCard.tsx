@@ -3,8 +3,8 @@ import Long from 'long';
 import type { FrameEntry } from '@/api/frame-parser';
 import { serverToLocal } from '@/api/timestamp-utils';
 import { yahboom_dogzilla_lite, usbvideo } from '@/api/proto.js';
-import YahboomDogzillaLiteDesktopDashboard from '@/yahboom_dogzilla_lite/YahboomDogzillaLiteDesktopDashboard';
-import YahboomDogzillaLiteViewModeSwitch, { type YahboomDogzillaLiteViewMode } from '@/yahboom_dogzilla_lite/YahboomDogzillaLiteViewModeSwitch';
+import YahboomDogzillaLiteDesktopDashboard from '@/devices/yahboom-dogzilla-lite/ui/YahboomDogzillaLiteDesktopDashboard';
+import YahboomDogzillaLiteViewModeSwitch, { type YahboomDogzillaLiteViewMode } from '@/devices/yahboom-dogzilla-lite/ui/YahboomDogzillaLiteViewModeSwitch';
 import { getVideoSourceId, getVideoSourceLabel } from '@/usbvideo/camera-source';
 import { getLatencyBgColor, getLatencyTextColor } from '@/utils/color-utils';
 

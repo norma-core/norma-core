@@ -22,6 +22,8 @@ const EMPTY_VALUES: AirGradientValues = {
   noxIndex: null,
 };
 
+const textDecoder = new TextDecoder();
+
 function opt(value: unknown): number | null {
   return typeof value === 'number' && Number.isFinite(value) ? value : null;
 }
@@ -40,7 +42,7 @@ function sanitizeNonFinite(json: string): string {
 
 // The driver forwards the full raw serial line as bytes; the JSON is parsed here.
 export function airGradientLineText(data: Uint8Array | null | undefined): string {
-  return data && data.length > 0 ? new TextDecoder().decode(data) : '';
+  return data && data.length > 0 ? textDecoder.decode(data) : '';
 }
 
 export function readAirGradientValues(

@@ -2,9 +2,9 @@ import { useState } from 'react';
 import { airgradient_open_air_o_1pst, arduino_nicla_sense_env, ina226, usbvideo, st3215, motors_mirroring, sysinfo, yahboom_dogzilla_lite, normvla, vesc_trampa } from '@/api/proto.js';
 import { formatBytes, parseUsbVideoData, parseMirroringData, parseSysinfoData, parseArduinoNiclaSenseEnvData, parseIna226Data, parseAirGradientData, parseYahboomDogzillaLiteData, parseNormvlaData } from '@/components/history/history-utils';
 import ExpandedView from '@/components/history/ExpandedView';
-import { readArduinoNiclaSenseEnvMainValues } from '@/utils/arduino-nicla-sense-env';
-import { formatIna226Current, readIna226CurrentAmps, readIna226ShuntMillivolts } from '@/utils/ina226';
-import { airGradientDeviceLabel, readAirGradientValues } from '@/utils/airgradient-open-air-o-1pst';
+import { readArduinoNiclaSenseEnvMainValues } from '@/devices/arduino-nicla-sense-env/values';
+import { formatIna226Current, readIna226CurrentAmps, readIna226ShuntMillivolts } from '@/devices/ina226/values';
+import { airGradientDeviceLabel, readAirGradientValues } from '@/devices/airgradient-open-air-o-1pst/values';
 
 export interface HistoryElementData {
   queueId: string;

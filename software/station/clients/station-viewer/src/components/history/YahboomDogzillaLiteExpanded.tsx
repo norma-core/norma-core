@@ -1,6 +1,6 @@
 import { memo } from 'react';
 import { yahboom_dogzilla_lite } from '@/api/proto.js';
-import YahboomDogzillaLiteViewer from '@/yahboom_dogzilla_lite/YahboomDogzillaLiteViewer';
+import YahboomDogzillaLiteViewer from '@/devices/yahboom-dogzilla-lite/ui/YahboomDogzillaLiteViewer';
 
 interface YahboomDogzillaLiteExpandedProps {
   data: yahboom_dogzilla_lite.InferenceState;
