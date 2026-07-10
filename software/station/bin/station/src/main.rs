@@ -32,6 +32,7 @@ pub mod station_proto {
 
 mod inference;
 mod queues;
+mod size;
 mod tags;
 mod web;
 
@@ -41,12 +42,12 @@ const VERSION: &str = concat!(env!("CARGO_PKG_VERSION"), " (", env!("GIT_HASH"),
 #[derive(Parser, Debug)]
 #[command(name = "NormaCore.Dev station", author, version = VERSION, about, long_about = None)]
 struct Args {
-    /// Maximum queue disk size in bytes
-    #[arg(long, default_value = "2147483648")] // 2GB default
+    /// Maximum queue disk size, e.g. `2G`, `512M`, or a plain byte count
+    #[arg(long, default_value = "2G", value_parser = size::parse_size::<u64>)]
     max_queue_disk_size: u64,
 
-    /// Maximum in-memory buffer size in bytes
-    #[arg(long, default_value = "268435456")] // 256MB default
+    /// Maximum in-memory buffer size, e.g. `256M`, `1.5G`, or a plain byte count
+    #[arg(long, default_value = "256M", value_parser = size::parse_size::<usize>)]
     max_memory_usage: usize,
 
     /// Base folder for normfs storage
