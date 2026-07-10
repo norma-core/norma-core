@@ -235,8 +235,23 @@ drivers:
   # USB video capture
   usb-video:
     enabled: true
-    resize-target: 224  # Resize shortest dimension to 224px
+    resolution: auto      # Capture format: "auto" or "<width>x<height>", e.g. "1280x720"
+    resize_target: 224    # Resize shortest dimension of stored frames to 224px
+    frame-skip: 0         # Drop N frames after each kept frame; 0 records every frame
+```
 
+`resolution` chooses which camera format to open. Cameras that do not offer the
+requested resolution log a warning and fall back to automatic format selection.
+It is independent of `resize_target`, which controls the size of the stored
+frames: you can capture at `1280x720` and store at `224`.
+
+`frame-skip` thins the recorded stream — `frame-skip: 2` drops two frames after
+each frame it keeps, recording one of every three. Skipped frames are discarded
+before any image conversion, so this reduces CPU load. Note that the live camera
+view in `station-viewer` reads the same queue as the recorder, so `frame-skip`
+also thins the live preview by the same factor.
+
+```yaml
 # ML inference integration
 inference:
   - queue-id: "inference/normvla"
