@@ -4,7 +4,7 @@ import { formatBytes, parseUsbVideoData, parseMirroringData, parseSysinfoData, p
 import ExpandedView from '@/components/history/ExpandedView';
 import { readArduinoNiclaSenseEnvMainValues } from '@/devices/arduino-nicla-sense-env/values';
 import { formatIna226Current, readIna226CurrentAmps, readIna226ShuntMillivolts } from '@/devices/ina226/values';
-import { airGradientDeviceLabel, readAirGradientValues } from '@/utils/airgradient-open-air-o-1pst';
+import { airGradientDeviceLabel, readAirGradientValues } from '@/devices/airgradient-open-air-o-1pst/values';
 
 export interface HistoryElementData {
   queueId: string;

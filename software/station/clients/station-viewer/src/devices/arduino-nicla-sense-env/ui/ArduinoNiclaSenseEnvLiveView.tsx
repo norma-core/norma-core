@@ -1,4 +1,5 @@
 import type { arduino_nicla_sense_env } from '@/api/proto.js';
+import DeviceMetricPill from '@/components/DeviceMetricPill';
 import DeviceWidgetShell from '@/components/DeviceWidgetShell';
 import { readArduinoNiclaSenseEnvMainValues } from '../values';
 
@@ -34,21 +35,6 @@ function deviceLabel(data: arduino_nicla_sense_env.IRxEnvelope): string {
   return `bus ${data.device.i2cBus ?? 'N/A'} / ${hexByte(data.device.i2cAddress)}`;
 }
 
-interface MetricPillProps {
-  label: string;
-  value: string;
-  tone: string;
-}
-
-function MetricPill({ label, value, tone }: MetricPillProps) {
-  return (
-    <div className="min-w-0 rounded bg-surface-primary/70 px-2 py-1">
-      <span className="mr-1 text-[10px] uppercase text-text-label">{label}</span>
-      <span className={`font-mono text-xs font-semibold ${tone}`} title={value}>{value}</span>
-    </div>
-  );
-}
-
 export interface ArduinoNiclaSenseEnvLiveViewProps {
   data: arduino_nicla_sense_env.IRxEnvelope;
 }
@@ -75,8 +61,8 @@ function ArduinoNiclaSenseEnvLiveView({ data }: ArduinoNiclaSenseEnvLiveViewProp
         </div>
       </div>
       <div className="mt-2 flex min-w-0 flex-wrap gap-1.5">
-        <MetricPill label="AQI" value={formatInteger(values.epaAqi)} tone="text-accent-warning" />
-        <MetricPill label="eCO2" value={formatMeasured(values.eco2Ppm, 'ppm', 0)} tone="text-accent-success" />
+        <DeviceMetricPill label="AQI" value={formatInteger(values.epaAqi)} tone="text-accent-warning" />
+        <DeviceMetricPill label="eCO2" value={formatMeasured(values.eco2Ppm, 'ppm', 0)} tone="text-accent-success" />
       </div>
     </DeviceWidgetShell>
   );
