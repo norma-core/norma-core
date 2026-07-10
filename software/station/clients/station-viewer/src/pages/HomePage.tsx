@@ -11,6 +11,7 @@ import { defaultTag } from "@/utils/tag-phrases";
 import { getFPSColor } from '@/utils/color-utils';
 import LiveDeviceSurface from '@/devices/LiveDeviceSurface';
 import { resolveLiveDevices } from '@/devices/live-registry';
+import CameraSurface from '@/usbvideo/CameraSurface';
 
 interface TagDialogState {
   entryId: number | null;
@@ -48,6 +49,17 @@ function HomePage() {
     [inferenceState],
   );
   const hasLiveDeviceViews = !liveDevicePlan.isEmpty;
+  const videoSources = inferenceState?.videoQueues ?? [];
+  const hasConnectedArms = Boolean(inferenceState?.st3215?.data.buses?.length);
+  const hasConnectedDog = Boolean(inferenceState?.yahboom_dogzilla_lite?.data.devices?.length);
+  const shouldShowStandaloneCameras = videoSources.length > 0
+    && !hasConnectedArms
+    && !hasConnectedDog;
+  const hasOnlySummaryDeviceViews = liveDevicePlan.views.length > 0
+    && liveDevicePlan.views.every((view) => view.slot === 'summary')
+    && liveDevicePlan.errors.length === 0;
+  const shouldUseCameraSensorLayout = shouldShowStandaloneCameras
+    && hasOnlySummaryDeviceViews;
   const isDesktopApp = window.stationDesktop?.isDesktop === true;
 
   useEffect(() => {
@@ -188,9 +200,28 @@ function HomePage() {
       )}
       <div className="flex-1 min-h-0 overflow-auto p-4">
         <div className="flex min-h-full w-full flex-col gap-4">
-          {hasLiveDeviceViews ? (
-            <LiveDeviceSurface plan={liveDevicePlan} />
+          {shouldUseCameraSensorLayout ? (
+            <div className="grid w-full gap-4 xl:grid-cols-[minmax(0,2fr)_minmax(20rem,1fr)] xl:items-start">
+              <CameraSurface
+                videoSources={videoSources}
+                desktopAspectRatio
+              />
+              <LiveDeviceSurface
+                plan={liveDevicePlan}
+                summaryLayout="stacked"
+              />
+            </div>
           ) : (
+            <>
+              {shouldShowStandaloneCameras && (
+                <CameraSurface videoSources={videoSources} />
+              )}
+              {hasLiveDeviceViews && (
+                <LiveDeviceSurface plan={liveDevicePlan} />
+              )}
+            </>
+          )}
+          {!hasLiveDeviceViews && !shouldShowStandaloneCameras && (
             <div className="flex flex-1 min-h-full w-full items-center justify-center rounded-lg border border-dashed border-border-default bg-surface-primary/40 px-6">
               <AsciiRobot />
             </div>

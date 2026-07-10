@@ -12,7 +12,7 @@ import { getLatencyBgColor, getLatencyTextColor } from '@/utils/color-utils';
 import CameraViewer from '@/usbvideo/CameraViewer';
 import RobotCameraView from '@/usbvideo/RobotCameraView';
 import BusWebGLRenderer from '@/st3215/BusWebGLRenderer';
-import CameraHudControls from '@/st3215/CameraHudControls';
+import CameraHudControls from '@/usbvideo/CameraHudControls';
 import MotorDataTable from '@/st3215/MotorDataTable';
 import { ADDR_GOAL_POSITION, getMotorPosition } from '@/st3215/motor-parser';
 

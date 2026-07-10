@@ -2,7 +2,7 @@ import { memo, useEffect, useMemo, useRef, useState, type ReactNode } from 'reac
 import { Scan } from 'lucide-react';
 import { commandManager } from '@/api/commands.js';
 import { yahboom_dogzilla_lite } from '@/api/proto.js';
-import CameraHudControls from '@/st3215/CameraHudControls';
+import CameraHudControls from '@/usbvideo/CameraHudControls';
 import YahboomDogzillaLiteDesktopActionPanel from '@/devices/yahboom-dogzilla-lite/ui/YahboomDogzillaLiteDesktopActionPanel';
 import YahboomDogzillaLiteDesktopMovementPanel from '@/devices/yahboom-dogzilla-lite/ui/YahboomDogzillaLiteDesktopMovementPanel';
 import type { YahboomDogzillaLiteViewMode } from '@/devices/yahboom-dogzilla-lite/ui/YahboomDogzillaLiteViewModeSwitch';
