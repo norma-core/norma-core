@@ -3,11 +3,11 @@ import { Scan } from 'lucide-react';
 import { commandManager } from '@/api/commands.js';
 import { yahboom_dogzilla_lite } from '@/api/proto.js';
 import CameraHudControls from '@/st3215/CameraHudControls';
-import YahboomDogzillaLiteDesktopActionPanel from '@/yahboom_dogzilla_lite/YahboomDogzillaLiteDesktopActionPanel';
-import YahboomDogzillaLiteDesktopMovementPanel from '@/yahboom_dogzilla_lite/YahboomDogzillaLiteDesktopMovementPanel';
-import type { YahboomDogzillaLiteViewMode } from '@/yahboom_dogzilla_lite/YahboomDogzillaLiteViewModeSwitch';
-import YahboomDogzillaLiteViewer from '@/yahboom_dogzilla_lite/YahboomDogzillaLiteViewer';
-import { getYahboomDogzillaLiteModelLabel } from '@/yahboom_dogzilla_lite/model-labels';
+import YahboomDogzillaLiteDesktopActionPanel from '@/devices/yahboom-dogzilla-lite/ui/YahboomDogzillaLiteDesktopActionPanel';
+import YahboomDogzillaLiteDesktopMovementPanel from '@/devices/yahboom-dogzilla-lite/ui/YahboomDogzillaLiteDesktopMovementPanel';
+import type { YahboomDogzillaLiteViewMode } from '@/devices/yahboom-dogzilla-lite/ui/YahboomDogzillaLiteViewModeSwitch';
+import YahboomDogzillaLiteViewer from '@/devices/yahboom-dogzilla-lite/ui/YahboomDogzillaLiteViewer';
+import { getYahboomDogzillaLiteModelLabel } from '@/devices/yahboom-dogzilla-lite/ui/model-labels';
 import CameraViewer from '@/usbvideo/CameraViewer';
 import { getGradientClass } from '@/utils/color-utils';
 

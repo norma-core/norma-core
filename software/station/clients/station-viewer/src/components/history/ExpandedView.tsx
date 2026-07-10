@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { airgradient_open_air_o_1pst, arduino_nicla_sense_env, ina226, usbvideo, st3215, motors_mirroring, sysinfo, yahboom_dogzilla_lite, normvla, vesc_trampa } from '@/api/proto.js';
 import ArduinoNiclaSenseEnvExpanded from '@/components/history/ArduinoNiclaSenseEnvExpanded';
 import Ina226Expanded from '@/components/history/Ina226Expanded';
-import { airGradientDeviceLabel, airGradientLineText, readAirGradientValues } from '@/utils/airgradient-open-air-o-1pst';
+import { airGradientDeviceLabel, airGradientLineText, readAirGradientValues } from '@/devices/airgradient-open-air-o-1pst/values';
 import { createCroppedJson } from '@/components/history/history-utils';
 import RawBytesExpanded from '@/components/history/RawBytesExpanded';
 import MirroringExpanded from '@/components/history/MirroringExpanded';

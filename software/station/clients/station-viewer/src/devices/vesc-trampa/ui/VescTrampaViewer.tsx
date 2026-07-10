@@ -2,19 +2,19 @@ import { memo } from 'react';
 import { vesc_trampa } from '@/api/proto.js';
 import VescTrampaCard from './VescTrampaCard';
 
-interface VescTrampaViewerProps {
-  inferenceState: vesc_trampa.IInferenceState;
+export interface VescTrampaViewerProps {
+  data: vesc_trampa.IInferenceState;
 }
 
-const VescTrampaViewer = memo(function VescTrampaViewer({ inferenceState }: VescTrampaViewerProps) {
-  if (!inferenceState.boards?.length) {
+const VescTrampaViewer = memo(function VescTrampaViewer({ data }: VescTrampaViewerProps) {
+  if (!data.boards?.length) {
     return null;
   }
 
   return (
     <div className="w-full font-mono text-accent-success">
       <div className="grid w-full grid-cols-1 gap-4 xl:grid-cols-2">
-        {inferenceState.boards.map((boardState, boardIndex) => (
+        {data.boards.map((boardState, boardIndex) => (
           <VescTrampaCard
             key={boardState.board?.uuid?.length ? Array.from(boardState.board.uuid).join('-') : boardState.board?.portName ?? boardIndex}
             boardState={boardState}
