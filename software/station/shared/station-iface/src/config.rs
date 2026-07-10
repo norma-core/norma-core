@@ -91,6 +91,13 @@ pub struct Drivers {
 
     #[serde(rename = "ina226", skip_serializing_if = "Option::is_none")]
     pub ina226: Option<Ina226Config>,
+
+    #[serde(
+        rename = "airgradient-open-air-o-1pst",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub airgradient_open_air_o_1pst: Option<AirGradientOpenAirO1pstConfig>,
 }
 
 /// ST3215 servo bus configuration
@@ -423,6 +430,55 @@ impl Default for Ina226Config {
     }
 }
 
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct AirGradientOpenAirO1pstConfig {
+    #[serde(default)]
+    pub enabled: bool,
+
+    /// Explicit serial port path (e.g. `/dev/ttyACM0`). When set, USB VID/PID
+    /// scanning is disabled and this port is used directly.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub port: Option<String>,
+
+    #[serde(
+        rename = "port-baud-rate",
+        default = "default_airgradient_open_air_o_1pst_port_baud_rate"
+    )]
+    pub port_baud_rate: u32,
+
+    /// USB `"vid:pid"` hex pairs to auto-match, e.g. `["303a:1001", "1a86:7523"]`.
+    /// Empty uses the built-in defaults.
+    #[serde(rename = "usb-match", default, skip_serializing_if = "Vec::is_empty")]
+    pub usb_match: Vec<String>,
+
+    #[serde(
+        rename = "read-timeout",
+        with = "humantime_serde",
+        default = "default_airgradient_open_air_o_1pst_read_timeout"
+    )]
+    pub read_timeout: std::time::Duration,
+}
+
+fn default_airgradient_open_air_o_1pst_port_baud_rate() -> u32 {
+    115_200
+}
+
+fn default_airgradient_open_air_o_1pst_read_timeout() -> std::time::Duration {
+    std::time::Duration::from_secs(10)
+}
+
+impl Default for AirGradientOpenAirO1pstConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            port: None,
+            port_baud_rate: default_airgradient_open_air_o_1pst_port_baud_rate(),
+            usb_match: Vec::new(),
+            read_timeout: default_airgradient_open_air_o_1pst_read_timeout(),
+        }
+    }
+}
+
 fn default_ov5647_dimension() -> String {
     "320x240".to_string()
 }
@@ -458,6 +514,7 @@ impl Default for Drivers {
             ov5647: None,
             arduino_nicla_sense_env: None,
             ina226: None,
+            airgradient_open_air_o_1pst: None,
         }
     }
 }
@@ -520,6 +577,20 @@ mod config_tests {
     fn default_config_still_creates_normvla_inference() {
         let cfg = Config::default();
         assert_eq!(cfg.inference.as_ref().map(Vec::len), Some(1));
+    }
+
+    #[test]
+    fn parses_airgradient_open_air_o_1pst_config() {
+        let cfg: Config = serde_yaml::from_str(
+            "drivers:\n  system-info: true\n  airgradient-open-air-o-1pst:\n    enabled: true\n    port: /dev/ttyACM0\ninference:\n",
+        )
+        .unwrap();
+        let airgradient = cfg.drivers.airgradient_open_air_o_1pst.unwrap();
+        assert!(airgradient.enabled);
+        assert_eq!(airgradient.port.as_deref(), Some("/dev/ttyACM0"));
+        assert_eq!(airgradient.port_baud_rate, 115_200);
+        assert_eq!(airgradient.read_timeout, std::time::Duration::from_secs(10));
+        assert_eq!(cfg.inference.as_ref().map(Vec::len), Some(0));
     }
 }
 
