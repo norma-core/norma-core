@@ -46,7 +46,7 @@ struct Args {
     max_queue_disk_size: u64,
 
     /// Maximum in-memory buffer size in bytes
-    #[arg(long, default_value = "33554432")] // 32MB default
+    #[arg(long, default_value = "268435456")] // 256MB default
     max_memory_usage: usize,
 
     /// Base folder for normfs storage
