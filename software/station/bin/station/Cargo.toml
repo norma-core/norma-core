@@ -19,6 +19,7 @@ tokio = { workspace = true }
 station_iface = { path = "../../shared/station-iface" }
 st3215 = { path = "../../../drivers/st3215" }
 vesc-trampa = { path = "../../../drivers/vesc-trampa" }
+airgradient-open-air-o-1pst = { path = "../../../drivers/airgradient-open-air-o-1pst" }
 yahboom-dogzilla-lite = { path = "../../../drivers/yahboom-dogzilla-lite", optional = true }
 ov5647 = { path = "../../../drivers/ov5647", optional = true }
 systime = { path = "../../shared/systime-rs" }

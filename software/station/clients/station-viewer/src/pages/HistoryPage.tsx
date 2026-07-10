@@ -61,6 +61,7 @@ function HistoryPage() {
   const sysinfoCount = parsedFrame?.sysinfo ? 1 : 0;
   const arduinoNiclaSenseEnvCount = parsedFrame?.arduinoNiclaSenseEnv ? 1 : 0;
   const ina226Count = parsedFrame?.ina226?.length ?? 0;
+  const airgradientOpenAirCount = parsedFrame?.airgradientOpenAir ? 1 : 0;
   const yahboomDogzillaLiteCount = parsedFrame?.yahboom_dogzilla_lite ? 1 : 0;
   const normvlaCount = parsedFrame?.normvla ? 1 : 0;
   const st3215TxCount = parsedFrame?.st3215Tx ? 1 : 0;
@@ -72,7 +73,8 @@ function HistoryPage() {
   const sysinfoIndex = mirroringIndex + mirroringCount;
   const arduinoNiclaSenseEnvIndex = sysinfoIndex + sysinfoCount;
   const ina226Index = arduinoNiclaSenseEnvIndex + arduinoNiclaSenseEnvCount;
-  const yahboomDogzillaLiteIndex = ina226Index + ina226Count;
+  const airgradientOpenAirIndex = ina226Index + ina226Count;
+  const yahboomDogzillaLiteIndex = airgradientOpenAirIndex + airgradientOpenAirCount;
   const normvlaIndex = yahboomDogzillaLiteIndex + yahboomDogzillaLiteCount;
   const st3215TxIndex = normvlaIndex + normvlaCount;
   const otherEntriesIndex = st3215TxIndex + st3215TxCount;
@@ -465,6 +467,21 @@ function HistoryPage() {
                       dataQueueId={entry.queueId}
                     />
                   ))}
+                  {parsedFrame.airgradientOpenAir && (
+                    <HistoryElement
+                      element={{
+                        queueId: parsedFrame.airgradientOpenAir.queueId,
+                        entryId: parsedFrame.airgradientOpenAir.ptr,
+                        data: parsedFrame.airgradientOpenAir.data,
+                        rawData: parsedFrame.airgradientOpenAir.rawData ?? null,
+                        type: getQueueType(parsedFrame.airgradientOpenAir.queueType),
+                        queueType: parsedFrame.airgradientOpenAir.queueType,
+                      }}
+                      index={airgradientOpenAirIndex}
+                      dataQueueType="airgradient-open-air-o-1pst"
+                      dataQueueId={parsedFrame.airgradientOpenAir.queueId}
+                    />
+                  )}
                   {parsedFrame.yahboom_dogzilla_lite && (
                     <HistoryElement
                       element={{
