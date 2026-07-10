@@ -268,9 +268,21 @@ impl<K: USBCameraDriver> USBVideoManager<K> {
                             );
                         }
 
-                        let formats = converters::filter_and_sort_cameras_formats(
-                            &src_formats
+                        let selection = converters::filter_and_sort_cameras_formats(
+                            &src_formats,
+                            cam_tracker.resolution(),
                         );
+
+                        if selection.resolution_fallback
+                            && let Some(requested) = cam_tracker.resolution()
+                        {
+                            warn!(
+                                "Camera {}: requested resolution {}x{} is not available, falling back to automatic format selection",
+                                camera.unique_id, requested.width, requested.height,
+                            );
+                        }
+
+                        let formats = selection.formats;
 
                         if formats.is_empty() {
                             warn!("Camera {} has no available formats", camera.unique_id);

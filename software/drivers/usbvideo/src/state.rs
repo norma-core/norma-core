@@ -1,7 +1,9 @@
+use std::collections::HashMap;
 use std::sync::Arc;
 
 use bytes::{Bytes, BytesMut};
 use log::{error, warn};
+use parking_lot::Mutex;
 use prost::Message;
 use station_iface::{
     StationEngine, iface_proto::drivers::QueueDataType
@@ -18,11 +20,21 @@ use crate::{
     },
 };
 
+/// `frame_skip` is the number of frames dropped after each kept frame,
+/// so we keep 1 of every `frame_skip + 1`. `0` keeps every frame.
+fn should_keep(count: u64, frame_skip: u32) -> bool {
+    count.is_multiple_of(frame_skip as u64 + 1)
+}
+
 pub struct StateTracker<T: StationEngine> {
     normfs: Arc<NormFS>,
     station_engine: Arc<T>,
     config: crate::USBVideoConfig,
     inference_states_queue_id: normfs::QueueId,
+    /// Per-camera frame counters, keyed by `Camera::unique_id`.
+    /// One `StateTracker` is shared by every camera task, so a single
+    /// global counter would let cameras thin each other unevenly.
+    frame_counters: Mutex<HashMap<String, u64>>,
 }
 
 impl<T: StationEngine> StateTracker<T> {
@@ -37,11 +49,16 @@ impl<T: StationEngine> StateTracker<T> {
             station_engine,
             config,
             inference_states_queue_id,
+            frame_counters: Mutex::new(HashMap::new()),
         }
     }
 
     pub fn resolve_queue_id(&self, queue_id: &str) -> normfs::QueueId {
         self.normfs.resolve(queue_id)
+    }
+
+    pub fn resolution(&self) -> Option<crate::Resolution> {
+        self.config.resolution
     }
 
     pub async fn handle_queue_start(&self, queue_id: &normfs::QueueId) {
@@ -81,6 +98,25 @@ impl<T: StationEngine> StateTracker<T> {
         width: u32, height: u32,
         frame_data: Bytes,
     ) {
+        let count = {
+            let mut counters = self.frame_counters.lock();
+            match counters.get_mut(&camera.unique_id) {
+                Some(counter) => {
+                    let current = *counter;
+                    *counter = counter.wrapping_add(1);
+                    current
+                }
+                None => {
+                    counters.insert(camera.unique_id.clone(), 1);
+                    0
+                }
+            }
+        };
+
+        if !should_keep(count, self.config.frame_skip) {
+            return;
+        }
+
         let converted = converters::convert_frame(
             width as u16,
             height as u16,
@@ -121,5 +157,29 @@ impl<T: StationEngine> StateTracker<T> {
         if let Err(e) = self.normfs.enqueue(queue_id, buf.freeze()) {
             error!("Failed to enqueue envelope for camera {}: {}", camera.unique_id, e);
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::should_keep;
+
+    #[test]
+    fn test_should_keep_zero_skip_keeps_every_frame() {
+        for count in 0..10 {
+            assert!(should_keep(count, 0), "frame {} should be kept", count);
+        }
+    }
+
+    #[test]
+    fn test_should_keep_skip_one_keeps_every_other_frame() {
+        let kept: Vec<u64> = (0..7).filter(|c| should_keep(*c, 1)).collect();
+        assert_eq!(kept, vec![0, 2, 4, 6]);
+    }
+
+    #[test]
+    fn test_should_keep_skip_two_keeps_one_of_every_three() {
+        let kept: Vec<u64> = (0..10).filter(|c| should_keep(*c, 2)).collect();
+        assert_eq!(kept, vec![0, 3, 6, 9]);
     }
 }

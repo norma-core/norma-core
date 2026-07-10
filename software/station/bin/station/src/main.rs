@@ -370,44 +370,6 @@ impl Station {
             }
         }
 
-        if let Some(airgradient_config) = &self.config.drivers.airgradient_open_air_o_1pst {
-            if airgradient_config.enabled {
-                let usb_matches = airgradient_config
-                    .usb_match
-                    .iter()
-                    .filter_map(|entry| {
-                        let parsed = airgradient_open_air_o_1pst::parse_usb_match(entry);
-                        if parsed.is_none() {
-                            log::warn!(
-                                "Ignoring invalid AirGradient usb-match entry '{}' (expected \"vid:pid\" hex)",
-                                entry
-                            );
-                        }
-                        parsed
-                    })
-                    .collect();
-
-                let config = airgradient_open_air_o_1pst::AirGradientOpenAirO1pstDriverConfig {
-                    port: airgradient_config.port.clone(),
-                    port_baud_rate: airgradient_config.port_baud_rate,
-                    usb_matches,
-                    read_timeout: airgradient_config.read_timeout,
-                };
-
-                if let Err(e) = airgradient_open_air_o_1pst::start_airgradient_open_air_o_1pst_driver(
-                    self.normfs.clone(),
-                    self.engine.clone(),
-                    config,
-                )
-                .await
-                {
-                    log::error!("Failed to start AirGradient Open Air O-1PST driver: {}", e);
-                }
-            } else {
-                log::info!("AirGradient Open Air O-1PST driver disabled by configuration");
-            }
-        }
-
         if let Some(st3215) = &st3215_config {
             // Start motors mirroring driver
             let motor_config = motors_mirroring::config::MotorConfig::from(st3215);
@@ -420,12 +382,25 @@ impl Station {
         // Start USB camera monitoring if configured
         if let Some(usb_video) = &self.config.drivers.usb_video {
             if usb_video.enabled {
+                let resolution = match usbvideo::parse_resolution(&usb_video.resolution) {
+                    Ok(resolution) => resolution,
+                    Err(e) => {
+                        log::warn!(
+                            "Invalid usb-video.resolution: {}; using automatic format selection",
+                            e
+                        );
+                        None
+                    }
+                };
+
                 let usb_instance = usbvideo::start_usbvideo(
                     self.normfs.clone(),
                     self.engine.clone(),
                     self.base_path.clone(),
                     usbvideo::USBVideoConfig {
                         resize_target: usb_video.resize_target,
+                        resolution,
+                        frame_skip: usb_video.frame_skip,
                     },
                 )
                 .await;
