@@ -176,6 +176,8 @@ Usage: station [OPTIONS]
 Options:
       --max-queue-disk-size <MAX_QUEUE_DISK_SIZE>
           Maximum queue disk size in bytes [default: 2147483648]
+      --max-memory-usage <MAX_MEMORY_USAGE>
+          Maximum in-memory buffer size in bytes [default: 33554432]
       --normfs-base-folder <NORMFS_BASE_FOLDER>
           Base folder for normfs storage [default: ./station_data]
   -c, --config <CONFIG>
@@ -207,6 +209,7 @@ station \
   --config robot.yaml \
   --normfs-base-folder ./data \
   --max-queue-disk-size 5368709120 \
+  --max-memory-usage 33554432 \
   --tcp 0.0.0.0:8888 \
   --web 0.0.0.0:8889
 ```

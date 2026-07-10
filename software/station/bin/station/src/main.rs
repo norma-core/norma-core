@@ -45,6 +45,10 @@ struct Args {
     #[arg(long, default_value = "2147483648")] // 2GB default
     max_queue_disk_size: u64,
 
+    /// Maximum in-memory buffer size in bytes
+    #[arg(long, default_value = "33554432")] // 32MB default
+    max_memory_usage: usize,
+
     /// Base folder for normfs storage
     #[arg(long, default_value = "./station_data")]
     normfs_base_folder: PathBuf,
@@ -150,6 +154,7 @@ impl Station {
     ) -> Result<Arc<NormFS>, Box<dyn std::error::Error>> {
         let mut settings = NormFsSettings {
             max_disk_usage_per_queue: Some(args.max_queue_disk_size),
+            max_memory_usage: args.max_memory_usage,
             ..Default::default()
         };
 
