@@ -72,16 +72,22 @@ function LiveDeviceSelectionError({ error }: LiveDeviceSelectionErrorProps) {
 
 interface LiveDeviceSurfaceProps {
   plan: LiveDevicePlan;
+  summaryLayout?: 'responsive' | 'stacked';
 }
 
-const LiveDeviceSurface = memo(function LiveDeviceSurface({ plan }: LiveDeviceSurfaceProps) {
+const LiveDeviceSurface = memo(function LiveDeviceSurface({
+  plan,
+  summaryLayout = 'responsive',
+}: LiveDeviceSurfaceProps) {
   const summaryViews = plan.views.filter((view) => view.slot === 'summary');
   const primaryViews = plan.views.filter((view) => view.slot === 'primary');
 
   return (
     <>
       {summaryViews.length > 0 && (
-        <div className="grid grid-cols-1 gap-2 xl:grid-cols-2 2xl:grid-cols-4">
+        <div className={`grid grid-cols-1 gap-2 ${
+          summaryLayout === 'responsive' ? 'xl:grid-cols-2 2xl:grid-cols-4' : ''
+        }`}>
           {summaryViews.map((view) => (
             <LiveDeviceView key={`${view.moduleId}:${view.key}`} view={view} />
           ))}

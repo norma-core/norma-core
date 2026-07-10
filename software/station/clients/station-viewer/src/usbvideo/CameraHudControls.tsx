@@ -1,6 +1,6 @@
 import { ArrowLeftRight, Maximize2, Minimize2, SlidersHorizontal } from 'lucide-react';
 
-type CameraLayoutMode = 'pip' | 'side-by-side' | 'stacked';
+export type CameraLayoutMode = 'pip' | 'side-by-side' | 'stacked';
 
 interface CameraHudControlsProps {
   cameraLayout: CameraLayoutMode;
