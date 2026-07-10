@@ -125,6 +125,23 @@ def main() -> None:
         raise SystemExit("CUDA required.")
     device = torch.device("cuda")
 
+    # Ampere/Ada perf flags — TF32 for residual FP32 matmuls and cuDNN autotune.
+    # Cheap, always-safe wins; behaviour unchanged at the (allowed) precision.
+    torch.set_float32_matmul_precision("high")
+    torch.backends.cuda.matmul.allow_tf32 = True
+    torch.backends.cudnn.allow_tf32 = True
+    torch.backends.cudnn.benchmark = True
+
+    # BF16 mixed-precision autocast on GPUs that support it (Ampere+).
+    # The model is already designed for it: smolvlm backbone loads as bf16 and
+    # flow_matching upcasts the final head to float32 before the loss. On older
+    # GPUs without bf16 (V100/T4/P100), this silently no-ops and we stay in fp32.
+    use_bf16 = torch.cuda.is_bf16_supported()
+    print(
+        f"GPU: {torch.cuda.get_device_name(0)} | "
+        f"bf16 autocast: {'on' if use_bf16 else 'off (GPU lacks bf16, using fp32)'}"
+    )
+
     args.output.mkdir(parents=True, exist_ok=True)
 
     train_ds = PickAndPlaceDataset(args.parquets, image_keys=IMAGE_KEYS)
@@ -159,7 +176,8 @@ def main() -> None:
     print(f"trainable params: {n_train:,} / {n_total:,}  ({100*n_train/n_total:.1f}%)")
 
     opt = torch.optim.AdamW(
-        trainable, lr=args.lr, betas=(0.9, 0.95), weight_decay=args.weight_decay
+        trainable, lr=args.lr, betas=(0.9, 0.95), weight_decay=args.weight_decay,
+        fused=True,
     )
     sched = torch.optim.lr_scheduler.LambdaLR(
         opt, lr_lambda=partial(
@@ -185,7 +203,8 @@ def main() -> None:
             if step >= args.steps:
                 break
             batch = build_train_batch(raw_batch, policy, stats, device)
-            loss, info = policy.forward(batch)
+            with torch.autocast(device_type="cuda", dtype=torch.bfloat16, enabled=use_bf16):
+                loss, info = policy.forward(batch)
 
             opt.zero_grad(set_to_none=True)
             loss.backward()

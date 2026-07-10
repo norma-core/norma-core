@@ -47,7 +47,7 @@ The Follower and Leader arms share a core architecture but differ in their motor
 | Part | Leader Qty | Follower Qty | Unit Cost | Links / Notes |
 | :--- | :---: | :---: | :---: | :--- |
 | **ST3215 Servo (12V/30kg)** | — | **8** | ~$22.00 | **Follower Motors.** [SeeedStudio](https://www.seeedstudio.com/STS3215-30KG-Serial-Servo-p-6340.html)<br>📦 **AliExpress (Note: Sold in 6-packs):** You need **8 motors**, so you must **buy two 6-packs** (leaving 4 spares). [Opt 1](https://aliexpress.com/item/1005009270126951.html) / [Opt 2](https://aliexpress.com/item/1005009339011602.html) / [Opt 3](https://aliexpress.com/item/1005009400013739.html) |
-| **ST3215 Servo (7.4V)** | **8** | — | ~$20.00 | **Leader Motors.** High back-drivability. **Choose one:**<br>**ST-3215-C049 (1:191):** Better rigidity and form retention - [SeeedStudio](https://www.seeedstudio.com/Feetech-ST-3215-C044-Heavy-Duty-Servo-7-4V-1-191-Gear-Reduction-p-6460.html)<br>**ST-3215-C046 (1:147):** Easier to control but less rigid - [SeeedStudio](https://www.seeedstudio.com/Feetech-ST-3215-C046-Standard-Torque-Servo-7-4V-1-147-Gear-Reduction-p-6461.html) / [AliExpress](https://aliexpress.com/item/1005010480778514.html) |
+| **ST3215 Servo (7.4V)** | **8** | — | ~$20.00 | **Leader Motors.** High back-drivability. **Choose one:**<br>**ST-3215-C044 (1:191):** Better rigidity and form retention - [SeeedStudio](https://www.seeedstudio.com/Feetech-ST-3215-C044-Heavy-Duty-Servo-7-4V-1-191-Gear-Reduction-p-6460.html)<br>**ST-3215-C046 (1:147):** Easier to control but less rigid - [SeeedStudio](https://www.seeedstudio.com/Feetech-ST-3215-C046-Standard-Torque-Servo-7-4V-1-147-Gear-Reduction-p-6461.html) / [AliExpress](https://aliexpress.com/item/1005010480778514.html) |
 | **Serial Bus Servo Driver** | **1** | **1** | ~$5.00 | [Waveshare](https://www.waveshare.com/bus-servo-adapter-a.htm)<br>Alt: [SeeedStudio XIAO](https://www.seeedstudio.com/Bus-Servo-Driver-Board-for-XIAO-p-6413.html) (requires 5.5×2.1mm DC socket with wires) |
 
 ### Power & Connectivity
@@ -83,9 +83,9 @@ Ensure all USB cables are rated for **data transfer**. Power-only "charging" cab
 ---
 
 # 🖨️ 3D Printing
-- **Filament needed (leader):** ~320g PLA (13h print time)
+- **Filament needed (leader):** ~320g PLA (13.5h print time)
 
-- **Filament needed (follower):** ~360g PLA (15.5h print time)
+- **Filament needed (follower):** ~360g PLA (16h print time)
 
   ![printing](./images/printing.png)
 
