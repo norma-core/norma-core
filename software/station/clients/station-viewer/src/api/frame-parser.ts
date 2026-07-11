@@ -1,5 +1,5 @@
 import Long from 'long';
-import { airgradient_open_air_o_1pst, arduino_nicla_sense_env, ina226, yahboom_dogzilla_lite, drivers, inference, motors_mirroring, normvla, st3215, sysinfo, usbvideo, vesc_trampa } from '@/api/proto.js';
+import { airgradient_open_air_o_1pst, arduino_nicla_sense_env, ina226, yahboom_dogzilla_lite, drivers, inference, motors_mirroring, normvla, st3215, sysinfo, usbvideo, vesc_trampa, victron_smartsolar_mppt } from '@/api/proto.js';
 import { NormFsClient } from "./normfs.js";
 import { getGlobalTimeAdjustmentNs, isTimeSyncActive } from '@/api/time-sync.js';
 import {
@@ -28,6 +28,7 @@ export interface Frame {
   arduinoNiclaSenseEnv?: FrameEntry<arduino_nicla_sense_env.IRxEnvelope>;
   ina226?: FrameEntry<ina226.IRxEnvelope>[];
   airgradientOpenAir?: FrameEntry<airgradient_open_air_o_1pst.IRxEnvelope>;
+  victronSmartSolar?: FrameEntry<victron_smartsolar_mppt.IRxEnvelope>[];
   yahboom_dogzilla_lite?: FrameEntry<yahboom_dogzilla_lite.IInferenceState>;
   normvla?: FrameEntry<normvla.IFrame>;
 
@@ -47,7 +48,7 @@ export interface Frame {
 }
 
 // Find entry in previous frame with matching queue and pointer
-type DecodedEntry = st3215.IInferenceState | st3215.ITxEnvelope | usbvideo.IRxEnvelope | motors_mirroring.IRxEnvelope | sysinfo.IEnvelope | arduino_nicla_sense_env.IRxEnvelope | ina226.IRxEnvelope | airgradient_open_air_o_1pst.IRxEnvelope | yahboom_dogzilla_lite.IInferenceState | normvla.IFrame | vesc_trampa.IInferenceState | vesc_trampa.IRxEnvelope | vesc_trampa.ITxEnvelope | null;
+type DecodedEntry = st3215.IInferenceState | st3215.ITxEnvelope | usbvideo.IRxEnvelope | motors_mirroring.IRxEnvelope | sysinfo.IEnvelope | arduino_nicla_sense_env.IRxEnvelope | ina226.IRxEnvelope | airgradient_open_air_o_1pst.IRxEnvelope | victron_smartsolar_mppt.IRxEnvelope | yahboom_dogzilla_lite.IInferenceState | normvla.IFrame | vesc_trampa.IInferenceState | vesc_trampa.IRxEnvelope | vesc_trampa.ITxEnvelope | null;
 
 interface ParseFrameOptions {
   retainRawData?: boolean;
@@ -147,6 +148,17 @@ function findPreviousEntry(
     }
   }
 
+  // Check Victron SmartSolar MPPT
+  if (previousFrame.victronSmartSolar) {
+    const match = previousFrame.victronSmartSolar.find(entry => entry.queueId === queue);
+    if (match) {
+      const prevPtr = match.ptr;
+      if (prevPtr.length === ptr.length && prevPtr.every((b, i) => b === ptr[i])) {
+        return { decoded: match.data, rawData: match.rawData ?? null };
+      }
+    }
+  }
+
   // Check yahboom_dogzilla_lite
   if (previousFrame.yahboom_dogzilla_lite?.queueId === queue) {
     const prevPtr = previousFrame.yahboom_dogzilla_lite.ptr;
@@ -196,6 +208,7 @@ export async function parseFrame(
     stateId: new Uint8Array(Array.from(entryIdBytes)),
     videoQueues: [],
     ina226: [],
+    victronSmartSolar: [],
     otherEntries: retainRawData ? {} : undefined
   };
 
@@ -300,6 +313,13 @@ export async function parseFrame(
                 decoded = airgradient_open_air_o_1pst.RxEnvelope.decode(streamEntry.data);
               } catch (error) {
                 console.error("Failed to decode airgradient_open_air_o_1pst.RxEnvelope:", error);
+              }
+              break;
+            case drivers.QueueDataType.QDT_VICTRON_SMARTSOLAR_MPPT_RX:
+              try {
+                decoded = victron_smartsolar_mppt.RxEnvelope.decode(streamEntry.data);
+              } catch (error) {
+                console.error("Failed to decode victron_smartsolar_mppt.RxEnvelope:", error);
               }
               break;
             case drivers.QueueDataType.QDT_YAHBOOM_DOGZILLA_LITE_INFERENCE:
@@ -440,6 +460,15 @@ export async function parseFrame(
               rawData: retainRawData ? result.rawData ?? null : null,
               queueType: result.type
             };
+            break;
+          case drivers.QueueDataType.QDT_VICTRON_SMARTSOLAR_MPPT_RX:
+            frame.victronSmartSolar!.push({
+              queueId: result.queue,
+              ptr: result.ptr,
+              data: result.decoded as victron_smartsolar_mppt.IRxEnvelope,
+              rawData: retainRawData ? result.rawData ?? null : null,
+              queueType: result.type
+            });
             break;
           case drivers.QueueDataType.QDT_YAHBOOM_DOGZILLA_LITE_INFERENCE:
             frame.yahboom_dogzilla_lite = {

@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { airgradient_open_air_o_1pst, arduino_nicla_sense_env, ina226, usbvideo, st3215, motors_mirroring, sysinfo, yahboom_dogzilla_lite, normvla, vesc_trampa } from '@/api/proto.js';
+import { airgradient_open_air_o_1pst, arduino_nicla_sense_env, ina226, usbvideo, st3215, motors_mirroring, sysinfo, yahboom_dogzilla_lite, normvla, vesc_trampa, victron_smartsolar_mppt } from '@/api/proto.js';
 import ArduinoNiclaSenseEnvExpanded from '@/components/history/ArduinoNiclaSenseEnvExpanded';
 import Ina226Expanded from '@/components/history/Ina226Expanded';
+import VictronSmartSolarExpanded from '@/components/history/VictronSmartSolarExpanded';
 import { airGradientDeviceLabel, airGradientLineText, readAirGradientValues } from '@/devices/airgradient-open-air-o-1pst/values';
 import { createCroppedJson } from '@/components/history/history-utils';
 import RawBytesExpanded from '@/components/history/RawBytesExpanded';
@@ -17,9 +18,11 @@ import FullscreenImageViewer from '@/components/FullscreenImageViewer';
 type DataTab = 'visual' | 'json' | 'raw';
 
 interface ExpandedViewProps {
-  data: usbvideo.IRxEnvelope | st3215.IInferenceState | st3215.ITxEnvelope | motors_mirroring.IRxEnvelope | sysinfo.IEnvelope | arduino_nicla_sense_env.IRxEnvelope | ina226.IRxEnvelope | airgradient_open_air_o_1pst.IRxEnvelope | yahboom_dogzilla_lite.IInferenceState | vesc_trampa.IInferenceState | vesc_trampa.IRxEnvelope | vesc_trampa.ITxEnvelope | normvla.IFrame | Uint8Array;
+  data: usbvideo.IRxEnvelope | st3215.IInferenceState | st3215.ITxEnvelope | motors_mirroring.IRxEnvelope | sysinfo.IEnvelope | arduino_nicla_sense_env.IRxEnvelope | ina226.IRxEnvelope | airgradient_open_air_o_1pst.IRxEnvelope | victron_smartsolar_mppt.IRxEnvelope | yahboom_dogzilla_lite.IInferenceState | vesc_trampa.IInferenceState | vesc_trampa.IRxEnvelope | vesc_trampa.ITxEnvelope | normvla.IFrame | Uint8Array;
   type: string | undefined;
   rawData?: Uint8Array | null;
+  queueId?: string;
+  entryId?: Uint8Array;
 }
 
 const TAB_OPTIONS: { id: DataTab; label: string }[] = [
@@ -79,11 +82,12 @@ function getAvailableTabs(
   const isArduinoNiclaSenseEnv = type === 'arduino-nicla-sense-env' && data instanceof arduino_nicla_sense_env.RxEnvelope;
   const isIna226 = type === 'ina226' && data instanceof ina226.RxEnvelope;
   const isAirGradient = type === 'airgradient-open-air-o-1pst' && data instanceof airgradient_open_air_o_1pst.RxEnvelope;
+  const isVictronSmartSolar = type === 'victron-smartsolar-mppt' && data instanceof victron_smartsolar_mppt.RxEnvelope;
   const isYahboomDogzillaLite = type === 'yahboom_dogzilla_lite' && data instanceof yahboom_dogzilla_lite.InferenceState;
   const isNormvla = type === 'normvla' && data instanceof normvla.Frame;
   const isVescTrampa = type === 'vesc-trampa-rx' && data instanceof vesc_trampa.RxEnvelope;
 
-  if (isUsbVideo || isSt3215 || isSt3215Tx || isMirroring || isVescTrampaTx || isSysinfo || isArduinoNiclaSenseEnv || isIna226 || isAirGradient || isYahboomDogzillaLite || isNormvla) {
+  if (isUsbVideo || isSt3215 || isSt3215Tx || isMirroring || isVescTrampaTx || isSysinfo || isArduinoNiclaSenseEnv || isIna226 || isAirGradient || isVictronSmartSolar || isYahboomDogzillaLite || isNormvla) {
     return ['visual', 'json', 'raw'];
   }
 
@@ -94,7 +98,7 @@ function getAvailableTabs(
   return ['json', 'raw'];
 }
 
-export default function ExpandedView({ data, type, rawData }: ExpandedViewProps) {
+export default function ExpandedView({ data, type, rawData, queueId, entryId }: ExpandedViewProps) {
   const availableTabs = getAvailableTabs(data, type);
   const [userSelectedTab, setUserSelectedTab] = useState<DataTab | null>(null);
   const [fullscreenImage, setFullscreenImage] = useState<{ src: string; alt: string } | null>(null);
@@ -161,6 +165,9 @@ export default function ExpandedView({ data, type, rawData }: ExpandedViewProps)
     }
     if (type === 'ina226' && data instanceof ina226.RxEnvelope) {
       return <Ina226Expanded data={data} />;
+    }
+    if (type === 'victron-smartsolar-mppt' && data instanceof victron_smartsolar_mppt.RxEnvelope) {
+      return <VictronSmartSolarExpanded data={data} queueId={queueId} entryId={entryId} />;
     }
     if (type === 'airgradient-open-air-o-1pst' && data instanceof airgradient_open_air_o_1pst.RxEnvelope) {
       const values = readAirGradientValues(data.data);

@@ -2531,6 +2531,7 @@ dependencies = [
  "tokio",
  "usbvideo",
  "vesc-trampa",
+ "victron-smartsolar-mppt",
  "yahboom-dogzilla-lite",
 ]
 
@@ -3087,6 +3088,21 @@ dependencies = [
  "log",
  "normfs",
  "parking_lot",
+ "prost",
+ "prost-build",
+ "station_iface",
+ "systime",
+ "tokio",
+ "tokio-serial",
+]
+
+[[package]]
+name = "victron-smartsolar-mppt"
+version = "0.1.0-beta.10"
+dependencies = [
+ "bytes",
+ "log",
+ "normfs",
  "prost",
  "prost-build",
  "station_iface",

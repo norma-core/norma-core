@@ -20,6 +20,7 @@ npm exec -- pbjs --wrap es6 --force-long -t static-module --es6 -l eslint-disabl
   ${SRC}/drivers/arduino-nicla-sense-env/arduino_nicla_sense_env.proto \
   ${SRC}/drivers/ina226/ina226.proto \
   ${SRC}/drivers/airgradient-open-air-o-1pst/airgradient_open_air_o_1pst.proto \
+  ${SRC}/drivers/victron-smartsolar-mppt/victron_smartsolar_mppt.proto \
   ${SRC}/drivers/inferences/normvla.proto \
   ${SRC}/normfs/normfs.proto \
   -o src/api/proto.js
