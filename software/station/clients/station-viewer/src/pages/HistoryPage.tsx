@@ -30,18 +30,15 @@ function HistoryPage() {
   const timelineControlsRef = useRef<TimelineControlsRef>(null);
 
   const {
-    currentFrame,
     parsedFrame,
     isLoading: isReadingEntry,
     error: entryError,
-    selectFrame: selectFrameData,
-  } = useFrameData();
-
-  useEffect(() => {
-    if (timelineState.currentFrame !== currentFrame) {
-      selectFrameData(timelineState.currentFrame, timelineState.isNavigationImmediate);
-    }
-  }, [timelineState.currentFrame, currentFrame, selectFrameData, timelineState.isNavigationImmediate]);
+  } = useFrameData({
+    frameNumber: timelineState.isLoading || timelineState.error
+      ? null
+      : timelineState.currentFrame,
+    immediate: timelineState.isNavigationImmediate,
+  });
 
   useKeyboardNavigation(timelineActions, timelineState, { gotoInputRef: timelineControlsRef });
 
@@ -126,7 +123,7 @@ function HistoryPage() {
               {isReadingEntry && (
                 <div className="flex items-center gap-2 text-accent-info">
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-accent-info"></div>
-                  <span>Reading entry {currentFrame.toLocaleString()}...</span>
+                  <span>Reading entry {timelineState.currentFrame.toLocaleString()}...</span>
                 </div>
               )}
 

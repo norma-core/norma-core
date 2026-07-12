@@ -1,91 +1,100 @@
-import { useState, useRef, useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import Long from 'long';
-import webSocketManager from '../api/websocket';
-import { Frame } from '../api/frame-parser';
+import webSocketManager from '@/api/websocket';
+import type { Frame } from '@/api/frame-parser';
 
 const DEBOUNCE_DELAY_MS = 200;
 
-export interface FrameDataState {
-  currentFrame: number;
+export interface UseFrameDataOptions {
+  frameNumber: number | null;
+  immediate?: boolean;
+}
+
+export interface UseFrameDataReturn {
   parsedFrame: Frame | null;
   isLoading: boolean;
   error: string | null;
 }
 
-export interface UseFrameDataReturn extends FrameDataState {
-  selectFrame: (frame: number, immediate?: boolean) => void;
-}
-
-export function useFrameData(): UseFrameDataReturn {
-  const [currentFrame, setCurrentFrame] = useState<number>(0);
+export function useFrameData({
+  frameNumber,
+  immediate = false,
+}: UseFrameDataOptions): UseFrameDataReturn {
   const [parsedFrame, setParsedFrame] = useState<Frame | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const debounceTimeout = useRef<number | null>(null);
   const parsedFrameRef = useRef<Frame | null>(null);
+  const requestGenerationRef = useRef(0);
 
-  // Keep ref in sync with state
-  useEffect(() => {
-    parsedFrameRef.current = parsedFrame;
-  }, [parsedFrame]);
+  const readEntryData = useCallback(async (
+    selectedFrame: number,
+    generation: number,
+  ) => {
+    if (generation !== requestGenerationRef.current) {
+      return;
+    }
 
-  const readEntryData = useCallback(async (frameNumber: number, previousFrame: Frame | null) => {
     setIsLoading(true);
     setError(null);
 
     try {
-      const entryIdBytes = new Uint8Array(Long.fromNumber(frameNumber).toBytesLE());
+      const entryIdBytes = new Uint8Array(Long.fromNumber(selectedFrame).toBytesLE());
+      const frame = await webSocketManager.getFrame(
+        entryIdBytes,
+        parsedFrameRef.current ?? undefined,
+      );
 
-      // Parse full frame using getFrame, pass previous frame for optimization
-      try {
-        const frame = await webSocketManager.getFrame(entryIdBytes, previousFrame || undefined);
-        setParsedFrame(frame);
-      } catch (frameError) {
-        console.error('Failed to parse frame:', frameError);
-        setError(`Failed to parse frame: ${frameError instanceof Error ? frameError.message : 'Unknown error'}`);
+      if (generation !== requestGenerationRef.current) {
+        return;
       }
+
+      parsedFrameRef.current = frame;
+      setParsedFrame(frame);
     } catch (err) {
-      console.error('Error reading entry:', err);
-      setError(err instanceof Error ? err.message : 'Unknown error reading entry');
+      if (generation !== requestGenerationRef.current) {
+        return;
+      }
+
+      console.error('Failed to parse frame:', err);
+      setError(
+        `Failed to parse frame: ${err instanceof Error ? err.message : 'Unknown error'}`,
+      );
     } finally {
-      setIsLoading(false);
+      if (generation === requestGenerationRef.current) {
+        setIsLoading(false);
+      }
     }
   }, []);
 
-  const selectFrame = useCallback((frameNumber: number, immediate?: boolean) => {
-    setCurrentFrame((prev) => {
-      if (frameNumber === prev) return prev;
-
-      if (debounceTimeout.current) {
-        clearTimeout(debounceTimeout.current);
-      }
-
-      if (immediate) {
-        readEntryData(frameNumber, parsedFrameRef.current);
-      } else {
-        debounceTimeout.current = window.setTimeout(() => {
-          readEntryData(frameNumber, parsedFrameRef.current);
-        }, DEBOUNCE_DELAY_MS);
-      }
-
-      return frameNumber;
-    });
-  }, [readEntryData]);
-
   useEffect(() => {
+    const generation = ++requestGenerationRef.current;
+
+    if (frameNumber === null) {
+      setIsLoading(false);
+      setError(null);
+      return;
+    }
+
+    if (immediate) {
+      void readEntryData(frameNumber, generation);
+      return () => {
+        requestGenerationRef.current += 1;
+      };
+    }
+
+    const debounceTimeout = window.setTimeout(() => {
+      void readEntryData(frameNumber, generation);
+    }, DEBOUNCE_DELAY_MS);
+
     return () => {
-      if (debounceTimeout.current) {
-        clearTimeout(debounceTimeout.current);
-      }
+      window.clearTimeout(debounceTimeout);
+      requestGenerationRef.current += 1;
     };
-  }, []);
+  }, [frameNumber, immediate, readEntryData]);
 
   return {
-    currentFrame,
     parsedFrame,
     isLoading,
     error,
-    selectFrame,
   };
 }

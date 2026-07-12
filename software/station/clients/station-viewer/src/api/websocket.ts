@@ -3,6 +3,7 @@ import { Frame, parseFrame } from "./frame-parser.js";
 import { timeSyncManager } from "./time-sync.js";
 import { NormFsClient } from "./normfs.js";
 import { commandManager, CommandManager } from "./commands.js";
+import { WS_EVENTS } from "./websocket-events.js";
 import Long from "long";
 
 export const ErrConnectionNotOpen = new Error("WebSocket: Connection not open.");
@@ -24,14 +25,21 @@ export interface ConnectionStats {
   };
 }
 
+export interface LiveSnapshot {
+  frame: Frame | null;
+  latestEntryId: number | null;
+}
+
 class WebSocketManager extends EventTarget {
   private ws: WebSocket | null = null;
   private url: string;
   private reconnectInterval: number = 100; // 100ms
   private isUpdating = true;
 
-  private currentFrame: Frame | null = null;
-  private latestEntryId: number | null = null;
+  private liveSnapshot: LiveSnapshot = {
+    frame: null,
+    latestEntryId: null,
+  };
   public readonly normFs: NormFsClient;
   public readonly commands: CommandManager;
 
@@ -53,15 +61,18 @@ class WebSocketManager extends EventTarget {
   constructor(url: string) {
     super();
     this.url = url;
-    this.stats.endpoint = url;
+    this.stats = { ...this.stats, endpoint: url };
     this.normFs = new NormFsClient();
     this.commands = commandManager;
     this.connect();
   }
 
-  public getCurrentFrame(): Frame | null {
-    return this.currentFrame;
-  }
+  public getLiveSnapshot = (): LiveSnapshot => this.liveSnapshot;
+
+  public subscribeLive = (listener: () => void): (() => void) => {
+    this.addEventListener(WS_EVENTS.INFERENCE_STATE, listener);
+    return () => this.removeEventListener(WS_EVENTS.INFERENCE_STATE, listener);
+  };
 
   public async getFrame(entryId: Uint8Array, previousFrame?: Frame): Promise<Frame> {
     // Read the inference-states entry
@@ -76,13 +87,12 @@ class WebSocketManager extends EventTarget {
     return frame;
   }
 
-  public getLatestEntryId(): number | null {
-    return this.latestEntryId;
-  }
+  public getConnectionStats = (): ConnectionStats => this.stats;
 
-  public getConnectionStats(): ConnectionStats {
-    return { ...this.stats };
-  }
+  public subscribeConnectionStats = (listener: () => void): (() => void) => {
+    this.addEventListener(WS_EVENTS.STATS, listener);
+    return () => this.removeEventListener(WS_EVENTS.STATS, listener);
+  };
 
   private async pollLatestFrame() {
     if (this.isPolling) {
@@ -97,20 +107,18 @@ class WebSocketManager extends EventTarget {
       const entryId = Long.fromBytesLE(Array.from(entry.id)).toNumber();
 
       // Only process if ID changed
-      if (entryId !== this.latestEntryId) {
-        this.latestEntryId = entryId;
-
+      if (entryId !== this.liveSnapshot.latestEntryId) {
         // Decode as InferenceRx and parse frame
         const inferenceRx = inference.InferenceRx.decode(entry.data);
-        const frame = await parseFrame(inferenceRx, entry.id, this.normFs, this.currentFrame || undefined, {
+        const frame = await parseFrame(inferenceRx, entry.id, this.normFs, this.liveSnapshot.frame || undefined, {
           retainRawData: false,
           publishVideoFrames: true,
         });
 
         // Update and dispatch
-        this.currentFrame = frame;
+        this.liveSnapshot = { frame, latestEntryId: entryId };
         this.frameTimestamps.push(Date.now());
-        this.dispatchEvent(new Event('inferenceState'));
+        this.dispatchEvent(new Event(WS_EVENTS.INFERENCE_STATE));
       }
     } catch {
       // Silently ignore if queue is empty (not yet populated)
@@ -190,23 +198,24 @@ class WebSocketManager extends EventTarget {
 
   private emitStats() {
     const fpsStats = this.calculateFPS();
-    this.stats.fps = fpsStats.fps;
-    this.stats.isFpsReady = fpsStats.isReady;
-    
-    // Add time sync information
     const timeSyncState = timeSyncManager.getState();
-    this.stats.timeSync = {
-      isActive: timeSyncState.isActive,
-      adjustmentNs: timeSyncState.timeAdjustmentNs,
-      pingMs: timeSyncState.pingTimeMs,
-      syncCount: timeSyncState.syncCount,
+    this.stats = {
+      ...this.stats,
+      fps: fpsStats.fps,
+      isFpsReady: fpsStats.isReady,
+      timeSync: {
+        isActive: timeSyncState.isActive,
+        adjustmentNs: timeSyncState.timeAdjustmentNs,
+        pingMs: timeSyncState.pingTimeMs,
+        syncCount: timeSyncState.syncCount,
+      },
     };
-    
-    this.dispatchEvent(new Event('stats'));
+
+    this.dispatchEvent(new Event(WS_EVENTS.STATS));
   }
 
   public connect() {
-    this.stats.status = 'connecting';
+    this.stats = { ...this.stats, status: 'connecting' };
     this.emitStats();
     
     this.ws = new WebSocket(this.url);
@@ -214,10 +223,13 @@ class WebSocketManager extends EventTarget {
 
     this.ws.onopen = () => {
       console.log("WebSocket: Connection established.");
-      this.stats.status = 'connected';
-      this.stats.connectedAt = Date.now();
-      this.stats.fps = 0;
-      this.stats.isFpsReady = false;
+      this.stats = {
+        ...this.stats,
+        status: 'connected',
+        connectedAt: Date.now(),
+        fps: 0,
+        isFpsReady: false,
+      };
       this.emitStats();
 
       this.normFs.onOpen();
@@ -238,8 +250,11 @@ class WebSocketManager extends EventTarget {
     this.ws.onmessage = async (event) => {
       try {
         // Update stats
-        this.stats.packetsReceived++;
-        this.stats.bytesReceived += event.data.byteLength;
+        this.stats = {
+          ...this.stats,
+          packetsReceived: this.stats.packetsReceived + 1,
+          bytesReceived: this.stats.bytesReceived + event.data.byteLength,
+        };
 
         const normFsResponse = normfs.ServerResponse.decode(new Uint8Array(event.data));
 
@@ -258,8 +273,11 @@ class WebSocketManager extends EventTarget {
 
     this.ws.onclose = (event) => {
       console.log("WebSocket: Connection closed.", event);
-      this.stats.status = 'disconnected';
-      this.stats.connectedAt = null;
+      this.stats = {
+        ...this.stats,
+        status: 'disconnected',
+        connectedAt: null,
+      };
       this.frameTimestamps = [];
       this.normFs.onClose();
 

@@ -299,23 +299,28 @@ export function useTimelineState(): UseTimelineStateReturn {
 
 Simpler hooks return plain values or flat objects (e.g., `useInferenceState` returns `Frame | null`, `useFrameData` returns `{ currentFrame, parsedFrame, isLoading, ... }`).
 
-### useEffect Cleanup
-Always clean up event listeners, timers, and subscriptions:
+### External Stores and Effect Cleanup
+
+Use `useSyncExternalStore` for state owned by long-lived managers. Snapshot getters must return the same object reference until the underlying state changes, and related values must be published atomically. `WebSocketManager` exposes the canonical live and connection-statistics snapshots; do not mirror them into hook-local `useState`.
+
+For component-owned effects, always clean up event listeners, timers, and subscriptions:
 
 ```typescript
 useEffect(() => {
-  const handler = () => setStats(webSocketManager.getConnectionStats());
-  webSocketManager.addEventListener(WS_EVENTS.STATS, handler);
-  return () => webSocketManager.removeEventListener(WS_EVENTS.STATS, handler);
+  const handler = () => setIsFullscreen(document.fullscreenElement === elementRef.current);
+  document.addEventListener('fullscreenchange', handler);
+  return () => document.removeEventListener('fullscreenchange', handler);
 }, []);
 ```
 
 ### Hook Exports
-All hooks are re-exported from `src/hooks/index.ts` (11 hooks + 3 types):
+All hooks are re-exported from `src/hooks/index.ts`:
 ```typescript
 export { useInferenceState } from "./useInferenceState";
 export { useLatestEntryId } from "./useLatestEntryId";
-export { useConnectionStats, useConnectionStatsWithUptime } from "./useConnectionStats";
+export { useLiveSnapshot } from "./useLiveSnapshot";
+export { useConnectionStats } from "./useConnectionStats";
+export { useElapsedSeconds } from "./useElapsedSeconds";
 export { useFrameData } from "./useFrameData";
 export { useQueueEntries } from "./useQueueEntries";
 export { useTimelineState } from "./useTimelineState";
@@ -366,12 +371,14 @@ Run `npm run build:proto` after modifying .proto files.
 
 ## State Management
 
-State is managed through custom hooks, not global state libraries. WebSocket events drive state updates via EventTarget. Global managers are exported as default singletons:
+State is managed through custom hooks, not global state libraries. WebSocket events drive stable immutable snapshots exposed to React through `useSyncExternalStore`. Global managers are exported as default singletons:
 
 ```typescript
 const webSocketManager = new WebSocketManager(`ws://${host}/api`);
 export default webSocketManager;
 ```
+
+The live snapshot contains the frame and latest entry ID as one atomic observation. Connection statistics use a separate snapshot. Keep local UI state in the owning page or device view; do not turn these transport snapshots into a general application store. See `docs/adr/README.md` for the accepted decisions and invariants.
 
 The WebSocket manager is initialized at app startup via side-effect import in `main.tsx`:
 ```typescript

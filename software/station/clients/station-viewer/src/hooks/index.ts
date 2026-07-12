@@ -1,6 +1,8 @@
 export { useInferenceState } from "./useInferenceState";
 export { useLatestEntryId } from "./useLatestEntryId";
-export { useConnectionStats, useConnectionStatsWithUptime } from "./useConnectionStats";
+export { useLiveSnapshot } from "./useLiveSnapshot";
+export { useConnectionStats } from "./useConnectionStats";
+export { useElapsedSeconds } from "./useElapsedSeconds";
 export { useFrameData } from "./useFrameData";
 export { useQueueEntries } from "./useQueueEntries";
 export { useTimelineState } from "./useTimelineState";
@@ -15,3 +17,4 @@ export type { Theme } from "./useTheme";
 export type { TimelineControlsRef } from "./useKeyboardNavigation";
 export type { UseWakeLockReturn } from "./useWakeLock";
 export type { BusStatus, ErrorPacketDump } from "./useBusMonitor";
+export type { LiveSnapshot } from "@/api/websocket";

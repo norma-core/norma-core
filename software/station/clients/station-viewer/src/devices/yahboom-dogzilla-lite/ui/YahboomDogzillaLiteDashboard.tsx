@@ -1,4 +1,5 @@
 import { memo, useEffect, useMemo, useRef, useState } from 'react';
+import type { ReactNode } from 'react';
 import Long from 'long';
 import {
   Activity,
@@ -27,7 +28,7 @@ import { CONTROL_SLIDER_CLASS_NAME } from '@/devices/yahboom-dogzilla-lite/ui/co
 import YahboomDogzillaLiteViewer from '@/devices/yahboom-dogzilla-lite/ui/YahboomDogzillaLiteViewer';
 import MovementPanel, { type MovementPanelRef } from '@/devices/yahboom-dogzilla-lite/ui/MovementPanel';
 import { getYahboomDogzillaLiteModelLabel } from '@/devices/yahboom-dogzilla-lite/ui/model-labels';
-import { useConnectionStatsWithUptime } from '@/hooks';
+import { useConnectionStats, useElapsedSeconds } from '@/hooks';
 import UsbCameraViewer from '@/usbvideo/CameraViewer';
 import { getVideoSourceId, getVideoSourceLabel } from '@/usbvideo/camera-source';
 
@@ -120,15 +121,18 @@ function clampByte(value: number) {
   return Math.max(0, Math.min(255, Math.round(value)));
 }
 
-function formatDuration(connectedAt: number | null) {
-  if (!connectedAt) {
+function formatDuration(seconds: number | null) {
+  if (seconds === null) {
     return 'N/A';
   }
-  const seconds = Math.max(0, Math.floor((Date.now() - connectedAt) / 1000));
   const hours = Math.floor(seconds / 3600);
   const minutes = Math.floor((seconds % 3600) / 60);
   const secs = seconds % 60;
   return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+}
+
+function DashboardUptime({ connectedAt }: { connectedAt: number | null }) {
+  return formatDuration(useElapsedSeconds(connectedAt));
 }
 
 function formatBytes(bytes: number) {
@@ -339,7 +343,7 @@ function StatusSection({
 }: {
   title: string;
   icon: typeof Radar;
-  rows: Array<{ label: string; value: string }>;
+  rows: Array<{ label: string; value: ReactNode }>;
 }) {
   return (
     <section className="rounded-lg border border-border-default bg-surface-primary/80 px-4 py-4">
@@ -383,7 +387,7 @@ const YahboomDogzillaLiteDashboard = memo(function YahboomDogzillaLiteDashboard(
   const [activeAction, setActiveAction] = useState<yahboom_dogzilla_lite.ActionType | null>(null);
   const [commandLog, setCommandLog] = useState<DashboardLogEntry[]>([]);
 
-  const connectionStats = useConnectionStatsWithUptime();
+  const connectionStats = useConnectionStats();
 
   const status = deviceState?.status ?? null;
   const device = deviceState?.device ?? null;
@@ -684,7 +688,7 @@ const YahboomDogzillaLiteDashboard = memo(function YahboomDogzillaLiteDashboard(
     { label: 'Endpoint', value: connectionStats?.endpoint ?? 'N/A' },
     { label: 'Packets', value: connectionStats ? connectionStats.packetsReceived.toLocaleString() : 'N/A' },
     { label: 'Data', value: connectionStats ? formatBytes(connectionStats.bytesReceived) : 'N/A' },
-    { label: 'Uptime', value: formatDuration(connectionStats?.connectedAt ?? null) },
+    { label: 'Uptime', value: <DashboardUptime connectedAt={connectionStats.connectedAt} /> },
     { label: 'Latency', value: `${Math.round(averageLatency)} ms` }
   ];
 

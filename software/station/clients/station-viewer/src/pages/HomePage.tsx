@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import Long from 'long';
 import { Tag as TagIcon } from 'lucide-react';
-import { useInferenceState, useConnectionStatsWithUptime, useLatestEntryId, useWakeLock, invalidateTagsCache } from "@/hooks";
+import { useConnectionStats, useElapsedSeconds, useLiveSnapshot, useWakeLock, invalidateTagsCache } from "@/hooks";
 import AsciiRobot from "@/components/AsciiRobot";
 import TagDialog from "@/components/TagDialog";
 import { copyToClipboard } from "@/api/clipboard-utils";
@@ -26,20 +26,22 @@ function formatBytes(bytes: number): string {
   return `${(bytes / Math.pow(k, i)).toFixed(2)} ${sizes[i]}`;
 }
 
-function formatUptime(connectedAt: number | null): string {
-  if (!connectedAt) return 'N/A';
-  const seconds = Math.floor((Date.now() - connectedAt) / 1000);
+function formatUptime(seconds: number | null): string {
+  if (seconds === null) return 'N/A';
   const hours = Math.floor(seconds / 3600);
   const minutes = Math.floor((seconds % 3600) / 60);
   const secs = seconds % 60;
   return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
 }
 
+function HomeUptime({ connectedAt }: { connectedAt: number | null }) {
+  return formatUptime(useElapsedSeconds(connectedAt));
+}
+
 function HomePage() {
   useWakeLock();
-  const inferenceState = useInferenceState();
-  const latestEntryId = useLatestEntryId();
-  const connectionStats = useConnectionStatsWithUptime();
+  const { frame: inferenceState, latestEntryId } = useLiveSnapshot();
+  const connectionStats = useConnectionStats();
   const [copied, setCopied] = useState(false);
   const [tagDialog, setTagDialog] = useState<TagDialogState | null>(null);
   const [isTagSubmitting, setIsTagSubmitting] = useState(false);
@@ -181,7 +183,9 @@ function HomePage() {
                 </div>
                 <div className="flex items-center gap-1.5">
                   <span className="text-text-muted">Uptime:</span>
-                  <span className="text-accent-success font-semibold">{formatUptime(connectionStats.connectedAt)}</span>
+                  <span className="text-accent-success font-semibold">
+                    <HomeUptime connectedAt={connectionStats.connectedAt} />
+                  </span>
                 </div>
               </div>
             </>
