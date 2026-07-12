@@ -16,6 +16,8 @@
     "lint": "oxlint",
     "preview": "vite preview",
     "build:proto": "cross-env sh scripts/protobuf.sh",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "type-check": "tsc -b"
   },
   "dependencies": {
@@ -43,7 +45,8 @@
     "tailwindcss": "^4.1.16",
     "typescript": "6.0.3",
     "vite": "^7.2.0",
-    "vite-plugin-compression": "^0.5.1"
+    "vite-plugin-compression": "^0.5.1",
+    "vitest": "4.1.10"
   },
   "engines": {
     "node": ">=22.0.0"

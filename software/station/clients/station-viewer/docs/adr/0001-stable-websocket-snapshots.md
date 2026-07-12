@@ -19,6 +19,8 @@ Each snapshot has a stable getter and a matching subscription method. A getter r
 
 The live frame and entry ID are updated atomically after frame parsing succeeds. Failed or incomplete parsing does not publish a partial snapshot.
 
+The last successfully published live snapshot remains available during a transient disconnect so the UI can present last-observed device data alongside disconnected connection statistics. Entry IDs are not treated as globally unique across connections: the manager resets its internal processed-entry cursor on close, forcing the first poll after reconnect to parse and publish the backend's current entry even when its numeric ID matches the retained snapshot.
+
 `WebSocketManager` remains the owner of transport, polling, NormFS access, decoding, and reconnect behavior. The snapshot interface does not move those responsibilities into React.
 
 ## Consequences
@@ -27,7 +29,7 @@ The live frame and entry ID are updated atomically after frame parsing succeeds.
 - React can consume manager state through the external-store seam.
 - Snapshot updates require immutable replacement rather than field mutation.
 - High-frequency frame data remains in the existing manager; this decision does not introduce a general application store.
-- Compatibility getters may delegate to the snapshots while existing callers migrate.
+- Connection lifecycle and live-data freshness remain distinct: connection statistics report connectivity while the live snapshot represents the last successful observation.
 
 ## Rejected alternatives
 

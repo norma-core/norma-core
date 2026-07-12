@@ -52,6 +52,7 @@ type DecodedEntry = st3215.IInferenceState | st3215.ITxEnvelope | usbvideo.IRxEn
 interface ParseFrameOptions {
   retainRawData?: boolean;
   publishVideoFrames?: boolean;
+  shouldPublishVideoFrames?: () => boolean;
 }
 
 function findPreviousEntry(
@@ -382,20 +383,23 @@ export async function parseFrame(
               queueType: result.type
             };
             break;
-          case drivers.QueueDataType.QDT_USB_VIDEO_FRAMES:
-            if (publishVideoFrames) {
+          case drivers.QueueDataType.QDT_USB_VIDEO_FRAMES: {
+            const publishCurrentVideoFrame = publishVideoFrames
+              && (options.shouldPublishVideoFrames?.() ?? true);
+            if (publishCurrentVideoFrame) {
               publishLiveCameraFrame(result.queue, result.decoded as usbvideo.IRxEnvelope);
             }
             frame.videoQueues!.push({
               queueId: result.queue,
               ptr: result.ptr,
-              data: publishVideoFrames
+              data: publishCurrentVideoFrame
                 ? createLiveCameraMetadataEnvelope(result.decoded as usbvideo.IRxEnvelope)
                 : result.decoded as usbvideo.IRxEnvelope,
               rawData: retainRawData ? result.rawData ?? null : null,
               queueType: result.type
             });
             break;
+          }
           case drivers.QueueDataType.QDT_MOTOR_MIRRORING_RX:
             frame.mirroring = {
               queueId: result.queue,

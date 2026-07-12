@@ -9,7 +9,7 @@ Station Viewer has two data-acquisition modes with different behavior:
 - live mode polls the latest `inference-states` entry at up to 50 Hz, reuses the previous parsed frame, publishes camera frames, and updates the live snapshot;
 - history mode selects immutable NormFS entries, retains data needed for inspection, debounces navigation, and applies the latest-request-wins rule from ADR 0004.
 
-`HistoryPage` currently enters history behavior by calling `webSocketManager.stopUpdating()` on mount and `resumeUpdating()` on cleanup. The manager stores this as one boolean. This works for the current route tree but exposes polling mechanics to the page and cannot represent nested or overlapping consumers.
+`HistoryPage` enters history behavior by acquiring a disposable lease from `WebSocketManager` and releasing it on cleanup. The manager tracks leases by identity so nested or overlapping consumers cannot resume live polling prematurely.
 
 ## Decision
 
@@ -29,8 +29,9 @@ Station Viewer has one process-wide acquisition mode. Simultaneous live and hist
 - Nested history consumers cannot accidentally resume live polling while another consumer still needs it suspended.
 - Reconnect behavior becomes a documented invariant.
 - Mode transitions become testable through one transport interface.
-- Implementing the decision requires replacing `stopUpdating()` and `resumeUpdating()` callers and adding lifecycle tests.
-- Connection statistics should expose whether live polling is active or suspended so acquisition behavior is observable.
+- `HistoryPage` no longer calls polling-mechanism methods directly.
+- Connection statistics expose `acquisitionMode`, making live polling intent observable.
+- A deferred polling resume prevents React Strict Mode's cleanup-remount probe from starting an in-flight live poll between leases.
 
 ## Rejected alternatives
 

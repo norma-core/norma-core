@@ -17,4 +17,3 @@ export type { Theme } from "./useTheme";
 export type { TimelineControlsRef } from "./useKeyboardNavigation";
 export type { UseWakeLockReturn } from "./useWakeLock";
 export type { BusStatus, ErrorPacketDump } from "./useBusMonitor";
-export type { LiveSnapshot } from "@/api/websocket";

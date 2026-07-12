@@ -42,12 +42,7 @@ function HistoryPage() {
 
   useKeyboardNavigation(timelineActions, timelineState, { gotoInputRef: timelineControlsRef });
 
-  useEffect(() => {
-    webSocketManager.stopUpdating();
-    return () => {
-      webSocketManager.resumeUpdating();
-    };
-  }, []);
+  useEffect(() => webSocketManager.acquireHistoryMode(), []);
 
   const videoQueueCount = parsedFrame?.videoQueues?.length ?? 0;
   const st3215Count = parsedFrame?.st3215 ? 1 : 0;

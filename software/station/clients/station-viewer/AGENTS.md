@@ -10,10 +10,20 @@ npm run build        # Full build: hashes, proto, type-check, and Vite build
 npm run build:proto  # Regenerate protobuf bindings from ../../../../../protobufs
 npm run lint         # Run oxlint (Rust-based linter)
 npm run type-check   # Run TypeScript compiler without emitting
+npm test             # Run Vitest once
+npm run test:watch   # Run Vitest in watch mode
 npm run preview      # Preview production build locally
 ```
 
-**Testing:** Not configured. No test runner exists in this project.
+## Testing
+
+Vitest runs in the Node environment. Keep tests beside the module as `*.test.ts`.
+
+Tests are regression guards, not a coverage target. Before adding a test, name the plausible bug it should catch. Prioritize behavior with a history of failure, async races, ownership or cleanup boundaries, atomic external-store updates, and non-trivial domain rules. A small set of tests around these risks is preferable to exhaustive coverage of trivial branches.
+
+Exercise behavior through public interfaces and assert caller-visible outcomes. Tests must survive an internal refactor that preserves behavior. Mock only true system boundaries when necessary, such as WebSocket, browser APIs, or time; use real Station Viewer modules together whenever practical. Avoid tests that mirror implementation steps, test private helpers, merely restate types, or assert mock call counts unless the count itself is part of the public contract.
+
+For a bug fix, first demonstrate that the test fails for the broken behavior, then make it pass. If a test cannot be connected to a realistic regression, do not add it.
 
 ## Tech Stack
 
@@ -297,7 +307,7 @@ export function useTimelineState(): UseTimelineStateReturn {
 }
 ```
 
-Simpler hooks return plain values or flat objects (e.g., `useInferenceState` returns `Frame | null`, `useFrameData` returns `{ currentFrame, parsedFrame, isLoading, ... }`).
+Simpler hooks return plain values or flat objects. For example, `useInferenceState` returns `Frame | null`, while `useFrameData({ frameNumber, immediate })` returns `{ parsedFrame, isLoading, error }`; timeline state is the sole owner of the selected frame number.
 
 ### External Stores and Effect Cleanup
 
@@ -329,8 +339,10 @@ export { useInferenceTags, invalidateTagsCache } from "./useInferenceTags";
 export { useKeyboardNavigation } from "./useKeyboardNavigation";
 export { useWakeLock } from "./useWakeLock";
 export { useBusMonitor } from "./useBusMonitor";
-// Plus type exports: TimelineControlsRef, UseWakeLockReturn, BusStatus, ErrorPacketDump
+// Plus hook-owned type exports: Theme, TimelineControlsRef, UseWakeLockReturn, BusStatus, ErrorPacketDump
 ```
+
+Modules outside `src/hooks/` import hooks through `@/hooks`. Hook implementations import sibling hooks directly rather than through the barrel, which avoids a cycle from `index.ts` back into the implementation being exported.
 
 ## Error Handling
 

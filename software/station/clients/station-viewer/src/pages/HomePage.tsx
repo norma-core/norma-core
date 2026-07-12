@@ -1,17 +1,18 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import Long from 'long';
 import { Tag as TagIcon } from 'lucide-react';
-import { useConnectionStats, useElapsedSeconds, useLiveSnapshot, useWakeLock, invalidateTagsCache } from "@/hooks";
-import AsciiRobot from "@/components/AsciiRobot";
-import TagDialog from "@/components/TagDialog";
-import { copyToClipboard } from "@/api/clipboard-utils";
-import { commandManager } from "@/api/commands";
-import { inference_tags } from "@/api/proto.js";
-import { defaultTag } from "@/utils/tag-phrases";
-import { getFPSColor } from '@/utils/color-utils';
+import { copyToClipboard } from '@/api/clipboard-utils';
+import { commandManager } from '@/api/commands';
+import { inference_tags } from '@/api/proto.js';
+import AsciiRobot from '@/components/AsciiRobot';
+import ConnectionUptime from '@/components/ConnectionUptime';
+import TagDialog from '@/components/TagDialog';
+import { useConnectionStats, useLiveSnapshot, useWakeLock, invalidateTagsCache } from '@/hooks';
 import LiveDeviceSurface from '@/devices/LiveDeviceSurface';
 import { resolveLiveDevices } from '@/devices/live-registry';
 import CameraSurface from '@/usbvideo/CameraSurface';
+import { getFPSColor } from '@/utils/color-utils';
+import { defaultTag } from '@/utils/tag-phrases';
 
 interface TagDialogState {
   entryId: number | null;
@@ -24,18 +25,6 @@ function formatBytes(bytes: number): string {
   const sizes = ['B', 'KB', 'MB', 'GB'];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
   return `${(bytes / Math.pow(k, i)).toFixed(2)} ${sizes[i]}`;
-}
-
-function formatUptime(seconds: number | null): string {
-  if (seconds === null) return 'N/A';
-  const hours = Math.floor(seconds / 3600);
-  const minutes = Math.floor((seconds % 3600) / 60);
-  const secs = seconds % 60;
-  return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-}
-
-function HomeUptime({ connectedAt }: { connectedAt: number | null }) {
-  return formatUptime(useElapsedSeconds(connectedAt));
 }
 
 function HomePage() {
@@ -184,7 +173,7 @@ function HomePage() {
                 <div className="flex items-center gap-1.5">
                   <span className="text-text-muted">Uptime:</span>
                   <span className="text-accent-success font-semibold">
-                    <HomeUptime connectedAt={connectionStats.connectedAt} />
+                    <ConnectionUptime connectedAt={connectionStats.connectedAt} />
                   </span>
                 </div>
               </div>

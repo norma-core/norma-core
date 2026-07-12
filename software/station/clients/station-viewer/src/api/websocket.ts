@@ -1,10 +1,10 @@
+import Long from "long";
 import { normfs, inference } from "./proto.js";
-import { Frame, parseFrame } from "./frame-parser.js";
+import { parseFrame, type Frame } from "./frame-parser.js";
 import { timeSyncManager } from "./time-sync.js";
 import { NormFsClient } from "./normfs.js";
-import { commandManager, CommandManager } from "./commands.js";
+import { commandManager, type CommandManager } from "./commands.js";
 import { WS_EVENTS } from "./websocket-events.js";
-import Long from "long";
 
 export const ErrConnectionNotOpen = new Error("WebSocket: Connection not open.");
 
@@ -17,6 +17,7 @@ export interface ConnectionStats {
   connectedAt: number | null;
   fps: number;
   isFpsReady: boolean;
+  acquisitionMode: 'live' | 'history';
   timeSync?: {
     isActive: boolean;
     adjustmentNs: number;
@@ -34,7 +35,10 @@ class WebSocketManager extends EventTarget {
   private ws: WebSocket | null = null;
   private url: string;
   private reconnectInterval: number = 100; // 100ms
-  private isUpdating = true;
+  private historyModeLeases = new Set<symbol>();
+  private acquisitionGeneration = 0;
+  private pollingResumeTimeout: number | null = null;
+  private lastProcessedEntryId: number | null = null;
 
   private liveSnapshot: LiveSnapshot = {
     frame: null,
@@ -56,6 +60,7 @@ class WebSocketManager extends EventTarget {
     connectedAt: null,
     fps: 0,
     isFpsReady: false,
+    acquisitionMode: 'live',
   };
 
   constructor(url: string) {
@@ -95,11 +100,12 @@ class WebSocketManager extends EventTarget {
   };
 
   private async pollLatestFrame() {
-    if (this.isPolling) {
+    if (!this.isLiveMode() || this.isPolling) {
       return; // Already polling
     }
 
     this.isPolling = true;
+    const acquisitionGeneration = this.acquisitionGeneration;
 
     try {
       // Read the latest entry directly: backward from offset 1, limit 1
@@ -107,15 +113,22 @@ class WebSocketManager extends EventTarget {
       const entryId = Long.fromBytesLE(Array.from(entry.id)).toNumber();
 
       // Only process if ID changed
-      if (entryId !== this.liveSnapshot.latestEntryId) {
+      if (entryId !== this.lastProcessedEntryId) {
         // Decode as InferenceRx and parse frame
         const inferenceRx = inference.InferenceRx.decode(entry.data);
         const frame = await parseFrame(inferenceRx, entry.id, this.normFs, this.liveSnapshot.frame || undefined, {
           retainRawData: false,
           publishVideoFrames: true,
+          shouldPublishVideoFrames: () =>
+            this.isLiveMode() && acquisitionGeneration === this.acquisitionGeneration,
         });
 
+        if (!this.isLiveMode() || acquisitionGeneration !== this.acquisitionGeneration) {
+          return;
+        }
+
         // Update and dispatch
+        this.lastProcessedEntryId = entryId;
         this.liveSnapshot = { frame, latestEntryId: entryId };
         this.frameTimestamps.push(Date.now());
         this.dispatchEvent(new Event(WS_EVENTS.INFERENCE_STATE));
@@ -128,6 +141,10 @@ class WebSocketManager extends EventTarget {
   }
 
   private startPolling() {
+    if (!this.isLiveMode() || !this.isConnected()) {
+      return;
+    }
+
     this.stopPolling();
 
     console.log("WebSocket: Starting frame polling at 50Hz...");
@@ -137,7 +154,7 @@ class WebSocketManager extends EventTarget {
 
     // Then poll every 20ms (50Hz)
     this.pollingInterval = window.setInterval(() => {
-      if (this.isUpdating && this.isConnected()) {
+      if (this.isLiveMode() && this.isConnected()) {
         this.pollLatestFrame();
       }
     }, 20);
@@ -155,24 +172,59 @@ class WebSocketManager extends EventTarget {
     return this.ws?.readyState === WebSocket.OPEN;
   }
 
-  public stopUpdating() {
-    if (!this.isUpdating) {
-      return;
-    }
-    console.log("WebSocket: Stopping state updates.");
-    this.isUpdating = false;
-    this.stopPolling();
+  private isLiveMode(): boolean {
+    return this.historyModeLeases.size === 0;
   }
 
-  public resumeUpdating() {
-    if (this.isUpdating) {
+  private cancelScheduledPollingResume(): void {
+    if (this.pollingResumeTimeout === null) {
       return;
     }
-    console.log("WebSocket: Resuming state updates.");
-    this.isUpdating = true;
-    if (this.isConnected()) {
+
+    window.clearTimeout(this.pollingResumeTimeout);
+    this.pollingResumeTimeout = null;
+  }
+
+  private schedulePollingResume(): void {
+    this.cancelScheduledPollingResume();
+    this.pollingResumeTimeout = window.setTimeout(() => {
+      this.pollingResumeTimeout = null;
       this.startPolling();
+    }, 0);
+  }
+
+  public acquireHistoryMode(): () => void {
+    const lease = Symbol('history-mode');
+    const entersHistoryMode = this.isLiveMode();
+    this.historyModeLeases.add(lease);
+
+    if (entersHistoryMode) {
+      console.log("WebSocket: Suspending live state updates.");
+      this.acquisitionGeneration += 1;
+      this.cancelScheduledPollingResume();
+      this.stopPolling();
+      this.emitStats();
     }
+
+    let isReleased = false;
+    return () => {
+      if (isReleased) {
+        return;
+      }
+      isReleased = true;
+
+      this.historyModeLeases.delete(lease);
+      if (!this.isLiveMode()) {
+        return;
+      }
+
+      console.log("WebSocket: Resuming live state updates.");
+      this.acquisitionGeneration += 1;
+      this.emitStats();
+      if (this.isConnected()) {
+        this.schedulePollingResume();
+      }
+    };
   }
 
   private calculateFPS(): { fps: number; isReady: boolean } {
@@ -196,13 +248,15 @@ class WebSocketManager extends EventTarget {
     return { fps: Number.isFinite(fps) ? fps : 0, isReady: true };
   }
 
-  private emitStats() {
+  private emitStats(patch: Partial<ConnectionStats> = {}) {
     const fpsStats = this.calculateFPS();
     const timeSyncState = timeSyncManager.getState();
     this.stats = {
       ...this.stats,
+      ...patch,
       fps: fpsStats.fps,
       isFpsReady: fpsStats.isReady,
+      acquisitionMode: this.isLiveMode() ? 'live' : 'history',
       timeSync: {
         isActive: timeSyncState.isActive,
         adjustmentNs: timeSyncState.timeAdjustmentNs,
@@ -215,26 +269,21 @@ class WebSocketManager extends EventTarget {
   }
 
   public connect() {
-    this.stats = { ...this.stats, status: 'connecting' };
-    this.emitStats();
+    this.emitStats({ status: 'connecting' });
     
     this.ws = new WebSocket(this.url);
     this.ws.binaryType = "arraybuffer";
 
     this.ws.onopen = () => {
       console.log("WebSocket: Connection established.");
-      this.stats = {
-        ...this.stats,
+      this.emitStats({
         status: 'connected',
         connectedAt: Date.now(),
-        fps: 0,
-        isFpsReady: false,
-      };
-      this.emitStats();
+      });
 
       this.normFs.onOpen();
 
-      if (this.isUpdating) {
+      if (this.isLiveMode()) {
         this.startPolling();
       }
 
@@ -249,13 +298,6 @@ class WebSocketManager extends EventTarget {
 
     this.ws.onmessage = async (event) => {
       try {
-        // Update stats
-        this.stats = {
-          ...this.stats,
-          packetsReceived: this.stats.packetsReceived + 1,
-          bytesReceived: this.stats.bytesReceived + event.data.byteLength,
-        };
-
         const normFsResponse = normfs.ServerResponse.decode(new Uint8Array(event.data));
 
         // Handle ping response for time sync
@@ -264,20 +306,19 @@ class WebSocketManager extends EventTarget {
         }
 
         this.normFs.processStreamFsResponse(normFsResponse);
-
-        this.emitStats();
       } catch (error) {
         console.error("WebSocket: Error processing message:", error);
+      } finally {
+        this.emitStats({
+          packetsReceived: this.stats.packetsReceived + 1,
+          bytesReceived: this.stats.bytesReceived + event.data.byteLength,
+        });
       }
     };
 
     this.ws.onclose = (event) => {
       console.log("WebSocket: Connection closed.", event);
-      this.stats = {
-        ...this.stats,
-        status: 'disconnected',
-        connectedAt: null,
-      };
+      this.lastProcessedEntryId = null;
       this.frameTimestamps = [];
       this.normFs.onClose();
 
@@ -285,9 +326,10 @@ class WebSocketManager extends EventTarget {
       timeSyncManager.stop();
 
       // Stop polling
+      this.cancelScheduledPollingResume();
       this.stopPolling();
 
-      this.emitStats();
+      this.emitStats({ status: 'disconnected', connectedAt: null });
       this.reconnect();
     };
 

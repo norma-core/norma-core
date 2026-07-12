@@ -20,6 +20,10 @@ Web authority is a renewable lease with backend-enforced expiry. Disconnect, bus
 
 Transition grace periods and confirmation windows may remain adapter implementation details, but their purpose and bounds are defined by the backend authority state machine. `sessionStorage` may restore recent user intent for the same bus; the viewer must reacquire authority before enabling control.
 
+## Implementation
+
+This cross-stack decision is accepted but not implemented yet. The current viewer still uses `sessionStorage` and observed-mirroring timing heuristics as a transitional UI policy. Those heuristics do not provide authoritative exclusion and must not be treated as the backend contract described above. Implementation requires coordinated backend command-protocol and frontend changes.
+
 ## Consequences
 
 - UI controls can be enabled from one explicit authority state rather than several timing conditions.
