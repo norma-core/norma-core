@@ -1,4 +1,4 @@
-import { memo, useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import Long from 'long';
 import {
   Activity,
@@ -21,13 +21,14 @@ import type { FrameEntry } from '@/api/frame-parser';
 import { commandManager } from '@/api/commands.js';
 import { serverToLocal } from '@/api/timestamp-utils';
 import { yahboom_dogzilla_lite, usbvideo } from '@/api/proto.js';
+import ConnectionUptime from '@/components/ConnectionUptime';
+import { useConnectionStats } from '@/hooks';
 import ActionPanel, { QUICK_ACTIONS, type ActionDefinition } from '@/devices/yahboom-dogzilla-lite/ui/ActionPanel';
 import AttitudeIndicator from '@/devices/yahboom-dogzilla-lite/ui/AttitudeIndicator';
 import { CONTROL_SLIDER_CLASS_NAME } from '@/devices/yahboom-dogzilla-lite/ui/control-classes';
 import YahboomDogzillaLiteViewer from '@/devices/yahboom-dogzilla-lite/ui/YahboomDogzillaLiteViewer';
 import MovementPanel, { type MovementPanelRef } from '@/devices/yahboom-dogzilla-lite/ui/MovementPanel';
 import { getYahboomDogzillaLiteModelLabel } from '@/devices/yahboom-dogzilla-lite/ui/model-labels';
-import { useConnectionStatsWithUptime } from '@/hooks';
 import UsbCameraViewer from '@/usbvideo/CameraViewer';
 import { getVideoSourceId, getVideoSourceLabel } from '@/usbvideo/camera-source';
 
@@ -118,17 +119,6 @@ interface CameraOption {
 
 function clampByte(value: number) {
   return Math.max(0, Math.min(255, Math.round(value)));
-}
-
-function formatDuration(connectedAt: number | null) {
-  if (!connectedAt) {
-    return 'N/A';
-  }
-  const seconds = Math.max(0, Math.floor((Date.now() - connectedAt) / 1000));
-  const hours = Math.floor(seconds / 3600);
-  const minutes = Math.floor((seconds % 3600) / 60);
-  const secs = seconds % 60;
-  return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
 }
 
 function formatBytes(bytes: number) {
@@ -332,15 +322,22 @@ function SliderControlCard({
   );
 }
 
+interface StatusRow {
+  label: string;
+  value: ReactNode;
+}
+
+interface StatusSectionProps {
+  title: string;
+  icon: typeof Radar;
+  rows: StatusRow[];
+}
+
 function StatusSection({
   title,
   icon: Icon,
   rows
-}: {
-  title: string;
-  icon: typeof Radar;
-  rows: Array<{ label: string; value: string }>;
-}) {
+}: StatusSectionProps) {
   return (
     <section className="rounded-lg border border-border-default bg-surface-primary/80 px-4 py-4">
       <div className="flex items-center gap-2">
@@ -383,7 +380,7 @@ const YahboomDogzillaLiteDashboard = memo(function YahboomDogzillaLiteDashboard(
   const [activeAction, setActiveAction] = useState<yahboom_dogzilla_lite.ActionType | null>(null);
   const [commandLog, setCommandLog] = useState<DashboardLogEntry[]>([]);
 
-  const connectionStats = useConnectionStatsWithUptime();
+  const connectionStats = useConnectionStats();
 
   const status = deviceState?.status ?? null;
   const device = deviceState?.device ?? null;
@@ -515,7 +512,7 @@ const YahboomDogzillaLiteDashboard = memo(function YahboomDogzillaLiteDashboard(
     ? latencyHistoryRef.current
     : [{ timestamp: now, latency: deviceLatency }];
   const averageLatency = latencySamples.reduce((sum, entry) => sum + entry.latency, 0) / latencySamples.length;
-  const pingValue = connectionStats?.timeSync?.isActive ? connectionStats.timeSync.pingMs : averageLatency;
+  const pingValue = connectionStats.timeSync?.isActive ? connectionStats.timeSync.pingMs : averageLatency;
   const pingTone = !isConnected ? 'danger' : pingValue < 100 ? 'good' : pingValue < 300 ? 'warn' : 'danger';
 
   const batteryPercent = status?.batteryLevel ?? null;
@@ -681,10 +678,10 @@ const YahboomDogzillaLiteDashboard = memo(function YahboomDogzillaLiteDashboard(
   ];
 
   const networkRows = [
-    { label: 'Endpoint', value: connectionStats?.endpoint ?? 'N/A' },
-    { label: 'Packets', value: connectionStats ? connectionStats.packetsReceived.toLocaleString() : 'N/A' },
-    { label: 'Data', value: connectionStats ? formatBytes(connectionStats.bytesReceived) : 'N/A' },
-    { label: 'Uptime', value: formatDuration(connectionStats?.connectedAt ?? null) },
+    { label: 'Endpoint', value: connectionStats.endpoint },
+    { label: 'Packets', value: connectionStats.packetsReceived.toLocaleString() },
+    { label: 'Data', value: formatBytes(connectionStats.bytesReceived) },
+    { label: 'Uptime', value: <ConnectionUptime connectedAt={connectionStats.connectedAt} /> },
     { label: 'Latency', value: `${Math.round(averageLatency)} ms` }
   ];
 

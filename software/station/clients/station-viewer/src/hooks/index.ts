@@ -1,6 +1,8 @@
 export { useInferenceState } from "./useInferenceState";
 export { useLatestEntryId } from "./useLatestEntryId";
-export { useConnectionStats, useConnectionStatsWithUptime } from "./useConnectionStats";
+export { useLiveSnapshot } from "./useLiveSnapshot";
+export { useConnectionStats } from "./useConnectionStats";
+export { useElapsedSeconds } from "./useElapsedSeconds";
 export { useFrameData } from "./useFrameData";
 export { useQueueEntries } from "./useQueueEntries";
 export { useTimelineState } from "./useTimelineState";

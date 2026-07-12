@@ -1,17 +1,18 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import Long from 'long';
 import { Tag as TagIcon } from 'lucide-react';
-import { useInferenceState, useConnectionStatsWithUptime, useLatestEntryId, useWakeLock, invalidateTagsCache } from "@/hooks";
-import AsciiRobot from "@/components/AsciiRobot";
-import TagDialog from "@/components/TagDialog";
-import { copyToClipboard } from "@/api/clipboard-utils";
-import { commandManager } from "@/api/commands";
-import { inference_tags } from "@/api/proto.js";
-import { defaultTag } from "@/utils/tag-phrases";
-import { getFPSColor } from '@/utils/color-utils';
+import { copyToClipboard } from '@/api/clipboard-utils';
+import { commandManager } from '@/api/commands';
+import { inference_tags } from '@/api/proto.js';
+import AsciiRobot from '@/components/AsciiRobot';
+import ConnectionUptime from '@/components/ConnectionUptime';
+import TagDialog from '@/components/TagDialog';
+import { useConnectionStats, useLiveSnapshot, useWakeLock, invalidateTagsCache } from '@/hooks';
 import LiveDeviceSurface from '@/devices/LiveDeviceSurface';
 import { resolveLiveDevices } from '@/devices/live-registry';
 import CameraSurface from '@/usbvideo/CameraSurface';
+import { getFPSColor } from '@/utils/color-utils';
+import { defaultTag } from '@/utils/tag-phrases';
 
 interface TagDialogState {
   entryId: number | null;
@@ -26,20 +27,10 @@ function formatBytes(bytes: number): string {
   return `${(bytes / Math.pow(k, i)).toFixed(2)} ${sizes[i]}`;
 }
 
-function formatUptime(connectedAt: number | null): string {
-  if (!connectedAt) return 'N/A';
-  const seconds = Math.floor((Date.now() - connectedAt) / 1000);
-  const hours = Math.floor(seconds / 3600);
-  const minutes = Math.floor((seconds % 3600) / 60);
-  const secs = seconds % 60;
-  return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-}
-
 function HomePage() {
   useWakeLock();
-  const inferenceState = useInferenceState();
-  const latestEntryId = useLatestEntryId();
-  const connectionStats = useConnectionStatsWithUptime();
+  const { frame: inferenceState, latestEntryId } = useLiveSnapshot();
+  const connectionStats = useConnectionStats();
   const [copied, setCopied] = useState(false);
   const [tagDialog, setTagDialog] = useState<TagDialogState | null>(null);
   const [isTagSubmitting, setIsTagSubmitting] = useState(false);
@@ -181,7 +172,9 @@ function HomePage() {
                 </div>
                 <div className="flex items-center gap-1.5">
                   <span className="text-text-muted">Uptime:</span>
-                  <span className="text-accent-success font-semibold">{formatUptime(connectionStats.connectedAt)}</span>
+                  <span className="text-accent-success font-semibold">
+                    <ConnectionUptime connectedAt={connectionStats.connectedAt} />
+                  </span>
                 </div>
               </div>
             </>

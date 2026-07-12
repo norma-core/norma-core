@@ -10,10 +10,20 @@ npm run build        # Full build: hashes, proto, type-check, and Vite build
 npm run build:proto  # Regenerate protobuf bindings from ../../../../../protobufs
 npm run lint         # Run oxlint (Rust-based linter)
 npm run type-check   # Run TypeScript compiler without emitting
+npm test             # Run Vitest once
+npm run test:watch   # Run Vitest in watch mode
 npm run preview      # Preview production build locally
 ```
 
-**Testing:** Not configured. No test runner exists in this project.
+## Testing
+
+Vitest runs in the Node environment. Keep tests beside the module as `*.test.ts`.
+
+Tests are regression guards, not a coverage target. Before adding a test, name the plausible bug it should catch. Prioritize behavior with a history of failure, async races, ownership or cleanup boundaries, atomic external-store updates, and non-trivial domain rules. A small set of tests around these risks is preferable to exhaustive coverage of trivial branches.
+
+Exercise behavior through public interfaces and assert caller-visible outcomes. Tests must survive an internal refactor that preserves behavior. Mock only true system boundaries when necessary, such as WebSocket, browser APIs, or time; use real Station Viewer modules together whenever practical. Avoid tests that mirror implementation steps, test private helpers, merely restate types, or assert mock call counts unless the count itself is part of the public contract.
+
+For a bug fix, first demonstrate that the test fails for the broken behavior, then make it pass. If a test cannot be connected to a realistic regression, do not add it.
 
 ## Tech Stack
 
@@ -297,25 +307,30 @@ export function useTimelineState(): UseTimelineStateReturn {
 }
 ```
 
-Simpler hooks return plain values or flat objects (e.g., `useInferenceState` returns `Frame | null`, `useFrameData` returns `{ currentFrame, parsedFrame, isLoading, ... }`).
+Simpler hooks return plain values or flat objects. For example, `useInferenceState` returns `Frame | null`, while `useFrameData({ frameNumber, immediate })` returns `{ parsedFrame, isLoading, error }`; timeline state is the sole owner of the selected frame number.
 
-### useEffect Cleanup
-Always clean up event listeners, timers, and subscriptions:
+### External Stores and Effect Cleanup
+
+Use `useSyncExternalStore` for state owned by long-lived managers. Snapshot getters must return the same object reference until the underlying state changes, and related values must be published atomically. `WebSocketManager` exposes the canonical live and connection-statistics snapshots; do not mirror them into hook-local `useState`.
+
+For component-owned effects, always clean up event listeners, timers, and subscriptions:
 
 ```typescript
 useEffect(() => {
-  const handler = () => setStats(webSocketManager.getConnectionStats());
-  webSocketManager.addEventListener(WS_EVENTS.STATS, handler);
-  return () => webSocketManager.removeEventListener(WS_EVENTS.STATS, handler);
+  const handler = () => setIsFullscreen(document.fullscreenElement === elementRef.current);
+  document.addEventListener('fullscreenchange', handler);
+  return () => document.removeEventListener('fullscreenchange', handler);
 }, []);
 ```
 
 ### Hook Exports
-All hooks are re-exported from `src/hooks/index.ts` (11 hooks + 3 types):
+All hooks are re-exported from `src/hooks/index.ts`:
 ```typescript
 export { useInferenceState } from "./useInferenceState";
 export { useLatestEntryId } from "./useLatestEntryId";
-export { useConnectionStats, useConnectionStatsWithUptime } from "./useConnectionStats";
+export { useLiveSnapshot } from "./useLiveSnapshot";
+export { useConnectionStats } from "./useConnectionStats";
+export { useElapsedSeconds } from "./useElapsedSeconds";
 export { useFrameData } from "./useFrameData";
 export { useQueueEntries } from "./useQueueEntries";
 export { useTimelineState } from "./useTimelineState";
@@ -324,8 +339,12 @@ export { useInferenceTags, invalidateTagsCache } from "./useInferenceTags";
 export { useKeyboardNavigation } from "./useKeyboardNavigation";
 export { useWakeLock } from "./useWakeLock";
 export { useBusMonitor } from "./useBusMonitor";
-// Plus type exports: TimelineControlsRef, UseWakeLockReturn, BusStatus, ErrorPacketDump
+export { useElementFullscreen } from "./useElementFullscreen";
+export { ThemeProvider, useTheme } from "./useTheme";
+// Plus hook-owned type exports: Theme, TimelineControlsRef, UseWakeLockReturn, BusStatus, ErrorPacketDump
 ```
+
+Modules outside `src/hooks/` import hooks through `@/hooks`. Hook implementations import sibling hooks directly rather than through the barrel, which avoids a cycle from `index.ts` back into the implementation being exported.
 
 ## Error Handling
 
@@ -366,12 +385,14 @@ Run `npm run build:proto` after modifying .proto files.
 
 ## State Management
 
-State is managed through custom hooks, not global state libraries. WebSocket events drive state updates via EventTarget. Global managers are exported as default singletons:
+State is managed through custom hooks, not global state libraries. WebSocket events drive stable immutable snapshots exposed to React through `useSyncExternalStore`. Global managers are exported as default singletons:
 
 ```typescript
 const webSocketManager = new WebSocketManager(`ws://${host}/api`);
 export default webSocketManager;
 ```
+
+The live snapshot contains the frame and latest entry ID as one atomic observation. Connection statistics use a separate snapshot. Keep local UI state in the owning page or device view; do not turn these transport snapshots into a general application store. See `docs/adr/README.md` for the accepted decisions and invariants.
 
 The WebSocket manager is initialized at app startup via side-effect import in `main.tsx`:
 ```typescript

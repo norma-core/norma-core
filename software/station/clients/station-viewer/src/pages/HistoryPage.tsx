@@ -30,27 +30,19 @@ function HistoryPage() {
   const timelineControlsRef = useRef<TimelineControlsRef>(null);
 
   const {
-    currentFrame,
     parsedFrame,
     isLoading: isReadingEntry,
     error: entryError,
-    selectFrame: selectFrameData,
-  } = useFrameData();
-
-  useEffect(() => {
-    if (timelineState.currentFrame !== currentFrame) {
-      selectFrameData(timelineState.currentFrame, timelineState.isNavigationImmediate);
-    }
-  }, [timelineState.currentFrame, currentFrame, selectFrameData, timelineState.isNavigationImmediate]);
+  } = useFrameData({
+    frameNumber: timelineState.isLoading || timelineState.error
+      ? null
+      : timelineState.currentFrame,
+    immediate: timelineState.isNavigationImmediate,
+  });
 
   useKeyboardNavigation(timelineActions, timelineState, { gotoInputRef: timelineControlsRef });
 
-  useEffect(() => {
-    webSocketManager.stopUpdating();
-    return () => {
-      webSocketManager.resumeUpdating();
-    };
-  }, []);
+  useEffect(() => webSocketManager.acquireHistoryMode(), []);
 
   const videoQueueCount = parsedFrame?.videoQueues?.length ?? 0;
   const st3215Count = parsedFrame?.st3215 ? 1 : 0;
@@ -126,7 +118,7 @@ function HistoryPage() {
               {isReadingEntry && (
                 <div className="flex items-center gap-2 text-accent-info">
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-accent-info"></div>
-                  <span>Reading entry {currentFrame.toLocaleString()}...</span>
+                  <span>Reading entry {timelineState.currentFrame.toLocaleString()}...</span>
                 </div>
               )}
 
