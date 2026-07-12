@@ -1,10 +1,10 @@
 import Long from "long";
-import { normfs, inference } from "./proto.js";
-import { parseFrame, type Frame } from "./frame-parser.js";
-import { timeSyncManager } from "./time-sync.js";
-import { NormFsClient } from "./normfs.js";
-import { commandManager, type CommandManager } from "./commands.js";
-import { WS_EVENTS } from "./websocket-events.js";
+import { commandManager, type CommandManager } from "@/api/commands.js";
+import { parseFrame, type Frame } from "@/api/frame-parser.js";
+import { NormFsClient } from "@/api/normfs.js";
+import { normfs, inference } from "@/api/proto.js";
+import { timeSyncManager } from "@/api/time-sync.js";
+import { WS_EVENTS } from "@/api/websocket-events.js";
 
 export const ErrConnectionNotOpen = new Error("WebSocket: Connection not open.");
 
@@ -116,7 +116,11 @@ class WebSocketManager extends EventTarget {
       if (entryId !== this.lastProcessedEntryId) {
         // Decode as InferenceRx and parse frame
         const inferenceRx = inference.InferenceRx.decode(entry.data);
-        const frame = await parseFrame(inferenceRx, entry.id, this.normFs, this.liveSnapshot.frame || undefined, {
+        let previousFrame: Frame | undefined;
+        if (this.lastProcessedEntryId !== null && this.liveSnapshot.frame !== null) {
+          previousFrame = this.liveSnapshot.frame;
+        }
+        const frame = await parseFrame(inferenceRx, entry.id, this.normFs, previousFrame, {
           retainRawData: false,
           shouldPublishVideoFrames: () =>
             this.isLiveMode() && acquisitionGeneration === this.acquisitionGeneration,

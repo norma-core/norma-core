@@ -12,9 +12,9 @@ The previous `useConnectionStatsWithUptime()` refreshed the complete statistics 
 
 Connection statistics update only in response to `WebSocketManager` events.
 
-A dedicated `useElapsedSeconds(startedAt)` hook owns the timer and cleanup needed to derive elapsed seconds. Each large consumer places that hook inside a small local uptime-rendering module, so the one-second tick stops at that module's seam.
+A dedicated `useElapsedSeconds(startedAt)` hook owns the timer and cleanup needed to derive elapsed seconds. The shared `ConnectionUptime` leaf component uses that hook, so large consumers render a stable subtree and the one-second tick stops at the leaf module's seam.
 
-Formatting remains local to the view because Home and device dashboards intentionally use different presentation formats.
+`ConnectionUptime` also owns the shared `HH:MM:SS` presentation used by Home and device dashboards. A view that later needs a different presentation can use `useElapsedSeconds` directly without moving the timer back into connection statistics.
 
 ## Consequences
 
@@ -29,6 +29,6 @@ Formatting remains local to the view because Home and device dashboards intentio
 
 Uptime is presentation-derived wall-clock state, not transport state. Putting a timer in the transport manager would mix unrelated responsibilities.
 
-### Use one shared uptime formatter
+### Keep separate uptime components and formatters in each view
 
-The views have different formatting requirements. Sharing timer behavior provides leverage without forcing presentation policy into the hook.
+This duplicates identical presentation code and makes future timer or formatting fixes easy to apply inconsistently. The shared leaf component keeps both the timer-driven render and common presentation isolated.

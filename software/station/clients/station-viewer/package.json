@@ -39,6 +39,7 @@
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^5.2.0",
     "cross-env": "^10.1.0",
+    "happy-dom": "20.10.6",
     "oxlint": "^1.61.0",
     "protobufjs": "^7.5.7",
     "protobufjs-cli": "^1.1.3",

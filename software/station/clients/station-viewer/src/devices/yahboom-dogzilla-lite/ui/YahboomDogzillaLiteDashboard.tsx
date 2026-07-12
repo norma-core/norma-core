@@ -1,5 +1,4 @@
-import { memo, useEffect, useMemo, useRef, useState } from 'react';
-import type { ReactNode } from 'react';
+import { memo, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import Long from 'long';
 import {
   Activity,
