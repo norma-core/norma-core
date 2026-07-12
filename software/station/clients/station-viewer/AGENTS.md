@@ -339,6 +339,8 @@ export { useInferenceTags, invalidateTagsCache } from "./useInferenceTags";
 export { useKeyboardNavigation } from "./useKeyboardNavigation";
 export { useWakeLock } from "./useWakeLock";
 export { useBusMonitor } from "./useBusMonitor";
+export { useElementFullscreen } from "./useElementFullscreen";
+export { ThemeProvider, useTheme } from "./useTheme";
 // Plus hook-owned type exports: Theme, TimelineControlsRef, UseWakeLockReturn, BusStatus, ErrorPacketDump
 ```
 

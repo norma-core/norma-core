@@ -12,13 +12,13 @@ Camera consumers need the newest image for one source, while device selection an
 
 Live parsing separates camera payload delivery from the normalized React frame.
 
-When `parseFrame` runs with `publishVideoFrames: true`, it publishes the encoded image bytes to `live-camera-store` under a stable source ID derived from camera `uniqueId`, falling back to `queueId`. The `Frame.videoQueues` entry receives a metadata-only envelope with the large image buffers removed.
+When `parseFrame` receives a `shouldPublishVideoFrames` predicate and it still returns `true` immediately before delivery, parsing publishes the encoded image bytes to `live-camera-store` under a stable source ID derived from camera `uniqueId`, falling back to `queueId`. The `Frame.videoQueues` entry receives a metadata-only envelope with the large image buffers removed.
 
 `live-camera-store` retains the latest frame per source and maintains listeners per source. A subscriber immediately receives the retained current frame when one exists. Removing the last listener also removes the listener set, while the latest frame remains available for the next subscriber.
 
 `CameraViewer` subscribes only to its selected source. It owns Blob URL creation and revocation, duplicate-index suppression, image load ordering, and display FPS. Camera bytes are not added to `LiveSnapshot`, React Context, or a general state manager.
 
-Historical parsing may retain complete decoded camera envelopes because history reads are selected, lower-frequency operations and may need the original entry contents. Payload publication is explicitly controlled by `ParseFrameOptions`.
+Historical parsing may retain complete decoded camera envelopes because history reads are selected, lower-frequency operations and may need the original entry contents. Payload publication is explicitly controlled by the `ParseFrameOptions` predicate; omitting it keeps camera payloads out of the live store.
 
 ## Consequences
 

@@ -51,7 +51,6 @@ type DecodedEntry = st3215.IInferenceState | st3215.ITxEnvelope | usbvideo.IRxEn
 
 interface ParseFrameOptions {
   retainRawData?: boolean;
-  publishVideoFrames?: boolean;
   shouldPublishVideoFrames?: () => boolean;
 }
 
@@ -192,7 +191,6 @@ export async function parseFrame(
   options: ParseFrameOptions = {},
 ): Promise<Frame> {
   const retainRawData = options.retainRawData ?? true;
-  const publishVideoFrames = options.publishVideoFrames ?? false;
   const frame: Frame = {
     stateId: new Uint8Array(Array.from(entryIdBytes)),
     videoQueues: [],
@@ -384,8 +382,7 @@ export async function parseFrame(
             };
             break;
           case drivers.QueueDataType.QDT_USB_VIDEO_FRAMES: {
-            const publishCurrentVideoFrame = publishVideoFrames
-              && (options.shouldPublishVideoFrames?.() ?? true);
+            const publishCurrentVideoFrame = options.shouldPublishVideoFrames?.() ?? false;
             if (publishCurrentVideoFrame) {
               publishLiveCameraFrame(result.queue, result.decoded as usbvideo.IRxEnvelope);
             }

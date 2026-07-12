@@ -118,7 +118,6 @@ class WebSocketManager extends EventTarget {
         const inferenceRx = inference.InferenceRx.decode(entry.data);
         const frame = await parseFrame(inferenceRx, entry.id, this.normFs, this.liveSnapshot.frame || undefined, {
           retainRawData: false,
-          publishVideoFrames: true,
           shouldPublishVideoFrames: () =>
             this.isLiveMode() && acquisitionGeneration === this.acquisitionGeneration,
         });
@@ -318,6 +317,7 @@ class WebSocketManager extends EventTarget {
 
     this.ws.onclose = (event) => {
       console.log("WebSocket: Connection closed.", event);
+      this.acquisitionGeneration += 1;
       this.lastProcessedEntryId = null;
       this.frameTimestamps = [];
       this.normFs.onClose();

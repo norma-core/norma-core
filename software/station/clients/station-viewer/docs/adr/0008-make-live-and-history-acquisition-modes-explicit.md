@@ -15,7 +15,7 @@ Station Viewer has two data-acquisition modes with different behavior:
 
 Expose acquisition intent rather than polling mechanics.
 
-The transport module provides a disposable history lease whose public concepts are `live` and `history`. Acquiring the first history lease suspends latest-frame polling but keeps the WebSocket and NormFS client available for selected reads. Releasing the last history lease resumes live polling immediately if the connection is open.
+The transport module provides a disposable history lease whose public concepts are `live` and `history`. Acquiring the first history lease suspends latest-frame polling but keeps the WebSocket and NormFS client available for selected reads. Releasing the last history lease switches acquisition intent back to `live` immediately and schedules polling to resume on the next task if the connection is open.
 
 Mode transitions must be idempotent and safe under React Strict Mode mount-cleanup-mount behavior. Reconnect must restore the active acquisition mode rather than always assuming live mode. Only live mode publishes camera payloads and advances `LiveSnapshot`; history reads return their results to their requesting history module.
 

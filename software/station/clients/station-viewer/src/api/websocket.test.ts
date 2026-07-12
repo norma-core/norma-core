@@ -1,4 +1,6 @@
+import Long from 'long';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { inference, normfs } from './proto.js';
 
 type MessageHandler = (event: MessageEvent<ArrayBuffer>) => void | Promise<void>;
 
@@ -21,11 +23,21 @@ class FakeWebSocket {
   close() {}
   send() {}
 
+  open() {
+    this.readyState = FakeWebSocket.OPEN;
+    this.onopen?.();
+  }
+
+  disconnect() {
+    this.readyState = 3;
+    this.onclose?.();
+  }
+
   async receive(data: Uint8Array) {
     if (!this.onmessage) {
       throw new Error('WebSocket message handler is not registered');
     }
-    await this.onmessage({ data: data.buffer } as MessageEvent<ArrayBuffer>);
+    await this.onmessage({ data: Uint8Array.from(data).buffer } as MessageEvent<ArrayBuffer>);
   }
 }
 
@@ -35,6 +47,23 @@ function getSocket(): FakeWebSocket {
     throw new Error('WebSocketManager did not create a WebSocket');
   }
   return socket;
+}
+
+function createFrameResponse(readId: number, entryId: number): Uint8Array {
+  const inferenceData = inference.InferenceRx.encode({ entries: [] }).finish();
+  return normfs.ServerResponse.encode({
+    read: {
+      readId: Long.fromNumber(readId),
+      result: normfs.ReadResponse.Result.RR_ENTRY,
+      id: { raw: Uint8Array.of(entryId) },
+      data: inferenceData,
+    },
+  }).finish();
+}
+
+async function finishFrameProcessing(): Promise<void> {
+  await Promise.resolve();
+  await Promise.resolve();
 }
 
 describe('WebSocketManager state', () => {
@@ -53,6 +82,7 @@ describe('WebSocketManager state', () => {
   });
 
   afterEach(() => {
+    vi.useRealTimers();
     vi.unstubAllGlobals();
   });
 
@@ -100,5 +130,55 @@ describe('WebSocketManager state', () => {
     expect(publishedModes).toEqual(['history', 'live']);
 
     unsubscribe();
+  });
+
+  it('does not publish an in-flight frame after the connection closes', async () => {
+    vi.useFakeTimers();
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    const { default: webSocketManager } = await import('./websocket');
+    const socket = getSocket();
+    const before = webSocketManager.getLiveSnapshot();
+    const publishedSnapshots: ReturnType<typeof webSocketManager.getLiveSnapshot>[] = [];
+    const unsubscribe = webSocketManager.subscribeLive(() => {
+      publishedSnapshots.push(webSocketManager.getLiveSnapshot());
+    });
+
+    socket.open();
+    const responseDelivery = socket.receive(createFrameResponse(1, 7));
+    socket.disconnect();
+    await responseDelivery;
+    await finishFrameProcessing();
+    unsubscribe();
+
+    expect(webSocketManager.getConnectionStats().status).toBe('disconnected');
+    expect(webSocketManager.getLiveSnapshot()).toBe(before);
+    expect(publishedSnapshots).toEqual([]);
+  });
+
+  it('publishes the current frame after reconnect when its entry ID is unchanged', async () => {
+    vi.useFakeTimers();
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    const { default: webSocketManager } = await import('./websocket');
+    const publishedSnapshots: ReturnType<typeof webSocketManager.getLiveSnapshot>[] = [];
+    const unsubscribe = webSocketManager.subscribeLive(() => {
+      publishedSnapshots.push(webSocketManager.getLiveSnapshot());
+    });
+
+    const firstSocket = getSocket();
+    firstSocket.open();
+    await firstSocket.receive(createFrameResponse(1, 7));
+    await finishFrameProcessing();
+    firstSocket.disconnect();
+
+    await vi.advanceTimersByTimeAsync(100);
+    const secondSocket = getSocket();
+    secondSocket.open();
+    await secondSocket.receive(createFrameResponse(2, 7));
+    await finishFrameProcessing();
+    unsubscribe();
+
+    expect(secondSocket).not.toBe(firstSocket);
+    expect(publishedSnapshots.map(({ latestEntryId }) => latestEntryId)).toEqual([7, 7]);
+    expect(publishedSnapshots[1]).not.toBe(publishedSnapshots[0]);
   });
 });
