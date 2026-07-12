@@ -33,7 +33,7 @@ The last successfully published live snapshot remains available during a transie
 
 ## Rejected alternatives
 
-### Add Zustand as the owner of WebSocket state
+### Add a general-purpose state manager as the owner of WebSocket state
 
 This would create a second owner for data already owned by `WebSocketManager` and would not remove the need to adapt transport events. The existing manager only needs a stronger interface.
 
