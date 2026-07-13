@@ -16818,4043 +16818,6 @@ export const frame = $root.frame = (() => {
     return frame;
 })();
 
-export const hikmicro = $root.hikmicro = (() => {
-
-    /**
-     * Namespace hikmicro.
-     * @exports hikmicro
-     * @namespace
-     */
-    const hikmicro = {};
-
-    hikmicro.UsbDeviceInfo = (function() {
-
-        /**
-         * Properties of a UsbDeviceInfo.
-         * @memberof hikmicro
-         * @interface IUsbDeviceInfo
-         * @property {number|null} [vendorId] UsbDeviceInfo vendorId
-         * @property {number|null} [productId] UsbDeviceInfo productId
-         * @property {number|null} [busNumber] UsbDeviceInfo busNumber
-         * @property {number|null} [deviceNumber] UsbDeviceInfo deviceNumber
-         * @property {Array.<number>|null} [portNumbers] UsbDeviceInfo portNumbers
-         * @property {string|null} [uniqueId] UsbDeviceInfo uniqueId
-         * @property {string|null} [manufacturer] UsbDeviceInfo manufacturer
-         * @property {string|null} [product] UsbDeviceInfo product
-         * @property {string|null} [serialNumber] UsbDeviceInfo serialNumber
-         * @property {number|null} [usbBcd] UsbDeviceInfo usbBcd
-         * @property {number|null} [deviceBcd] UsbDeviceInfo deviceBcd
-         * @property {number|null} [deviceClass] UsbDeviceInfo deviceClass
-         * @property {number|null} [deviceSubclass] UsbDeviceInfo deviceSubclass
-         * @property {number|null} [deviceProtocol] UsbDeviceInfo deviceProtocol
-         * @property {number|null} [maxPacketSize0] UsbDeviceInfo maxPacketSize0
-         * @property {number|null} [numConfigurations] UsbDeviceInfo numConfigurations
-         * @property {Uint8Array|null} [deviceDescriptor] UsbDeviceInfo deviceDescriptor
-         * @property {Array.<Uint8Array>|null} [configDescriptors] UsbDeviceInfo configDescriptors
-         */
-
-        /**
-         * Constructs a new UsbDeviceInfo.
-         * @memberof hikmicro
-         * @classdesc Represents a UsbDeviceInfo.
-         * @implements IUsbDeviceInfo
-         * @constructor
-         * @param {hikmicro.IUsbDeviceInfo=} [properties] Properties to set
-         */
-        function UsbDeviceInfo(properties) {
-            this.portNumbers = [];
-            this.configDescriptors = [];
-            if (properties)
-                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
-                        this[keys[i]] = properties[keys[i]];
-        }
-
-        /**
-         * UsbDeviceInfo vendorId.
-         * @member {number} vendorId
-         * @memberof hikmicro.UsbDeviceInfo
-         * @instance
-         */
-        UsbDeviceInfo.prototype.vendorId = 0;
-
-        /**
-         * UsbDeviceInfo productId.
-         * @member {number} productId
-         * @memberof hikmicro.UsbDeviceInfo
-         * @instance
-         */
-        UsbDeviceInfo.prototype.productId = 0;
-
-        /**
-         * UsbDeviceInfo busNumber.
-         * @member {number} busNumber
-         * @memberof hikmicro.UsbDeviceInfo
-         * @instance
-         */
-        UsbDeviceInfo.prototype.busNumber = 0;
-
-        /**
-         * UsbDeviceInfo deviceNumber.
-         * @member {number} deviceNumber
-         * @memberof hikmicro.UsbDeviceInfo
-         * @instance
-         */
-        UsbDeviceInfo.prototype.deviceNumber = 0;
-
-        /**
-         * UsbDeviceInfo portNumbers.
-         * @member {Array.<number>} portNumbers
-         * @memberof hikmicro.UsbDeviceInfo
-         * @instance
-         */
-        UsbDeviceInfo.prototype.portNumbers = $util.emptyArray;
-
-        /**
-         * UsbDeviceInfo uniqueId.
-         * @member {string} uniqueId
-         * @memberof hikmicro.UsbDeviceInfo
-         * @instance
-         */
-        UsbDeviceInfo.prototype.uniqueId = "";
-
-        /**
-         * UsbDeviceInfo manufacturer.
-         * @member {string} manufacturer
-         * @memberof hikmicro.UsbDeviceInfo
-         * @instance
-         */
-        UsbDeviceInfo.prototype.manufacturer = "";
-
-        /**
-         * UsbDeviceInfo product.
-         * @member {string} product
-         * @memberof hikmicro.UsbDeviceInfo
-         * @instance
-         */
-        UsbDeviceInfo.prototype.product = "";
-
-        /**
-         * UsbDeviceInfo serialNumber.
-         * @member {string} serialNumber
-         * @memberof hikmicro.UsbDeviceInfo
-         * @instance
-         */
-        UsbDeviceInfo.prototype.serialNumber = "";
-
-        /**
-         * UsbDeviceInfo usbBcd.
-         * @member {number} usbBcd
-         * @memberof hikmicro.UsbDeviceInfo
-         * @instance
-         */
-        UsbDeviceInfo.prototype.usbBcd = 0;
-
-        /**
-         * UsbDeviceInfo deviceBcd.
-         * @member {number} deviceBcd
-         * @memberof hikmicro.UsbDeviceInfo
-         * @instance
-         */
-        UsbDeviceInfo.prototype.deviceBcd = 0;
-
-        /**
-         * UsbDeviceInfo deviceClass.
-         * @member {number} deviceClass
-         * @memberof hikmicro.UsbDeviceInfo
-         * @instance
-         */
-        UsbDeviceInfo.prototype.deviceClass = 0;
-
-        /**
-         * UsbDeviceInfo deviceSubclass.
-         * @member {number} deviceSubclass
-         * @memberof hikmicro.UsbDeviceInfo
-         * @instance
-         */
-        UsbDeviceInfo.prototype.deviceSubclass = 0;
-
-        /**
-         * UsbDeviceInfo deviceProtocol.
-         * @member {number} deviceProtocol
-         * @memberof hikmicro.UsbDeviceInfo
-         * @instance
-         */
-        UsbDeviceInfo.prototype.deviceProtocol = 0;
-
-        /**
-         * UsbDeviceInfo maxPacketSize0.
-         * @member {number} maxPacketSize0
-         * @memberof hikmicro.UsbDeviceInfo
-         * @instance
-         */
-        UsbDeviceInfo.prototype.maxPacketSize0 = 0;
-
-        /**
-         * UsbDeviceInfo numConfigurations.
-         * @member {number} numConfigurations
-         * @memberof hikmicro.UsbDeviceInfo
-         * @instance
-         */
-        UsbDeviceInfo.prototype.numConfigurations = 0;
-
-        /**
-         * UsbDeviceInfo deviceDescriptor.
-         * @member {Uint8Array} deviceDescriptor
-         * @memberof hikmicro.UsbDeviceInfo
-         * @instance
-         */
-        UsbDeviceInfo.prototype.deviceDescriptor = $util.newBuffer([]);
-
-        /**
-         * UsbDeviceInfo configDescriptors.
-         * @member {Array.<Uint8Array>} configDescriptors
-         * @memberof hikmicro.UsbDeviceInfo
-         * @instance
-         */
-        UsbDeviceInfo.prototype.configDescriptors = $util.emptyArray;
-
-        /**
-         * Creates a new UsbDeviceInfo instance using the specified properties.
-         * @function create
-         * @memberof hikmicro.UsbDeviceInfo
-         * @static
-         * @param {hikmicro.IUsbDeviceInfo=} [properties] Properties to set
-         * @returns {hikmicro.UsbDeviceInfo} UsbDeviceInfo instance
-         */
-        UsbDeviceInfo.create = function create(properties) {
-            return new UsbDeviceInfo(properties);
-        };
-
-        /**
-         * Encodes the specified UsbDeviceInfo message. Does not implicitly {@link hikmicro.UsbDeviceInfo.verify|verify} messages.
-         * @function encode
-         * @memberof hikmicro.UsbDeviceInfo
-         * @static
-         * @param {hikmicro.IUsbDeviceInfo} message UsbDeviceInfo message or plain object to encode
-         * @param {$protobuf.Writer} [writer] Writer to encode to
-         * @returns {$protobuf.Writer} Writer
-         */
-        UsbDeviceInfo.encode = function encode(message, writer) {
-            if (!writer)
-                writer = $Writer.create();
-            if (message.vendorId != null && Object.hasOwnProperty.call(message, "vendorId"))
-                writer.uint32(/* id 1, wireType 0 =*/8).uint32(message.vendorId);
-            if (message.productId != null && Object.hasOwnProperty.call(message, "productId"))
-                writer.uint32(/* id 2, wireType 0 =*/16).uint32(message.productId);
-            if (message.busNumber != null && Object.hasOwnProperty.call(message, "busNumber"))
-                writer.uint32(/* id 3, wireType 0 =*/24).uint32(message.busNumber);
-            if (message.deviceNumber != null && Object.hasOwnProperty.call(message, "deviceNumber"))
-                writer.uint32(/* id 4, wireType 0 =*/32).uint32(message.deviceNumber);
-            if (message.portNumbers != null && message.portNumbers.length) {
-                writer.uint32(/* id 5, wireType 2 =*/42).fork();
-                for (let i = 0; i < message.portNumbers.length; ++i)
-                    writer.uint32(message.portNumbers[i]);
-                writer.ldelim();
-            }
-            if (message.uniqueId != null && Object.hasOwnProperty.call(message, "uniqueId"))
-                writer.uint32(/* id 6, wireType 2 =*/50).string(message.uniqueId);
-            if (message.manufacturer != null && Object.hasOwnProperty.call(message, "manufacturer"))
-                writer.uint32(/* id 7, wireType 2 =*/58).string(message.manufacturer);
-            if (message.product != null && Object.hasOwnProperty.call(message, "product"))
-                writer.uint32(/* id 8, wireType 2 =*/66).string(message.product);
-            if (message.serialNumber != null && Object.hasOwnProperty.call(message, "serialNumber"))
-                writer.uint32(/* id 9, wireType 2 =*/74).string(message.serialNumber);
-            if (message.usbBcd != null && Object.hasOwnProperty.call(message, "usbBcd"))
-                writer.uint32(/* id 20, wireType 0 =*/160).uint32(message.usbBcd);
-            if (message.deviceBcd != null && Object.hasOwnProperty.call(message, "deviceBcd"))
-                writer.uint32(/* id 21, wireType 0 =*/168).uint32(message.deviceBcd);
-            if (message.deviceClass != null && Object.hasOwnProperty.call(message, "deviceClass"))
-                writer.uint32(/* id 22, wireType 0 =*/176).uint32(message.deviceClass);
-            if (message.deviceSubclass != null && Object.hasOwnProperty.call(message, "deviceSubclass"))
-                writer.uint32(/* id 23, wireType 0 =*/184).uint32(message.deviceSubclass);
-            if (message.deviceProtocol != null && Object.hasOwnProperty.call(message, "deviceProtocol"))
-                writer.uint32(/* id 24, wireType 0 =*/192).uint32(message.deviceProtocol);
-            if (message.maxPacketSize0 != null && Object.hasOwnProperty.call(message, "maxPacketSize0"))
-                writer.uint32(/* id 25, wireType 0 =*/200).uint32(message.maxPacketSize0);
-            if (message.numConfigurations != null && Object.hasOwnProperty.call(message, "numConfigurations"))
-                writer.uint32(/* id 26, wireType 0 =*/208).uint32(message.numConfigurations);
-            if (message.deviceDescriptor != null && Object.hasOwnProperty.call(message, "deviceDescriptor"))
-                writer.uint32(/* id 40, wireType 2 =*/322).bytes(message.deviceDescriptor);
-            if (message.configDescriptors != null && message.configDescriptors.length)
-                for (let i = 0; i < message.configDescriptors.length; ++i)
-                    writer.uint32(/* id 41, wireType 2 =*/330).bytes(message.configDescriptors[i]);
-            return writer;
-        };
-
-        /**
-         * Encodes the specified UsbDeviceInfo message, length delimited. Does not implicitly {@link hikmicro.UsbDeviceInfo.verify|verify} messages.
-         * @function encodeDelimited
-         * @memberof hikmicro.UsbDeviceInfo
-         * @static
-         * @param {hikmicro.IUsbDeviceInfo} message UsbDeviceInfo message or plain object to encode
-         * @param {$protobuf.Writer} [writer] Writer to encode to
-         * @returns {$protobuf.Writer} Writer
-         */
-        UsbDeviceInfo.encodeDelimited = function encodeDelimited(message, writer) {
-            return this.encode(message, writer).ldelim();
-        };
-
-        /**
-         * Decodes a UsbDeviceInfo message from the specified reader or buffer.
-         * @function decode
-         * @memberof hikmicro.UsbDeviceInfo
-         * @static
-         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
-         * @param {number} [length] Message length if known beforehand
-         * @returns {hikmicro.UsbDeviceInfo} UsbDeviceInfo
-         * @throws {Error} If the payload is not a reader or valid buffer
-         * @throws {$protobuf.util.ProtocolError} If required fields are missing
-         */
-        UsbDeviceInfo.decode = function decode(reader, length, error, long) {
-            if (!(reader instanceof $Reader))
-                reader = $Reader.create(reader);
-            if (long === undefined)
-                long = 0;
-            if (long > $Reader.recursionLimit)
-                throw Error("maximum nesting depth exceeded");
-            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.hikmicro.UsbDeviceInfo();
-            while (reader.pos < end) {
-                let tag = reader.uint32();
-                if (tag === error)
-                    break;
-                switch (tag >>> 3) {
-                case 1: {
-                        message.vendorId = reader.uint32();
-                        break;
-                    }
-                case 2: {
-                        message.productId = reader.uint32();
-                        break;
-                    }
-                case 3: {
-                        message.busNumber = reader.uint32();
-                        break;
-                    }
-                case 4: {
-                        message.deviceNumber = reader.uint32();
-                        break;
-                    }
-                case 5: {
-                        if (!(message.portNumbers && message.portNumbers.length))
-                            message.portNumbers = [];
-                        if ((tag & 7) === 2) {
-                            let end2 = reader.uint32() + reader.pos;
-                            while (reader.pos < end2)
-                                message.portNumbers.push(reader.uint32());
-                        } else
-                            message.portNumbers.push(reader.uint32());
-                        break;
-                    }
-                case 6: {
-                        message.uniqueId = reader.string();
-                        break;
-                    }
-                case 7: {
-                        message.manufacturer = reader.string();
-                        break;
-                    }
-                case 8: {
-                        message.product = reader.string();
-                        break;
-                    }
-                case 9: {
-                        message.serialNumber = reader.string();
-                        break;
-                    }
-                case 20: {
-                        message.usbBcd = reader.uint32();
-                        break;
-                    }
-                case 21: {
-                        message.deviceBcd = reader.uint32();
-                        break;
-                    }
-                case 22: {
-                        message.deviceClass = reader.uint32();
-                        break;
-                    }
-                case 23: {
-                        message.deviceSubclass = reader.uint32();
-                        break;
-                    }
-                case 24: {
-                        message.deviceProtocol = reader.uint32();
-                        break;
-                    }
-                case 25: {
-                        message.maxPacketSize0 = reader.uint32();
-                        break;
-                    }
-                case 26: {
-                        message.numConfigurations = reader.uint32();
-                        break;
-                    }
-                case 40: {
-                        message.deviceDescriptor = reader.bytes();
-                        break;
-                    }
-                case 41: {
-                        if (!(message.configDescriptors && message.configDescriptors.length))
-                            message.configDescriptors = [];
-                        message.configDescriptors.push(reader.bytes());
-                        break;
-                    }
-                default:
-                    reader.skipType(tag & 7, long);
-                    break;
-                }
-            }
-            return message;
-        };
-
-        /**
-         * Decodes a UsbDeviceInfo message from the specified reader or buffer, length delimited.
-         * @function decodeDelimited
-         * @memberof hikmicro.UsbDeviceInfo
-         * @static
-         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
-         * @returns {hikmicro.UsbDeviceInfo} UsbDeviceInfo
-         * @throws {Error} If the payload is not a reader or valid buffer
-         * @throws {$protobuf.util.ProtocolError} If required fields are missing
-         */
-        UsbDeviceInfo.decodeDelimited = function decodeDelimited(reader) {
-            if (!(reader instanceof $Reader))
-                reader = new $Reader(reader);
-            return this.decode(reader, reader.uint32());
-        };
-
-        /**
-         * Verifies a UsbDeviceInfo message.
-         * @function verify
-         * @memberof hikmicro.UsbDeviceInfo
-         * @static
-         * @param {Object.<string,*>} message Plain object to verify
-         * @returns {string|null} `null` if valid, otherwise the reason why it is not
-         */
-        UsbDeviceInfo.verify = function verify(message, long) {
-            if (typeof message !== "object" || message === null)
-                return "object expected";
-            if (long === undefined)
-                long = 0;
-            if (long > $util.recursionLimit)
-                return "maximum nesting depth exceeded";
-            if (message.vendorId != null && message.hasOwnProperty("vendorId"))
-                if (!$util.isInteger(message.vendorId))
-                    return "vendorId: integer expected";
-            if (message.productId != null && message.hasOwnProperty("productId"))
-                if (!$util.isInteger(message.productId))
-                    return "productId: integer expected";
-            if (message.busNumber != null && message.hasOwnProperty("busNumber"))
-                if (!$util.isInteger(message.busNumber))
-                    return "busNumber: integer expected";
-            if (message.deviceNumber != null && message.hasOwnProperty("deviceNumber"))
-                if (!$util.isInteger(message.deviceNumber))
-                    return "deviceNumber: integer expected";
-            if (message.portNumbers != null && message.hasOwnProperty("portNumbers")) {
-                if (!Array.isArray(message.portNumbers))
-                    return "portNumbers: array expected";
-                for (let i = 0; i < message.portNumbers.length; ++i)
-                    if (!$util.isInteger(message.portNumbers[i]))
-                        return "portNumbers: integer[] expected";
-            }
-            if (message.uniqueId != null && message.hasOwnProperty("uniqueId"))
-                if (!$util.isString(message.uniqueId))
-                    return "uniqueId: string expected";
-            if (message.manufacturer != null && message.hasOwnProperty("manufacturer"))
-                if (!$util.isString(message.manufacturer))
-                    return "manufacturer: string expected";
-            if (message.product != null && message.hasOwnProperty("product"))
-                if (!$util.isString(message.product))
-                    return "product: string expected";
-            if (message.serialNumber != null && message.hasOwnProperty("serialNumber"))
-                if (!$util.isString(message.serialNumber))
-                    return "serialNumber: string expected";
-            if (message.usbBcd != null && message.hasOwnProperty("usbBcd"))
-                if (!$util.isInteger(message.usbBcd))
-                    return "usbBcd: integer expected";
-            if (message.deviceBcd != null && message.hasOwnProperty("deviceBcd"))
-                if (!$util.isInteger(message.deviceBcd))
-                    return "deviceBcd: integer expected";
-            if (message.deviceClass != null && message.hasOwnProperty("deviceClass"))
-                if (!$util.isInteger(message.deviceClass))
-                    return "deviceClass: integer expected";
-            if (message.deviceSubclass != null && message.hasOwnProperty("deviceSubclass"))
-                if (!$util.isInteger(message.deviceSubclass))
-                    return "deviceSubclass: integer expected";
-            if (message.deviceProtocol != null && message.hasOwnProperty("deviceProtocol"))
-                if (!$util.isInteger(message.deviceProtocol))
-                    return "deviceProtocol: integer expected";
-            if (message.maxPacketSize0 != null && message.hasOwnProperty("maxPacketSize0"))
-                if (!$util.isInteger(message.maxPacketSize0))
-                    return "maxPacketSize0: integer expected";
-            if (message.numConfigurations != null && message.hasOwnProperty("numConfigurations"))
-                if (!$util.isInteger(message.numConfigurations))
-                    return "numConfigurations: integer expected";
-            if (message.deviceDescriptor != null && message.hasOwnProperty("deviceDescriptor"))
-                if (!(message.deviceDescriptor && typeof message.deviceDescriptor.length === "number" || $util.isString(message.deviceDescriptor)))
-                    return "deviceDescriptor: buffer expected";
-            if (message.configDescriptors != null && message.hasOwnProperty("configDescriptors")) {
-                if (!Array.isArray(message.configDescriptors))
-                    return "configDescriptors: array expected";
-                for (let i = 0; i < message.configDescriptors.length; ++i)
-                    if (!(message.configDescriptors[i] && typeof message.configDescriptors[i].length === "number" || $util.isString(message.configDescriptors[i])))
-                        return "configDescriptors: buffer[] expected";
-            }
-            return null;
-        };
-
-        /**
-         * Creates a UsbDeviceInfo message from a plain object. Also converts values to their respective internal types.
-         * @function fromObject
-         * @memberof hikmicro.UsbDeviceInfo
-         * @static
-         * @param {Object.<string,*>} object Plain object
-         * @returns {hikmicro.UsbDeviceInfo} UsbDeviceInfo
-         */
-        UsbDeviceInfo.fromObject = function fromObject(object, long) {
-            if (object instanceof $root.hikmicro.UsbDeviceInfo)
-                return object;
-            if (long === undefined)
-                long = 0;
-            if (long > $util.recursionLimit)
-                throw Error("maximum nesting depth exceeded");
-            let message = new $root.hikmicro.UsbDeviceInfo();
-            if (object.vendorId != null)
-                message.vendorId = object.vendorId >>> 0;
-            if (object.productId != null)
-                message.productId = object.productId >>> 0;
-            if (object.busNumber != null)
-                message.busNumber = object.busNumber >>> 0;
-            if (object.deviceNumber != null)
-                message.deviceNumber = object.deviceNumber >>> 0;
-            if (object.portNumbers) {
-                if (!Array.isArray(object.portNumbers))
-                    throw TypeError(".hikmicro.UsbDeviceInfo.portNumbers: array expected");
-                message.portNumbers = [];
-                for (let i = 0; i < object.portNumbers.length; ++i)
-                    message.portNumbers[i] = object.portNumbers[i] >>> 0;
-            }
-            if (object.uniqueId != null)
-                message.uniqueId = String(object.uniqueId);
-            if (object.manufacturer != null)
-                message.manufacturer = String(object.manufacturer);
-            if (object.product != null)
-                message.product = String(object.product);
-            if (object.serialNumber != null)
-                message.serialNumber = String(object.serialNumber);
-            if (object.usbBcd != null)
-                message.usbBcd = object.usbBcd >>> 0;
-            if (object.deviceBcd != null)
-                message.deviceBcd = object.deviceBcd >>> 0;
-            if (object.deviceClass != null)
-                message.deviceClass = object.deviceClass >>> 0;
-            if (object.deviceSubclass != null)
-                message.deviceSubclass = object.deviceSubclass >>> 0;
-            if (object.deviceProtocol != null)
-                message.deviceProtocol = object.deviceProtocol >>> 0;
-            if (object.maxPacketSize0 != null)
-                message.maxPacketSize0 = object.maxPacketSize0 >>> 0;
-            if (object.numConfigurations != null)
-                message.numConfigurations = object.numConfigurations >>> 0;
-            if (object.deviceDescriptor != null)
-                if (typeof object.deviceDescriptor === "string")
-                    $util.base64.decode(object.deviceDescriptor, message.deviceDescriptor = $util.newBuffer($util.base64.length(object.deviceDescriptor)), 0);
-                else if (object.deviceDescriptor.length >= 0)
-                    message.deviceDescriptor = object.deviceDescriptor;
-            if (object.configDescriptors) {
-                if (!Array.isArray(object.configDescriptors))
-                    throw TypeError(".hikmicro.UsbDeviceInfo.configDescriptors: array expected");
-                message.configDescriptors = [];
-                for (let i = 0; i < object.configDescriptors.length; ++i)
-                    if (typeof object.configDescriptors[i] === "string")
-                        $util.base64.decode(object.configDescriptors[i], message.configDescriptors[i] = $util.newBuffer($util.base64.length(object.configDescriptors[i])), 0);
-                    else if (object.configDescriptors[i].length >= 0)
-                        message.configDescriptors[i] = object.configDescriptors[i];
-            }
-            return message;
-        };
-
-        /**
-         * Creates a plain object from a UsbDeviceInfo message. Also converts values to other types if specified.
-         * @function toObject
-         * @memberof hikmicro.UsbDeviceInfo
-         * @static
-         * @param {hikmicro.UsbDeviceInfo} message UsbDeviceInfo
-         * @param {$protobuf.IConversionOptions} [options] Conversion options
-         * @returns {Object.<string,*>} Plain object
-         */
-        UsbDeviceInfo.toObject = function toObject(message, options) {
-            if (!options)
-                options = {};
-            let object = {};
-            if (options.arrays || options.defaults) {
-                object.portNumbers = [];
-                object.configDescriptors = [];
-            }
-            if (options.defaults) {
-                object.vendorId = 0;
-                object.productId = 0;
-                object.busNumber = 0;
-                object.deviceNumber = 0;
-                object.uniqueId = "";
-                object.manufacturer = "";
-                object.product = "";
-                object.serialNumber = "";
-                object.usbBcd = 0;
-                object.deviceBcd = 0;
-                object.deviceClass = 0;
-                object.deviceSubclass = 0;
-                object.deviceProtocol = 0;
-                object.maxPacketSize0 = 0;
-                object.numConfigurations = 0;
-                if (options.bytes === String)
-                    object.deviceDescriptor = "";
-                else {
-                    object.deviceDescriptor = [];
-                    if (options.bytes !== Array)
-                        object.deviceDescriptor = $util.newBuffer(object.deviceDescriptor);
-                }
-            }
-            if (message.vendorId != null && message.hasOwnProperty("vendorId"))
-                object.vendorId = message.vendorId;
-            if (message.productId != null && message.hasOwnProperty("productId"))
-                object.productId = message.productId;
-            if (message.busNumber != null && message.hasOwnProperty("busNumber"))
-                object.busNumber = message.busNumber;
-            if (message.deviceNumber != null && message.hasOwnProperty("deviceNumber"))
-                object.deviceNumber = message.deviceNumber;
-            if (message.portNumbers && message.portNumbers.length) {
-                object.portNumbers = [];
-                for (let j = 0; j < message.portNumbers.length; ++j)
-                    object.portNumbers[j] = message.portNumbers[j];
-            }
-            if (message.uniqueId != null && message.hasOwnProperty("uniqueId"))
-                object.uniqueId = message.uniqueId;
-            if (message.manufacturer != null && message.hasOwnProperty("manufacturer"))
-                object.manufacturer = message.manufacturer;
-            if (message.product != null && message.hasOwnProperty("product"))
-                object.product = message.product;
-            if (message.serialNumber != null && message.hasOwnProperty("serialNumber"))
-                object.serialNumber = message.serialNumber;
-            if (message.usbBcd != null && message.hasOwnProperty("usbBcd"))
-                object.usbBcd = message.usbBcd;
-            if (message.deviceBcd != null && message.hasOwnProperty("deviceBcd"))
-                object.deviceBcd = message.deviceBcd;
-            if (message.deviceClass != null && message.hasOwnProperty("deviceClass"))
-                object.deviceClass = message.deviceClass;
-            if (message.deviceSubclass != null && message.hasOwnProperty("deviceSubclass"))
-                object.deviceSubclass = message.deviceSubclass;
-            if (message.deviceProtocol != null && message.hasOwnProperty("deviceProtocol"))
-                object.deviceProtocol = message.deviceProtocol;
-            if (message.maxPacketSize0 != null && message.hasOwnProperty("maxPacketSize0"))
-                object.maxPacketSize0 = message.maxPacketSize0;
-            if (message.numConfigurations != null && message.hasOwnProperty("numConfigurations"))
-                object.numConfigurations = message.numConfigurations;
-            if (message.deviceDescriptor != null && message.hasOwnProperty("deviceDescriptor"))
-                object.deviceDescriptor = options.bytes === String ? $util.base64.encode(message.deviceDescriptor, 0, message.deviceDescriptor.length) : options.bytes === Array ? Array.prototype.slice.call(message.deviceDescriptor) : message.deviceDescriptor;
-            if (message.configDescriptors && message.configDescriptors.length) {
-                object.configDescriptors = [];
-                for (let j = 0; j < message.configDescriptors.length; ++j)
-                    object.configDescriptors[j] = options.bytes === String ? $util.base64.encode(message.configDescriptors[j], 0, message.configDescriptors[j].length) : options.bytes === Array ? Array.prototype.slice.call(message.configDescriptors[j]) : message.configDescriptors[j];
-            }
-            return object;
-        };
-
-        /**
-         * Converts this UsbDeviceInfo to JSON.
-         * @function toJSON
-         * @memberof hikmicro.UsbDeviceInfo
-         * @instance
-         * @returns {Object.<string,*>} JSON object
-         */
-        UsbDeviceInfo.prototype.toJSON = function toJSON() {
-            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
-        };
-
-        /**
-         * Gets the default type url for UsbDeviceInfo
-         * @function getTypeUrl
-         * @memberof hikmicro.UsbDeviceInfo
-         * @static
-         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
-         * @returns {string} The default type url
-         */
-        UsbDeviceInfo.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
-            if (typeUrlPrefix === undefined) {
-                typeUrlPrefix = "type.googleapis.com";
-            }
-            return typeUrlPrefix + "/hikmicro.UsbDeviceInfo";
-        };
-
-        return UsbDeviceInfo;
-    })();
-
-    hikmicro.CompactStreamFormat = (function() {
-
-        /**
-         * Properties of a CompactStreamFormat.
-         * @memberof hikmicro
-         * @interface ICompactStreamFormat
-         * @property {number|null} [fourcc] CompactStreamFormat fourcc
-         * @property {number|null} [formatIndex] CompactStreamFormat formatIndex
-         * @property {number|null} [frameIndex] CompactStreamFormat frameIndex
-         * @property {number|null} [uvcWidth] CompactStreamFormat uvcWidth
-         * @property {number|null} [uvcHeight] CompactStreamFormat uvcHeight
-         * @property {number|null} [framesPerSecond] CompactStreamFormat framesPerSecond
-         * @property {Uint8Array|null} [guid] CompactStreamFormat guid
-         * @property {number|null} [sourceFormat] CompactStreamFormat sourceFormat
-         */
-
-        /**
-         * Constructs a new CompactStreamFormat.
-         * @memberof hikmicro
-         * @classdesc Represents a CompactStreamFormat.
-         * @implements ICompactStreamFormat
-         * @constructor
-         * @param {hikmicro.ICompactStreamFormat=} [properties] Properties to set
-         */
-        function CompactStreamFormat(properties) {
-            if (properties)
-                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
-                        this[keys[i]] = properties[keys[i]];
-        }
-
-        /**
-         * CompactStreamFormat fourcc.
-         * @member {number} fourcc
-         * @memberof hikmicro.CompactStreamFormat
-         * @instance
-         */
-        CompactStreamFormat.prototype.fourcc = 0;
-
-        /**
-         * CompactStreamFormat formatIndex.
-         * @member {number} formatIndex
-         * @memberof hikmicro.CompactStreamFormat
-         * @instance
-         */
-        CompactStreamFormat.prototype.formatIndex = 0;
-
-        /**
-         * CompactStreamFormat frameIndex.
-         * @member {number} frameIndex
-         * @memberof hikmicro.CompactStreamFormat
-         * @instance
-         */
-        CompactStreamFormat.prototype.frameIndex = 0;
-
-        /**
-         * CompactStreamFormat uvcWidth.
-         * @member {number} uvcWidth
-         * @memberof hikmicro.CompactStreamFormat
-         * @instance
-         */
-        CompactStreamFormat.prototype.uvcWidth = 0;
-
-        /**
-         * CompactStreamFormat uvcHeight.
-         * @member {number} uvcHeight
-         * @memberof hikmicro.CompactStreamFormat
-         * @instance
-         */
-        CompactStreamFormat.prototype.uvcHeight = 0;
-
-        /**
-         * CompactStreamFormat framesPerSecond.
-         * @member {number} framesPerSecond
-         * @memberof hikmicro.CompactStreamFormat
-         * @instance
-         */
-        CompactStreamFormat.prototype.framesPerSecond = 0;
-
-        /**
-         * CompactStreamFormat guid.
-         * @member {Uint8Array} guid
-         * @memberof hikmicro.CompactStreamFormat
-         * @instance
-         */
-        CompactStreamFormat.prototype.guid = $util.newBuffer([]);
-
-        /**
-         * CompactStreamFormat sourceFormat.
-         * @member {number} sourceFormat
-         * @memberof hikmicro.CompactStreamFormat
-         * @instance
-         */
-        CompactStreamFormat.prototype.sourceFormat = 0;
-
-        /**
-         * Creates a new CompactStreamFormat instance using the specified properties.
-         * @function create
-         * @memberof hikmicro.CompactStreamFormat
-         * @static
-         * @param {hikmicro.ICompactStreamFormat=} [properties] Properties to set
-         * @returns {hikmicro.CompactStreamFormat} CompactStreamFormat instance
-         */
-        CompactStreamFormat.create = function create(properties) {
-            return new CompactStreamFormat(properties);
-        };
-
-        /**
-         * Encodes the specified CompactStreamFormat message. Does not implicitly {@link hikmicro.CompactStreamFormat.verify|verify} messages.
-         * @function encode
-         * @memberof hikmicro.CompactStreamFormat
-         * @static
-         * @param {hikmicro.ICompactStreamFormat} message CompactStreamFormat message or plain object to encode
-         * @param {$protobuf.Writer} [writer] Writer to encode to
-         * @returns {$protobuf.Writer} Writer
-         */
-        CompactStreamFormat.encode = function encode(message, writer) {
-            if (!writer)
-                writer = $Writer.create();
-            if (message.fourcc != null && Object.hasOwnProperty.call(message, "fourcc"))
-                writer.uint32(/* id 1, wireType 0 =*/8).uint32(message.fourcc);
-            if (message.formatIndex != null && Object.hasOwnProperty.call(message, "formatIndex"))
-                writer.uint32(/* id 2, wireType 0 =*/16).uint32(message.formatIndex);
-            if (message.frameIndex != null && Object.hasOwnProperty.call(message, "frameIndex"))
-                writer.uint32(/* id 3, wireType 0 =*/24).uint32(message.frameIndex);
-            if (message.uvcWidth != null && Object.hasOwnProperty.call(message, "uvcWidth"))
-                writer.uint32(/* id 4, wireType 0 =*/32).uint32(message.uvcWidth);
-            if (message.uvcHeight != null && Object.hasOwnProperty.call(message, "uvcHeight"))
-                writer.uint32(/* id 5, wireType 0 =*/40).uint32(message.uvcHeight);
-            if (message.framesPerSecond != null && Object.hasOwnProperty.call(message, "framesPerSecond"))
-                writer.uint32(/* id 6, wireType 5 =*/53).float(message.framesPerSecond);
-            if (message.guid != null && Object.hasOwnProperty.call(message, "guid"))
-                writer.uint32(/* id 7, wireType 2 =*/58).bytes(message.guid);
-            if (message.sourceFormat != null && Object.hasOwnProperty.call(message, "sourceFormat"))
-                writer.uint32(/* id 8, wireType 0 =*/64).uint32(message.sourceFormat);
-            return writer;
-        };
-
-        /**
-         * Encodes the specified CompactStreamFormat message, length delimited. Does not implicitly {@link hikmicro.CompactStreamFormat.verify|verify} messages.
-         * @function encodeDelimited
-         * @memberof hikmicro.CompactStreamFormat
-         * @static
-         * @param {hikmicro.ICompactStreamFormat} message CompactStreamFormat message or plain object to encode
-         * @param {$protobuf.Writer} [writer] Writer to encode to
-         * @returns {$protobuf.Writer} Writer
-         */
-        CompactStreamFormat.encodeDelimited = function encodeDelimited(message, writer) {
-            return this.encode(message, writer).ldelim();
-        };
-
-        /**
-         * Decodes a CompactStreamFormat message from the specified reader or buffer.
-         * @function decode
-         * @memberof hikmicro.CompactStreamFormat
-         * @static
-         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
-         * @param {number} [length] Message length if known beforehand
-         * @returns {hikmicro.CompactStreamFormat} CompactStreamFormat
-         * @throws {Error} If the payload is not a reader or valid buffer
-         * @throws {$protobuf.util.ProtocolError} If required fields are missing
-         */
-        CompactStreamFormat.decode = function decode(reader, length, error, long) {
-            if (!(reader instanceof $Reader))
-                reader = $Reader.create(reader);
-            if (long === undefined)
-                long = 0;
-            if (long > $Reader.recursionLimit)
-                throw Error("maximum nesting depth exceeded");
-            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.hikmicro.CompactStreamFormat();
-            while (reader.pos < end) {
-                let tag = reader.uint32();
-                if (tag === error)
-                    break;
-                switch (tag >>> 3) {
-                case 1: {
-                        message.fourcc = reader.uint32();
-                        break;
-                    }
-                case 2: {
-                        message.formatIndex = reader.uint32();
-                        break;
-                    }
-                case 3: {
-                        message.frameIndex = reader.uint32();
-                        break;
-                    }
-                case 4: {
-                        message.uvcWidth = reader.uint32();
-                        break;
-                    }
-                case 5: {
-                        message.uvcHeight = reader.uint32();
-                        break;
-                    }
-                case 6: {
-                        message.framesPerSecond = reader.float();
-                        break;
-                    }
-                case 7: {
-                        message.guid = reader.bytes();
-                        break;
-                    }
-                case 8: {
-                        message.sourceFormat = reader.uint32();
-                        break;
-                    }
-                default:
-                    reader.skipType(tag & 7, long);
-                    break;
-                }
-            }
-            return message;
-        };
-
-        /**
-         * Decodes a CompactStreamFormat message from the specified reader or buffer, length delimited.
-         * @function decodeDelimited
-         * @memberof hikmicro.CompactStreamFormat
-         * @static
-         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
-         * @returns {hikmicro.CompactStreamFormat} CompactStreamFormat
-         * @throws {Error} If the payload is not a reader or valid buffer
-         * @throws {$protobuf.util.ProtocolError} If required fields are missing
-         */
-        CompactStreamFormat.decodeDelimited = function decodeDelimited(reader) {
-            if (!(reader instanceof $Reader))
-                reader = new $Reader(reader);
-            return this.decode(reader, reader.uint32());
-        };
-
-        /**
-         * Verifies a CompactStreamFormat message.
-         * @function verify
-         * @memberof hikmicro.CompactStreamFormat
-         * @static
-         * @param {Object.<string,*>} message Plain object to verify
-         * @returns {string|null} `null` if valid, otherwise the reason why it is not
-         */
-        CompactStreamFormat.verify = function verify(message, long) {
-            if (typeof message !== "object" || message === null)
-                return "object expected";
-            if (long === undefined)
-                long = 0;
-            if (long > $util.recursionLimit)
-                return "maximum nesting depth exceeded";
-            if (message.fourcc != null && message.hasOwnProperty("fourcc"))
-                if (!$util.isInteger(message.fourcc))
-                    return "fourcc: integer expected";
-            if (message.formatIndex != null && message.hasOwnProperty("formatIndex"))
-                if (!$util.isInteger(message.formatIndex))
-                    return "formatIndex: integer expected";
-            if (message.frameIndex != null && message.hasOwnProperty("frameIndex"))
-                if (!$util.isInteger(message.frameIndex))
-                    return "frameIndex: integer expected";
-            if (message.uvcWidth != null && message.hasOwnProperty("uvcWidth"))
-                if (!$util.isInteger(message.uvcWidth))
-                    return "uvcWidth: integer expected";
-            if (message.uvcHeight != null && message.hasOwnProperty("uvcHeight"))
-                if (!$util.isInteger(message.uvcHeight))
-                    return "uvcHeight: integer expected";
-            if (message.framesPerSecond != null && message.hasOwnProperty("framesPerSecond"))
-                if (typeof message.framesPerSecond !== "number")
-                    return "framesPerSecond: number expected";
-            if (message.guid != null && message.hasOwnProperty("guid"))
-                if (!(message.guid && typeof message.guid.length === "number" || $util.isString(message.guid)))
-                    return "guid: buffer expected";
-            if (message.sourceFormat != null && message.hasOwnProperty("sourceFormat"))
-                if (!$util.isInteger(message.sourceFormat))
-                    return "sourceFormat: integer expected";
-            return null;
-        };
-
-        /**
-         * Creates a CompactStreamFormat message from a plain object. Also converts values to their respective internal types.
-         * @function fromObject
-         * @memberof hikmicro.CompactStreamFormat
-         * @static
-         * @param {Object.<string,*>} object Plain object
-         * @returns {hikmicro.CompactStreamFormat} CompactStreamFormat
-         */
-        CompactStreamFormat.fromObject = function fromObject(object, long) {
-            if (object instanceof $root.hikmicro.CompactStreamFormat)
-                return object;
-            if (long === undefined)
-                long = 0;
-            if (long > $util.recursionLimit)
-                throw Error("maximum nesting depth exceeded");
-            let message = new $root.hikmicro.CompactStreamFormat();
-            if (object.fourcc != null)
-                message.fourcc = object.fourcc >>> 0;
-            if (object.formatIndex != null)
-                message.formatIndex = object.formatIndex >>> 0;
-            if (object.frameIndex != null)
-                message.frameIndex = object.frameIndex >>> 0;
-            if (object.uvcWidth != null)
-                message.uvcWidth = object.uvcWidth >>> 0;
-            if (object.uvcHeight != null)
-                message.uvcHeight = object.uvcHeight >>> 0;
-            if (object.framesPerSecond != null)
-                message.framesPerSecond = Number(object.framesPerSecond);
-            if (object.guid != null)
-                if (typeof object.guid === "string")
-                    $util.base64.decode(object.guid, message.guid = $util.newBuffer($util.base64.length(object.guid)), 0);
-                else if (object.guid.length >= 0)
-                    message.guid = object.guid;
-            if (object.sourceFormat != null)
-                message.sourceFormat = object.sourceFormat >>> 0;
-            return message;
-        };
-
-        /**
-         * Creates a plain object from a CompactStreamFormat message. Also converts values to other types if specified.
-         * @function toObject
-         * @memberof hikmicro.CompactStreamFormat
-         * @static
-         * @param {hikmicro.CompactStreamFormat} message CompactStreamFormat
-         * @param {$protobuf.IConversionOptions} [options] Conversion options
-         * @returns {Object.<string,*>} Plain object
-         */
-        CompactStreamFormat.toObject = function toObject(message, options) {
-            if (!options)
-                options = {};
-            let object = {};
-            if (options.defaults) {
-                object.fourcc = 0;
-                object.formatIndex = 0;
-                object.frameIndex = 0;
-                object.uvcWidth = 0;
-                object.uvcHeight = 0;
-                object.framesPerSecond = 0;
-                if (options.bytes === String)
-                    object.guid = "";
-                else {
-                    object.guid = [];
-                    if (options.bytes !== Array)
-                        object.guid = $util.newBuffer(object.guid);
-                }
-                object.sourceFormat = 0;
-            }
-            if (message.fourcc != null && message.hasOwnProperty("fourcc"))
-                object.fourcc = message.fourcc;
-            if (message.formatIndex != null && message.hasOwnProperty("formatIndex"))
-                object.formatIndex = message.formatIndex;
-            if (message.frameIndex != null && message.hasOwnProperty("frameIndex"))
-                object.frameIndex = message.frameIndex;
-            if (message.uvcWidth != null && message.hasOwnProperty("uvcWidth"))
-                object.uvcWidth = message.uvcWidth;
-            if (message.uvcHeight != null && message.hasOwnProperty("uvcHeight"))
-                object.uvcHeight = message.uvcHeight;
-            if (message.framesPerSecond != null && message.hasOwnProperty("framesPerSecond"))
-                object.framesPerSecond = options.json && !isFinite(message.framesPerSecond) ? String(message.framesPerSecond) : message.framesPerSecond;
-            if (message.guid != null && message.hasOwnProperty("guid"))
-                object.guid = options.bytes === String ? $util.base64.encode(message.guid, 0, message.guid.length) : options.bytes === Array ? Array.prototype.slice.call(message.guid) : message.guid;
-            if (message.sourceFormat != null && message.hasOwnProperty("sourceFormat"))
-                object.sourceFormat = message.sourceFormat;
-            return object;
-        };
-
-        /**
-         * Converts this CompactStreamFormat to JSON.
-         * @function toJSON
-         * @memberof hikmicro.CompactStreamFormat
-         * @instance
-         * @returns {Object.<string,*>} JSON object
-         */
-        CompactStreamFormat.prototype.toJSON = function toJSON() {
-            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
-        };
-
-        /**
-         * Gets the default type url for CompactStreamFormat
-         * @function getTypeUrl
-         * @memberof hikmicro.CompactStreamFormat
-         * @static
-         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
-         * @returns {string} The default type url
-         */
-        CompactStreamFormat.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
-            if (typeUrlPrefix === undefined) {
-                typeUrlPrefix = "type.googleapis.com";
-            }
-            return typeUrlPrefix + "/hikmicro.CompactStreamFormat";
-        };
-
-        return CompactStreamFormat;
-    })();
-
-    hikmicro.CompactPayloadLayout = (function() {
-
-        /**
-         * Properties of a CompactPayloadLayout.
-         * @memberof hikmicro
-         * @interface ICompactPayloadLayout
-         * @property {number|null} [sensorWidth] CompactPayloadLayout sensorWidth
-         * @property {number|null} [sensorHeight] CompactPayloadLayout sensorHeight
-         * @property {number|null} [payloadLength] CompactPayloadLayout payloadLength
-         * @property {number|null} [thermalY16Offset] CompactPayloadLayout thermalY16Offset
-         * @property {number|null} [thermalY16Length] CompactPayloadLayout thermalY16Length
-         * @property {number|null} [runtimeBlockOffset] CompactPayloadLayout runtimeBlockOffset
-         * @property {number|null} [runtimeBlockLength] CompactPayloadLayout runtimeBlockLength
-         */
-
-        /**
-         * Constructs a new CompactPayloadLayout.
-         * @memberof hikmicro
-         * @classdesc Represents a CompactPayloadLayout.
-         * @implements ICompactPayloadLayout
-         * @constructor
-         * @param {hikmicro.ICompactPayloadLayout=} [properties] Properties to set
-         */
-        function CompactPayloadLayout(properties) {
-            if (properties)
-                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
-                        this[keys[i]] = properties[keys[i]];
-        }
-
-        /**
-         * CompactPayloadLayout sensorWidth.
-         * @member {number} sensorWidth
-         * @memberof hikmicro.CompactPayloadLayout
-         * @instance
-         */
-        CompactPayloadLayout.prototype.sensorWidth = 0;
-
-        /**
-         * CompactPayloadLayout sensorHeight.
-         * @member {number} sensorHeight
-         * @memberof hikmicro.CompactPayloadLayout
-         * @instance
-         */
-        CompactPayloadLayout.prototype.sensorHeight = 0;
-
-        /**
-         * CompactPayloadLayout payloadLength.
-         * @member {number} payloadLength
-         * @memberof hikmicro.CompactPayloadLayout
-         * @instance
-         */
-        CompactPayloadLayout.prototype.payloadLength = 0;
-
-        /**
-         * CompactPayloadLayout thermalY16Offset.
-         * @member {number} thermalY16Offset
-         * @memberof hikmicro.CompactPayloadLayout
-         * @instance
-         */
-        CompactPayloadLayout.prototype.thermalY16Offset = 0;
-
-        /**
-         * CompactPayloadLayout thermalY16Length.
-         * @member {number} thermalY16Length
-         * @memberof hikmicro.CompactPayloadLayout
-         * @instance
-         */
-        CompactPayloadLayout.prototype.thermalY16Length = 0;
-
-        /**
-         * CompactPayloadLayout runtimeBlockOffset.
-         * @member {number} runtimeBlockOffset
-         * @memberof hikmicro.CompactPayloadLayout
-         * @instance
-         */
-        CompactPayloadLayout.prototype.runtimeBlockOffset = 0;
-
-        /**
-         * CompactPayloadLayout runtimeBlockLength.
-         * @member {number} runtimeBlockLength
-         * @memberof hikmicro.CompactPayloadLayout
-         * @instance
-         */
-        CompactPayloadLayout.prototype.runtimeBlockLength = 0;
-
-        /**
-         * Creates a new CompactPayloadLayout instance using the specified properties.
-         * @function create
-         * @memberof hikmicro.CompactPayloadLayout
-         * @static
-         * @param {hikmicro.ICompactPayloadLayout=} [properties] Properties to set
-         * @returns {hikmicro.CompactPayloadLayout} CompactPayloadLayout instance
-         */
-        CompactPayloadLayout.create = function create(properties) {
-            return new CompactPayloadLayout(properties);
-        };
-
-        /**
-         * Encodes the specified CompactPayloadLayout message. Does not implicitly {@link hikmicro.CompactPayloadLayout.verify|verify} messages.
-         * @function encode
-         * @memberof hikmicro.CompactPayloadLayout
-         * @static
-         * @param {hikmicro.ICompactPayloadLayout} message CompactPayloadLayout message or plain object to encode
-         * @param {$protobuf.Writer} [writer] Writer to encode to
-         * @returns {$protobuf.Writer} Writer
-         */
-        CompactPayloadLayout.encode = function encode(message, writer) {
-            if (!writer)
-                writer = $Writer.create();
-            if (message.sensorWidth != null && Object.hasOwnProperty.call(message, "sensorWidth"))
-                writer.uint32(/* id 1, wireType 0 =*/8).uint32(message.sensorWidth);
-            if (message.sensorHeight != null && Object.hasOwnProperty.call(message, "sensorHeight"))
-                writer.uint32(/* id 2, wireType 0 =*/16).uint32(message.sensorHeight);
-            if (message.payloadLength != null && Object.hasOwnProperty.call(message, "payloadLength"))
-                writer.uint32(/* id 3, wireType 0 =*/24).uint32(message.payloadLength);
-            if (message.thermalY16Offset != null && Object.hasOwnProperty.call(message, "thermalY16Offset"))
-                writer.uint32(/* id 10, wireType 0 =*/80).uint32(message.thermalY16Offset);
-            if (message.thermalY16Length != null && Object.hasOwnProperty.call(message, "thermalY16Length"))
-                writer.uint32(/* id 11, wireType 0 =*/88).uint32(message.thermalY16Length);
-            if (message.runtimeBlockOffset != null && Object.hasOwnProperty.call(message, "runtimeBlockOffset"))
-                writer.uint32(/* id 12, wireType 0 =*/96).uint32(message.runtimeBlockOffset);
-            if (message.runtimeBlockLength != null && Object.hasOwnProperty.call(message, "runtimeBlockLength"))
-                writer.uint32(/* id 13, wireType 0 =*/104).uint32(message.runtimeBlockLength);
-            return writer;
-        };
-
-        /**
-         * Encodes the specified CompactPayloadLayout message, length delimited. Does not implicitly {@link hikmicro.CompactPayloadLayout.verify|verify} messages.
-         * @function encodeDelimited
-         * @memberof hikmicro.CompactPayloadLayout
-         * @static
-         * @param {hikmicro.ICompactPayloadLayout} message CompactPayloadLayout message or plain object to encode
-         * @param {$protobuf.Writer} [writer] Writer to encode to
-         * @returns {$protobuf.Writer} Writer
-         */
-        CompactPayloadLayout.encodeDelimited = function encodeDelimited(message, writer) {
-            return this.encode(message, writer).ldelim();
-        };
-
-        /**
-         * Decodes a CompactPayloadLayout message from the specified reader or buffer.
-         * @function decode
-         * @memberof hikmicro.CompactPayloadLayout
-         * @static
-         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
-         * @param {number} [length] Message length if known beforehand
-         * @returns {hikmicro.CompactPayloadLayout} CompactPayloadLayout
-         * @throws {Error} If the payload is not a reader or valid buffer
-         * @throws {$protobuf.util.ProtocolError} If required fields are missing
-         */
-        CompactPayloadLayout.decode = function decode(reader, length, error, long) {
-            if (!(reader instanceof $Reader))
-                reader = $Reader.create(reader);
-            if (long === undefined)
-                long = 0;
-            if (long > $Reader.recursionLimit)
-                throw Error("maximum nesting depth exceeded");
-            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.hikmicro.CompactPayloadLayout();
-            while (reader.pos < end) {
-                let tag = reader.uint32();
-                if (tag === error)
-                    break;
-                switch (tag >>> 3) {
-                case 1: {
-                        message.sensorWidth = reader.uint32();
-                        break;
-                    }
-                case 2: {
-                        message.sensorHeight = reader.uint32();
-                        break;
-                    }
-                case 3: {
-                        message.payloadLength = reader.uint32();
-                        break;
-                    }
-                case 10: {
-                        message.thermalY16Offset = reader.uint32();
-                        break;
-                    }
-                case 11: {
-                        message.thermalY16Length = reader.uint32();
-                        break;
-                    }
-                case 12: {
-                        message.runtimeBlockOffset = reader.uint32();
-                        break;
-                    }
-                case 13: {
-                        message.runtimeBlockLength = reader.uint32();
-                        break;
-                    }
-                default:
-                    reader.skipType(tag & 7, long);
-                    break;
-                }
-            }
-            return message;
-        };
-
-        /**
-         * Decodes a CompactPayloadLayout message from the specified reader or buffer, length delimited.
-         * @function decodeDelimited
-         * @memberof hikmicro.CompactPayloadLayout
-         * @static
-         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
-         * @returns {hikmicro.CompactPayloadLayout} CompactPayloadLayout
-         * @throws {Error} If the payload is not a reader or valid buffer
-         * @throws {$protobuf.util.ProtocolError} If required fields are missing
-         */
-        CompactPayloadLayout.decodeDelimited = function decodeDelimited(reader) {
-            if (!(reader instanceof $Reader))
-                reader = new $Reader(reader);
-            return this.decode(reader, reader.uint32());
-        };
-
-        /**
-         * Verifies a CompactPayloadLayout message.
-         * @function verify
-         * @memberof hikmicro.CompactPayloadLayout
-         * @static
-         * @param {Object.<string,*>} message Plain object to verify
-         * @returns {string|null} `null` if valid, otherwise the reason why it is not
-         */
-        CompactPayloadLayout.verify = function verify(message, long) {
-            if (typeof message !== "object" || message === null)
-                return "object expected";
-            if (long === undefined)
-                long = 0;
-            if (long > $util.recursionLimit)
-                return "maximum nesting depth exceeded";
-            if (message.sensorWidth != null && message.hasOwnProperty("sensorWidth"))
-                if (!$util.isInteger(message.sensorWidth))
-                    return "sensorWidth: integer expected";
-            if (message.sensorHeight != null && message.hasOwnProperty("sensorHeight"))
-                if (!$util.isInteger(message.sensorHeight))
-                    return "sensorHeight: integer expected";
-            if (message.payloadLength != null && message.hasOwnProperty("payloadLength"))
-                if (!$util.isInteger(message.payloadLength))
-                    return "payloadLength: integer expected";
-            if (message.thermalY16Offset != null && message.hasOwnProperty("thermalY16Offset"))
-                if (!$util.isInteger(message.thermalY16Offset))
-                    return "thermalY16Offset: integer expected";
-            if (message.thermalY16Length != null && message.hasOwnProperty("thermalY16Length"))
-                if (!$util.isInteger(message.thermalY16Length))
-                    return "thermalY16Length: integer expected";
-            if (message.runtimeBlockOffset != null && message.hasOwnProperty("runtimeBlockOffset"))
-                if (!$util.isInteger(message.runtimeBlockOffset))
-                    return "runtimeBlockOffset: integer expected";
-            if (message.runtimeBlockLength != null && message.hasOwnProperty("runtimeBlockLength"))
-                if (!$util.isInteger(message.runtimeBlockLength))
-                    return "runtimeBlockLength: integer expected";
-            return null;
-        };
-
-        /**
-         * Creates a CompactPayloadLayout message from a plain object. Also converts values to their respective internal types.
-         * @function fromObject
-         * @memberof hikmicro.CompactPayloadLayout
-         * @static
-         * @param {Object.<string,*>} object Plain object
-         * @returns {hikmicro.CompactPayloadLayout} CompactPayloadLayout
-         */
-        CompactPayloadLayout.fromObject = function fromObject(object, long) {
-            if (object instanceof $root.hikmicro.CompactPayloadLayout)
-                return object;
-            if (long === undefined)
-                long = 0;
-            if (long > $util.recursionLimit)
-                throw Error("maximum nesting depth exceeded");
-            let message = new $root.hikmicro.CompactPayloadLayout();
-            if (object.sensorWidth != null)
-                message.sensorWidth = object.sensorWidth >>> 0;
-            if (object.sensorHeight != null)
-                message.sensorHeight = object.sensorHeight >>> 0;
-            if (object.payloadLength != null)
-                message.payloadLength = object.payloadLength >>> 0;
-            if (object.thermalY16Offset != null)
-                message.thermalY16Offset = object.thermalY16Offset >>> 0;
-            if (object.thermalY16Length != null)
-                message.thermalY16Length = object.thermalY16Length >>> 0;
-            if (object.runtimeBlockOffset != null)
-                message.runtimeBlockOffset = object.runtimeBlockOffset >>> 0;
-            if (object.runtimeBlockLength != null)
-                message.runtimeBlockLength = object.runtimeBlockLength >>> 0;
-            return message;
-        };
-
-        /**
-         * Creates a plain object from a CompactPayloadLayout message. Also converts values to other types if specified.
-         * @function toObject
-         * @memberof hikmicro.CompactPayloadLayout
-         * @static
-         * @param {hikmicro.CompactPayloadLayout} message CompactPayloadLayout
-         * @param {$protobuf.IConversionOptions} [options] Conversion options
-         * @returns {Object.<string,*>} Plain object
-         */
-        CompactPayloadLayout.toObject = function toObject(message, options) {
-            if (!options)
-                options = {};
-            let object = {};
-            if (options.defaults) {
-                object.sensorWidth = 0;
-                object.sensorHeight = 0;
-                object.payloadLength = 0;
-                object.thermalY16Offset = 0;
-                object.thermalY16Length = 0;
-                object.runtimeBlockOffset = 0;
-                object.runtimeBlockLength = 0;
-            }
-            if (message.sensorWidth != null && message.hasOwnProperty("sensorWidth"))
-                object.sensorWidth = message.sensorWidth;
-            if (message.sensorHeight != null && message.hasOwnProperty("sensorHeight"))
-                object.sensorHeight = message.sensorHeight;
-            if (message.payloadLength != null && message.hasOwnProperty("payloadLength"))
-                object.payloadLength = message.payloadLength;
-            if (message.thermalY16Offset != null && message.hasOwnProperty("thermalY16Offset"))
-                object.thermalY16Offset = message.thermalY16Offset;
-            if (message.thermalY16Length != null && message.hasOwnProperty("thermalY16Length"))
-                object.thermalY16Length = message.thermalY16Length;
-            if (message.runtimeBlockOffset != null && message.hasOwnProperty("runtimeBlockOffset"))
-                object.runtimeBlockOffset = message.runtimeBlockOffset;
-            if (message.runtimeBlockLength != null && message.hasOwnProperty("runtimeBlockLength"))
-                object.runtimeBlockLength = message.runtimeBlockLength;
-            return object;
-        };
-
-        /**
-         * Converts this CompactPayloadLayout to JSON.
-         * @function toJSON
-         * @memberof hikmicro.CompactPayloadLayout
-         * @instance
-         * @returns {Object.<string,*>} JSON object
-         */
-        CompactPayloadLayout.prototype.toJSON = function toJSON() {
-            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
-        };
-
-        /**
-         * Gets the default type url for CompactPayloadLayout
-         * @function getTypeUrl
-         * @memberof hikmicro.CompactPayloadLayout
-         * @static
-         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
-         * @returns {string} The default type url
-         */
-        CompactPayloadLayout.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
-            if (typeUrlPrefix === undefined) {
-                typeUrlPrefix = "type.googleapis.com";
-            }
-            return typeUrlPrefix + "/hikmicro.CompactPayloadLayout";
-        };
-
-        return CompactPayloadLayout;
-    })();
-
-    hikmicro.RuntimeBlockInfo = (function() {
-
-        /**
-         * Properties of a RuntimeBlockInfo.
-         * @memberof hikmicro
-         * @interface IRuntimeBlockInfo
-         * @property {boolean|null} [markerOk] RuntimeBlockInfo markerOk
-         * @property {number|null} [marker] RuntimeBlockInfo marker
-         * @property {number|null} [rawSensor] RuntimeBlockInfo rawSensor
-         * @property {number|null} [mtlibSensor] RuntimeBlockInfo mtlibSensor
-         * @property {number|null} [interParam_0] RuntimeBlockInfo interParam_0
-         * @property {number|null} [interParam_1] RuntimeBlockInfo interParam_1
-         * @property {number|null} [interParam_2] RuntimeBlockInfo interParam_2
-         * @property {number|null} [frameHeight] RuntimeBlockInfo frameHeight
-         * @property {number|null} [frameWidth] RuntimeBlockInfo frameWidth
-         * @property {number|null} [rawSensorHeader] RuntimeBlockInfo rawSensorHeader
-         * @property {number|null} [mode] RuntimeBlockInfo mode
-         * @property {number|null} [range] RuntimeBlockInfo range
-         */
-
-        /**
-         * Constructs a new RuntimeBlockInfo.
-         * @memberof hikmicro
-         * @classdesc Represents a RuntimeBlockInfo.
-         * @implements IRuntimeBlockInfo
-         * @constructor
-         * @param {hikmicro.IRuntimeBlockInfo=} [properties] Properties to set
-         */
-        function RuntimeBlockInfo(properties) {
-            if (properties)
-                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
-                        this[keys[i]] = properties[keys[i]];
-        }
-
-        /**
-         * RuntimeBlockInfo markerOk.
-         * @member {boolean} markerOk
-         * @memberof hikmicro.RuntimeBlockInfo
-         * @instance
-         */
-        RuntimeBlockInfo.prototype.markerOk = false;
-
-        /**
-         * RuntimeBlockInfo marker.
-         * @member {number} marker
-         * @memberof hikmicro.RuntimeBlockInfo
-         * @instance
-         */
-        RuntimeBlockInfo.prototype.marker = 0;
-
-        /**
-         * RuntimeBlockInfo rawSensor.
-         * @member {number} rawSensor
-         * @memberof hikmicro.RuntimeBlockInfo
-         * @instance
-         */
-        RuntimeBlockInfo.prototype.rawSensor = 0;
-
-        /**
-         * RuntimeBlockInfo mtlibSensor.
-         * @member {number} mtlibSensor
-         * @memberof hikmicro.RuntimeBlockInfo
-         * @instance
-         */
-        RuntimeBlockInfo.prototype.mtlibSensor = 0;
-
-        /**
-         * RuntimeBlockInfo interParam_0.
-         * @member {number} interParam_0
-         * @memberof hikmicro.RuntimeBlockInfo
-         * @instance
-         */
-        RuntimeBlockInfo.prototype.interParam_0 = 0;
-
-        /**
-         * RuntimeBlockInfo interParam_1.
-         * @member {number} interParam_1
-         * @memberof hikmicro.RuntimeBlockInfo
-         * @instance
-         */
-        RuntimeBlockInfo.prototype.interParam_1 = 0;
-
-        /**
-         * RuntimeBlockInfo interParam_2.
-         * @member {number} interParam_2
-         * @memberof hikmicro.RuntimeBlockInfo
-         * @instance
-         */
-        RuntimeBlockInfo.prototype.interParam_2 = 0;
-
-        /**
-         * RuntimeBlockInfo frameHeight.
-         * @member {number} frameHeight
-         * @memberof hikmicro.RuntimeBlockInfo
-         * @instance
-         */
-        RuntimeBlockInfo.prototype.frameHeight = 0;
-
-        /**
-         * RuntimeBlockInfo frameWidth.
-         * @member {number} frameWidth
-         * @memberof hikmicro.RuntimeBlockInfo
-         * @instance
-         */
-        RuntimeBlockInfo.prototype.frameWidth = 0;
-
-        /**
-         * RuntimeBlockInfo rawSensorHeader.
-         * @member {number} rawSensorHeader
-         * @memberof hikmicro.RuntimeBlockInfo
-         * @instance
-         */
-        RuntimeBlockInfo.prototype.rawSensorHeader = 0;
-
-        /**
-         * RuntimeBlockInfo mode.
-         * @member {number} mode
-         * @memberof hikmicro.RuntimeBlockInfo
-         * @instance
-         */
-        RuntimeBlockInfo.prototype.mode = 0;
-
-        /**
-         * RuntimeBlockInfo range.
-         * @member {number} range
-         * @memberof hikmicro.RuntimeBlockInfo
-         * @instance
-         */
-        RuntimeBlockInfo.prototype.range = 0;
-
-        /**
-         * Creates a new RuntimeBlockInfo instance using the specified properties.
-         * @function create
-         * @memberof hikmicro.RuntimeBlockInfo
-         * @static
-         * @param {hikmicro.IRuntimeBlockInfo=} [properties] Properties to set
-         * @returns {hikmicro.RuntimeBlockInfo} RuntimeBlockInfo instance
-         */
-        RuntimeBlockInfo.create = function create(properties) {
-            return new RuntimeBlockInfo(properties);
-        };
-
-        /**
-         * Encodes the specified RuntimeBlockInfo message. Does not implicitly {@link hikmicro.RuntimeBlockInfo.verify|verify} messages.
-         * @function encode
-         * @memberof hikmicro.RuntimeBlockInfo
-         * @static
-         * @param {hikmicro.IRuntimeBlockInfo} message RuntimeBlockInfo message or plain object to encode
-         * @param {$protobuf.Writer} [writer] Writer to encode to
-         * @returns {$protobuf.Writer} Writer
-         */
-        RuntimeBlockInfo.encode = function encode(message, writer) {
-            if (!writer)
-                writer = $Writer.create();
-            if (message.markerOk != null && Object.hasOwnProperty.call(message, "markerOk"))
-                writer.uint32(/* id 1, wireType 0 =*/8).bool(message.markerOk);
-            if (message.marker != null && Object.hasOwnProperty.call(message, "marker"))
-                writer.uint32(/* id 2, wireType 0 =*/16).uint32(message.marker);
-            if (message.rawSensor != null && Object.hasOwnProperty.call(message, "rawSensor"))
-                writer.uint32(/* id 3, wireType 0 =*/24).uint32(message.rawSensor);
-            if (message.mtlibSensor != null && Object.hasOwnProperty.call(message, "mtlibSensor"))
-                writer.uint32(/* id 4, wireType 0 =*/32).uint32(message.mtlibSensor);
-            if (message.interParam_0 != null && Object.hasOwnProperty.call(message, "interParam_0"))
-                writer.uint32(/* id 5, wireType 0 =*/40).uint32(message.interParam_0);
-            if (message.interParam_1 != null && Object.hasOwnProperty.call(message, "interParam_1"))
-                writer.uint32(/* id 6, wireType 0 =*/48).uint32(message.interParam_1);
-            if (message.interParam_2 != null && Object.hasOwnProperty.call(message, "interParam_2"))
-                writer.uint32(/* id 7, wireType 0 =*/56).uint32(message.interParam_2);
-            if (message.frameHeight != null && Object.hasOwnProperty.call(message, "frameHeight"))
-                writer.uint32(/* id 20, wireType 0 =*/160).uint32(message.frameHeight);
-            if (message.frameWidth != null && Object.hasOwnProperty.call(message, "frameWidth"))
-                writer.uint32(/* id 21, wireType 0 =*/168).uint32(message.frameWidth);
-            if (message.rawSensorHeader != null && Object.hasOwnProperty.call(message, "rawSensorHeader"))
-                writer.uint32(/* id 22, wireType 0 =*/176).uint32(message.rawSensorHeader);
-            if (message.mode != null && Object.hasOwnProperty.call(message, "mode"))
-                writer.uint32(/* id 23, wireType 0 =*/184).uint32(message.mode);
-            if (message.range != null && Object.hasOwnProperty.call(message, "range"))
-                writer.uint32(/* id 24, wireType 0 =*/192).uint32(message.range);
-            return writer;
-        };
-
-        /**
-         * Encodes the specified RuntimeBlockInfo message, length delimited. Does not implicitly {@link hikmicro.RuntimeBlockInfo.verify|verify} messages.
-         * @function encodeDelimited
-         * @memberof hikmicro.RuntimeBlockInfo
-         * @static
-         * @param {hikmicro.IRuntimeBlockInfo} message RuntimeBlockInfo message or plain object to encode
-         * @param {$protobuf.Writer} [writer] Writer to encode to
-         * @returns {$protobuf.Writer} Writer
-         */
-        RuntimeBlockInfo.encodeDelimited = function encodeDelimited(message, writer) {
-            return this.encode(message, writer).ldelim();
-        };
-
-        /**
-         * Decodes a RuntimeBlockInfo message from the specified reader or buffer.
-         * @function decode
-         * @memberof hikmicro.RuntimeBlockInfo
-         * @static
-         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
-         * @param {number} [length] Message length if known beforehand
-         * @returns {hikmicro.RuntimeBlockInfo} RuntimeBlockInfo
-         * @throws {Error} If the payload is not a reader or valid buffer
-         * @throws {$protobuf.util.ProtocolError} If required fields are missing
-         */
-        RuntimeBlockInfo.decode = function decode(reader, length, error, long) {
-            if (!(reader instanceof $Reader))
-                reader = $Reader.create(reader);
-            if (long === undefined)
-                long = 0;
-            if (long > $Reader.recursionLimit)
-                throw Error("maximum nesting depth exceeded");
-            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.hikmicro.RuntimeBlockInfo();
-            while (reader.pos < end) {
-                let tag = reader.uint32();
-                if (tag === error)
-                    break;
-                switch (tag >>> 3) {
-                case 1: {
-                        message.markerOk = reader.bool();
-                        break;
-                    }
-                case 2: {
-                        message.marker = reader.uint32();
-                        break;
-                    }
-                case 3: {
-                        message.rawSensor = reader.uint32();
-                        break;
-                    }
-                case 4: {
-                        message.mtlibSensor = reader.uint32();
-                        break;
-                    }
-                case 5: {
-                        message.interParam_0 = reader.uint32();
-                        break;
-                    }
-                case 6: {
-                        message.interParam_1 = reader.uint32();
-                        break;
-                    }
-                case 7: {
-                        message.interParam_2 = reader.uint32();
-                        break;
-                    }
-                case 20: {
-                        message.frameHeight = reader.uint32();
-                        break;
-                    }
-                case 21: {
-                        message.frameWidth = reader.uint32();
-                        break;
-                    }
-                case 22: {
-                        message.rawSensorHeader = reader.uint32();
-                        break;
-                    }
-                case 23: {
-                        message.mode = reader.uint32();
-                        break;
-                    }
-                case 24: {
-                        message.range = reader.uint32();
-                        break;
-                    }
-                default:
-                    reader.skipType(tag & 7, long);
-                    break;
-                }
-            }
-            return message;
-        };
-
-        /**
-         * Decodes a RuntimeBlockInfo message from the specified reader or buffer, length delimited.
-         * @function decodeDelimited
-         * @memberof hikmicro.RuntimeBlockInfo
-         * @static
-         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
-         * @returns {hikmicro.RuntimeBlockInfo} RuntimeBlockInfo
-         * @throws {Error} If the payload is not a reader or valid buffer
-         * @throws {$protobuf.util.ProtocolError} If required fields are missing
-         */
-        RuntimeBlockInfo.decodeDelimited = function decodeDelimited(reader) {
-            if (!(reader instanceof $Reader))
-                reader = new $Reader(reader);
-            return this.decode(reader, reader.uint32());
-        };
-
-        /**
-         * Verifies a RuntimeBlockInfo message.
-         * @function verify
-         * @memberof hikmicro.RuntimeBlockInfo
-         * @static
-         * @param {Object.<string,*>} message Plain object to verify
-         * @returns {string|null} `null` if valid, otherwise the reason why it is not
-         */
-        RuntimeBlockInfo.verify = function verify(message, long) {
-            if (typeof message !== "object" || message === null)
-                return "object expected";
-            if (long === undefined)
-                long = 0;
-            if (long > $util.recursionLimit)
-                return "maximum nesting depth exceeded";
-            if (message.markerOk != null && message.hasOwnProperty("markerOk"))
-                if (typeof message.markerOk !== "boolean")
-                    return "markerOk: boolean expected";
-            if (message.marker != null && message.hasOwnProperty("marker"))
-                if (!$util.isInteger(message.marker))
-                    return "marker: integer expected";
-            if (message.rawSensor != null && message.hasOwnProperty("rawSensor"))
-                if (!$util.isInteger(message.rawSensor))
-                    return "rawSensor: integer expected";
-            if (message.mtlibSensor != null && message.hasOwnProperty("mtlibSensor"))
-                if (!$util.isInteger(message.mtlibSensor))
-                    return "mtlibSensor: integer expected";
-            if (message.interParam_0 != null && message.hasOwnProperty("interParam_0"))
-                if (!$util.isInteger(message.interParam_0))
-                    return "interParam_0: integer expected";
-            if (message.interParam_1 != null && message.hasOwnProperty("interParam_1"))
-                if (!$util.isInteger(message.interParam_1))
-                    return "interParam_1: integer expected";
-            if (message.interParam_2 != null && message.hasOwnProperty("interParam_2"))
-                if (!$util.isInteger(message.interParam_2))
-                    return "interParam_2: integer expected";
-            if (message.frameHeight != null && message.hasOwnProperty("frameHeight"))
-                if (!$util.isInteger(message.frameHeight))
-                    return "frameHeight: integer expected";
-            if (message.frameWidth != null && message.hasOwnProperty("frameWidth"))
-                if (!$util.isInteger(message.frameWidth))
-                    return "frameWidth: integer expected";
-            if (message.rawSensorHeader != null && message.hasOwnProperty("rawSensorHeader"))
-                if (!$util.isInteger(message.rawSensorHeader))
-                    return "rawSensorHeader: integer expected";
-            if (message.mode != null && message.hasOwnProperty("mode"))
-                if (!$util.isInteger(message.mode))
-                    return "mode: integer expected";
-            if (message.range != null && message.hasOwnProperty("range"))
-                if (!$util.isInteger(message.range))
-                    return "range: integer expected";
-            return null;
-        };
-
-        /**
-         * Creates a RuntimeBlockInfo message from a plain object. Also converts values to their respective internal types.
-         * @function fromObject
-         * @memberof hikmicro.RuntimeBlockInfo
-         * @static
-         * @param {Object.<string,*>} object Plain object
-         * @returns {hikmicro.RuntimeBlockInfo} RuntimeBlockInfo
-         */
-        RuntimeBlockInfo.fromObject = function fromObject(object, long) {
-            if (object instanceof $root.hikmicro.RuntimeBlockInfo)
-                return object;
-            if (long === undefined)
-                long = 0;
-            if (long > $util.recursionLimit)
-                throw Error("maximum nesting depth exceeded");
-            let message = new $root.hikmicro.RuntimeBlockInfo();
-            if (object.markerOk != null)
-                message.markerOk = Boolean(object.markerOk);
-            if (object.marker != null)
-                message.marker = object.marker >>> 0;
-            if (object.rawSensor != null)
-                message.rawSensor = object.rawSensor >>> 0;
-            if (object.mtlibSensor != null)
-                message.mtlibSensor = object.mtlibSensor >>> 0;
-            if (object.interParam_0 != null)
-                message.interParam_0 = object.interParam_0 >>> 0;
-            if (object.interParam_1 != null)
-                message.interParam_1 = object.interParam_1 >>> 0;
-            if (object.interParam_2 != null)
-                message.interParam_2 = object.interParam_2 >>> 0;
-            if (object.frameHeight != null)
-                message.frameHeight = object.frameHeight >>> 0;
-            if (object.frameWidth != null)
-                message.frameWidth = object.frameWidth >>> 0;
-            if (object.rawSensorHeader != null)
-                message.rawSensorHeader = object.rawSensorHeader >>> 0;
-            if (object.mode != null)
-                message.mode = object.mode >>> 0;
-            if (object.range != null)
-                message.range = object.range >>> 0;
-            return message;
-        };
-
-        /**
-         * Creates a plain object from a RuntimeBlockInfo message. Also converts values to other types if specified.
-         * @function toObject
-         * @memberof hikmicro.RuntimeBlockInfo
-         * @static
-         * @param {hikmicro.RuntimeBlockInfo} message RuntimeBlockInfo
-         * @param {$protobuf.IConversionOptions} [options] Conversion options
-         * @returns {Object.<string,*>} Plain object
-         */
-        RuntimeBlockInfo.toObject = function toObject(message, options) {
-            if (!options)
-                options = {};
-            let object = {};
-            if (options.defaults) {
-                object.markerOk = false;
-                object.marker = 0;
-                object.rawSensor = 0;
-                object.mtlibSensor = 0;
-                object.interParam_0 = 0;
-                object.interParam_1 = 0;
-                object.interParam_2 = 0;
-                object.frameHeight = 0;
-                object.frameWidth = 0;
-                object.rawSensorHeader = 0;
-                object.mode = 0;
-                object.range = 0;
-            }
-            if (message.markerOk != null && message.hasOwnProperty("markerOk"))
-                object.markerOk = message.markerOk;
-            if (message.marker != null && message.hasOwnProperty("marker"))
-                object.marker = message.marker;
-            if (message.rawSensor != null && message.hasOwnProperty("rawSensor"))
-                object.rawSensor = message.rawSensor;
-            if (message.mtlibSensor != null && message.hasOwnProperty("mtlibSensor"))
-                object.mtlibSensor = message.mtlibSensor;
-            if (message.interParam_0 != null && message.hasOwnProperty("interParam_0"))
-                object.interParam_0 = message.interParam_0;
-            if (message.interParam_1 != null && message.hasOwnProperty("interParam_1"))
-                object.interParam_1 = message.interParam_1;
-            if (message.interParam_2 != null && message.hasOwnProperty("interParam_2"))
-                object.interParam_2 = message.interParam_2;
-            if (message.frameHeight != null && message.hasOwnProperty("frameHeight"))
-                object.frameHeight = message.frameHeight;
-            if (message.frameWidth != null && message.hasOwnProperty("frameWidth"))
-                object.frameWidth = message.frameWidth;
-            if (message.rawSensorHeader != null && message.hasOwnProperty("rawSensorHeader"))
-                object.rawSensorHeader = message.rawSensorHeader;
-            if (message.mode != null && message.hasOwnProperty("mode"))
-                object.mode = message.mode;
-            if (message.range != null && message.hasOwnProperty("range"))
-                object.range = message.range;
-            return object;
-        };
-
-        /**
-         * Converts this RuntimeBlockInfo to JSON.
-         * @function toJSON
-         * @memberof hikmicro.RuntimeBlockInfo
-         * @instance
-         * @returns {Object.<string,*>} JSON object
-         */
-        RuntimeBlockInfo.prototype.toJSON = function toJSON() {
-            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
-        };
-
-        /**
-         * Gets the default type url for RuntimeBlockInfo
-         * @function getTypeUrl
-         * @memberof hikmicro.RuntimeBlockInfo
-         * @static
-         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
-         * @returns {string} The default type url
-         */
-        RuntimeBlockInfo.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
-            if (typeUrlPrefix === undefined) {
-                typeUrlPrefix = "type.googleapis.com";
-            }
-            return typeUrlPrefix + "/hikmicro.RuntimeBlockInfo";
-        };
-
-        return RuntimeBlockInfo;
-    })();
-
-    hikmicro.CalibrationChunk = (function() {
-
-        /**
-         * Properties of a CalibrationChunk.
-         * @memberof hikmicro
-         * @interface ICalibrationChunk
-         * @property {number|null} [index] CalibrationChunk index
-         * @property {Uint8Array|null} [header] CalibrationChunk header
-         * @property {Uint8Array|null} [payload] CalibrationChunk payload
-         */
-
-        /**
-         * Constructs a new CalibrationChunk.
-         * @memberof hikmicro
-         * @classdesc Represents a CalibrationChunk.
-         * @implements ICalibrationChunk
-         * @constructor
-         * @param {hikmicro.ICalibrationChunk=} [properties] Properties to set
-         */
-        function CalibrationChunk(properties) {
-            if (properties)
-                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
-                        this[keys[i]] = properties[keys[i]];
-        }
-
-        /**
-         * CalibrationChunk index.
-         * @member {number} index
-         * @memberof hikmicro.CalibrationChunk
-         * @instance
-         */
-        CalibrationChunk.prototype.index = 0;
-
-        /**
-         * CalibrationChunk header.
-         * @member {Uint8Array} header
-         * @memberof hikmicro.CalibrationChunk
-         * @instance
-         */
-        CalibrationChunk.prototype.header = $util.newBuffer([]);
-
-        /**
-         * CalibrationChunk payload.
-         * @member {Uint8Array} payload
-         * @memberof hikmicro.CalibrationChunk
-         * @instance
-         */
-        CalibrationChunk.prototype.payload = $util.newBuffer([]);
-
-        /**
-         * Creates a new CalibrationChunk instance using the specified properties.
-         * @function create
-         * @memberof hikmicro.CalibrationChunk
-         * @static
-         * @param {hikmicro.ICalibrationChunk=} [properties] Properties to set
-         * @returns {hikmicro.CalibrationChunk} CalibrationChunk instance
-         */
-        CalibrationChunk.create = function create(properties) {
-            return new CalibrationChunk(properties);
-        };
-
-        /**
-         * Encodes the specified CalibrationChunk message. Does not implicitly {@link hikmicro.CalibrationChunk.verify|verify} messages.
-         * @function encode
-         * @memberof hikmicro.CalibrationChunk
-         * @static
-         * @param {hikmicro.ICalibrationChunk} message CalibrationChunk message or plain object to encode
-         * @param {$protobuf.Writer} [writer] Writer to encode to
-         * @returns {$protobuf.Writer} Writer
-         */
-        CalibrationChunk.encode = function encode(message, writer) {
-            if (!writer)
-                writer = $Writer.create();
-            if (message.index != null && Object.hasOwnProperty.call(message, "index"))
-                writer.uint32(/* id 1, wireType 0 =*/8).uint32(message.index);
-            if (message.header != null && Object.hasOwnProperty.call(message, "header"))
-                writer.uint32(/* id 2, wireType 2 =*/18).bytes(message.header);
-            if (message.payload != null && Object.hasOwnProperty.call(message, "payload"))
-                writer.uint32(/* id 3, wireType 2 =*/26).bytes(message.payload);
-            return writer;
-        };
-
-        /**
-         * Encodes the specified CalibrationChunk message, length delimited. Does not implicitly {@link hikmicro.CalibrationChunk.verify|verify} messages.
-         * @function encodeDelimited
-         * @memberof hikmicro.CalibrationChunk
-         * @static
-         * @param {hikmicro.ICalibrationChunk} message CalibrationChunk message or plain object to encode
-         * @param {$protobuf.Writer} [writer] Writer to encode to
-         * @returns {$protobuf.Writer} Writer
-         */
-        CalibrationChunk.encodeDelimited = function encodeDelimited(message, writer) {
-            return this.encode(message, writer).ldelim();
-        };
-
-        /**
-         * Decodes a CalibrationChunk message from the specified reader or buffer.
-         * @function decode
-         * @memberof hikmicro.CalibrationChunk
-         * @static
-         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
-         * @param {number} [length] Message length if known beforehand
-         * @returns {hikmicro.CalibrationChunk} CalibrationChunk
-         * @throws {Error} If the payload is not a reader or valid buffer
-         * @throws {$protobuf.util.ProtocolError} If required fields are missing
-         */
-        CalibrationChunk.decode = function decode(reader, length, error, long) {
-            if (!(reader instanceof $Reader))
-                reader = $Reader.create(reader);
-            if (long === undefined)
-                long = 0;
-            if (long > $Reader.recursionLimit)
-                throw Error("maximum nesting depth exceeded");
-            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.hikmicro.CalibrationChunk();
-            while (reader.pos < end) {
-                let tag = reader.uint32();
-                if (tag === error)
-                    break;
-                switch (tag >>> 3) {
-                case 1: {
-                        message.index = reader.uint32();
-                        break;
-                    }
-                case 2: {
-                        message.header = reader.bytes();
-                        break;
-                    }
-                case 3: {
-                        message.payload = reader.bytes();
-                        break;
-                    }
-                default:
-                    reader.skipType(tag & 7, long);
-                    break;
-                }
-            }
-            return message;
-        };
-
-        /**
-         * Decodes a CalibrationChunk message from the specified reader or buffer, length delimited.
-         * @function decodeDelimited
-         * @memberof hikmicro.CalibrationChunk
-         * @static
-         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
-         * @returns {hikmicro.CalibrationChunk} CalibrationChunk
-         * @throws {Error} If the payload is not a reader or valid buffer
-         * @throws {$protobuf.util.ProtocolError} If required fields are missing
-         */
-        CalibrationChunk.decodeDelimited = function decodeDelimited(reader) {
-            if (!(reader instanceof $Reader))
-                reader = new $Reader(reader);
-            return this.decode(reader, reader.uint32());
-        };
-
-        /**
-         * Verifies a CalibrationChunk message.
-         * @function verify
-         * @memberof hikmicro.CalibrationChunk
-         * @static
-         * @param {Object.<string,*>} message Plain object to verify
-         * @returns {string|null} `null` if valid, otherwise the reason why it is not
-         */
-        CalibrationChunk.verify = function verify(message, long) {
-            if (typeof message !== "object" || message === null)
-                return "object expected";
-            if (long === undefined)
-                long = 0;
-            if (long > $util.recursionLimit)
-                return "maximum nesting depth exceeded";
-            if (message.index != null && message.hasOwnProperty("index"))
-                if (!$util.isInteger(message.index))
-                    return "index: integer expected";
-            if (message.header != null && message.hasOwnProperty("header"))
-                if (!(message.header && typeof message.header.length === "number" || $util.isString(message.header)))
-                    return "header: buffer expected";
-            if (message.payload != null && message.hasOwnProperty("payload"))
-                if (!(message.payload && typeof message.payload.length === "number" || $util.isString(message.payload)))
-                    return "payload: buffer expected";
-            return null;
-        };
-
-        /**
-         * Creates a CalibrationChunk message from a plain object. Also converts values to their respective internal types.
-         * @function fromObject
-         * @memberof hikmicro.CalibrationChunk
-         * @static
-         * @param {Object.<string,*>} object Plain object
-         * @returns {hikmicro.CalibrationChunk} CalibrationChunk
-         */
-        CalibrationChunk.fromObject = function fromObject(object, long) {
-            if (object instanceof $root.hikmicro.CalibrationChunk)
-                return object;
-            if (long === undefined)
-                long = 0;
-            if (long > $util.recursionLimit)
-                throw Error("maximum nesting depth exceeded");
-            let message = new $root.hikmicro.CalibrationChunk();
-            if (object.index != null)
-                message.index = object.index >>> 0;
-            if (object.header != null)
-                if (typeof object.header === "string")
-                    $util.base64.decode(object.header, message.header = $util.newBuffer($util.base64.length(object.header)), 0);
-                else if (object.header.length >= 0)
-                    message.header = object.header;
-            if (object.payload != null)
-                if (typeof object.payload === "string")
-                    $util.base64.decode(object.payload, message.payload = $util.newBuffer($util.base64.length(object.payload)), 0);
-                else if (object.payload.length >= 0)
-                    message.payload = object.payload;
-            return message;
-        };
-
-        /**
-         * Creates a plain object from a CalibrationChunk message. Also converts values to other types if specified.
-         * @function toObject
-         * @memberof hikmicro.CalibrationChunk
-         * @static
-         * @param {hikmicro.CalibrationChunk} message CalibrationChunk
-         * @param {$protobuf.IConversionOptions} [options] Conversion options
-         * @returns {Object.<string,*>} Plain object
-         */
-        CalibrationChunk.toObject = function toObject(message, options) {
-            if (!options)
-                options = {};
-            let object = {};
-            if (options.defaults) {
-                object.index = 0;
-                if (options.bytes === String)
-                    object.header = "";
-                else {
-                    object.header = [];
-                    if (options.bytes !== Array)
-                        object.header = $util.newBuffer(object.header);
-                }
-                if (options.bytes === String)
-                    object.payload = "";
-                else {
-                    object.payload = [];
-                    if (options.bytes !== Array)
-                        object.payload = $util.newBuffer(object.payload);
-                }
-            }
-            if (message.index != null && message.hasOwnProperty("index"))
-                object.index = message.index;
-            if (message.header != null && message.hasOwnProperty("header"))
-                object.header = options.bytes === String ? $util.base64.encode(message.header, 0, message.header.length) : options.bytes === Array ? Array.prototype.slice.call(message.header) : message.header;
-            if (message.payload != null && message.hasOwnProperty("payload"))
-                object.payload = options.bytes === String ? $util.base64.encode(message.payload, 0, message.payload.length) : options.bytes === Array ? Array.prototype.slice.call(message.payload) : message.payload;
-            return object;
-        };
-
-        /**
-         * Converts this CalibrationChunk to JSON.
-         * @function toJSON
-         * @memberof hikmicro.CalibrationChunk
-         * @instance
-         * @returns {Object.<string,*>} JSON object
-         */
-        CalibrationChunk.prototype.toJSON = function toJSON() {
-            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
-        };
-
-        /**
-         * Gets the default type url for CalibrationChunk
-         * @function getTypeUrl
-         * @memberof hikmicro.CalibrationChunk
-         * @static
-         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
-         * @returns {string} The default type url
-         */
-        CalibrationChunk.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
-            if (typeUrlPrefix === undefined) {
-                typeUrlPrefix = "type.googleapis.com";
-            }
-            return typeUrlPrefix + "/hikmicro.CalibrationChunk";
-        };
-
-        return CalibrationChunk;
-    })();
-
-    hikmicro.CalibrationData = (function() {
-
-        /**
-         * Properties of a CalibrationData.
-         * @memberof hikmicro
-         * @interface ICalibrationData
-         * @property {boolean|null} [attempted] CalibrationData attempted
-         * @property {boolean|null} [ok] CalibrationData ok
-         * @property {string|null} [error] CalibrationData error
-         * @property {Uint8Array|null} [lengthHeader] CalibrationData lengthHeader
-         * @property {number|null} [declaredLength] CalibrationData declaredLength
-         * @property {Uint8Array|null} [container] CalibrationData container
-         * @property {number|null} [factoryBlobOffset] CalibrationData factoryBlobOffset
-         * @property {number|null} [factoryBlobLength] CalibrationData factoryBlobLength
-         * @property {Array.<hikmicro.ICalibrationChunk>|null} [chunks] CalibrationData chunks
-         */
-
-        /**
-         * Constructs a new CalibrationData.
-         * @memberof hikmicro
-         * @classdesc Represents a CalibrationData.
-         * @implements ICalibrationData
-         * @constructor
-         * @param {hikmicro.ICalibrationData=} [properties] Properties to set
-         */
-        function CalibrationData(properties) {
-            this.chunks = [];
-            if (properties)
-                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
-                        this[keys[i]] = properties[keys[i]];
-        }
-
-        /**
-         * CalibrationData attempted.
-         * @member {boolean} attempted
-         * @memberof hikmicro.CalibrationData
-         * @instance
-         */
-        CalibrationData.prototype.attempted = false;
-
-        /**
-         * CalibrationData ok.
-         * @member {boolean} ok
-         * @memberof hikmicro.CalibrationData
-         * @instance
-         */
-        CalibrationData.prototype.ok = false;
-
-        /**
-         * CalibrationData error.
-         * @member {string} error
-         * @memberof hikmicro.CalibrationData
-         * @instance
-         */
-        CalibrationData.prototype.error = "";
-
-        /**
-         * CalibrationData lengthHeader.
-         * @member {Uint8Array} lengthHeader
-         * @memberof hikmicro.CalibrationData
-         * @instance
-         */
-        CalibrationData.prototype.lengthHeader = $util.newBuffer([]);
-
-        /**
-         * CalibrationData declaredLength.
-         * @member {number} declaredLength
-         * @memberof hikmicro.CalibrationData
-         * @instance
-         */
-        CalibrationData.prototype.declaredLength = 0;
-
-        /**
-         * CalibrationData container.
-         * @member {Uint8Array} container
-         * @memberof hikmicro.CalibrationData
-         * @instance
-         */
-        CalibrationData.prototype.container = $util.newBuffer([]);
-
-        /**
-         * CalibrationData factoryBlobOffset.
-         * @member {number} factoryBlobOffset
-         * @memberof hikmicro.CalibrationData
-         * @instance
-         */
-        CalibrationData.prototype.factoryBlobOffset = 0;
-
-        /**
-         * CalibrationData factoryBlobLength.
-         * @member {number} factoryBlobLength
-         * @memberof hikmicro.CalibrationData
-         * @instance
-         */
-        CalibrationData.prototype.factoryBlobLength = 0;
-
-        /**
-         * CalibrationData chunks.
-         * @member {Array.<hikmicro.ICalibrationChunk>} chunks
-         * @memberof hikmicro.CalibrationData
-         * @instance
-         */
-        CalibrationData.prototype.chunks = $util.emptyArray;
-
-        /**
-         * Creates a new CalibrationData instance using the specified properties.
-         * @function create
-         * @memberof hikmicro.CalibrationData
-         * @static
-         * @param {hikmicro.ICalibrationData=} [properties] Properties to set
-         * @returns {hikmicro.CalibrationData} CalibrationData instance
-         */
-        CalibrationData.create = function create(properties) {
-            return new CalibrationData(properties);
-        };
-
-        /**
-         * Encodes the specified CalibrationData message. Does not implicitly {@link hikmicro.CalibrationData.verify|verify} messages.
-         * @function encode
-         * @memberof hikmicro.CalibrationData
-         * @static
-         * @param {hikmicro.ICalibrationData} message CalibrationData message or plain object to encode
-         * @param {$protobuf.Writer} [writer] Writer to encode to
-         * @returns {$protobuf.Writer} Writer
-         */
-        CalibrationData.encode = function encode(message, writer) {
-            if (!writer)
-                writer = $Writer.create();
-            if (message.attempted != null && Object.hasOwnProperty.call(message, "attempted"))
-                writer.uint32(/* id 1, wireType 0 =*/8).bool(message.attempted);
-            if (message.ok != null && Object.hasOwnProperty.call(message, "ok"))
-                writer.uint32(/* id 2, wireType 0 =*/16).bool(message.ok);
-            if (message.error != null && Object.hasOwnProperty.call(message, "error"))
-                writer.uint32(/* id 3, wireType 2 =*/26).string(message.error);
-            if (message.lengthHeader != null && Object.hasOwnProperty.call(message, "lengthHeader"))
-                writer.uint32(/* id 10, wireType 2 =*/82).bytes(message.lengthHeader);
-            if (message.declaredLength != null && Object.hasOwnProperty.call(message, "declaredLength"))
-                writer.uint32(/* id 11, wireType 0 =*/88).uint32(message.declaredLength);
-            if (message.container != null && Object.hasOwnProperty.call(message, "container"))
-                writer.uint32(/* id 12, wireType 2 =*/98).bytes(message.container);
-            if (message.factoryBlobOffset != null && Object.hasOwnProperty.call(message, "factoryBlobOffset"))
-                writer.uint32(/* id 14, wireType 0 =*/112).uint32(message.factoryBlobOffset);
-            if (message.factoryBlobLength != null && Object.hasOwnProperty.call(message, "factoryBlobLength"))
-                writer.uint32(/* id 15, wireType 0 =*/120).uint32(message.factoryBlobLength);
-            if (message.chunks != null && message.chunks.length)
-                for (let i = 0; i < message.chunks.length; ++i)
-                    $root.hikmicro.CalibrationChunk.encode(message.chunks[i], writer.uint32(/* id 30, wireType 2 =*/242).fork()).ldelim();
-            return writer;
-        };
-
-        /**
-         * Encodes the specified CalibrationData message, length delimited. Does not implicitly {@link hikmicro.CalibrationData.verify|verify} messages.
-         * @function encodeDelimited
-         * @memberof hikmicro.CalibrationData
-         * @static
-         * @param {hikmicro.ICalibrationData} message CalibrationData message or plain object to encode
-         * @param {$protobuf.Writer} [writer] Writer to encode to
-         * @returns {$protobuf.Writer} Writer
-         */
-        CalibrationData.encodeDelimited = function encodeDelimited(message, writer) {
-            return this.encode(message, writer).ldelim();
-        };
-
-        /**
-         * Decodes a CalibrationData message from the specified reader or buffer.
-         * @function decode
-         * @memberof hikmicro.CalibrationData
-         * @static
-         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
-         * @param {number} [length] Message length if known beforehand
-         * @returns {hikmicro.CalibrationData} CalibrationData
-         * @throws {Error} If the payload is not a reader or valid buffer
-         * @throws {$protobuf.util.ProtocolError} If required fields are missing
-         */
-        CalibrationData.decode = function decode(reader, length, error, long) {
-            if (!(reader instanceof $Reader))
-                reader = $Reader.create(reader);
-            if (long === undefined)
-                long = 0;
-            if (long > $Reader.recursionLimit)
-                throw Error("maximum nesting depth exceeded");
-            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.hikmicro.CalibrationData();
-            while (reader.pos < end) {
-                let tag = reader.uint32();
-                if (tag === error)
-                    break;
-                switch (tag >>> 3) {
-                case 1: {
-                        message.attempted = reader.bool();
-                        break;
-                    }
-                case 2: {
-                        message.ok = reader.bool();
-                        break;
-                    }
-                case 3: {
-                        message.error = reader.string();
-                        break;
-                    }
-                case 10: {
-                        message.lengthHeader = reader.bytes();
-                        break;
-                    }
-                case 11: {
-                        message.declaredLength = reader.uint32();
-                        break;
-                    }
-                case 12: {
-                        message.container = reader.bytes();
-                        break;
-                    }
-                case 14: {
-                        message.factoryBlobOffset = reader.uint32();
-                        break;
-                    }
-                case 15: {
-                        message.factoryBlobLength = reader.uint32();
-                        break;
-                    }
-                case 30: {
-                        if (!(message.chunks && message.chunks.length))
-                            message.chunks = [];
-                        message.chunks.push($root.hikmicro.CalibrationChunk.decode(reader, reader.uint32(), undefined, long + 1));
-                        break;
-                    }
-                default:
-                    reader.skipType(tag & 7, long);
-                    break;
-                }
-            }
-            return message;
-        };
-
-        /**
-         * Decodes a CalibrationData message from the specified reader or buffer, length delimited.
-         * @function decodeDelimited
-         * @memberof hikmicro.CalibrationData
-         * @static
-         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
-         * @returns {hikmicro.CalibrationData} CalibrationData
-         * @throws {Error} If the payload is not a reader or valid buffer
-         * @throws {$protobuf.util.ProtocolError} If required fields are missing
-         */
-        CalibrationData.decodeDelimited = function decodeDelimited(reader) {
-            if (!(reader instanceof $Reader))
-                reader = new $Reader(reader);
-            return this.decode(reader, reader.uint32());
-        };
-
-        /**
-         * Verifies a CalibrationData message.
-         * @function verify
-         * @memberof hikmicro.CalibrationData
-         * @static
-         * @param {Object.<string,*>} message Plain object to verify
-         * @returns {string|null} `null` if valid, otherwise the reason why it is not
-         */
-        CalibrationData.verify = function verify(message, long) {
-            if (typeof message !== "object" || message === null)
-                return "object expected";
-            if (long === undefined)
-                long = 0;
-            if (long > $util.recursionLimit)
-                return "maximum nesting depth exceeded";
-            if (message.attempted != null && message.hasOwnProperty("attempted"))
-                if (typeof message.attempted !== "boolean")
-                    return "attempted: boolean expected";
-            if (message.ok != null && message.hasOwnProperty("ok"))
-                if (typeof message.ok !== "boolean")
-                    return "ok: boolean expected";
-            if (message.error != null && message.hasOwnProperty("error"))
-                if (!$util.isString(message.error))
-                    return "error: string expected";
-            if (message.lengthHeader != null && message.hasOwnProperty("lengthHeader"))
-                if (!(message.lengthHeader && typeof message.lengthHeader.length === "number" || $util.isString(message.lengthHeader)))
-                    return "lengthHeader: buffer expected";
-            if (message.declaredLength != null && message.hasOwnProperty("declaredLength"))
-                if (!$util.isInteger(message.declaredLength))
-                    return "declaredLength: integer expected";
-            if (message.container != null && message.hasOwnProperty("container"))
-                if (!(message.container && typeof message.container.length === "number" || $util.isString(message.container)))
-                    return "container: buffer expected";
-            if (message.factoryBlobOffset != null && message.hasOwnProperty("factoryBlobOffset"))
-                if (!$util.isInteger(message.factoryBlobOffset))
-                    return "factoryBlobOffset: integer expected";
-            if (message.factoryBlobLength != null && message.hasOwnProperty("factoryBlobLength"))
-                if (!$util.isInteger(message.factoryBlobLength))
-                    return "factoryBlobLength: integer expected";
-            if (message.chunks != null && message.hasOwnProperty("chunks")) {
-                if (!Array.isArray(message.chunks))
-                    return "chunks: array expected";
-                for (let i = 0; i < message.chunks.length; ++i) {
-                    let error = $root.hikmicro.CalibrationChunk.verify(message.chunks[i], long + 1);
-                    if (error)
-                        return "chunks." + error;
-                }
-            }
-            return null;
-        };
-
-        /**
-         * Creates a CalibrationData message from a plain object. Also converts values to their respective internal types.
-         * @function fromObject
-         * @memberof hikmicro.CalibrationData
-         * @static
-         * @param {Object.<string,*>} object Plain object
-         * @returns {hikmicro.CalibrationData} CalibrationData
-         */
-        CalibrationData.fromObject = function fromObject(object, long) {
-            if (object instanceof $root.hikmicro.CalibrationData)
-                return object;
-            if (long === undefined)
-                long = 0;
-            if (long > $util.recursionLimit)
-                throw Error("maximum nesting depth exceeded");
-            let message = new $root.hikmicro.CalibrationData();
-            if (object.attempted != null)
-                message.attempted = Boolean(object.attempted);
-            if (object.ok != null)
-                message.ok = Boolean(object.ok);
-            if (object.error != null)
-                message.error = String(object.error);
-            if (object.lengthHeader != null)
-                if (typeof object.lengthHeader === "string")
-                    $util.base64.decode(object.lengthHeader, message.lengthHeader = $util.newBuffer($util.base64.length(object.lengthHeader)), 0);
-                else if (object.lengthHeader.length >= 0)
-                    message.lengthHeader = object.lengthHeader;
-            if (object.declaredLength != null)
-                message.declaredLength = object.declaredLength >>> 0;
-            if (object.container != null)
-                if (typeof object.container === "string")
-                    $util.base64.decode(object.container, message.container = $util.newBuffer($util.base64.length(object.container)), 0);
-                else if (object.container.length >= 0)
-                    message.container = object.container;
-            if (object.factoryBlobOffset != null)
-                message.factoryBlobOffset = object.factoryBlobOffset >>> 0;
-            if (object.factoryBlobLength != null)
-                message.factoryBlobLength = object.factoryBlobLength >>> 0;
-            if (object.chunks) {
-                if (!Array.isArray(object.chunks))
-                    throw TypeError(".hikmicro.CalibrationData.chunks: array expected");
-                message.chunks = [];
-                for (let i = 0; i < object.chunks.length; ++i) {
-                    if (typeof object.chunks[i] !== "object")
-                        throw TypeError(".hikmicro.CalibrationData.chunks: object expected");
-                    message.chunks[i] = $root.hikmicro.CalibrationChunk.fromObject(object.chunks[i], long + 1);
-                }
-            }
-            return message;
-        };
-
-        /**
-         * Creates a plain object from a CalibrationData message. Also converts values to other types if specified.
-         * @function toObject
-         * @memberof hikmicro.CalibrationData
-         * @static
-         * @param {hikmicro.CalibrationData} message CalibrationData
-         * @param {$protobuf.IConversionOptions} [options] Conversion options
-         * @returns {Object.<string,*>} Plain object
-         */
-        CalibrationData.toObject = function toObject(message, options) {
-            if (!options)
-                options = {};
-            let object = {};
-            if (options.arrays || options.defaults)
-                object.chunks = [];
-            if (options.defaults) {
-                object.attempted = false;
-                object.ok = false;
-                object.error = "";
-                if (options.bytes === String)
-                    object.lengthHeader = "";
-                else {
-                    object.lengthHeader = [];
-                    if (options.bytes !== Array)
-                        object.lengthHeader = $util.newBuffer(object.lengthHeader);
-                }
-                object.declaredLength = 0;
-                if (options.bytes === String)
-                    object.container = "";
-                else {
-                    object.container = [];
-                    if (options.bytes !== Array)
-                        object.container = $util.newBuffer(object.container);
-                }
-                object.factoryBlobOffset = 0;
-                object.factoryBlobLength = 0;
-            }
-            if (message.attempted != null && message.hasOwnProperty("attempted"))
-                object.attempted = message.attempted;
-            if (message.ok != null && message.hasOwnProperty("ok"))
-                object.ok = message.ok;
-            if (message.error != null && message.hasOwnProperty("error"))
-                object.error = message.error;
-            if (message.lengthHeader != null && message.hasOwnProperty("lengthHeader"))
-                object.lengthHeader = options.bytes === String ? $util.base64.encode(message.lengthHeader, 0, message.lengthHeader.length) : options.bytes === Array ? Array.prototype.slice.call(message.lengthHeader) : message.lengthHeader;
-            if (message.declaredLength != null && message.hasOwnProperty("declaredLength"))
-                object.declaredLength = message.declaredLength;
-            if (message.container != null && message.hasOwnProperty("container"))
-                object.container = options.bytes === String ? $util.base64.encode(message.container, 0, message.container.length) : options.bytes === Array ? Array.prototype.slice.call(message.container) : message.container;
-            if (message.factoryBlobOffset != null && message.hasOwnProperty("factoryBlobOffset"))
-                object.factoryBlobOffset = message.factoryBlobOffset;
-            if (message.factoryBlobLength != null && message.hasOwnProperty("factoryBlobLength"))
-                object.factoryBlobLength = message.factoryBlobLength;
-            if (message.chunks && message.chunks.length) {
-                object.chunks = [];
-                for (let j = 0; j < message.chunks.length; ++j)
-                    object.chunks[j] = $root.hikmicro.CalibrationChunk.toObject(message.chunks[j], options);
-            }
-            return object;
-        };
-
-        /**
-         * Converts this CalibrationData to JSON.
-         * @function toJSON
-         * @memberof hikmicro.CalibrationData
-         * @instance
-         * @returns {Object.<string,*>} JSON object
-         */
-        CalibrationData.prototype.toJSON = function toJSON() {
-            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
-        };
-
-        /**
-         * Gets the default type url for CalibrationData
-         * @function getTypeUrl
-         * @memberof hikmicro.CalibrationData
-         * @static
-         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
-         * @returns {string} The default type url
-         */
-        CalibrationData.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
-            if (typeUrlPrefix === undefined) {
-                typeUrlPrefix = "type.googleapis.com";
-            }
-            return typeUrlPrefix + "/hikmicro.CalibrationData";
-        };
-
-        return CalibrationData;
-    })();
-
-    hikmicro.DeviceInfo = (function() {
-
-        /**
-         * Properties of a DeviceInfo.
-         * @memberof hikmicro
-         * @interface IDeviceInfo
-         * @property {string|null} [driver] DeviceInfo driver
-         * @property {hikmicro.IUsbDeviceInfo|null} [usb] DeviceInfo usb
-         * @property {hikmicro.ICompactStreamFormat|null} [streamFormat] DeviceInfo streamFormat
-         * @property {hikmicro.ICompactPayloadLayout|null} [layout] DeviceInfo layout
-         * @property {hikmicro.ICalibrationData|null} [calibration] DeviceInfo calibration
-         */
-
-        /**
-         * Constructs a new DeviceInfo.
-         * @memberof hikmicro
-         * @classdesc Represents a DeviceInfo.
-         * @implements IDeviceInfo
-         * @constructor
-         * @param {hikmicro.IDeviceInfo=} [properties] Properties to set
-         */
-        function DeviceInfo(properties) {
-            if (properties)
-                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
-                        this[keys[i]] = properties[keys[i]];
-        }
-
-        /**
-         * DeviceInfo driver.
-         * @member {string} driver
-         * @memberof hikmicro.DeviceInfo
-         * @instance
-         */
-        DeviceInfo.prototype.driver = "";
-
-        /**
-         * DeviceInfo usb.
-         * @member {hikmicro.IUsbDeviceInfo|null|undefined} usb
-         * @memberof hikmicro.DeviceInfo
-         * @instance
-         */
-        DeviceInfo.prototype.usb = null;
-
-        /**
-         * DeviceInfo streamFormat.
-         * @member {hikmicro.ICompactStreamFormat|null|undefined} streamFormat
-         * @memberof hikmicro.DeviceInfo
-         * @instance
-         */
-        DeviceInfo.prototype.streamFormat = null;
-
-        /**
-         * DeviceInfo layout.
-         * @member {hikmicro.ICompactPayloadLayout|null|undefined} layout
-         * @memberof hikmicro.DeviceInfo
-         * @instance
-         */
-        DeviceInfo.prototype.layout = null;
-
-        /**
-         * DeviceInfo calibration.
-         * @member {hikmicro.ICalibrationData|null|undefined} calibration
-         * @memberof hikmicro.DeviceInfo
-         * @instance
-         */
-        DeviceInfo.prototype.calibration = null;
-
-        /**
-         * Creates a new DeviceInfo instance using the specified properties.
-         * @function create
-         * @memberof hikmicro.DeviceInfo
-         * @static
-         * @param {hikmicro.IDeviceInfo=} [properties] Properties to set
-         * @returns {hikmicro.DeviceInfo} DeviceInfo instance
-         */
-        DeviceInfo.create = function create(properties) {
-            return new DeviceInfo(properties);
-        };
-
-        /**
-         * Encodes the specified DeviceInfo message. Does not implicitly {@link hikmicro.DeviceInfo.verify|verify} messages.
-         * @function encode
-         * @memberof hikmicro.DeviceInfo
-         * @static
-         * @param {hikmicro.IDeviceInfo} message DeviceInfo message or plain object to encode
-         * @param {$protobuf.Writer} [writer] Writer to encode to
-         * @returns {$protobuf.Writer} Writer
-         */
-        DeviceInfo.encode = function encode(message, writer) {
-            if (!writer)
-                writer = $Writer.create();
-            if (message.driver != null && Object.hasOwnProperty.call(message, "driver"))
-                writer.uint32(/* id 1, wireType 2 =*/10).string(message.driver);
-            if (message.usb != null && Object.hasOwnProperty.call(message, "usb"))
-                $root.hikmicro.UsbDeviceInfo.encode(message.usb, writer.uint32(/* id 2, wireType 2 =*/18).fork()).ldelim();
-            if (message.streamFormat != null && Object.hasOwnProperty.call(message, "streamFormat"))
-                $root.hikmicro.CompactStreamFormat.encode(message.streamFormat, writer.uint32(/* id 3, wireType 2 =*/26).fork()).ldelim();
-            if (message.layout != null && Object.hasOwnProperty.call(message, "layout"))
-                $root.hikmicro.CompactPayloadLayout.encode(message.layout, writer.uint32(/* id 4, wireType 2 =*/34).fork()).ldelim();
-            if (message.calibration != null && Object.hasOwnProperty.call(message, "calibration"))
-                $root.hikmicro.CalibrationData.encode(message.calibration, writer.uint32(/* id 5, wireType 2 =*/42).fork()).ldelim();
-            return writer;
-        };
-
-        /**
-         * Encodes the specified DeviceInfo message, length delimited. Does not implicitly {@link hikmicro.DeviceInfo.verify|verify} messages.
-         * @function encodeDelimited
-         * @memberof hikmicro.DeviceInfo
-         * @static
-         * @param {hikmicro.IDeviceInfo} message DeviceInfo message or plain object to encode
-         * @param {$protobuf.Writer} [writer] Writer to encode to
-         * @returns {$protobuf.Writer} Writer
-         */
-        DeviceInfo.encodeDelimited = function encodeDelimited(message, writer) {
-            return this.encode(message, writer).ldelim();
-        };
-
-        /**
-         * Decodes a DeviceInfo message from the specified reader or buffer.
-         * @function decode
-         * @memberof hikmicro.DeviceInfo
-         * @static
-         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
-         * @param {number} [length] Message length if known beforehand
-         * @returns {hikmicro.DeviceInfo} DeviceInfo
-         * @throws {Error} If the payload is not a reader or valid buffer
-         * @throws {$protobuf.util.ProtocolError} If required fields are missing
-         */
-        DeviceInfo.decode = function decode(reader, length, error, long) {
-            if (!(reader instanceof $Reader))
-                reader = $Reader.create(reader);
-            if (long === undefined)
-                long = 0;
-            if (long > $Reader.recursionLimit)
-                throw Error("maximum nesting depth exceeded");
-            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.hikmicro.DeviceInfo();
-            while (reader.pos < end) {
-                let tag = reader.uint32();
-                if (tag === error)
-                    break;
-                switch (tag >>> 3) {
-                case 1: {
-                        message.driver = reader.string();
-                        break;
-                    }
-                case 2: {
-                        message.usb = $root.hikmicro.UsbDeviceInfo.decode(reader, reader.uint32(), undefined, long + 1);
-                        break;
-                    }
-                case 3: {
-                        message.streamFormat = $root.hikmicro.CompactStreamFormat.decode(reader, reader.uint32(), undefined, long + 1);
-                        break;
-                    }
-                case 4: {
-                        message.layout = $root.hikmicro.CompactPayloadLayout.decode(reader, reader.uint32(), undefined, long + 1);
-                        break;
-                    }
-                case 5: {
-                        message.calibration = $root.hikmicro.CalibrationData.decode(reader, reader.uint32(), undefined, long + 1);
-                        break;
-                    }
-                default:
-                    reader.skipType(tag & 7, long);
-                    break;
-                }
-            }
-            return message;
-        };
-
-        /**
-         * Decodes a DeviceInfo message from the specified reader or buffer, length delimited.
-         * @function decodeDelimited
-         * @memberof hikmicro.DeviceInfo
-         * @static
-         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
-         * @returns {hikmicro.DeviceInfo} DeviceInfo
-         * @throws {Error} If the payload is not a reader or valid buffer
-         * @throws {$protobuf.util.ProtocolError} If required fields are missing
-         */
-        DeviceInfo.decodeDelimited = function decodeDelimited(reader) {
-            if (!(reader instanceof $Reader))
-                reader = new $Reader(reader);
-            return this.decode(reader, reader.uint32());
-        };
-
-        /**
-         * Verifies a DeviceInfo message.
-         * @function verify
-         * @memberof hikmicro.DeviceInfo
-         * @static
-         * @param {Object.<string,*>} message Plain object to verify
-         * @returns {string|null} `null` if valid, otherwise the reason why it is not
-         */
-        DeviceInfo.verify = function verify(message, long) {
-            if (typeof message !== "object" || message === null)
-                return "object expected";
-            if (long === undefined)
-                long = 0;
-            if (long > $util.recursionLimit)
-                return "maximum nesting depth exceeded";
-            if (message.driver != null && message.hasOwnProperty("driver"))
-                if (!$util.isString(message.driver))
-                    return "driver: string expected";
-            if (message.usb != null && message.hasOwnProperty("usb")) {
-                let error = $root.hikmicro.UsbDeviceInfo.verify(message.usb, long + 1);
-                if (error)
-                    return "usb." + error;
-            }
-            if (message.streamFormat != null && message.hasOwnProperty("streamFormat")) {
-                let error = $root.hikmicro.CompactStreamFormat.verify(message.streamFormat, long + 1);
-                if (error)
-                    return "streamFormat." + error;
-            }
-            if (message.layout != null && message.hasOwnProperty("layout")) {
-                let error = $root.hikmicro.CompactPayloadLayout.verify(message.layout, long + 1);
-                if (error)
-                    return "layout." + error;
-            }
-            if (message.calibration != null && message.hasOwnProperty("calibration")) {
-                let error = $root.hikmicro.CalibrationData.verify(message.calibration, long + 1);
-                if (error)
-                    return "calibration." + error;
-            }
-            return null;
-        };
-
-        /**
-         * Creates a DeviceInfo message from a plain object. Also converts values to their respective internal types.
-         * @function fromObject
-         * @memberof hikmicro.DeviceInfo
-         * @static
-         * @param {Object.<string,*>} object Plain object
-         * @returns {hikmicro.DeviceInfo} DeviceInfo
-         */
-        DeviceInfo.fromObject = function fromObject(object, long) {
-            if (object instanceof $root.hikmicro.DeviceInfo)
-                return object;
-            if (long === undefined)
-                long = 0;
-            if (long > $util.recursionLimit)
-                throw Error("maximum nesting depth exceeded");
-            let message = new $root.hikmicro.DeviceInfo();
-            if (object.driver != null)
-                message.driver = String(object.driver);
-            if (object.usb != null) {
-                if (typeof object.usb !== "object")
-                    throw TypeError(".hikmicro.DeviceInfo.usb: object expected");
-                message.usb = $root.hikmicro.UsbDeviceInfo.fromObject(object.usb, long + 1);
-            }
-            if (object.streamFormat != null) {
-                if (typeof object.streamFormat !== "object")
-                    throw TypeError(".hikmicro.DeviceInfo.streamFormat: object expected");
-                message.streamFormat = $root.hikmicro.CompactStreamFormat.fromObject(object.streamFormat, long + 1);
-            }
-            if (object.layout != null) {
-                if (typeof object.layout !== "object")
-                    throw TypeError(".hikmicro.DeviceInfo.layout: object expected");
-                message.layout = $root.hikmicro.CompactPayloadLayout.fromObject(object.layout, long + 1);
-            }
-            if (object.calibration != null) {
-                if (typeof object.calibration !== "object")
-                    throw TypeError(".hikmicro.DeviceInfo.calibration: object expected");
-                message.calibration = $root.hikmicro.CalibrationData.fromObject(object.calibration, long + 1);
-            }
-            return message;
-        };
-
-        /**
-         * Creates a plain object from a DeviceInfo message. Also converts values to other types if specified.
-         * @function toObject
-         * @memberof hikmicro.DeviceInfo
-         * @static
-         * @param {hikmicro.DeviceInfo} message DeviceInfo
-         * @param {$protobuf.IConversionOptions} [options] Conversion options
-         * @returns {Object.<string,*>} Plain object
-         */
-        DeviceInfo.toObject = function toObject(message, options) {
-            if (!options)
-                options = {};
-            let object = {};
-            if (options.defaults) {
-                object.driver = "";
-                object.usb = null;
-                object.streamFormat = null;
-                object.layout = null;
-                object.calibration = null;
-            }
-            if (message.driver != null && message.hasOwnProperty("driver"))
-                object.driver = message.driver;
-            if (message.usb != null && message.hasOwnProperty("usb"))
-                object.usb = $root.hikmicro.UsbDeviceInfo.toObject(message.usb, options);
-            if (message.streamFormat != null && message.hasOwnProperty("streamFormat"))
-                object.streamFormat = $root.hikmicro.CompactStreamFormat.toObject(message.streamFormat, options);
-            if (message.layout != null && message.hasOwnProperty("layout"))
-                object.layout = $root.hikmicro.CompactPayloadLayout.toObject(message.layout, options);
-            if (message.calibration != null && message.hasOwnProperty("calibration"))
-                object.calibration = $root.hikmicro.CalibrationData.toObject(message.calibration, options);
-            return object;
-        };
-
-        /**
-         * Converts this DeviceInfo to JSON.
-         * @function toJSON
-         * @memberof hikmicro.DeviceInfo
-         * @instance
-         * @returns {Object.<string,*>} JSON object
-         */
-        DeviceInfo.prototype.toJSON = function toJSON() {
-            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
-        };
-
-        /**
-         * Gets the default type url for DeviceInfo
-         * @function getTypeUrl
-         * @memberof hikmicro.DeviceInfo
-         * @static
-         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
-         * @returns {string} The default type url
-         */
-        DeviceInfo.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
-            if (typeUrlPrefix === undefined) {
-                typeUrlPrefix = "type.googleapis.com";
-            }
-            return typeUrlPrefix + "/hikmicro.DeviceInfo";
-        };
-
-        return DeviceInfo;
-    })();
-
-    hikmicro.ThermalFrame = (function() {
-
-        /**
-         * Properties of a ThermalFrame.
-         * @memberof hikmicro
-         * @interface IThermalFrame
-         * @property {number|null} [sequence] ThermalFrame sequence
-         * @property {Long|null} [monotonicStampNs] ThermalFrame monotonicStampNs
-         * @property {Long|null} [localStampNs] ThermalFrame localStampNs
-         * @property {hikmicro.IRuntimeBlockInfo|null} [runtime] ThermalFrame runtime
-         * @property {Uint8Array|null} [payload] ThermalFrame payload
-         */
-
-        /**
-         * Constructs a new ThermalFrame.
-         * @memberof hikmicro
-         * @classdesc Represents a ThermalFrame.
-         * @implements IThermalFrame
-         * @constructor
-         * @param {hikmicro.IThermalFrame=} [properties] Properties to set
-         */
-        function ThermalFrame(properties) {
-            if (properties)
-                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
-                        this[keys[i]] = properties[keys[i]];
-        }
-
-        /**
-         * ThermalFrame sequence.
-         * @member {number} sequence
-         * @memberof hikmicro.ThermalFrame
-         * @instance
-         */
-        ThermalFrame.prototype.sequence = 0;
-
-        /**
-         * ThermalFrame monotonicStampNs.
-         * @member {Long} monotonicStampNs
-         * @memberof hikmicro.ThermalFrame
-         * @instance
-         */
-        ThermalFrame.prototype.monotonicStampNs = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
-
-        /**
-         * ThermalFrame localStampNs.
-         * @member {Long} localStampNs
-         * @memberof hikmicro.ThermalFrame
-         * @instance
-         */
-        ThermalFrame.prototype.localStampNs = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
-
-        /**
-         * ThermalFrame runtime.
-         * @member {hikmicro.IRuntimeBlockInfo|null|undefined} runtime
-         * @memberof hikmicro.ThermalFrame
-         * @instance
-         */
-        ThermalFrame.prototype.runtime = null;
-
-        /**
-         * ThermalFrame payload.
-         * @member {Uint8Array} payload
-         * @memberof hikmicro.ThermalFrame
-         * @instance
-         */
-        ThermalFrame.prototype.payload = $util.newBuffer([]);
-
-        /**
-         * Creates a new ThermalFrame instance using the specified properties.
-         * @function create
-         * @memberof hikmicro.ThermalFrame
-         * @static
-         * @param {hikmicro.IThermalFrame=} [properties] Properties to set
-         * @returns {hikmicro.ThermalFrame} ThermalFrame instance
-         */
-        ThermalFrame.create = function create(properties) {
-            return new ThermalFrame(properties);
-        };
-
-        /**
-         * Encodes the specified ThermalFrame message. Does not implicitly {@link hikmicro.ThermalFrame.verify|verify} messages.
-         * @function encode
-         * @memberof hikmicro.ThermalFrame
-         * @static
-         * @param {hikmicro.IThermalFrame} message ThermalFrame message or plain object to encode
-         * @param {$protobuf.Writer} [writer] Writer to encode to
-         * @returns {$protobuf.Writer} Writer
-         */
-        ThermalFrame.encode = function encode(message, writer) {
-            if (!writer)
-                writer = $Writer.create();
-            if (message.sequence != null && Object.hasOwnProperty.call(message, "sequence"))
-                writer.uint32(/* id 1, wireType 0 =*/8).uint32(message.sequence);
-            if (message.monotonicStampNs != null && Object.hasOwnProperty.call(message, "monotonicStampNs"))
-                writer.uint32(/* id 2, wireType 0 =*/16).uint64(message.monotonicStampNs);
-            if (message.localStampNs != null && Object.hasOwnProperty.call(message, "localStampNs"))
-                writer.uint32(/* id 3, wireType 0 =*/24).uint64(message.localStampNs);
-            if (message.runtime != null && Object.hasOwnProperty.call(message, "runtime"))
-                $root.hikmicro.RuntimeBlockInfo.encode(message.runtime, writer.uint32(/* id 6, wireType 2 =*/50).fork()).ldelim();
-            if (message.payload != null && Object.hasOwnProperty.call(message, "payload"))
-                writer.uint32(/* id 10, wireType 2 =*/82).bytes(message.payload);
-            return writer;
-        };
-
-        /**
-         * Encodes the specified ThermalFrame message, length delimited. Does not implicitly {@link hikmicro.ThermalFrame.verify|verify} messages.
-         * @function encodeDelimited
-         * @memberof hikmicro.ThermalFrame
-         * @static
-         * @param {hikmicro.IThermalFrame} message ThermalFrame message or plain object to encode
-         * @param {$protobuf.Writer} [writer] Writer to encode to
-         * @returns {$protobuf.Writer} Writer
-         */
-        ThermalFrame.encodeDelimited = function encodeDelimited(message, writer) {
-            return this.encode(message, writer).ldelim();
-        };
-
-        /**
-         * Decodes a ThermalFrame message from the specified reader or buffer.
-         * @function decode
-         * @memberof hikmicro.ThermalFrame
-         * @static
-         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
-         * @param {number} [length] Message length if known beforehand
-         * @returns {hikmicro.ThermalFrame} ThermalFrame
-         * @throws {Error} If the payload is not a reader or valid buffer
-         * @throws {$protobuf.util.ProtocolError} If required fields are missing
-         */
-        ThermalFrame.decode = function decode(reader, length, error, long) {
-            if (!(reader instanceof $Reader))
-                reader = $Reader.create(reader);
-            if (long === undefined)
-                long = 0;
-            if (long > $Reader.recursionLimit)
-                throw Error("maximum nesting depth exceeded");
-            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.hikmicro.ThermalFrame();
-            while (reader.pos < end) {
-                let tag = reader.uint32();
-                if (tag === error)
-                    break;
-                switch (tag >>> 3) {
-                case 1: {
-                        message.sequence = reader.uint32();
-                        break;
-                    }
-                case 2: {
-                        message.monotonicStampNs = reader.uint64();
-                        break;
-                    }
-                case 3: {
-                        message.localStampNs = reader.uint64();
-                        break;
-                    }
-                case 6: {
-                        message.runtime = $root.hikmicro.RuntimeBlockInfo.decode(reader, reader.uint32(), undefined, long + 1);
-                        break;
-                    }
-                case 10: {
-                        message.payload = reader.bytes();
-                        break;
-                    }
-                default:
-                    reader.skipType(tag & 7, long);
-                    break;
-                }
-            }
-            return message;
-        };
-
-        /**
-         * Decodes a ThermalFrame message from the specified reader or buffer, length delimited.
-         * @function decodeDelimited
-         * @memberof hikmicro.ThermalFrame
-         * @static
-         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
-         * @returns {hikmicro.ThermalFrame} ThermalFrame
-         * @throws {Error} If the payload is not a reader or valid buffer
-         * @throws {$protobuf.util.ProtocolError} If required fields are missing
-         */
-        ThermalFrame.decodeDelimited = function decodeDelimited(reader) {
-            if (!(reader instanceof $Reader))
-                reader = new $Reader(reader);
-            return this.decode(reader, reader.uint32());
-        };
-
-        /**
-         * Verifies a ThermalFrame message.
-         * @function verify
-         * @memberof hikmicro.ThermalFrame
-         * @static
-         * @param {Object.<string,*>} message Plain object to verify
-         * @returns {string|null} `null` if valid, otherwise the reason why it is not
-         */
-        ThermalFrame.verify = function verify(message, long) {
-            if (typeof message !== "object" || message === null)
-                return "object expected";
-            if (long === undefined)
-                long = 0;
-            if (long > $util.recursionLimit)
-                return "maximum nesting depth exceeded";
-            if (message.sequence != null && message.hasOwnProperty("sequence"))
-                if (!$util.isInteger(message.sequence))
-                    return "sequence: integer expected";
-            if (message.monotonicStampNs != null && message.hasOwnProperty("monotonicStampNs"))
-                if (!$util.isInteger(message.monotonicStampNs) && !(message.monotonicStampNs && $util.isInteger(message.monotonicStampNs.low) && $util.isInteger(message.monotonicStampNs.high)))
-                    return "monotonicStampNs: integer|Long expected";
-            if (message.localStampNs != null && message.hasOwnProperty("localStampNs"))
-                if (!$util.isInteger(message.localStampNs) && !(message.localStampNs && $util.isInteger(message.localStampNs.low) && $util.isInteger(message.localStampNs.high)))
-                    return "localStampNs: integer|Long expected";
-            if (message.runtime != null && message.hasOwnProperty("runtime")) {
-                let error = $root.hikmicro.RuntimeBlockInfo.verify(message.runtime, long + 1);
-                if (error)
-                    return "runtime." + error;
-            }
-            if (message.payload != null && message.hasOwnProperty("payload"))
-                if (!(message.payload && typeof message.payload.length === "number" || $util.isString(message.payload)))
-                    return "payload: buffer expected";
-            return null;
-        };
-
-        /**
-         * Creates a ThermalFrame message from a plain object. Also converts values to their respective internal types.
-         * @function fromObject
-         * @memberof hikmicro.ThermalFrame
-         * @static
-         * @param {Object.<string,*>} object Plain object
-         * @returns {hikmicro.ThermalFrame} ThermalFrame
-         */
-        ThermalFrame.fromObject = function fromObject(object, long) {
-            if (object instanceof $root.hikmicro.ThermalFrame)
-                return object;
-            if (long === undefined)
-                long = 0;
-            if (long > $util.recursionLimit)
-                throw Error("maximum nesting depth exceeded");
-            let message = new $root.hikmicro.ThermalFrame();
-            if (object.sequence != null)
-                message.sequence = object.sequence >>> 0;
-            if (object.monotonicStampNs != null)
-                if ($util.Long)
-                    (message.monotonicStampNs = $util.Long.fromValue(object.monotonicStampNs)).unsigned = true;
-                else if (typeof object.monotonicStampNs === "string")
-                    message.monotonicStampNs = parseInt(object.monotonicStampNs, 10);
-                else if (typeof object.monotonicStampNs === "number")
-                    message.monotonicStampNs = object.monotonicStampNs;
-                else if (typeof object.monotonicStampNs === "object")
-                    message.monotonicStampNs = new $util.LongBits(object.monotonicStampNs.low >>> 0, object.monotonicStampNs.high >>> 0).toNumber(true);
-            if (object.localStampNs != null)
-                if ($util.Long)
-                    (message.localStampNs = $util.Long.fromValue(object.localStampNs)).unsigned = true;
-                else if (typeof object.localStampNs === "string")
-                    message.localStampNs = parseInt(object.localStampNs, 10);
-                else if (typeof object.localStampNs === "number")
-                    message.localStampNs = object.localStampNs;
-                else if (typeof object.localStampNs === "object")
-                    message.localStampNs = new $util.LongBits(object.localStampNs.low >>> 0, object.localStampNs.high >>> 0).toNumber(true);
-            if (object.runtime != null) {
-                if (typeof object.runtime !== "object")
-                    throw TypeError(".hikmicro.ThermalFrame.runtime: object expected");
-                message.runtime = $root.hikmicro.RuntimeBlockInfo.fromObject(object.runtime, long + 1);
-            }
-            if (object.payload != null)
-                if (typeof object.payload === "string")
-                    $util.base64.decode(object.payload, message.payload = $util.newBuffer($util.base64.length(object.payload)), 0);
-                else if (object.payload.length >= 0)
-                    message.payload = object.payload;
-            return message;
-        };
-
-        /**
-         * Creates a plain object from a ThermalFrame message. Also converts values to other types if specified.
-         * @function toObject
-         * @memberof hikmicro.ThermalFrame
-         * @static
-         * @param {hikmicro.ThermalFrame} message ThermalFrame
-         * @param {$protobuf.IConversionOptions} [options] Conversion options
-         * @returns {Object.<string,*>} Plain object
-         */
-        ThermalFrame.toObject = function toObject(message, options) {
-            if (!options)
-                options = {};
-            let object = {};
-            if (options.defaults) {
-                object.sequence = 0;
-                if ($util.Long) {
-                    let long = new $util.Long(0, 0, true);
-                    object.monotonicStampNs = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
-                } else
-                    object.monotonicStampNs = options.longs === String ? "0" : 0;
-                if ($util.Long) {
-                    let long = new $util.Long(0, 0, true);
-                    object.localStampNs = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
-                } else
-                    object.localStampNs = options.longs === String ? "0" : 0;
-                object.runtime = null;
-                if (options.bytes === String)
-                    object.payload = "";
-                else {
-                    object.payload = [];
-                    if (options.bytes !== Array)
-                        object.payload = $util.newBuffer(object.payload);
-                }
-            }
-            if (message.sequence != null && message.hasOwnProperty("sequence"))
-                object.sequence = message.sequence;
-            if (message.monotonicStampNs != null && message.hasOwnProperty("monotonicStampNs"))
-                if (typeof message.monotonicStampNs === "number")
-                    object.monotonicStampNs = options.longs === String ? String(message.monotonicStampNs) : message.monotonicStampNs;
-                else
-                    object.monotonicStampNs = options.longs === String ? $util.Long.prototype.toString.call(message.monotonicStampNs) : options.longs === Number ? new $util.LongBits(message.monotonicStampNs.low >>> 0, message.monotonicStampNs.high >>> 0).toNumber(true) : message.monotonicStampNs;
-            if (message.localStampNs != null && message.hasOwnProperty("localStampNs"))
-                if (typeof message.localStampNs === "number")
-                    object.localStampNs = options.longs === String ? String(message.localStampNs) : message.localStampNs;
-                else
-                    object.localStampNs = options.longs === String ? $util.Long.prototype.toString.call(message.localStampNs) : options.longs === Number ? new $util.LongBits(message.localStampNs.low >>> 0, message.localStampNs.high >>> 0).toNumber(true) : message.localStampNs;
-            if (message.runtime != null && message.hasOwnProperty("runtime"))
-                object.runtime = $root.hikmicro.RuntimeBlockInfo.toObject(message.runtime, options);
-            if (message.payload != null && message.hasOwnProperty("payload"))
-                object.payload = options.bytes === String ? $util.base64.encode(message.payload, 0, message.payload.length) : options.bytes === Array ? Array.prototype.slice.call(message.payload) : message.payload;
-            return object;
-        };
-
-        /**
-         * Converts this ThermalFrame to JSON.
-         * @function toJSON
-         * @memberof hikmicro.ThermalFrame
-         * @instance
-         * @returns {Object.<string,*>} JSON object
-         */
-        ThermalFrame.prototype.toJSON = function toJSON() {
-            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
-        };
-
-        /**
-         * Gets the default type url for ThermalFrame
-         * @function getTypeUrl
-         * @memberof hikmicro.ThermalFrame
-         * @static
-         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
-         * @returns {string} The default type url
-         */
-        ThermalFrame.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
-            if (typeUrlPrefix === undefined) {
-                typeUrlPrefix = "type.googleapis.com";
-            }
-            return typeUrlPrefix + "/hikmicro.ThermalFrame";
-        };
-
-        return ThermalFrame;
-    })();
-
-    hikmicro.ThermalFramesBlock = (function() {
-
-        /**
-         * Properties of a ThermalFramesBlock.
-         * @memberof hikmicro
-         * @interface IThermalFramesBlock
-         * @property {number|null} [sequence] ThermalFramesBlock sequence
-         * @property {number|null} [frameCount] ThermalFramesBlock frameCount
-         * @property {Long|null} [monotonicStartNs] ThermalFramesBlock monotonicStartNs
-         * @property {Long|null} [monotonicEndNs] ThermalFramesBlock monotonicEndNs
-         * @property {Long|null} [localStartNs] ThermalFramesBlock localStartNs
-         * @property {Long|null} [localEndNs] ThermalFramesBlock localEndNs
-         * @property {hikmicro.ICompactStreamFormat|null} [streamFormat] ThermalFramesBlock streamFormat
-         * @property {hikmicro.ICompactPayloadLayout|null} [layout] ThermalFramesBlock layout
-         * @property {Array.<hikmicro.IThermalFrame>|null} [frames] ThermalFramesBlock frames
-         */
-
-        /**
-         * Constructs a new ThermalFramesBlock.
-         * @memberof hikmicro
-         * @classdesc Represents a ThermalFramesBlock.
-         * @implements IThermalFramesBlock
-         * @constructor
-         * @param {hikmicro.IThermalFramesBlock=} [properties] Properties to set
-         */
-        function ThermalFramesBlock(properties) {
-            this.frames = [];
-            if (properties)
-                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
-                        this[keys[i]] = properties[keys[i]];
-        }
-
-        /**
-         * ThermalFramesBlock sequence.
-         * @member {number} sequence
-         * @memberof hikmicro.ThermalFramesBlock
-         * @instance
-         */
-        ThermalFramesBlock.prototype.sequence = 0;
-
-        /**
-         * ThermalFramesBlock frameCount.
-         * @member {number} frameCount
-         * @memberof hikmicro.ThermalFramesBlock
-         * @instance
-         */
-        ThermalFramesBlock.prototype.frameCount = 0;
-
-        /**
-         * ThermalFramesBlock monotonicStartNs.
-         * @member {Long} monotonicStartNs
-         * @memberof hikmicro.ThermalFramesBlock
-         * @instance
-         */
-        ThermalFramesBlock.prototype.monotonicStartNs = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
-
-        /**
-         * ThermalFramesBlock monotonicEndNs.
-         * @member {Long} monotonicEndNs
-         * @memberof hikmicro.ThermalFramesBlock
-         * @instance
-         */
-        ThermalFramesBlock.prototype.monotonicEndNs = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
-
-        /**
-         * ThermalFramesBlock localStartNs.
-         * @member {Long} localStartNs
-         * @memberof hikmicro.ThermalFramesBlock
-         * @instance
-         */
-        ThermalFramesBlock.prototype.localStartNs = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
-
-        /**
-         * ThermalFramesBlock localEndNs.
-         * @member {Long} localEndNs
-         * @memberof hikmicro.ThermalFramesBlock
-         * @instance
-         */
-        ThermalFramesBlock.prototype.localEndNs = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
-
-        /**
-         * ThermalFramesBlock streamFormat.
-         * @member {hikmicro.ICompactStreamFormat|null|undefined} streamFormat
-         * @memberof hikmicro.ThermalFramesBlock
-         * @instance
-         */
-        ThermalFramesBlock.prototype.streamFormat = null;
-
-        /**
-         * ThermalFramesBlock layout.
-         * @member {hikmicro.ICompactPayloadLayout|null|undefined} layout
-         * @memberof hikmicro.ThermalFramesBlock
-         * @instance
-         */
-        ThermalFramesBlock.prototype.layout = null;
-
-        /**
-         * ThermalFramesBlock frames.
-         * @member {Array.<hikmicro.IThermalFrame>} frames
-         * @memberof hikmicro.ThermalFramesBlock
-         * @instance
-         */
-        ThermalFramesBlock.prototype.frames = $util.emptyArray;
-
-        /**
-         * Creates a new ThermalFramesBlock instance using the specified properties.
-         * @function create
-         * @memberof hikmicro.ThermalFramesBlock
-         * @static
-         * @param {hikmicro.IThermalFramesBlock=} [properties] Properties to set
-         * @returns {hikmicro.ThermalFramesBlock} ThermalFramesBlock instance
-         */
-        ThermalFramesBlock.create = function create(properties) {
-            return new ThermalFramesBlock(properties);
-        };
-
-        /**
-         * Encodes the specified ThermalFramesBlock message. Does not implicitly {@link hikmicro.ThermalFramesBlock.verify|verify} messages.
-         * @function encode
-         * @memberof hikmicro.ThermalFramesBlock
-         * @static
-         * @param {hikmicro.IThermalFramesBlock} message ThermalFramesBlock message or plain object to encode
-         * @param {$protobuf.Writer} [writer] Writer to encode to
-         * @returns {$protobuf.Writer} Writer
-         */
-        ThermalFramesBlock.encode = function encode(message, writer) {
-            if (!writer)
-                writer = $Writer.create();
-            if (message.sequence != null && Object.hasOwnProperty.call(message, "sequence"))
-                writer.uint32(/* id 1, wireType 0 =*/8).uint32(message.sequence);
-            if (message.frameCount != null && Object.hasOwnProperty.call(message, "frameCount"))
-                writer.uint32(/* id 2, wireType 0 =*/16).uint32(message.frameCount);
-            if (message.monotonicStartNs != null && Object.hasOwnProperty.call(message, "monotonicStartNs"))
-                writer.uint32(/* id 3, wireType 0 =*/24).uint64(message.monotonicStartNs);
-            if (message.monotonicEndNs != null && Object.hasOwnProperty.call(message, "monotonicEndNs"))
-                writer.uint32(/* id 4, wireType 0 =*/32).uint64(message.monotonicEndNs);
-            if (message.localStartNs != null && Object.hasOwnProperty.call(message, "localStartNs"))
-                writer.uint32(/* id 5, wireType 0 =*/40).uint64(message.localStartNs);
-            if (message.localEndNs != null && Object.hasOwnProperty.call(message, "localEndNs"))
-                writer.uint32(/* id 6, wireType 0 =*/48).uint64(message.localEndNs);
-            if (message.streamFormat != null && Object.hasOwnProperty.call(message, "streamFormat"))
-                $root.hikmicro.CompactStreamFormat.encode(message.streamFormat, writer.uint32(/* id 7, wireType 2 =*/58).fork()).ldelim();
-            if (message.layout != null && Object.hasOwnProperty.call(message, "layout"))
-                $root.hikmicro.CompactPayloadLayout.encode(message.layout, writer.uint32(/* id 8, wireType 2 =*/66).fork()).ldelim();
-            if (message.frames != null && message.frames.length)
-                for (let i = 0; i < message.frames.length; ++i)
-                    $root.hikmicro.ThermalFrame.encode(message.frames[i], writer.uint32(/* id 10, wireType 2 =*/82).fork()).ldelim();
-            return writer;
-        };
-
-        /**
-         * Encodes the specified ThermalFramesBlock message, length delimited. Does not implicitly {@link hikmicro.ThermalFramesBlock.verify|verify} messages.
-         * @function encodeDelimited
-         * @memberof hikmicro.ThermalFramesBlock
-         * @static
-         * @param {hikmicro.IThermalFramesBlock} message ThermalFramesBlock message or plain object to encode
-         * @param {$protobuf.Writer} [writer] Writer to encode to
-         * @returns {$protobuf.Writer} Writer
-         */
-        ThermalFramesBlock.encodeDelimited = function encodeDelimited(message, writer) {
-            return this.encode(message, writer).ldelim();
-        };
-
-        /**
-         * Decodes a ThermalFramesBlock message from the specified reader or buffer.
-         * @function decode
-         * @memberof hikmicro.ThermalFramesBlock
-         * @static
-         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
-         * @param {number} [length] Message length if known beforehand
-         * @returns {hikmicro.ThermalFramesBlock} ThermalFramesBlock
-         * @throws {Error} If the payload is not a reader or valid buffer
-         * @throws {$protobuf.util.ProtocolError} If required fields are missing
-         */
-        ThermalFramesBlock.decode = function decode(reader, length, error, long) {
-            if (!(reader instanceof $Reader))
-                reader = $Reader.create(reader);
-            if (long === undefined)
-                long = 0;
-            if (long > $Reader.recursionLimit)
-                throw Error("maximum nesting depth exceeded");
-            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.hikmicro.ThermalFramesBlock();
-            while (reader.pos < end) {
-                let tag = reader.uint32();
-                if (tag === error)
-                    break;
-                switch (tag >>> 3) {
-                case 1: {
-                        message.sequence = reader.uint32();
-                        break;
-                    }
-                case 2: {
-                        message.frameCount = reader.uint32();
-                        break;
-                    }
-                case 3: {
-                        message.monotonicStartNs = reader.uint64();
-                        break;
-                    }
-                case 4: {
-                        message.monotonicEndNs = reader.uint64();
-                        break;
-                    }
-                case 5: {
-                        message.localStartNs = reader.uint64();
-                        break;
-                    }
-                case 6: {
-                        message.localEndNs = reader.uint64();
-                        break;
-                    }
-                case 7: {
-                        message.streamFormat = $root.hikmicro.CompactStreamFormat.decode(reader, reader.uint32(), undefined, long + 1);
-                        break;
-                    }
-                case 8: {
-                        message.layout = $root.hikmicro.CompactPayloadLayout.decode(reader, reader.uint32(), undefined, long + 1);
-                        break;
-                    }
-                case 10: {
-                        if (!(message.frames && message.frames.length))
-                            message.frames = [];
-                        message.frames.push($root.hikmicro.ThermalFrame.decode(reader, reader.uint32(), undefined, long + 1));
-                        break;
-                    }
-                default:
-                    reader.skipType(tag & 7, long);
-                    break;
-                }
-            }
-            return message;
-        };
-
-        /**
-         * Decodes a ThermalFramesBlock message from the specified reader or buffer, length delimited.
-         * @function decodeDelimited
-         * @memberof hikmicro.ThermalFramesBlock
-         * @static
-         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
-         * @returns {hikmicro.ThermalFramesBlock} ThermalFramesBlock
-         * @throws {Error} If the payload is not a reader or valid buffer
-         * @throws {$protobuf.util.ProtocolError} If required fields are missing
-         */
-        ThermalFramesBlock.decodeDelimited = function decodeDelimited(reader) {
-            if (!(reader instanceof $Reader))
-                reader = new $Reader(reader);
-            return this.decode(reader, reader.uint32());
-        };
-
-        /**
-         * Verifies a ThermalFramesBlock message.
-         * @function verify
-         * @memberof hikmicro.ThermalFramesBlock
-         * @static
-         * @param {Object.<string,*>} message Plain object to verify
-         * @returns {string|null} `null` if valid, otherwise the reason why it is not
-         */
-        ThermalFramesBlock.verify = function verify(message, long) {
-            if (typeof message !== "object" || message === null)
-                return "object expected";
-            if (long === undefined)
-                long = 0;
-            if (long > $util.recursionLimit)
-                return "maximum nesting depth exceeded";
-            if (message.sequence != null && message.hasOwnProperty("sequence"))
-                if (!$util.isInteger(message.sequence))
-                    return "sequence: integer expected";
-            if (message.frameCount != null && message.hasOwnProperty("frameCount"))
-                if (!$util.isInteger(message.frameCount))
-                    return "frameCount: integer expected";
-            if (message.monotonicStartNs != null && message.hasOwnProperty("monotonicStartNs"))
-                if (!$util.isInteger(message.monotonicStartNs) && !(message.monotonicStartNs && $util.isInteger(message.monotonicStartNs.low) && $util.isInteger(message.monotonicStartNs.high)))
-                    return "monotonicStartNs: integer|Long expected";
-            if (message.monotonicEndNs != null && message.hasOwnProperty("monotonicEndNs"))
-                if (!$util.isInteger(message.monotonicEndNs) && !(message.monotonicEndNs && $util.isInteger(message.monotonicEndNs.low) && $util.isInteger(message.monotonicEndNs.high)))
-                    return "monotonicEndNs: integer|Long expected";
-            if (message.localStartNs != null && message.hasOwnProperty("localStartNs"))
-                if (!$util.isInteger(message.localStartNs) && !(message.localStartNs && $util.isInteger(message.localStartNs.low) && $util.isInteger(message.localStartNs.high)))
-                    return "localStartNs: integer|Long expected";
-            if (message.localEndNs != null && message.hasOwnProperty("localEndNs"))
-                if (!$util.isInteger(message.localEndNs) && !(message.localEndNs && $util.isInteger(message.localEndNs.low) && $util.isInteger(message.localEndNs.high)))
-                    return "localEndNs: integer|Long expected";
-            if (message.streamFormat != null && message.hasOwnProperty("streamFormat")) {
-                let error = $root.hikmicro.CompactStreamFormat.verify(message.streamFormat, long + 1);
-                if (error)
-                    return "streamFormat." + error;
-            }
-            if (message.layout != null && message.hasOwnProperty("layout")) {
-                let error = $root.hikmicro.CompactPayloadLayout.verify(message.layout, long + 1);
-                if (error)
-                    return "layout." + error;
-            }
-            if (message.frames != null && message.hasOwnProperty("frames")) {
-                if (!Array.isArray(message.frames))
-                    return "frames: array expected";
-                for (let i = 0; i < message.frames.length; ++i) {
-                    let error = $root.hikmicro.ThermalFrame.verify(message.frames[i], long + 1);
-                    if (error)
-                        return "frames." + error;
-                }
-            }
-            return null;
-        };
-
-        /**
-         * Creates a ThermalFramesBlock message from a plain object. Also converts values to their respective internal types.
-         * @function fromObject
-         * @memberof hikmicro.ThermalFramesBlock
-         * @static
-         * @param {Object.<string,*>} object Plain object
-         * @returns {hikmicro.ThermalFramesBlock} ThermalFramesBlock
-         */
-        ThermalFramesBlock.fromObject = function fromObject(object, long) {
-            if (object instanceof $root.hikmicro.ThermalFramesBlock)
-                return object;
-            if (long === undefined)
-                long = 0;
-            if (long > $util.recursionLimit)
-                throw Error("maximum nesting depth exceeded");
-            let message = new $root.hikmicro.ThermalFramesBlock();
-            if (object.sequence != null)
-                message.sequence = object.sequence >>> 0;
-            if (object.frameCount != null)
-                message.frameCount = object.frameCount >>> 0;
-            if (object.monotonicStartNs != null)
-                if ($util.Long)
-                    (message.monotonicStartNs = $util.Long.fromValue(object.monotonicStartNs)).unsigned = true;
-                else if (typeof object.monotonicStartNs === "string")
-                    message.monotonicStartNs = parseInt(object.monotonicStartNs, 10);
-                else if (typeof object.monotonicStartNs === "number")
-                    message.monotonicStartNs = object.monotonicStartNs;
-                else if (typeof object.monotonicStartNs === "object")
-                    message.monotonicStartNs = new $util.LongBits(object.monotonicStartNs.low >>> 0, object.monotonicStartNs.high >>> 0).toNumber(true);
-            if (object.monotonicEndNs != null)
-                if ($util.Long)
-                    (message.monotonicEndNs = $util.Long.fromValue(object.monotonicEndNs)).unsigned = true;
-                else if (typeof object.monotonicEndNs === "string")
-                    message.monotonicEndNs = parseInt(object.monotonicEndNs, 10);
-                else if (typeof object.monotonicEndNs === "number")
-                    message.monotonicEndNs = object.monotonicEndNs;
-                else if (typeof object.monotonicEndNs === "object")
-                    message.monotonicEndNs = new $util.LongBits(object.monotonicEndNs.low >>> 0, object.monotonicEndNs.high >>> 0).toNumber(true);
-            if (object.localStartNs != null)
-                if ($util.Long)
-                    (message.localStartNs = $util.Long.fromValue(object.localStartNs)).unsigned = true;
-                else if (typeof object.localStartNs === "string")
-                    message.localStartNs = parseInt(object.localStartNs, 10);
-                else if (typeof object.localStartNs === "number")
-                    message.localStartNs = object.localStartNs;
-                else if (typeof object.localStartNs === "object")
-                    message.localStartNs = new $util.LongBits(object.localStartNs.low >>> 0, object.localStartNs.high >>> 0).toNumber(true);
-            if (object.localEndNs != null)
-                if ($util.Long)
-                    (message.localEndNs = $util.Long.fromValue(object.localEndNs)).unsigned = true;
-                else if (typeof object.localEndNs === "string")
-                    message.localEndNs = parseInt(object.localEndNs, 10);
-                else if (typeof object.localEndNs === "number")
-                    message.localEndNs = object.localEndNs;
-                else if (typeof object.localEndNs === "object")
-                    message.localEndNs = new $util.LongBits(object.localEndNs.low >>> 0, object.localEndNs.high >>> 0).toNumber(true);
-            if (object.streamFormat != null) {
-                if (typeof object.streamFormat !== "object")
-                    throw TypeError(".hikmicro.ThermalFramesBlock.streamFormat: object expected");
-                message.streamFormat = $root.hikmicro.CompactStreamFormat.fromObject(object.streamFormat, long + 1);
-            }
-            if (object.layout != null) {
-                if (typeof object.layout !== "object")
-                    throw TypeError(".hikmicro.ThermalFramesBlock.layout: object expected");
-                message.layout = $root.hikmicro.CompactPayloadLayout.fromObject(object.layout, long + 1);
-            }
-            if (object.frames) {
-                if (!Array.isArray(object.frames))
-                    throw TypeError(".hikmicro.ThermalFramesBlock.frames: array expected");
-                message.frames = [];
-                for (let i = 0; i < object.frames.length; ++i) {
-                    if (typeof object.frames[i] !== "object")
-                        throw TypeError(".hikmicro.ThermalFramesBlock.frames: object expected");
-                    message.frames[i] = $root.hikmicro.ThermalFrame.fromObject(object.frames[i], long + 1);
-                }
-            }
-            return message;
-        };
-
-        /**
-         * Creates a plain object from a ThermalFramesBlock message. Also converts values to other types if specified.
-         * @function toObject
-         * @memberof hikmicro.ThermalFramesBlock
-         * @static
-         * @param {hikmicro.ThermalFramesBlock} message ThermalFramesBlock
-         * @param {$protobuf.IConversionOptions} [options] Conversion options
-         * @returns {Object.<string,*>} Plain object
-         */
-        ThermalFramesBlock.toObject = function toObject(message, options) {
-            if (!options)
-                options = {};
-            let object = {};
-            if (options.arrays || options.defaults)
-                object.frames = [];
-            if (options.defaults) {
-                object.sequence = 0;
-                object.frameCount = 0;
-                if ($util.Long) {
-                    let long = new $util.Long(0, 0, true);
-                    object.monotonicStartNs = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
-                } else
-                    object.monotonicStartNs = options.longs === String ? "0" : 0;
-                if ($util.Long) {
-                    let long = new $util.Long(0, 0, true);
-                    object.monotonicEndNs = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
-                } else
-                    object.monotonicEndNs = options.longs === String ? "0" : 0;
-                if ($util.Long) {
-                    let long = new $util.Long(0, 0, true);
-                    object.localStartNs = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
-                } else
-                    object.localStartNs = options.longs === String ? "0" : 0;
-                if ($util.Long) {
-                    let long = new $util.Long(0, 0, true);
-                    object.localEndNs = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
-                } else
-                    object.localEndNs = options.longs === String ? "0" : 0;
-                object.streamFormat = null;
-                object.layout = null;
-            }
-            if (message.sequence != null && message.hasOwnProperty("sequence"))
-                object.sequence = message.sequence;
-            if (message.frameCount != null && message.hasOwnProperty("frameCount"))
-                object.frameCount = message.frameCount;
-            if (message.monotonicStartNs != null && message.hasOwnProperty("monotonicStartNs"))
-                if (typeof message.monotonicStartNs === "number")
-                    object.monotonicStartNs = options.longs === String ? String(message.monotonicStartNs) : message.monotonicStartNs;
-                else
-                    object.monotonicStartNs = options.longs === String ? $util.Long.prototype.toString.call(message.monotonicStartNs) : options.longs === Number ? new $util.LongBits(message.monotonicStartNs.low >>> 0, message.monotonicStartNs.high >>> 0).toNumber(true) : message.monotonicStartNs;
-            if (message.monotonicEndNs != null && message.hasOwnProperty("monotonicEndNs"))
-                if (typeof message.monotonicEndNs === "number")
-                    object.monotonicEndNs = options.longs === String ? String(message.monotonicEndNs) : message.monotonicEndNs;
-                else
-                    object.monotonicEndNs = options.longs === String ? $util.Long.prototype.toString.call(message.monotonicEndNs) : options.longs === Number ? new $util.LongBits(message.monotonicEndNs.low >>> 0, message.monotonicEndNs.high >>> 0).toNumber(true) : message.monotonicEndNs;
-            if (message.localStartNs != null && message.hasOwnProperty("localStartNs"))
-                if (typeof message.localStartNs === "number")
-                    object.localStartNs = options.longs === String ? String(message.localStartNs) : message.localStartNs;
-                else
-                    object.localStartNs = options.longs === String ? $util.Long.prototype.toString.call(message.localStartNs) : options.longs === Number ? new $util.LongBits(message.localStartNs.low >>> 0, message.localStartNs.high >>> 0).toNumber(true) : message.localStartNs;
-            if (message.localEndNs != null && message.hasOwnProperty("localEndNs"))
-                if (typeof message.localEndNs === "number")
-                    object.localEndNs = options.longs === String ? String(message.localEndNs) : message.localEndNs;
-                else
-                    object.localEndNs = options.longs === String ? $util.Long.prototype.toString.call(message.localEndNs) : options.longs === Number ? new $util.LongBits(message.localEndNs.low >>> 0, message.localEndNs.high >>> 0).toNumber(true) : message.localEndNs;
-            if (message.streamFormat != null && message.hasOwnProperty("streamFormat"))
-                object.streamFormat = $root.hikmicro.CompactStreamFormat.toObject(message.streamFormat, options);
-            if (message.layout != null && message.hasOwnProperty("layout"))
-                object.layout = $root.hikmicro.CompactPayloadLayout.toObject(message.layout, options);
-            if (message.frames && message.frames.length) {
-                object.frames = [];
-                for (let j = 0; j < message.frames.length; ++j)
-                    object.frames[j] = $root.hikmicro.ThermalFrame.toObject(message.frames[j], options);
-            }
-            return object;
-        };
-
-        /**
-         * Converts this ThermalFramesBlock to JSON.
-         * @function toJSON
-         * @memberof hikmicro.ThermalFramesBlock
-         * @instance
-         * @returns {Object.<string,*>} JSON object
-         */
-        ThermalFramesBlock.prototype.toJSON = function toJSON() {
-            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
-        };
-
-        /**
-         * Gets the default type url for ThermalFramesBlock
-         * @function getTypeUrl
-         * @memberof hikmicro.ThermalFramesBlock
-         * @static
-         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
-         * @returns {string} The default type url
-         */
-        ThermalFramesBlock.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
-            if (typeUrlPrefix === undefined) {
-                typeUrlPrefix = "type.googleapis.com";
-            }
-            return typeUrlPrefix + "/hikmicro.ThermalFramesBlock";
-        };
-
-        return ThermalFramesBlock;
-    })();
-
-    hikmicro.RxEnvelope = (function() {
-
-        /**
-         * Properties of a RxEnvelope.
-         * @memberof hikmicro
-         * @interface IRxEnvelope
-         * @property {hikmicro.IDeviceInfo|null} [deviceInfo] RxEnvelope deviceInfo
-         * @property {hikmicro.IThermalFramesBlock|null} [frames] RxEnvelope frames
-         */
-
-        /**
-         * Constructs a new RxEnvelope.
-         * @memberof hikmicro
-         * @classdesc Represents a RxEnvelope.
-         * @implements IRxEnvelope
-         * @constructor
-         * @param {hikmicro.IRxEnvelope=} [properties] Properties to set
-         */
-        function RxEnvelope(properties) {
-            if (properties)
-                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
-                        this[keys[i]] = properties[keys[i]];
-        }
-
-        /**
-         * RxEnvelope deviceInfo.
-         * @member {hikmicro.IDeviceInfo|null|undefined} deviceInfo
-         * @memberof hikmicro.RxEnvelope
-         * @instance
-         */
-        RxEnvelope.prototype.deviceInfo = null;
-
-        /**
-         * RxEnvelope frames.
-         * @member {hikmicro.IThermalFramesBlock|null|undefined} frames
-         * @memberof hikmicro.RxEnvelope
-         * @instance
-         */
-        RxEnvelope.prototype.frames = null;
-
-        /**
-         * Creates a new RxEnvelope instance using the specified properties.
-         * @function create
-         * @memberof hikmicro.RxEnvelope
-         * @static
-         * @param {hikmicro.IRxEnvelope=} [properties] Properties to set
-         * @returns {hikmicro.RxEnvelope} RxEnvelope instance
-         */
-        RxEnvelope.create = function create(properties) {
-            return new RxEnvelope(properties);
-        };
-
-        /**
-         * Encodes the specified RxEnvelope message. Does not implicitly {@link hikmicro.RxEnvelope.verify|verify} messages.
-         * @function encode
-         * @memberof hikmicro.RxEnvelope
-         * @static
-         * @param {hikmicro.IRxEnvelope} message RxEnvelope message or plain object to encode
-         * @param {$protobuf.Writer} [writer] Writer to encode to
-         * @returns {$protobuf.Writer} Writer
-         */
-        RxEnvelope.encode = function encode(message, writer) {
-            if (!writer)
-                writer = $Writer.create();
-            if (message.deviceInfo != null && Object.hasOwnProperty.call(message, "deviceInfo"))
-                $root.hikmicro.DeviceInfo.encode(message.deviceInfo, writer.uint32(/* id 1, wireType 2 =*/10).fork()).ldelim();
-            if (message.frames != null && Object.hasOwnProperty.call(message, "frames"))
-                $root.hikmicro.ThermalFramesBlock.encode(message.frames, writer.uint32(/* id 2, wireType 2 =*/18).fork()).ldelim();
-            return writer;
-        };
-
-        /**
-         * Encodes the specified RxEnvelope message, length delimited. Does not implicitly {@link hikmicro.RxEnvelope.verify|verify} messages.
-         * @function encodeDelimited
-         * @memberof hikmicro.RxEnvelope
-         * @static
-         * @param {hikmicro.IRxEnvelope} message RxEnvelope message or plain object to encode
-         * @param {$protobuf.Writer} [writer] Writer to encode to
-         * @returns {$protobuf.Writer} Writer
-         */
-        RxEnvelope.encodeDelimited = function encodeDelimited(message, writer) {
-            return this.encode(message, writer).ldelim();
-        };
-
-        /**
-         * Decodes a RxEnvelope message from the specified reader or buffer.
-         * @function decode
-         * @memberof hikmicro.RxEnvelope
-         * @static
-         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
-         * @param {number} [length] Message length if known beforehand
-         * @returns {hikmicro.RxEnvelope} RxEnvelope
-         * @throws {Error} If the payload is not a reader or valid buffer
-         * @throws {$protobuf.util.ProtocolError} If required fields are missing
-         */
-        RxEnvelope.decode = function decode(reader, length, error, long) {
-            if (!(reader instanceof $Reader))
-                reader = $Reader.create(reader);
-            if (long === undefined)
-                long = 0;
-            if (long > $Reader.recursionLimit)
-                throw Error("maximum nesting depth exceeded");
-            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.hikmicro.RxEnvelope();
-            while (reader.pos < end) {
-                let tag = reader.uint32();
-                if (tag === error)
-                    break;
-                switch (tag >>> 3) {
-                case 1: {
-                        message.deviceInfo = $root.hikmicro.DeviceInfo.decode(reader, reader.uint32(), undefined, long + 1);
-                        break;
-                    }
-                case 2: {
-                        message.frames = $root.hikmicro.ThermalFramesBlock.decode(reader, reader.uint32(), undefined, long + 1);
-                        break;
-                    }
-                default:
-                    reader.skipType(tag & 7, long);
-                    break;
-                }
-            }
-            return message;
-        };
-
-        /**
-         * Decodes a RxEnvelope message from the specified reader or buffer, length delimited.
-         * @function decodeDelimited
-         * @memberof hikmicro.RxEnvelope
-         * @static
-         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
-         * @returns {hikmicro.RxEnvelope} RxEnvelope
-         * @throws {Error} If the payload is not a reader or valid buffer
-         * @throws {$protobuf.util.ProtocolError} If required fields are missing
-         */
-        RxEnvelope.decodeDelimited = function decodeDelimited(reader) {
-            if (!(reader instanceof $Reader))
-                reader = new $Reader(reader);
-            return this.decode(reader, reader.uint32());
-        };
-
-        /**
-         * Verifies a RxEnvelope message.
-         * @function verify
-         * @memberof hikmicro.RxEnvelope
-         * @static
-         * @param {Object.<string,*>} message Plain object to verify
-         * @returns {string|null} `null` if valid, otherwise the reason why it is not
-         */
-        RxEnvelope.verify = function verify(message, long) {
-            if (typeof message !== "object" || message === null)
-                return "object expected";
-            if (long === undefined)
-                long = 0;
-            if (long > $util.recursionLimit)
-                return "maximum nesting depth exceeded";
-            if (message.deviceInfo != null && message.hasOwnProperty("deviceInfo")) {
-                let error = $root.hikmicro.DeviceInfo.verify(message.deviceInfo, long + 1);
-                if (error)
-                    return "deviceInfo." + error;
-            }
-            if (message.frames != null && message.hasOwnProperty("frames")) {
-                let error = $root.hikmicro.ThermalFramesBlock.verify(message.frames, long + 1);
-                if (error)
-                    return "frames." + error;
-            }
-            return null;
-        };
-
-        /**
-         * Creates a RxEnvelope message from a plain object. Also converts values to their respective internal types.
-         * @function fromObject
-         * @memberof hikmicro.RxEnvelope
-         * @static
-         * @param {Object.<string,*>} object Plain object
-         * @returns {hikmicro.RxEnvelope} RxEnvelope
-         */
-        RxEnvelope.fromObject = function fromObject(object, long) {
-            if (object instanceof $root.hikmicro.RxEnvelope)
-                return object;
-            if (long === undefined)
-                long = 0;
-            if (long > $util.recursionLimit)
-                throw Error("maximum nesting depth exceeded");
-            let message = new $root.hikmicro.RxEnvelope();
-            if (object.deviceInfo != null) {
-                if (typeof object.deviceInfo !== "object")
-                    throw TypeError(".hikmicro.RxEnvelope.deviceInfo: object expected");
-                message.deviceInfo = $root.hikmicro.DeviceInfo.fromObject(object.deviceInfo, long + 1);
-            }
-            if (object.frames != null) {
-                if (typeof object.frames !== "object")
-                    throw TypeError(".hikmicro.RxEnvelope.frames: object expected");
-                message.frames = $root.hikmicro.ThermalFramesBlock.fromObject(object.frames, long + 1);
-            }
-            return message;
-        };
-
-        /**
-         * Creates a plain object from a RxEnvelope message. Also converts values to other types if specified.
-         * @function toObject
-         * @memberof hikmicro.RxEnvelope
-         * @static
-         * @param {hikmicro.RxEnvelope} message RxEnvelope
-         * @param {$protobuf.IConversionOptions} [options] Conversion options
-         * @returns {Object.<string,*>} Plain object
-         */
-        RxEnvelope.toObject = function toObject(message, options) {
-            if (!options)
-                options = {};
-            let object = {};
-            if (options.defaults) {
-                object.deviceInfo = null;
-                object.frames = null;
-            }
-            if (message.deviceInfo != null && message.hasOwnProperty("deviceInfo"))
-                object.deviceInfo = $root.hikmicro.DeviceInfo.toObject(message.deviceInfo, options);
-            if (message.frames != null && message.hasOwnProperty("frames"))
-                object.frames = $root.hikmicro.ThermalFramesBlock.toObject(message.frames, options);
-            return object;
-        };
-
-        /**
-         * Converts this RxEnvelope to JSON.
-         * @function toJSON
-         * @memberof hikmicro.RxEnvelope
-         * @instance
-         * @returns {Object.<string,*>} JSON object
-         */
-        RxEnvelope.prototype.toJSON = function toJSON() {
-            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
-        };
-
-        /**
-         * Gets the default type url for RxEnvelope
-         * @function getTypeUrl
-         * @memberof hikmicro.RxEnvelope
-         * @static
-         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
-         * @returns {string} The default type url
-         */
-        RxEnvelope.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
-            if (typeUrlPrefix === undefined) {
-                typeUrlPrefix = "type.googleapis.com";
-            }
-            return typeUrlPrefix + "/hikmicro.RxEnvelope";
-        };
-
-        return RxEnvelope;
-    })();
-
-    return hikmicro;
-})();
-
 export const motors_mirroring = $root.motors_mirroring = (() => {
 
     /**
@@ -43821,6 +39784,4043 @@ export const normvla = $root.normvla = (() => {
     })();
 
     return normvla;
+})();
+
+export const hikmicro = $root.hikmicro = (() => {
+
+    /**
+     * Namespace hikmicro.
+     * @exports hikmicro
+     * @namespace
+     */
+    const hikmicro = {};
+
+    hikmicro.UsbDeviceInfo = (function() {
+
+        /**
+         * Properties of a UsbDeviceInfo.
+         * @memberof hikmicro
+         * @interface IUsbDeviceInfo
+         * @property {number|null} [vendorId] UsbDeviceInfo vendorId
+         * @property {number|null} [productId] UsbDeviceInfo productId
+         * @property {number|null} [busNumber] UsbDeviceInfo busNumber
+         * @property {number|null} [deviceNumber] UsbDeviceInfo deviceNumber
+         * @property {Array.<number>|null} [portNumbers] UsbDeviceInfo portNumbers
+         * @property {string|null} [uniqueId] UsbDeviceInfo uniqueId
+         * @property {string|null} [manufacturer] UsbDeviceInfo manufacturer
+         * @property {string|null} [product] UsbDeviceInfo product
+         * @property {string|null} [serialNumber] UsbDeviceInfo serialNumber
+         * @property {number|null} [usbBcd] UsbDeviceInfo usbBcd
+         * @property {number|null} [deviceBcd] UsbDeviceInfo deviceBcd
+         * @property {number|null} [deviceClass] UsbDeviceInfo deviceClass
+         * @property {number|null} [deviceSubclass] UsbDeviceInfo deviceSubclass
+         * @property {number|null} [deviceProtocol] UsbDeviceInfo deviceProtocol
+         * @property {number|null} [maxPacketSize0] UsbDeviceInfo maxPacketSize0
+         * @property {number|null} [numConfigurations] UsbDeviceInfo numConfigurations
+         * @property {Uint8Array|null} [deviceDescriptor] UsbDeviceInfo deviceDescriptor
+         * @property {Array.<Uint8Array>|null} [configDescriptors] UsbDeviceInfo configDescriptors
+         */
+
+        /**
+         * Constructs a new UsbDeviceInfo.
+         * @memberof hikmicro
+         * @classdesc Represents a UsbDeviceInfo.
+         * @implements IUsbDeviceInfo
+         * @constructor
+         * @param {hikmicro.IUsbDeviceInfo=} [properties] Properties to set
+         */
+        function UsbDeviceInfo(properties) {
+            this.portNumbers = [];
+            this.configDescriptors = [];
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * UsbDeviceInfo vendorId.
+         * @member {number} vendorId
+         * @memberof hikmicro.UsbDeviceInfo
+         * @instance
+         */
+        UsbDeviceInfo.prototype.vendorId = 0;
+
+        /**
+         * UsbDeviceInfo productId.
+         * @member {number} productId
+         * @memberof hikmicro.UsbDeviceInfo
+         * @instance
+         */
+        UsbDeviceInfo.prototype.productId = 0;
+
+        /**
+         * UsbDeviceInfo busNumber.
+         * @member {number} busNumber
+         * @memberof hikmicro.UsbDeviceInfo
+         * @instance
+         */
+        UsbDeviceInfo.prototype.busNumber = 0;
+
+        /**
+         * UsbDeviceInfo deviceNumber.
+         * @member {number} deviceNumber
+         * @memberof hikmicro.UsbDeviceInfo
+         * @instance
+         */
+        UsbDeviceInfo.prototype.deviceNumber = 0;
+
+        /**
+         * UsbDeviceInfo portNumbers.
+         * @member {Array.<number>} portNumbers
+         * @memberof hikmicro.UsbDeviceInfo
+         * @instance
+         */
+        UsbDeviceInfo.prototype.portNumbers = $util.emptyArray;
+
+        /**
+         * UsbDeviceInfo uniqueId.
+         * @member {string} uniqueId
+         * @memberof hikmicro.UsbDeviceInfo
+         * @instance
+         */
+        UsbDeviceInfo.prototype.uniqueId = "";
+
+        /**
+         * UsbDeviceInfo manufacturer.
+         * @member {string} manufacturer
+         * @memberof hikmicro.UsbDeviceInfo
+         * @instance
+         */
+        UsbDeviceInfo.prototype.manufacturer = "";
+
+        /**
+         * UsbDeviceInfo product.
+         * @member {string} product
+         * @memberof hikmicro.UsbDeviceInfo
+         * @instance
+         */
+        UsbDeviceInfo.prototype.product = "";
+
+        /**
+         * UsbDeviceInfo serialNumber.
+         * @member {string} serialNumber
+         * @memberof hikmicro.UsbDeviceInfo
+         * @instance
+         */
+        UsbDeviceInfo.prototype.serialNumber = "";
+
+        /**
+         * UsbDeviceInfo usbBcd.
+         * @member {number} usbBcd
+         * @memberof hikmicro.UsbDeviceInfo
+         * @instance
+         */
+        UsbDeviceInfo.prototype.usbBcd = 0;
+
+        /**
+         * UsbDeviceInfo deviceBcd.
+         * @member {number} deviceBcd
+         * @memberof hikmicro.UsbDeviceInfo
+         * @instance
+         */
+        UsbDeviceInfo.prototype.deviceBcd = 0;
+
+        /**
+         * UsbDeviceInfo deviceClass.
+         * @member {number} deviceClass
+         * @memberof hikmicro.UsbDeviceInfo
+         * @instance
+         */
+        UsbDeviceInfo.prototype.deviceClass = 0;
+
+        /**
+         * UsbDeviceInfo deviceSubclass.
+         * @member {number} deviceSubclass
+         * @memberof hikmicro.UsbDeviceInfo
+         * @instance
+         */
+        UsbDeviceInfo.prototype.deviceSubclass = 0;
+
+        /**
+         * UsbDeviceInfo deviceProtocol.
+         * @member {number} deviceProtocol
+         * @memberof hikmicro.UsbDeviceInfo
+         * @instance
+         */
+        UsbDeviceInfo.prototype.deviceProtocol = 0;
+
+        /**
+         * UsbDeviceInfo maxPacketSize0.
+         * @member {number} maxPacketSize0
+         * @memberof hikmicro.UsbDeviceInfo
+         * @instance
+         */
+        UsbDeviceInfo.prototype.maxPacketSize0 = 0;
+
+        /**
+         * UsbDeviceInfo numConfigurations.
+         * @member {number} numConfigurations
+         * @memberof hikmicro.UsbDeviceInfo
+         * @instance
+         */
+        UsbDeviceInfo.prototype.numConfigurations = 0;
+
+        /**
+         * UsbDeviceInfo deviceDescriptor.
+         * @member {Uint8Array} deviceDescriptor
+         * @memberof hikmicro.UsbDeviceInfo
+         * @instance
+         */
+        UsbDeviceInfo.prototype.deviceDescriptor = $util.newBuffer([]);
+
+        /**
+         * UsbDeviceInfo configDescriptors.
+         * @member {Array.<Uint8Array>} configDescriptors
+         * @memberof hikmicro.UsbDeviceInfo
+         * @instance
+         */
+        UsbDeviceInfo.prototype.configDescriptors = $util.emptyArray;
+
+        /**
+         * Creates a new UsbDeviceInfo instance using the specified properties.
+         * @function create
+         * @memberof hikmicro.UsbDeviceInfo
+         * @static
+         * @param {hikmicro.IUsbDeviceInfo=} [properties] Properties to set
+         * @returns {hikmicro.UsbDeviceInfo} UsbDeviceInfo instance
+         */
+        UsbDeviceInfo.create = function create(properties) {
+            return new UsbDeviceInfo(properties);
+        };
+
+        /**
+         * Encodes the specified UsbDeviceInfo message. Does not implicitly {@link hikmicro.UsbDeviceInfo.verify|verify} messages.
+         * @function encode
+         * @memberof hikmicro.UsbDeviceInfo
+         * @static
+         * @param {hikmicro.IUsbDeviceInfo} message UsbDeviceInfo message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        UsbDeviceInfo.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.vendorId != null && Object.hasOwnProperty.call(message, "vendorId"))
+                writer.uint32(/* id 1, wireType 0 =*/8).uint32(message.vendorId);
+            if (message.productId != null && Object.hasOwnProperty.call(message, "productId"))
+                writer.uint32(/* id 2, wireType 0 =*/16).uint32(message.productId);
+            if (message.busNumber != null && Object.hasOwnProperty.call(message, "busNumber"))
+                writer.uint32(/* id 3, wireType 0 =*/24).uint32(message.busNumber);
+            if (message.deviceNumber != null && Object.hasOwnProperty.call(message, "deviceNumber"))
+                writer.uint32(/* id 4, wireType 0 =*/32).uint32(message.deviceNumber);
+            if (message.portNumbers != null && message.portNumbers.length) {
+                writer.uint32(/* id 5, wireType 2 =*/42).fork();
+                for (let i = 0; i < message.portNumbers.length; ++i)
+                    writer.uint32(message.portNumbers[i]);
+                writer.ldelim();
+            }
+            if (message.uniqueId != null && Object.hasOwnProperty.call(message, "uniqueId"))
+                writer.uint32(/* id 6, wireType 2 =*/50).string(message.uniqueId);
+            if (message.manufacturer != null && Object.hasOwnProperty.call(message, "manufacturer"))
+                writer.uint32(/* id 7, wireType 2 =*/58).string(message.manufacturer);
+            if (message.product != null && Object.hasOwnProperty.call(message, "product"))
+                writer.uint32(/* id 8, wireType 2 =*/66).string(message.product);
+            if (message.serialNumber != null && Object.hasOwnProperty.call(message, "serialNumber"))
+                writer.uint32(/* id 9, wireType 2 =*/74).string(message.serialNumber);
+            if (message.usbBcd != null && Object.hasOwnProperty.call(message, "usbBcd"))
+                writer.uint32(/* id 20, wireType 0 =*/160).uint32(message.usbBcd);
+            if (message.deviceBcd != null && Object.hasOwnProperty.call(message, "deviceBcd"))
+                writer.uint32(/* id 21, wireType 0 =*/168).uint32(message.deviceBcd);
+            if (message.deviceClass != null && Object.hasOwnProperty.call(message, "deviceClass"))
+                writer.uint32(/* id 22, wireType 0 =*/176).uint32(message.deviceClass);
+            if (message.deviceSubclass != null && Object.hasOwnProperty.call(message, "deviceSubclass"))
+                writer.uint32(/* id 23, wireType 0 =*/184).uint32(message.deviceSubclass);
+            if (message.deviceProtocol != null && Object.hasOwnProperty.call(message, "deviceProtocol"))
+                writer.uint32(/* id 24, wireType 0 =*/192).uint32(message.deviceProtocol);
+            if (message.maxPacketSize0 != null && Object.hasOwnProperty.call(message, "maxPacketSize0"))
+                writer.uint32(/* id 25, wireType 0 =*/200).uint32(message.maxPacketSize0);
+            if (message.numConfigurations != null && Object.hasOwnProperty.call(message, "numConfigurations"))
+                writer.uint32(/* id 26, wireType 0 =*/208).uint32(message.numConfigurations);
+            if (message.deviceDescriptor != null && Object.hasOwnProperty.call(message, "deviceDescriptor"))
+                writer.uint32(/* id 40, wireType 2 =*/322).bytes(message.deviceDescriptor);
+            if (message.configDescriptors != null && message.configDescriptors.length)
+                for (let i = 0; i < message.configDescriptors.length; ++i)
+                    writer.uint32(/* id 41, wireType 2 =*/330).bytes(message.configDescriptors[i]);
+            return writer;
+        };
+
+        /**
+         * Encodes the specified UsbDeviceInfo message, length delimited. Does not implicitly {@link hikmicro.UsbDeviceInfo.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof hikmicro.UsbDeviceInfo
+         * @static
+         * @param {hikmicro.IUsbDeviceInfo} message UsbDeviceInfo message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        UsbDeviceInfo.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes a UsbDeviceInfo message from the specified reader or buffer.
+         * @function decode
+         * @memberof hikmicro.UsbDeviceInfo
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {hikmicro.UsbDeviceInfo} UsbDeviceInfo
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        UsbDeviceInfo.decode = function decode(reader, length, error, long) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.hikmicro.UsbDeviceInfo();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                if (tag === error)
+                    break;
+                switch (tag >>> 3) {
+                case 1: {
+                        message.vendorId = reader.uint32();
+                        break;
+                    }
+                case 2: {
+                        message.productId = reader.uint32();
+                        break;
+                    }
+                case 3: {
+                        message.busNumber = reader.uint32();
+                        break;
+                    }
+                case 4: {
+                        message.deviceNumber = reader.uint32();
+                        break;
+                    }
+                case 5: {
+                        if (!(message.portNumbers && message.portNumbers.length))
+                            message.portNumbers = [];
+                        if ((tag & 7) === 2) {
+                            let end2 = reader.uint32() + reader.pos;
+                            while (reader.pos < end2)
+                                message.portNumbers.push(reader.uint32());
+                        } else
+                            message.portNumbers.push(reader.uint32());
+                        break;
+                    }
+                case 6: {
+                        message.uniqueId = reader.string();
+                        break;
+                    }
+                case 7: {
+                        message.manufacturer = reader.string();
+                        break;
+                    }
+                case 8: {
+                        message.product = reader.string();
+                        break;
+                    }
+                case 9: {
+                        message.serialNumber = reader.string();
+                        break;
+                    }
+                case 20: {
+                        message.usbBcd = reader.uint32();
+                        break;
+                    }
+                case 21: {
+                        message.deviceBcd = reader.uint32();
+                        break;
+                    }
+                case 22: {
+                        message.deviceClass = reader.uint32();
+                        break;
+                    }
+                case 23: {
+                        message.deviceSubclass = reader.uint32();
+                        break;
+                    }
+                case 24: {
+                        message.deviceProtocol = reader.uint32();
+                        break;
+                    }
+                case 25: {
+                        message.maxPacketSize0 = reader.uint32();
+                        break;
+                    }
+                case 26: {
+                        message.numConfigurations = reader.uint32();
+                        break;
+                    }
+                case 40: {
+                        message.deviceDescriptor = reader.bytes();
+                        break;
+                    }
+                case 41: {
+                        if (!(message.configDescriptors && message.configDescriptors.length))
+                            message.configDescriptors = [];
+                        message.configDescriptors.push(reader.bytes());
+                        break;
+                    }
+                default:
+                    reader.skipType(tag & 7, long);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes a UsbDeviceInfo message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof hikmicro.UsbDeviceInfo
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {hikmicro.UsbDeviceInfo} UsbDeviceInfo
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        UsbDeviceInfo.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies a UsbDeviceInfo message.
+         * @function verify
+         * @memberof hikmicro.UsbDeviceInfo
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        UsbDeviceInfo.verify = function verify(message, long) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
+            if (message.vendorId != null && message.hasOwnProperty("vendorId"))
+                if (!$util.isInteger(message.vendorId))
+                    return "vendorId: integer expected";
+            if (message.productId != null && message.hasOwnProperty("productId"))
+                if (!$util.isInteger(message.productId))
+                    return "productId: integer expected";
+            if (message.busNumber != null && message.hasOwnProperty("busNumber"))
+                if (!$util.isInteger(message.busNumber))
+                    return "busNumber: integer expected";
+            if (message.deviceNumber != null && message.hasOwnProperty("deviceNumber"))
+                if (!$util.isInteger(message.deviceNumber))
+                    return "deviceNumber: integer expected";
+            if (message.portNumbers != null && message.hasOwnProperty("portNumbers")) {
+                if (!Array.isArray(message.portNumbers))
+                    return "portNumbers: array expected";
+                for (let i = 0; i < message.portNumbers.length; ++i)
+                    if (!$util.isInteger(message.portNumbers[i]))
+                        return "portNumbers: integer[] expected";
+            }
+            if (message.uniqueId != null && message.hasOwnProperty("uniqueId"))
+                if (!$util.isString(message.uniqueId))
+                    return "uniqueId: string expected";
+            if (message.manufacturer != null && message.hasOwnProperty("manufacturer"))
+                if (!$util.isString(message.manufacturer))
+                    return "manufacturer: string expected";
+            if (message.product != null && message.hasOwnProperty("product"))
+                if (!$util.isString(message.product))
+                    return "product: string expected";
+            if (message.serialNumber != null && message.hasOwnProperty("serialNumber"))
+                if (!$util.isString(message.serialNumber))
+                    return "serialNumber: string expected";
+            if (message.usbBcd != null && message.hasOwnProperty("usbBcd"))
+                if (!$util.isInteger(message.usbBcd))
+                    return "usbBcd: integer expected";
+            if (message.deviceBcd != null && message.hasOwnProperty("deviceBcd"))
+                if (!$util.isInteger(message.deviceBcd))
+                    return "deviceBcd: integer expected";
+            if (message.deviceClass != null && message.hasOwnProperty("deviceClass"))
+                if (!$util.isInteger(message.deviceClass))
+                    return "deviceClass: integer expected";
+            if (message.deviceSubclass != null && message.hasOwnProperty("deviceSubclass"))
+                if (!$util.isInteger(message.deviceSubclass))
+                    return "deviceSubclass: integer expected";
+            if (message.deviceProtocol != null && message.hasOwnProperty("deviceProtocol"))
+                if (!$util.isInteger(message.deviceProtocol))
+                    return "deviceProtocol: integer expected";
+            if (message.maxPacketSize0 != null && message.hasOwnProperty("maxPacketSize0"))
+                if (!$util.isInteger(message.maxPacketSize0))
+                    return "maxPacketSize0: integer expected";
+            if (message.numConfigurations != null && message.hasOwnProperty("numConfigurations"))
+                if (!$util.isInteger(message.numConfigurations))
+                    return "numConfigurations: integer expected";
+            if (message.deviceDescriptor != null && message.hasOwnProperty("deviceDescriptor"))
+                if (!(message.deviceDescriptor && typeof message.deviceDescriptor.length === "number" || $util.isString(message.deviceDescriptor)))
+                    return "deviceDescriptor: buffer expected";
+            if (message.configDescriptors != null && message.hasOwnProperty("configDescriptors")) {
+                if (!Array.isArray(message.configDescriptors))
+                    return "configDescriptors: array expected";
+                for (let i = 0; i < message.configDescriptors.length; ++i)
+                    if (!(message.configDescriptors[i] && typeof message.configDescriptors[i].length === "number" || $util.isString(message.configDescriptors[i])))
+                        return "configDescriptors: buffer[] expected";
+            }
+            return null;
+        };
+
+        /**
+         * Creates a UsbDeviceInfo message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof hikmicro.UsbDeviceInfo
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {hikmicro.UsbDeviceInfo} UsbDeviceInfo
+         */
+        UsbDeviceInfo.fromObject = function fromObject(object, long) {
+            if (object instanceof $root.hikmicro.UsbDeviceInfo)
+                return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let message = new $root.hikmicro.UsbDeviceInfo();
+            if (object.vendorId != null)
+                message.vendorId = object.vendorId >>> 0;
+            if (object.productId != null)
+                message.productId = object.productId >>> 0;
+            if (object.busNumber != null)
+                message.busNumber = object.busNumber >>> 0;
+            if (object.deviceNumber != null)
+                message.deviceNumber = object.deviceNumber >>> 0;
+            if (object.portNumbers) {
+                if (!Array.isArray(object.portNumbers))
+                    throw TypeError(".hikmicro.UsbDeviceInfo.portNumbers: array expected");
+                message.portNumbers = [];
+                for (let i = 0; i < object.portNumbers.length; ++i)
+                    message.portNumbers[i] = object.portNumbers[i] >>> 0;
+            }
+            if (object.uniqueId != null)
+                message.uniqueId = String(object.uniqueId);
+            if (object.manufacturer != null)
+                message.manufacturer = String(object.manufacturer);
+            if (object.product != null)
+                message.product = String(object.product);
+            if (object.serialNumber != null)
+                message.serialNumber = String(object.serialNumber);
+            if (object.usbBcd != null)
+                message.usbBcd = object.usbBcd >>> 0;
+            if (object.deviceBcd != null)
+                message.deviceBcd = object.deviceBcd >>> 0;
+            if (object.deviceClass != null)
+                message.deviceClass = object.deviceClass >>> 0;
+            if (object.deviceSubclass != null)
+                message.deviceSubclass = object.deviceSubclass >>> 0;
+            if (object.deviceProtocol != null)
+                message.deviceProtocol = object.deviceProtocol >>> 0;
+            if (object.maxPacketSize0 != null)
+                message.maxPacketSize0 = object.maxPacketSize0 >>> 0;
+            if (object.numConfigurations != null)
+                message.numConfigurations = object.numConfigurations >>> 0;
+            if (object.deviceDescriptor != null)
+                if (typeof object.deviceDescriptor === "string")
+                    $util.base64.decode(object.deviceDescriptor, message.deviceDescriptor = $util.newBuffer($util.base64.length(object.deviceDescriptor)), 0);
+                else if (object.deviceDescriptor.length >= 0)
+                    message.deviceDescriptor = object.deviceDescriptor;
+            if (object.configDescriptors) {
+                if (!Array.isArray(object.configDescriptors))
+                    throw TypeError(".hikmicro.UsbDeviceInfo.configDescriptors: array expected");
+                message.configDescriptors = [];
+                for (let i = 0; i < object.configDescriptors.length; ++i)
+                    if (typeof object.configDescriptors[i] === "string")
+                        $util.base64.decode(object.configDescriptors[i], message.configDescriptors[i] = $util.newBuffer($util.base64.length(object.configDescriptors[i])), 0);
+                    else if (object.configDescriptors[i].length >= 0)
+                        message.configDescriptors[i] = object.configDescriptors[i];
+            }
+            return message;
+        };
+
+        /**
+         * Creates a plain object from a UsbDeviceInfo message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof hikmicro.UsbDeviceInfo
+         * @static
+         * @param {hikmicro.UsbDeviceInfo} message UsbDeviceInfo
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        UsbDeviceInfo.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.arrays || options.defaults) {
+                object.portNumbers = [];
+                object.configDescriptors = [];
+            }
+            if (options.defaults) {
+                object.vendorId = 0;
+                object.productId = 0;
+                object.busNumber = 0;
+                object.deviceNumber = 0;
+                object.uniqueId = "";
+                object.manufacturer = "";
+                object.product = "";
+                object.serialNumber = "";
+                object.usbBcd = 0;
+                object.deviceBcd = 0;
+                object.deviceClass = 0;
+                object.deviceSubclass = 0;
+                object.deviceProtocol = 0;
+                object.maxPacketSize0 = 0;
+                object.numConfigurations = 0;
+                if (options.bytes === String)
+                    object.deviceDescriptor = "";
+                else {
+                    object.deviceDescriptor = [];
+                    if (options.bytes !== Array)
+                        object.deviceDescriptor = $util.newBuffer(object.deviceDescriptor);
+                }
+            }
+            if (message.vendorId != null && message.hasOwnProperty("vendorId"))
+                object.vendorId = message.vendorId;
+            if (message.productId != null && message.hasOwnProperty("productId"))
+                object.productId = message.productId;
+            if (message.busNumber != null && message.hasOwnProperty("busNumber"))
+                object.busNumber = message.busNumber;
+            if (message.deviceNumber != null && message.hasOwnProperty("deviceNumber"))
+                object.deviceNumber = message.deviceNumber;
+            if (message.portNumbers && message.portNumbers.length) {
+                object.portNumbers = [];
+                for (let j = 0; j < message.portNumbers.length; ++j)
+                    object.portNumbers[j] = message.portNumbers[j];
+            }
+            if (message.uniqueId != null && message.hasOwnProperty("uniqueId"))
+                object.uniqueId = message.uniqueId;
+            if (message.manufacturer != null && message.hasOwnProperty("manufacturer"))
+                object.manufacturer = message.manufacturer;
+            if (message.product != null && message.hasOwnProperty("product"))
+                object.product = message.product;
+            if (message.serialNumber != null && message.hasOwnProperty("serialNumber"))
+                object.serialNumber = message.serialNumber;
+            if (message.usbBcd != null && message.hasOwnProperty("usbBcd"))
+                object.usbBcd = message.usbBcd;
+            if (message.deviceBcd != null && message.hasOwnProperty("deviceBcd"))
+                object.deviceBcd = message.deviceBcd;
+            if (message.deviceClass != null && message.hasOwnProperty("deviceClass"))
+                object.deviceClass = message.deviceClass;
+            if (message.deviceSubclass != null && message.hasOwnProperty("deviceSubclass"))
+                object.deviceSubclass = message.deviceSubclass;
+            if (message.deviceProtocol != null && message.hasOwnProperty("deviceProtocol"))
+                object.deviceProtocol = message.deviceProtocol;
+            if (message.maxPacketSize0 != null && message.hasOwnProperty("maxPacketSize0"))
+                object.maxPacketSize0 = message.maxPacketSize0;
+            if (message.numConfigurations != null && message.hasOwnProperty("numConfigurations"))
+                object.numConfigurations = message.numConfigurations;
+            if (message.deviceDescriptor != null && message.hasOwnProperty("deviceDescriptor"))
+                object.deviceDescriptor = options.bytes === String ? $util.base64.encode(message.deviceDescriptor, 0, message.deviceDescriptor.length) : options.bytes === Array ? Array.prototype.slice.call(message.deviceDescriptor) : message.deviceDescriptor;
+            if (message.configDescriptors && message.configDescriptors.length) {
+                object.configDescriptors = [];
+                for (let j = 0; j < message.configDescriptors.length; ++j)
+                    object.configDescriptors[j] = options.bytes === String ? $util.base64.encode(message.configDescriptors[j], 0, message.configDescriptors[j].length) : options.bytes === Array ? Array.prototype.slice.call(message.configDescriptors[j]) : message.configDescriptors[j];
+            }
+            return object;
+        };
+
+        /**
+         * Converts this UsbDeviceInfo to JSON.
+         * @function toJSON
+         * @memberof hikmicro.UsbDeviceInfo
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        UsbDeviceInfo.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for UsbDeviceInfo
+         * @function getTypeUrl
+         * @memberof hikmicro.UsbDeviceInfo
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        UsbDeviceInfo.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+            if (typeUrlPrefix === undefined) {
+                typeUrlPrefix = "type.googleapis.com";
+            }
+            return typeUrlPrefix + "/hikmicro.UsbDeviceInfo";
+        };
+
+        return UsbDeviceInfo;
+    })();
+
+    hikmicro.CompactStreamFormat = (function() {
+
+        /**
+         * Properties of a CompactStreamFormat.
+         * @memberof hikmicro
+         * @interface ICompactStreamFormat
+         * @property {number|null} [fourcc] CompactStreamFormat fourcc
+         * @property {number|null} [formatIndex] CompactStreamFormat formatIndex
+         * @property {number|null} [frameIndex] CompactStreamFormat frameIndex
+         * @property {number|null} [uvcWidth] CompactStreamFormat uvcWidth
+         * @property {number|null} [uvcHeight] CompactStreamFormat uvcHeight
+         * @property {number|null} [framesPerSecond] CompactStreamFormat framesPerSecond
+         * @property {Uint8Array|null} [guid] CompactStreamFormat guid
+         * @property {number|null} [sourceFormat] CompactStreamFormat sourceFormat
+         */
+
+        /**
+         * Constructs a new CompactStreamFormat.
+         * @memberof hikmicro
+         * @classdesc Represents a CompactStreamFormat.
+         * @implements ICompactStreamFormat
+         * @constructor
+         * @param {hikmicro.ICompactStreamFormat=} [properties] Properties to set
+         */
+        function CompactStreamFormat(properties) {
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * CompactStreamFormat fourcc.
+         * @member {number} fourcc
+         * @memberof hikmicro.CompactStreamFormat
+         * @instance
+         */
+        CompactStreamFormat.prototype.fourcc = 0;
+
+        /**
+         * CompactStreamFormat formatIndex.
+         * @member {number} formatIndex
+         * @memberof hikmicro.CompactStreamFormat
+         * @instance
+         */
+        CompactStreamFormat.prototype.formatIndex = 0;
+
+        /**
+         * CompactStreamFormat frameIndex.
+         * @member {number} frameIndex
+         * @memberof hikmicro.CompactStreamFormat
+         * @instance
+         */
+        CompactStreamFormat.prototype.frameIndex = 0;
+
+        /**
+         * CompactStreamFormat uvcWidth.
+         * @member {number} uvcWidth
+         * @memberof hikmicro.CompactStreamFormat
+         * @instance
+         */
+        CompactStreamFormat.prototype.uvcWidth = 0;
+
+        /**
+         * CompactStreamFormat uvcHeight.
+         * @member {number} uvcHeight
+         * @memberof hikmicro.CompactStreamFormat
+         * @instance
+         */
+        CompactStreamFormat.prototype.uvcHeight = 0;
+
+        /**
+         * CompactStreamFormat framesPerSecond.
+         * @member {number} framesPerSecond
+         * @memberof hikmicro.CompactStreamFormat
+         * @instance
+         */
+        CompactStreamFormat.prototype.framesPerSecond = 0;
+
+        /**
+         * CompactStreamFormat guid.
+         * @member {Uint8Array} guid
+         * @memberof hikmicro.CompactStreamFormat
+         * @instance
+         */
+        CompactStreamFormat.prototype.guid = $util.newBuffer([]);
+
+        /**
+         * CompactStreamFormat sourceFormat.
+         * @member {number} sourceFormat
+         * @memberof hikmicro.CompactStreamFormat
+         * @instance
+         */
+        CompactStreamFormat.prototype.sourceFormat = 0;
+
+        /**
+         * Creates a new CompactStreamFormat instance using the specified properties.
+         * @function create
+         * @memberof hikmicro.CompactStreamFormat
+         * @static
+         * @param {hikmicro.ICompactStreamFormat=} [properties] Properties to set
+         * @returns {hikmicro.CompactStreamFormat} CompactStreamFormat instance
+         */
+        CompactStreamFormat.create = function create(properties) {
+            return new CompactStreamFormat(properties);
+        };
+
+        /**
+         * Encodes the specified CompactStreamFormat message. Does not implicitly {@link hikmicro.CompactStreamFormat.verify|verify} messages.
+         * @function encode
+         * @memberof hikmicro.CompactStreamFormat
+         * @static
+         * @param {hikmicro.ICompactStreamFormat} message CompactStreamFormat message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        CompactStreamFormat.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.fourcc != null && Object.hasOwnProperty.call(message, "fourcc"))
+                writer.uint32(/* id 1, wireType 0 =*/8).uint32(message.fourcc);
+            if (message.formatIndex != null && Object.hasOwnProperty.call(message, "formatIndex"))
+                writer.uint32(/* id 2, wireType 0 =*/16).uint32(message.formatIndex);
+            if (message.frameIndex != null && Object.hasOwnProperty.call(message, "frameIndex"))
+                writer.uint32(/* id 3, wireType 0 =*/24).uint32(message.frameIndex);
+            if (message.uvcWidth != null && Object.hasOwnProperty.call(message, "uvcWidth"))
+                writer.uint32(/* id 4, wireType 0 =*/32).uint32(message.uvcWidth);
+            if (message.uvcHeight != null && Object.hasOwnProperty.call(message, "uvcHeight"))
+                writer.uint32(/* id 5, wireType 0 =*/40).uint32(message.uvcHeight);
+            if (message.framesPerSecond != null && Object.hasOwnProperty.call(message, "framesPerSecond"))
+                writer.uint32(/* id 6, wireType 5 =*/53).float(message.framesPerSecond);
+            if (message.guid != null && Object.hasOwnProperty.call(message, "guid"))
+                writer.uint32(/* id 7, wireType 2 =*/58).bytes(message.guid);
+            if (message.sourceFormat != null && Object.hasOwnProperty.call(message, "sourceFormat"))
+                writer.uint32(/* id 8, wireType 0 =*/64).uint32(message.sourceFormat);
+            return writer;
+        };
+
+        /**
+         * Encodes the specified CompactStreamFormat message, length delimited. Does not implicitly {@link hikmicro.CompactStreamFormat.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof hikmicro.CompactStreamFormat
+         * @static
+         * @param {hikmicro.ICompactStreamFormat} message CompactStreamFormat message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        CompactStreamFormat.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes a CompactStreamFormat message from the specified reader or buffer.
+         * @function decode
+         * @memberof hikmicro.CompactStreamFormat
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {hikmicro.CompactStreamFormat} CompactStreamFormat
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        CompactStreamFormat.decode = function decode(reader, length, error, long) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.hikmicro.CompactStreamFormat();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                if (tag === error)
+                    break;
+                switch (tag >>> 3) {
+                case 1: {
+                        message.fourcc = reader.uint32();
+                        break;
+                    }
+                case 2: {
+                        message.formatIndex = reader.uint32();
+                        break;
+                    }
+                case 3: {
+                        message.frameIndex = reader.uint32();
+                        break;
+                    }
+                case 4: {
+                        message.uvcWidth = reader.uint32();
+                        break;
+                    }
+                case 5: {
+                        message.uvcHeight = reader.uint32();
+                        break;
+                    }
+                case 6: {
+                        message.framesPerSecond = reader.float();
+                        break;
+                    }
+                case 7: {
+                        message.guid = reader.bytes();
+                        break;
+                    }
+                case 8: {
+                        message.sourceFormat = reader.uint32();
+                        break;
+                    }
+                default:
+                    reader.skipType(tag & 7, long);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes a CompactStreamFormat message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof hikmicro.CompactStreamFormat
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {hikmicro.CompactStreamFormat} CompactStreamFormat
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        CompactStreamFormat.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies a CompactStreamFormat message.
+         * @function verify
+         * @memberof hikmicro.CompactStreamFormat
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        CompactStreamFormat.verify = function verify(message, long) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
+            if (message.fourcc != null && message.hasOwnProperty("fourcc"))
+                if (!$util.isInteger(message.fourcc))
+                    return "fourcc: integer expected";
+            if (message.formatIndex != null && message.hasOwnProperty("formatIndex"))
+                if (!$util.isInteger(message.formatIndex))
+                    return "formatIndex: integer expected";
+            if (message.frameIndex != null && message.hasOwnProperty("frameIndex"))
+                if (!$util.isInteger(message.frameIndex))
+                    return "frameIndex: integer expected";
+            if (message.uvcWidth != null && message.hasOwnProperty("uvcWidth"))
+                if (!$util.isInteger(message.uvcWidth))
+                    return "uvcWidth: integer expected";
+            if (message.uvcHeight != null && message.hasOwnProperty("uvcHeight"))
+                if (!$util.isInteger(message.uvcHeight))
+                    return "uvcHeight: integer expected";
+            if (message.framesPerSecond != null && message.hasOwnProperty("framesPerSecond"))
+                if (typeof message.framesPerSecond !== "number")
+                    return "framesPerSecond: number expected";
+            if (message.guid != null && message.hasOwnProperty("guid"))
+                if (!(message.guid && typeof message.guid.length === "number" || $util.isString(message.guid)))
+                    return "guid: buffer expected";
+            if (message.sourceFormat != null && message.hasOwnProperty("sourceFormat"))
+                if (!$util.isInteger(message.sourceFormat))
+                    return "sourceFormat: integer expected";
+            return null;
+        };
+
+        /**
+         * Creates a CompactStreamFormat message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof hikmicro.CompactStreamFormat
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {hikmicro.CompactStreamFormat} CompactStreamFormat
+         */
+        CompactStreamFormat.fromObject = function fromObject(object, long) {
+            if (object instanceof $root.hikmicro.CompactStreamFormat)
+                return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let message = new $root.hikmicro.CompactStreamFormat();
+            if (object.fourcc != null)
+                message.fourcc = object.fourcc >>> 0;
+            if (object.formatIndex != null)
+                message.formatIndex = object.formatIndex >>> 0;
+            if (object.frameIndex != null)
+                message.frameIndex = object.frameIndex >>> 0;
+            if (object.uvcWidth != null)
+                message.uvcWidth = object.uvcWidth >>> 0;
+            if (object.uvcHeight != null)
+                message.uvcHeight = object.uvcHeight >>> 0;
+            if (object.framesPerSecond != null)
+                message.framesPerSecond = Number(object.framesPerSecond);
+            if (object.guid != null)
+                if (typeof object.guid === "string")
+                    $util.base64.decode(object.guid, message.guid = $util.newBuffer($util.base64.length(object.guid)), 0);
+                else if (object.guid.length >= 0)
+                    message.guid = object.guid;
+            if (object.sourceFormat != null)
+                message.sourceFormat = object.sourceFormat >>> 0;
+            return message;
+        };
+
+        /**
+         * Creates a plain object from a CompactStreamFormat message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof hikmicro.CompactStreamFormat
+         * @static
+         * @param {hikmicro.CompactStreamFormat} message CompactStreamFormat
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        CompactStreamFormat.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.defaults) {
+                object.fourcc = 0;
+                object.formatIndex = 0;
+                object.frameIndex = 0;
+                object.uvcWidth = 0;
+                object.uvcHeight = 0;
+                object.framesPerSecond = 0;
+                if (options.bytes === String)
+                    object.guid = "";
+                else {
+                    object.guid = [];
+                    if (options.bytes !== Array)
+                        object.guid = $util.newBuffer(object.guid);
+                }
+                object.sourceFormat = 0;
+            }
+            if (message.fourcc != null && message.hasOwnProperty("fourcc"))
+                object.fourcc = message.fourcc;
+            if (message.formatIndex != null && message.hasOwnProperty("formatIndex"))
+                object.formatIndex = message.formatIndex;
+            if (message.frameIndex != null && message.hasOwnProperty("frameIndex"))
+                object.frameIndex = message.frameIndex;
+            if (message.uvcWidth != null && message.hasOwnProperty("uvcWidth"))
+                object.uvcWidth = message.uvcWidth;
+            if (message.uvcHeight != null && message.hasOwnProperty("uvcHeight"))
+                object.uvcHeight = message.uvcHeight;
+            if (message.framesPerSecond != null && message.hasOwnProperty("framesPerSecond"))
+                object.framesPerSecond = options.json && !isFinite(message.framesPerSecond) ? String(message.framesPerSecond) : message.framesPerSecond;
+            if (message.guid != null && message.hasOwnProperty("guid"))
+                object.guid = options.bytes === String ? $util.base64.encode(message.guid, 0, message.guid.length) : options.bytes === Array ? Array.prototype.slice.call(message.guid) : message.guid;
+            if (message.sourceFormat != null && message.hasOwnProperty("sourceFormat"))
+                object.sourceFormat = message.sourceFormat;
+            return object;
+        };
+
+        /**
+         * Converts this CompactStreamFormat to JSON.
+         * @function toJSON
+         * @memberof hikmicro.CompactStreamFormat
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        CompactStreamFormat.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for CompactStreamFormat
+         * @function getTypeUrl
+         * @memberof hikmicro.CompactStreamFormat
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        CompactStreamFormat.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+            if (typeUrlPrefix === undefined) {
+                typeUrlPrefix = "type.googleapis.com";
+            }
+            return typeUrlPrefix + "/hikmicro.CompactStreamFormat";
+        };
+
+        return CompactStreamFormat;
+    })();
+
+    hikmicro.CompactPayloadLayout = (function() {
+
+        /**
+         * Properties of a CompactPayloadLayout.
+         * @memberof hikmicro
+         * @interface ICompactPayloadLayout
+         * @property {number|null} [sensorWidth] CompactPayloadLayout sensorWidth
+         * @property {number|null} [sensorHeight] CompactPayloadLayout sensorHeight
+         * @property {number|null} [payloadLength] CompactPayloadLayout payloadLength
+         * @property {number|null} [thermalY16Offset] CompactPayloadLayout thermalY16Offset
+         * @property {number|null} [thermalY16Length] CompactPayloadLayout thermalY16Length
+         * @property {number|null} [runtimeBlockOffset] CompactPayloadLayout runtimeBlockOffset
+         * @property {number|null} [runtimeBlockLength] CompactPayloadLayout runtimeBlockLength
+         */
+
+        /**
+         * Constructs a new CompactPayloadLayout.
+         * @memberof hikmicro
+         * @classdesc Represents a CompactPayloadLayout.
+         * @implements ICompactPayloadLayout
+         * @constructor
+         * @param {hikmicro.ICompactPayloadLayout=} [properties] Properties to set
+         */
+        function CompactPayloadLayout(properties) {
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * CompactPayloadLayout sensorWidth.
+         * @member {number} sensorWidth
+         * @memberof hikmicro.CompactPayloadLayout
+         * @instance
+         */
+        CompactPayloadLayout.prototype.sensorWidth = 0;
+
+        /**
+         * CompactPayloadLayout sensorHeight.
+         * @member {number} sensorHeight
+         * @memberof hikmicro.CompactPayloadLayout
+         * @instance
+         */
+        CompactPayloadLayout.prototype.sensorHeight = 0;
+
+        /**
+         * CompactPayloadLayout payloadLength.
+         * @member {number} payloadLength
+         * @memberof hikmicro.CompactPayloadLayout
+         * @instance
+         */
+        CompactPayloadLayout.prototype.payloadLength = 0;
+
+        /**
+         * CompactPayloadLayout thermalY16Offset.
+         * @member {number} thermalY16Offset
+         * @memberof hikmicro.CompactPayloadLayout
+         * @instance
+         */
+        CompactPayloadLayout.prototype.thermalY16Offset = 0;
+
+        /**
+         * CompactPayloadLayout thermalY16Length.
+         * @member {number} thermalY16Length
+         * @memberof hikmicro.CompactPayloadLayout
+         * @instance
+         */
+        CompactPayloadLayout.prototype.thermalY16Length = 0;
+
+        /**
+         * CompactPayloadLayout runtimeBlockOffset.
+         * @member {number} runtimeBlockOffset
+         * @memberof hikmicro.CompactPayloadLayout
+         * @instance
+         */
+        CompactPayloadLayout.prototype.runtimeBlockOffset = 0;
+
+        /**
+         * CompactPayloadLayout runtimeBlockLength.
+         * @member {number} runtimeBlockLength
+         * @memberof hikmicro.CompactPayloadLayout
+         * @instance
+         */
+        CompactPayloadLayout.prototype.runtimeBlockLength = 0;
+
+        /**
+         * Creates a new CompactPayloadLayout instance using the specified properties.
+         * @function create
+         * @memberof hikmicro.CompactPayloadLayout
+         * @static
+         * @param {hikmicro.ICompactPayloadLayout=} [properties] Properties to set
+         * @returns {hikmicro.CompactPayloadLayout} CompactPayloadLayout instance
+         */
+        CompactPayloadLayout.create = function create(properties) {
+            return new CompactPayloadLayout(properties);
+        };
+
+        /**
+         * Encodes the specified CompactPayloadLayout message. Does not implicitly {@link hikmicro.CompactPayloadLayout.verify|verify} messages.
+         * @function encode
+         * @memberof hikmicro.CompactPayloadLayout
+         * @static
+         * @param {hikmicro.ICompactPayloadLayout} message CompactPayloadLayout message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        CompactPayloadLayout.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.sensorWidth != null && Object.hasOwnProperty.call(message, "sensorWidth"))
+                writer.uint32(/* id 1, wireType 0 =*/8).uint32(message.sensorWidth);
+            if (message.sensorHeight != null && Object.hasOwnProperty.call(message, "sensorHeight"))
+                writer.uint32(/* id 2, wireType 0 =*/16).uint32(message.sensorHeight);
+            if (message.payloadLength != null && Object.hasOwnProperty.call(message, "payloadLength"))
+                writer.uint32(/* id 3, wireType 0 =*/24).uint32(message.payloadLength);
+            if (message.thermalY16Offset != null && Object.hasOwnProperty.call(message, "thermalY16Offset"))
+                writer.uint32(/* id 10, wireType 0 =*/80).uint32(message.thermalY16Offset);
+            if (message.thermalY16Length != null && Object.hasOwnProperty.call(message, "thermalY16Length"))
+                writer.uint32(/* id 11, wireType 0 =*/88).uint32(message.thermalY16Length);
+            if (message.runtimeBlockOffset != null && Object.hasOwnProperty.call(message, "runtimeBlockOffset"))
+                writer.uint32(/* id 12, wireType 0 =*/96).uint32(message.runtimeBlockOffset);
+            if (message.runtimeBlockLength != null && Object.hasOwnProperty.call(message, "runtimeBlockLength"))
+                writer.uint32(/* id 13, wireType 0 =*/104).uint32(message.runtimeBlockLength);
+            return writer;
+        };
+
+        /**
+         * Encodes the specified CompactPayloadLayout message, length delimited. Does not implicitly {@link hikmicro.CompactPayloadLayout.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof hikmicro.CompactPayloadLayout
+         * @static
+         * @param {hikmicro.ICompactPayloadLayout} message CompactPayloadLayout message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        CompactPayloadLayout.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes a CompactPayloadLayout message from the specified reader or buffer.
+         * @function decode
+         * @memberof hikmicro.CompactPayloadLayout
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {hikmicro.CompactPayloadLayout} CompactPayloadLayout
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        CompactPayloadLayout.decode = function decode(reader, length, error, long) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.hikmicro.CompactPayloadLayout();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                if (tag === error)
+                    break;
+                switch (tag >>> 3) {
+                case 1: {
+                        message.sensorWidth = reader.uint32();
+                        break;
+                    }
+                case 2: {
+                        message.sensorHeight = reader.uint32();
+                        break;
+                    }
+                case 3: {
+                        message.payloadLength = reader.uint32();
+                        break;
+                    }
+                case 10: {
+                        message.thermalY16Offset = reader.uint32();
+                        break;
+                    }
+                case 11: {
+                        message.thermalY16Length = reader.uint32();
+                        break;
+                    }
+                case 12: {
+                        message.runtimeBlockOffset = reader.uint32();
+                        break;
+                    }
+                case 13: {
+                        message.runtimeBlockLength = reader.uint32();
+                        break;
+                    }
+                default:
+                    reader.skipType(tag & 7, long);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes a CompactPayloadLayout message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof hikmicro.CompactPayloadLayout
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {hikmicro.CompactPayloadLayout} CompactPayloadLayout
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        CompactPayloadLayout.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies a CompactPayloadLayout message.
+         * @function verify
+         * @memberof hikmicro.CompactPayloadLayout
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        CompactPayloadLayout.verify = function verify(message, long) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
+            if (message.sensorWidth != null && message.hasOwnProperty("sensorWidth"))
+                if (!$util.isInteger(message.sensorWidth))
+                    return "sensorWidth: integer expected";
+            if (message.sensorHeight != null && message.hasOwnProperty("sensorHeight"))
+                if (!$util.isInteger(message.sensorHeight))
+                    return "sensorHeight: integer expected";
+            if (message.payloadLength != null && message.hasOwnProperty("payloadLength"))
+                if (!$util.isInteger(message.payloadLength))
+                    return "payloadLength: integer expected";
+            if (message.thermalY16Offset != null && message.hasOwnProperty("thermalY16Offset"))
+                if (!$util.isInteger(message.thermalY16Offset))
+                    return "thermalY16Offset: integer expected";
+            if (message.thermalY16Length != null && message.hasOwnProperty("thermalY16Length"))
+                if (!$util.isInteger(message.thermalY16Length))
+                    return "thermalY16Length: integer expected";
+            if (message.runtimeBlockOffset != null && message.hasOwnProperty("runtimeBlockOffset"))
+                if (!$util.isInteger(message.runtimeBlockOffset))
+                    return "runtimeBlockOffset: integer expected";
+            if (message.runtimeBlockLength != null && message.hasOwnProperty("runtimeBlockLength"))
+                if (!$util.isInteger(message.runtimeBlockLength))
+                    return "runtimeBlockLength: integer expected";
+            return null;
+        };
+
+        /**
+         * Creates a CompactPayloadLayout message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof hikmicro.CompactPayloadLayout
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {hikmicro.CompactPayloadLayout} CompactPayloadLayout
+         */
+        CompactPayloadLayout.fromObject = function fromObject(object, long) {
+            if (object instanceof $root.hikmicro.CompactPayloadLayout)
+                return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let message = new $root.hikmicro.CompactPayloadLayout();
+            if (object.sensorWidth != null)
+                message.sensorWidth = object.sensorWidth >>> 0;
+            if (object.sensorHeight != null)
+                message.sensorHeight = object.sensorHeight >>> 0;
+            if (object.payloadLength != null)
+                message.payloadLength = object.payloadLength >>> 0;
+            if (object.thermalY16Offset != null)
+                message.thermalY16Offset = object.thermalY16Offset >>> 0;
+            if (object.thermalY16Length != null)
+                message.thermalY16Length = object.thermalY16Length >>> 0;
+            if (object.runtimeBlockOffset != null)
+                message.runtimeBlockOffset = object.runtimeBlockOffset >>> 0;
+            if (object.runtimeBlockLength != null)
+                message.runtimeBlockLength = object.runtimeBlockLength >>> 0;
+            return message;
+        };
+
+        /**
+         * Creates a plain object from a CompactPayloadLayout message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof hikmicro.CompactPayloadLayout
+         * @static
+         * @param {hikmicro.CompactPayloadLayout} message CompactPayloadLayout
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        CompactPayloadLayout.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.defaults) {
+                object.sensorWidth = 0;
+                object.sensorHeight = 0;
+                object.payloadLength = 0;
+                object.thermalY16Offset = 0;
+                object.thermalY16Length = 0;
+                object.runtimeBlockOffset = 0;
+                object.runtimeBlockLength = 0;
+            }
+            if (message.sensorWidth != null && message.hasOwnProperty("sensorWidth"))
+                object.sensorWidth = message.sensorWidth;
+            if (message.sensorHeight != null && message.hasOwnProperty("sensorHeight"))
+                object.sensorHeight = message.sensorHeight;
+            if (message.payloadLength != null && message.hasOwnProperty("payloadLength"))
+                object.payloadLength = message.payloadLength;
+            if (message.thermalY16Offset != null && message.hasOwnProperty("thermalY16Offset"))
+                object.thermalY16Offset = message.thermalY16Offset;
+            if (message.thermalY16Length != null && message.hasOwnProperty("thermalY16Length"))
+                object.thermalY16Length = message.thermalY16Length;
+            if (message.runtimeBlockOffset != null && message.hasOwnProperty("runtimeBlockOffset"))
+                object.runtimeBlockOffset = message.runtimeBlockOffset;
+            if (message.runtimeBlockLength != null && message.hasOwnProperty("runtimeBlockLength"))
+                object.runtimeBlockLength = message.runtimeBlockLength;
+            return object;
+        };
+
+        /**
+         * Converts this CompactPayloadLayout to JSON.
+         * @function toJSON
+         * @memberof hikmicro.CompactPayloadLayout
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        CompactPayloadLayout.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for CompactPayloadLayout
+         * @function getTypeUrl
+         * @memberof hikmicro.CompactPayloadLayout
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        CompactPayloadLayout.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+            if (typeUrlPrefix === undefined) {
+                typeUrlPrefix = "type.googleapis.com";
+            }
+            return typeUrlPrefix + "/hikmicro.CompactPayloadLayout";
+        };
+
+        return CompactPayloadLayout;
+    })();
+
+    hikmicro.RuntimeBlockInfo = (function() {
+
+        /**
+         * Properties of a RuntimeBlockInfo.
+         * @memberof hikmicro
+         * @interface IRuntimeBlockInfo
+         * @property {boolean|null} [markerOk] RuntimeBlockInfo markerOk
+         * @property {number|null} [marker] RuntimeBlockInfo marker
+         * @property {number|null} [rawSensor] RuntimeBlockInfo rawSensor
+         * @property {number|null} [mtlibSensor] RuntimeBlockInfo mtlibSensor
+         * @property {number|null} [interParam_0] RuntimeBlockInfo interParam_0
+         * @property {number|null} [interParam_1] RuntimeBlockInfo interParam_1
+         * @property {number|null} [interParam_2] RuntimeBlockInfo interParam_2
+         * @property {number|null} [frameHeight] RuntimeBlockInfo frameHeight
+         * @property {number|null} [frameWidth] RuntimeBlockInfo frameWidth
+         * @property {number|null} [rawSensorHeader] RuntimeBlockInfo rawSensorHeader
+         * @property {number|null} [mode] RuntimeBlockInfo mode
+         * @property {number|null} [range] RuntimeBlockInfo range
+         */
+
+        /**
+         * Constructs a new RuntimeBlockInfo.
+         * @memberof hikmicro
+         * @classdesc Represents a RuntimeBlockInfo.
+         * @implements IRuntimeBlockInfo
+         * @constructor
+         * @param {hikmicro.IRuntimeBlockInfo=} [properties] Properties to set
+         */
+        function RuntimeBlockInfo(properties) {
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * RuntimeBlockInfo markerOk.
+         * @member {boolean} markerOk
+         * @memberof hikmicro.RuntimeBlockInfo
+         * @instance
+         */
+        RuntimeBlockInfo.prototype.markerOk = false;
+
+        /**
+         * RuntimeBlockInfo marker.
+         * @member {number} marker
+         * @memberof hikmicro.RuntimeBlockInfo
+         * @instance
+         */
+        RuntimeBlockInfo.prototype.marker = 0;
+
+        /**
+         * RuntimeBlockInfo rawSensor.
+         * @member {number} rawSensor
+         * @memberof hikmicro.RuntimeBlockInfo
+         * @instance
+         */
+        RuntimeBlockInfo.prototype.rawSensor = 0;
+
+        /**
+         * RuntimeBlockInfo mtlibSensor.
+         * @member {number} mtlibSensor
+         * @memberof hikmicro.RuntimeBlockInfo
+         * @instance
+         */
+        RuntimeBlockInfo.prototype.mtlibSensor = 0;
+
+        /**
+         * RuntimeBlockInfo interParam_0.
+         * @member {number} interParam_0
+         * @memberof hikmicro.RuntimeBlockInfo
+         * @instance
+         */
+        RuntimeBlockInfo.prototype.interParam_0 = 0;
+
+        /**
+         * RuntimeBlockInfo interParam_1.
+         * @member {number} interParam_1
+         * @memberof hikmicro.RuntimeBlockInfo
+         * @instance
+         */
+        RuntimeBlockInfo.prototype.interParam_1 = 0;
+
+        /**
+         * RuntimeBlockInfo interParam_2.
+         * @member {number} interParam_2
+         * @memberof hikmicro.RuntimeBlockInfo
+         * @instance
+         */
+        RuntimeBlockInfo.prototype.interParam_2 = 0;
+
+        /**
+         * RuntimeBlockInfo frameHeight.
+         * @member {number} frameHeight
+         * @memberof hikmicro.RuntimeBlockInfo
+         * @instance
+         */
+        RuntimeBlockInfo.prototype.frameHeight = 0;
+
+        /**
+         * RuntimeBlockInfo frameWidth.
+         * @member {number} frameWidth
+         * @memberof hikmicro.RuntimeBlockInfo
+         * @instance
+         */
+        RuntimeBlockInfo.prototype.frameWidth = 0;
+
+        /**
+         * RuntimeBlockInfo rawSensorHeader.
+         * @member {number} rawSensorHeader
+         * @memberof hikmicro.RuntimeBlockInfo
+         * @instance
+         */
+        RuntimeBlockInfo.prototype.rawSensorHeader = 0;
+
+        /**
+         * RuntimeBlockInfo mode.
+         * @member {number} mode
+         * @memberof hikmicro.RuntimeBlockInfo
+         * @instance
+         */
+        RuntimeBlockInfo.prototype.mode = 0;
+
+        /**
+         * RuntimeBlockInfo range.
+         * @member {number} range
+         * @memberof hikmicro.RuntimeBlockInfo
+         * @instance
+         */
+        RuntimeBlockInfo.prototype.range = 0;
+
+        /**
+         * Creates a new RuntimeBlockInfo instance using the specified properties.
+         * @function create
+         * @memberof hikmicro.RuntimeBlockInfo
+         * @static
+         * @param {hikmicro.IRuntimeBlockInfo=} [properties] Properties to set
+         * @returns {hikmicro.RuntimeBlockInfo} RuntimeBlockInfo instance
+         */
+        RuntimeBlockInfo.create = function create(properties) {
+            return new RuntimeBlockInfo(properties);
+        };
+
+        /**
+         * Encodes the specified RuntimeBlockInfo message. Does not implicitly {@link hikmicro.RuntimeBlockInfo.verify|verify} messages.
+         * @function encode
+         * @memberof hikmicro.RuntimeBlockInfo
+         * @static
+         * @param {hikmicro.IRuntimeBlockInfo} message RuntimeBlockInfo message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        RuntimeBlockInfo.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.markerOk != null && Object.hasOwnProperty.call(message, "markerOk"))
+                writer.uint32(/* id 1, wireType 0 =*/8).bool(message.markerOk);
+            if (message.marker != null && Object.hasOwnProperty.call(message, "marker"))
+                writer.uint32(/* id 2, wireType 0 =*/16).uint32(message.marker);
+            if (message.rawSensor != null && Object.hasOwnProperty.call(message, "rawSensor"))
+                writer.uint32(/* id 3, wireType 0 =*/24).uint32(message.rawSensor);
+            if (message.mtlibSensor != null && Object.hasOwnProperty.call(message, "mtlibSensor"))
+                writer.uint32(/* id 4, wireType 0 =*/32).uint32(message.mtlibSensor);
+            if (message.interParam_0 != null && Object.hasOwnProperty.call(message, "interParam_0"))
+                writer.uint32(/* id 5, wireType 0 =*/40).uint32(message.interParam_0);
+            if (message.interParam_1 != null && Object.hasOwnProperty.call(message, "interParam_1"))
+                writer.uint32(/* id 6, wireType 0 =*/48).uint32(message.interParam_1);
+            if (message.interParam_2 != null && Object.hasOwnProperty.call(message, "interParam_2"))
+                writer.uint32(/* id 7, wireType 0 =*/56).uint32(message.interParam_2);
+            if (message.frameHeight != null && Object.hasOwnProperty.call(message, "frameHeight"))
+                writer.uint32(/* id 20, wireType 0 =*/160).uint32(message.frameHeight);
+            if (message.frameWidth != null && Object.hasOwnProperty.call(message, "frameWidth"))
+                writer.uint32(/* id 21, wireType 0 =*/168).uint32(message.frameWidth);
+            if (message.rawSensorHeader != null && Object.hasOwnProperty.call(message, "rawSensorHeader"))
+                writer.uint32(/* id 22, wireType 0 =*/176).uint32(message.rawSensorHeader);
+            if (message.mode != null && Object.hasOwnProperty.call(message, "mode"))
+                writer.uint32(/* id 23, wireType 0 =*/184).uint32(message.mode);
+            if (message.range != null && Object.hasOwnProperty.call(message, "range"))
+                writer.uint32(/* id 24, wireType 0 =*/192).uint32(message.range);
+            return writer;
+        };
+
+        /**
+         * Encodes the specified RuntimeBlockInfo message, length delimited. Does not implicitly {@link hikmicro.RuntimeBlockInfo.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof hikmicro.RuntimeBlockInfo
+         * @static
+         * @param {hikmicro.IRuntimeBlockInfo} message RuntimeBlockInfo message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        RuntimeBlockInfo.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes a RuntimeBlockInfo message from the specified reader or buffer.
+         * @function decode
+         * @memberof hikmicro.RuntimeBlockInfo
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {hikmicro.RuntimeBlockInfo} RuntimeBlockInfo
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        RuntimeBlockInfo.decode = function decode(reader, length, error, long) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.hikmicro.RuntimeBlockInfo();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                if (tag === error)
+                    break;
+                switch (tag >>> 3) {
+                case 1: {
+                        message.markerOk = reader.bool();
+                        break;
+                    }
+                case 2: {
+                        message.marker = reader.uint32();
+                        break;
+                    }
+                case 3: {
+                        message.rawSensor = reader.uint32();
+                        break;
+                    }
+                case 4: {
+                        message.mtlibSensor = reader.uint32();
+                        break;
+                    }
+                case 5: {
+                        message.interParam_0 = reader.uint32();
+                        break;
+                    }
+                case 6: {
+                        message.interParam_1 = reader.uint32();
+                        break;
+                    }
+                case 7: {
+                        message.interParam_2 = reader.uint32();
+                        break;
+                    }
+                case 20: {
+                        message.frameHeight = reader.uint32();
+                        break;
+                    }
+                case 21: {
+                        message.frameWidth = reader.uint32();
+                        break;
+                    }
+                case 22: {
+                        message.rawSensorHeader = reader.uint32();
+                        break;
+                    }
+                case 23: {
+                        message.mode = reader.uint32();
+                        break;
+                    }
+                case 24: {
+                        message.range = reader.uint32();
+                        break;
+                    }
+                default:
+                    reader.skipType(tag & 7, long);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes a RuntimeBlockInfo message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof hikmicro.RuntimeBlockInfo
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {hikmicro.RuntimeBlockInfo} RuntimeBlockInfo
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        RuntimeBlockInfo.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies a RuntimeBlockInfo message.
+         * @function verify
+         * @memberof hikmicro.RuntimeBlockInfo
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        RuntimeBlockInfo.verify = function verify(message, long) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
+            if (message.markerOk != null && message.hasOwnProperty("markerOk"))
+                if (typeof message.markerOk !== "boolean")
+                    return "markerOk: boolean expected";
+            if (message.marker != null && message.hasOwnProperty("marker"))
+                if (!$util.isInteger(message.marker))
+                    return "marker: integer expected";
+            if (message.rawSensor != null && message.hasOwnProperty("rawSensor"))
+                if (!$util.isInteger(message.rawSensor))
+                    return "rawSensor: integer expected";
+            if (message.mtlibSensor != null && message.hasOwnProperty("mtlibSensor"))
+                if (!$util.isInteger(message.mtlibSensor))
+                    return "mtlibSensor: integer expected";
+            if (message.interParam_0 != null && message.hasOwnProperty("interParam_0"))
+                if (!$util.isInteger(message.interParam_0))
+                    return "interParam_0: integer expected";
+            if (message.interParam_1 != null && message.hasOwnProperty("interParam_1"))
+                if (!$util.isInteger(message.interParam_1))
+                    return "interParam_1: integer expected";
+            if (message.interParam_2 != null && message.hasOwnProperty("interParam_2"))
+                if (!$util.isInteger(message.interParam_2))
+                    return "interParam_2: integer expected";
+            if (message.frameHeight != null && message.hasOwnProperty("frameHeight"))
+                if (!$util.isInteger(message.frameHeight))
+                    return "frameHeight: integer expected";
+            if (message.frameWidth != null && message.hasOwnProperty("frameWidth"))
+                if (!$util.isInteger(message.frameWidth))
+                    return "frameWidth: integer expected";
+            if (message.rawSensorHeader != null && message.hasOwnProperty("rawSensorHeader"))
+                if (!$util.isInteger(message.rawSensorHeader))
+                    return "rawSensorHeader: integer expected";
+            if (message.mode != null && message.hasOwnProperty("mode"))
+                if (!$util.isInteger(message.mode))
+                    return "mode: integer expected";
+            if (message.range != null && message.hasOwnProperty("range"))
+                if (!$util.isInteger(message.range))
+                    return "range: integer expected";
+            return null;
+        };
+
+        /**
+         * Creates a RuntimeBlockInfo message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof hikmicro.RuntimeBlockInfo
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {hikmicro.RuntimeBlockInfo} RuntimeBlockInfo
+         */
+        RuntimeBlockInfo.fromObject = function fromObject(object, long) {
+            if (object instanceof $root.hikmicro.RuntimeBlockInfo)
+                return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let message = new $root.hikmicro.RuntimeBlockInfo();
+            if (object.markerOk != null)
+                message.markerOk = Boolean(object.markerOk);
+            if (object.marker != null)
+                message.marker = object.marker >>> 0;
+            if (object.rawSensor != null)
+                message.rawSensor = object.rawSensor >>> 0;
+            if (object.mtlibSensor != null)
+                message.mtlibSensor = object.mtlibSensor >>> 0;
+            if (object.interParam_0 != null)
+                message.interParam_0 = object.interParam_0 >>> 0;
+            if (object.interParam_1 != null)
+                message.interParam_1 = object.interParam_1 >>> 0;
+            if (object.interParam_2 != null)
+                message.interParam_2 = object.interParam_2 >>> 0;
+            if (object.frameHeight != null)
+                message.frameHeight = object.frameHeight >>> 0;
+            if (object.frameWidth != null)
+                message.frameWidth = object.frameWidth >>> 0;
+            if (object.rawSensorHeader != null)
+                message.rawSensorHeader = object.rawSensorHeader >>> 0;
+            if (object.mode != null)
+                message.mode = object.mode >>> 0;
+            if (object.range != null)
+                message.range = object.range >>> 0;
+            return message;
+        };
+
+        /**
+         * Creates a plain object from a RuntimeBlockInfo message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof hikmicro.RuntimeBlockInfo
+         * @static
+         * @param {hikmicro.RuntimeBlockInfo} message RuntimeBlockInfo
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        RuntimeBlockInfo.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.defaults) {
+                object.markerOk = false;
+                object.marker = 0;
+                object.rawSensor = 0;
+                object.mtlibSensor = 0;
+                object.interParam_0 = 0;
+                object.interParam_1 = 0;
+                object.interParam_2 = 0;
+                object.frameHeight = 0;
+                object.frameWidth = 0;
+                object.rawSensorHeader = 0;
+                object.mode = 0;
+                object.range = 0;
+            }
+            if (message.markerOk != null && message.hasOwnProperty("markerOk"))
+                object.markerOk = message.markerOk;
+            if (message.marker != null && message.hasOwnProperty("marker"))
+                object.marker = message.marker;
+            if (message.rawSensor != null && message.hasOwnProperty("rawSensor"))
+                object.rawSensor = message.rawSensor;
+            if (message.mtlibSensor != null && message.hasOwnProperty("mtlibSensor"))
+                object.mtlibSensor = message.mtlibSensor;
+            if (message.interParam_0 != null && message.hasOwnProperty("interParam_0"))
+                object.interParam_0 = message.interParam_0;
+            if (message.interParam_1 != null && message.hasOwnProperty("interParam_1"))
+                object.interParam_1 = message.interParam_1;
+            if (message.interParam_2 != null && message.hasOwnProperty("interParam_2"))
+                object.interParam_2 = message.interParam_2;
+            if (message.frameHeight != null && message.hasOwnProperty("frameHeight"))
+                object.frameHeight = message.frameHeight;
+            if (message.frameWidth != null && message.hasOwnProperty("frameWidth"))
+                object.frameWidth = message.frameWidth;
+            if (message.rawSensorHeader != null && message.hasOwnProperty("rawSensorHeader"))
+                object.rawSensorHeader = message.rawSensorHeader;
+            if (message.mode != null && message.hasOwnProperty("mode"))
+                object.mode = message.mode;
+            if (message.range != null && message.hasOwnProperty("range"))
+                object.range = message.range;
+            return object;
+        };
+
+        /**
+         * Converts this RuntimeBlockInfo to JSON.
+         * @function toJSON
+         * @memberof hikmicro.RuntimeBlockInfo
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        RuntimeBlockInfo.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for RuntimeBlockInfo
+         * @function getTypeUrl
+         * @memberof hikmicro.RuntimeBlockInfo
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        RuntimeBlockInfo.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+            if (typeUrlPrefix === undefined) {
+                typeUrlPrefix = "type.googleapis.com";
+            }
+            return typeUrlPrefix + "/hikmicro.RuntimeBlockInfo";
+        };
+
+        return RuntimeBlockInfo;
+    })();
+
+    hikmicro.CalibrationChunk = (function() {
+
+        /**
+         * Properties of a CalibrationChunk.
+         * @memberof hikmicro
+         * @interface ICalibrationChunk
+         * @property {number|null} [index] CalibrationChunk index
+         * @property {Uint8Array|null} [header] CalibrationChunk header
+         * @property {Uint8Array|null} [payload] CalibrationChunk payload
+         */
+
+        /**
+         * Constructs a new CalibrationChunk.
+         * @memberof hikmicro
+         * @classdesc Represents a CalibrationChunk.
+         * @implements ICalibrationChunk
+         * @constructor
+         * @param {hikmicro.ICalibrationChunk=} [properties] Properties to set
+         */
+        function CalibrationChunk(properties) {
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * CalibrationChunk index.
+         * @member {number} index
+         * @memberof hikmicro.CalibrationChunk
+         * @instance
+         */
+        CalibrationChunk.prototype.index = 0;
+
+        /**
+         * CalibrationChunk header.
+         * @member {Uint8Array} header
+         * @memberof hikmicro.CalibrationChunk
+         * @instance
+         */
+        CalibrationChunk.prototype.header = $util.newBuffer([]);
+
+        /**
+         * CalibrationChunk payload.
+         * @member {Uint8Array} payload
+         * @memberof hikmicro.CalibrationChunk
+         * @instance
+         */
+        CalibrationChunk.prototype.payload = $util.newBuffer([]);
+
+        /**
+         * Creates a new CalibrationChunk instance using the specified properties.
+         * @function create
+         * @memberof hikmicro.CalibrationChunk
+         * @static
+         * @param {hikmicro.ICalibrationChunk=} [properties] Properties to set
+         * @returns {hikmicro.CalibrationChunk} CalibrationChunk instance
+         */
+        CalibrationChunk.create = function create(properties) {
+            return new CalibrationChunk(properties);
+        };
+
+        /**
+         * Encodes the specified CalibrationChunk message. Does not implicitly {@link hikmicro.CalibrationChunk.verify|verify} messages.
+         * @function encode
+         * @memberof hikmicro.CalibrationChunk
+         * @static
+         * @param {hikmicro.ICalibrationChunk} message CalibrationChunk message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        CalibrationChunk.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.index != null && Object.hasOwnProperty.call(message, "index"))
+                writer.uint32(/* id 1, wireType 0 =*/8).uint32(message.index);
+            if (message.header != null && Object.hasOwnProperty.call(message, "header"))
+                writer.uint32(/* id 2, wireType 2 =*/18).bytes(message.header);
+            if (message.payload != null && Object.hasOwnProperty.call(message, "payload"))
+                writer.uint32(/* id 3, wireType 2 =*/26).bytes(message.payload);
+            return writer;
+        };
+
+        /**
+         * Encodes the specified CalibrationChunk message, length delimited. Does not implicitly {@link hikmicro.CalibrationChunk.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof hikmicro.CalibrationChunk
+         * @static
+         * @param {hikmicro.ICalibrationChunk} message CalibrationChunk message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        CalibrationChunk.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes a CalibrationChunk message from the specified reader or buffer.
+         * @function decode
+         * @memberof hikmicro.CalibrationChunk
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {hikmicro.CalibrationChunk} CalibrationChunk
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        CalibrationChunk.decode = function decode(reader, length, error, long) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.hikmicro.CalibrationChunk();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                if (tag === error)
+                    break;
+                switch (tag >>> 3) {
+                case 1: {
+                        message.index = reader.uint32();
+                        break;
+                    }
+                case 2: {
+                        message.header = reader.bytes();
+                        break;
+                    }
+                case 3: {
+                        message.payload = reader.bytes();
+                        break;
+                    }
+                default:
+                    reader.skipType(tag & 7, long);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes a CalibrationChunk message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof hikmicro.CalibrationChunk
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {hikmicro.CalibrationChunk} CalibrationChunk
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        CalibrationChunk.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies a CalibrationChunk message.
+         * @function verify
+         * @memberof hikmicro.CalibrationChunk
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        CalibrationChunk.verify = function verify(message, long) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
+            if (message.index != null && message.hasOwnProperty("index"))
+                if (!$util.isInteger(message.index))
+                    return "index: integer expected";
+            if (message.header != null && message.hasOwnProperty("header"))
+                if (!(message.header && typeof message.header.length === "number" || $util.isString(message.header)))
+                    return "header: buffer expected";
+            if (message.payload != null && message.hasOwnProperty("payload"))
+                if (!(message.payload && typeof message.payload.length === "number" || $util.isString(message.payload)))
+                    return "payload: buffer expected";
+            return null;
+        };
+
+        /**
+         * Creates a CalibrationChunk message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof hikmicro.CalibrationChunk
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {hikmicro.CalibrationChunk} CalibrationChunk
+         */
+        CalibrationChunk.fromObject = function fromObject(object, long) {
+            if (object instanceof $root.hikmicro.CalibrationChunk)
+                return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let message = new $root.hikmicro.CalibrationChunk();
+            if (object.index != null)
+                message.index = object.index >>> 0;
+            if (object.header != null)
+                if (typeof object.header === "string")
+                    $util.base64.decode(object.header, message.header = $util.newBuffer($util.base64.length(object.header)), 0);
+                else if (object.header.length >= 0)
+                    message.header = object.header;
+            if (object.payload != null)
+                if (typeof object.payload === "string")
+                    $util.base64.decode(object.payload, message.payload = $util.newBuffer($util.base64.length(object.payload)), 0);
+                else if (object.payload.length >= 0)
+                    message.payload = object.payload;
+            return message;
+        };
+
+        /**
+         * Creates a plain object from a CalibrationChunk message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof hikmicro.CalibrationChunk
+         * @static
+         * @param {hikmicro.CalibrationChunk} message CalibrationChunk
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        CalibrationChunk.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.defaults) {
+                object.index = 0;
+                if (options.bytes === String)
+                    object.header = "";
+                else {
+                    object.header = [];
+                    if (options.bytes !== Array)
+                        object.header = $util.newBuffer(object.header);
+                }
+                if (options.bytes === String)
+                    object.payload = "";
+                else {
+                    object.payload = [];
+                    if (options.bytes !== Array)
+                        object.payload = $util.newBuffer(object.payload);
+                }
+            }
+            if (message.index != null && message.hasOwnProperty("index"))
+                object.index = message.index;
+            if (message.header != null && message.hasOwnProperty("header"))
+                object.header = options.bytes === String ? $util.base64.encode(message.header, 0, message.header.length) : options.bytes === Array ? Array.prototype.slice.call(message.header) : message.header;
+            if (message.payload != null && message.hasOwnProperty("payload"))
+                object.payload = options.bytes === String ? $util.base64.encode(message.payload, 0, message.payload.length) : options.bytes === Array ? Array.prototype.slice.call(message.payload) : message.payload;
+            return object;
+        };
+
+        /**
+         * Converts this CalibrationChunk to JSON.
+         * @function toJSON
+         * @memberof hikmicro.CalibrationChunk
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        CalibrationChunk.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for CalibrationChunk
+         * @function getTypeUrl
+         * @memberof hikmicro.CalibrationChunk
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        CalibrationChunk.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+            if (typeUrlPrefix === undefined) {
+                typeUrlPrefix = "type.googleapis.com";
+            }
+            return typeUrlPrefix + "/hikmicro.CalibrationChunk";
+        };
+
+        return CalibrationChunk;
+    })();
+
+    hikmicro.CalibrationData = (function() {
+
+        /**
+         * Properties of a CalibrationData.
+         * @memberof hikmicro
+         * @interface ICalibrationData
+         * @property {boolean|null} [attempted] CalibrationData attempted
+         * @property {boolean|null} [ok] CalibrationData ok
+         * @property {string|null} [error] CalibrationData error
+         * @property {Uint8Array|null} [lengthHeader] CalibrationData lengthHeader
+         * @property {number|null} [declaredLength] CalibrationData declaredLength
+         * @property {Uint8Array|null} [container] CalibrationData container
+         * @property {number|null} [factoryBlobOffset] CalibrationData factoryBlobOffset
+         * @property {number|null} [factoryBlobLength] CalibrationData factoryBlobLength
+         * @property {Array.<hikmicro.ICalibrationChunk>|null} [chunks] CalibrationData chunks
+         */
+
+        /**
+         * Constructs a new CalibrationData.
+         * @memberof hikmicro
+         * @classdesc Represents a CalibrationData.
+         * @implements ICalibrationData
+         * @constructor
+         * @param {hikmicro.ICalibrationData=} [properties] Properties to set
+         */
+        function CalibrationData(properties) {
+            this.chunks = [];
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * CalibrationData attempted.
+         * @member {boolean} attempted
+         * @memberof hikmicro.CalibrationData
+         * @instance
+         */
+        CalibrationData.prototype.attempted = false;
+
+        /**
+         * CalibrationData ok.
+         * @member {boolean} ok
+         * @memberof hikmicro.CalibrationData
+         * @instance
+         */
+        CalibrationData.prototype.ok = false;
+
+        /**
+         * CalibrationData error.
+         * @member {string} error
+         * @memberof hikmicro.CalibrationData
+         * @instance
+         */
+        CalibrationData.prototype.error = "";
+
+        /**
+         * CalibrationData lengthHeader.
+         * @member {Uint8Array} lengthHeader
+         * @memberof hikmicro.CalibrationData
+         * @instance
+         */
+        CalibrationData.prototype.lengthHeader = $util.newBuffer([]);
+
+        /**
+         * CalibrationData declaredLength.
+         * @member {number} declaredLength
+         * @memberof hikmicro.CalibrationData
+         * @instance
+         */
+        CalibrationData.prototype.declaredLength = 0;
+
+        /**
+         * CalibrationData container.
+         * @member {Uint8Array} container
+         * @memberof hikmicro.CalibrationData
+         * @instance
+         */
+        CalibrationData.prototype.container = $util.newBuffer([]);
+
+        /**
+         * CalibrationData factoryBlobOffset.
+         * @member {number} factoryBlobOffset
+         * @memberof hikmicro.CalibrationData
+         * @instance
+         */
+        CalibrationData.prototype.factoryBlobOffset = 0;
+
+        /**
+         * CalibrationData factoryBlobLength.
+         * @member {number} factoryBlobLength
+         * @memberof hikmicro.CalibrationData
+         * @instance
+         */
+        CalibrationData.prototype.factoryBlobLength = 0;
+
+        /**
+         * CalibrationData chunks.
+         * @member {Array.<hikmicro.ICalibrationChunk>} chunks
+         * @memberof hikmicro.CalibrationData
+         * @instance
+         */
+        CalibrationData.prototype.chunks = $util.emptyArray;
+
+        /**
+         * Creates a new CalibrationData instance using the specified properties.
+         * @function create
+         * @memberof hikmicro.CalibrationData
+         * @static
+         * @param {hikmicro.ICalibrationData=} [properties] Properties to set
+         * @returns {hikmicro.CalibrationData} CalibrationData instance
+         */
+        CalibrationData.create = function create(properties) {
+            return new CalibrationData(properties);
+        };
+
+        /**
+         * Encodes the specified CalibrationData message. Does not implicitly {@link hikmicro.CalibrationData.verify|verify} messages.
+         * @function encode
+         * @memberof hikmicro.CalibrationData
+         * @static
+         * @param {hikmicro.ICalibrationData} message CalibrationData message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        CalibrationData.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.attempted != null && Object.hasOwnProperty.call(message, "attempted"))
+                writer.uint32(/* id 1, wireType 0 =*/8).bool(message.attempted);
+            if (message.ok != null && Object.hasOwnProperty.call(message, "ok"))
+                writer.uint32(/* id 2, wireType 0 =*/16).bool(message.ok);
+            if (message.error != null && Object.hasOwnProperty.call(message, "error"))
+                writer.uint32(/* id 3, wireType 2 =*/26).string(message.error);
+            if (message.lengthHeader != null && Object.hasOwnProperty.call(message, "lengthHeader"))
+                writer.uint32(/* id 10, wireType 2 =*/82).bytes(message.lengthHeader);
+            if (message.declaredLength != null && Object.hasOwnProperty.call(message, "declaredLength"))
+                writer.uint32(/* id 11, wireType 0 =*/88).uint32(message.declaredLength);
+            if (message.container != null && Object.hasOwnProperty.call(message, "container"))
+                writer.uint32(/* id 12, wireType 2 =*/98).bytes(message.container);
+            if (message.factoryBlobOffset != null && Object.hasOwnProperty.call(message, "factoryBlobOffset"))
+                writer.uint32(/* id 14, wireType 0 =*/112).uint32(message.factoryBlobOffset);
+            if (message.factoryBlobLength != null && Object.hasOwnProperty.call(message, "factoryBlobLength"))
+                writer.uint32(/* id 15, wireType 0 =*/120).uint32(message.factoryBlobLength);
+            if (message.chunks != null && message.chunks.length)
+                for (let i = 0; i < message.chunks.length; ++i)
+                    $root.hikmicro.CalibrationChunk.encode(message.chunks[i], writer.uint32(/* id 30, wireType 2 =*/242).fork()).ldelim();
+            return writer;
+        };
+
+        /**
+         * Encodes the specified CalibrationData message, length delimited. Does not implicitly {@link hikmicro.CalibrationData.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof hikmicro.CalibrationData
+         * @static
+         * @param {hikmicro.ICalibrationData} message CalibrationData message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        CalibrationData.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes a CalibrationData message from the specified reader or buffer.
+         * @function decode
+         * @memberof hikmicro.CalibrationData
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {hikmicro.CalibrationData} CalibrationData
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        CalibrationData.decode = function decode(reader, length, error, long) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.hikmicro.CalibrationData();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                if (tag === error)
+                    break;
+                switch (tag >>> 3) {
+                case 1: {
+                        message.attempted = reader.bool();
+                        break;
+                    }
+                case 2: {
+                        message.ok = reader.bool();
+                        break;
+                    }
+                case 3: {
+                        message.error = reader.string();
+                        break;
+                    }
+                case 10: {
+                        message.lengthHeader = reader.bytes();
+                        break;
+                    }
+                case 11: {
+                        message.declaredLength = reader.uint32();
+                        break;
+                    }
+                case 12: {
+                        message.container = reader.bytes();
+                        break;
+                    }
+                case 14: {
+                        message.factoryBlobOffset = reader.uint32();
+                        break;
+                    }
+                case 15: {
+                        message.factoryBlobLength = reader.uint32();
+                        break;
+                    }
+                case 30: {
+                        if (!(message.chunks && message.chunks.length))
+                            message.chunks = [];
+                        message.chunks.push($root.hikmicro.CalibrationChunk.decode(reader, reader.uint32(), undefined, long + 1));
+                        break;
+                    }
+                default:
+                    reader.skipType(tag & 7, long);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes a CalibrationData message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof hikmicro.CalibrationData
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {hikmicro.CalibrationData} CalibrationData
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        CalibrationData.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies a CalibrationData message.
+         * @function verify
+         * @memberof hikmicro.CalibrationData
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        CalibrationData.verify = function verify(message, long) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
+            if (message.attempted != null && message.hasOwnProperty("attempted"))
+                if (typeof message.attempted !== "boolean")
+                    return "attempted: boolean expected";
+            if (message.ok != null && message.hasOwnProperty("ok"))
+                if (typeof message.ok !== "boolean")
+                    return "ok: boolean expected";
+            if (message.error != null && message.hasOwnProperty("error"))
+                if (!$util.isString(message.error))
+                    return "error: string expected";
+            if (message.lengthHeader != null && message.hasOwnProperty("lengthHeader"))
+                if (!(message.lengthHeader && typeof message.lengthHeader.length === "number" || $util.isString(message.lengthHeader)))
+                    return "lengthHeader: buffer expected";
+            if (message.declaredLength != null && message.hasOwnProperty("declaredLength"))
+                if (!$util.isInteger(message.declaredLength))
+                    return "declaredLength: integer expected";
+            if (message.container != null && message.hasOwnProperty("container"))
+                if (!(message.container && typeof message.container.length === "number" || $util.isString(message.container)))
+                    return "container: buffer expected";
+            if (message.factoryBlobOffset != null && message.hasOwnProperty("factoryBlobOffset"))
+                if (!$util.isInteger(message.factoryBlobOffset))
+                    return "factoryBlobOffset: integer expected";
+            if (message.factoryBlobLength != null && message.hasOwnProperty("factoryBlobLength"))
+                if (!$util.isInteger(message.factoryBlobLength))
+                    return "factoryBlobLength: integer expected";
+            if (message.chunks != null && message.hasOwnProperty("chunks")) {
+                if (!Array.isArray(message.chunks))
+                    return "chunks: array expected";
+                for (let i = 0; i < message.chunks.length; ++i) {
+                    let error = $root.hikmicro.CalibrationChunk.verify(message.chunks[i], long + 1);
+                    if (error)
+                        return "chunks." + error;
+                }
+            }
+            return null;
+        };
+
+        /**
+         * Creates a CalibrationData message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof hikmicro.CalibrationData
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {hikmicro.CalibrationData} CalibrationData
+         */
+        CalibrationData.fromObject = function fromObject(object, long) {
+            if (object instanceof $root.hikmicro.CalibrationData)
+                return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let message = new $root.hikmicro.CalibrationData();
+            if (object.attempted != null)
+                message.attempted = Boolean(object.attempted);
+            if (object.ok != null)
+                message.ok = Boolean(object.ok);
+            if (object.error != null)
+                message.error = String(object.error);
+            if (object.lengthHeader != null)
+                if (typeof object.lengthHeader === "string")
+                    $util.base64.decode(object.lengthHeader, message.lengthHeader = $util.newBuffer($util.base64.length(object.lengthHeader)), 0);
+                else if (object.lengthHeader.length >= 0)
+                    message.lengthHeader = object.lengthHeader;
+            if (object.declaredLength != null)
+                message.declaredLength = object.declaredLength >>> 0;
+            if (object.container != null)
+                if (typeof object.container === "string")
+                    $util.base64.decode(object.container, message.container = $util.newBuffer($util.base64.length(object.container)), 0);
+                else if (object.container.length >= 0)
+                    message.container = object.container;
+            if (object.factoryBlobOffset != null)
+                message.factoryBlobOffset = object.factoryBlobOffset >>> 0;
+            if (object.factoryBlobLength != null)
+                message.factoryBlobLength = object.factoryBlobLength >>> 0;
+            if (object.chunks) {
+                if (!Array.isArray(object.chunks))
+                    throw TypeError(".hikmicro.CalibrationData.chunks: array expected");
+                message.chunks = [];
+                for (let i = 0; i < object.chunks.length; ++i) {
+                    if (typeof object.chunks[i] !== "object")
+                        throw TypeError(".hikmicro.CalibrationData.chunks: object expected");
+                    message.chunks[i] = $root.hikmicro.CalibrationChunk.fromObject(object.chunks[i], long + 1);
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Creates a plain object from a CalibrationData message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof hikmicro.CalibrationData
+         * @static
+         * @param {hikmicro.CalibrationData} message CalibrationData
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        CalibrationData.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.arrays || options.defaults)
+                object.chunks = [];
+            if (options.defaults) {
+                object.attempted = false;
+                object.ok = false;
+                object.error = "";
+                if (options.bytes === String)
+                    object.lengthHeader = "";
+                else {
+                    object.lengthHeader = [];
+                    if (options.bytes !== Array)
+                        object.lengthHeader = $util.newBuffer(object.lengthHeader);
+                }
+                object.declaredLength = 0;
+                if (options.bytes === String)
+                    object.container = "";
+                else {
+                    object.container = [];
+                    if (options.bytes !== Array)
+                        object.container = $util.newBuffer(object.container);
+                }
+                object.factoryBlobOffset = 0;
+                object.factoryBlobLength = 0;
+            }
+            if (message.attempted != null && message.hasOwnProperty("attempted"))
+                object.attempted = message.attempted;
+            if (message.ok != null && message.hasOwnProperty("ok"))
+                object.ok = message.ok;
+            if (message.error != null && message.hasOwnProperty("error"))
+                object.error = message.error;
+            if (message.lengthHeader != null && message.hasOwnProperty("lengthHeader"))
+                object.lengthHeader = options.bytes === String ? $util.base64.encode(message.lengthHeader, 0, message.lengthHeader.length) : options.bytes === Array ? Array.prototype.slice.call(message.lengthHeader) : message.lengthHeader;
+            if (message.declaredLength != null && message.hasOwnProperty("declaredLength"))
+                object.declaredLength = message.declaredLength;
+            if (message.container != null && message.hasOwnProperty("container"))
+                object.container = options.bytes === String ? $util.base64.encode(message.container, 0, message.container.length) : options.bytes === Array ? Array.prototype.slice.call(message.container) : message.container;
+            if (message.factoryBlobOffset != null && message.hasOwnProperty("factoryBlobOffset"))
+                object.factoryBlobOffset = message.factoryBlobOffset;
+            if (message.factoryBlobLength != null && message.hasOwnProperty("factoryBlobLength"))
+                object.factoryBlobLength = message.factoryBlobLength;
+            if (message.chunks && message.chunks.length) {
+                object.chunks = [];
+                for (let j = 0; j < message.chunks.length; ++j)
+                    object.chunks[j] = $root.hikmicro.CalibrationChunk.toObject(message.chunks[j], options);
+            }
+            return object;
+        };
+
+        /**
+         * Converts this CalibrationData to JSON.
+         * @function toJSON
+         * @memberof hikmicro.CalibrationData
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        CalibrationData.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for CalibrationData
+         * @function getTypeUrl
+         * @memberof hikmicro.CalibrationData
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        CalibrationData.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+            if (typeUrlPrefix === undefined) {
+                typeUrlPrefix = "type.googleapis.com";
+            }
+            return typeUrlPrefix + "/hikmicro.CalibrationData";
+        };
+
+        return CalibrationData;
+    })();
+
+    hikmicro.DeviceInfo = (function() {
+
+        /**
+         * Properties of a DeviceInfo.
+         * @memberof hikmicro
+         * @interface IDeviceInfo
+         * @property {string|null} [driver] DeviceInfo driver
+         * @property {hikmicro.IUsbDeviceInfo|null} [usb] DeviceInfo usb
+         * @property {hikmicro.ICompactStreamFormat|null} [streamFormat] DeviceInfo streamFormat
+         * @property {hikmicro.ICompactPayloadLayout|null} [layout] DeviceInfo layout
+         * @property {hikmicro.ICalibrationData|null} [calibration] DeviceInfo calibration
+         */
+
+        /**
+         * Constructs a new DeviceInfo.
+         * @memberof hikmicro
+         * @classdesc Represents a DeviceInfo.
+         * @implements IDeviceInfo
+         * @constructor
+         * @param {hikmicro.IDeviceInfo=} [properties] Properties to set
+         */
+        function DeviceInfo(properties) {
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * DeviceInfo driver.
+         * @member {string} driver
+         * @memberof hikmicro.DeviceInfo
+         * @instance
+         */
+        DeviceInfo.prototype.driver = "";
+
+        /**
+         * DeviceInfo usb.
+         * @member {hikmicro.IUsbDeviceInfo|null|undefined} usb
+         * @memberof hikmicro.DeviceInfo
+         * @instance
+         */
+        DeviceInfo.prototype.usb = null;
+
+        /**
+         * DeviceInfo streamFormat.
+         * @member {hikmicro.ICompactStreamFormat|null|undefined} streamFormat
+         * @memberof hikmicro.DeviceInfo
+         * @instance
+         */
+        DeviceInfo.prototype.streamFormat = null;
+
+        /**
+         * DeviceInfo layout.
+         * @member {hikmicro.ICompactPayloadLayout|null|undefined} layout
+         * @memberof hikmicro.DeviceInfo
+         * @instance
+         */
+        DeviceInfo.prototype.layout = null;
+
+        /**
+         * DeviceInfo calibration.
+         * @member {hikmicro.ICalibrationData|null|undefined} calibration
+         * @memberof hikmicro.DeviceInfo
+         * @instance
+         */
+        DeviceInfo.prototype.calibration = null;
+
+        /**
+         * Creates a new DeviceInfo instance using the specified properties.
+         * @function create
+         * @memberof hikmicro.DeviceInfo
+         * @static
+         * @param {hikmicro.IDeviceInfo=} [properties] Properties to set
+         * @returns {hikmicro.DeviceInfo} DeviceInfo instance
+         */
+        DeviceInfo.create = function create(properties) {
+            return new DeviceInfo(properties);
+        };
+
+        /**
+         * Encodes the specified DeviceInfo message. Does not implicitly {@link hikmicro.DeviceInfo.verify|verify} messages.
+         * @function encode
+         * @memberof hikmicro.DeviceInfo
+         * @static
+         * @param {hikmicro.IDeviceInfo} message DeviceInfo message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        DeviceInfo.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.driver != null && Object.hasOwnProperty.call(message, "driver"))
+                writer.uint32(/* id 1, wireType 2 =*/10).string(message.driver);
+            if (message.usb != null && Object.hasOwnProperty.call(message, "usb"))
+                $root.hikmicro.UsbDeviceInfo.encode(message.usb, writer.uint32(/* id 2, wireType 2 =*/18).fork()).ldelim();
+            if (message.streamFormat != null && Object.hasOwnProperty.call(message, "streamFormat"))
+                $root.hikmicro.CompactStreamFormat.encode(message.streamFormat, writer.uint32(/* id 3, wireType 2 =*/26).fork()).ldelim();
+            if (message.layout != null && Object.hasOwnProperty.call(message, "layout"))
+                $root.hikmicro.CompactPayloadLayout.encode(message.layout, writer.uint32(/* id 4, wireType 2 =*/34).fork()).ldelim();
+            if (message.calibration != null && Object.hasOwnProperty.call(message, "calibration"))
+                $root.hikmicro.CalibrationData.encode(message.calibration, writer.uint32(/* id 5, wireType 2 =*/42).fork()).ldelim();
+            return writer;
+        };
+
+        /**
+         * Encodes the specified DeviceInfo message, length delimited. Does not implicitly {@link hikmicro.DeviceInfo.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof hikmicro.DeviceInfo
+         * @static
+         * @param {hikmicro.IDeviceInfo} message DeviceInfo message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        DeviceInfo.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes a DeviceInfo message from the specified reader or buffer.
+         * @function decode
+         * @memberof hikmicro.DeviceInfo
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {hikmicro.DeviceInfo} DeviceInfo
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        DeviceInfo.decode = function decode(reader, length, error, long) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.hikmicro.DeviceInfo();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                if (tag === error)
+                    break;
+                switch (tag >>> 3) {
+                case 1: {
+                        message.driver = reader.string();
+                        break;
+                    }
+                case 2: {
+                        message.usb = $root.hikmicro.UsbDeviceInfo.decode(reader, reader.uint32(), undefined, long + 1);
+                        break;
+                    }
+                case 3: {
+                        message.streamFormat = $root.hikmicro.CompactStreamFormat.decode(reader, reader.uint32(), undefined, long + 1);
+                        break;
+                    }
+                case 4: {
+                        message.layout = $root.hikmicro.CompactPayloadLayout.decode(reader, reader.uint32(), undefined, long + 1);
+                        break;
+                    }
+                case 5: {
+                        message.calibration = $root.hikmicro.CalibrationData.decode(reader, reader.uint32(), undefined, long + 1);
+                        break;
+                    }
+                default:
+                    reader.skipType(tag & 7, long);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes a DeviceInfo message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof hikmicro.DeviceInfo
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {hikmicro.DeviceInfo} DeviceInfo
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        DeviceInfo.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies a DeviceInfo message.
+         * @function verify
+         * @memberof hikmicro.DeviceInfo
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        DeviceInfo.verify = function verify(message, long) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
+            if (message.driver != null && message.hasOwnProperty("driver"))
+                if (!$util.isString(message.driver))
+                    return "driver: string expected";
+            if (message.usb != null && message.hasOwnProperty("usb")) {
+                let error = $root.hikmicro.UsbDeviceInfo.verify(message.usb, long + 1);
+                if (error)
+                    return "usb." + error;
+            }
+            if (message.streamFormat != null && message.hasOwnProperty("streamFormat")) {
+                let error = $root.hikmicro.CompactStreamFormat.verify(message.streamFormat, long + 1);
+                if (error)
+                    return "streamFormat." + error;
+            }
+            if (message.layout != null && message.hasOwnProperty("layout")) {
+                let error = $root.hikmicro.CompactPayloadLayout.verify(message.layout, long + 1);
+                if (error)
+                    return "layout." + error;
+            }
+            if (message.calibration != null && message.hasOwnProperty("calibration")) {
+                let error = $root.hikmicro.CalibrationData.verify(message.calibration, long + 1);
+                if (error)
+                    return "calibration." + error;
+            }
+            return null;
+        };
+
+        /**
+         * Creates a DeviceInfo message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof hikmicro.DeviceInfo
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {hikmicro.DeviceInfo} DeviceInfo
+         */
+        DeviceInfo.fromObject = function fromObject(object, long) {
+            if (object instanceof $root.hikmicro.DeviceInfo)
+                return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let message = new $root.hikmicro.DeviceInfo();
+            if (object.driver != null)
+                message.driver = String(object.driver);
+            if (object.usb != null) {
+                if (typeof object.usb !== "object")
+                    throw TypeError(".hikmicro.DeviceInfo.usb: object expected");
+                message.usb = $root.hikmicro.UsbDeviceInfo.fromObject(object.usb, long + 1);
+            }
+            if (object.streamFormat != null) {
+                if (typeof object.streamFormat !== "object")
+                    throw TypeError(".hikmicro.DeviceInfo.streamFormat: object expected");
+                message.streamFormat = $root.hikmicro.CompactStreamFormat.fromObject(object.streamFormat, long + 1);
+            }
+            if (object.layout != null) {
+                if (typeof object.layout !== "object")
+                    throw TypeError(".hikmicro.DeviceInfo.layout: object expected");
+                message.layout = $root.hikmicro.CompactPayloadLayout.fromObject(object.layout, long + 1);
+            }
+            if (object.calibration != null) {
+                if (typeof object.calibration !== "object")
+                    throw TypeError(".hikmicro.DeviceInfo.calibration: object expected");
+                message.calibration = $root.hikmicro.CalibrationData.fromObject(object.calibration, long + 1);
+            }
+            return message;
+        };
+
+        /**
+         * Creates a plain object from a DeviceInfo message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof hikmicro.DeviceInfo
+         * @static
+         * @param {hikmicro.DeviceInfo} message DeviceInfo
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        DeviceInfo.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.defaults) {
+                object.driver = "";
+                object.usb = null;
+                object.streamFormat = null;
+                object.layout = null;
+                object.calibration = null;
+            }
+            if (message.driver != null && message.hasOwnProperty("driver"))
+                object.driver = message.driver;
+            if (message.usb != null && message.hasOwnProperty("usb"))
+                object.usb = $root.hikmicro.UsbDeviceInfo.toObject(message.usb, options);
+            if (message.streamFormat != null && message.hasOwnProperty("streamFormat"))
+                object.streamFormat = $root.hikmicro.CompactStreamFormat.toObject(message.streamFormat, options);
+            if (message.layout != null && message.hasOwnProperty("layout"))
+                object.layout = $root.hikmicro.CompactPayloadLayout.toObject(message.layout, options);
+            if (message.calibration != null && message.hasOwnProperty("calibration"))
+                object.calibration = $root.hikmicro.CalibrationData.toObject(message.calibration, options);
+            return object;
+        };
+
+        /**
+         * Converts this DeviceInfo to JSON.
+         * @function toJSON
+         * @memberof hikmicro.DeviceInfo
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        DeviceInfo.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for DeviceInfo
+         * @function getTypeUrl
+         * @memberof hikmicro.DeviceInfo
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        DeviceInfo.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+            if (typeUrlPrefix === undefined) {
+                typeUrlPrefix = "type.googleapis.com";
+            }
+            return typeUrlPrefix + "/hikmicro.DeviceInfo";
+        };
+
+        return DeviceInfo;
+    })();
+
+    hikmicro.ThermalFrame = (function() {
+
+        /**
+         * Properties of a ThermalFrame.
+         * @memberof hikmicro
+         * @interface IThermalFrame
+         * @property {number|null} [sequence] ThermalFrame sequence
+         * @property {Long|null} [monotonicStampNs] ThermalFrame monotonicStampNs
+         * @property {Long|null} [localStampNs] ThermalFrame localStampNs
+         * @property {hikmicro.IRuntimeBlockInfo|null} [runtime] ThermalFrame runtime
+         * @property {Uint8Array|null} [payload] ThermalFrame payload
+         */
+
+        /**
+         * Constructs a new ThermalFrame.
+         * @memberof hikmicro
+         * @classdesc Represents a ThermalFrame.
+         * @implements IThermalFrame
+         * @constructor
+         * @param {hikmicro.IThermalFrame=} [properties] Properties to set
+         */
+        function ThermalFrame(properties) {
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * ThermalFrame sequence.
+         * @member {number} sequence
+         * @memberof hikmicro.ThermalFrame
+         * @instance
+         */
+        ThermalFrame.prototype.sequence = 0;
+
+        /**
+         * ThermalFrame monotonicStampNs.
+         * @member {Long} monotonicStampNs
+         * @memberof hikmicro.ThermalFrame
+         * @instance
+         */
+        ThermalFrame.prototype.monotonicStampNs = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+
+        /**
+         * ThermalFrame localStampNs.
+         * @member {Long} localStampNs
+         * @memberof hikmicro.ThermalFrame
+         * @instance
+         */
+        ThermalFrame.prototype.localStampNs = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+
+        /**
+         * ThermalFrame runtime.
+         * @member {hikmicro.IRuntimeBlockInfo|null|undefined} runtime
+         * @memberof hikmicro.ThermalFrame
+         * @instance
+         */
+        ThermalFrame.prototype.runtime = null;
+
+        /**
+         * ThermalFrame payload.
+         * @member {Uint8Array} payload
+         * @memberof hikmicro.ThermalFrame
+         * @instance
+         */
+        ThermalFrame.prototype.payload = $util.newBuffer([]);
+
+        /**
+         * Creates a new ThermalFrame instance using the specified properties.
+         * @function create
+         * @memberof hikmicro.ThermalFrame
+         * @static
+         * @param {hikmicro.IThermalFrame=} [properties] Properties to set
+         * @returns {hikmicro.ThermalFrame} ThermalFrame instance
+         */
+        ThermalFrame.create = function create(properties) {
+            return new ThermalFrame(properties);
+        };
+
+        /**
+         * Encodes the specified ThermalFrame message. Does not implicitly {@link hikmicro.ThermalFrame.verify|verify} messages.
+         * @function encode
+         * @memberof hikmicro.ThermalFrame
+         * @static
+         * @param {hikmicro.IThermalFrame} message ThermalFrame message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        ThermalFrame.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.sequence != null && Object.hasOwnProperty.call(message, "sequence"))
+                writer.uint32(/* id 1, wireType 0 =*/8).uint32(message.sequence);
+            if (message.monotonicStampNs != null && Object.hasOwnProperty.call(message, "monotonicStampNs"))
+                writer.uint32(/* id 2, wireType 0 =*/16).uint64(message.monotonicStampNs);
+            if (message.localStampNs != null && Object.hasOwnProperty.call(message, "localStampNs"))
+                writer.uint32(/* id 3, wireType 0 =*/24).uint64(message.localStampNs);
+            if (message.runtime != null && Object.hasOwnProperty.call(message, "runtime"))
+                $root.hikmicro.RuntimeBlockInfo.encode(message.runtime, writer.uint32(/* id 6, wireType 2 =*/50).fork()).ldelim();
+            if (message.payload != null && Object.hasOwnProperty.call(message, "payload"))
+                writer.uint32(/* id 10, wireType 2 =*/82).bytes(message.payload);
+            return writer;
+        };
+
+        /**
+         * Encodes the specified ThermalFrame message, length delimited. Does not implicitly {@link hikmicro.ThermalFrame.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof hikmicro.ThermalFrame
+         * @static
+         * @param {hikmicro.IThermalFrame} message ThermalFrame message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        ThermalFrame.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes a ThermalFrame message from the specified reader or buffer.
+         * @function decode
+         * @memberof hikmicro.ThermalFrame
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {hikmicro.ThermalFrame} ThermalFrame
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        ThermalFrame.decode = function decode(reader, length, error, long) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.hikmicro.ThermalFrame();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                if (tag === error)
+                    break;
+                switch (tag >>> 3) {
+                case 1: {
+                        message.sequence = reader.uint32();
+                        break;
+                    }
+                case 2: {
+                        message.monotonicStampNs = reader.uint64();
+                        break;
+                    }
+                case 3: {
+                        message.localStampNs = reader.uint64();
+                        break;
+                    }
+                case 6: {
+                        message.runtime = $root.hikmicro.RuntimeBlockInfo.decode(reader, reader.uint32(), undefined, long + 1);
+                        break;
+                    }
+                case 10: {
+                        message.payload = reader.bytes();
+                        break;
+                    }
+                default:
+                    reader.skipType(tag & 7, long);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes a ThermalFrame message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof hikmicro.ThermalFrame
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {hikmicro.ThermalFrame} ThermalFrame
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        ThermalFrame.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies a ThermalFrame message.
+         * @function verify
+         * @memberof hikmicro.ThermalFrame
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        ThermalFrame.verify = function verify(message, long) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
+            if (message.sequence != null && message.hasOwnProperty("sequence"))
+                if (!$util.isInteger(message.sequence))
+                    return "sequence: integer expected";
+            if (message.monotonicStampNs != null && message.hasOwnProperty("monotonicStampNs"))
+                if (!$util.isInteger(message.monotonicStampNs) && !(message.monotonicStampNs && $util.isInteger(message.monotonicStampNs.low) && $util.isInteger(message.monotonicStampNs.high)))
+                    return "monotonicStampNs: integer|Long expected";
+            if (message.localStampNs != null && message.hasOwnProperty("localStampNs"))
+                if (!$util.isInteger(message.localStampNs) && !(message.localStampNs && $util.isInteger(message.localStampNs.low) && $util.isInteger(message.localStampNs.high)))
+                    return "localStampNs: integer|Long expected";
+            if (message.runtime != null && message.hasOwnProperty("runtime")) {
+                let error = $root.hikmicro.RuntimeBlockInfo.verify(message.runtime, long + 1);
+                if (error)
+                    return "runtime." + error;
+            }
+            if (message.payload != null && message.hasOwnProperty("payload"))
+                if (!(message.payload && typeof message.payload.length === "number" || $util.isString(message.payload)))
+                    return "payload: buffer expected";
+            return null;
+        };
+
+        /**
+         * Creates a ThermalFrame message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof hikmicro.ThermalFrame
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {hikmicro.ThermalFrame} ThermalFrame
+         */
+        ThermalFrame.fromObject = function fromObject(object, long) {
+            if (object instanceof $root.hikmicro.ThermalFrame)
+                return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let message = new $root.hikmicro.ThermalFrame();
+            if (object.sequence != null)
+                message.sequence = object.sequence >>> 0;
+            if (object.monotonicStampNs != null)
+                if ($util.Long)
+                    (message.monotonicStampNs = $util.Long.fromValue(object.monotonicStampNs)).unsigned = true;
+                else if (typeof object.monotonicStampNs === "string")
+                    message.monotonicStampNs = parseInt(object.monotonicStampNs, 10);
+                else if (typeof object.monotonicStampNs === "number")
+                    message.monotonicStampNs = object.monotonicStampNs;
+                else if (typeof object.monotonicStampNs === "object")
+                    message.monotonicStampNs = new $util.LongBits(object.monotonicStampNs.low >>> 0, object.monotonicStampNs.high >>> 0).toNumber(true);
+            if (object.localStampNs != null)
+                if ($util.Long)
+                    (message.localStampNs = $util.Long.fromValue(object.localStampNs)).unsigned = true;
+                else if (typeof object.localStampNs === "string")
+                    message.localStampNs = parseInt(object.localStampNs, 10);
+                else if (typeof object.localStampNs === "number")
+                    message.localStampNs = object.localStampNs;
+                else if (typeof object.localStampNs === "object")
+                    message.localStampNs = new $util.LongBits(object.localStampNs.low >>> 0, object.localStampNs.high >>> 0).toNumber(true);
+            if (object.runtime != null) {
+                if (typeof object.runtime !== "object")
+                    throw TypeError(".hikmicro.ThermalFrame.runtime: object expected");
+                message.runtime = $root.hikmicro.RuntimeBlockInfo.fromObject(object.runtime, long + 1);
+            }
+            if (object.payload != null)
+                if (typeof object.payload === "string")
+                    $util.base64.decode(object.payload, message.payload = $util.newBuffer($util.base64.length(object.payload)), 0);
+                else if (object.payload.length >= 0)
+                    message.payload = object.payload;
+            return message;
+        };
+
+        /**
+         * Creates a plain object from a ThermalFrame message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof hikmicro.ThermalFrame
+         * @static
+         * @param {hikmicro.ThermalFrame} message ThermalFrame
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        ThermalFrame.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.defaults) {
+                object.sequence = 0;
+                if ($util.Long) {
+                    let long = new $util.Long(0, 0, true);
+                    object.monotonicStampNs = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+                } else
+                    object.monotonicStampNs = options.longs === String ? "0" : 0;
+                if ($util.Long) {
+                    let long = new $util.Long(0, 0, true);
+                    object.localStampNs = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+                } else
+                    object.localStampNs = options.longs === String ? "0" : 0;
+                object.runtime = null;
+                if (options.bytes === String)
+                    object.payload = "";
+                else {
+                    object.payload = [];
+                    if (options.bytes !== Array)
+                        object.payload = $util.newBuffer(object.payload);
+                }
+            }
+            if (message.sequence != null && message.hasOwnProperty("sequence"))
+                object.sequence = message.sequence;
+            if (message.monotonicStampNs != null && message.hasOwnProperty("monotonicStampNs"))
+                if (typeof message.monotonicStampNs === "number")
+                    object.monotonicStampNs = options.longs === String ? String(message.monotonicStampNs) : message.monotonicStampNs;
+                else
+                    object.monotonicStampNs = options.longs === String ? $util.Long.prototype.toString.call(message.monotonicStampNs) : options.longs === Number ? new $util.LongBits(message.monotonicStampNs.low >>> 0, message.monotonicStampNs.high >>> 0).toNumber(true) : message.monotonicStampNs;
+            if (message.localStampNs != null && message.hasOwnProperty("localStampNs"))
+                if (typeof message.localStampNs === "number")
+                    object.localStampNs = options.longs === String ? String(message.localStampNs) : message.localStampNs;
+                else
+                    object.localStampNs = options.longs === String ? $util.Long.prototype.toString.call(message.localStampNs) : options.longs === Number ? new $util.LongBits(message.localStampNs.low >>> 0, message.localStampNs.high >>> 0).toNumber(true) : message.localStampNs;
+            if (message.runtime != null && message.hasOwnProperty("runtime"))
+                object.runtime = $root.hikmicro.RuntimeBlockInfo.toObject(message.runtime, options);
+            if (message.payload != null && message.hasOwnProperty("payload"))
+                object.payload = options.bytes === String ? $util.base64.encode(message.payload, 0, message.payload.length) : options.bytes === Array ? Array.prototype.slice.call(message.payload) : message.payload;
+            return object;
+        };
+
+        /**
+         * Converts this ThermalFrame to JSON.
+         * @function toJSON
+         * @memberof hikmicro.ThermalFrame
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        ThermalFrame.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for ThermalFrame
+         * @function getTypeUrl
+         * @memberof hikmicro.ThermalFrame
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        ThermalFrame.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+            if (typeUrlPrefix === undefined) {
+                typeUrlPrefix = "type.googleapis.com";
+            }
+            return typeUrlPrefix + "/hikmicro.ThermalFrame";
+        };
+
+        return ThermalFrame;
+    })();
+
+    hikmicro.ThermalFramesBlock = (function() {
+
+        /**
+         * Properties of a ThermalFramesBlock.
+         * @memberof hikmicro
+         * @interface IThermalFramesBlock
+         * @property {number|null} [sequence] ThermalFramesBlock sequence
+         * @property {number|null} [frameCount] ThermalFramesBlock frameCount
+         * @property {Long|null} [monotonicStartNs] ThermalFramesBlock monotonicStartNs
+         * @property {Long|null} [monotonicEndNs] ThermalFramesBlock monotonicEndNs
+         * @property {Long|null} [localStartNs] ThermalFramesBlock localStartNs
+         * @property {Long|null} [localEndNs] ThermalFramesBlock localEndNs
+         * @property {hikmicro.ICompactStreamFormat|null} [streamFormat] ThermalFramesBlock streamFormat
+         * @property {hikmicro.ICompactPayloadLayout|null} [layout] ThermalFramesBlock layout
+         * @property {Array.<hikmicro.IThermalFrame>|null} [frames] ThermalFramesBlock frames
+         */
+
+        /**
+         * Constructs a new ThermalFramesBlock.
+         * @memberof hikmicro
+         * @classdesc Represents a ThermalFramesBlock.
+         * @implements IThermalFramesBlock
+         * @constructor
+         * @param {hikmicro.IThermalFramesBlock=} [properties] Properties to set
+         */
+        function ThermalFramesBlock(properties) {
+            this.frames = [];
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * ThermalFramesBlock sequence.
+         * @member {number} sequence
+         * @memberof hikmicro.ThermalFramesBlock
+         * @instance
+         */
+        ThermalFramesBlock.prototype.sequence = 0;
+
+        /**
+         * ThermalFramesBlock frameCount.
+         * @member {number} frameCount
+         * @memberof hikmicro.ThermalFramesBlock
+         * @instance
+         */
+        ThermalFramesBlock.prototype.frameCount = 0;
+
+        /**
+         * ThermalFramesBlock monotonicStartNs.
+         * @member {Long} monotonicStartNs
+         * @memberof hikmicro.ThermalFramesBlock
+         * @instance
+         */
+        ThermalFramesBlock.prototype.monotonicStartNs = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+
+        /**
+         * ThermalFramesBlock monotonicEndNs.
+         * @member {Long} monotonicEndNs
+         * @memberof hikmicro.ThermalFramesBlock
+         * @instance
+         */
+        ThermalFramesBlock.prototype.monotonicEndNs = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+
+        /**
+         * ThermalFramesBlock localStartNs.
+         * @member {Long} localStartNs
+         * @memberof hikmicro.ThermalFramesBlock
+         * @instance
+         */
+        ThermalFramesBlock.prototype.localStartNs = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+
+        /**
+         * ThermalFramesBlock localEndNs.
+         * @member {Long} localEndNs
+         * @memberof hikmicro.ThermalFramesBlock
+         * @instance
+         */
+        ThermalFramesBlock.prototype.localEndNs = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+
+        /**
+         * ThermalFramesBlock streamFormat.
+         * @member {hikmicro.ICompactStreamFormat|null|undefined} streamFormat
+         * @memberof hikmicro.ThermalFramesBlock
+         * @instance
+         */
+        ThermalFramesBlock.prototype.streamFormat = null;
+
+        /**
+         * ThermalFramesBlock layout.
+         * @member {hikmicro.ICompactPayloadLayout|null|undefined} layout
+         * @memberof hikmicro.ThermalFramesBlock
+         * @instance
+         */
+        ThermalFramesBlock.prototype.layout = null;
+
+        /**
+         * ThermalFramesBlock frames.
+         * @member {Array.<hikmicro.IThermalFrame>} frames
+         * @memberof hikmicro.ThermalFramesBlock
+         * @instance
+         */
+        ThermalFramesBlock.prototype.frames = $util.emptyArray;
+
+        /**
+         * Creates a new ThermalFramesBlock instance using the specified properties.
+         * @function create
+         * @memberof hikmicro.ThermalFramesBlock
+         * @static
+         * @param {hikmicro.IThermalFramesBlock=} [properties] Properties to set
+         * @returns {hikmicro.ThermalFramesBlock} ThermalFramesBlock instance
+         */
+        ThermalFramesBlock.create = function create(properties) {
+            return new ThermalFramesBlock(properties);
+        };
+
+        /**
+         * Encodes the specified ThermalFramesBlock message. Does not implicitly {@link hikmicro.ThermalFramesBlock.verify|verify} messages.
+         * @function encode
+         * @memberof hikmicro.ThermalFramesBlock
+         * @static
+         * @param {hikmicro.IThermalFramesBlock} message ThermalFramesBlock message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        ThermalFramesBlock.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.sequence != null && Object.hasOwnProperty.call(message, "sequence"))
+                writer.uint32(/* id 1, wireType 0 =*/8).uint32(message.sequence);
+            if (message.frameCount != null && Object.hasOwnProperty.call(message, "frameCount"))
+                writer.uint32(/* id 2, wireType 0 =*/16).uint32(message.frameCount);
+            if (message.monotonicStartNs != null && Object.hasOwnProperty.call(message, "monotonicStartNs"))
+                writer.uint32(/* id 3, wireType 0 =*/24).uint64(message.monotonicStartNs);
+            if (message.monotonicEndNs != null && Object.hasOwnProperty.call(message, "monotonicEndNs"))
+                writer.uint32(/* id 4, wireType 0 =*/32).uint64(message.monotonicEndNs);
+            if (message.localStartNs != null && Object.hasOwnProperty.call(message, "localStartNs"))
+                writer.uint32(/* id 5, wireType 0 =*/40).uint64(message.localStartNs);
+            if (message.localEndNs != null && Object.hasOwnProperty.call(message, "localEndNs"))
+                writer.uint32(/* id 6, wireType 0 =*/48).uint64(message.localEndNs);
+            if (message.streamFormat != null && Object.hasOwnProperty.call(message, "streamFormat"))
+                $root.hikmicro.CompactStreamFormat.encode(message.streamFormat, writer.uint32(/* id 7, wireType 2 =*/58).fork()).ldelim();
+            if (message.layout != null && Object.hasOwnProperty.call(message, "layout"))
+                $root.hikmicro.CompactPayloadLayout.encode(message.layout, writer.uint32(/* id 8, wireType 2 =*/66).fork()).ldelim();
+            if (message.frames != null && message.frames.length)
+                for (let i = 0; i < message.frames.length; ++i)
+                    $root.hikmicro.ThermalFrame.encode(message.frames[i], writer.uint32(/* id 10, wireType 2 =*/82).fork()).ldelim();
+            return writer;
+        };
+
+        /**
+         * Encodes the specified ThermalFramesBlock message, length delimited. Does not implicitly {@link hikmicro.ThermalFramesBlock.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof hikmicro.ThermalFramesBlock
+         * @static
+         * @param {hikmicro.IThermalFramesBlock} message ThermalFramesBlock message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        ThermalFramesBlock.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes a ThermalFramesBlock message from the specified reader or buffer.
+         * @function decode
+         * @memberof hikmicro.ThermalFramesBlock
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {hikmicro.ThermalFramesBlock} ThermalFramesBlock
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        ThermalFramesBlock.decode = function decode(reader, length, error, long) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.hikmicro.ThermalFramesBlock();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                if (tag === error)
+                    break;
+                switch (tag >>> 3) {
+                case 1: {
+                        message.sequence = reader.uint32();
+                        break;
+                    }
+                case 2: {
+                        message.frameCount = reader.uint32();
+                        break;
+                    }
+                case 3: {
+                        message.monotonicStartNs = reader.uint64();
+                        break;
+                    }
+                case 4: {
+                        message.monotonicEndNs = reader.uint64();
+                        break;
+                    }
+                case 5: {
+                        message.localStartNs = reader.uint64();
+                        break;
+                    }
+                case 6: {
+                        message.localEndNs = reader.uint64();
+                        break;
+                    }
+                case 7: {
+                        message.streamFormat = $root.hikmicro.CompactStreamFormat.decode(reader, reader.uint32(), undefined, long + 1);
+                        break;
+                    }
+                case 8: {
+                        message.layout = $root.hikmicro.CompactPayloadLayout.decode(reader, reader.uint32(), undefined, long + 1);
+                        break;
+                    }
+                case 10: {
+                        if (!(message.frames && message.frames.length))
+                            message.frames = [];
+                        message.frames.push($root.hikmicro.ThermalFrame.decode(reader, reader.uint32(), undefined, long + 1));
+                        break;
+                    }
+                default:
+                    reader.skipType(tag & 7, long);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes a ThermalFramesBlock message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof hikmicro.ThermalFramesBlock
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {hikmicro.ThermalFramesBlock} ThermalFramesBlock
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        ThermalFramesBlock.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies a ThermalFramesBlock message.
+         * @function verify
+         * @memberof hikmicro.ThermalFramesBlock
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        ThermalFramesBlock.verify = function verify(message, long) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
+            if (message.sequence != null && message.hasOwnProperty("sequence"))
+                if (!$util.isInteger(message.sequence))
+                    return "sequence: integer expected";
+            if (message.frameCount != null && message.hasOwnProperty("frameCount"))
+                if (!$util.isInteger(message.frameCount))
+                    return "frameCount: integer expected";
+            if (message.monotonicStartNs != null && message.hasOwnProperty("monotonicStartNs"))
+                if (!$util.isInteger(message.monotonicStartNs) && !(message.monotonicStartNs && $util.isInteger(message.monotonicStartNs.low) && $util.isInteger(message.monotonicStartNs.high)))
+                    return "monotonicStartNs: integer|Long expected";
+            if (message.monotonicEndNs != null && message.hasOwnProperty("monotonicEndNs"))
+                if (!$util.isInteger(message.monotonicEndNs) && !(message.monotonicEndNs && $util.isInteger(message.monotonicEndNs.low) && $util.isInteger(message.monotonicEndNs.high)))
+                    return "monotonicEndNs: integer|Long expected";
+            if (message.localStartNs != null && message.hasOwnProperty("localStartNs"))
+                if (!$util.isInteger(message.localStartNs) && !(message.localStartNs && $util.isInteger(message.localStartNs.low) && $util.isInteger(message.localStartNs.high)))
+                    return "localStartNs: integer|Long expected";
+            if (message.localEndNs != null && message.hasOwnProperty("localEndNs"))
+                if (!$util.isInteger(message.localEndNs) && !(message.localEndNs && $util.isInteger(message.localEndNs.low) && $util.isInteger(message.localEndNs.high)))
+                    return "localEndNs: integer|Long expected";
+            if (message.streamFormat != null && message.hasOwnProperty("streamFormat")) {
+                let error = $root.hikmicro.CompactStreamFormat.verify(message.streamFormat, long + 1);
+                if (error)
+                    return "streamFormat." + error;
+            }
+            if (message.layout != null && message.hasOwnProperty("layout")) {
+                let error = $root.hikmicro.CompactPayloadLayout.verify(message.layout, long + 1);
+                if (error)
+                    return "layout." + error;
+            }
+            if (message.frames != null && message.hasOwnProperty("frames")) {
+                if (!Array.isArray(message.frames))
+                    return "frames: array expected";
+                for (let i = 0; i < message.frames.length; ++i) {
+                    let error = $root.hikmicro.ThermalFrame.verify(message.frames[i], long + 1);
+                    if (error)
+                        return "frames." + error;
+                }
+            }
+            return null;
+        };
+
+        /**
+         * Creates a ThermalFramesBlock message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof hikmicro.ThermalFramesBlock
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {hikmicro.ThermalFramesBlock} ThermalFramesBlock
+         */
+        ThermalFramesBlock.fromObject = function fromObject(object, long) {
+            if (object instanceof $root.hikmicro.ThermalFramesBlock)
+                return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let message = new $root.hikmicro.ThermalFramesBlock();
+            if (object.sequence != null)
+                message.sequence = object.sequence >>> 0;
+            if (object.frameCount != null)
+                message.frameCount = object.frameCount >>> 0;
+            if (object.monotonicStartNs != null)
+                if ($util.Long)
+                    (message.monotonicStartNs = $util.Long.fromValue(object.monotonicStartNs)).unsigned = true;
+                else if (typeof object.monotonicStartNs === "string")
+                    message.monotonicStartNs = parseInt(object.monotonicStartNs, 10);
+                else if (typeof object.monotonicStartNs === "number")
+                    message.monotonicStartNs = object.monotonicStartNs;
+                else if (typeof object.monotonicStartNs === "object")
+                    message.monotonicStartNs = new $util.LongBits(object.monotonicStartNs.low >>> 0, object.monotonicStartNs.high >>> 0).toNumber(true);
+            if (object.monotonicEndNs != null)
+                if ($util.Long)
+                    (message.monotonicEndNs = $util.Long.fromValue(object.monotonicEndNs)).unsigned = true;
+                else if (typeof object.monotonicEndNs === "string")
+                    message.monotonicEndNs = parseInt(object.monotonicEndNs, 10);
+                else if (typeof object.monotonicEndNs === "number")
+                    message.monotonicEndNs = object.monotonicEndNs;
+                else if (typeof object.monotonicEndNs === "object")
+                    message.monotonicEndNs = new $util.LongBits(object.monotonicEndNs.low >>> 0, object.monotonicEndNs.high >>> 0).toNumber(true);
+            if (object.localStartNs != null)
+                if ($util.Long)
+                    (message.localStartNs = $util.Long.fromValue(object.localStartNs)).unsigned = true;
+                else if (typeof object.localStartNs === "string")
+                    message.localStartNs = parseInt(object.localStartNs, 10);
+                else if (typeof object.localStartNs === "number")
+                    message.localStartNs = object.localStartNs;
+                else if (typeof object.localStartNs === "object")
+                    message.localStartNs = new $util.LongBits(object.localStartNs.low >>> 0, object.localStartNs.high >>> 0).toNumber(true);
+            if (object.localEndNs != null)
+                if ($util.Long)
+                    (message.localEndNs = $util.Long.fromValue(object.localEndNs)).unsigned = true;
+                else if (typeof object.localEndNs === "string")
+                    message.localEndNs = parseInt(object.localEndNs, 10);
+                else if (typeof object.localEndNs === "number")
+                    message.localEndNs = object.localEndNs;
+                else if (typeof object.localEndNs === "object")
+                    message.localEndNs = new $util.LongBits(object.localEndNs.low >>> 0, object.localEndNs.high >>> 0).toNumber(true);
+            if (object.streamFormat != null) {
+                if (typeof object.streamFormat !== "object")
+                    throw TypeError(".hikmicro.ThermalFramesBlock.streamFormat: object expected");
+                message.streamFormat = $root.hikmicro.CompactStreamFormat.fromObject(object.streamFormat, long + 1);
+            }
+            if (object.layout != null) {
+                if (typeof object.layout !== "object")
+                    throw TypeError(".hikmicro.ThermalFramesBlock.layout: object expected");
+                message.layout = $root.hikmicro.CompactPayloadLayout.fromObject(object.layout, long + 1);
+            }
+            if (object.frames) {
+                if (!Array.isArray(object.frames))
+                    throw TypeError(".hikmicro.ThermalFramesBlock.frames: array expected");
+                message.frames = [];
+                for (let i = 0; i < object.frames.length; ++i) {
+                    if (typeof object.frames[i] !== "object")
+                        throw TypeError(".hikmicro.ThermalFramesBlock.frames: object expected");
+                    message.frames[i] = $root.hikmicro.ThermalFrame.fromObject(object.frames[i], long + 1);
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Creates a plain object from a ThermalFramesBlock message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof hikmicro.ThermalFramesBlock
+         * @static
+         * @param {hikmicro.ThermalFramesBlock} message ThermalFramesBlock
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        ThermalFramesBlock.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.arrays || options.defaults)
+                object.frames = [];
+            if (options.defaults) {
+                object.sequence = 0;
+                object.frameCount = 0;
+                if ($util.Long) {
+                    let long = new $util.Long(0, 0, true);
+                    object.monotonicStartNs = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+                } else
+                    object.monotonicStartNs = options.longs === String ? "0" : 0;
+                if ($util.Long) {
+                    let long = new $util.Long(0, 0, true);
+                    object.monotonicEndNs = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+                } else
+                    object.monotonicEndNs = options.longs === String ? "0" : 0;
+                if ($util.Long) {
+                    let long = new $util.Long(0, 0, true);
+                    object.localStartNs = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+                } else
+                    object.localStartNs = options.longs === String ? "0" : 0;
+                if ($util.Long) {
+                    let long = new $util.Long(0, 0, true);
+                    object.localEndNs = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+                } else
+                    object.localEndNs = options.longs === String ? "0" : 0;
+                object.streamFormat = null;
+                object.layout = null;
+            }
+            if (message.sequence != null && message.hasOwnProperty("sequence"))
+                object.sequence = message.sequence;
+            if (message.frameCount != null && message.hasOwnProperty("frameCount"))
+                object.frameCount = message.frameCount;
+            if (message.monotonicStartNs != null && message.hasOwnProperty("monotonicStartNs"))
+                if (typeof message.monotonicStartNs === "number")
+                    object.monotonicStartNs = options.longs === String ? String(message.monotonicStartNs) : message.monotonicStartNs;
+                else
+                    object.monotonicStartNs = options.longs === String ? $util.Long.prototype.toString.call(message.monotonicStartNs) : options.longs === Number ? new $util.LongBits(message.monotonicStartNs.low >>> 0, message.monotonicStartNs.high >>> 0).toNumber(true) : message.monotonicStartNs;
+            if (message.monotonicEndNs != null && message.hasOwnProperty("monotonicEndNs"))
+                if (typeof message.monotonicEndNs === "number")
+                    object.monotonicEndNs = options.longs === String ? String(message.monotonicEndNs) : message.monotonicEndNs;
+                else
+                    object.monotonicEndNs = options.longs === String ? $util.Long.prototype.toString.call(message.monotonicEndNs) : options.longs === Number ? new $util.LongBits(message.monotonicEndNs.low >>> 0, message.monotonicEndNs.high >>> 0).toNumber(true) : message.monotonicEndNs;
+            if (message.localStartNs != null && message.hasOwnProperty("localStartNs"))
+                if (typeof message.localStartNs === "number")
+                    object.localStartNs = options.longs === String ? String(message.localStartNs) : message.localStartNs;
+                else
+                    object.localStartNs = options.longs === String ? $util.Long.prototype.toString.call(message.localStartNs) : options.longs === Number ? new $util.LongBits(message.localStartNs.low >>> 0, message.localStartNs.high >>> 0).toNumber(true) : message.localStartNs;
+            if (message.localEndNs != null && message.hasOwnProperty("localEndNs"))
+                if (typeof message.localEndNs === "number")
+                    object.localEndNs = options.longs === String ? String(message.localEndNs) : message.localEndNs;
+                else
+                    object.localEndNs = options.longs === String ? $util.Long.prototype.toString.call(message.localEndNs) : options.longs === Number ? new $util.LongBits(message.localEndNs.low >>> 0, message.localEndNs.high >>> 0).toNumber(true) : message.localEndNs;
+            if (message.streamFormat != null && message.hasOwnProperty("streamFormat"))
+                object.streamFormat = $root.hikmicro.CompactStreamFormat.toObject(message.streamFormat, options);
+            if (message.layout != null && message.hasOwnProperty("layout"))
+                object.layout = $root.hikmicro.CompactPayloadLayout.toObject(message.layout, options);
+            if (message.frames && message.frames.length) {
+                object.frames = [];
+                for (let j = 0; j < message.frames.length; ++j)
+                    object.frames[j] = $root.hikmicro.ThermalFrame.toObject(message.frames[j], options);
+            }
+            return object;
+        };
+
+        /**
+         * Converts this ThermalFramesBlock to JSON.
+         * @function toJSON
+         * @memberof hikmicro.ThermalFramesBlock
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        ThermalFramesBlock.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for ThermalFramesBlock
+         * @function getTypeUrl
+         * @memberof hikmicro.ThermalFramesBlock
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        ThermalFramesBlock.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+            if (typeUrlPrefix === undefined) {
+                typeUrlPrefix = "type.googleapis.com";
+            }
+            return typeUrlPrefix + "/hikmicro.ThermalFramesBlock";
+        };
+
+        return ThermalFramesBlock;
+    })();
+
+    hikmicro.RxEnvelope = (function() {
+
+        /**
+         * Properties of a RxEnvelope.
+         * @memberof hikmicro
+         * @interface IRxEnvelope
+         * @property {hikmicro.IDeviceInfo|null} [deviceInfo] RxEnvelope deviceInfo
+         * @property {hikmicro.IThermalFramesBlock|null} [frames] RxEnvelope frames
+         */
+
+        /**
+         * Constructs a new RxEnvelope.
+         * @memberof hikmicro
+         * @classdesc Represents a RxEnvelope.
+         * @implements IRxEnvelope
+         * @constructor
+         * @param {hikmicro.IRxEnvelope=} [properties] Properties to set
+         */
+        function RxEnvelope(properties) {
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * RxEnvelope deviceInfo.
+         * @member {hikmicro.IDeviceInfo|null|undefined} deviceInfo
+         * @memberof hikmicro.RxEnvelope
+         * @instance
+         */
+        RxEnvelope.prototype.deviceInfo = null;
+
+        /**
+         * RxEnvelope frames.
+         * @member {hikmicro.IThermalFramesBlock|null|undefined} frames
+         * @memberof hikmicro.RxEnvelope
+         * @instance
+         */
+        RxEnvelope.prototype.frames = null;
+
+        /**
+         * Creates a new RxEnvelope instance using the specified properties.
+         * @function create
+         * @memberof hikmicro.RxEnvelope
+         * @static
+         * @param {hikmicro.IRxEnvelope=} [properties] Properties to set
+         * @returns {hikmicro.RxEnvelope} RxEnvelope instance
+         */
+        RxEnvelope.create = function create(properties) {
+            return new RxEnvelope(properties);
+        };
+
+        /**
+         * Encodes the specified RxEnvelope message. Does not implicitly {@link hikmicro.RxEnvelope.verify|verify} messages.
+         * @function encode
+         * @memberof hikmicro.RxEnvelope
+         * @static
+         * @param {hikmicro.IRxEnvelope} message RxEnvelope message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        RxEnvelope.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.deviceInfo != null && Object.hasOwnProperty.call(message, "deviceInfo"))
+                $root.hikmicro.DeviceInfo.encode(message.deviceInfo, writer.uint32(/* id 1, wireType 2 =*/10).fork()).ldelim();
+            if (message.frames != null && Object.hasOwnProperty.call(message, "frames"))
+                $root.hikmicro.ThermalFramesBlock.encode(message.frames, writer.uint32(/* id 2, wireType 2 =*/18).fork()).ldelim();
+            return writer;
+        };
+
+        /**
+         * Encodes the specified RxEnvelope message, length delimited. Does not implicitly {@link hikmicro.RxEnvelope.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof hikmicro.RxEnvelope
+         * @static
+         * @param {hikmicro.IRxEnvelope} message RxEnvelope message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        RxEnvelope.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes a RxEnvelope message from the specified reader or buffer.
+         * @function decode
+         * @memberof hikmicro.RxEnvelope
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {hikmicro.RxEnvelope} RxEnvelope
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        RxEnvelope.decode = function decode(reader, length, error, long) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.hikmicro.RxEnvelope();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                if (tag === error)
+                    break;
+                switch (tag >>> 3) {
+                case 1: {
+                        message.deviceInfo = $root.hikmicro.DeviceInfo.decode(reader, reader.uint32(), undefined, long + 1);
+                        break;
+                    }
+                case 2: {
+                        message.frames = $root.hikmicro.ThermalFramesBlock.decode(reader, reader.uint32(), undefined, long + 1);
+                        break;
+                    }
+                default:
+                    reader.skipType(tag & 7, long);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes a RxEnvelope message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof hikmicro.RxEnvelope
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {hikmicro.RxEnvelope} RxEnvelope
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        RxEnvelope.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies a RxEnvelope message.
+         * @function verify
+         * @memberof hikmicro.RxEnvelope
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        RxEnvelope.verify = function verify(message, long) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
+            if (message.deviceInfo != null && message.hasOwnProperty("deviceInfo")) {
+                let error = $root.hikmicro.DeviceInfo.verify(message.deviceInfo, long + 1);
+                if (error)
+                    return "deviceInfo." + error;
+            }
+            if (message.frames != null && message.hasOwnProperty("frames")) {
+                let error = $root.hikmicro.ThermalFramesBlock.verify(message.frames, long + 1);
+                if (error)
+                    return "frames." + error;
+            }
+            return null;
+        };
+
+        /**
+         * Creates a RxEnvelope message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof hikmicro.RxEnvelope
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {hikmicro.RxEnvelope} RxEnvelope
+         */
+        RxEnvelope.fromObject = function fromObject(object, long) {
+            if (object instanceof $root.hikmicro.RxEnvelope)
+                return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let message = new $root.hikmicro.RxEnvelope();
+            if (object.deviceInfo != null) {
+                if (typeof object.deviceInfo !== "object")
+                    throw TypeError(".hikmicro.RxEnvelope.deviceInfo: object expected");
+                message.deviceInfo = $root.hikmicro.DeviceInfo.fromObject(object.deviceInfo, long + 1);
+            }
+            if (object.frames != null) {
+                if (typeof object.frames !== "object")
+                    throw TypeError(".hikmicro.RxEnvelope.frames: object expected");
+                message.frames = $root.hikmicro.ThermalFramesBlock.fromObject(object.frames, long + 1);
+            }
+            return message;
+        };
+
+        /**
+         * Creates a plain object from a RxEnvelope message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof hikmicro.RxEnvelope
+         * @static
+         * @param {hikmicro.RxEnvelope} message RxEnvelope
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        RxEnvelope.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.defaults) {
+                object.deviceInfo = null;
+                object.frames = null;
+            }
+            if (message.deviceInfo != null && message.hasOwnProperty("deviceInfo"))
+                object.deviceInfo = $root.hikmicro.DeviceInfo.toObject(message.deviceInfo, options);
+            if (message.frames != null && message.hasOwnProperty("frames"))
+                object.frames = $root.hikmicro.ThermalFramesBlock.toObject(message.frames, options);
+            return object;
+        };
+
+        /**
+         * Converts this RxEnvelope to JSON.
+         * @function toJSON
+         * @memberof hikmicro.RxEnvelope
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        RxEnvelope.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for RxEnvelope
+         * @function getTypeUrl
+         * @memberof hikmicro.RxEnvelope
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        RxEnvelope.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+            if (typeUrlPrefix === undefined) {
+                typeUrlPrefix = "type.googleapis.com";
+            }
+            return typeUrlPrefix + "/hikmicro.RxEnvelope";
+        };
+
+        return RxEnvelope;
+    })();
+
+    return hikmicro;
 })();
 
 export const normfs = $root.normfs = (() => {
