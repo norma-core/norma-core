@@ -378,25 +378,7 @@ impl Station {
 
         if let Some(airgradient_config) = &self.config.drivers.airgradient_open_air_o_1pst {
             if airgradient_config.enabled {
-                let usb_matches = airgradient_config
-                    .usb_match
-                    .iter()
-                    .filter_map(|entry| {
-                        let parsed = airgradient_open_air_o_1pst::parse_usb_match(entry);
-                        if parsed.is_none() {
-                            log::warn!(
-                                "Ignoring invalid AirGradient usb-match entry '{}' (expected \"vid:pid\" hex)",
-                                entry
-                            );
-                        }
-                        parsed
-                    })
-                    .collect();
-
                 let config = airgradient_open_air_o_1pst::AirGradientOpenAirO1pstDriverConfig {
-                    port: airgradient_config.port.clone(),
-                    port_baud_rate: airgradient_config.port_baud_rate,
-                    usb_matches,
                     read_timeout: airgradient_config.read_timeout,
                 };
 
