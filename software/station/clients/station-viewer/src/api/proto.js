@@ -36983,6 +36983,7 @@ export const airgradient_open_air_o_1pst = $root.airgradient_open_air_o_1pst = (
          * @property {string|null} [manufacturer] AirGradientDevice manufacturer
          * @property {string|null} [product] AirGradientDevice product
          * @property {number|null} [portBaudRate] AirGradientDevice portBaudRate
+         * @property {string|null} [deviceId] AirGradientDevice deviceId
          */
 
         /**
@@ -37057,6 +37058,14 @@ export const airgradient_open_air_o_1pst = $root.airgradient_open_air_o_1pst = (
         AirGradientDevice.prototype.portBaudRate = 0;
 
         /**
+         * AirGradientDevice deviceId.
+         * @member {string} deviceId
+         * @memberof airgradient_open_air_o_1pst.AirGradientDevice
+         * @instance
+         */
+        AirGradientDevice.prototype.deviceId = "";
+
+        /**
          * Creates a new AirGradientDevice instance using the specified properties.
          * @function create
          * @memberof airgradient_open_air_o_1pst.AirGradientDevice
@@ -37094,6 +37103,8 @@ export const airgradient_open_air_o_1pst = $root.airgradient_open_air_o_1pst = (
                 writer.uint32(/* id 6, wireType 2 =*/50).string(message.product);
             if (message.portBaudRate != null && Object.hasOwnProperty.call(message, "portBaudRate"))
                 writer.uint32(/* id 7, wireType 0 =*/56).uint32(message.portBaudRate);
+            if (message.deviceId != null && Object.hasOwnProperty.call(message, "deviceId"))
+                writer.uint32(/* id 8, wireType 2 =*/66).string(message.deviceId);
             return writer;
         };
 
@@ -37162,6 +37173,10 @@ export const airgradient_open_air_o_1pst = $root.airgradient_open_air_o_1pst = (
                         message.portBaudRate = reader.uint32();
                         break;
                     }
+                case 8: {
+                        message.deviceId = reader.string();
+                        break;
+                    }
                 default:
                     reader.skipType(tag & 7, long);
                     break;
@@ -37222,6 +37237,9 @@ export const airgradient_open_air_o_1pst = $root.airgradient_open_air_o_1pst = (
             if (message.portBaudRate != null && message.hasOwnProperty("portBaudRate"))
                 if (!$util.isInteger(message.portBaudRate))
                     return "portBaudRate: integer expected";
+            if (message.deviceId != null && message.hasOwnProperty("deviceId"))
+                if (!$util.isString(message.deviceId))
+                    return "deviceId: string expected";
             return null;
         };
 
@@ -37255,6 +37273,8 @@ export const airgradient_open_air_o_1pst = $root.airgradient_open_air_o_1pst = (
                 message.product = String(object.product);
             if (object.portBaudRate != null)
                 message.portBaudRate = object.portBaudRate >>> 0;
+            if (object.deviceId != null)
+                message.deviceId = String(object.deviceId);
             return message;
         };
 
@@ -37279,6 +37299,7 @@ export const airgradient_open_air_o_1pst = $root.airgradient_open_air_o_1pst = (
                 object.manufacturer = "";
                 object.product = "";
                 object.portBaudRate = 0;
+                object.deviceId = "";
             }
             if (message.portName != null && message.hasOwnProperty("portName"))
                 object.portName = message.portName;
@@ -37294,6 +37315,8 @@ export const airgradient_open_air_o_1pst = $root.airgradient_open_air_o_1pst = (
                 object.product = message.product;
             if (message.portBaudRate != null && message.hasOwnProperty("portBaudRate"))
                 object.portBaudRate = message.portBaudRate;
+            if (message.deviceId != null && message.hasOwnProperty("deviceId"))
+                object.deviceId = message.deviceId;
             return object;
         };
 

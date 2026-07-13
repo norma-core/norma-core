@@ -17,7 +17,7 @@ build here, which disables all networking and prints straight to serial.
 - One JSON line/sec at `115200` baud with every metric:
 
   ```json
-  {"pm1_0": 2, "pm2_5": 3, "pm10_0": 4, "temp_c": 28.2, "humidity": 35.0, "co2": 438, "voc_index": 55, "nox_index": 1}
+  {"device_id": "A4:CF:12:3B:56:78", "pm1_0": 2, "pm2_5": 3, "pm10_0": 4, "temp_c": 28.2, "humidity": 35.0, "co2": 438, "voc_index": 55, "nox_index": 1}
   ```
 
 - SGP41 VOC/NOx compensated from the Plantower temp/humidity.

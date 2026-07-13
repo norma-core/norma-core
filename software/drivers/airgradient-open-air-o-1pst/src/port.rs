@@ -1,11 +1,14 @@
 use crate::airgradient_open_air_o_1pst_proto::{
     AirGradientDevice, AirGradientSignalType, RxEnvelope,
 };
+use crate::driver::device_rx_queue_path;
 use crate::parse;
 use bytes::Bytes;
 use log::{debug, error, info};
 use normfs::{NormFS, QueueId};
 use prost::Message;
+use station_iface::StationEngine;
+use station_iface::iface_proto::drivers::QueueDataType;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 use tokio::io::{AsyncBufReadExt, BufReader};
@@ -22,23 +25,23 @@ enum Line {
     Eof,
 }
 
-pub struct AirGradientPort {
+pub struct AirGradientPort<T: StationEngine> {
     normfs: Arc<NormFS>,
-    rx_queue_id: QueueId,
+    station_engine: Arc<T>,
     device: AirGradientDevice,
     read_timeout: Duration,
 }
 
-impl AirGradientPort {
+impl<T: StationEngine> AirGradientPort<T> {
     pub fn new(
         normfs: Arc<NormFS>,
-        rx_queue_id: QueueId,
+        station_engine: Arc<T>,
         device: AirGradientDevice,
         read_timeout: Duration,
     ) -> Self {
         Self {
             normfs,
-            rx_queue_id,
+            station_engine,
             device,
             read_timeout,
         }
@@ -53,7 +56,7 @@ impl AirGradientPort {
 
         let mut reader = BufReader::new(port);
         let mut buf: Vec<u8> = Vec::with_capacity(256);
-        let mut connected = false;
+        let mut session: Option<(QueueId, Arc<AirGradientDevice>)> = None;
         let mut malformed_count: u64 = 0;
         let mut last_malformed_log: Option<Instant> = None;
 
@@ -68,23 +71,41 @@ impl AirGradientPort {
                     let line = String::from_utf8_lossy(&buf);
                     if parse::has_json_object(&line) {
                         let payload = Bytes::copy_from_slice(trim_line_end(&buf));
-                        if !connected {
-                            connected = true;
+
+                        if session.is_none() {
+                            let mut device = self.device.clone();
+                            device.device_id = parse::json_string_field(&line, "device_id")
+                                .unwrap_or_default()
+                                .to_string();
+
+                            let rx_queue_id = match self.ensure_device_queue(&device).await {
+                                Ok(rx_queue_id) => rx_queue_id,
+                                Err(err) => break format!("failed to create device queue: {err}"),
+                            };
                             info!(
-                                "AirGradient Open Air O-1PST receiving measurements from {}",
-                                port_name
+                                "AirGradient Open Air O-1PST receiving measurements from {} (device_id={:?})",
+                                port_name, device.device_id
                             );
+                            let device = Arc::new(device);
                             self.publish(
+                                &rx_queue_id,
+                                &device,
                                 AirGradientSignalType::AirgradientConnected,
                                 Some(payload.clone()),
                                 String::new(),
                             );
+                            session = Some((rx_queue_id, device));
                         }
-                        self.publish(
-                            AirGradientSignalType::AirgradientMeasurement,
-                            Some(payload),
-                            String::new(),
-                        );
+
+                        if let Some((rx_queue_id, device)) = &session {
+                            self.publish(
+                                rx_queue_id,
+                                device,
+                                AirGradientSignalType::AirgradientMeasurement,
+                                Some(payload),
+                                String::new(),
+                            );
+                        }
                     } else {
                         note_malformed(
                             &mut malformed_count,
@@ -97,19 +118,50 @@ impl AirGradientPort {
         };
 
         info!("AirGradient Open Air O-1PST port {} closed: {}", port_name, reason);
-        if connected {
-            self.publish(AirGradientSignalType::AirgradientDisconnected, None, reason);
+        if let Some((rx_queue_id, device)) = &session {
+            self.publish(
+                rx_queue_id,
+                device,
+                AirGradientSignalType::AirgradientDisconnected,
+                None,
+                reason,
+            );
         }
         Ok(())
     }
 
-    fn publish(&self, signal_type: AirGradientSignalType, data: Option<Bytes>, error: String) {
+    async fn ensure_device_queue(
+        &self,
+        device: &AirGradientDevice,
+    ) -> Result<QueueId, Box<dyn std::error::Error + Send + Sync>> {
+        let rx_queue_id = self.normfs.resolve(&device_rx_queue_path(device));
+        self.normfs.ensure_queue_exists_for_write(&rx_queue_id).await?;
+        self.station_engine.register_queue(
+            &rx_queue_id,
+            QueueDataType::QdtAirgradientOpenAirO1pstRx,
+            vec![],
+        );
+        info!(
+            "AirGradient Open Air O-1PST on {} publishing to queue {}",
+            device.port_name, rx_queue_id
+        );
+        Ok(rx_queue_id)
+    }
+
+    fn publish(
+        &self,
+        rx_queue_id: &QueueId,
+        device: &AirGradientDevice,
+        signal_type: AirGradientSignalType,
+        data: Option<Bytes>,
+        error: String,
+    ) {
         let envelope = RxEnvelope {
             monotonic_stamp_ns: systime::get_monotonic_stamp_ns(),
             local_stamp_ns: systime::get_local_stamp_ns(),
             app_start_id: systime::get_app_start_id(),
             signal_type: signal_type as i32,
-            device: Some(self.device.clone()),
+            device: Some(device.clone()),
             data: data.unwrap_or_default(),
             error,
         };
@@ -119,7 +171,7 @@ impl AirGradientPort {
             error!("Failed to encode AirGradient Open Air O-1PST envelope: {}", err);
             return;
         }
-        if let Err(err) = self.normfs.enqueue(&self.rx_queue_id, Bytes::from(buffer)) {
+        if let Err(err) = self.normfs.enqueue(rx_queue_id, Bytes::from(buffer)) {
             error!("Failed to enqueue AirGradient Open Air O-1PST envelope: {}", err);
         }
     }
