@@ -34,6 +34,8 @@ enum QueueDataType {
     QDT_INA226_RX                  = 52; // ina226.RxEnvelope
 
     QDT_AIRGRADIENT_OPEN_AIR_O_1PST_RX = 53; // airgradient_open_air_o_1pst.RxEnvelope
+
+    QDT_VICTRON_SMARTSOLAR_MPPT_RX = 54; // victron_smartsolar_mppt.RxEnvelope
 }
 
 enum StationCommandType {

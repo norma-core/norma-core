@@ -256,7 +256,8 @@ export namespace drivers {
         QDT_ARDUINO_NICLA_SENSE_ENV_TX = 50,
         QDT_ARDUINO_NICLA_SENSE_ENV_RX = 51,
         QDT_INA226_RX = 52,
-        QDT_AIRGRADIENT_OPEN_AIR_O_1PST_RX = 53
+        QDT_AIRGRADIENT_OPEN_AIR_O_1PST_RX = 53,
+        QDT_VICTRON_SMARTSOLAR_MPPT_RX = 54
     }
 
     /** StationCommandType enum. */
@@ -13072,6 +13073,316 @@ export namespace airgradient_open_air_o_1pst {
     }
 }
 
+/** Namespace victron_smartsolar_mppt. */
+export namespace victron_smartsolar_mppt {
+
+    /** VictronSignalType enum. */
+    enum VictronSignalType {
+        VICTRON_SIGNAL_TYPE_UNSPECIFIED = 0,
+        VICTRON_CONNECTED = 1,
+        VICTRON_DISCONNECTED = 2,
+        VICTRON_TEXT_BLOCK = 3,
+        VICTRON_HEX_FRAME = 4,
+        VICTRON_ERROR = 5
+    }
+
+    /** Properties of a VictronDevice. */
+    interface IVictronDevice {
+
+        /** VictronDevice portName */
+        portName?: (string|null);
+
+        /** VictronDevice vid */
+        vid?: (number|null);
+
+        /** VictronDevice pid */
+        pid?: (number|null);
+
+        /** VictronDevice serialNumber */
+        serialNumber?: (string|null);
+
+        /** VictronDevice manufacturer */
+        manufacturer?: (string|null);
+
+        /** VictronDevice product */
+        product?: (string|null);
+
+        /** VictronDevice portBaudRate */
+        portBaudRate?: (number|null);
+
+        /** VictronDevice productId */
+        productId?: (number|null);
+
+        /** VictronDevice modelName */
+        modelName?: (string|null);
+
+        /** VictronDevice firmwareVersion */
+        firmwareVersion?: (string|null);
+
+        /** VictronDevice deviceSerial */
+        deviceSerial?: (string|null);
+    }
+
+    /** Represents a VictronDevice. */
+    class VictronDevice implements IVictronDevice {
+
+        /**
+         * Constructs a new VictronDevice.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: victron_smartsolar_mppt.IVictronDevice);
+
+        /** VictronDevice portName. */
+        public portName: string;
+
+        /** VictronDevice vid. */
+        public vid: number;
+
+        /** VictronDevice pid. */
+        public pid: number;
+
+        /** VictronDevice serialNumber. */
+        public serialNumber: string;
+
+        /** VictronDevice manufacturer. */
+        public manufacturer: string;
+
+        /** VictronDevice product. */
+        public product: string;
+
+        /** VictronDevice portBaudRate. */
+        public portBaudRate: number;
+
+        /** VictronDevice productId. */
+        public productId: number;
+
+        /** VictronDevice modelName. */
+        public modelName: string;
+
+        /** VictronDevice firmwareVersion. */
+        public firmwareVersion: string;
+
+        /** VictronDevice deviceSerial. */
+        public deviceSerial: string;
+
+        /**
+         * Creates a new VictronDevice instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns VictronDevice instance
+         */
+        public static create(properties?: victron_smartsolar_mppt.IVictronDevice): victron_smartsolar_mppt.VictronDevice;
+
+        /**
+         * Encodes the specified VictronDevice message. Does not implicitly {@link victron_smartsolar_mppt.VictronDevice.verify|verify} messages.
+         * @param message VictronDevice message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: victron_smartsolar_mppt.IVictronDevice, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified VictronDevice message, length delimited. Does not implicitly {@link victron_smartsolar_mppt.VictronDevice.verify|verify} messages.
+         * @param message VictronDevice message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: victron_smartsolar_mppt.IVictronDevice, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes a VictronDevice message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns VictronDevice
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): victron_smartsolar_mppt.VictronDevice;
+
+        /**
+         * Decodes a VictronDevice message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns VictronDevice
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): victron_smartsolar_mppt.VictronDevice;
+
+        /**
+         * Verifies a VictronDevice message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates a VictronDevice message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns VictronDevice
+         */
+        public static fromObject(object: { [k: string]: any }): victron_smartsolar_mppt.VictronDevice;
+
+        /**
+         * Creates a plain object from a VictronDevice message. Also converts values to other types if specified.
+         * @param message VictronDevice
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: victron_smartsolar_mppt.VictronDevice, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this VictronDevice to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for VictronDevice
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
+    /** Properties of a RxEnvelope. */
+    interface IRxEnvelope {
+
+        /** RxEnvelope monotonicStampNs */
+        monotonicStampNs?: (Long|null);
+
+        /** RxEnvelope localStampNs */
+        localStampNs?: (Long|null);
+
+        /** RxEnvelope appStartId */
+        appStartId?: (Long|null);
+
+        /** RxEnvelope signalType */
+        signalType?: (victron_smartsolar_mppt.VictronSignalType|null);
+
+        /** RxEnvelope device */
+        device?: (victron_smartsolar_mppt.IVictronDevice|null);
+
+        /** RxEnvelope data */
+        data?: (Uint8Array|null);
+
+        /** RxEnvelope hexFrame */
+        hexFrame?: (Uint8Array|null);
+
+        /** RxEnvelope error */
+        error?: (string|null);
+    }
+
+    /** Represents a RxEnvelope. */
+    class RxEnvelope implements IRxEnvelope {
+
+        /**
+         * Constructs a new RxEnvelope.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: victron_smartsolar_mppt.IRxEnvelope);
+
+        /** RxEnvelope monotonicStampNs. */
+        public monotonicStampNs: Long;
+
+        /** RxEnvelope localStampNs. */
+        public localStampNs: Long;
+
+        /** RxEnvelope appStartId. */
+        public appStartId: Long;
+
+        /** RxEnvelope signalType. */
+        public signalType: victron_smartsolar_mppt.VictronSignalType;
+
+        /** RxEnvelope device. */
+        public device?: (victron_smartsolar_mppt.IVictronDevice|null);
+
+        /** RxEnvelope data. */
+        public data: Uint8Array;
+
+        /** RxEnvelope hexFrame. */
+        public hexFrame: Uint8Array;
+
+        /** RxEnvelope error. */
+        public error: string;
+
+        /**
+         * Creates a new RxEnvelope instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns RxEnvelope instance
+         */
+        public static create(properties?: victron_smartsolar_mppt.IRxEnvelope): victron_smartsolar_mppt.RxEnvelope;
+
+        /**
+         * Encodes the specified RxEnvelope message. Does not implicitly {@link victron_smartsolar_mppt.RxEnvelope.verify|verify} messages.
+         * @param message RxEnvelope message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: victron_smartsolar_mppt.IRxEnvelope, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified RxEnvelope message, length delimited. Does not implicitly {@link victron_smartsolar_mppt.RxEnvelope.verify|verify} messages.
+         * @param message RxEnvelope message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: victron_smartsolar_mppt.IRxEnvelope, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes a RxEnvelope message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns RxEnvelope
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): victron_smartsolar_mppt.RxEnvelope;
+
+        /**
+         * Decodes a RxEnvelope message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns RxEnvelope
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): victron_smartsolar_mppt.RxEnvelope;
+
+        /**
+         * Verifies a RxEnvelope message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates a RxEnvelope message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns RxEnvelope
+         */
+        public static fromObject(object: { [k: string]: any }): victron_smartsolar_mppt.RxEnvelope;
+
+        /**
+         * Creates a plain object from a RxEnvelope message. Also converts values to other types if specified.
+         * @param message RxEnvelope
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: victron_smartsolar_mppt.RxEnvelope, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this RxEnvelope to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for RxEnvelope
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+}
+
 /** Namespace normvla. */
 export namespace normvla {
 
@@ -13432,6 +13743,1388 @@ export namespace normvla {
 
         /**
          * Gets the default type url for Image
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+}
+
+/** Namespace hikmicro. */
+export namespace hikmicro {
+
+    /** Properties of a UsbDeviceInfo. */
+    interface IUsbDeviceInfo {
+
+        /** UsbDeviceInfo vendorId */
+        vendorId?: (number|null);
+
+        /** UsbDeviceInfo productId */
+        productId?: (number|null);
+
+        /** UsbDeviceInfo busNumber */
+        busNumber?: (number|null);
+
+        /** UsbDeviceInfo deviceNumber */
+        deviceNumber?: (number|null);
+
+        /** UsbDeviceInfo portNumbers */
+        portNumbers?: (number[]|null);
+
+        /** UsbDeviceInfo uniqueId */
+        uniqueId?: (string|null);
+
+        /** UsbDeviceInfo manufacturer */
+        manufacturer?: (string|null);
+
+        /** UsbDeviceInfo product */
+        product?: (string|null);
+
+        /** UsbDeviceInfo serialNumber */
+        serialNumber?: (string|null);
+
+        /** UsbDeviceInfo usbBcd */
+        usbBcd?: (number|null);
+
+        /** UsbDeviceInfo deviceBcd */
+        deviceBcd?: (number|null);
+
+        /** UsbDeviceInfo deviceClass */
+        deviceClass?: (number|null);
+
+        /** UsbDeviceInfo deviceSubclass */
+        deviceSubclass?: (number|null);
+
+        /** UsbDeviceInfo deviceProtocol */
+        deviceProtocol?: (number|null);
+
+        /** UsbDeviceInfo maxPacketSize0 */
+        maxPacketSize0?: (number|null);
+
+        /** UsbDeviceInfo numConfigurations */
+        numConfigurations?: (number|null);
+
+        /** UsbDeviceInfo deviceDescriptor */
+        deviceDescriptor?: (Uint8Array|null);
+
+        /** UsbDeviceInfo configDescriptors */
+        configDescriptors?: (Uint8Array[]|null);
+    }
+
+    /** Represents a UsbDeviceInfo. */
+    class UsbDeviceInfo implements IUsbDeviceInfo {
+
+        /**
+         * Constructs a new UsbDeviceInfo.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: hikmicro.IUsbDeviceInfo);
+
+        /** UsbDeviceInfo vendorId. */
+        public vendorId: number;
+
+        /** UsbDeviceInfo productId. */
+        public productId: number;
+
+        /** UsbDeviceInfo busNumber. */
+        public busNumber: number;
+
+        /** UsbDeviceInfo deviceNumber. */
+        public deviceNumber: number;
+
+        /** UsbDeviceInfo portNumbers. */
+        public portNumbers: number[];
+
+        /** UsbDeviceInfo uniqueId. */
+        public uniqueId: string;
+
+        /** UsbDeviceInfo manufacturer. */
+        public manufacturer: string;
+
+        /** UsbDeviceInfo product. */
+        public product: string;
+
+        /** UsbDeviceInfo serialNumber. */
+        public serialNumber: string;
+
+        /** UsbDeviceInfo usbBcd. */
+        public usbBcd: number;
+
+        /** UsbDeviceInfo deviceBcd. */
+        public deviceBcd: number;
+
+        /** UsbDeviceInfo deviceClass. */
+        public deviceClass: number;
+
+        /** UsbDeviceInfo deviceSubclass. */
+        public deviceSubclass: number;
+
+        /** UsbDeviceInfo deviceProtocol. */
+        public deviceProtocol: number;
+
+        /** UsbDeviceInfo maxPacketSize0. */
+        public maxPacketSize0: number;
+
+        /** UsbDeviceInfo numConfigurations. */
+        public numConfigurations: number;
+
+        /** UsbDeviceInfo deviceDescriptor. */
+        public deviceDescriptor: Uint8Array;
+
+        /** UsbDeviceInfo configDescriptors. */
+        public configDescriptors: Uint8Array[];
+
+        /**
+         * Creates a new UsbDeviceInfo instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns UsbDeviceInfo instance
+         */
+        public static create(properties?: hikmicro.IUsbDeviceInfo): hikmicro.UsbDeviceInfo;
+
+        /**
+         * Encodes the specified UsbDeviceInfo message. Does not implicitly {@link hikmicro.UsbDeviceInfo.verify|verify} messages.
+         * @param message UsbDeviceInfo message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: hikmicro.IUsbDeviceInfo, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified UsbDeviceInfo message, length delimited. Does not implicitly {@link hikmicro.UsbDeviceInfo.verify|verify} messages.
+         * @param message UsbDeviceInfo message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: hikmicro.IUsbDeviceInfo, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes a UsbDeviceInfo message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns UsbDeviceInfo
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): hikmicro.UsbDeviceInfo;
+
+        /**
+         * Decodes a UsbDeviceInfo message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns UsbDeviceInfo
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): hikmicro.UsbDeviceInfo;
+
+        /**
+         * Verifies a UsbDeviceInfo message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates a UsbDeviceInfo message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns UsbDeviceInfo
+         */
+        public static fromObject(object: { [k: string]: any }): hikmicro.UsbDeviceInfo;
+
+        /**
+         * Creates a plain object from a UsbDeviceInfo message. Also converts values to other types if specified.
+         * @param message UsbDeviceInfo
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: hikmicro.UsbDeviceInfo, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this UsbDeviceInfo to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for UsbDeviceInfo
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
+    /** Properties of a CompactStreamFormat. */
+    interface ICompactStreamFormat {
+
+        /** CompactStreamFormat fourcc */
+        fourcc?: (number|null);
+
+        /** CompactStreamFormat formatIndex */
+        formatIndex?: (number|null);
+
+        /** CompactStreamFormat frameIndex */
+        frameIndex?: (number|null);
+
+        /** CompactStreamFormat uvcWidth */
+        uvcWidth?: (number|null);
+
+        /** CompactStreamFormat uvcHeight */
+        uvcHeight?: (number|null);
+
+        /** CompactStreamFormat framesPerSecond */
+        framesPerSecond?: (number|null);
+
+        /** CompactStreamFormat guid */
+        guid?: (Uint8Array|null);
+
+        /** CompactStreamFormat sourceFormat */
+        sourceFormat?: (number|null);
+    }
+
+    /** Represents a CompactStreamFormat. */
+    class CompactStreamFormat implements ICompactStreamFormat {
+
+        /**
+         * Constructs a new CompactStreamFormat.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: hikmicro.ICompactStreamFormat);
+
+        /** CompactStreamFormat fourcc. */
+        public fourcc: number;
+
+        /** CompactStreamFormat formatIndex. */
+        public formatIndex: number;
+
+        /** CompactStreamFormat frameIndex. */
+        public frameIndex: number;
+
+        /** CompactStreamFormat uvcWidth. */
+        public uvcWidth: number;
+
+        /** CompactStreamFormat uvcHeight. */
+        public uvcHeight: number;
+
+        /** CompactStreamFormat framesPerSecond. */
+        public framesPerSecond: number;
+
+        /** CompactStreamFormat guid. */
+        public guid: Uint8Array;
+
+        /** CompactStreamFormat sourceFormat. */
+        public sourceFormat: number;
+
+        /**
+         * Creates a new CompactStreamFormat instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns CompactStreamFormat instance
+         */
+        public static create(properties?: hikmicro.ICompactStreamFormat): hikmicro.CompactStreamFormat;
+
+        /**
+         * Encodes the specified CompactStreamFormat message. Does not implicitly {@link hikmicro.CompactStreamFormat.verify|verify} messages.
+         * @param message CompactStreamFormat message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: hikmicro.ICompactStreamFormat, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified CompactStreamFormat message, length delimited. Does not implicitly {@link hikmicro.CompactStreamFormat.verify|verify} messages.
+         * @param message CompactStreamFormat message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: hikmicro.ICompactStreamFormat, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes a CompactStreamFormat message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns CompactStreamFormat
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): hikmicro.CompactStreamFormat;
+
+        /**
+         * Decodes a CompactStreamFormat message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns CompactStreamFormat
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): hikmicro.CompactStreamFormat;
+
+        /**
+         * Verifies a CompactStreamFormat message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates a CompactStreamFormat message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns CompactStreamFormat
+         */
+        public static fromObject(object: { [k: string]: any }): hikmicro.CompactStreamFormat;
+
+        /**
+         * Creates a plain object from a CompactStreamFormat message. Also converts values to other types if specified.
+         * @param message CompactStreamFormat
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: hikmicro.CompactStreamFormat, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this CompactStreamFormat to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for CompactStreamFormat
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
+    /** Properties of a CompactPayloadLayout. */
+    interface ICompactPayloadLayout {
+
+        /** CompactPayloadLayout sensorWidth */
+        sensorWidth?: (number|null);
+
+        /** CompactPayloadLayout sensorHeight */
+        sensorHeight?: (number|null);
+
+        /** CompactPayloadLayout payloadLength */
+        payloadLength?: (number|null);
+
+        /** CompactPayloadLayout thermalY16Offset */
+        thermalY16Offset?: (number|null);
+
+        /** CompactPayloadLayout thermalY16Length */
+        thermalY16Length?: (number|null);
+
+        /** CompactPayloadLayout runtimeBlockOffset */
+        runtimeBlockOffset?: (number|null);
+
+        /** CompactPayloadLayout runtimeBlockLength */
+        runtimeBlockLength?: (number|null);
+    }
+
+    /** Represents a CompactPayloadLayout. */
+    class CompactPayloadLayout implements ICompactPayloadLayout {
+
+        /**
+         * Constructs a new CompactPayloadLayout.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: hikmicro.ICompactPayloadLayout);
+
+        /** CompactPayloadLayout sensorWidth. */
+        public sensorWidth: number;
+
+        /** CompactPayloadLayout sensorHeight. */
+        public sensorHeight: number;
+
+        /** CompactPayloadLayout payloadLength. */
+        public payloadLength: number;
+
+        /** CompactPayloadLayout thermalY16Offset. */
+        public thermalY16Offset: number;
+
+        /** CompactPayloadLayout thermalY16Length. */
+        public thermalY16Length: number;
+
+        /** CompactPayloadLayout runtimeBlockOffset. */
+        public runtimeBlockOffset: number;
+
+        /** CompactPayloadLayout runtimeBlockLength. */
+        public runtimeBlockLength: number;
+
+        /**
+         * Creates a new CompactPayloadLayout instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns CompactPayloadLayout instance
+         */
+        public static create(properties?: hikmicro.ICompactPayloadLayout): hikmicro.CompactPayloadLayout;
+
+        /**
+         * Encodes the specified CompactPayloadLayout message. Does not implicitly {@link hikmicro.CompactPayloadLayout.verify|verify} messages.
+         * @param message CompactPayloadLayout message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: hikmicro.ICompactPayloadLayout, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified CompactPayloadLayout message, length delimited. Does not implicitly {@link hikmicro.CompactPayloadLayout.verify|verify} messages.
+         * @param message CompactPayloadLayout message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: hikmicro.ICompactPayloadLayout, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes a CompactPayloadLayout message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns CompactPayloadLayout
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): hikmicro.CompactPayloadLayout;
+
+        /**
+         * Decodes a CompactPayloadLayout message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns CompactPayloadLayout
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): hikmicro.CompactPayloadLayout;
+
+        /**
+         * Verifies a CompactPayloadLayout message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates a CompactPayloadLayout message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns CompactPayloadLayout
+         */
+        public static fromObject(object: { [k: string]: any }): hikmicro.CompactPayloadLayout;
+
+        /**
+         * Creates a plain object from a CompactPayloadLayout message. Also converts values to other types if specified.
+         * @param message CompactPayloadLayout
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: hikmicro.CompactPayloadLayout, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this CompactPayloadLayout to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for CompactPayloadLayout
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
+    /** Properties of a RuntimeBlockInfo. */
+    interface IRuntimeBlockInfo {
+
+        /** RuntimeBlockInfo markerOk */
+        markerOk?: (boolean|null);
+
+        /** RuntimeBlockInfo marker */
+        marker?: (number|null);
+
+        /** RuntimeBlockInfo rawSensor */
+        rawSensor?: (number|null);
+
+        /** RuntimeBlockInfo mtlibSensor */
+        mtlibSensor?: (number|null);
+
+        /** RuntimeBlockInfo interParam_0 */
+        interParam_0?: (number|null);
+
+        /** RuntimeBlockInfo interParam_1 */
+        interParam_1?: (number|null);
+
+        /** RuntimeBlockInfo interParam_2 */
+        interParam_2?: (number|null);
+
+        /** RuntimeBlockInfo frameHeight */
+        frameHeight?: (number|null);
+
+        /** RuntimeBlockInfo frameWidth */
+        frameWidth?: (number|null);
+
+        /** RuntimeBlockInfo rawSensorHeader */
+        rawSensorHeader?: (number|null);
+
+        /** RuntimeBlockInfo mode */
+        mode?: (number|null);
+
+        /** RuntimeBlockInfo range */
+        range?: (number|null);
+    }
+
+    /** Represents a RuntimeBlockInfo. */
+    class RuntimeBlockInfo implements IRuntimeBlockInfo {
+
+        /**
+         * Constructs a new RuntimeBlockInfo.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: hikmicro.IRuntimeBlockInfo);
+
+        /** RuntimeBlockInfo markerOk. */
+        public markerOk: boolean;
+
+        /** RuntimeBlockInfo marker. */
+        public marker: number;
+
+        /** RuntimeBlockInfo rawSensor. */
+        public rawSensor: number;
+
+        /** RuntimeBlockInfo mtlibSensor. */
+        public mtlibSensor: number;
+
+        /** RuntimeBlockInfo interParam_0. */
+        public interParam_0: number;
+
+        /** RuntimeBlockInfo interParam_1. */
+        public interParam_1: number;
+
+        /** RuntimeBlockInfo interParam_2. */
+        public interParam_2: number;
+
+        /** RuntimeBlockInfo frameHeight. */
+        public frameHeight: number;
+
+        /** RuntimeBlockInfo frameWidth. */
+        public frameWidth: number;
+
+        /** RuntimeBlockInfo rawSensorHeader. */
+        public rawSensorHeader: number;
+
+        /** RuntimeBlockInfo mode. */
+        public mode: number;
+
+        /** RuntimeBlockInfo range. */
+        public range: number;
+
+        /**
+         * Creates a new RuntimeBlockInfo instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns RuntimeBlockInfo instance
+         */
+        public static create(properties?: hikmicro.IRuntimeBlockInfo): hikmicro.RuntimeBlockInfo;
+
+        /**
+         * Encodes the specified RuntimeBlockInfo message. Does not implicitly {@link hikmicro.RuntimeBlockInfo.verify|verify} messages.
+         * @param message RuntimeBlockInfo message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: hikmicro.IRuntimeBlockInfo, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified RuntimeBlockInfo message, length delimited. Does not implicitly {@link hikmicro.RuntimeBlockInfo.verify|verify} messages.
+         * @param message RuntimeBlockInfo message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: hikmicro.IRuntimeBlockInfo, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes a RuntimeBlockInfo message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns RuntimeBlockInfo
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): hikmicro.RuntimeBlockInfo;
+
+        /**
+         * Decodes a RuntimeBlockInfo message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns RuntimeBlockInfo
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): hikmicro.RuntimeBlockInfo;
+
+        /**
+         * Verifies a RuntimeBlockInfo message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates a RuntimeBlockInfo message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns RuntimeBlockInfo
+         */
+        public static fromObject(object: { [k: string]: any }): hikmicro.RuntimeBlockInfo;
+
+        /**
+         * Creates a plain object from a RuntimeBlockInfo message. Also converts values to other types if specified.
+         * @param message RuntimeBlockInfo
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: hikmicro.RuntimeBlockInfo, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this RuntimeBlockInfo to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for RuntimeBlockInfo
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
+    /** Properties of a CalibrationChunk. */
+    interface ICalibrationChunk {
+
+        /** CalibrationChunk index */
+        index?: (number|null);
+
+        /** CalibrationChunk header */
+        header?: (Uint8Array|null);
+
+        /** CalibrationChunk payload */
+        payload?: (Uint8Array|null);
+    }
+
+    /** Represents a CalibrationChunk. */
+    class CalibrationChunk implements ICalibrationChunk {
+
+        /**
+         * Constructs a new CalibrationChunk.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: hikmicro.ICalibrationChunk);
+
+        /** CalibrationChunk index. */
+        public index: number;
+
+        /** CalibrationChunk header. */
+        public header: Uint8Array;
+
+        /** CalibrationChunk payload. */
+        public payload: Uint8Array;
+
+        /**
+         * Creates a new CalibrationChunk instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns CalibrationChunk instance
+         */
+        public static create(properties?: hikmicro.ICalibrationChunk): hikmicro.CalibrationChunk;
+
+        /**
+         * Encodes the specified CalibrationChunk message. Does not implicitly {@link hikmicro.CalibrationChunk.verify|verify} messages.
+         * @param message CalibrationChunk message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: hikmicro.ICalibrationChunk, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified CalibrationChunk message, length delimited. Does not implicitly {@link hikmicro.CalibrationChunk.verify|verify} messages.
+         * @param message CalibrationChunk message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: hikmicro.ICalibrationChunk, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes a CalibrationChunk message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns CalibrationChunk
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): hikmicro.CalibrationChunk;
+
+        /**
+         * Decodes a CalibrationChunk message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns CalibrationChunk
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): hikmicro.CalibrationChunk;
+
+        /**
+         * Verifies a CalibrationChunk message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates a CalibrationChunk message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns CalibrationChunk
+         */
+        public static fromObject(object: { [k: string]: any }): hikmicro.CalibrationChunk;
+
+        /**
+         * Creates a plain object from a CalibrationChunk message. Also converts values to other types if specified.
+         * @param message CalibrationChunk
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: hikmicro.CalibrationChunk, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this CalibrationChunk to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for CalibrationChunk
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
+    /** Properties of a CalibrationData. */
+    interface ICalibrationData {
+
+        /** CalibrationData attempted */
+        attempted?: (boolean|null);
+
+        /** CalibrationData ok */
+        ok?: (boolean|null);
+
+        /** CalibrationData error */
+        error?: (string|null);
+
+        /** CalibrationData lengthHeader */
+        lengthHeader?: (Uint8Array|null);
+
+        /** CalibrationData declaredLength */
+        declaredLength?: (number|null);
+
+        /** CalibrationData container */
+        container?: (Uint8Array|null);
+
+        /** CalibrationData factoryBlobOffset */
+        factoryBlobOffset?: (number|null);
+
+        /** CalibrationData factoryBlobLength */
+        factoryBlobLength?: (number|null);
+
+        /** CalibrationData chunks */
+        chunks?: (hikmicro.ICalibrationChunk[]|null);
+    }
+
+    /** Represents a CalibrationData. */
+    class CalibrationData implements ICalibrationData {
+
+        /**
+         * Constructs a new CalibrationData.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: hikmicro.ICalibrationData);
+
+        /** CalibrationData attempted. */
+        public attempted: boolean;
+
+        /** CalibrationData ok. */
+        public ok: boolean;
+
+        /** CalibrationData error. */
+        public error: string;
+
+        /** CalibrationData lengthHeader. */
+        public lengthHeader: Uint8Array;
+
+        /** CalibrationData declaredLength. */
+        public declaredLength: number;
+
+        /** CalibrationData container. */
+        public container: Uint8Array;
+
+        /** CalibrationData factoryBlobOffset. */
+        public factoryBlobOffset: number;
+
+        /** CalibrationData factoryBlobLength. */
+        public factoryBlobLength: number;
+
+        /** CalibrationData chunks. */
+        public chunks: hikmicro.ICalibrationChunk[];
+
+        /**
+         * Creates a new CalibrationData instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns CalibrationData instance
+         */
+        public static create(properties?: hikmicro.ICalibrationData): hikmicro.CalibrationData;
+
+        /**
+         * Encodes the specified CalibrationData message. Does not implicitly {@link hikmicro.CalibrationData.verify|verify} messages.
+         * @param message CalibrationData message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: hikmicro.ICalibrationData, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified CalibrationData message, length delimited. Does not implicitly {@link hikmicro.CalibrationData.verify|verify} messages.
+         * @param message CalibrationData message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: hikmicro.ICalibrationData, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes a CalibrationData message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns CalibrationData
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): hikmicro.CalibrationData;
+
+        /**
+         * Decodes a CalibrationData message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns CalibrationData
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): hikmicro.CalibrationData;
+
+        /**
+         * Verifies a CalibrationData message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates a CalibrationData message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns CalibrationData
+         */
+        public static fromObject(object: { [k: string]: any }): hikmicro.CalibrationData;
+
+        /**
+         * Creates a plain object from a CalibrationData message. Also converts values to other types if specified.
+         * @param message CalibrationData
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: hikmicro.CalibrationData, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this CalibrationData to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for CalibrationData
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
+    /** Properties of a DeviceInfo. */
+    interface IDeviceInfo {
+
+        /** DeviceInfo driver */
+        driver?: (string|null);
+
+        /** DeviceInfo usb */
+        usb?: (hikmicro.IUsbDeviceInfo|null);
+
+        /** DeviceInfo streamFormat */
+        streamFormat?: (hikmicro.ICompactStreamFormat|null);
+
+        /** DeviceInfo layout */
+        layout?: (hikmicro.ICompactPayloadLayout|null);
+
+        /** DeviceInfo calibration */
+        calibration?: (hikmicro.ICalibrationData|null);
+    }
+
+    /** Represents a DeviceInfo. */
+    class DeviceInfo implements IDeviceInfo {
+
+        /**
+         * Constructs a new DeviceInfo.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: hikmicro.IDeviceInfo);
+
+        /** DeviceInfo driver. */
+        public driver: string;
+
+        /** DeviceInfo usb. */
+        public usb?: (hikmicro.IUsbDeviceInfo|null);
+
+        /** DeviceInfo streamFormat. */
+        public streamFormat?: (hikmicro.ICompactStreamFormat|null);
+
+        /** DeviceInfo layout. */
+        public layout?: (hikmicro.ICompactPayloadLayout|null);
+
+        /** DeviceInfo calibration. */
+        public calibration?: (hikmicro.ICalibrationData|null);
+
+        /**
+         * Creates a new DeviceInfo instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns DeviceInfo instance
+         */
+        public static create(properties?: hikmicro.IDeviceInfo): hikmicro.DeviceInfo;
+
+        /**
+         * Encodes the specified DeviceInfo message. Does not implicitly {@link hikmicro.DeviceInfo.verify|verify} messages.
+         * @param message DeviceInfo message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: hikmicro.IDeviceInfo, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified DeviceInfo message, length delimited. Does not implicitly {@link hikmicro.DeviceInfo.verify|verify} messages.
+         * @param message DeviceInfo message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: hikmicro.IDeviceInfo, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes a DeviceInfo message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns DeviceInfo
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): hikmicro.DeviceInfo;
+
+        /**
+         * Decodes a DeviceInfo message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns DeviceInfo
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): hikmicro.DeviceInfo;
+
+        /**
+         * Verifies a DeviceInfo message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates a DeviceInfo message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns DeviceInfo
+         */
+        public static fromObject(object: { [k: string]: any }): hikmicro.DeviceInfo;
+
+        /**
+         * Creates a plain object from a DeviceInfo message. Also converts values to other types if specified.
+         * @param message DeviceInfo
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: hikmicro.DeviceInfo, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this DeviceInfo to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for DeviceInfo
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
+    /** Properties of a ThermalFrame. */
+    interface IThermalFrame {
+
+        /** ThermalFrame sequence */
+        sequence?: (number|null);
+
+        /** ThermalFrame monotonicStampNs */
+        monotonicStampNs?: (Long|null);
+
+        /** ThermalFrame localStampNs */
+        localStampNs?: (Long|null);
+
+        /** ThermalFrame runtime */
+        runtime?: (hikmicro.IRuntimeBlockInfo|null);
+
+        /** ThermalFrame payload */
+        payload?: (Uint8Array|null);
+    }
+
+    /** Represents a ThermalFrame. */
+    class ThermalFrame implements IThermalFrame {
+
+        /**
+         * Constructs a new ThermalFrame.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: hikmicro.IThermalFrame);
+
+        /** ThermalFrame sequence. */
+        public sequence: number;
+
+        /** ThermalFrame monotonicStampNs. */
+        public monotonicStampNs: Long;
+
+        /** ThermalFrame localStampNs. */
+        public localStampNs: Long;
+
+        /** ThermalFrame runtime. */
+        public runtime?: (hikmicro.IRuntimeBlockInfo|null);
+
+        /** ThermalFrame payload. */
+        public payload: Uint8Array;
+
+        /**
+         * Creates a new ThermalFrame instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns ThermalFrame instance
+         */
+        public static create(properties?: hikmicro.IThermalFrame): hikmicro.ThermalFrame;
+
+        /**
+         * Encodes the specified ThermalFrame message. Does not implicitly {@link hikmicro.ThermalFrame.verify|verify} messages.
+         * @param message ThermalFrame message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: hikmicro.IThermalFrame, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified ThermalFrame message, length delimited. Does not implicitly {@link hikmicro.ThermalFrame.verify|verify} messages.
+         * @param message ThermalFrame message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: hikmicro.IThermalFrame, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes a ThermalFrame message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns ThermalFrame
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): hikmicro.ThermalFrame;
+
+        /**
+         * Decodes a ThermalFrame message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns ThermalFrame
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): hikmicro.ThermalFrame;
+
+        /**
+         * Verifies a ThermalFrame message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates a ThermalFrame message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns ThermalFrame
+         */
+        public static fromObject(object: { [k: string]: any }): hikmicro.ThermalFrame;
+
+        /**
+         * Creates a plain object from a ThermalFrame message. Also converts values to other types if specified.
+         * @param message ThermalFrame
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: hikmicro.ThermalFrame, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this ThermalFrame to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for ThermalFrame
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
+    /** Properties of a ThermalFramesBlock. */
+    interface IThermalFramesBlock {
+
+        /** ThermalFramesBlock sequence */
+        sequence?: (number|null);
+
+        /** ThermalFramesBlock frameCount */
+        frameCount?: (number|null);
+
+        /** ThermalFramesBlock monotonicStartNs */
+        monotonicStartNs?: (Long|null);
+
+        /** ThermalFramesBlock monotonicEndNs */
+        monotonicEndNs?: (Long|null);
+
+        /** ThermalFramesBlock localStartNs */
+        localStartNs?: (Long|null);
+
+        /** ThermalFramesBlock localEndNs */
+        localEndNs?: (Long|null);
+
+        /** ThermalFramesBlock streamFormat */
+        streamFormat?: (hikmicro.ICompactStreamFormat|null);
+
+        /** ThermalFramesBlock layout */
+        layout?: (hikmicro.ICompactPayloadLayout|null);
+
+        /** ThermalFramesBlock frames */
+        frames?: (hikmicro.IThermalFrame[]|null);
+    }
+
+    /** Represents a ThermalFramesBlock. */
+    class ThermalFramesBlock implements IThermalFramesBlock {
+
+        /**
+         * Constructs a new ThermalFramesBlock.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: hikmicro.IThermalFramesBlock);
+
+        /** ThermalFramesBlock sequence. */
+        public sequence: number;
+
+        /** ThermalFramesBlock frameCount. */
+        public frameCount: number;
+
+        /** ThermalFramesBlock monotonicStartNs. */
+        public monotonicStartNs: Long;
+
+        /** ThermalFramesBlock monotonicEndNs. */
+        public monotonicEndNs: Long;
+
+        /** ThermalFramesBlock localStartNs. */
+        public localStartNs: Long;
+
+        /** ThermalFramesBlock localEndNs. */
+        public localEndNs: Long;
+
+        /** ThermalFramesBlock streamFormat. */
+        public streamFormat?: (hikmicro.ICompactStreamFormat|null);
+
+        /** ThermalFramesBlock layout. */
+        public layout?: (hikmicro.ICompactPayloadLayout|null);
+
+        /** ThermalFramesBlock frames. */
+        public frames: hikmicro.IThermalFrame[];
+
+        /**
+         * Creates a new ThermalFramesBlock instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns ThermalFramesBlock instance
+         */
+        public static create(properties?: hikmicro.IThermalFramesBlock): hikmicro.ThermalFramesBlock;
+
+        /**
+         * Encodes the specified ThermalFramesBlock message. Does not implicitly {@link hikmicro.ThermalFramesBlock.verify|verify} messages.
+         * @param message ThermalFramesBlock message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: hikmicro.IThermalFramesBlock, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified ThermalFramesBlock message, length delimited. Does not implicitly {@link hikmicro.ThermalFramesBlock.verify|verify} messages.
+         * @param message ThermalFramesBlock message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: hikmicro.IThermalFramesBlock, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes a ThermalFramesBlock message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns ThermalFramesBlock
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): hikmicro.ThermalFramesBlock;
+
+        /**
+         * Decodes a ThermalFramesBlock message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns ThermalFramesBlock
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): hikmicro.ThermalFramesBlock;
+
+        /**
+         * Verifies a ThermalFramesBlock message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates a ThermalFramesBlock message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns ThermalFramesBlock
+         */
+        public static fromObject(object: { [k: string]: any }): hikmicro.ThermalFramesBlock;
+
+        /**
+         * Creates a plain object from a ThermalFramesBlock message. Also converts values to other types if specified.
+         * @param message ThermalFramesBlock
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: hikmicro.ThermalFramesBlock, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this ThermalFramesBlock to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for ThermalFramesBlock
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
+    /** Properties of a RxEnvelope. */
+    interface IRxEnvelope {
+
+        /** RxEnvelope deviceInfo */
+        deviceInfo?: (hikmicro.IDeviceInfo|null);
+
+        /** RxEnvelope frames */
+        frames?: (hikmicro.IThermalFramesBlock|null);
+    }
+
+    /** Represents a RxEnvelope. */
+    class RxEnvelope implements IRxEnvelope {
+
+        /**
+         * Constructs a new RxEnvelope.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: hikmicro.IRxEnvelope);
+
+        /** RxEnvelope deviceInfo. */
+        public deviceInfo?: (hikmicro.IDeviceInfo|null);
+
+        /** RxEnvelope frames. */
+        public frames?: (hikmicro.IThermalFramesBlock|null);
+
+        /**
+         * Creates a new RxEnvelope instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns RxEnvelope instance
+         */
+        public static create(properties?: hikmicro.IRxEnvelope): hikmicro.RxEnvelope;
+
+        /**
+         * Encodes the specified RxEnvelope message. Does not implicitly {@link hikmicro.RxEnvelope.verify|verify} messages.
+         * @param message RxEnvelope message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: hikmicro.IRxEnvelope, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified RxEnvelope message, length delimited. Does not implicitly {@link hikmicro.RxEnvelope.verify|verify} messages.
+         * @param message RxEnvelope message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: hikmicro.IRxEnvelope, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes a RxEnvelope message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns RxEnvelope
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): hikmicro.RxEnvelope;
+
+        /**
+         * Decodes a RxEnvelope message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns RxEnvelope
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): hikmicro.RxEnvelope;
+
+        /**
+         * Verifies a RxEnvelope message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates a RxEnvelope message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns RxEnvelope
+         */
+        public static fromObject(object: { [k: string]: any }): hikmicro.RxEnvelope;
+
+        /**
+         * Creates a plain object from a RxEnvelope message. Also converts values to other types if specified.
+         * @param message RxEnvelope
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: hikmicro.RxEnvelope, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this RxEnvelope to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for RxEnvelope
          * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
          * @returns The default type url
          */

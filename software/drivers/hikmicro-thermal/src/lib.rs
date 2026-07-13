@@ -38,12 +38,15 @@ const DISCOVERY_POLL_INTERVAL: Duration = Duration::from_secs(1);
 #[derive(Debug, Clone)]
 pub struct HikmicroThermalConfig {
     pub frame_timeout: Duration,
+    /// Drop this many frames after each frame that is kept. `0` keeps every frame.
+    pub frame_skip: u32,
 }
 
 impl Default for HikmicroThermalConfig {
     fn default() -> Self {
         Self {
             frame_timeout: Duration::from_secs(5),
+            frame_skip: 0,
         }
     }
 }
@@ -127,6 +130,7 @@ async fn run_manager<T: StationEngine + Send + Sync + 'static>(
                     let running_capture = running.clone();
                     let unique_id = camera.unique_id.clone();
                     let timeout = config.frame_timeout;
+                    let frame_skip = config.frame_skip;
 
                     tokio::spawn(async move {
                         let result = run_camera_capture(
@@ -135,6 +139,7 @@ async fn run_manager<T: StationEngine + Send + Sync + 'static>(
                             queue_id_capture,
                             stop_capture,
                             timeout,
+                            frame_skip,
                         )
                         .await;
                         if let Err(e) = result {
@@ -164,11 +169,12 @@ async fn run_camera_capture(
     queue_id: normfs::QueueId,
     stop: Arc<AtomicBool>,
     frame_timeout: Duration,
+    frame_skip: u32,
 ) -> Result<(), String> {
     let device_info_camera = camera.clone();
     let device_info_normfs = normfs.clone();
     let device_info_queue_id = queue_id.clone();
-    tokio::task::spawn_blocking(move || {
+    let device_info = tokio::task::spawn_blocking(move || {
         linux::enqueue_device_info(
             &device_info_camera,
             device_info_normfs.as_ref(),
@@ -185,10 +191,12 @@ async fn run_camera_capture(
     tokio::task::spawn_blocking(move || {
         linux::capture_continuous(
             &capture_camera,
+            device_info,
             capture_normfs.as_ref(),
             &capture_queue_id,
             capture_stop.as_ref(),
             frame_timeout,
+            frame_skip,
         )
     })
     .await

@@ -178,6 +178,14 @@ impl Station {
                         encryption_type: EncryptionType::Aes,
                     },
                 ),
+                (
+                    "hikmicro-thermal/*".to_string(),
+                    QueueConfig {
+                        compression_type: CompressionType::Zstd,
+                        enable_fsync: false,
+                        encryption_type: EncryptionType::Aes,
+                    },
+                ),
             ],
             QueueConfig::default(), // default config for all other queues
         )?;
@@ -397,6 +405,27 @@ impl Station {
             }
         }
 
+        if let Some(victron_config) = &self.config.drivers.victron_smartsolar_mppt {
+            if victron_config.enabled {
+                let config = victron_smartsolar_mppt::VictronSmartSolarMpptDriverConfig {
+                    read_timeout: victron_config.read_timeout,
+                };
+
+                if let Err(e) =
+                    victron_smartsolar_mppt::start_victron_smartsolar_mppt_driver(
+                        self.normfs.clone(),
+                        self.engine.clone(),
+                        config,
+                    )
+                    .await
+                {
+                    log::error!("Failed to start Victron SmartSolar MPPT driver: {}", e);
+                }
+            } else {
+                log::info!("Victron SmartSolar MPPT driver disabled by configuration");
+            }
+        }
+
         if let Some(st3215) = &st3215_config {
             // Start motors mirroring driver
             let motor_config = motors_mirroring::config::MotorConfig::from(st3215);
@@ -444,6 +473,7 @@ impl Station {
             if hikmicro_config.enabled {
                 let config = hikmicro_thermal::HikmicroThermalConfig {
                     frame_timeout: hikmicro_config.frame_timeout,
+                    frame_skip: hikmicro_config.frame_skip,
                 };
 
                 match hikmicro_thermal::start_hikmicro_thermal(

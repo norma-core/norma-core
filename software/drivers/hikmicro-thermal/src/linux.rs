@@ -26,6 +26,12 @@ const XU_W_INDEX: u16 = (XU_UNIT_ID as u16) << 8;
 const USB_TIMEOUT_MS: u32 = 1_000;
 const FRAMES_PER_RX_ENVELOPE: usize = 25;
 
+/// `frame_skip` is the number of frames dropped after each kept frame,
+/// so we keep 1 of every `frame_skip + 1`. `0` keeps every frame.
+fn should_keep(count: u64, frame_skip: u32) -> bool {
+    count.is_multiple_of(frame_skip as u64 + 1)
+}
+
 pub fn discover_cameras() -> Result<Vec<CameraIdentity>, String> {
     let ctx = UvcContext::new()?;
     let mut cameras = Vec::new();
@@ -93,7 +99,7 @@ pub fn enqueue_device_info(
     camera: &CameraIdentity,
     normfs: &NormFS,
     queue_id: &normfs::QueueId,
-) -> Result<(), String> {
+) -> Result<hikmicro::DeviceInfo, String> {
     let calibration = read_calibration_for_camera(camera);
     let device_info = hikmicro::DeviceInfo {
         driver: "hikmicro-thermal/linux/libuvc+libusb".to_string(),
@@ -109,20 +115,22 @@ pub fn enqueue_device_info(
         normfs,
         queue_id,
         hikmicro::RxEnvelope {
-            device_info: Some(device_info),
+            device_info: Some(device_info.clone()),
             frames: None,
         },
     )?;
 
-    Ok(())
+    Ok(device_info)
 }
 
 pub fn capture_continuous(
     camera: &CameraIdentity,
+    device_info: hikmicro::DeviceInfo,
     normfs: &NormFS,
     queue_id: &normfs::QueueId,
     stop: &AtomicBool,
     frame_timeout: Duration,
+    frame_skip: u32,
 ) -> Result<(), String> {
     let ctx = UvcContext::new()?;
     let mut stream = open_compact_stream(&ctx, camera)?;
@@ -130,6 +138,7 @@ pub fn capture_continuous(
 
     let mut block_sequence = 0u32;
     let mut last_frame = Instant::now();
+    let mut valid_frame_count = 0u64;
     let mut frames = Vec::with_capacity(FRAMES_PER_RX_ENVELOPE);
     while !stop.load(Ordering::Acquire) {
         if last_frame.elapsed() > frame_timeout {
@@ -147,11 +156,18 @@ pub fn capture_continuous(
                     continue;
                 }
 
+                let count = valid_frame_count;
+                valid_frame_count = valid_frame_count.wrapping_add(1);
+                if !should_keep(count, frame_skip) {
+                    continue;
+                }
+
                 frames.push(thermal_frame_from_capture(frame));
                 if frames.len() >= FRAMES_PER_RX_ENVELOPE {
                     enqueue_frames_block(
                         normfs,
                         queue_id,
+                        &device_info,
                         block_sequence,
                         std::mem::take(&mut frames),
                     )?;
@@ -165,7 +181,7 @@ pub fn capture_continuous(
     }
 
     if !frames.is_empty() {
-        enqueue_frames_block(normfs, queue_id, block_sequence, frames)?;
+        enqueue_frames_block(normfs, queue_id, &device_info, block_sequence, frames)?;
     }
 
     Ok(())
@@ -174,6 +190,7 @@ pub fn capture_continuous(
 fn enqueue_frames_block(
     normfs: &NormFS,
     queue_id: &normfs::QueueId,
+    device_info: &hikmicro::DeviceInfo,
     block_sequence: u32,
     frames: Vec<hikmicro::ThermalFrame>,
 ) -> Result<(), String> {
@@ -195,7 +212,7 @@ fn enqueue_frames_block(
         normfs,
         queue_id,
         hikmicro::RxEnvelope {
-            device_info: None,
+            device_info: Some(device_info.clone()),
             frames: Some(block),
         },
     )
@@ -622,6 +639,34 @@ impl Drop for StreamHandle {
                 uvc_unref_device(self.device);
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::should_keep;
+
+    #[test]
+    fn should_keep_zero_skip_keeps_every_frame() {
+        assert!(should_keep(0, 0));
+        assert!(should_keep(1, 0));
+        assert!(should_keep(2, 0));
+    }
+
+    #[test]
+    fn should_keep_skip_one_keeps_every_other_frame() {
+        assert!(should_keep(0, 1));
+        assert!(!should_keep(1, 1));
+        assert!(should_keep(2, 1));
+        assert!(!should_keep(3, 1));
+    }
+
+    #[test]
+    fn should_keep_skip_two_keeps_one_of_every_three() {
+        assert!(should_keep(0, 2));
+        assert!(!should_keep(1, 2));
+        assert!(!should_keep(2, 2));
+        assert!(should_keep(3, 2));
     }
 }
 

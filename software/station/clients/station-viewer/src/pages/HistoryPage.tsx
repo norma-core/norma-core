@@ -45,6 +45,7 @@ function HistoryPage() {
   useEffect(() => webSocketManager.acquireHistoryMode(), []);
 
   const videoQueueCount = parsedFrame?.videoQueues?.length ?? 0;
+  const hikmicroThermalCount = parsedFrame?.hikmicroThermal?.length ?? 0;
   const st3215Count = parsedFrame?.st3215 ? 1 : 0;
   const vescTrampaCount = parsedFrame?.vescTrampa ? 1 : 0;
   const vescTrampaRxCount = parsedFrame?.vescTrampaRx ? 1 : 0;
@@ -54,6 +55,7 @@ function HistoryPage() {
   const arduinoNiclaSenseEnvCount = parsedFrame?.arduinoNiclaSenseEnv ? 1 : 0;
   const ina226Count = parsedFrame?.ina226?.length ?? 0;
   const airgradientOpenAirCount = parsedFrame?.airgradientOpenAir?.length ?? 0;
+  const victronSmartSolarCount = parsedFrame?.victronSmartSolar?.length ?? 0;
   const yahboomDogzillaLiteCount = parsedFrame?.yahboom_dogzilla_lite ? 1 : 0;
   const normvlaCount = parsedFrame?.normvla ? 1 : 0;
   const st3215TxCount = parsedFrame?.st3215Tx ? 1 : 0;
@@ -61,12 +63,14 @@ function HistoryPage() {
   const vescTrampaRxIndex = vescTrampaIndex + vescTrampaCount;
   const vescTrampaTxIndex = vescTrampaRxIndex + vescTrampaRxCount;
   const videoQueuesIndex = vescTrampaTxIndex + vescTrampaTxCount;
-  const mirroringIndex = videoQueuesIndex + videoQueueCount;
+  const hikmicroThermalIndex = videoQueuesIndex + videoQueueCount;
+  const mirroringIndex = hikmicroThermalIndex + hikmicroThermalCount;
   const sysinfoIndex = mirroringIndex + mirroringCount;
   const arduinoNiclaSenseEnvIndex = sysinfoIndex + sysinfoCount;
   const ina226Index = arduinoNiclaSenseEnvIndex + arduinoNiclaSenseEnvCount;
   const airgradientOpenAirIndex = ina226Index + ina226Count;
-  const yahboomDogzillaLiteIndex = airgradientOpenAirIndex + airgradientOpenAirCount;
+  const victronSmartSolarIndex = airgradientOpenAirIndex + airgradientOpenAirCount;
+  const yahboomDogzillaLiteIndex = victronSmartSolarIndex + victronSmartSolarCount;
   const normvlaIndex = yahboomDogzillaLiteIndex + yahboomDogzillaLiteCount;
   const st3215TxIndex = normvlaIndex + normvlaCount;
   const otherEntriesIndex = st3215TxIndex + st3215TxCount;
@@ -228,6 +232,17 @@ function HistoryPage() {
                             </div>
                           </div>
                         ))}
+                        {parsedFrame.hikmicroThermal?.map((entry) => (
+                          <div key={entry.queueId} className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <span className="text-accent-warning font-mono">{entry.queueId}</span>
+                              <span className="text-accent-warning text-xs px-1 py-0.5 bg-accent-warning/10 rounded">HIKMICRO</span>
+                            </div>
+                            <div className="text-text-label font-mono">
+                              {formatPtrBytes(entry.ptr)}
+                            </div>
+                          </div>
+                        ))}
                         {parsedFrame.mirroring && (
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3">
@@ -277,6 +292,17 @@ function HistoryPage() {
                             <div className="flex items-center gap-3">
                               <span className="text-accent-warning font-mono">{entry.queueId}</span>
                               <span className="text-accent-warning text-xs px-1 py-0.5 bg-accent-warning/10 rounded">INA226</span>
+                            </div>
+                            <div className="text-text-label font-mono">
+                              {formatPtrBytes(entry.ptr)}
+                            </div>
+                          </div>
+                        ))}
+                        {parsedFrame.victronSmartSolar?.map((entry) => (
+                          <div key={entry.queueId} className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <span className="text-accent-warning font-mono">{entry.queueId}</span>
+                              <span className="text-accent-success text-xs px-1 py-0.5 bg-accent-success/10 rounded">VICTRON MPPT</span>
                             </div>
                             <div className="text-text-label font-mono">
                               {formatPtrBytes(entry.ptr)}
@@ -398,6 +424,22 @@ function HistoryPage() {
                       dataQueueId={video.queueId}
                     />
                   ))}
+                  {parsedFrame.hikmicroThermal?.map((entry, idx) => (
+                    <HistoryElement
+                      key={entry.queueId}
+                      element={{
+                        queueId: entry.queueId,
+                        entryId: entry.ptr,
+                        data: entry.data,
+                        rawData: entry.rawData ?? null,
+                        type: getQueueType(entry.queueType),
+                        queueType: entry.queueType,
+                      }}
+                      index={hikmicroThermalIndex + idx}
+                      dataQueueType="hikmicro-thermal"
+                      dataQueueId={entry.queueId}
+                    />
+                  ))}
                   {parsedFrame.mirroring && (
                     <HistoryElement
                       element={{
@@ -472,6 +514,22 @@ function HistoryPage() {
                       }}
                       index={airgradientOpenAirIndex + idx}
                       dataQueueType="airgradient-open-air-o-1pst"
+                      dataQueueId={entry.queueId}
+                    />
+                  ))}
+                  {parsedFrame.victronSmartSolar?.map((entry, idx) => (
+                    <HistoryElement
+                      key={entry.queueId}
+                      element={{
+                        queueId: entry.queueId,
+                        entryId: entry.ptr,
+                        data: entry.data,
+                        rawData: entry.rawData ?? null,
+                        type: getQueueType(entry.queueType),
+                        queueType: entry.queueType,
+                      }}
+                      index={victronSmartSolarIndex + idx}
+                      dataQueueType="victron-smartsolar-mppt"
                       dataQueueId={entry.queueId}
                     />
                   ))}
