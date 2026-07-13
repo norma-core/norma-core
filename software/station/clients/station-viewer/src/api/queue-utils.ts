@@ -25,6 +25,8 @@ export function getQueueType(queueType: drivers.QueueDataType): string | undefin
   switch (queueType) {
     case drivers.QueueDataType.QDT_USB_VIDEO_FRAMES:
       return 'usbvideo';
+    case drivers.QueueDataType.QDT_HIKMICRO_THERMAL:
+      return 'hikmicro-thermal';
     case drivers.QueueDataType.QDT_ST3215_INFERENCE:
       return 'st3215';
     case drivers.QueueDataType.QDT_ST3215_SERIAL_TX:

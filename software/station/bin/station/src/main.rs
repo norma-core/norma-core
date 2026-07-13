@@ -178,6 +178,14 @@ impl Station {
                         encryption_type: EncryptionType::Aes,
                     },
                 ),
+                (
+                    "hikmicro-thermal/*".to_string(),
+                    QueueConfig {
+                        compression_type: CompressionType::Zstd,
+                        enable_fsync: false,
+                        encryption_type: EncryptionType::Aes,
+                    },
+                ),
             ],
             QueueConfig::default(), // default config for all other queues
         )?;
@@ -462,6 +470,7 @@ impl Station {
             if hikmicro_config.enabled {
                 let config = hikmicro_thermal::HikmicroThermalConfig {
                     frame_timeout: hikmicro_config.frame_timeout,
+                    frame_skip: hikmicro_config.frame_skip,
                 };
 
                 match hikmicro_thermal::start_hikmicro_thermal(

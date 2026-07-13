@@ -21,6 +21,7 @@ npm exec -- pbjs --wrap es6 --force-long -t static-module --es6 -l eslint-disabl
   ${SRC}/drivers/ina226/ina226.proto \
   ${SRC}/drivers/airgradient-open-air-o-1pst/airgradient_open_air_o_1pst.proto \
   ${SRC}/drivers/inferences/normvla.proto \
+  ${SRC}/drivers/hikmicro/hikmicro.proto \
   ${SRC}/normfs/normfs.proto \
   -o src/api/proto.js
 npm exec -- pbts src/api/proto.js -o src/api/proto.d.ts

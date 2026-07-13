@@ -299,6 +299,11 @@ pub struct HikmicroThermalConfig {
         default = "default_hikmicro_thermal_frame_timeout"
     )]
     pub frame_timeout: std::time::Duration,
+
+    /// Drop this many frames after each frame that is kept, so 1 of every
+    /// `frame_skip + 1` frames is recorded. Default 0 keeps every frame.
+    #[serde(rename = "frame-skip", default)]
+    pub frame_skip: u32,
 }
 
 fn default_hikmicro_thermal_frame_timeout() -> std::time::Duration {
@@ -310,6 +315,7 @@ impl Default for HikmicroThermalConfig {
         Self {
             enabled: false,
             frame_timeout: default_hikmicro_thermal_frame_timeout(),
+            frame_skip: 0,
         }
     }
 }
@@ -633,5 +639,26 @@ mod usb_video_config_tests {
         let cfg: UsbVideoConfig =
             serde_yaml::from_str("enabled: true\nresolution: \"720p\"\n").unwrap();
         assert_eq!(cfg.resolution, "720p");
+    }
+}
+
+#[cfg(test)]
+mod hikmicro_thermal_config_tests {
+    use super::HikmicroThermalConfig;
+
+    #[test]
+    fn test_defaults_when_only_enabled_is_given() {
+        let cfg: HikmicroThermalConfig = serde_yaml::from_str("enabled: true").unwrap();
+        assert!(cfg.enabled);
+        assert_eq!(cfg.frame_timeout, std::time::Duration::from_secs(5));
+        assert_eq!(cfg.frame_skip, 0);
+    }
+
+    #[test]
+    fn test_parses_frame_timeout_and_frame_skip() {
+        let yaml = "enabled: true\nframe-timeout: 2s\nframe-skip: 3\n";
+        let cfg: HikmicroThermalConfig = serde_yaml::from_str(yaml).unwrap();
+        assert_eq!(cfg.frame_timeout, std::time::Duration::from_secs(2));
+        assert_eq!(cfg.frame_skip, 3);
     }
 }

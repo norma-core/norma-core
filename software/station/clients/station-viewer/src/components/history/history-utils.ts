@@ -1,8 +1,9 @@
-import { airgradient_open_air_o_1pst, arduino_nicla_sense_env, usbvideo, frame, st3215, motors_mirroring, sysinfo, yahboom_dogzilla_lite, normvla, ina226 } from '@/api/proto.js';
+import { airgradient_open_air_o_1pst, arduino_nicla_sense_env, hikmicro, usbvideo, frame, st3215, motors_mirroring, sysinfo, yahboom_dogzilla_lite, normvla, ina226 } from '@/api/proto.js';
 import { serverToLocal } from '@/api/timestamp-utils';
 
 type ParsedHistoryData =
   | usbvideo.IRxEnvelope
+  | hikmicro.IRxEnvelope
   | st3215.IInferenceState
   | motors_mirroring.IRxEnvelope
   | sysinfo.IEnvelope
@@ -95,6 +96,58 @@ export function createCroppedJson(data: usbvideo.RxEnvelope): string {
   }
 }
 
+function cropString(value: unknown, label: string): unknown {
+  if (typeof value === 'string' && value.length > 100) {
+    return `[${label}: ${value.length} chars] ${value.substring(0, 50)}...`;
+  }
+  return value;
+}
+
+export function createCroppedHikmicroJson(data: hikmicro.RxEnvelope): string {
+  try {
+    const plainObject = hikmicro.RxEnvelope.toObject(data, {
+      longs: String,
+      enums: String,
+      bytes: String,
+      defaults: true
+    }) as Record<string, unknown>;
+
+    const deviceInfo = plainObject.deviceInfo as Record<string, unknown> | undefined;
+    const calibration = deviceInfo?.calibration as Record<string, unknown> | undefined;
+    if (calibration) {
+      calibration.container = cropString(calibration.container, 'calibration container');
+      const chunks = calibration.chunks;
+      if (Array.isArray(chunks)) {
+        calibration.chunks = chunks.map((chunk, idx) => {
+          if (!chunk || typeof chunk !== 'object') {
+            return chunk;
+          }
+          const cropped = { ...(chunk as Record<string, unknown>) };
+          cropped.data = cropString(cropped.data, `calibration chunk ${idx + 1}`);
+          return cropped;
+        });
+      }
+    }
+
+    const framesBlock = plainObject.frames as Record<string, unknown> | undefined;
+    const frames = framesBlock?.frames;
+    if (framesBlock && Array.isArray(frames)) {
+      framesBlock.frames = frames.map((frameData, idx) => {
+        if (!frameData || typeof frameData !== 'object') {
+          return frameData;
+        }
+        const cropped = { ...(frameData as Record<string, unknown>) };
+        cropped.payload = cropString(cropped.payload, `thermal frame ${idx + 1}`);
+        return cropped;
+      });
+    }
+
+    return JSON.stringify(plainObject, null, 2);
+  } catch (error) {
+    return `Error creating JSON: ${error instanceof Error ? error.message : 'Unknown error'}`;
+  }
+}
+
 export interface St3215HexdumpResult {
   jsonString: string;
   hexdumps: { placeholder: string; content: string }[];
@@ -137,6 +190,18 @@ export function parseUsbVideoData(data: Uint8Array | ParsedHistoryData): usbvide
     return usbvideo.RxEnvelope.decode(data);
   } catch (error) {
     console.error('Failed to parse usbvideo.RxEnvelope:', error);
+    return null;
+  }
+}
+
+export function parseHikmicroThermalData(data: Uint8Array | ParsedHistoryData): hikmicro.RxEnvelope | null {
+  if (!(data instanceof Uint8Array)) {
+    return data as hikmicro.RxEnvelope;
+  }
+  try {
+    return hikmicro.RxEnvelope.decode(data);
+  } catch (error) {
+    console.error('Failed to parse hikmicro.RxEnvelope:', error);
     return null;
   }
 }

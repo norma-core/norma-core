@@ -45,6 +45,7 @@ function HistoryPage() {
   useEffect(() => webSocketManager.acquireHistoryMode(), []);
 
   const videoQueueCount = parsedFrame?.videoQueues?.length ?? 0;
+  const hikmicroThermalCount = parsedFrame?.hikmicroThermal?.length ?? 0;
   const st3215Count = parsedFrame?.st3215 ? 1 : 0;
   const vescTrampaCount = parsedFrame?.vescTrampa ? 1 : 0;
   const vescTrampaRxCount = parsedFrame?.vescTrampaRx ? 1 : 0;
@@ -61,7 +62,8 @@ function HistoryPage() {
   const vescTrampaRxIndex = vescTrampaIndex + vescTrampaCount;
   const vescTrampaTxIndex = vescTrampaRxIndex + vescTrampaRxCount;
   const videoQueuesIndex = vescTrampaTxIndex + vescTrampaTxCount;
-  const mirroringIndex = videoQueuesIndex + videoQueueCount;
+  const hikmicroThermalIndex = videoQueuesIndex + videoQueueCount;
+  const mirroringIndex = hikmicroThermalIndex + hikmicroThermalCount;
   const sysinfoIndex = mirroringIndex + mirroringCount;
   const arduinoNiclaSenseEnvIndex = sysinfoIndex + sysinfoCount;
   const ina226Index = arduinoNiclaSenseEnvIndex + arduinoNiclaSenseEnvCount;
@@ -225,6 +227,17 @@ function HistoryPage() {
                             </div>
                             <div className="text-text-label font-mono">
                               {formatPtrBytes(video.ptr)}
+                            </div>
+                          </div>
+                        ))}
+                        {parsedFrame.hikmicroThermal?.map((entry) => (
+                          <div key={entry.queueId} className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <span className="text-accent-warning font-mono">{entry.queueId}</span>
+                              <span className="text-accent-warning text-xs px-1 py-0.5 bg-accent-warning/10 rounded">HIKMICRO</span>
+                            </div>
+                            <div className="text-text-label font-mono">
+                              {formatPtrBytes(entry.ptr)}
                             </div>
                           </div>
                         ))}
@@ -396,6 +409,22 @@ function HistoryPage() {
                       index={videoQueuesIndex + idx}
                       dataQueueType="usbvideo"
                       dataQueueId={video.queueId}
+                    />
+                  ))}
+                  {parsedFrame.hikmicroThermal?.map((entry, idx) => (
+                    <HistoryElement
+                      key={entry.queueId}
+                      element={{
+                        queueId: entry.queueId,
+                        entryId: entry.ptr,
+                        data: entry.data,
+                        rawData: entry.rawData ?? null,
+                        type: getQueueType(entry.queueType),
+                        queueType: entry.queueType,
+                      }}
+                      index={hikmicroThermalIndex + idx}
+                      dataQueueType="hikmicro-thermal"
+                      dataQueueId={entry.queueId}
                     />
                   ))}
                   {parsedFrame.mirroring && (

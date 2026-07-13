@@ -1,15 +1,16 @@
 import { useState } from 'react';
-import { airgradient_open_air_o_1pst, arduino_nicla_sense_env, ina226, usbvideo, st3215, motors_mirroring, sysinfo, yahboom_dogzilla_lite, normvla, vesc_trampa } from '@/api/proto.js';
-import { formatBytes, parseUsbVideoData, parseMirroringData, parseSysinfoData, parseArduinoNiclaSenseEnvData, parseIna226Data, parseAirGradientData, parseYahboomDogzillaLiteData, parseNormvlaData } from '@/components/history/history-utils';
+import { airgradient_open_air_o_1pst, arduino_nicla_sense_env, hikmicro, ina226, usbvideo, st3215, motors_mirroring, sysinfo, yahboom_dogzilla_lite, normvla, vesc_trampa } from '@/api/proto.js';
+import { formatBytes, parseUsbVideoData, parseHikmicroThermalData, parseMirroringData, parseSysinfoData, parseArduinoNiclaSenseEnvData, parseIna226Data, parseAirGradientData, parseYahboomDogzillaLiteData, parseNormvlaData } from '@/components/history/history-utils';
 import ExpandedView from '@/components/history/ExpandedView';
 import { readArduinoNiclaSenseEnvMainValues } from '@/devices/arduino-nicla-sense-env/values';
 import { formatIna226Current, readIna226CurrentAmps, readIna226ShuntMillivolts } from '@/devices/ina226/values';
 import { airGradientDeviceLabel, readAirGradientValues } from '@/devices/airgradient-open-air-o-1pst/values';
+import { formatCelsius, latestThermalFrame, renderThermalFrame } from '@/devices/hikmicro-thermal/thermal';
 
 export interface HistoryElementData {
   queueId: string;
   entryId: Uint8Array;
-  data: Uint8Array | usbvideo.IRxEnvelope | st3215.IInferenceState | st3215.ITxEnvelope | motors_mirroring.IRxEnvelope | sysinfo.IEnvelope | arduino_nicla_sense_env.IRxEnvelope | ina226.IRxEnvelope | airgradient_open_air_o_1pst.IRxEnvelope | yahboom_dogzilla_lite.IInferenceState | vesc_trampa.IInferenceState | vesc_trampa.IRxEnvelope | vesc_trampa.ITxEnvelope | normvla.IFrame | null;
+  data: Uint8Array | usbvideo.IRxEnvelope | hikmicro.IRxEnvelope | st3215.IInferenceState | st3215.ITxEnvelope | motors_mirroring.IRxEnvelope | sysinfo.IEnvelope | arduino_nicla_sense_env.IRxEnvelope | ina226.IRxEnvelope | airgradient_open_air_o_1pst.IRxEnvelope | yahboom_dogzilla_lite.IInferenceState | vesc_trampa.IInferenceState | vesc_trampa.IRxEnvelope | vesc_trampa.ITxEnvelope | normvla.IFrame | null;
   rawData?: Uint8Array | null;
   error?: string;
   type?: string;
@@ -49,10 +50,13 @@ function formatSensorValue(value: number | null, unit = '', decimals = 2): strin
 }
 
 function HistoryElement({ element, index, dataQueueType, dataQueueId }: HistoryElementProps) {
-  const [isExpanded, setIsExpanded] = useState(element.type === 'usbvideo' || element.type === 'st3215' || element.type === 'yahboom_dogzilla_lite' || element.type === 'arduino-nicla-sense-env' || element.type === 'ina226' || element.type === 'airgradient-open-air-o-1pst' || element.type === 'normvla' || element.type === 'st3215tx' || element.type === 'vesc-trampa' || element.type === 'vesc-trampa-rx' || element.type === 'vesc-trampa-tx');
+  const [isExpanded, setIsExpanded] = useState(element.type === 'usbvideo' || element.type === 'hikmicro-thermal' || element.type === 'st3215' || element.type === 'yahboom_dogzilla_lite' || element.type === 'arduino-nicla-sense-env' || element.type === 'ina226' || element.type === 'airgradient-open-air-o-1pst' || element.type === 'normvla' || element.type === 'st3215tx' || element.type === 'vesc-trampa' || element.type === 'vesc-trampa-rx' || element.type === 'vesc-trampa-tx');
   const displayQueueId = formatQueueIdForDisplay(element.queueId);
 
   const usbVideoData = element.type === 'usbvideo' && element.data ? parseUsbVideoData(element.data) : null;
+  const hikmicroThermalData = element.type === 'hikmicro-thermal' && element.data ? parseHikmicroThermalData(element.data) : null;
+  const hikmicroFrame = hikmicroThermalData ? latestThermalFrame(hikmicroThermalData) : null;
+  const hikmicroRendered = hikmicroThermalData && hikmicroFrame ? renderThermalFrame(hikmicroThermalData, hikmicroFrame) : null;
   const mirroringData = element.type === 'mirroring' && element.data ? parseMirroringData(element.data) : null;
   const sysinfoData = element.type === 'sysinfo' && element.data ? parseSysinfoData(element.data) : null;
   const arduinoNiclaSenseEnvData = element.type === 'arduino-nicla-sense-env' && element.data ? parseArduinoNiclaSenseEnvData(element.data) : null;
@@ -147,7 +151,7 @@ function HistoryElement({ element, index, dataQueueType, dataQueueId }: HistoryE
 
       {!isExpanded && (
         <div className="px-2 pb-2 space-y-1">
-          {element.data && element.data instanceof Uint8Array && !usbVideoData && !normvlaData && (
+          {element.data && element.data instanceof Uint8Array && !usbVideoData && !hikmicroThermalData && !normvlaData && (
             <div className="bg-surface-primary p-1.5 rounded font-mono text-xs text-accent-success overflow-x-auto">
               {formatBytes(element.data, 32)}
               {element.data.length > 32 && '...'}
@@ -161,6 +165,25 @@ function HistoryElement({ element, index, dataQueueType, dataQueueId }: HistoryE
                   Frames: {usbVideoData.frames.stamps.length}
                 </div>
               )}
+            </div>
+          )}
+
+          {hikmicroThermalData && (
+            <div className="flex flex-wrap items-center gap-3 text-xs">
+              <span className={hikmicroRendered?.usedCalibration ? 'text-accent-success' : 'text-accent-warning'}>
+                {hikmicroRendered?.usedCalibration ? 'Calibrated' : 'Raw'}
+              </span>
+              {hikmicroRendered && (
+                <>
+                  <span className="text-accent-warning">Center: {formatCelsius(hikmicroRendered.centerC)}</span>
+                  <span className="text-accent-data">Avg: {formatCelsius(hikmicroRendered.avgC)}</span>
+                  <span className="text-accent-info">Min: {formatCelsius(hikmicroRendered.minC)}</span>
+                  <span className="text-accent-critical">Max: {formatCelsius(hikmicroRendered.maxC)}</span>
+                </>
+              )}
+              <span className="text-text-label">
+                Frames: {hikmicroThermalData.frames?.frameCount ?? hikmicroThermalData.frames?.frames?.length ?? 0}
+              </span>
             </div>
           )}
 
