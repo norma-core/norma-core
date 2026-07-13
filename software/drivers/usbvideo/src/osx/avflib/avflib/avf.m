@@ -20,6 +20,7 @@
 @interface CaptureSession : NSObject <AVCaptureVideoDataOutputSampleBufferDelegate>
 @property (nonatomic, strong) AVCaptureSession *session;
 @property (nonatomic, strong) AVCaptureDevice *device;
+@property (nonatomic, strong) AVCaptureDeviceFormat *desiredFormat;
 @property (nonatomic, strong) AVCaptureDeviceInput *input;
 @property (nonatomic, strong) AVCaptureVideoDataOutput *output;
 @property (nonatomic, strong) dispatch_queue_t captureQueue;
@@ -539,27 +540,32 @@ didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer
     // Create capture session
     CaptureSession *captureSession = [[CaptureSession alloc] initWithBufferCount:bufferCount];
     captureSession.device = device;
+    // Remembered so it can be re-applied after startRunning: the session's
+    // preset (High) re-overrides device.activeFormat when the session starts.
+    captureSession.desiredFormat = format;
 
-    // Configure device
     NSError *error = nil;
-    if (![device lockForConfiguration:&error]) {
-        NSLog(@"Failed to lock device for configuration: %@", error);
-        return -1;
-    }
-    
-    device.activeFormat = format;
-    [device unlockForConfiguration];
-    
+
     captureSession.input = [AVCaptureDeviceInput deviceInputWithDevice:device error:&error];
     if (!captureSession.input) {
         NSLog(@"Failed to create device input: %@", error);
         return -1;
     }
-    
+
+    // Configure the session as one transaction. Order matters: adding an input
+    // renegotiates the device to the session's preset (AVCaptureSessionPresetHigh
+    // by default), so device.activeFormat must be set AFTER addInput. Setting it
+    // earlier would be overridden and the camera would capture at its high
+    // resolution regardless of the requested format. On macOS, setting
+    // activeFormat implicitly switches the session to input-priority so the
+    // chosen format is honored.
+    [captureSession.session beginConfiguration];
+
     if ([captureSession.session canAddInput:captureSession.input]) {
         [captureSession.session addInput:captureSession.input];
     } else {
         NSLog(@"Cannot add input to session");
+        [captureSession.session commitConfiguration];
         return -1;
     }
     
@@ -570,6 +576,7 @@ didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer
     
     if (!captureSession.output.sampleBufferDelegate) {
         NSLog(@"Failed to set sample buffer delegate");
+        [captureSession.session commitConfiguration];
         return -1;
     }
     
@@ -582,9 +589,21 @@ didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer
         [captureSession.session addOutput:captureSession.output];
     } else {
         NSLog(@"Cannot add output to session");
+        [captureSession.session commitConfiguration];
         return -1;
     }
-    
+
+    if ([device lockForConfiguration:&error]) {
+        device.activeFormat = format;
+        [device unlockForConfiguration];
+    } else {
+        NSLog(@"Failed to lock device for configuration: %@", error);
+        [captureSession.session commitConfiguration];
+        return -1;
+    }
+
+    [captureSession.session commitConfiguration];
+
     [g_sessionsLock lock];
     
     if (g_sessions.count >= MAX_CONCURRENT_SESSIONS) {
@@ -624,6 +643,21 @@ didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer
     captureSession.droppedFrames = 0;
 
     [captureSession.session startRunning];
+
+    // startRunning re-applies the session preset (High), overriding the
+    // activeFormat chosen in createCaptureSession. Re-apply the requested format
+    // now that the session is running so capture matches the configured
+    // resolution instead of the camera's high-preset default.
+    if (captureSession.desiredFormat &&
+        captureSession.device.activeFormat != captureSession.desiredFormat) {
+        NSError *fmtError = nil;
+        if ([captureSession.device lockForConfiguration:&fmtError]) {
+            captureSession.device.activeFormat = captureSession.desiredFormat;
+            [captureSession.device unlockForConfiguration];
+        } else {
+            NSLog(@"Failed to re-apply active format after startRunning: %@", fmtError);
+        }
+    }
 
     if (!captureSession.session.isRunning) {
         NSLog(@"Failed to start capture session");

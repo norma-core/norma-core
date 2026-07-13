@@ -240,8 +240,10 @@ drivers:
     frame-skip: 0         # Drop N frames after each kept frame; 0 records every frame
 ```
 
-`resolution` chooses which camera format to open. Cameras that do not offer the
-requested resolution log a warning and fall back to automatic format selection.
+`resolution` chooses which camera format to open. With `auto` the best available
+format is picked automatically. When an explicit `<width>x<height>` is requested,
+only formats at exactly that resolution are used — a camera that does not offer
+it logs a warning and is ignored rather than capturing at a different resolution.
 It is independent of `resize_target`, which controls the size of the stored
 frames: you can capture at `1280x720` and store at `224`.
 
