@@ -721,6 +721,7 @@ export const drivers = $root.drivers = (() => {
      * @property {number} QDT_ARDUINO_NICLA_SENSE_ENV_RX=51 QDT_ARDUINO_NICLA_SENSE_ENV_RX value
      * @property {number} QDT_INA226_RX=52 QDT_INA226_RX value
      * @property {number} QDT_AIRGRADIENT_OPEN_AIR_O_1PST_RX=53 QDT_AIRGRADIENT_OPEN_AIR_O_1PST_RX value
+     * @property {number} QDT_VICTRON_SMARTSOLAR_MPPT_RX=54 QDT_VICTRON_SMARTSOLAR_MPPT_RX value
      */
     drivers.QueueDataType = (function() {
         const valuesById = {}, values = Object.create(valuesById);
@@ -748,6 +749,7 @@ export const drivers = $root.drivers = (() => {
         values[valuesById[51] = "QDT_ARDUINO_NICLA_SENSE_ENV_RX"] = 51;
         values[valuesById[52] = "QDT_INA226_RX"] = 52;
         values[valuesById[53] = "QDT_AIRGRADIENT_OPEN_AIR_O_1PST_RX"] = 53;
+        values[valuesById[54] = "QDT_VICTRON_SMARTSOLAR_MPPT_RX"] = 54;
         return values;
     })();
 
@@ -1338,6 +1340,7 @@ export const inference = $root.inference = (() => {
                     case 51:
                     case 52:
                     case 53:
+                    case 54:
                         break;
                     }
                 return null;
@@ -1468,6 +1471,10 @@ export const inference = $root.inference = (() => {
                 case "QDT_AIRGRADIENT_OPEN_AIR_O_1PST_RX":
                 case 53:
                     message.type = 53;
+                    break;
+                case "QDT_VICTRON_SMARTSOLAR_MPPT_RX":
+                case 54:
+                    message.type = 54;
                     break;
                 }
                 return message;
@@ -37766,6 +37773,971 @@ export const airgradient_open_air_o_1pst = $root.airgradient_open_air_o_1pst = (
     })();
 
     return airgradient_open_air_o_1pst;
+})();
+
+export const victron_smartsolar_mppt = $root.victron_smartsolar_mppt = (() => {
+
+    /**
+     * Namespace victron_smartsolar_mppt.
+     * @exports victron_smartsolar_mppt
+     * @namespace
+     */
+    const victron_smartsolar_mppt = {};
+
+    /**
+     * VictronSignalType enum.
+     * @name victron_smartsolar_mppt.VictronSignalType
+     * @enum {number}
+     * @property {number} VICTRON_SIGNAL_TYPE_UNSPECIFIED=0 VICTRON_SIGNAL_TYPE_UNSPECIFIED value
+     * @property {number} VICTRON_CONNECTED=1 VICTRON_CONNECTED value
+     * @property {number} VICTRON_DISCONNECTED=2 VICTRON_DISCONNECTED value
+     * @property {number} VICTRON_TEXT_BLOCK=3 VICTRON_TEXT_BLOCK value
+     * @property {number} VICTRON_HEX_FRAME=4 VICTRON_HEX_FRAME value
+     * @property {number} VICTRON_ERROR=5 VICTRON_ERROR value
+     */
+    victron_smartsolar_mppt.VictronSignalType = (function() {
+        const valuesById = {}, values = Object.create(valuesById);
+        values[valuesById[0] = "VICTRON_SIGNAL_TYPE_UNSPECIFIED"] = 0;
+        values[valuesById[1] = "VICTRON_CONNECTED"] = 1;
+        values[valuesById[2] = "VICTRON_DISCONNECTED"] = 2;
+        values[valuesById[3] = "VICTRON_TEXT_BLOCK"] = 3;
+        values[valuesById[4] = "VICTRON_HEX_FRAME"] = 4;
+        values[valuesById[5] = "VICTRON_ERROR"] = 5;
+        return values;
+    })();
+
+    victron_smartsolar_mppt.VictronDevice = (function() {
+
+        /**
+         * Properties of a VictronDevice.
+         * @memberof victron_smartsolar_mppt
+         * @interface IVictronDevice
+         * @property {string|null} [portName] VictronDevice portName
+         * @property {number|null} [vid] VictronDevice vid
+         * @property {number|null} [pid] VictronDevice pid
+         * @property {string|null} [serialNumber] VictronDevice serialNumber
+         * @property {string|null} [manufacturer] VictronDevice manufacturer
+         * @property {string|null} [product] VictronDevice product
+         * @property {number|null} [portBaudRate] VictronDevice portBaudRate
+         * @property {number|null} [productId] VictronDevice productId
+         * @property {string|null} [modelName] VictronDevice modelName
+         * @property {string|null} [firmwareVersion] VictronDevice firmwareVersion
+         * @property {string|null} [deviceSerial] VictronDevice deviceSerial
+         */
+
+        /**
+         * Constructs a new VictronDevice.
+         * @memberof victron_smartsolar_mppt
+         * @classdesc Represents a VictronDevice.
+         * @implements IVictronDevice
+         * @constructor
+         * @param {victron_smartsolar_mppt.IVictronDevice=} [properties] Properties to set
+         */
+        function VictronDevice(properties) {
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * VictronDevice portName.
+         * @member {string} portName
+         * @memberof victron_smartsolar_mppt.VictronDevice
+         * @instance
+         */
+        VictronDevice.prototype.portName = "";
+
+        /**
+         * VictronDevice vid.
+         * @member {number} vid
+         * @memberof victron_smartsolar_mppt.VictronDevice
+         * @instance
+         */
+        VictronDevice.prototype.vid = 0;
+
+        /**
+         * VictronDevice pid.
+         * @member {number} pid
+         * @memberof victron_smartsolar_mppt.VictronDevice
+         * @instance
+         */
+        VictronDevice.prototype.pid = 0;
+
+        /**
+         * VictronDevice serialNumber.
+         * @member {string} serialNumber
+         * @memberof victron_smartsolar_mppt.VictronDevice
+         * @instance
+         */
+        VictronDevice.prototype.serialNumber = "";
+
+        /**
+         * VictronDevice manufacturer.
+         * @member {string} manufacturer
+         * @memberof victron_smartsolar_mppt.VictronDevice
+         * @instance
+         */
+        VictronDevice.prototype.manufacturer = "";
+
+        /**
+         * VictronDevice product.
+         * @member {string} product
+         * @memberof victron_smartsolar_mppt.VictronDevice
+         * @instance
+         */
+        VictronDevice.prototype.product = "";
+
+        /**
+         * VictronDevice portBaudRate.
+         * @member {number} portBaudRate
+         * @memberof victron_smartsolar_mppt.VictronDevice
+         * @instance
+         */
+        VictronDevice.prototype.portBaudRate = 0;
+
+        /**
+         * VictronDevice productId.
+         * @member {number} productId
+         * @memberof victron_smartsolar_mppt.VictronDevice
+         * @instance
+         */
+        VictronDevice.prototype.productId = 0;
+
+        /**
+         * VictronDevice modelName.
+         * @member {string} modelName
+         * @memberof victron_smartsolar_mppt.VictronDevice
+         * @instance
+         */
+        VictronDevice.prototype.modelName = "";
+
+        /**
+         * VictronDevice firmwareVersion.
+         * @member {string} firmwareVersion
+         * @memberof victron_smartsolar_mppt.VictronDevice
+         * @instance
+         */
+        VictronDevice.prototype.firmwareVersion = "";
+
+        /**
+         * VictronDevice deviceSerial.
+         * @member {string} deviceSerial
+         * @memberof victron_smartsolar_mppt.VictronDevice
+         * @instance
+         */
+        VictronDevice.prototype.deviceSerial = "";
+
+        /**
+         * Creates a new VictronDevice instance using the specified properties.
+         * @function create
+         * @memberof victron_smartsolar_mppt.VictronDevice
+         * @static
+         * @param {victron_smartsolar_mppt.IVictronDevice=} [properties] Properties to set
+         * @returns {victron_smartsolar_mppt.VictronDevice} VictronDevice instance
+         */
+        VictronDevice.create = function create(properties) {
+            return new VictronDevice(properties);
+        };
+
+        /**
+         * Encodes the specified VictronDevice message. Does not implicitly {@link victron_smartsolar_mppt.VictronDevice.verify|verify} messages.
+         * @function encode
+         * @memberof victron_smartsolar_mppt.VictronDevice
+         * @static
+         * @param {victron_smartsolar_mppt.IVictronDevice} message VictronDevice message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        VictronDevice.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.portName != null && Object.hasOwnProperty.call(message, "portName"))
+                writer.uint32(/* id 1, wireType 2 =*/10).string(message.portName);
+            if (message.vid != null && Object.hasOwnProperty.call(message, "vid"))
+                writer.uint32(/* id 2, wireType 0 =*/16).uint32(message.vid);
+            if (message.pid != null && Object.hasOwnProperty.call(message, "pid"))
+                writer.uint32(/* id 3, wireType 0 =*/24).uint32(message.pid);
+            if (message.serialNumber != null && Object.hasOwnProperty.call(message, "serialNumber"))
+                writer.uint32(/* id 4, wireType 2 =*/34).string(message.serialNumber);
+            if (message.manufacturer != null && Object.hasOwnProperty.call(message, "manufacturer"))
+                writer.uint32(/* id 5, wireType 2 =*/42).string(message.manufacturer);
+            if (message.product != null && Object.hasOwnProperty.call(message, "product"))
+                writer.uint32(/* id 6, wireType 2 =*/50).string(message.product);
+            if (message.portBaudRate != null && Object.hasOwnProperty.call(message, "portBaudRate"))
+                writer.uint32(/* id 7, wireType 0 =*/56).uint32(message.portBaudRate);
+            if (message.productId != null && Object.hasOwnProperty.call(message, "productId"))
+                writer.uint32(/* id 8, wireType 0 =*/64).uint32(message.productId);
+            if (message.modelName != null && Object.hasOwnProperty.call(message, "modelName"))
+                writer.uint32(/* id 9, wireType 2 =*/74).string(message.modelName);
+            if (message.firmwareVersion != null && Object.hasOwnProperty.call(message, "firmwareVersion"))
+                writer.uint32(/* id 10, wireType 2 =*/82).string(message.firmwareVersion);
+            if (message.deviceSerial != null && Object.hasOwnProperty.call(message, "deviceSerial"))
+                writer.uint32(/* id 11, wireType 2 =*/90).string(message.deviceSerial);
+            return writer;
+        };
+
+        /**
+         * Encodes the specified VictronDevice message, length delimited. Does not implicitly {@link victron_smartsolar_mppt.VictronDevice.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof victron_smartsolar_mppt.VictronDevice
+         * @static
+         * @param {victron_smartsolar_mppt.IVictronDevice} message VictronDevice message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        VictronDevice.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes a VictronDevice message from the specified reader or buffer.
+         * @function decode
+         * @memberof victron_smartsolar_mppt.VictronDevice
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {victron_smartsolar_mppt.VictronDevice} VictronDevice
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        VictronDevice.decode = function decode(reader, length, error, long) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.victron_smartsolar_mppt.VictronDevice();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                if (tag === error)
+                    break;
+                switch (tag >>> 3) {
+                case 1: {
+                        message.portName = reader.string();
+                        break;
+                    }
+                case 2: {
+                        message.vid = reader.uint32();
+                        break;
+                    }
+                case 3: {
+                        message.pid = reader.uint32();
+                        break;
+                    }
+                case 4: {
+                        message.serialNumber = reader.string();
+                        break;
+                    }
+                case 5: {
+                        message.manufacturer = reader.string();
+                        break;
+                    }
+                case 6: {
+                        message.product = reader.string();
+                        break;
+                    }
+                case 7: {
+                        message.portBaudRate = reader.uint32();
+                        break;
+                    }
+                case 8: {
+                        message.productId = reader.uint32();
+                        break;
+                    }
+                case 9: {
+                        message.modelName = reader.string();
+                        break;
+                    }
+                case 10: {
+                        message.firmwareVersion = reader.string();
+                        break;
+                    }
+                case 11: {
+                        message.deviceSerial = reader.string();
+                        break;
+                    }
+                default:
+                    reader.skipType(tag & 7, long);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes a VictronDevice message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof victron_smartsolar_mppt.VictronDevice
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {victron_smartsolar_mppt.VictronDevice} VictronDevice
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        VictronDevice.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies a VictronDevice message.
+         * @function verify
+         * @memberof victron_smartsolar_mppt.VictronDevice
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        VictronDevice.verify = function verify(message, long) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
+            if (message.portName != null && message.hasOwnProperty("portName"))
+                if (!$util.isString(message.portName))
+                    return "portName: string expected";
+            if (message.vid != null && message.hasOwnProperty("vid"))
+                if (!$util.isInteger(message.vid))
+                    return "vid: integer expected";
+            if (message.pid != null && message.hasOwnProperty("pid"))
+                if (!$util.isInteger(message.pid))
+                    return "pid: integer expected";
+            if (message.serialNumber != null && message.hasOwnProperty("serialNumber"))
+                if (!$util.isString(message.serialNumber))
+                    return "serialNumber: string expected";
+            if (message.manufacturer != null && message.hasOwnProperty("manufacturer"))
+                if (!$util.isString(message.manufacturer))
+                    return "manufacturer: string expected";
+            if (message.product != null && message.hasOwnProperty("product"))
+                if (!$util.isString(message.product))
+                    return "product: string expected";
+            if (message.portBaudRate != null && message.hasOwnProperty("portBaudRate"))
+                if (!$util.isInteger(message.portBaudRate))
+                    return "portBaudRate: integer expected";
+            if (message.productId != null && message.hasOwnProperty("productId"))
+                if (!$util.isInteger(message.productId))
+                    return "productId: integer expected";
+            if (message.modelName != null && message.hasOwnProperty("modelName"))
+                if (!$util.isString(message.modelName))
+                    return "modelName: string expected";
+            if (message.firmwareVersion != null && message.hasOwnProperty("firmwareVersion"))
+                if (!$util.isString(message.firmwareVersion))
+                    return "firmwareVersion: string expected";
+            if (message.deviceSerial != null && message.hasOwnProperty("deviceSerial"))
+                if (!$util.isString(message.deviceSerial))
+                    return "deviceSerial: string expected";
+            return null;
+        };
+
+        /**
+         * Creates a VictronDevice message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof victron_smartsolar_mppt.VictronDevice
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {victron_smartsolar_mppt.VictronDevice} VictronDevice
+         */
+        VictronDevice.fromObject = function fromObject(object, long) {
+            if (object instanceof $root.victron_smartsolar_mppt.VictronDevice)
+                return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let message = new $root.victron_smartsolar_mppt.VictronDevice();
+            if (object.portName != null)
+                message.portName = String(object.portName);
+            if (object.vid != null)
+                message.vid = object.vid >>> 0;
+            if (object.pid != null)
+                message.pid = object.pid >>> 0;
+            if (object.serialNumber != null)
+                message.serialNumber = String(object.serialNumber);
+            if (object.manufacturer != null)
+                message.manufacturer = String(object.manufacturer);
+            if (object.product != null)
+                message.product = String(object.product);
+            if (object.portBaudRate != null)
+                message.portBaudRate = object.portBaudRate >>> 0;
+            if (object.productId != null)
+                message.productId = object.productId >>> 0;
+            if (object.modelName != null)
+                message.modelName = String(object.modelName);
+            if (object.firmwareVersion != null)
+                message.firmwareVersion = String(object.firmwareVersion);
+            if (object.deviceSerial != null)
+                message.deviceSerial = String(object.deviceSerial);
+            return message;
+        };
+
+        /**
+         * Creates a plain object from a VictronDevice message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof victron_smartsolar_mppt.VictronDevice
+         * @static
+         * @param {victron_smartsolar_mppt.VictronDevice} message VictronDevice
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        VictronDevice.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.defaults) {
+                object.portName = "";
+                object.vid = 0;
+                object.pid = 0;
+                object.serialNumber = "";
+                object.manufacturer = "";
+                object.product = "";
+                object.portBaudRate = 0;
+                object.productId = 0;
+                object.modelName = "";
+                object.firmwareVersion = "";
+                object.deviceSerial = "";
+            }
+            if (message.portName != null && message.hasOwnProperty("portName"))
+                object.portName = message.portName;
+            if (message.vid != null && message.hasOwnProperty("vid"))
+                object.vid = message.vid;
+            if (message.pid != null && message.hasOwnProperty("pid"))
+                object.pid = message.pid;
+            if (message.serialNumber != null && message.hasOwnProperty("serialNumber"))
+                object.serialNumber = message.serialNumber;
+            if (message.manufacturer != null && message.hasOwnProperty("manufacturer"))
+                object.manufacturer = message.manufacturer;
+            if (message.product != null && message.hasOwnProperty("product"))
+                object.product = message.product;
+            if (message.portBaudRate != null && message.hasOwnProperty("portBaudRate"))
+                object.portBaudRate = message.portBaudRate;
+            if (message.productId != null && message.hasOwnProperty("productId"))
+                object.productId = message.productId;
+            if (message.modelName != null && message.hasOwnProperty("modelName"))
+                object.modelName = message.modelName;
+            if (message.firmwareVersion != null && message.hasOwnProperty("firmwareVersion"))
+                object.firmwareVersion = message.firmwareVersion;
+            if (message.deviceSerial != null && message.hasOwnProperty("deviceSerial"))
+                object.deviceSerial = message.deviceSerial;
+            return object;
+        };
+
+        /**
+         * Converts this VictronDevice to JSON.
+         * @function toJSON
+         * @memberof victron_smartsolar_mppt.VictronDevice
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        VictronDevice.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for VictronDevice
+         * @function getTypeUrl
+         * @memberof victron_smartsolar_mppt.VictronDevice
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        VictronDevice.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+            if (typeUrlPrefix === undefined) {
+                typeUrlPrefix = "type.googleapis.com";
+            }
+            return typeUrlPrefix + "/victron_smartsolar_mppt.VictronDevice";
+        };
+
+        return VictronDevice;
+    })();
+
+    victron_smartsolar_mppt.RxEnvelope = (function() {
+
+        /**
+         * Properties of a RxEnvelope.
+         * @memberof victron_smartsolar_mppt
+         * @interface IRxEnvelope
+         * @property {Long|null} [monotonicStampNs] RxEnvelope monotonicStampNs
+         * @property {Long|null} [localStampNs] RxEnvelope localStampNs
+         * @property {Long|null} [appStartId] RxEnvelope appStartId
+         * @property {victron_smartsolar_mppt.VictronSignalType|null} [signalType] RxEnvelope signalType
+         * @property {victron_smartsolar_mppt.IVictronDevice|null} [device] RxEnvelope device
+         * @property {Uint8Array|null} [data] RxEnvelope data
+         * @property {Uint8Array|null} [hexFrame] RxEnvelope hexFrame
+         * @property {string|null} [error] RxEnvelope error
+         */
+
+        /**
+         * Constructs a new RxEnvelope.
+         * @memberof victron_smartsolar_mppt
+         * @classdesc Represents a RxEnvelope.
+         * @implements IRxEnvelope
+         * @constructor
+         * @param {victron_smartsolar_mppt.IRxEnvelope=} [properties] Properties to set
+         */
+        function RxEnvelope(properties) {
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * RxEnvelope monotonicStampNs.
+         * @member {Long} monotonicStampNs
+         * @memberof victron_smartsolar_mppt.RxEnvelope
+         * @instance
+         */
+        RxEnvelope.prototype.monotonicStampNs = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+
+        /**
+         * RxEnvelope localStampNs.
+         * @member {Long} localStampNs
+         * @memberof victron_smartsolar_mppt.RxEnvelope
+         * @instance
+         */
+        RxEnvelope.prototype.localStampNs = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+
+        /**
+         * RxEnvelope appStartId.
+         * @member {Long} appStartId
+         * @memberof victron_smartsolar_mppt.RxEnvelope
+         * @instance
+         */
+        RxEnvelope.prototype.appStartId = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+
+        /**
+         * RxEnvelope signalType.
+         * @member {victron_smartsolar_mppt.VictronSignalType} signalType
+         * @memberof victron_smartsolar_mppt.RxEnvelope
+         * @instance
+         */
+        RxEnvelope.prototype.signalType = 0;
+
+        /**
+         * RxEnvelope device.
+         * @member {victron_smartsolar_mppt.IVictronDevice|null|undefined} device
+         * @memberof victron_smartsolar_mppt.RxEnvelope
+         * @instance
+         */
+        RxEnvelope.prototype.device = null;
+
+        /**
+         * RxEnvelope data.
+         * @member {Uint8Array} data
+         * @memberof victron_smartsolar_mppt.RxEnvelope
+         * @instance
+         */
+        RxEnvelope.prototype.data = $util.newBuffer([]);
+
+        /**
+         * RxEnvelope hexFrame.
+         * @member {Uint8Array} hexFrame
+         * @memberof victron_smartsolar_mppt.RxEnvelope
+         * @instance
+         */
+        RxEnvelope.prototype.hexFrame = $util.newBuffer([]);
+
+        /**
+         * RxEnvelope error.
+         * @member {string} error
+         * @memberof victron_smartsolar_mppt.RxEnvelope
+         * @instance
+         */
+        RxEnvelope.prototype.error = "";
+
+        /**
+         * Creates a new RxEnvelope instance using the specified properties.
+         * @function create
+         * @memberof victron_smartsolar_mppt.RxEnvelope
+         * @static
+         * @param {victron_smartsolar_mppt.IRxEnvelope=} [properties] Properties to set
+         * @returns {victron_smartsolar_mppt.RxEnvelope} RxEnvelope instance
+         */
+        RxEnvelope.create = function create(properties) {
+            return new RxEnvelope(properties);
+        };
+
+        /**
+         * Encodes the specified RxEnvelope message. Does not implicitly {@link victron_smartsolar_mppt.RxEnvelope.verify|verify} messages.
+         * @function encode
+         * @memberof victron_smartsolar_mppt.RxEnvelope
+         * @static
+         * @param {victron_smartsolar_mppt.IRxEnvelope} message RxEnvelope message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        RxEnvelope.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.monotonicStampNs != null && Object.hasOwnProperty.call(message, "monotonicStampNs"))
+                writer.uint32(/* id 1, wireType 0 =*/8).uint64(message.monotonicStampNs);
+            if (message.localStampNs != null && Object.hasOwnProperty.call(message, "localStampNs"))
+                writer.uint32(/* id 2, wireType 0 =*/16).uint64(message.localStampNs);
+            if (message.appStartId != null && Object.hasOwnProperty.call(message, "appStartId"))
+                writer.uint32(/* id 3, wireType 0 =*/24).uint64(message.appStartId);
+            if (message.signalType != null && Object.hasOwnProperty.call(message, "signalType"))
+                writer.uint32(/* id 10, wireType 0 =*/80).int32(message.signalType);
+            if (message.device != null && Object.hasOwnProperty.call(message, "device"))
+                $root.victron_smartsolar_mppt.VictronDevice.encode(message.device, writer.uint32(/* id 11, wireType 2 =*/90).fork()).ldelim();
+            if (message.data != null && Object.hasOwnProperty.call(message, "data"))
+                writer.uint32(/* id 20, wireType 2 =*/162).bytes(message.data);
+            if (message.hexFrame != null && Object.hasOwnProperty.call(message, "hexFrame"))
+                writer.uint32(/* id 21, wireType 2 =*/170).bytes(message.hexFrame);
+            if (message.error != null && Object.hasOwnProperty.call(message, "error"))
+                writer.uint32(/* id 50, wireType 2 =*/402).string(message.error);
+            return writer;
+        };
+
+        /**
+         * Encodes the specified RxEnvelope message, length delimited. Does not implicitly {@link victron_smartsolar_mppt.RxEnvelope.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof victron_smartsolar_mppt.RxEnvelope
+         * @static
+         * @param {victron_smartsolar_mppt.IRxEnvelope} message RxEnvelope message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        RxEnvelope.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes a RxEnvelope message from the specified reader or buffer.
+         * @function decode
+         * @memberof victron_smartsolar_mppt.RxEnvelope
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {victron_smartsolar_mppt.RxEnvelope} RxEnvelope
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        RxEnvelope.decode = function decode(reader, length, error, long) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.victron_smartsolar_mppt.RxEnvelope();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                if (tag === error)
+                    break;
+                switch (tag >>> 3) {
+                case 1: {
+                        message.monotonicStampNs = reader.uint64();
+                        break;
+                    }
+                case 2: {
+                        message.localStampNs = reader.uint64();
+                        break;
+                    }
+                case 3: {
+                        message.appStartId = reader.uint64();
+                        break;
+                    }
+                case 10: {
+                        message.signalType = reader.int32();
+                        break;
+                    }
+                case 11: {
+                        message.device = $root.victron_smartsolar_mppt.VictronDevice.decode(reader, reader.uint32(), undefined, long + 1);
+                        break;
+                    }
+                case 20: {
+                        message.data = reader.bytes();
+                        break;
+                    }
+                case 21: {
+                        message.hexFrame = reader.bytes();
+                        break;
+                    }
+                case 50: {
+                        message.error = reader.string();
+                        break;
+                    }
+                default:
+                    reader.skipType(tag & 7, long);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes a RxEnvelope message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof victron_smartsolar_mppt.RxEnvelope
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {victron_smartsolar_mppt.RxEnvelope} RxEnvelope
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        RxEnvelope.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies a RxEnvelope message.
+         * @function verify
+         * @memberof victron_smartsolar_mppt.RxEnvelope
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        RxEnvelope.verify = function verify(message, long) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
+            if (message.monotonicStampNs != null && message.hasOwnProperty("monotonicStampNs"))
+                if (!$util.isInteger(message.monotonicStampNs) && !(message.monotonicStampNs && $util.isInteger(message.monotonicStampNs.low) && $util.isInteger(message.monotonicStampNs.high)))
+                    return "monotonicStampNs: integer|Long expected";
+            if (message.localStampNs != null && message.hasOwnProperty("localStampNs"))
+                if (!$util.isInteger(message.localStampNs) && !(message.localStampNs && $util.isInteger(message.localStampNs.low) && $util.isInteger(message.localStampNs.high)))
+                    return "localStampNs: integer|Long expected";
+            if (message.appStartId != null && message.hasOwnProperty("appStartId"))
+                if (!$util.isInteger(message.appStartId) && !(message.appStartId && $util.isInteger(message.appStartId.low) && $util.isInteger(message.appStartId.high)))
+                    return "appStartId: integer|Long expected";
+            if (message.signalType != null && message.hasOwnProperty("signalType"))
+                switch (message.signalType) {
+                default:
+                    return "signalType: enum value expected";
+                case 0:
+                case 1:
+                case 2:
+                case 3:
+                case 4:
+                case 5:
+                    break;
+                }
+            if (message.device != null && message.hasOwnProperty("device")) {
+                let error = $root.victron_smartsolar_mppt.VictronDevice.verify(message.device, long + 1);
+                if (error)
+                    return "device." + error;
+            }
+            if (message.data != null && message.hasOwnProperty("data"))
+                if (!(message.data && typeof message.data.length === "number" || $util.isString(message.data)))
+                    return "data: buffer expected";
+            if (message.hexFrame != null && message.hasOwnProperty("hexFrame"))
+                if (!(message.hexFrame && typeof message.hexFrame.length === "number" || $util.isString(message.hexFrame)))
+                    return "hexFrame: buffer expected";
+            if (message.error != null && message.hasOwnProperty("error"))
+                if (!$util.isString(message.error))
+                    return "error: string expected";
+            return null;
+        };
+
+        /**
+         * Creates a RxEnvelope message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof victron_smartsolar_mppt.RxEnvelope
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {victron_smartsolar_mppt.RxEnvelope} RxEnvelope
+         */
+        RxEnvelope.fromObject = function fromObject(object, long) {
+            if (object instanceof $root.victron_smartsolar_mppt.RxEnvelope)
+                return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let message = new $root.victron_smartsolar_mppt.RxEnvelope();
+            if (object.monotonicStampNs != null)
+                if ($util.Long)
+                    (message.monotonicStampNs = $util.Long.fromValue(object.monotonicStampNs)).unsigned = true;
+                else if (typeof object.monotonicStampNs === "string")
+                    message.monotonicStampNs = parseInt(object.monotonicStampNs, 10);
+                else if (typeof object.monotonicStampNs === "number")
+                    message.monotonicStampNs = object.monotonicStampNs;
+                else if (typeof object.monotonicStampNs === "object")
+                    message.monotonicStampNs = new $util.LongBits(object.monotonicStampNs.low >>> 0, object.monotonicStampNs.high >>> 0).toNumber(true);
+            if (object.localStampNs != null)
+                if ($util.Long)
+                    (message.localStampNs = $util.Long.fromValue(object.localStampNs)).unsigned = true;
+                else if (typeof object.localStampNs === "string")
+                    message.localStampNs = parseInt(object.localStampNs, 10);
+                else if (typeof object.localStampNs === "number")
+                    message.localStampNs = object.localStampNs;
+                else if (typeof object.localStampNs === "object")
+                    message.localStampNs = new $util.LongBits(object.localStampNs.low >>> 0, object.localStampNs.high >>> 0).toNumber(true);
+            if (object.appStartId != null)
+                if ($util.Long)
+                    (message.appStartId = $util.Long.fromValue(object.appStartId)).unsigned = true;
+                else if (typeof object.appStartId === "string")
+                    message.appStartId = parseInt(object.appStartId, 10);
+                else if (typeof object.appStartId === "number")
+                    message.appStartId = object.appStartId;
+                else if (typeof object.appStartId === "object")
+                    message.appStartId = new $util.LongBits(object.appStartId.low >>> 0, object.appStartId.high >>> 0).toNumber(true);
+            switch (object.signalType) {
+            default:
+                if (typeof object.signalType === "number") {
+                    message.signalType = object.signalType;
+                    break;
+                }
+                break;
+            case "VICTRON_SIGNAL_TYPE_UNSPECIFIED":
+            case 0:
+                message.signalType = 0;
+                break;
+            case "VICTRON_CONNECTED":
+            case 1:
+                message.signalType = 1;
+                break;
+            case "VICTRON_DISCONNECTED":
+            case 2:
+                message.signalType = 2;
+                break;
+            case "VICTRON_TEXT_BLOCK":
+            case 3:
+                message.signalType = 3;
+                break;
+            case "VICTRON_HEX_FRAME":
+            case 4:
+                message.signalType = 4;
+                break;
+            case "VICTRON_ERROR":
+            case 5:
+                message.signalType = 5;
+                break;
+            }
+            if (object.device != null) {
+                if (typeof object.device !== "object")
+                    throw TypeError(".victron_smartsolar_mppt.RxEnvelope.device: object expected");
+                message.device = $root.victron_smartsolar_mppt.VictronDevice.fromObject(object.device, long + 1);
+            }
+            if (object.data != null)
+                if (typeof object.data === "string")
+                    $util.base64.decode(object.data, message.data = $util.newBuffer($util.base64.length(object.data)), 0);
+                else if (object.data.length >= 0)
+                    message.data = object.data;
+            if (object.hexFrame != null)
+                if (typeof object.hexFrame === "string")
+                    $util.base64.decode(object.hexFrame, message.hexFrame = $util.newBuffer($util.base64.length(object.hexFrame)), 0);
+                else if (object.hexFrame.length >= 0)
+                    message.hexFrame = object.hexFrame;
+            if (object.error != null)
+                message.error = String(object.error);
+            return message;
+        };
+
+        /**
+         * Creates a plain object from a RxEnvelope message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof victron_smartsolar_mppt.RxEnvelope
+         * @static
+         * @param {victron_smartsolar_mppt.RxEnvelope} message RxEnvelope
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        RxEnvelope.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.defaults) {
+                if ($util.Long) {
+                    let long = new $util.Long(0, 0, true);
+                    object.monotonicStampNs = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+                } else
+                    object.monotonicStampNs = options.longs === String ? "0" : 0;
+                if ($util.Long) {
+                    let long = new $util.Long(0, 0, true);
+                    object.localStampNs = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+                } else
+                    object.localStampNs = options.longs === String ? "0" : 0;
+                if ($util.Long) {
+                    let long = new $util.Long(0, 0, true);
+                    object.appStartId = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+                } else
+                    object.appStartId = options.longs === String ? "0" : 0;
+                object.signalType = options.enums === String ? "VICTRON_SIGNAL_TYPE_UNSPECIFIED" : 0;
+                object.device = null;
+                if (options.bytes === String)
+                    object.data = "";
+                else {
+                    object.data = [];
+                    if (options.bytes !== Array)
+                        object.data = $util.newBuffer(object.data);
+                }
+                if (options.bytes === String)
+                    object.hexFrame = "";
+                else {
+                    object.hexFrame = [];
+                    if (options.bytes !== Array)
+                        object.hexFrame = $util.newBuffer(object.hexFrame);
+                }
+                object.error = "";
+            }
+            if (message.monotonicStampNs != null && message.hasOwnProperty("monotonicStampNs"))
+                if (typeof message.monotonicStampNs === "number")
+                    object.monotonicStampNs = options.longs === String ? String(message.monotonicStampNs) : message.monotonicStampNs;
+                else
+                    object.monotonicStampNs = options.longs === String ? $util.Long.prototype.toString.call(message.monotonicStampNs) : options.longs === Number ? new $util.LongBits(message.monotonicStampNs.low >>> 0, message.monotonicStampNs.high >>> 0).toNumber(true) : message.monotonicStampNs;
+            if (message.localStampNs != null && message.hasOwnProperty("localStampNs"))
+                if (typeof message.localStampNs === "number")
+                    object.localStampNs = options.longs === String ? String(message.localStampNs) : message.localStampNs;
+                else
+                    object.localStampNs = options.longs === String ? $util.Long.prototype.toString.call(message.localStampNs) : options.longs === Number ? new $util.LongBits(message.localStampNs.low >>> 0, message.localStampNs.high >>> 0).toNumber(true) : message.localStampNs;
+            if (message.appStartId != null && message.hasOwnProperty("appStartId"))
+                if (typeof message.appStartId === "number")
+                    object.appStartId = options.longs === String ? String(message.appStartId) : message.appStartId;
+                else
+                    object.appStartId = options.longs === String ? $util.Long.prototype.toString.call(message.appStartId) : options.longs === Number ? new $util.LongBits(message.appStartId.low >>> 0, message.appStartId.high >>> 0).toNumber(true) : message.appStartId;
+            if (message.signalType != null && message.hasOwnProperty("signalType"))
+                object.signalType = options.enums === String ? $root.victron_smartsolar_mppt.VictronSignalType[message.signalType] === undefined ? message.signalType : $root.victron_smartsolar_mppt.VictronSignalType[message.signalType] : message.signalType;
+            if (message.device != null && message.hasOwnProperty("device"))
+                object.device = $root.victron_smartsolar_mppt.VictronDevice.toObject(message.device, options);
+            if (message.data != null && message.hasOwnProperty("data"))
+                object.data = options.bytes === String ? $util.base64.encode(message.data, 0, message.data.length) : options.bytes === Array ? Array.prototype.slice.call(message.data) : message.data;
+            if (message.hexFrame != null && message.hasOwnProperty("hexFrame"))
+                object.hexFrame = options.bytes === String ? $util.base64.encode(message.hexFrame, 0, message.hexFrame.length) : options.bytes === Array ? Array.prototype.slice.call(message.hexFrame) : message.hexFrame;
+            if (message.error != null && message.hasOwnProperty("error"))
+                object.error = message.error;
+            return object;
+        };
+
+        /**
+         * Converts this RxEnvelope to JSON.
+         * @function toJSON
+         * @memberof victron_smartsolar_mppt.RxEnvelope
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        RxEnvelope.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for RxEnvelope
+         * @function getTypeUrl
+         * @memberof victron_smartsolar_mppt.RxEnvelope
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        RxEnvelope.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+            if (typeUrlPrefix === undefined) {
+                typeUrlPrefix = "type.googleapis.com";
+            }
+            return typeUrlPrefix + "/victron_smartsolar_mppt.RxEnvelope";
+        };
+
+        return RxEnvelope;
+    })();
+
+    return victron_smartsolar_mppt;
 })();
 
 export const normvla = $root.normvla = (() => {

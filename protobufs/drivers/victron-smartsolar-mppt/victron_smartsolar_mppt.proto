@@ -1,0 +1,44 @@
+syntax = "proto3";
+
+package victron_smartsolar_mppt;
+
+enum VictronSignalType {
+    VICTRON_SIGNAL_TYPE_UNSPECIFIED = 0;
+    VICTRON_CONNECTED               = 1;
+    VICTRON_DISCONNECTED            = 2;
+    VICTRON_TEXT_BLOCK              = 3;
+    VICTRON_HEX_FRAME               = 4;
+    VICTRON_ERROR                   = 5;
+}
+
+message VictronDevice {
+    string port_name      = 1;
+    uint32 vid            = 2;
+    uint32 pid            = 3;
+    string serial_number  = 4;
+    string manufacturer   = 5;
+    string product        = 6;
+    uint32 port_baud_rate = 7;
+
+    uint32 product_id       = 8;
+    string model_name       = 9;
+    string firmware_version = 10;
+    string device_serial    = 11;
+}
+
+message RxEnvelope {
+    uint64 monotonic_stamp_ns = 1;
+    uint64 local_stamp_ns     = 2;
+    uint64 app_start_id       = 3;
+
+    VictronSignalType signal_type = 10;
+    VictronDevice     device      = 11;
+
+    // Raw VE.Direct TEXT block bytes on TEXT_BLOCK/CONNECTED; empty otherwise.
+    bytes data = 20;
+
+    // Raw VE.Direct HEX response frame on HEX_FRAME; empty otherwise.
+    bytes hex_frame = 21;
+
+    string error = 50;
+}

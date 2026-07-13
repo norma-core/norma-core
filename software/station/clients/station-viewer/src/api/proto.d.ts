@@ -256,7 +256,8 @@ export namespace drivers {
         QDT_ARDUINO_NICLA_SENSE_ENV_TX = 50,
         QDT_ARDUINO_NICLA_SENSE_ENV_RX = 51,
         QDT_INA226_RX = 52,
-        QDT_AIRGRADIENT_OPEN_AIR_O_1PST_RX = 53
+        QDT_AIRGRADIENT_OPEN_AIR_O_1PST_RX = 53,
+        QDT_VICTRON_SMARTSOLAR_MPPT_RX = 54
     }
 
     /** StationCommandType enum. */
@@ -13050,6 +13051,316 @@ export namespace airgradient_open_air_o_1pst {
          * @returns Plain object
          */
         public static toObject(message: airgradient_open_air_o_1pst.RxEnvelope, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this RxEnvelope to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for RxEnvelope
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+}
+
+/** Namespace victron_smartsolar_mppt. */
+export namespace victron_smartsolar_mppt {
+
+    /** VictronSignalType enum. */
+    enum VictronSignalType {
+        VICTRON_SIGNAL_TYPE_UNSPECIFIED = 0,
+        VICTRON_CONNECTED = 1,
+        VICTRON_DISCONNECTED = 2,
+        VICTRON_TEXT_BLOCK = 3,
+        VICTRON_HEX_FRAME = 4,
+        VICTRON_ERROR = 5
+    }
+
+    /** Properties of a VictronDevice. */
+    interface IVictronDevice {
+
+        /** VictronDevice portName */
+        portName?: (string|null);
+
+        /** VictronDevice vid */
+        vid?: (number|null);
+
+        /** VictronDevice pid */
+        pid?: (number|null);
+
+        /** VictronDevice serialNumber */
+        serialNumber?: (string|null);
+
+        /** VictronDevice manufacturer */
+        manufacturer?: (string|null);
+
+        /** VictronDevice product */
+        product?: (string|null);
+
+        /** VictronDevice portBaudRate */
+        portBaudRate?: (number|null);
+
+        /** VictronDevice productId */
+        productId?: (number|null);
+
+        /** VictronDevice modelName */
+        modelName?: (string|null);
+
+        /** VictronDevice firmwareVersion */
+        firmwareVersion?: (string|null);
+
+        /** VictronDevice deviceSerial */
+        deviceSerial?: (string|null);
+    }
+
+    /** Represents a VictronDevice. */
+    class VictronDevice implements IVictronDevice {
+
+        /**
+         * Constructs a new VictronDevice.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: victron_smartsolar_mppt.IVictronDevice);
+
+        /** VictronDevice portName. */
+        public portName: string;
+
+        /** VictronDevice vid. */
+        public vid: number;
+
+        /** VictronDevice pid. */
+        public pid: number;
+
+        /** VictronDevice serialNumber. */
+        public serialNumber: string;
+
+        /** VictronDevice manufacturer. */
+        public manufacturer: string;
+
+        /** VictronDevice product. */
+        public product: string;
+
+        /** VictronDevice portBaudRate. */
+        public portBaudRate: number;
+
+        /** VictronDevice productId. */
+        public productId: number;
+
+        /** VictronDevice modelName. */
+        public modelName: string;
+
+        /** VictronDevice firmwareVersion. */
+        public firmwareVersion: string;
+
+        /** VictronDevice deviceSerial. */
+        public deviceSerial: string;
+
+        /**
+         * Creates a new VictronDevice instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns VictronDevice instance
+         */
+        public static create(properties?: victron_smartsolar_mppt.IVictronDevice): victron_smartsolar_mppt.VictronDevice;
+
+        /**
+         * Encodes the specified VictronDevice message. Does not implicitly {@link victron_smartsolar_mppt.VictronDevice.verify|verify} messages.
+         * @param message VictronDevice message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: victron_smartsolar_mppt.IVictronDevice, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified VictronDevice message, length delimited. Does not implicitly {@link victron_smartsolar_mppt.VictronDevice.verify|verify} messages.
+         * @param message VictronDevice message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: victron_smartsolar_mppt.IVictronDevice, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes a VictronDevice message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns VictronDevice
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): victron_smartsolar_mppt.VictronDevice;
+
+        /**
+         * Decodes a VictronDevice message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns VictronDevice
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): victron_smartsolar_mppt.VictronDevice;
+
+        /**
+         * Verifies a VictronDevice message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates a VictronDevice message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns VictronDevice
+         */
+        public static fromObject(object: { [k: string]: any }): victron_smartsolar_mppt.VictronDevice;
+
+        /**
+         * Creates a plain object from a VictronDevice message. Also converts values to other types if specified.
+         * @param message VictronDevice
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: victron_smartsolar_mppt.VictronDevice, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this VictronDevice to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for VictronDevice
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
+    /** Properties of a RxEnvelope. */
+    interface IRxEnvelope {
+
+        /** RxEnvelope monotonicStampNs */
+        monotonicStampNs?: (Long|null);
+
+        /** RxEnvelope localStampNs */
+        localStampNs?: (Long|null);
+
+        /** RxEnvelope appStartId */
+        appStartId?: (Long|null);
+
+        /** RxEnvelope signalType */
+        signalType?: (victron_smartsolar_mppt.VictronSignalType|null);
+
+        /** RxEnvelope device */
+        device?: (victron_smartsolar_mppt.IVictronDevice|null);
+
+        /** RxEnvelope data */
+        data?: (Uint8Array|null);
+
+        /** RxEnvelope hexFrame */
+        hexFrame?: (Uint8Array|null);
+
+        /** RxEnvelope error */
+        error?: (string|null);
+    }
+
+    /** Represents a RxEnvelope. */
+    class RxEnvelope implements IRxEnvelope {
+
+        /**
+         * Constructs a new RxEnvelope.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: victron_smartsolar_mppt.IRxEnvelope);
+
+        /** RxEnvelope monotonicStampNs. */
+        public monotonicStampNs: Long;
+
+        /** RxEnvelope localStampNs. */
+        public localStampNs: Long;
+
+        /** RxEnvelope appStartId. */
+        public appStartId: Long;
+
+        /** RxEnvelope signalType. */
+        public signalType: victron_smartsolar_mppt.VictronSignalType;
+
+        /** RxEnvelope device. */
+        public device?: (victron_smartsolar_mppt.IVictronDevice|null);
+
+        /** RxEnvelope data. */
+        public data: Uint8Array;
+
+        /** RxEnvelope hexFrame. */
+        public hexFrame: Uint8Array;
+
+        /** RxEnvelope error. */
+        public error: string;
+
+        /**
+         * Creates a new RxEnvelope instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns RxEnvelope instance
+         */
+        public static create(properties?: victron_smartsolar_mppt.IRxEnvelope): victron_smartsolar_mppt.RxEnvelope;
+
+        /**
+         * Encodes the specified RxEnvelope message. Does not implicitly {@link victron_smartsolar_mppt.RxEnvelope.verify|verify} messages.
+         * @param message RxEnvelope message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: victron_smartsolar_mppt.IRxEnvelope, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified RxEnvelope message, length delimited. Does not implicitly {@link victron_smartsolar_mppt.RxEnvelope.verify|verify} messages.
+         * @param message RxEnvelope message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: victron_smartsolar_mppt.IRxEnvelope, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes a RxEnvelope message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns RxEnvelope
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): victron_smartsolar_mppt.RxEnvelope;
+
+        /**
+         * Decodes a RxEnvelope message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns RxEnvelope
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): victron_smartsolar_mppt.RxEnvelope;
+
+        /**
+         * Verifies a RxEnvelope message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates a RxEnvelope message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns RxEnvelope
+         */
+        public static fromObject(object: { [k: string]: any }): victron_smartsolar_mppt.RxEnvelope;
+
+        /**
+         * Creates a plain object from a RxEnvelope message. Also converts values to other types if specified.
+         * @param message RxEnvelope
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: victron_smartsolar_mppt.RxEnvelope, options?: $protobuf.IConversionOptions): { [k: string]: any };
 
         /**
          * Converts this RxEnvelope to JSON.

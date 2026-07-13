@@ -1,0 +1,20 @@
+[package]
+name = "victron-smartsolar-mppt"
+version.workspace = true
+edition = "2024"
+
+[dependencies]
+tokio = { workspace = true }
+tokio-serial = { workspace = true }
+normfs = { workspace = true }
+systime = { path = "../../station/shared/systime-rs" }
+station_iface = { path = "../../station/shared/station-iface" }
+prost = { workspace = true }
+bytes = { workspace = true }
+log = { workspace = true }
+
+[lib]
+path = "src/lib.rs"
+
+[build-dependencies]
+prost-build = { workspace = true }

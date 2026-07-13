@@ -12,6 +12,7 @@ members = [
   "software/drivers/sysinfod",
   "software/drivers/usbvideo",
   "software/drivers/vesc-trampa",
+  "software/drivers/victron-smartsolar-mppt",
   "software/drivers/yahboom-dogzilla-lite",
   "software/drivers/ov5647",
   "software/station/bin/station",
