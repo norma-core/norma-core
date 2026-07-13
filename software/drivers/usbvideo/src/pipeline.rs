@@ -273,13 +273,14 @@ impl<K: USBCameraDriver> USBVideoManager<K> {
                             cam_tracker.resolution(),
                         );
 
-                        if selection.resolution_fallback
+                        if selection.resolution_unavailable
                             && let Some(requested) = cam_tracker.resolution()
                         {
                             warn!(
-                                "Camera {}: requested resolution {}x{} is not available, falling back to automatic format selection",
+                                "Camera {}: requested resolution {}x{} is not available, ignoring camera",
                                 camera.unique_id, requested.width, requested.height,
                             );
+                            return;
                         }
 
                         let formats = selection.formats;

@@ -427,29 +427,31 @@ impl Station {
         // Start USB camera monitoring if configured
         if let Some(usb_video) = &self.config.drivers.usb_video {
             if usb_video.enabled {
-                let resolution = match usbvideo::parse_resolution(&usb_video.resolution) {
-                    Ok(resolution) => resolution,
-                    Err(e) => {
-                        log::warn!(
-                            "Invalid usb-video.resolution: {}; using automatic format selection",
-                            e
-                        );
-                        None
+                match usbvideo::parse_resolution(&usb_video.resolution) {
+                    Ok(resolution) => {
+                        let usb_instance = usbvideo::start_usbvideo(
+                            self.normfs.clone(),
+                            self.engine.clone(),
+                            self.base_path.clone(),
+                            usbvideo::USBVideoConfig {
+                                resize_target: usb_video.resize_target,
+                                resolution,
+                                frame_skip: usb_video.frame_skip,
+                            },
+                        )
+                        .await;
+                        self.usbvideo_instances.lock().push(usb_instance);
                     }
-                };
-
-                let usb_instance = usbvideo::start_usbvideo(
-                    self.normfs.clone(),
-                    self.engine.clone(),
-                    self.base_path.clone(),
-                    usbvideo::USBVideoConfig {
-                        resize_target: usb_video.resize_target,
-                        resolution,
-                        frame_skip: usb_video.frame_skip,
-                    },
-                )
-                .await;
-                self.usbvideo_instances.lock().push(usb_instance);
+                    Err(e) => {
+                        // Do not silently fall back to automatic format selection:
+                        // a misconfigured resolution disables the driver so cameras
+                        // are ignored rather than captured at an unintended size.
+                        log::error!(
+                            "Invalid usb-video.resolution {:?}: {}. usb-video driver disabled; cameras ignored (set resolution to \"auto\" to capture at an automatic format)",
+                            usb_video.resolution, e
+                        );
+                    }
+                }
             } else {
                 log::info!("USB video monitoring disabled by configuration");
             }
