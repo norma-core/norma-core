@@ -12822,6 +12822,9 @@ export namespace airgradient_open_air_o_1pst {
 
         /** AirGradientDevice portBaudRate */
         portBaudRate?: (number|null);
+
+        /** AirGradientDevice deviceId */
+        deviceId?: (string|null);
     }
 
     /** Represents an AirGradientDevice. */
@@ -12853,6 +12856,9 @@ export namespace airgradient_open_air_o_1pst {
 
         /** AirGradientDevice portBaudRate. */
         public portBaudRate: number;
+
+        /** AirGradientDevice deviceId. */
+        public deviceId: string;
 
         /**
          * Creates a new AirGradientDevice instance using the specified properties.

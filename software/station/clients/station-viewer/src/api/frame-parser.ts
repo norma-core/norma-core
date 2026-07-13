@@ -27,7 +27,7 @@ export interface Frame {
   sysinfo?: FrameEntry<sysinfo.IEnvelope>;
   arduinoNiclaSenseEnv?: FrameEntry<arduino_nicla_sense_env.IRxEnvelope>;
   ina226?: FrameEntry<ina226.IRxEnvelope>[];
-  airgradientOpenAir?: FrameEntry<airgradient_open_air_o_1pst.IRxEnvelope>;
+  airgradientOpenAir?: FrameEntry<airgradient_open_air_o_1pst.IRxEnvelope>[];
   yahboom_dogzilla_lite?: FrameEntry<yahboom_dogzilla_lite.IInferenceState>;
   normvla?: FrameEntry<normvla.IFrame>;
 
@@ -140,10 +140,13 @@ function findPreviousEntry(
   }
 
   // Check AirGradient Open Air O-1PST
-  if (previousFrame.airgradientOpenAir?.queueId === queue) {
-    const prevPtr = previousFrame.airgradientOpenAir.ptr;
-    if (prevPtr.length === ptr.length && prevPtr.every((b, i) => b === ptr[i])) {
-      return { decoded: previousFrame.airgradientOpenAir.data, rawData: previousFrame.airgradientOpenAir.rawData ?? null };
+  if (previousFrame.airgradientOpenAir) {
+    const match = previousFrame.airgradientOpenAir.find(entry => entry.queueId === queue);
+    if (match) {
+      const prevPtr = match.ptr;
+      if (prevPtr.length === ptr.length && prevPtr.every((b, i) => b === ptr[i])) {
+        return { decoded: match.data, rawData: match.rawData ?? null };
+      }
     }
   }
 
@@ -195,6 +198,7 @@ export async function parseFrame(
     stateId: new Uint8Array(Array.from(entryIdBytes)),
     videoQueues: [],
     ina226: [],
+    airgradientOpenAir: [],
     otherEntries: retainRawData ? {} : undefined
   };
 
@@ -434,13 +438,13 @@ export async function parseFrame(
             });
             break;
           case drivers.QueueDataType.QDT_AIRGRADIENT_OPEN_AIR_O_1PST_RX:
-            frame.airgradientOpenAir = {
+            frame.airgradientOpenAir!.push({
               queueId: result.queue,
               ptr: result.ptr,
               data: result.decoded as airgradient_open_air_o_1pst.IRxEnvelope,
               rawData: retainRawData ? result.rawData ?? null : null,
               queueType: result.type
-            };
+            });
             break;
           case drivers.QueueDataType.QDT_YAHBOOM_DOGZILLA_LITE_INFERENCE:
             frame.yahboom_dogzilla_lite = {

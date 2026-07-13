@@ -1,9 +1,8 @@
 use crate::airgradient_open_air_o_1pst_proto::AirGradientDevice;
 use crate::port::AirGradientPort;
 use log::{error, info, warn};
-use normfs::{NormFS, QueueId};
+use normfs::NormFS;
 use station_iface::StationEngine;
-use station_iface::iface_proto::drivers::QueueDataType;
 use std::collections::HashSet;
 use std::sync::Arc;
 use std::time::Duration;
@@ -12,7 +11,7 @@ use tokio::task::JoinHandle;
 use tokio::time::interval;
 use tokio_serial::{SerialPortInfo, SerialPortType, available_ports};
 
-pub const RX_QUEUE_ID: &str = "airgradient-open-air-o-1pst/rx";
+pub const QUEUE_PREFIX: &str = "airgradient-open-air-o-1pst";
 pub const DEFAULT_READ_TIMEOUT: Duration = Duration::from_secs(10);
 
 const PORT_BAUD_RATE: u32 = 115_200;
@@ -57,14 +56,6 @@ impl AirGradientOpenAirO1pstDriver {
         station_engine: Arc<T>,
         mut config: AirGradientOpenAirO1pstDriverConfig,
     ) -> Result<Self, Box<dyn std::error::Error>> {
-        let rx_queue_id = normfs.resolve(RX_QUEUE_ID);
-        normfs.ensure_queue_exists_for_write(&rx_queue_id).await?;
-        station_engine.register_queue(
-            &rx_queue_id,
-            QueueDataType::QdtAirgradientOpenAirO1pstRx,
-            vec![],
-        );
-
         if config.read_timeout.is_zero() {
             warn!(
                 "AirGradient Open Air O-1PST read timeout is zero, using {:?}",
@@ -79,12 +70,30 @@ impl AirGradientOpenAirO1pstDriver {
         );
         let worker = tokio::spawn(run_scan_loop(
             normfs.clone(),
-            rx_queue_id,
+            station_engine,
             config.read_timeout,
         ));
 
         Ok(Self { _worker: worker })
     }
+}
+
+pub(crate) fn device_rx_queue_path(device: &AirGradientDevice) -> String {
+    let key = [
+        device.device_id.as_str(),
+        device.serial_number.as_str(),
+        device.port_name.as_str(),
+    ]
+    .into_iter()
+    .find(|candidate| !candidate.is_empty())
+    .unwrap_or("unknown");
+
+    let key: String = key
+        .chars()
+        .map(|c| if c.is_ascii_alphanumeric() { c } else { '-' })
+        .collect();
+
+    format!("{QUEUE_PREFIX}/{key}/rx")
 }
 
 pub async fn start_airgradient_open_air_o_1pst_driver<T: StationEngine>(
@@ -96,7 +105,11 @@ pub async fn start_airgradient_open_air_o_1pst_driver<T: StationEngine>(
     Ok(Arc::new(driver))
 }
 
-async fn run_scan_loop(normfs: Arc<NormFS>, rx_queue_id: QueueId, read_timeout: Duration) {
+async fn run_scan_loop<T: StationEngine>(
+    normfs: Arc<NormFS>,
+    station_engine: Arc<T>,
+    read_timeout: Duration,
+) {
     let managed: Arc<RwLock<HashSet<String>>> = Arc::new(RwLock::new(HashSet::new()));
     let mut scan = interval(Duration::from_secs(1));
 
@@ -126,10 +139,10 @@ async fn run_scan_loop(normfs: Arc<NormFS>, rx_queue_id: QueueId, read_timeout: 
             managed.write().await.insert(port_name.clone());
 
             let normfs = normfs.clone();
-            let rx_queue_id = rx_queue_id.clone();
+            let station_engine = station_engine.clone();
             let managed = managed.clone();
             tokio::spawn(async move {
-                let port = AirGradientPort::new(normfs, rx_queue_id, device, read_timeout);
+                let port = AirGradientPort::new(normfs, station_engine, device, read_timeout);
                 if let Err(err) = port.open().await {
                     warn!("Failed to open AirGradient Open Air O-1PST port {}: {}", port_name, err);
                 }
@@ -186,5 +199,6 @@ fn create_device(port_info: &SerialPortInfo) -> AirGradientDevice {
         manufacturer,
         product,
         port_baud_rate: PORT_BAUD_RATE,
+        device_id: String::new(),
     }
 }

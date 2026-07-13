@@ -8,5 +8,5 @@ mod port;
 
 pub use driver::{
     AirGradientOpenAirO1pstDriver, AirGradientOpenAirO1pstDriverConfig, DEFAULT_READ_TIMEOUT,
-    RX_QUEUE_ID, start_airgradient_open_air_o_1pst_driver,
+    QUEUE_PREFIX, start_airgradient_open_air_o_1pst_driver,
 };

@@ -76,5 +76,5 @@ export function airGradientDeviceLabel(
   if (!device) {
     return 'AirGradient';
   }
-  return device.portName || device.serialNumber || device.product || 'AirGradient';
+  return device.deviceId || device.portName || device.serialNumber || device.product || 'AirGradient';
 }

@@ -18,6 +18,7 @@ message AirGradientDevice {
     string manufacturer   = 5;
     string product        = 6;
     uint32 port_baud_rate = 7;
+    string device_id      = 8;
 }
 
 message RxEnvelope {
