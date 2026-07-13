@@ -98,6 +98,13 @@ pub struct Drivers {
         skip_serializing_if = "Option::is_none"
     )]
     pub airgradient_open_air_o_1pst: Option<AirGradientOpenAirO1pstConfig>,
+
+    #[serde(
+        rename = "victron-smartsolar-mppt",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub victron_smartsolar_mppt: Option<VictronSmartSolarMpptConfig>,
 }
 
 /// ST3215 servo bus configuration
@@ -485,6 +492,34 @@ impl Default for AirGradientOpenAirO1pstConfig {
     }
 }
 
+/// Victron SmartSolar MPPT solar charge controller (VE.Direct over USB).
+/// The charger is located by USB auto-detection.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct VictronSmartSolarMpptConfig {
+    #[serde(default)]
+    pub enabled: bool,
+
+    #[serde(
+        rename = "read-timeout",
+        with = "humantime_serde",
+        default = "default_victron_smartsolar_mppt_read_timeout"
+    )]
+    pub read_timeout: std::time::Duration,
+}
+
+fn default_victron_smartsolar_mppt_read_timeout() -> std::time::Duration {
+    std::time::Duration::from_secs(10)
+}
+
+impl Default for VictronSmartSolarMpptConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            read_timeout: default_victron_smartsolar_mppt_read_timeout(),
+        }
+    }
+}
+
 fn default_ov5647_dimension() -> String {
     "320x240".to_string()
 }
@@ -521,6 +556,7 @@ impl Default for Drivers {
             arduino_nicla_sense_env: None,
             ina226: None,
             airgradient_open_air_o_1pst: None,
+            victron_smartsolar_mppt: None,
         }
     }
 }
@@ -596,6 +632,18 @@ mod config_tests {
         assert_eq!(airgradient.port.as_deref(), Some("/dev/ttyACM0"));
         assert_eq!(airgradient.port_baud_rate, 115_200);
         assert_eq!(airgradient.read_timeout, std::time::Duration::from_secs(10));
+        assert_eq!(cfg.inference.as_ref().map(Vec::len), Some(0));
+    }
+
+    #[test]
+    fn parses_victron_smartsolar_mppt_config() {
+        let cfg: Config = serde_yaml::from_str(
+            "drivers:\n  system-info: true\n  victron-smartsolar-mppt:\n    enabled: true\n    read-timeout: 30s\ninference:\n",
+        )
+        .unwrap();
+        let victron = cfg.drivers.victron_smartsolar_mppt.unwrap();
+        assert!(victron.enabled);
+        assert_eq!(victron.read_timeout, std::time::Duration::from_secs(30));
         assert_eq!(cfg.inference.as_ref().map(Vec::len), Some(0));
     }
 }
