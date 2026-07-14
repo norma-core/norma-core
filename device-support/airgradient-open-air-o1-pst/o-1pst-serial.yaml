@@ -79,6 +79,7 @@ interval:
           # Format the output as a clean JSON string
           format: '{"device_id": "%s", "pm1_0": %.0f, "pm2_5": %.0f, "pm10_0": %.0f, "temp_c": %.1f, "humidity": %.1f, "co2": %.0f, "voc_index": %.0f, "nox_index": %.0f}'
           args: 
+            - esphome::get_mac_address_pretty().c_str()
             - id(pm1_0).state
             - id(pm2_5).state
             - id(pm10_0).state
