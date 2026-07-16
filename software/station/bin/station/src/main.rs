@@ -70,6 +70,13 @@ struct Args {
     /// Addr to listen for websocket server. If provided without a value, it will listen on 0.0.0.0:8889.
     #[arg(long, num_args = 0..=1, default_missing_value = "0.0.0.0:8889")]
     web: Option<String>,
+
+    /// Local filesystem path to an ElRobot follower URDF file to serve
+    /// instead of the copy embedded into this binary at build time. Useful
+    /// for iterating on the URDF (e.g. gravity-compensation dynamics data)
+    /// without rebuilding station-viewer and station itself.
+    #[arg(long)]
+    elrobot_urdf_path: Option<PathBuf>,
 }
 
 fn validate_normfs_file_size(args: &Args) -> Result<(), io::Error> {
@@ -749,6 +756,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     log::info!("NormFS file size: {} bytes", args.normfs_file_size);
     log::info!("NormFS base folder: {:?}", args.normfs_base_folder);
     log::info!("Configuration file: {:?}", args.config);
+    if let Some(path) = &args.elrobot_urdf_path {
+        log::info!("ElRobot URDF override: {:?}", path);
+    }
 
     let mut station = Station::new(&args).await?;
 
@@ -796,9 +806,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         let normfs_clone = station.normfs.clone();
         let web_shutdown_clone = web_shutdown.clone();
+        let elrobot_urdf_path = args.elrobot_urdf_path.clone();
         web_server_handle = Some(tokio::spawn(async move {
-            if let Err(e) =
-                web::server::start_server(web_addr, normfs_clone, web_shutdown_clone).await
+            if let Err(e) = web::server::start_server(
+                web_addr,
+                normfs_clone,
+                web_shutdown_clone,
+                elrobot_urdf_path,
+            )
+            .await
             {
                 log::error!("Web server error: {}", e);
             }

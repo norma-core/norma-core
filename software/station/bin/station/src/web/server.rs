@@ -8,6 +8,7 @@ use normfs::NormFS;
 use rust_embed::RustEmbed;
 use std::error::Error;
 use std::net::SocketAddr;
+use std::path::PathBuf;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use tokio::net::TcpListener;
@@ -15,6 +16,11 @@ use tokio::net::TcpListener;
 #[derive(RustEmbed)]
 #[folder = "../../clients/station-viewer/dist"]
 struct Asset;
+
+// Asset key `rust_embed` uses for the ElRobot follower URDF (matches
+// `elrobotUrdfPath` in station-viewer's `devices/elrobot/config.ts`), the
+// only asset `--elrobot-urdf-path` is allowed to override.
+const ELROBOT_FOLLOWER_URDF_ASSET: &str = "devices/elrobot/elrobot_follower.urdf";
 
 fn empty() -> BoxBody<Bytes, hyper::Error> {
     Empty::<Bytes>::new()
@@ -30,6 +36,7 @@ fn full<T: Into<Bytes>>(chunk: T) -> BoxBody<Bytes, hyper::Error> {
 
 struct WebServer {
     normfs: Arc<NormFS>,
+    elrobot_urdf_override: Option<PathBuf>,
 }
 
 // Routes taken from `software/station/clients/station-viewer/src/App.tsx`.
@@ -91,6 +98,34 @@ impl WebServer {
         } else {
             asset_path
         };
+
+        if asset_path == ELROBOT_FOLLOWER_URDF_ASSET
+            && let Some(override_path) = &self.elrobot_urdf_override
+        {
+            match tokio::fs::read(override_path).await {
+                Ok(bytes) => {
+                    let mime = mime_guess::from_path(asset_path).first_or_octet_stream();
+                    let mut response = Response::new(full(bytes));
+                    response.headers_mut().insert(
+                        hyper::header::CONTENT_TYPE,
+                        hyper::header::HeaderValue::from_str(mime.as_ref())?,
+                    );
+                    // Deliberately not immutable/long-lived like the embedded
+                    // asset's cache header: the whole point of this override
+                    // is to iterate on the file on disk between reloads.
+                    response.headers_mut().insert(
+                        hyper::header::CACHE_CONTROL,
+                        hyper::header::HeaderValue::from_static("no-store, no-cache, must-revalidate"),
+                    );
+                    return Ok(response);
+                }
+                Err(e) => {
+                    log::error!(
+                        "Failed to read ElRobot URDF override at {override_path:?}: {e:#}. Falling back to the embedded asset."
+                    );
+                }
+            }
+        }
 
         let gz_path = format!("{}.gz", asset_path);
 
@@ -190,10 +225,14 @@ pub async fn start_server(
     addr: SocketAddr,
     normfs: Arc<NormFS>,
     shutdown: Arc<AtomicBool>,
+    elrobot_urdf_override: Option<PathBuf>,
 ) -> Result<(), Box<dyn Error + Send + Sync>> {
     let listener = TcpListener::bind(addr).await?;
     log::info!("WebSocket server listening on {}", addr);
-    let server = Arc::new(WebServer { normfs });
+    let server = Arc::new(WebServer {
+        normfs,
+        elrobot_urdf_override,
+    });
 
     loop {
         tokio::select! {
