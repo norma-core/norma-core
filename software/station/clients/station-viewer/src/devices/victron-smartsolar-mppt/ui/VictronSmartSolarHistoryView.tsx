@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { victron_smartsolar_mppt } from '@/api/proto.js';
 import webSocketManager from '@/api/websocket';
+import type { HistoryExpandedProps } from '@/devices/history';
 import {
   CHARGE_STATE_LABELS,
   DEVICE_MODE_LABELS,
@@ -34,12 +35,6 @@ import {
 // accumulated state the live widget holds; the window has to be wide enough to
 // cover the async-only registers, which the charger volunteers every few seconds.
 const REPLAY_ENTRIES = 64;
-
-interface VictronSmartSolarExpandedProps {
-  data: victron_smartsolar_mppt.IRxEnvelope;
-  queueId?: string;
-  entryId?: Uint8Array;
-}
 
 interface Item {
   label: string;
@@ -113,7 +108,8 @@ function GroupPanel({ group }: { group: Group }) {
   );
 }
 
-function VictronSmartSolarExpanded({ data, queueId, entryId }: VictronSmartSolarExpandedProps) {
+function VictronSmartSolarHistoryView({ entry }: HistoryExpandedProps<victron_smartsolar_mppt.IRxEnvelope>) {
+  const { data, queueId, ptr: entryId } = entry;
   const [state, setState] = useState<VictronState>(() => applyEnvelope(EMPTY_STATE, data));
 
   useEffect(() => {
@@ -135,8 +131,8 @@ function VictronSmartSolarExpanded({ data, queueId, entryId }: VictronSmartSolar
     Promise.all(
       ids.map(async (id) => {
         try {
-          const entry = await webSocketManager.normFs.readSingleEntry(queueId, id);
-          return victron_smartsolar_mppt.RxEnvelope.decode(entry.data);
+          const readEntry = await webSocketManager.normFs.readSingleEntry(queueId, id);
+          return victron_smartsolar_mppt.RxEnvelope.decode(readEntry.data);
         } catch {
           return null;
         }
@@ -257,4 +253,4 @@ function VictronSmartSolarExpanded({ data, queueId, entryId }: VictronSmartSolar
   );
 }
 
-export default VictronSmartSolarExpanded;
+export default VictronSmartSolarHistoryView;

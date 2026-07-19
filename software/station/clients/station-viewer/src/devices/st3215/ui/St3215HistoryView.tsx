@@ -1,11 +1,8 @@
 import { memo, useMemo } from 'react';
 import { st3215 } from '@/api/proto.js';
+import type { HistoryExpandedProps } from '@/devices/history';
 import { getMotorCurrent, getMotorPosition, getMotorTemperature, getMotorVelocity, isTorqueEnabled } from '@/st3215/motor-parser';
 import BusWebGLRenderer from '@/st3215/BusWebGLRenderer';
-
-interface St3215ExpandedProps {
-  data: st3215.InferenceState;
-}
 
 interface MotorSummaryTableProps {
   motors?: st3215.InferenceState.IMotorState[] | null;
@@ -97,7 +94,8 @@ const MotorSummaryTable = memo(function MotorSummaryTable({ motors }: MotorSumma
   );
 });
 
-const St3215Expanded = memo(function St3215Expanded({ data }: St3215ExpandedProps) {
+const St3215HistoryView = memo(function St3215HistoryView({ entry }: HistoryExpandedProps<st3215.IInferenceState>) {
+  const { data } = entry;
   const busCount = data.buses?.length ?? 0;
   const totalMotors = data.buses?.reduce((total, bus) => total + (bus.motors?.length || 0), 0) ?? 0;
   const canRenderWebGL = BusWebGLRenderer.canRender();
@@ -156,4 +154,4 @@ const St3215Expanded = memo(function St3215Expanded({ data }: St3215ExpandedProp
   );
 });
 
-export default St3215Expanded;
+export default St3215HistoryView;

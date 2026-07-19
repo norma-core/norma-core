@@ -4,7 +4,6 @@ export { useLiveSnapshot } from "./useLiveSnapshot";
 export { useConnectionStats } from "./useConnectionStats";
 export { useElapsedSeconds } from "./useElapsedSeconds";
 export { useFrameData } from "./useFrameData";
-export { useQueueEntries } from "./useQueueEntries";
 export { useTimelineState } from "./useTimelineState";
 export { useStartupMarkers } from "./useStartupMarkers";
 export { useInferenceTags, invalidateTagsCache } from "./useInferenceTags";

@@ -260,32 +260,37 @@ describe('WebSocketManager state', () => {
     vi.spyOn(console, 'log').mockImplementation(() => undefined);
     const { default: webSocketManager } = await import('@/api/websocket');
     const sysinfoEntry: inference.InferenceRx.IEntry = {
-      queue: 'system',
+      queue: 'system/rx',
       ptr: Uint8Array.of(3),
       type: drivers.QueueDataType.QDT_SYSTEM,
     };
 
     const firstSocket = getSocket();
     queueFrame(firstSocket, 7, [sysinfoEntry]);
-    firstSocket.queueReadResponse('system', {
+    firstSocket.queueReadResponse('system/rx', {
       entryId: 3,
       data: createSysinfoData('old-backend'),
     });
     const firstSnapshot = waitForNextLiveSnapshot(webSocketManager);
     firstSocket.open();
-    expect((await firstSnapshot).frame?.sysinfo?.data.data?.hostname).toBe('old-backend');
+    const { sysinfoCodec } = await import('@/devices/sysinfo/codec');
+    expect(
+      (await firstSnapshot).frame?.devices.entryOf(sysinfoCodec)?.data.data?.hostname,
+    ).toBe('old-backend');
     firstSocket.disconnect();
 
     await vi.advanceTimersByTimeAsync(100);
     const secondSocket = getSocket();
     queueFrame(secondSocket, 7, [sysinfoEntry]);
-    secondSocket.queueReadResponse('system', {
+    secondSocket.queueReadResponse('system/rx', {
       entryId: 3,
       data: createSysinfoData('new-backend'),
     });
     const secondSnapshot = waitForNextLiveSnapshot(webSocketManager);
     secondSocket.open();
 
-    expect((await secondSnapshot).frame?.sysinfo?.data.data?.hostname).toBe('new-backend');
+    expect(
+      (await secondSnapshot).frame?.devices.entryOf(sysinfoCodec)?.data.data?.hostname,
+    ).toBe('new-backend');
   });
 });

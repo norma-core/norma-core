@@ -1,50 +1,19 @@
-import { Component, Suspense, memo } from 'react';
-import type { ReactNode } from 'react';
+import { Suspense, memo } from 'react';
+import DeviceErrorBoundary from '@/components/DeviceErrorBoundary';
 import type {
   LiveDeviceError,
   LiveDevicePlan,
   ResolvedLiveDeviceView,
 } from './live-registry';
 
-interface LiveDeviceErrorBoundaryProps {
-  label: string;
-  children: ReactNode;
-}
-
-interface LiveDeviceErrorBoundaryState {
-  error: Error | null;
-}
-
-class LiveDeviceErrorBoundary extends Component<
-  LiveDeviceErrorBoundaryProps,
-  LiveDeviceErrorBoundaryState
-> {
-  state: LiveDeviceErrorBoundaryState = { error: null };
-
-  static getDerivedStateFromError(error: Error): LiveDeviceErrorBoundaryState {
-    return { error };
-  }
-
-  render() {
-    if (this.state.error) {
-      return (
-        <div className="flex min-h-40 items-center justify-center rounded-lg border border-accent-critical bg-surface-primary/40 p-4 text-center text-accent-critical">
-          Failed to render {this.props.label}: {this.state.error.message}
-        </div>
-      );
-    }
-
-    return this.props.children;
-  }
-}
-
 interface LiveDeviceViewProps {
   view: ResolvedLiveDeviceView;
+  resetKey: unknown;
 }
 
-function LiveDeviceView({ view }: LiveDeviceViewProps) {
+function LiveDeviceView({ view, resetKey }: LiveDeviceViewProps) {
   return (
-    <LiveDeviceErrorBoundary label={view.moduleLabel}>
+    <DeviceErrorBoundary label={view.moduleLabel} resetKey={resetKey}>
       <Suspense
         fallback={(
           <div className="flex min-h-40 items-center justify-center rounded-lg border border-border-default bg-surface-primary/40 text-accent-data">
@@ -54,7 +23,7 @@ function LiveDeviceView({ view }: LiveDeviceViewProps) {
       >
         {view.content}
       </Suspense>
-    </LiveDeviceErrorBoundary>
+    </DeviceErrorBoundary>
   );
 }
 
@@ -89,7 +58,7 @@ const LiveDeviceSurface = memo(function LiveDeviceSurface({
           summaryLayout === 'responsive' ? 'xl:grid-cols-2 2xl:grid-cols-4' : ''
         }`}>
           {summaryViews.map((view) => (
-            <LiveDeviceView key={`${view.moduleId}:${view.key}`} view={view} />
+            <LiveDeviceView key={`${view.moduleId}:${view.key}`} view={view} resetKey={plan} />
           ))}
         </div>
       )}
@@ -97,7 +66,7 @@ const LiveDeviceSurface = memo(function LiveDeviceSurface({
         <LiveDeviceSelectionError key={error.moduleId} error={error} />
       ))}
       {primaryViews.map((view) => (
-        <LiveDeviceView key={`${view.moduleId}:${view.key}`} view={view} />
+        <LiveDeviceView key={`${view.moduleId}:${view.key}`} view={view} resetKey={plan} />
       ))}
     </>
   );

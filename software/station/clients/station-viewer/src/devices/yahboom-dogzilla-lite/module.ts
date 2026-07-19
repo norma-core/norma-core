@@ -1,12 +1,15 @@
 import { customLive } from '@/devices/live';
+import { usbVideoCodec } from '@/devices/usbvideo/codec';
+import { yahboomDogzillaLiteCodec } from './codec';
 import type { YahboomDogzillaLiteDeviceViewerProps } from './ui/YahboomDogzillaLiteDeviceViewer';
 
 export default customLive<YahboomDogzillaLiteDeviceViewerProps>({
   id: 'yahboom-dogzilla-lite',
   label: 'Yahboom Dogzilla Lite',
   order: 20,
+  embedsCameraFeed: true,
   select: (frame) => {
-    const inferenceState = frame.yahboom_dogzilla_lite?.data;
+    const inferenceState = frame.devices.entryOf(yahboomDogzillaLiteCodec)?.data;
     if (!inferenceState?.devices?.length) {
       return [];
     }
@@ -15,7 +18,7 @@ export default customLive<YahboomDogzillaLiteDeviceViewerProps>({
       key: 'yahboom-dogzilla-lite',
       props: {
         inferenceState,
-        videoSources: frame.videoQueues,
+        videoSources: [...frame.devices.entriesOf(usbVideoCodec)],
       },
     }];
   },

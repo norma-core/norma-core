@@ -1,10 +1,7 @@
 import { memo } from 'react';
 import { yahboom_dogzilla_lite } from '@/api/proto.js';
+import type { HistoryExpandedProps } from '@/devices/history';
 import YahboomDogzillaLiteViewer from '@/devices/yahboom-dogzilla-lite/ui/YahboomDogzillaLiteViewer';
-
-interface YahboomDogzillaLiteExpandedProps {
-  data: yahboom_dogzilla_lite.InferenceState;
-}
 
 const SERVO_LABELS = [
   { id: 11, label: 'front left leg elbow' },
@@ -67,7 +64,8 @@ function ServoTable({ status }: { status: yahboom_dogzilla_lite.IYahboomDogzilla
   );
 }
 
-const YahboomDogzillaLiteExpanded = memo(function YahboomDogzillaLiteExpanded({ data }: YahboomDogzillaLiteExpandedProps) {
+const YahboomDogzillaLiteHistoryView = memo(function YahboomDogzillaLiteHistoryView({ entry }: HistoryExpandedProps<yahboom_dogzilla_lite.IInferenceState>) {
+  const { data } = entry;
   const deviceCount = data.devices?.length ?? 0;
   const connectedCount = data.devices?.filter(d => d.isConnected).length ?? 0;
 
@@ -150,4 +148,4 @@ const YahboomDogzillaLiteExpanded = memo(function YahboomDogzillaLiteExpanded({ 
   );
 });
 
-export default YahboomDogzillaLiteExpanded;
+export default YahboomDogzillaLiteHistoryView;

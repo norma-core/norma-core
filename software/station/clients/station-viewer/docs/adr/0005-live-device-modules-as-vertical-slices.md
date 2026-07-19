@@ -14,19 +14,20 @@ Each concrete live device is a vertical module under `src/devices/<device-id>/`.
 
 The live catalog discovers `src/devices/*/module.ts` with Vite's bundled `import.meta.glob`. Manifests are loaded eagerly so catalog validation happens at startup; their React views are loaded lazily.
 
-The normal authoring interface is `live()`. It selects one `FrameEntry` field, normalizes single and repeated entries, uses `queueId` as the stable view key, and supplies a typed `{ data }` prop. `customLive()` is reserved for views whose props require more than one frame field.
+The normal authoring interface is `live()`. It selects entries through one typed codec identity, normalizes codec cardinality, uses `queueId` as the stable view key, and supplies a typed `{ data }` prop. `customLive()` is reserved for views whose props require multiple codec-backed inputs.
 
 Selection is pure. A selector does not use hooks, JSX, I/O, timers, mutation, or subscriptions. It returns stable keys and props; the factory owns React element creation and lazy loading.
 
-Module IDs and display orders are globally unique. View keys are non-empty and unique within a module. Shared layout is expressed through the closed `summary` and `primary` slots rather than arbitrary layout strings. Selection failures are reported for the affected module without preventing other modules from resolving.
+Module IDs are globally unique. Equal display orders are allowed and resolved deterministically by module ID and entry key. View keys are non-empty and unique within a module. Shared layout is expressed through the closed `summary` and `primary` slots rather than arbitrary layout strings. Selection failures are reported for the affected module without preventing other modules from resolving.
 
-`HomePage` depends only on `resolveLiveDevices(frame)` and `LiveDeviceSurface`; it never imports a concrete device.
+The closed `embedsCameraFeed` capability lets a selected primary module claim presentation of the current USB camera feed. `HomePage` depends on `resolveLiveDevices(frame)`, `LiveDeviceSurface`, and codec contracts needed for shared composition; it never imports concrete device UI or manifests.
 
 ## Consequences
 
 - A device can add or change live presentation without editing `HomePage` or a central registry.
 - Device-specific knowledge has locality inside one vertical module.
 - Shared code owns ordering, validation, lazy loading, layout slots, and error isolation once.
+- A render failure is isolated to one device and retried when new resolved content arrives.
 - The authoring interface deliberately covers live presentation only; it is not a general plugin contract.
 - Adding a new layout slot changes the shared interface and requires evidence that multiple modules need it.
 

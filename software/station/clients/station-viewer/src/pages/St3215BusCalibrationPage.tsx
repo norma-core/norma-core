@@ -7,6 +7,7 @@ import { useInferenceState, useWakeLock } from '../hooks';
 import { useLocation, Link, useNavigate } from 'react-router-dom';
 import { getMotorVoltage } from '../st3215/motor-parser';
 import { supportsSt3215Bus } from '@/devices/st3215-models';
+import { st3215InferenceCodec } from '@/devices/st3215/codec';
 
 const MIN_CALIBRATED_RANGE = 100;
 const actionButtonClasses = 'inline-flex w-full shrink-0 items-center justify-center whitespace-nowrap rounded-lg px-4 py-2 text-sm font-bold transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto md:px-6 md:py-3 md:text-base';
@@ -46,12 +47,13 @@ const St3215BusCalibrationPage: React.FC = () => {
     () => selectedBusFromState || null
   );
   const inferenceState = useInferenceState();
+  const latestSt3215 = inferenceState?.devices.entryOf(st3215InferenceCodec)?.data;
   const [resetting, setResetting] = useState(false);
   const [showFreezeConfirmation, setShowFreezeConfirmation] = useState(false);
   const [isSavePending, setIsSavePending] = useState(false);
 
   const currentBusState = selectedBus
-    ? inferenceState?.st3215?.data.buses?.find((b: st3215.InferenceState.IBusState) => b.bus?.serialNumber === selectedBus.bus?.serialNumber) || selectedBus
+    ? latestSt3215?.buses?.find((b: st3215.InferenceState.IBusState) => b.bus?.serialNumber === selectedBus.bus?.serialNumber) || selectedBus
     : null;
   const isCalibrationFrozen = currentBusState?.motors?.some((motor: st3215.InferenceState.IMotorState) => motor.rangeFreezed) ?? false;
   const [showResetConfirmation, setShowResetConfirmation] = useState(isCalibrationFrozen);

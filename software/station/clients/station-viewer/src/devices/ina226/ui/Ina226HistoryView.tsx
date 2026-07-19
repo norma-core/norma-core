@@ -1,4 +1,5 @@
 import { ina226 } from '@/api/proto.js';
+import type { HistoryExpandedProps } from '@/devices/history';
 import {
   INA226_BUS_REGISTER,
   INA226_BUS_VOLTAGE_LSB_V,
@@ -13,10 +14,6 @@ import {
   readIna226Word,
   toSigned16,
 } from '@/devices/ina226/values';
-
-interface Ina226ExpandedProps {
-  data: ina226.IRxEnvelope;
-}
 
 interface SummaryValue {
   label: string;
@@ -188,7 +185,8 @@ function DumpCell({ register, word }: { register: number; word: number | null })
   );
 }
 
-export default function Ina226Expanded({ data }: Ina226ExpandedProps) {
+export default function Ina226HistoryView({ entry }: HistoryExpandedProps<ina226.IRxEnvelope>) {
+  const { data } = entry;
   const bytes = bytesFrom(data.data);
   const device = data.device ?? null;
   const info = device?.info ?? null;
