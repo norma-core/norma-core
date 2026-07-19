@@ -17,7 +17,7 @@ npm run preview      # Preview production build locally
 
 ## Testing
 
-Vitest runs in the Node environment. Keep tests beside the module as `*.test.ts`.
+Vitest runs in the Node environment. Keep tests beside the module as `*.test.ts` or `*.test.tsx`.
 
 Tests are regression guards, not a coverage target. Before adding a test, name the plausible bug it should catch. Prioritize behavior with a history of failure, async races, ownership or cleanup boundaries, atomic external-store updates, and non-trivial domain rules. A small set of tests around these risks is preferable to exhaustive coverage of trivial branches.
 

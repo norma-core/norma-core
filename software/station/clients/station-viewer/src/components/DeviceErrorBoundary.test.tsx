@@ -1,13 +1,13 @@
 // @vitest-environment happy-dom
 
-import { act, createElement } from 'react';
+import { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import DeviceErrorBoundary from './DeviceErrorBoundary';
 
 function FailingView({ shouldFail }: { shouldFail: boolean }) {
   if (shouldFail) throw new Error('broken frame');
-  return createElement('div', null, 'Recovered');
+  return <div>Recovered</div>;
 }
 
 describe('DeviceErrorBoundary', () => {
@@ -29,26 +29,20 @@ describe('DeviceErrorBoundary', () => {
 
   it('retries its children after the reset key changes', async () => {
     await act(async () => {
-      root.render(createElement(
-        DeviceErrorBoundary,
-        {
-          label: 'camera',
-          resetKey: 'frame-1',
-          children: createElement(FailingView, { shouldFail: true }),
-        },
-      ));
+      root.render(
+        <DeviceErrorBoundary label="camera" resetKey="frame-1">
+          <FailingView shouldFail />
+        </DeviceErrorBoundary>,
+      );
     });
     expect(container.textContent).toContain('Failed to render camera: broken frame');
 
     await act(async () => {
-      root.render(createElement(
-        DeviceErrorBoundary,
-        {
-          label: 'camera',
-          resetKey: 'frame-2',
-          children: createElement(FailingView, { shouldFail: false }),
-        },
-      ));
+      root.render(
+        <DeviceErrorBoundary label="camera" resetKey="frame-2">
+          <FailingView shouldFail={false} />
+        </DeviceErrorBoundary>,
+      );
     });
     expect(container.textContent).toBe('Recovered');
   });
