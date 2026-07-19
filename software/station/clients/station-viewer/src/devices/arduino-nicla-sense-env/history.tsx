@@ -1,7 +1,7 @@
 import { arduino_nicla_sense_env } from '@/api/proto.js';
-import type { FrameEntry } from '@/devices/codec';
+import type { FrameEntry } from '@/devices/queue-adapter';
 import { defineHistory } from '@/devices/history';
-import { arduinoNiclaSenseEnvCodec } from './codec';
+import { arduinoNiclaSenseEnvQueue } from './queue';
 import { readArduinoNiclaSenseEnvMainValues } from './values';
 
 function formatValue(number: number | null, unit = '', decimals = 2): string | null {
@@ -28,7 +28,7 @@ function Summary({ entry }: { entry: FrameEntry<arduino_nicla_sense_env.IRxEnvel
 }
 
 export default defineHistory({
-  codec: arduinoNiclaSenseEnvCodec,
+  queue: arduinoNiclaSenseEnvQueue,
   order: 8,
   Summary,
   loadExpanded: () => import('./ui/ArduinoNiclaSenseEnvHistoryView'),

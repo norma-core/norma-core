@@ -1,7 +1,7 @@
 import { drivers, sysinfo } from '@/api/proto.js';
-import { defineCodec } from '@/devices/codec';
+import { defineQueueAdapter } from '@/devices/queue-adapter';
 
-export const sysinfoCodec = defineCodec<sysinfo.IEnvelope>({
+export const sysinfoQueue = defineQueueAdapter<sysinfo.IEnvelope>({
   key: 'sysinfo',
   message: sysinfo.Envelope,
   queueType: drivers.QueueDataType.QDT_SYSTEM,
@@ -9,4 +9,4 @@ export const sysinfoCodec = defineCodec<sysinfo.IEnvelope>({
   matchQueue: (queueId) => queueId === 'system/rx' || queueId.endsWith('/system/rx'),
 });
 
-export default sysinfoCodec;
+export default sysinfoQueue;

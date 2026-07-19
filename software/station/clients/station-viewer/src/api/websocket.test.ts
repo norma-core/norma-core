@@ -273,9 +273,9 @@ describe('WebSocketManager state', () => {
     });
     const firstSnapshot = waitForNextLiveSnapshot(webSocketManager);
     firstSocket.open();
-    const { sysinfoCodec } = await import('@/devices/sysinfo/codec');
+    const { sysinfoQueue } = await import('@/devices/sysinfo/queue');
     expect(
-      (await firstSnapshot).frame?.devices.entryOf(sysinfoCodec)?.data.data?.hostname,
+      (await firstSnapshot).frame?.devices.entryOf(sysinfoQueue)?.data.data?.hostname,
     ).toBe('old-backend');
     firstSocket.disconnect();
 
@@ -290,7 +290,7 @@ describe('WebSocketManager state', () => {
     secondSocket.open();
 
     expect(
-      (await secondSnapshot).frame?.devices.entryOf(sysinfoCodec)?.data.data?.hostname,
+      (await secondSnapshot).frame?.devices.entryOf(sysinfoQueue)?.data.data?.hostname,
     ).toBe('new-backend');
   });
 });

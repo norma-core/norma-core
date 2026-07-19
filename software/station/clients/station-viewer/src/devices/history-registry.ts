@@ -1,21 +1,21 @@
-import type { AnyDeviceCodec } from './codec';
+import type { AnyDeviceQueueAdapter } from './queue-adapter';
 import type { AnyHistoryAdapter, HistoryAdapterLookup } from './history';
 
 export function createHistoryAdapterLookup(
   adapters: readonly AnyHistoryAdapter[],
 ): HistoryAdapterLookup {
-  const byCodec = new Map<AnyDeviceCodec, AnyHistoryAdapter>();
+  const byQueue = new Map<AnyDeviceQueueAdapter, AnyHistoryAdapter>();
 
   for (const adapter of adapters) {
-    if (byCodec.has(adapter.codec)) {
-      throw new Error(`Duplicate history adapter for codec ${adapter.codec.key}.`);
+    if (byQueue.has(adapter.queue)) {
+      throw new Error(`Duplicate history adapter for queue ${adapter.queue.key}.`);
     }
-    byCodec.set(adapter.codec, adapter);
+    byQueue.set(adapter.queue, adapter);
   }
 
   return {
-    forCodec: (codec) => byCodec.get(codec),
-    orderFor: (codec) => byCodec.get(codec)?.order ?? Number.POSITIVE_INFINITY,
+    forQueue: (queue) => byQueue.get(queue),
+    orderFor: (queue) => byQueue.get(queue)?.order ?? Number.POSITIVE_INFINITY,
   };
 }
 
@@ -29,10 +29,10 @@ const historyAdapters = createHistoryAdapterLookup(
   ),
 );
 
-export function historyAdapterFor(codec: AnyDeviceCodec): AnyHistoryAdapter | undefined {
-  return historyAdapters.forCodec(codec);
+export function historyAdapterFor(queue: AnyDeviceQueueAdapter): AnyHistoryAdapter | undefined {
+  return historyAdapters.forQueue(queue);
 }
 
-export function historyOrderFor(codec: AnyDeviceCodec): number {
-  return historyAdapters.orderFor(codec);
+export function historyOrderFor(queue: AnyDeviceQueueAdapter): number {
+  return historyAdapters.orderFor(queue);
 }

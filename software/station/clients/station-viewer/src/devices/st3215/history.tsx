@@ -1,7 +1,7 @@
 import type { st3215 } from '@/api/proto.js';
-import type { FrameEntry } from '@/devices/codec';
+import type { FrameEntry } from '@/devices/queue-adapter';
 import { defineHistory } from '@/devices/history';
-import { st3215InferenceCodec, st3215TxCodec } from './codec';
+import { st3215InferenceQueue, st3215TxQueue } from './queue';
 
 function InferenceSummary({ entry }: { entry: FrameEntry<st3215.IInferenceState> }) {
   const motors = entry.data.buses?.reduce((total, bus) => total + (bus.motors?.length ?? 0), 0) ?? 0;
@@ -30,7 +30,7 @@ function hexdump(bytes: Uint8Array): string[] {
 }
 
 function inferenceToJson(data: st3215.IInferenceState): unknown {
-  const object = st3215InferenceCodec.message.toObject(data, { longs: String, enums: String, bytes: String, defaults: true });
+  const object = st3215InferenceQueue.message.toObject(data, { longs: String, enums: String, bytes: String, defaults: true });
   const buses = object.buses;
   if (!Array.isArray(buses)) return object;
 
@@ -51,14 +51,14 @@ function inferenceToJson(data: st3215.IInferenceState): unknown {
 
 export default [
   defineHistory({
-    codec: st3215InferenceCodec,
+    queue: st3215InferenceQueue,
     order: 0,
     Summary: InferenceSummary,
     loadExpanded: () => import('./ui/St3215HistoryView'),
     toJson: inferenceToJson,
   }),
   defineHistory({
-    codec: st3215TxCodec,
+    queue: st3215TxQueue,
     order: 14,
     Summary: TxSummary,
     loadExpanded: () => import('./ui/St3215TxHistoryView'),

@@ -4,14 +4,14 @@ import type { inference } from '@/api/proto.js';
 import { getGlobalTimeAdjustmentNs, isTimeSyncActive } from '@/api/time-sync.js';
 import {
   createDeviceEntryStore,
-  type AnyDeviceCodec,
+  type AnyDeviceQueueAdapter,
   type DecodeContext,
   type DeviceEntryStore,
   type FrameEntry,
-} from '@/devices/codec';
-import { resolveCodec } from '@/devices/codec-registry';
+} from '@/devices/queue-adapter';
+import { resolveQueueAdapter } from '@/devices/queue-adapter-registry';
 
-export type { FrameEntry } from '@/devices/codec';
+export type { FrameEntry } from '@/devices/queue-adapter';
 
 export interface FrameEntryReader {
   readSingleEntry(
@@ -48,13 +48,13 @@ export interface ParseFrameOptions {
 }
 
 interface PreviousDecodedEntry {
-  codec: AnyDeviceCodec;
+  adapter: AnyDeviceQueueAdapter;
   entry: FrameEntry<unknown>;
 }
 
 interface DecodedResult {
   kind: 'decoded';
-  codec: AnyDeviceCodec;
+  adapter: AnyDeviceQueueAdapter;
   entry: FrameEntry<unknown>;
   issues: readonly FrameIssue[];
 }
@@ -86,7 +86,7 @@ function indexPreviousFrame(previousFrame?: Frame): {
 
   for (const group of previousFrame.devices.all()) {
     for (const entry of group.entries) {
-      decoded.set(entry.queueId, { codec: group.codec, entry });
+      decoded.set(entry.queueId, { adapter: group.adapter, entry });
     }
   }
   for (const [queueId, entry] of Object.entries(previousFrame.otherEntries ?? {})) {
@@ -129,41 +129,41 @@ export async function parseFrame(
 
     const resolution = queueType === undefined
       ? undefined
-      : resolveCodec(queueType, queueId);
-    const codec = resolution && 'codec' in resolution ? resolution.codec : undefined;
+      : resolveQueueAdapter(queueType, queueId);
+    const adapter = resolution && 'adapter' in resolution ? resolution.adapter : undefined;
     const matchIssues: FrameIssue[] = resolution && 'ambiguous' in resolution
       ? [{
           queueId,
           queueType,
           stage: 'match',
-          message: `Ambiguous device codecs: ${resolution.ambiguous.map((candidate) => candidate.key).join(', ')}`,
+          message: `Ambiguous device queue adapters: ${resolution.ambiguous.map((candidate) => candidate.key).join(', ')}`,
         }]
       : [];
     const context: DecodeContext = { queueId, shouldPublishVideoFrames };
 
     const previousDecoded = previous.decoded.get(queueId);
     if (
-      codec
-      && previousDecoded?.codec === codec
+      adapter
+      && previousDecoded?.adapter === adapter
       && bytesEqual(previousDecoded.entry.ptr, ptr)
       && (!retainRawData || previousDecoded.entry.rawData != null)
-      && (codec.reusable?.(previousDecoded.entry, context) ?? true)
+      && (adapter.reusable?.(previousDecoded.entry, context) ?? true)
     ) {
       return {
         kind: 'decoded',
-        codec,
+        adapter,
         entry: Object.freeze({
           ...previousDecoded.entry,
           ptr,
           rawData: retainRawData ? previousDecoded.entry.rawData ?? null : null,
-          queueType: codec.queueType,
+          queueType: adapter.queueType,
         }),
         issues: matchIssues,
       };
     }
 
     const previousRaw = previous.raw.get(queueId);
-    if (!codec && previousRaw && bytesEqual(previousRaw.ptr, ptr)) {
+    if (!adapter && previousRaw && bytesEqual(previousRaw.ptr, ptr)) {
       return {
         kind: 'raw',
         queueId,
@@ -191,7 +191,7 @@ export async function parseFrame(
       };
     }
 
-    if (!codec) {
+    if (!adapter) {
       return {
         kind: 'raw',
         queueId,
@@ -202,17 +202,17 @@ export async function parseFrame(
     }
 
     try {
-      const decoded = codec.decode(rawData);
-      const projected = codec.afterDecode?.(decoded, context) ?? decoded;
+      const decoded = adapter.decode(rawData);
+      const projected = adapter.afterDecode?.(decoded, context) ?? decoded;
       return {
         kind: 'decoded',
-        codec,
+        adapter,
         entry: Object.freeze({
           queueId,
           ptr,
           data: projected,
           rawData: retainRawData ? rawData : null,
-          queueType: codec.queueType,
+          queueType: adapter.queueType,
         }),
         issues: matchIssues,
       };
@@ -226,39 +226,39 @@ export async function parseFrame(
           queueId,
           queueType,
           stage: 'decode',
-          message: error instanceof Error ? error.message : `Failed to decode ${codec.key}.`,
+          message: error instanceof Error ? error.message : `Failed to decode ${adapter.key}.`,
         }],
       };
     }
   }));
 
-  const mutableGroups = new Map<AnyDeviceCodec, FrameEntry<unknown>[]>();
+  const mutableGroups = new Map<AnyDeviceQueueAdapter, FrameEntry<unknown>[]>();
   const otherEntries: { [queueId: string]: { ptr: Uint8Array; data: Uint8Array } } = {};
   const issues = results.flatMap((result) => result.issues);
 
   for (const result of results) {
     if (result.kind === 'decoded') {
-      const entries = mutableGroups.get(result.codec) ?? [];
+      const entries = mutableGroups.get(result.adapter) ?? [];
       entries.push(result.entry);
-      mutableGroups.set(result.codec, entries);
+      mutableGroups.set(result.adapter, entries);
     } else if (retainRawData && result.data) {
       otherEntries[result.queueId] = { ptr: result.ptr, data: result.data };
     }
   }
 
-  for (const [codec, entries] of mutableGroups) {
-    if (codec.cardinality === 'single' && entries.length > 1) {
+  for (const [adapter, entries] of mutableGroups) {
+    if (adapter.cardinality === 'single' && entries.length > 1) {
       issues.push({
         queueId: entries.map((entry) => entry.queueId).join(', '),
-        queueType: codec.queueType,
+        queueType: adapter.queueType,
         stage: 'cardinality',
-        message: `Device codec ${codec.key} expected one entry, received ${entries.length}.`,
+        message: `Device queue adapter ${adapter.key} expected one entry, received ${entries.length}.`,
       });
     }
   }
 
-  const groups = new Map<AnyDeviceCodec, readonly FrameEntry<unknown>[]>(
-    [...mutableGroups].map(([codec, entries]) => [codec, Object.freeze(entries)]),
+  const groups = new Map<AnyDeviceQueueAdapter, readonly FrameEntry<unknown>[]>(
+    [...mutableGroups].map(([adapter, entries]) => [adapter, Object.freeze(entries)]),
   );
   const adjustmentNsNumber = getGlobalTimeAdjustmentNs();
 

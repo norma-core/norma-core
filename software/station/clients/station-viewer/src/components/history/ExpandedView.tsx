@@ -4,14 +4,14 @@ import DeviceErrorBoundary from '@/components/DeviceErrorBoundary';
 import FullscreenImageViewer from '@/components/FullscreenImageViewer';
 import ProtoJsonBlock from '@/components/history/ProtoJsonBlock';
 import RawBytesExpanded from '@/components/history/RawBytesExpanded';
-import type { AnyDeviceCodec, FrameEntry } from '@/devices/codec';
-import { allCodecs } from '@/devices/codec-registry';
+import type { AnyDeviceQueueAdapter, FrameEntry } from '@/devices/queue-adapter';
+import { allQueueAdapters } from '@/devices/queue-adapter-registry';
 import type { AnyHistoryAdapter } from '@/devices/history';
 
 type DataTab = 'visual' | 'json' | 'raw';
 
 export type ExpandedViewData =
-  | { kind: 'decoded'; codec: AnyDeviceCodec; entry: FrameEntry<unknown>; adapter?: AnyHistoryAdapter }
+  | { kind: 'decoded'; queue: AnyDeviceQueueAdapter; entry: FrameEntry<unknown>; adapter?: AnyHistoryAdapter }
   | { kind: 'raw'; data: Uint8Array };
 
 interface ExpandedViewProps {
@@ -21,9 +21,9 @@ interface ExpandedViewProps {
 const JSON_OPTIONS = { longs: String, enums: String, bytes: String, defaults: true };
 
 function candidateDecodes(data: Uint8Array): Array<{ typeName: string; value: unknown }> {
-  const candidates = allCodecs().map((codec) => ({
-    typeName: codec.key,
-    decode: () => codec.message.toObject(codec.decode(data), JSON_OPTIONS),
+  const candidates = allQueueAdapters().map((queue) => ({
+    typeName: queue.key,
+    decode: () => queue.message.toObject(queue.decode(data), JSON_OPTIONS),
   }));
   candidates.push({
     typeName: 'st3215.RxEnvelope',
@@ -42,10 +42,10 @@ function candidateDecodes(data: Uint8Array): Array<{ typeName: string; value: un
 function DecodedJson({ value }: { value: Extract<ExpandedViewData, { kind: 'decoded' }> }) {
   const jsonValue = useMemo(
     () => value.adapter?.toJson(value.entry.data)
-      ?? value.codec.message.toObject(value.entry.data, JSON_OPTIONS),
-    [value.adapter, value.codec, value.entry.data],
+      ?? value.queue.message.toObject(value.entry.data, JSON_OPTIONS),
+    [value.adapter, value.entry.data, value.queue],
   );
-  return <ProtoJsonBlock title={value.codec.key} value={jsonValue} />;
+  return <ProtoJsonBlock title={value.queue.key} value={jsonValue} />;
 }
 
 function RawCandidateJson({ data }: { data: Uint8Array }) {
@@ -93,7 +93,7 @@ export default function ExpandedView({ value }: ExpandedViewProps) {
       </div>
 
       {activeTab === 'visual' && Expanded && value.kind === 'decoded' && (
-        <DeviceErrorBoundary label={value.codec.key} resetKey={value.entry}>
+        <DeviceErrorBoundary label={value.queue.key} resetKey={value.entry}>
           <Suspense fallback={<div className="p-4 text-accent-data">Loading visual view...</div>}>
             <Expanded
               entry={value.entry}

@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
 import { drivers, inference, normvla, sysinfo, usbvideo } from '@/api/proto.js';
-import { normvlaCodec } from '@/devices/normvla/codec';
-import { sysinfoCodec } from '@/devices/sysinfo/codec';
-import { usbVideoCodec } from '@/devices/usbvideo/codec';
+import { normvlaQueue } from '@/devices/normvla/queue';
+import { sysinfoQueue } from '@/devices/sysinfo/queue';
+import { usbVideoQueue } from '@/devices/usbvideo/queue';
 import { getLiveCameraFrame } from '@/usbvideo/live-camera-store';
 import { parseFrame, type FrameEntryReader } from './frame-parser';
 
@@ -21,7 +21,7 @@ function readerFor(entries: Record<string, Uint8Array>) {
 }
 
 describe('parseFrame', () => {
-  it('decodes a known codec and retains its provenance and raw bytes', async () => {
+  it('decodes a known queue and retains its provenance and raw bytes', async () => {
     const raw = sysinfo.Envelope.encode({ data: { hostname: 'station' } }).finish();
     const frame = await parseFrame(
       { entries: [reference('/system/rx', drivers.QueueDataType.QDT_SYSTEM)] },
@@ -29,9 +29,9 @@ describe('parseFrame', () => {
       readerFor({ '/system/rx': raw }),
     );
 
-    expect(frame.devices.entryOf(sysinfoCodec)?.data.data?.hostname).toBe('station');
-    expect(frame.devices.entryOf(sysinfoCodec)?.rawData).toEqual(raw);
-    expect(frame.devices.entryOf(sysinfoCodec)?.queueType).toBe(drivers.QueueDataType.QDT_SYSTEM);
+    expect(frame.devices.entryOf(sysinfoQueue)?.data.data?.hostname).toBe('station');
+    expect(frame.devices.entryOf(sysinfoQueue)?.rawData).toEqual(raw);
+    expect(frame.devices.entryOf(sysinfoQueue)?.queueType).toBe(drivers.QueueDataType.QDT_SYSTEM);
     expect(frame.issues).toEqual([]);
   });
 
@@ -44,7 +44,7 @@ describe('parseFrame', () => {
       readerFor({ [queueId]: raw }),
     );
 
-    expect(frame.devices.entryOf(normvlaCodec)?.queueId).toBe(queueId);
+    expect(frame.devices.entryOf(normvlaQueue)?.queueId).toBe(queueId);
     expect(frame.otherEntries).not.toHaveProperty(queueId);
   });
 
@@ -73,7 +73,7 @@ describe('parseFrame', () => {
     const second = await parseFrame(inferenceRx, ENTRY_ID, reader, first);
 
     expect(reader.readSingleEntry).toHaveBeenCalledTimes(1);
-    expect(second.devices.entryOf(sysinfoCodec)?.data).toBe(first.devices.entryOf(sysinfoCodec)?.data);
+    expect(second.devices.entryOf(sysinfoQueue)?.data).toBe(first.devices.entryOf(sysinfoQueue)?.data);
   });
 
   it('refetches when raw retention is newly requested', async () => {
@@ -84,7 +84,7 @@ describe('parseFrame', () => {
     const withRaw = await parseFrame(inferenceRx, ENTRY_ID, reader, withoutRaw, { retainRawData: true });
 
     expect(reader.readSingleEntry).toHaveBeenCalledTimes(2);
-    expect(withRaw.devices.entryOf(sysinfoCodec)?.rawData).toEqual(raw);
+    expect(withRaw.devices.entryOf(sysinfoQueue)?.rawData).toEqual(raw);
   });
 
   it('keeps every single-cardinality entry and reports the violation', async () => {
@@ -98,7 +98,7 @@ describe('parseFrame', () => {
       readerFor({ '/a/system/rx': raw, '/b/system/rx': raw }),
     );
 
-    expect(frame.devices.entriesOf(sysinfoCodec)).toHaveLength(2);
+    expect(frame.devices.entriesOf(sysinfoQueue)).toHaveLength(2);
     expect(frame.issues).toMatchObject([{ stage: 'cardinality' }]);
   });
 
@@ -111,7 +111,7 @@ describe('parseFrame', () => {
       readerFor({ [queueId]: raw }),
     );
 
-    expect(frame.devices.entryOf(sysinfoCodec)).toBeUndefined();
+    expect(frame.devices.entryOf(sysinfoQueue)).toBeUndefined();
     expect(frame.otherEntries?.[queueId]?.data).toEqual(raw);
     expect(frame.issues).toEqual([]);
   });
@@ -131,7 +131,7 @@ describe('parseFrame', () => {
     );
 
     expect(Array.from(getLiveCameraFrame('camera-test-routing')?.data ?? [])).toEqual([1, 2, 3]);
-    expect(frame.devices.entriesOf(usbVideoCodec)[0].data.frames?.framesData).toBeUndefined();
+    expect(frame.devices.entriesOf(usbVideoQueue)[0].data.frames?.framesData).toBeUndefined();
   });
 
   it('reuses an unchanged empty usbvideo envelope in full-payload mode', async () => {
@@ -143,8 +143,8 @@ describe('parseFrame', () => {
     const second = await parseFrame(inferenceRx, ENTRY_ID, reader, first);
 
     expect(reader.readSingleEntry).toHaveBeenCalledTimes(1);
-    expect(second.devices.entriesOf(usbVideoCodec)[0].data).toBe(
-      first.devices.entriesOf(usbVideoCodec)[0].data,
+    expect(second.devices.entriesOf(usbVideoQueue)[0].data).toBe(
+      first.devices.entriesOf(usbVideoQueue)[0].data,
     );
   });
 });

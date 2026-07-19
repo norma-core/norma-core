@@ -1,7 +1,7 @@
 import type { normvla } from '@/api/proto.js';
-import type { FrameEntry } from '@/devices/codec';
+import type { FrameEntry } from '@/devices/queue-adapter';
 import { defineHistory } from '@/devices/history';
-import { normvlaCodec } from './codec';
+import { normvlaQueue } from './queue';
 
 function Summary({ entry }: { entry: FrameEntry<normvla.IFrame> }) {
   return (
@@ -13,12 +13,12 @@ function Summary({ entry }: { entry: FrameEntry<normvla.IFrame> }) {
 }
 
 export default defineHistory({
-  codec: normvlaCodec,
+  queue: normvlaQueue,
   order: 13,
   Summary,
   loadExpanded: () => import('./ui/NormvlaHistoryView'),
   toJson: (data) => ({
-    ...normvlaCodec.message.toObject(data, { longs: String, enums: String, bytes: String, defaults: true }),
+    ...normvlaQueue.message.toObject(data, { longs: String, enums: String, bytes: String, defaults: true }),
     images: data.images?.map((image, index) => ({
       monotonicStampNs: image.monotonicStampNs?.toString(),
       jpeg: `[image ${index + 1}: ${image.jpeg?.length ?? 0} bytes]`,

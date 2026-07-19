@@ -1,11 +1,11 @@
 import { live } from '@/devices/live';
-import { ina226Codec } from './codec';
+import { ina226Queue } from './queue';
 
 export default live({
   id: 'ina226',
   label: 'INA226',
   order: 2,
   slot: 'summary',
-  codec: ina226Codec,
+  queue: ina226Queue,
   loadView: () => import('./ui/Ina226LiveView'),
 });

@@ -1,7 +1,7 @@
 import type { vesc_trampa } from '@/api/proto.js';
-import type { FrameEntry } from '@/devices/codec';
+import type { FrameEntry } from '@/devices/queue-adapter';
 import { defineHistory } from '@/devices/history';
-import { vescTrampaTxCodec } from './codec';
+import { vescTrampaTxQueue } from './queue';
 
 function Summary({ entry }: { entry: FrameEntry<vesc_trampa.ITxEnvelope> }) {
   const data = entry.data;
@@ -15,7 +15,7 @@ function Summary({ entry }: { entry: FrameEntry<vesc_trampa.ITxEnvelope> }) {
 }
 
 export default defineHistory({
-  codec: vescTrampaTxCodec,
+  queue: vescTrampaTxQueue,
   order: 3,
   Summary,
   loadExpanded: () => import('./ui/VescTrampaTxHistoryView'),

@@ -1,7 +1,7 @@
 import { ina226 } from '@/api/proto.js';
-import type { FrameEntry } from '@/devices/codec';
+import type { FrameEntry } from '@/devices/queue-adapter';
 import { defineHistory } from '@/devices/history';
-import { ina226Codec } from './codec';
+import { ina226Queue } from './queue';
 import { formatIna226Current, readIna226CurrentAmps, readIna226ShuntMillivolts } from './values';
 
 function Summary({ entry }: { entry: FrameEntry<ina226.IRxEnvelope> }) {
@@ -22,7 +22,7 @@ function Summary({ entry }: { entry: FrameEntry<ina226.IRxEnvelope> }) {
 }
 
 export default defineHistory({
-  codec: ina226Codec,
+  queue: ina226Queue,
   order: 9,
   Summary,
   loadExpanded: () => import('./ui/Ina226HistoryView'),

@@ -3,7 +3,7 @@ import webSocketManager from '../api/websocket';
 import { useInferenceState, useWakeLock, useBusMonitor } from '../hooks';
 import { st3215 } from '../api/proto';
 import { useLocation, Link } from 'react-router-dom';
-import { st3215InferenceCodec } from '@/devices/st3215/codec';
+import { st3215InferenceQueue } from '@/devices/st3215/queue';
 
 enum MotorIdSetProgress {
   IDLE = 'idle',
@@ -22,7 +22,7 @@ const St3215MotorConfigPage: React.FC = () => {
   const selectedBusFromState = location.state?.bus as st3215.InferenceState.IBusState | undefined;
 
   const inferenceState = useInferenceState();
-  const latestSt3215 = inferenceState?.devices.entryOf(st3215InferenceCodec)?.data;
+  const latestSt3215 = inferenceState?.devices.entryOf(st3215InferenceQueue)?.data;
   const [isMotorIdSetInProgress, setIsMotorIdSetInProgress] = useState(false);
   const [newMotorId, setNewMotorId] = useState<number>(1);
   const [motorIdSetProgress, setMotorIdSetProgress] = useState<MotorIdSetProgress>(MotorIdSetProgress.IDLE);

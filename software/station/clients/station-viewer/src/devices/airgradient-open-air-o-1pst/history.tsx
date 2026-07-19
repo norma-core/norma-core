@@ -1,7 +1,7 @@
 import { airgradient_open_air_o_1pst } from '@/api/proto.js';
-import type { FrameEntry } from '@/devices/codec';
+import type { FrameEntry } from '@/devices/queue-adapter';
 import { defineHistory } from '@/devices/history';
-import { airgradientOpenAirCodec } from './codec';
+import { airgradientOpenAirQueue } from './queue';
 import { airGradientDeviceLabel, airGradientLineText, readAirGradientValues } from './values';
 
 function Summary({ entry }: { entry: FrameEntry<airgradient_open_air_o_1pst.IRxEnvelope> }) {
@@ -22,12 +22,12 @@ function Summary({ entry }: { entry: FrameEntry<airgradient_open_air_o_1pst.IRxE
 }
 
 export default defineHistory({
-  codec: airgradientOpenAirCodec,
+  queue: airgradientOpenAirQueue,
   order: 10,
   Summary,
   loadExpanded: () => import('./ui/AirGradientHistoryView'),
   toJson: (data) => ({
-    ...airgradientOpenAirCodec.message.toObject(data, { longs: String, enums: String, bytes: String, defaults: true }),
+    ...airgradientOpenAirQueue.message.toObject(data, { longs: String, enums: String, bytes: String, defaults: true }),
     data: airGradientLineText(data.data),
   }),
 });

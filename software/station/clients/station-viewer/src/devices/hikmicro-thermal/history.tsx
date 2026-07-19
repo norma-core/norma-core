@@ -1,7 +1,7 @@
 import type { hikmicro } from '@/api/proto.js';
-import type { FrameEntry } from '@/devices/codec';
+import type { FrameEntry } from '@/devices/queue-adapter';
 import { defineHistory } from '@/devices/history';
-import { hikmicroThermalCodec } from './codec';
+import { hikmicroThermalQueue } from './queue';
 import { formatCelsius, latestThermalFrame, renderThermalFrame } from './thermal';
 
 function Summary({ entry }: { entry: FrameEntry<hikmicro.IRxEnvelope> }) {
@@ -26,12 +26,12 @@ function Summary({ entry }: { entry: FrameEntry<hikmicro.IRxEnvelope> }) {
 }
 
 export default defineHistory({
-  codec: hikmicroThermalCodec,
+  queue: hikmicroThermalQueue,
   order: 5,
   Summary,
   loadExpanded: () => import('./ui/HikmicroThermalHistoryView'),
   toJson: (data) => {
-    const object = hikmicroThermalCodec.message.toObject(data, { longs: String, enums: String, bytes: String, defaults: true });
+    const object = hikmicroThermalQueue.message.toObject(data, { longs: String, enums: String, bytes: String, defaults: true });
     const frames = object.frames as Record<string, unknown> | undefined;
     if (frames && Array.isArray(frames.frames)) {
       frames.frames = frames.frames.map((value, index) => {

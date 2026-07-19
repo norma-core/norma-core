@@ -1,7 +1,7 @@
 # ADR 0010: Centralize frame decoding before device presentation
 
 - Date: 2026-07-12
-- Status: Superseded by [ADR 0011](0011-discover-device-codecs-and-history-adapters.md)
+- Status: Superseded by [ADR 0011](0011-discover-queue-and-history-adapters.md)
 
 ## Context
 

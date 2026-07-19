@@ -1,7 +1,7 @@
 import { createElement, lazy } from 'react';
 import type { ComponentType, ReactNode } from 'react';
 import type { Frame } from '@/api/frame-parser';
-import type { DeviceCodec } from './codec';
+import type { DeviceQueueAdapter } from './queue-adapter';
 
 type LazyViewLoader<Props extends object> = () => Promise<{ default: ComponentType<Props> }>;
 
@@ -39,9 +39,9 @@ export interface CustomLiveDeviceDefinition<Props extends object> extends LiveDe
   }[];
 }
 
-export interface CodecLiveDeviceDefinition<T>
+export interface QueueLiveDeviceDefinition<T>
   extends LiveDeviceDefinition<{ data: T }> {
-  codec: DeviceCodec<T>;
+  queue: DeviceQueueAdapter<T>;
   when?: (data: T) => boolean;
 }
 
@@ -73,10 +73,10 @@ export function customLive<Props extends object>(
 }
 
 export function live<T>(
-  definition: CodecLiveDeviceDefinition<T>,
+  definition: QueueLiveDeviceDefinition<T>,
 ): LiveDeviceAdapter {
   return defineLiveDevice(definition, (frame) =>
-    frame.devices.entriesOf(definition.codec)
+    frame.devices.entriesOf(definition.queue)
       .filter((entry) => definition.when?.(entry.data) ?? true)
       .map((entry) => ({
         key: entry.queueId,

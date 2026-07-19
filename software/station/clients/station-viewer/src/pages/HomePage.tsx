@@ -10,7 +10,7 @@ import TagDialog from '@/components/TagDialog';
 import { useConnectionStats, useLiveSnapshot, useWakeLock, invalidateTagsCache } from '@/hooks';
 import LiveDeviceSurface from '@/devices/LiveDeviceSurface';
 import { resolveLiveDevices } from '@/devices/live-registry';
-import { usbVideoCodec } from '@/devices/usbvideo/codec';
+import { usbVideoQueue } from '@/devices/usbvideo/queue';
 import CameraSurface from '@/usbvideo/CameraSurface';
 import { getFPSColor } from '@/utils/color-utils';
 import { defaultTag } from '@/utils/tag-phrases';
@@ -41,7 +41,7 @@ function HomePage() {
     [inferenceState],
   );
   const hasLiveDeviceViews = !liveDevicePlan.isEmpty;
-  const videoSources = inferenceState?.devices.entriesOf(usbVideoCodec) ?? [];
+  const videoSources = inferenceState?.devices.entriesOf(usbVideoQueue) ?? [];
   const shouldShowStandaloneCameras = videoSources.length > 0
     && !liveDevicePlan.hasEmbeddedCameraFeed;
   const hasOnlySummaryDeviceViews = liveDevicePlan.views.length > 0

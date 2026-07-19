@@ -1,7 +1,7 @@
 import type { sysinfo } from '@/api/proto.js';
-import type { FrameEntry } from '@/devices/codec';
+import type { FrameEntry } from '@/devices/queue-adapter';
 import { defineHistory } from '@/devices/history';
-import { sysinfoCodec } from './codec';
+import { sysinfoQueue } from './queue';
 
 function Summary({ entry }: { entry: FrameEntry<sysinfo.IEnvelope> }) {
   const data = entry.data.data;
@@ -22,7 +22,7 @@ function Summary({ entry }: { entry: FrameEntry<sysinfo.IEnvelope> }) {
 }
 
 export default defineHistory({
-  codec: sysinfoCodec,
+  queue: sysinfoQueue,
   order: 7,
   Summary,
   loadExpanded: () => import('./ui/SysinfoHistoryView'),

@@ -1,7 +1,7 @@
 import { victron_smartsolar_mppt } from '@/api/proto.js';
-import type { FrameEntry } from '@/devices/codec';
+import type { FrameEntry } from '@/devices/queue-adapter';
 import { defineHistory } from '@/devices/history';
-import { victronSmartSolarCodec } from './codec';
+import { victronSmartSolarQueue } from './queue';
 import {
   describeRegisterValue,
   formatRegisterHex,
@@ -39,7 +39,7 @@ function Summary({ entry }: { entry: FrameEntry<victron_smartsolar_mppt.IRxEnvel
 }
 
 export default defineHistory({
-  codec: victronSmartSolarCodec,
+  queue: victronSmartSolarQueue,
   order: 11,
   Summary,
   loadExpanded: () => import('./ui/VictronSmartSolarHistoryView'),

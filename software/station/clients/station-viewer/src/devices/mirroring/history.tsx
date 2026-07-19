@@ -1,7 +1,7 @@
 import type { motors_mirroring } from '@/api/proto.js';
-import type { FrameEntry } from '@/devices/codec';
+import type { FrameEntry } from '@/devices/queue-adapter';
 import { defineHistory } from '@/devices/history';
-import { mirroringCodec } from './codec';
+import { mirroringQueue } from './queue';
 
 function Summary({ entry }: { entry: FrameEntry<motors_mirroring.IRxEnvelope> }) {
   const count = entry.data.state?.mirroring?.length ?? 0;
@@ -9,7 +9,7 @@ function Summary({ entry }: { entry: FrameEntry<motors_mirroring.IRxEnvelope> })
 }
 
 export default defineHistory({
-  codec: mirroringCodec,
+  queue: mirroringQueue,
   order: 6,
   Summary,
   loadExpanded: () => import('./ui/MirroringHistoryView'),

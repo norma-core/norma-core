@@ -1,11 +1,11 @@
 import { live } from '@/devices/live';
-import { victronSmartSolarCodec } from './codec';
+import { victronSmartSolarQueue } from './queue';
 
 export default live({
   id: 'victron-smartsolar-mppt',
   label: 'Victron SmartSolar MPPT',
   order: 4,
   slot: 'summary',
-  codec: victronSmartSolarCodec,
+  queue: victronSmartSolarQueue,
   loadView: () => import('./ui/VictronSmartSolarLiveView'),
 });

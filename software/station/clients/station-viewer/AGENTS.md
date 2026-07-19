@@ -46,7 +46,7 @@ src/
   api/            # WebSocket, protobuf, time sync, normfs, commands, clipboard, generic frame parsing
   components/     # Shared UI components
     history/      # Generic history shells and byte/JSON presentation
-  devices/        # Device codecs, history/live adapters, UI, and ST3215 model manifests
+  devices/        # Device queues, history/live adapters, UI, and ST3215 model manifests
   hooks/          # Custom React hooks (re-exported from index.ts)
   pages/          # Route components (suffixed with Page)
   st3215/         # Motor driver components, utilities, and robot renderers
@@ -59,7 +59,7 @@ public/
 
 ## Device Modules
 
-Concrete device code lives under `src/devices/<device-id>/`. A device directory is a vertical slice: protocol decoding, history/live adapters, device-only UI, formatting helpers, commands, and model-specific assets live together. Shared shells discover adapters; they do not enumerate concrete devices. `HomePage` may import codec contracts when it deliberately combines entries (currently `usbVideoCodec` for the shared standalone camera surface), but must not import concrete device UI or manifests.
+Concrete device code lives under `src/devices/<device-id>/`. A device directory is a vertical slice: protocol decoding, history/live adapters, device-only UI, formatting helpers, commands, and model-specific assets live together. Shared shells discover adapters; they do not enumerate concrete devices. `HomePage` may import queue declarations when it deliberately combines entries (currently `usbVideoQueue` for the shared standalone camera surface), but must not import concrete device UI or manifests.
 
 The shared implementation is deliberately split into separate deep modules with different interfaces:
 
@@ -68,14 +68,14 @@ src/devices/
   live.ts                 # live()/customLive() authoring factories
   live-registry.ts        # discovers live manifests and resolves a LiveDevicePlan
   LiveDeviceSurface.tsx   # lazy rendering, slots, and error isolation
-  codec.ts                # typed codec contract and identity-keyed Frame store
-  codec-registry.ts       # discovers codecs and resolves queue type/id
+  queue-adapter.ts        # typed queue-adapter interface and identity-keyed Frame store
+  queue-adapter-registry.ts # discovers queue declarations and resolves queue type/id
   history.tsx             # typed history-adapter authoring factory
-  history-registry.ts     # discovers history adapters by codec identity
+  history-registry.ts     # discovers history adapters by queue identity
   st3215-model.ts         # st3215Model() authoring factory and model contract
   st3215-models.ts        # discovers and resolves ST3215 robot models
   <device-id>/
-    codec.ts              # one codec or a small codec array
+    queue.ts              # one queue declaration or a small queue array
     module.ts             # one live-module manifest
     history.tsx           # optional summary/expanded/JSON history adapter
     ui/                   # lazy device UI
@@ -90,18 +90,18 @@ Do not recreate a general plugin framework. Live UI, ST3215 robot models, histor
 
 `live-registry.ts` discovers `src/devices/*/module.ts` using Vite's bundled `import.meta.glob`. **Never edit a central registration list and never import a concrete module from `HomePage`.** A manifest is eagerly loaded, but its UI must be loaded lazily.
 
-Use `live()` for the normal case. The factory selects entries through the codec identity, normalizes cardinality, uses `queueId` as the stable key, supplies typed `{ data }`, and creates the lazy React element.
+Use `live()` for the normal case. The factory selects entries through the typed queue identity, uses `queueId` as the stable key, supplies typed `{ data }`, and creates the lazy React element.
 
 ```typescript
 import { live } from '@/devices/live';
-import { newSensorCodec } from './codec';
+import { newSensorQueue } from './queue';
 
 export default live({
   id: 'new-sensor',
   label: 'New Sensor',
   order: 40,
   slot: 'summary',
-  codec: newSensorCodec,
+  queue: newSensorQueue,
   when: (data) => data.readings?.length > 0,
   loadView: () => import('./ui/NewSensorLiveView'),
 });
@@ -126,8 +126,8 @@ export default customLive<NewViewerProps>({
   order: 40,
   embedsCameraFeed: true,
   select: (frame) => {
-    const data = frame.devices.entryOf(newDeviceCodec)?.data;
-    const videos = frame.devices.entriesOf(usbVideoCodec).map((entry) => entry.data);
+    const data = frame.devices.entryOf(newDeviceQueue)?.data;
+    const videos = frame.devices.entriesOf(usbVideoQueue).map((entry) => entry.data);
     return data ? [{ key: 'new-device', props: { data, videos } }] : [];
   },
   loadView: () => import('./ui/NewDeviceViewer'),
@@ -180,13 +180,13 @@ Rules and invariants:
 ### Adding or Extending a Device
 
 1. Add the `.proto` and append its `QueueDataType` in `protobufs/station/drivers.proto`, then run `npm run build:proto`.
-2. Add `src/devices/<device-id>/codec.ts` with `defineCodec({ key, message, queueType, cardinality })`. Use `matchQueue` only to disambiguate codecs that share a queue type. Keep `decode` pure; device side effects belong in the explicit `afterDecode` hook.
-3. Create `module.ts` with `live({ codec, ... })`; use `customLive()` only when the view needs multiple codec-backed inputs.
-4. Add `history.tsx` with `defineHistory({ codec, Summary?, loadExpanded?, toJson? })`. Expanded UI is collapsed by default, lazy, and receives one typed `entry`; generic JSON/raw history works without an adapter. Use `defaultExpanded: true` only for a deliberately cheap view that should mount immediately.
+2. Add `src/devices/<device-id>/queue.ts` with `defineQueueAdapter({ key, message, queueType, cardinality })`. Use `matchQueue` only to disambiguate adapters that share a queue type. Keep `decode` pure; device side effects belong in the explicit `afterDecode` hook.
+3. Create `module.ts` with `live({ queue, ... })`; use `customLive()` only when the view needs inputs from multiple queues.
+4. Add `history.tsx` with `defineHistory({ queue, Summary?, loadExpanded?, toJson? })`. Expanded UI is collapsed by default, lazy, and receives one typed `entry`; generic JSON/raw history works without an adapter. Use `defaultExpanded: true` only for a deliberately cheap view that should mount immediately.
 5. Put device-only UI and helpers under the device directory. For a physical ST3215 robot, also add its model manifest and assets.
-6. Test codec matching/parser behavior and selection through public seams. Run type-check, lint, tests, and the production build; the build validates both eager globs and lazy history imports.
+6. Test queue matching/parser behavior and selection through public seams. Run type-check, lint, tests, and the production build; the build validates both eager globs and lazy history imports.
 
-Codecs are protocol contracts and may be imported by readers and composition code. Concrete UI, live manifests, and history adapters remain discoverable implementation details and must not be imported by shared shells.
+Queue declarations are protocol adapters and may be imported by readers and composition code. Concrete UI, live manifests, and history adapters remain discoverable implementation details and must not be imported by shared shells.
 
 ## Code Style
 

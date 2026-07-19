@@ -1,7 +1,7 @@
 import { drivers, normvla } from '@/api/proto.js';
-import { defineCodec } from '@/devices/codec';
+import { defineQueueAdapter } from '@/devices/queue-adapter';
 
-export const normvlaCodec = defineCodec<normvla.IFrame>({
+export const normvlaQueue = defineQueueAdapter<normvla.IFrame>({
   key: 'normvla',
   message: normvla.Frame,
   queueType: drivers.QueueDataType.QDT_INFERENCE_FRAMES,
@@ -9,4 +9,4 @@ export const normvlaCodec = defineCodec<normvla.IFrame>({
   matchQueue: (queueId) => queueId.endsWith('/inference/normvla'),
 });
 
-export default normvlaCodec;
+export default normvlaQueue;

@@ -1,11 +1,11 @@
 import { drivers, ina226 } from '@/api/proto.js';
-import { defineCodec } from '@/devices/codec';
+import { defineQueueAdapter } from '@/devices/queue-adapter';
 
-export const ina226Codec = defineCodec<ina226.IRxEnvelope>({
+export const ina226Queue = defineQueueAdapter<ina226.IRxEnvelope>({
   key: 'ina226',
   message: ina226.RxEnvelope,
   queueType: drivers.QueueDataType.QDT_INA226_RX,
   cardinality: 'multiple',
 });
 
-export default ina226Codec;
+export default ina226Queue;

@@ -1,7 +1,7 @@
 import type { yahboom_dogzilla_lite } from '@/api/proto.js';
-import type { FrameEntry } from '@/devices/codec';
+import type { FrameEntry } from '@/devices/queue-adapter';
 import { defineHistory } from '@/devices/history';
-import { yahboomDogzillaLiteCodec } from './codec';
+import { yahboomDogzillaLiteQueue } from './queue';
 
 function Summary({ entry }: { entry: FrameEntry<yahboom_dogzilla_lite.IInferenceState> }) {
   const devices = entry.data.devices ?? [];
@@ -15,7 +15,7 @@ function Summary({ entry }: { entry: FrameEntry<yahboom_dogzilla_lite.IInference
 }
 
 export default defineHistory({
-  codec: yahboomDogzillaLiteCodec,
+  queue: yahboomDogzillaLiteQueue,
   order: 12,
   Summary,
   loadExpanded: () => import('./ui/YahboomDogzillaLiteHistoryView'),

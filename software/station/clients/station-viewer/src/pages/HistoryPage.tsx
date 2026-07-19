@@ -41,11 +41,11 @@ export default function HistoryPage() {
 
   const elements = useMemo<HistoryElementData[]>(() => {
     if (!parsedFrame) return [];
-    const decoded = parsedFrame.devices.all().flatMap(({ codec, entries }) =>
-      entries.map((entry) => ({ kind: 'decoded' as const, codec, entry })),
+    const decoded = parsedFrame.devices.all().flatMap(({ adapter, entries }) =>
+      entries.map((entry) => ({ kind: 'decoded' as const, queue: adapter, entry })),
     ).sort((left, right) =>
-      historyOrderFor(left.codec) - historyOrderFor(right.codec)
-      || left.codec.key.localeCompare(right.codec.key)
+      historyOrderFor(left.queue) - historyOrderFor(right.queue)
+      || left.queue.key.localeCompare(right.queue.key)
       || left.entry.queueId.localeCompare(right.entry.queueId),
     );
     const raw = Object.entries(parsedFrame.otherEntries ?? {})
@@ -97,7 +97,7 @@ export default function HistoryPage() {
                     {elements.map((element) => {
                       const queueId = element.kind === 'decoded' ? element.entry.queueId : element.queueId;
                       const ptr = element.kind === 'decoded' ? element.entry.ptr : element.ptr;
-                      const label = element.kind === 'decoded' ? element.codec.key : 'unknown';
+                      const label = element.kind === 'decoded' ? element.queue.key : 'unknown';
                       return (
                         <div key={`${label}:${queueId}`} className="flex items-center justify-between gap-3">
                           <div className="flex min-w-0 items-center gap-3">
@@ -129,7 +129,7 @@ export default function HistoryPage() {
                   <h3 className="mb-2 text-sm text-text-label">Decoded entries ({elements.length})</h3>
                   {elements.map((element, index) => {
                     const queueId = element.kind === 'decoded' ? element.entry.queueId : element.queueId;
-                    const key = element.kind === 'decoded' ? element.codec.key : 'raw';
+                    const key = element.kind === 'decoded' ? element.queue.key : 'raw';
                     return <HistoryElement key={`${key}:${queueId}`} element={element} index={index} />;
                   })}
                 </div>

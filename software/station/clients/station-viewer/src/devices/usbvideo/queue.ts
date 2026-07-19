@@ -1,5 +1,5 @@
 import { drivers, usbvideo } from '@/api/proto.js';
-import { defineCodec } from '@/devices/codec';
+import { defineQueueAdapter } from '@/devices/queue-adapter';
 import {
   createLiveCameraMetadataEnvelope,
   publishLiveCameraFrame,
@@ -7,7 +7,7 @@ import {
 
 const metadataEnvelopes = new WeakSet<object>();
 
-export const usbVideoCodec = defineCodec<usbvideo.IRxEnvelope>({
+export const usbVideoQueue = defineQueueAdapter<usbvideo.IRxEnvelope>({
   key: 'usbvideo',
   message: usbvideo.RxEnvelope,
   queueType: drivers.QueueDataType.QDT_USB_VIDEO_FRAMES,
@@ -28,4 +28,4 @@ export const usbVideoCodec = defineCodec<usbvideo.IRxEnvelope>({
   },
 });
 
-export default usbVideoCodec;
+export default usbVideoQueue;

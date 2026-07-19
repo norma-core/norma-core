@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import ExpandedView from '@/components/history/ExpandedView';
 import { formatBytes } from '@/components/history/history-utils';
-import type { AnyDeviceCodec, FrameEntry } from '@/devices/codec';
+import type { AnyDeviceQueueAdapter, FrameEntry } from '@/devices/queue-adapter';
 import { historyAdapterFor } from '@/devices/history-registry';
 
 export type HistoryElementData =
-  | { kind: 'decoded'; codec: AnyDeviceCodec; entry: FrameEntry<unknown> }
+  | { kind: 'decoded'; queue: AnyDeviceQueueAdapter; entry: FrameEntry<unknown> }
   | { kind: 'raw'; queueId: string; ptr: Uint8Array; data: Uint8Array };
 
 interface HistoryElementProps {
@@ -23,7 +23,7 @@ function formatQueueId(queueId: string): string {
 }
 
 export default function HistoryElement({ element, index }: HistoryElementProps) {
-  const adapter = element.kind === 'decoded' ? historyAdapterFor(element.codec) : undefined;
+  const adapter = element.kind === 'decoded' ? historyAdapterFor(element.queue) : undefined;
   const [isExpanded, setIsExpanded] = useState(
     element.kind === 'decoded' ? (adapter?.defaultExpanded ?? false) : false,
   );
@@ -45,7 +45,7 @@ export default function HistoryElement({ element, index }: HistoryElementProps) 
           <span className="truncate font-mono text-sm text-accent-warning">{formatQueueId(queueId)}</span>
           <span className="text-xs text-text-label">→</span>
           <span className="font-mono text-xs text-accent-success">{formatBytes(ptr)}</span>
-          {element.kind === 'decoded' && <span className="font-mono text-xs text-accent-secondary">{element.codec.key}</span>}
+          {element.kind === 'decoded' && <span className="font-mono text-xs text-accent-secondary">{element.queue.key}</span>}
         </div>
         <span className="shrink-0 text-xs text-text-secondary">
           {rawData ? `${rawData.length.toLocaleString()}b` : 'Parsed'}
@@ -65,7 +65,7 @@ export default function HistoryElement({ element, index }: HistoryElementProps) 
       {isExpanded && (
         <ExpandedView
           value={element.kind === 'decoded'
-            ? { kind: 'decoded', codec: element.codec, entry: element.entry, adapter }
+            ? { kind: 'decoded', queue: element.queue, entry: element.entry, adapter }
             : { kind: 'raw', data: element.data }}
         />
       )}

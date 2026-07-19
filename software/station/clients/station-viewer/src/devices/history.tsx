@@ -1,6 +1,6 @@
 import { lazy } from 'react';
 import type { ComponentType } from 'react';
-import type { AnyDeviceCodec, DeviceCodec, FrameEntry } from './codec';
+import type { AnyDeviceQueueAdapter, DeviceQueueAdapter, FrameEntry } from './queue-adapter';
 
 export interface HistoryExpandedProps<T> {
   entry: FrameEntry<T>;
@@ -8,7 +8,7 @@ export interface HistoryExpandedProps<T> {
 }
 
 export interface HistoryAdapter<T> {
-  codec: DeviceCodec<T>;
+  queue: DeviceQueueAdapter<T>;
   order: number;
   defaultExpanded: boolean;
   Summary?: ComponentType<{ entry: FrameEntry<T> }>;
@@ -17,12 +17,12 @@ export interface HistoryAdapter<T> {
 }
 
 // Heterogeneous discovery erases T once. The history registry keys this value
-// by adapter.codec identity, and the shell only pairs it with entries produced
-// by that exact codec object.
+// by adapter.queue identity, and the shell only pairs it with entries produced
+// by that exact queue adapter object.
 export type AnyHistoryAdapter = HistoryAdapter<any>;
 
 interface HistoryDefinition<T> {
-  codec: DeviceCodec<T>;
+  queue: DeviceQueueAdapter<T>;
   order?: number;
   defaultExpanded?: boolean;
   Summary?: ComponentType<{ entry: FrameEntry<T> }>;
@@ -40,17 +40,17 @@ const JSON_OPTIONS = {
 export function defineHistory<T>(definition: HistoryDefinition<T>): HistoryAdapter<T> {
   const Expanded = definition.loadExpanded ? lazy(definition.loadExpanded) : undefined;
   return Object.freeze({
-    codec: definition.codec,
+    queue: definition.queue,
     order: definition.order ?? Number.POSITIVE_INFINITY,
     defaultExpanded: definition.defaultExpanded ?? false,
     Summary: definition.Summary,
     Expanded,
     toJson: definition.toJson
-      ?? ((data: T) => definition.codec.message.toObject(data, JSON_OPTIONS)),
+      ?? ((data: T) => definition.queue.message.toObject(data, JSON_OPTIONS)),
   });
 }
 
 export interface HistoryAdapterLookup {
-  forCodec(codec: AnyDeviceCodec): AnyHistoryAdapter | undefined;
-  orderFor(codec: AnyDeviceCodec): number;
+  forQueue(queue: AnyDeviceQueueAdapter): AnyHistoryAdapter | undefined;
+  orderFor(queue: AnyDeviceQueueAdapter): number;
 }

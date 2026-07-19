@@ -1,8 +1,8 @@
 import { customLive } from '@/devices/live';
 import type { BusViewerProps } from '@/st3215/BusViewer';
-import { mirroringCodec } from '@/devices/mirroring/codec';
-import { usbVideoCodec } from '@/devices/usbvideo/codec';
-import { st3215InferenceCodec } from './codec';
+import { mirroringQueue } from '@/devices/mirroring/queue';
+import { usbVideoQueue } from '@/devices/usbvideo/queue';
+import { st3215InferenceQueue } from './queue';
 
 export default customLive<BusViewerProps>({
   id: 'st3215',
@@ -11,7 +11,7 @@ export default customLive<BusViewerProps>({
   isRealtime: true,
   embedsCameraFeed: true,
   select: (frame) => {
-    const inferenceState = frame.devices.entryOf(st3215InferenceCodec)?.data;
+    const inferenceState = frame.devices.entryOf(st3215InferenceQueue)?.data;
     if (!inferenceState?.buses?.length) {
       return [];
     }
@@ -20,8 +20,8 @@ export default customLive<BusViewerProps>({
       key: 'st3215',
       props: {
         inferenceState,
-        videoSources: [...frame.devices.entriesOf(usbVideoCodec)],
-        mirroringState: frame.devices.entryOf(mirroringCodec)?.data.state ?? undefined,
+        videoSources: [...frame.devices.entriesOf(usbVideoQueue)],
+        mirroringState: frame.devices.entryOf(mirroringQueue)?.data.state ?? undefined,
       },
     }];
   },
