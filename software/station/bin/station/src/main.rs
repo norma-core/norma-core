@@ -75,7 +75,7 @@ struct Args {
     /// instead of the copy embedded into this binary at build time. Useful
     /// for iterating on the URDF (e.g. gravity-compensation dynamics data)
     /// without rebuilding station-viewer and station itself.
-    #[arg(long)]
+    #[arg(long, value_parser = parse_existing_file)]
     elrobot_urdf_path: Option<PathBuf>,
 }
 
@@ -111,6 +111,17 @@ fn validate_normfs_file_size(args: &Args) -> Result<(), io::Error> {
     }
 
     Ok(())
+}
+
+/// Rejects the CLI value up front (clap fails `Args::parse()` with a clear
+/// message) rather than letting a typo'd `--elrobot-urdf-path` silently fall
+/// back to the embedded URDF the first time a client happens to request it.
+fn parse_existing_file(s: &str) -> Result<PathBuf, String> {
+    let path = PathBuf::from(s);
+    if !path.is_file() {
+        return Err(format!("file not found: {}", path.display()));
+    }
+    Ok(path)
 }
 
 struct Station {
