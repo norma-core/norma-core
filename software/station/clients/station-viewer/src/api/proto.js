@@ -198,6 +198,7 @@ export const commands = $root.commands = (() => {
                 case 1:
                 case 2:
                 case 3:
+                case 4:
                     break;
                 }
             if (message.body != null && message.hasOwnProperty("body"))
@@ -249,6 +250,10 @@ export const commands = $root.commands = (() => {
             case "STC_YAHBOOM_DOGZILLA_LITE_COMMAND":
             case 3:
                 message.type = 3;
+                break;
+            case "STC_GRAVITY_COMP_COMMAND":
+            case 4:
+                message.type = 4;
                 break;
             }
             if (object.body != null)
@@ -700,6 +705,8 @@ export const drivers = $root.drivers = (() => {
      * @property {number} QDT_INFERENCE_FRAMES=22 QDT_INFERENCE_FRAMES value
      * @property {number} QDT_MOTOR_MIRRORING_MODES=30 QDT_MOTOR_MIRRORING_MODES value
      * @property {number} QDT_MOTOR_MIRRORING_RX=32 QDT_MOTOR_MIRRORING_RX value
+     * @property {number} QDT_MOTOR_MIRRORING_GRAVITY_COMP_MODES=33 QDT_MOTOR_MIRRORING_GRAVITY_COMP_MODES value
+     * @property {number} QDT_MOTOR_MIRRORING_GRAVITY_COMP_SETTINGS=34 QDT_MOTOR_MIRRORING_GRAVITY_COMP_SETTINGS value
      * @property {number} QDT_YAHBOOM_DOGZILLA_LITE_SERIAL_TX=40 QDT_YAHBOOM_DOGZILLA_LITE_SERIAL_TX value
      * @property {number} QDT_YAHBOOM_DOGZILLA_LITE_SERIAL_RX=41 QDT_YAHBOOM_DOGZILLA_LITE_SERIAL_RX value
      * @property {number} QDT_YAHBOOM_DOGZILLA_LITE_INFERENCE=42 QDT_YAHBOOM_DOGZILLA_LITE_INFERENCE value
@@ -719,6 +726,8 @@ export const drivers = $root.drivers = (() => {
         values[valuesById[22] = "QDT_INFERENCE_FRAMES"] = 22;
         values[valuesById[30] = "QDT_MOTOR_MIRRORING_MODES"] = 30;
         values[valuesById[32] = "QDT_MOTOR_MIRRORING_RX"] = 32;
+        values[valuesById[33] = "QDT_MOTOR_MIRRORING_GRAVITY_COMP_MODES"] = 33;
+        values[valuesById[34] = "QDT_MOTOR_MIRRORING_GRAVITY_COMP_SETTINGS"] = 34;
         values[valuesById[40] = "QDT_YAHBOOM_DOGZILLA_LITE_SERIAL_TX"] = 40;
         values[valuesById[41] = "QDT_YAHBOOM_DOGZILLA_LITE_SERIAL_RX"] = 41;
         values[valuesById[42] = "QDT_YAHBOOM_DOGZILLA_LITE_INFERENCE"] = 42;
@@ -733,6 +742,7 @@ export const drivers = $root.drivers = (() => {
      * @property {number} STC_MOTOR_MIRRORING_COMMAND=1 STC_MOTOR_MIRRORING_COMMAND value
      * @property {number} STC_INFERENCE_TAG_COMMAND=2 STC_INFERENCE_TAG_COMMAND value
      * @property {number} STC_YAHBOOM_DOGZILLA_LITE_COMMAND=3 STC_YAHBOOM_DOGZILLA_LITE_COMMAND value
+     * @property {number} STC_GRAVITY_COMP_COMMAND=4 STC_GRAVITY_COMP_COMMAND value
      */
     drivers.StationCommandType = (function() {
         const valuesById = {}, values = Object.create(valuesById);
@@ -740,6 +750,7 @@ export const drivers = $root.drivers = (() => {
         values[valuesById[1] = "STC_MOTOR_MIRRORING_COMMAND"] = 1;
         values[valuesById[2] = "STC_INFERENCE_TAG_COMMAND"] = 2;
         values[valuesById[3] = "STC_YAHBOOM_DOGZILLA_LITE_COMMAND"] = 3;
+        values[valuesById[4] = "STC_GRAVITY_COMP_COMMAND"] = 4;
         return values;
     })();
 
@@ -1297,6 +1308,8 @@ export const inference = $root.inference = (() => {
                     case 22:
                     case 30:
                     case 32:
+                    case 33:
+                    case 34:
                     case 40:
                     case 41:
                     case 42:
@@ -1386,6 +1399,14 @@ export const inference = $root.inference = (() => {
                 case "QDT_MOTOR_MIRRORING_RX":
                 case 32:
                     message.type = 32;
+                    break;
+                case "QDT_MOTOR_MIRRORING_GRAVITY_COMP_MODES":
+                case 33:
+                    message.type = 33;
+                    break;
+                case "QDT_MOTOR_MIRRORING_GRAVITY_COMP_SETTINGS":
+                case 34:
+                    message.type = 34;
                     break;
                 case "QDT_YAHBOOM_DOGZILLA_LITE_SERIAL_TX":
                 case 40:
@@ -14436,6 +14457,7 @@ export const motors_mirroring = $root.motors_mirroring = (() => {
          * @property {Long|null} [appStartId] RxEnvelope appStartId
          * @property {motors_mirroring.IInferenceState|null} [state] RxEnvelope state
          * @property {motors_mirroring.ICommand|null} [command] RxEnvelope command
+         * @property {motors_mirroring.IGravityCompCommand|null} [gravityCommand] RxEnvelope gravityCommand
          */
 
         /**
@@ -14494,6 +14516,14 @@ export const motors_mirroring = $root.motors_mirroring = (() => {
         RxEnvelope.prototype.command = null;
 
         /**
+         * RxEnvelope gravityCommand.
+         * @member {motors_mirroring.IGravityCompCommand|null|undefined} gravityCommand
+         * @memberof motors_mirroring.RxEnvelope
+         * @instance
+         */
+        RxEnvelope.prototype.gravityCommand = null;
+
+        /**
          * Creates a new RxEnvelope instance using the specified properties.
          * @function create
          * @memberof motors_mirroring.RxEnvelope
@@ -14527,6 +14557,8 @@ export const motors_mirroring = $root.motors_mirroring = (() => {
                 $root.motors_mirroring.InferenceState.encode(message.state, writer.uint32(/* id 10, wireType 2 =*/82).fork()).ldelim();
             if (message.command != null && Object.hasOwnProperty.call(message, "command"))
                 $root.motors_mirroring.Command.encode(message.command, writer.uint32(/* id 11, wireType 2 =*/90).fork()).ldelim();
+            if (message.gravityCommand != null && Object.hasOwnProperty.call(message, "gravityCommand"))
+                $root.motors_mirroring.GravityCompCommand.encode(message.gravityCommand, writer.uint32(/* id 12, wireType 2 =*/98).fork()).ldelim();
             return writer;
         };
 
@@ -14587,6 +14619,10 @@ export const motors_mirroring = $root.motors_mirroring = (() => {
                         message.command = $root.motors_mirroring.Command.decode(reader, reader.uint32(), undefined, long + 1);
                         break;
                     }
+                case 12: {
+                        message.gravityCommand = $root.motors_mirroring.GravityCompCommand.decode(reader, reader.uint32(), undefined, long + 1);
+                        break;
+                    }
                 default:
                     reader.skipType(tag & 7, long);
                     break;
@@ -14645,6 +14681,11 @@ export const motors_mirroring = $root.motors_mirroring = (() => {
                 if (error)
                     return "command." + error;
             }
+            if (message.gravityCommand != null && message.hasOwnProperty("gravityCommand")) {
+                let error = $root.motors_mirroring.GravityCompCommand.verify(message.gravityCommand, long + 1);
+                if (error)
+                    return "gravityCommand." + error;
+            }
             return null;
         };
 
@@ -14701,6 +14742,11 @@ export const motors_mirroring = $root.motors_mirroring = (() => {
                     throw TypeError(".motors_mirroring.RxEnvelope.command: object expected");
                 message.command = $root.motors_mirroring.Command.fromObject(object.command, long + 1);
             }
+            if (object.gravityCommand != null) {
+                if (typeof object.gravityCommand !== "object")
+                    throw TypeError(".motors_mirroring.RxEnvelope.gravityCommand: object expected");
+                message.gravityCommand = $root.motors_mirroring.GravityCompCommand.fromObject(object.gravityCommand, long + 1);
+            }
             return message;
         };
 
@@ -14735,6 +14781,7 @@ export const motors_mirroring = $root.motors_mirroring = (() => {
                     object.appStartId = options.longs === String ? "0" : 0;
                 object.state = null;
                 object.command = null;
+                object.gravityCommand = null;
             }
             if (message.monotonicStampNs != null && message.hasOwnProperty("monotonicStampNs"))
                 if (typeof message.monotonicStampNs === "number")
@@ -14755,6 +14802,8 @@ export const motors_mirroring = $root.motors_mirroring = (() => {
                 object.state = $root.motors_mirroring.InferenceState.toObject(message.state, options);
             if (message.command != null && message.hasOwnProperty("command"))
                 object.command = $root.motors_mirroring.Command.toObject(message.command, options);
+            if (message.gravityCommand != null && message.hasOwnProperty("gravityCommand"))
+                object.gravityCommand = $root.motors_mirroring.GravityCompCommand.toObject(message.gravityCommand, options);
             return object;
         };
 
@@ -14795,6 +14844,7 @@ export const motors_mirroring = $root.motors_mirroring = (() => {
          * @interface IInferenceState
          * @property {Array.<motors_mirroring.InferenceState.IBus>|null} [modes] InferenceState modes
          * @property {Array.<motors_mirroring.InferenceState.IMirroring>|null} [mirroring] InferenceState mirroring
+         * @property {Array.<motors_mirroring.IGravityCompBusState>|null} [gravityComp] InferenceState gravityComp
          */
 
         /**
@@ -14808,6 +14858,7 @@ export const motors_mirroring = $root.motors_mirroring = (() => {
         function InferenceState(properties) {
             this.modes = [];
             this.mirroring = [];
+            this.gravityComp = [];
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
                     if (properties[keys[i]] != null && keys[i] !== "__proto__")
@@ -14829,6 +14880,14 @@ export const motors_mirroring = $root.motors_mirroring = (() => {
          * @instance
          */
         InferenceState.prototype.mirroring = $util.emptyArray;
+
+        /**
+         * InferenceState gravityComp.
+         * @member {Array.<motors_mirroring.IGravityCompBusState>} gravityComp
+         * @memberof motors_mirroring.InferenceState
+         * @instance
+         */
+        InferenceState.prototype.gravityComp = $util.emptyArray;
 
         /**
          * Creates a new InferenceState instance using the specified properties.
@@ -14860,6 +14919,9 @@ export const motors_mirroring = $root.motors_mirroring = (() => {
             if (message.mirroring != null && message.mirroring.length)
                 for (let i = 0; i < message.mirroring.length; ++i)
                     $root.motors_mirroring.InferenceState.Mirroring.encode(message.mirroring[i], writer.uint32(/* id 11, wireType 2 =*/90).fork()).ldelim();
+            if (message.gravityComp != null && message.gravityComp.length)
+                for (let i = 0; i < message.gravityComp.length; ++i)
+                    $root.motors_mirroring.GravityCompBusState.encode(message.gravityComp[i], writer.uint32(/* id 12, wireType 2 =*/98).fork()).ldelim();
             return writer;
         };
 
@@ -14910,6 +14972,12 @@ export const motors_mirroring = $root.motors_mirroring = (() => {
                         if (!(message.mirroring && message.mirroring.length))
                             message.mirroring = [];
                         message.mirroring.push($root.motors_mirroring.InferenceState.Mirroring.decode(reader, reader.uint32(), undefined, long + 1));
+                        break;
+                    }
+                case 12: {
+                        if (!(message.gravityComp && message.gravityComp.length))
+                            message.gravityComp = [];
+                        message.gravityComp.push($root.motors_mirroring.GravityCompBusState.decode(reader, reader.uint32(), undefined, long + 1));
                         break;
                     }
                 default:
@@ -14969,6 +15037,15 @@ export const motors_mirroring = $root.motors_mirroring = (() => {
                         return "mirroring." + error;
                 }
             }
+            if (message.gravityComp != null && message.hasOwnProperty("gravityComp")) {
+                if (!Array.isArray(message.gravityComp))
+                    return "gravityComp: array expected";
+                for (let i = 0; i < message.gravityComp.length; ++i) {
+                    let error = $root.motors_mirroring.GravityCompBusState.verify(message.gravityComp[i], long + 1);
+                    if (error)
+                        return "gravityComp." + error;
+                }
+            }
             return null;
         };
 
@@ -15008,6 +15085,16 @@ export const motors_mirroring = $root.motors_mirroring = (() => {
                     message.mirroring[i] = $root.motors_mirroring.InferenceState.Mirroring.fromObject(object.mirroring[i], long + 1);
                 }
             }
+            if (object.gravityComp) {
+                if (!Array.isArray(object.gravityComp))
+                    throw TypeError(".motors_mirroring.InferenceState.gravityComp: array expected");
+                message.gravityComp = [];
+                for (let i = 0; i < object.gravityComp.length; ++i) {
+                    if (typeof object.gravityComp[i] !== "object")
+                        throw TypeError(".motors_mirroring.InferenceState.gravityComp: object expected");
+                    message.gravityComp[i] = $root.motors_mirroring.GravityCompBusState.fromObject(object.gravityComp[i], long + 1);
+                }
+            }
             return message;
         };
 
@@ -15027,6 +15114,7 @@ export const motors_mirroring = $root.motors_mirroring = (() => {
             if (options.arrays || options.defaults) {
                 object.modes = [];
                 object.mirroring = [];
+                object.gravityComp = [];
             }
             if (message.modes && message.modes.length) {
                 object.modes = [];
@@ -15037,6 +15125,11 @@ export const motors_mirroring = $root.motors_mirroring = (() => {
                 object.mirroring = [];
                 for (let j = 0; j < message.mirroring.length; ++j)
                     object.mirroring[j] = $root.motors_mirroring.InferenceState.Mirroring.toObject(message.mirroring[j], options);
+            }
+            if (message.gravityComp && message.gravityComp.length) {
+                object.gravityComp = [];
+                for (let j = 0; j < message.gravityComp.length; ++j)
+                    object.gravityComp[j] = $root.motors_mirroring.GravityCompBusState.toObject(message.gravityComp[j], options);
             }
             return object;
         };
@@ -15605,6 +15698,1566 @@ export const motors_mirroring = $root.motors_mirroring = (() => {
         })();
 
         return InferenceState;
+    })();
+
+    /**
+     * GravityCompState enum.
+     * @name motors_mirroring.GravityCompState
+     * @enum {number}
+     * @property {number} GC_UNKNOWN=0 GC_UNKNOWN value
+     * @property {number} GC_DISABLED=1 GC_DISABLED value
+     * @property {number} GC_ENABLED=2 GC_ENABLED value
+     */
+    motors_mirroring.GravityCompState = (function() {
+        const valuesById = {}, values = Object.create(valuesById);
+        values[valuesById[0] = "GC_UNKNOWN"] = 0;
+        values[valuesById[1] = "GC_DISABLED"] = 1;
+        values[valuesById[2] = "GC_ENABLED"] = 2;
+        return values;
+    })();
+
+    motors_mirroring.GravityCompModeEnvelope = (function() {
+
+        /**
+         * Properties of a GravityCompModeEnvelope.
+         * @memberof motors_mirroring
+         * @interface IGravityCompModeEnvelope
+         * @property {Long|null} [monotonicStampNs] GravityCompModeEnvelope monotonicStampNs
+         * @property {Long|null} [localStampNs] GravityCompModeEnvelope localStampNs
+         * @property {Long|null} [appStartId] GravityCompModeEnvelope appStartId
+         * @property {motors_mirroring.IMirroringBus|null} [bus] GravityCompModeEnvelope bus
+         * @property {motors_mirroring.GravityCompState|null} [state] GravityCompModeEnvelope state
+         */
+
+        /**
+         * Constructs a new GravityCompModeEnvelope.
+         * @memberof motors_mirroring
+         * @classdesc Represents a GravityCompModeEnvelope.
+         * @implements IGravityCompModeEnvelope
+         * @constructor
+         * @param {motors_mirroring.IGravityCompModeEnvelope=} [properties] Properties to set
+         */
+        function GravityCompModeEnvelope(properties) {
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * GravityCompModeEnvelope monotonicStampNs.
+         * @member {Long} monotonicStampNs
+         * @memberof motors_mirroring.GravityCompModeEnvelope
+         * @instance
+         */
+        GravityCompModeEnvelope.prototype.monotonicStampNs = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+
+        /**
+         * GravityCompModeEnvelope localStampNs.
+         * @member {Long} localStampNs
+         * @memberof motors_mirroring.GravityCompModeEnvelope
+         * @instance
+         */
+        GravityCompModeEnvelope.prototype.localStampNs = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+
+        /**
+         * GravityCompModeEnvelope appStartId.
+         * @member {Long} appStartId
+         * @memberof motors_mirroring.GravityCompModeEnvelope
+         * @instance
+         */
+        GravityCompModeEnvelope.prototype.appStartId = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+
+        /**
+         * GravityCompModeEnvelope bus.
+         * @member {motors_mirroring.IMirroringBus|null|undefined} bus
+         * @memberof motors_mirroring.GravityCompModeEnvelope
+         * @instance
+         */
+        GravityCompModeEnvelope.prototype.bus = null;
+
+        /**
+         * GravityCompModeEnvelope state.
+         * @member {motors_mirroring.GravityCompState} state
+         * @memberof motors_mirroring.GravityCompModeEnvelope
+         * @instance
+         */
+        GravityCompModeEnvelope.prototype.state = 0;
+
+        /**
+         * Creates a new GravityCompModeEnvelope instance using the specified properties.
+         * @function create
+         * @memberof motors_mirroring.GravityCompModeEnvelope
+         * @static
+         * @param {motors_mirroring.IGravityCompModeEnvelope=} [properties] Properties to set
+         * @returns {motors_mirroring.GravityCompModeEnvelope} GravityCompModeEnvelope instance
+         */
+        GravityCompModeEnvelope.create = function create(properties) {
+            return new GravityCompModeEnvelope(properties);
+        };
+
+        /**
+         * Encodes the specified GravityCompModeEnvelope message. Does not implicitly {@link motors_mirroring.GravityCompModeEnvelope.verify|verify} messages.
+         * @function encode
+         * @memberof motors_mirroring.GravityCompModeEnvelope
+         * @static
+         * @param {motors_mirroring.IGravityCompModeEnvelope} message GravityCompModeEnvelope message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        GravityCompModeEnvelope.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.monotonicStampNs != null && Object.hasOwnProperty.call(message, "monotonicStampNs"))
+                writer.uint32(/* id 1, wireType 0 =*/8).uint64(message.monotonicStampNs);
+            if (message.localStampNs != null && Object.hasOwnProperty.call(message, "localStampNs"))
+                writer.uint32(/* id 2, wireType 0 =*/16).uint64(message.localStampNs);
+            if (message.appStartId != null && Object.hasOwnProperty.call(message, "appStartId"))
+                writer.uint32(/* id 3, wireType 0 =*/24).uint64(message.appStartId);
+            if (message.bus != null && Object.hasOwnProperty.call(message, "bus"))
+                $root.motors_mirroring.MirroringBus.encode(message.bus, writer.uint32(/* id 4, wireType 2 =*/34).fork()).ldelim();
+            if (message.state != null && Object.hasOwnProperty.call(message, "state"))
+                writer.uint32(/* id 5, wireType 0 =*/40).int32(message.state);
+            return writer;
+        };
+
+        /**
+         * Encodes the specified GravityCompModeEnvelope message, length delimited. Does not implicitly {@link motors_mirroring.GravityCompModeEnvelope.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof motors_mirroring.GravityCompModeEnvelope
+         * @static
+         * @param {motors_mirroring.IGravityCompModeEnvelope} message GravityCompModeEnvelope message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        GravityCompModeEnvelope.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes a GravityCompModeEnvelope message from the specified reader or buffer.
+         * @function decode
+         * @memberof motors_mirroring.GravityCompModeEnvelope
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {motors_mirroring.GravityCompModeEnvelope} GravityCompModeEnvelope
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        GravityCompModeEnvelope.decode = function decode(reader, length, error, long) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.motors_mirroring.GravityCompModeEnvelope();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                if (tag === error)
+                    break;
+                switch (tag >>> 3) {
+                case 1: {
+                        message.monotonicStampNs = reader.uint64();
+                        break;
+                    }
+                case 2: {
+                        message.localStampNs = reader.uint64();
+                        break;
+                    }
+                case 3: {
+                        message.appStartId = reader.uint64();
+                        break;
+                    }
+                case 4: {
+                        message.bus = $root.motors_mirroring.MirroringBus.decode(reader, reader.uint32(), undefined, long + 1);
+                        break;
+                    }
+                case 5: {
+                        message.state = reader.int32();
+                        break;
+                    }
+                default:
+                    reader.skipType(tag & 7, long);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes a GravityCompModeEnvelope message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof motors_mirroring.GravityCompModeEnvelope
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {motors_mirroring.GravityCompModeEnvelope} GravityCompModeEnvelope
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        GravityCompModeEnvelope.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies a GravityCompModeEnvelope message.
+         * @function verify
+         * @memberof motors_mirroring.GravityCompModeEnvelope
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        GravityCompModeEnvelope.verify = function verify(message, long) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
+            if (message.monotonicStampNs != null && message.hasOwnProperty("monotonicStampNs"))
+                if (!$util.isInteger(message.monotonicStampNs) && !(message.monotonicStampNs && $util.isInteger(message.monotonicStampNs.low) && $util.isInteger(message.monotonicStampNs.high)))
+                    return "monotonicStampNs: integer|Long expected";
+            if (message.localStampNs != null && message.hasOwnProperty("localStampNs"))
+                if (!$util.isInteger(message.localStampNs) && !(message.localStampNs && $util.isInteger(message.localStampNs.low) && $util.isInteger(message.localStampNs.high)))
+                    return "localStampNs: integer|Long expected";
+            if (message.appStartId != null && message.hasOwnProperty("appStartId"))
+                if (!$util.isInteger(message.appStartId) && !(message.appStartId && $util.isInteger(message.appStartId.low) && $util.isInteger(message.appStartId.high)))
+                    return "appStartId: integer|Long expected";
+            if (message.bus != null && message.hasOwnProperty("bus")) {
+                let error = $root.motors_mirroring.MirroringBus.verify(message.bus, long + 1);
+                if (error)
+                    return "bus." + error;
+            }
+            if (message.state != null && message.hasOwnProperty("state"))
+                switch (message.state) {
+                default:
+                    return "state: enum value expected";
+                case 0:
+                case 1:
+                case 2:
+                    break;
+                }
+            return null;
+        };
+
+        /**
+         * Creates a GravityCompModeEnvelope message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof motors_mirroring.GravityCompModeEnvelope
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {motors_mirroring.GravityCompModeEnvelope} GravityCompModeEnvelope
+         */
+        GravityCompModeEnvelope.fromObject = function fromObject(object, long) {
+            if (object instanceof $root.motors_mirroring.GravityCompModeEnvelope)
+                return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let message = new $root.motors_mirroring.GravityCompModeEnvelope();
+            if (object.monotonicStampNs != null)
+                if ($util.Long)
+                    (message.monotonicStampNs = $util.Long.fromValue(object.monotonicStampNs)).unsigned = true;
+                else if (typeof object.monotonicStampNs === "string")
+                    message.monotonicStampNs = parseInt(object.monotonicStampNs, 10);
+                else if (typeof object.monotonicStampNs === "number")
+                    message.monotonicStampNs = object.monotonicStampNs;
+                else if (typeof object.monotonicStampNs === "object")
+                    message.monotonicStampNs = new $util.LongBits(object.monotonicStampNs.low >>> 0, object.monotonicStampNs.high >>> 0).toNumber(true);
+            if (object.localStampNs != null)
+                if ($util.Long)
+                    (message.localStampNs = $util.Long.fromValue(object.localStampNs)).unsigned = true;
+                else if (typeof object.localStampNs === "string")
+                    message.localStampNs = parseInt(object.localStampNs, 10);
+                else if (typeof object.localStampNs === "number")
+                    message.localStampNs = object.localStampNs;
+                else if (typeof object.localStampNs === "object")
+                    message.localStampNs = new $util.LongBits(object.localStampNs.low >>> 0, object.localStampNs.high >>> 0).toNumber(true);
+            if (object.appStartId != null)
+                if ($util.Long)
+                    (message.appStartId = $util.Long.fromValue(object.appStartId)).unsigned = true;
+                else if (typeof object.appStartId === "string")
+                    message.appStartId = parseInt(object.appStartId, 10);
+                else if (typeof object.appStartId === "number")
+                    message.appStartId = object.appStartId;
+                else if (typeof object.appStartId === "object")
+                    message.appStartId = new $util.LongBits(object.appStartId.low >>> 0, object.appStartId.high >>> 0).toNumber(true);
+            if (object.bus != null) {
+                if (typeof object.bus !== "object")
+                    throw TypeError(".motors_mirroring.GravityCompModeEnvelope.bus: object expected");
+                message.bus = $root.motors_mirroring.MirroringBus.fromObject(object.bus, long + 1);
+            }
+            switch (object.state) {
+            default:
+                if (typeof object.state === "number") {
+                    message.state = object.state;
+                    break;
+                }
+                break;
+            case "GC_UNKNOWN":
+            case 0:
+                message.state = 0;
+                break;
+            case "GC_DISABLED":
+            case 1:
+                message.state = 1;
+                break;
+            case "GC_ENABLED":
+            case 2:
+                message.state = 2;
+                break;
+            }
+            return message;
+        };
+
+        /**
+         * Creates a plain object from a GravityCompModeEnvelope message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof motors_mirroring.GravityCompModeEnvelope
+         * @static
+         * @param {motors_mirroring.GravityCompModeEnvelope} message GravityCompModeEnvelope
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        GravityCompModeEnvelope.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.defaults) {
+                if ($util.Long) {
+                    let long = new $util.Long(0, 0, true);
+                    object.monotonicStampNs = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+                } else
+                    object.monotonicStampNs = options.longs === String ? "0" : 0;
+                if ($util.Long) {
+                    let long = new $util.Long(0, 0, true);
+                    object.localStampNs = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+                } else
+                    object.localStampNs = options.longs === String ? "0" : 0;
+                if ($util.Long) {
+                    let long = new $util.Long(0, 0, true);
+                    object.appStartId = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+                } else
+                    object.appStartId = options.longs === String ? "0" : 0;
+                object.bus = null;
+                object.state = options.enums === String ? "GC_UNKNOWN" : 0;
+            }
+            if (message.monotonicStampNs != null && message.hasOwnProperty("monotonicStampNs"))
+                if (typeof message.monotonicStampNs === "number")
+                    object.monotonicStampNs = options.longs === String ? String(message.monotonicStampNs) : message.monotonicStampNs;
+                else
+                    object.monotonicStampNs = options.longs === String ? $util.Long.prototype.toString.call(message.monotonicStampNs) : options.longs === Number ? new $util.LongBits(message.monotonicStampNs.low >>> 0, message.monotonicStampNs.high >>> 0).toNumber(true) : message.monotonicStampNs;
+            if (message.localStampNs != null && message.hasOwnProperty("localStampNs"))
+                if (typeof message.localStampNs === "number")
+                    object.localStampNs = options.longs === String ? String(message.localStampNs) : message.localStampNs;
+                else
+                    object.localStampNs = options.longs === String ? $util.Long.prototype.toString.call(message.localStampNs) : options.longs === Number ? new $util.LongBits(message.localStampNs.low >>> 0, message.localStampNs.high >>> 0).toNumber(true) : message.localStampNs;
+            if (message.appStartId != null && message.hasOwnProperty("appStartId"))
+                if (typeof message.appStartId === "number")
+                    object.appStartId = options.longs === String ? String(message.appStartId) : message.appStartId;
+                else
+                    object.appStartId = options.longs === String ? $util.Long.prototype.toString.call(message.appStartId) : options.longs === Number ? new $util.LongBits(message.appStartId.low >>> 0, message.appStartId.high >>> 0).toNumber(true) : message.appStartId;
+            if (message.bus != null && message.hasOwnProperty("bus"))
+                object.bus = $root.motors_mirroring.MirroringBus.toObject(message.bus, options);
+            if (message.state != null && message.hasOwnProperty("state"))
+                object.state = options.enums === String ? $root.motors_mirroring.GravityCompState[message.state] === undefined ? message.state : $root.motors_mirroring.GravityCompState[message.state] : message.state;
+            return object;
+        };
+
+        /**
+         * Converts this GravityCompModeEnvelope to JSON.
+         * @function toJSON
+         * @memberof motors_mirroring.GravityCompModeEnvelope
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        GravityCompModeEnvelope.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for GravityCompModeEnvelope
+         * @function getTypeUrl
+         * @memberof motors_mirroring.GravityCompModeEnvelope
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        GravityCompModeEnvelope.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+            if (typeUrlPrefix === undefined) {
+                typeUrlPrefix = "type.googleapis.com";
+            }
+            return typeUrlPrefix + "/motors_mirroring.GravityCompModeEnvelope";
+        };
+
+        return GravityCompModeEnvelope;
+    })();
+
+    /**
+     * GravityCompCommandType enum.
+     * @name motors_mirroring.GravityCompCommandType
+     * @enum {number}
+     * @property {number} GCT_START_GRAVITY_COMP=0 GCT_START_GRAVITY_COMP value
+     * @property {number} GCT_STOP_GRAVITY_COMP=1 GCT_STOP_GRAVITY_COMP value
+     * @property {number} GCT_SET_GAIN=2 GCT_SET_GAIN value
+     * @property {number} GCT_SET_TORQUE_LIMIT=3 GCT_SET_TORQUE_LIMIT value
+     * @property {number} GCT_SAVE_SETTINGS=4 GCT_SAVE_SETTINGS value
+     */
+    motors_mirroring.GravityCompCommandType = (function() {
+        const valuesById = {}, values = Object.create(valuesById);
+        values[valuesById[0] = "GCT_START_GRAVITY_COMP"] = 0;
+        values[valuesById[1] = "GCT_STOP_GRAVITY_COMP"] = 1;
+        values[valuesById[2] = "GCT_SET_GAIN"] = 2;
+        values[valuesById[3] = "GCT_SET_TORQUE_LIMIT"] = 3;
+        values[valuesById[4] = "GCT_SAVE_SETTINGS"] = 4;
+        return values;
+    })();
+
+    motors_mirroring.GravityCompCommand = (function() {
+
+        /**
+         * Properties of a GravityCompCommand.
+         * @memberof motors_mirroring
+         * @interface IGravityCompCommand
+         * @property {motors_mirroring.GravityCompCommandType|null} [type] GravityCompCommand type
+         * @property {motors_mirroring.IMirroringBus|null} [bus] GravityCompCommand bus
+         * @property {number|null} [gainRadPerNm] GravityCompCommand gainRadPerNm
+         * @property {number|null} [motorId] GravityCompCommand motorId
+         * @property {number|null} [torqueLimit] GravityCompCommand torqueLimit
+         */
+
+        /**
+         * Constructs a new GravityCompCommand.
+         * @memberof motors_mirroring
+         * @classdesc Represents a GravityCompCommand.
+         * @implements IGravityCompCommand
+         * @constructor
+         * @param {motors_mirroring.IGravityCompCommand=} [properties] Properties to set
+         */
+        function GravityCompCommand(properties) {
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * GravityCompCommand type.
+         * @member {motors_mirroring.GravityCompCommandType} type
+         * @memberof motors_mirroring.GravityCompCommand
+         * @instance
+         */
+        GravityCompCommand.prototype.type = 0;
+
+        /**
+         * GravityCompCommand bus.
+         * @member {motors_mirroring.IMirroringBus|null|undefined} bus
+         * @memberof motors_mirroring.GravityCompCommand
+         * @instance
+         */
+        GravityCompCommand.prototype.bus = null;
+
+        /**
+         * GravityCompCommand gainRadPerNm.
+         * @member {number|null|undefined} gainRadPerNm
+         * @memberof motors_mirroring.GravityCompCommand
+         * @instance
+         */
+        GravityCompCommand.prototype.gainRadPerNm = null;
+
+        /**
+         * GravityCompCommand motorId.
+         * @member {number|null|undefined} motorId
+         * @memberof motors_mirroring.GravityCompCommand
+         * @instance
+         */
+        GravityCompCommand.prototype.motorId = null;
+
+        /**
+         * GravityCompCommand torqueLimit.
+         * @member {number|null|undefined} torqueLimit
+         * @memberof motors_mirroring.GravityCompCommand
+         * @instance
+         */
+        GravityCompCommand.prototype.torqueLimit = null;
+
+        // OneOf field names bound to virtual getters and setters
+        let $oneOfFields;
+
+        // Virtual OneOf for proto3 optional field
+        Object.defineProperty(GravityCompCommand.prototype, "_gainRadPerNm", {
+            get: $util.oneOfGetter($oneOfFields = ["gainRadPerNm"]),
+            set: $util.oneOfSetter($oneOfFields)
+        });
+
+        // Virtual OneOf for proto3 optional field
+        Object.defineProperty(GravityCompCommand.prototype, "_motorId", {
+            get: $util.oneOfGetter($oneOfFields = ["motorId"]),
+            set: $util.oneOfSetter($oneOfFields)
+        });
+
+        // Virtual OneOf for proto3 optional field
+        Object.defineProperty(GravityCompCommand.prototype, "_torqueLimit", {
+            get: $util.oneOfGetter($oneOfFields = ["torqueLimit"]),
+            set: $util.oneOfSetter($oneOfFields)
+        });
+
+        /**
+         * Creates a new GravityCompCommand instance using the specified properties.
+         * @function create
+         * @memberof motors_mirroring.GravityCompCommand
+         * @static
+         * @param {motors_mirroring.IGravityCompCommand=} [properties] Properties to set
+         * @returns {motors_mirroring.GravityCompCommand} GravityCompCommand instance
+         */
+        GravityCompCommand.create = function create(properties) {
+            return new GravityCompCommand(properties);
+        };
+
+        /**
+         * Encodes the specified GravityCompCommand message. Does not implicitly {@link motors_mirroring.GravityCompCommand.verify|verify} messages.
+         * @function encode
+         * @memberof motors_mirroring.GravityCompCommand
+         * @static
+         * @param {motors_mirroring.IGravityCompCommand} message GravityCompCommand message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        GravityCompCommand.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.type != null && Object.hasOwnProperty.call(message, "type"))
+                writer.uint32(/* id 1, wireType 0 =*/8).int32(message.type);
+            if (message.bus != null && Object.hasOwnProperty.call(message, "bus"))
+                $root.motors_mirroring.MirroringBus.encode(message.bus, writer.uint32(/* id 2, wireType 2 =*/18).fork()).ldelim();
+            if (message.gainRadPerNm != null && Object.hasOwnProperty.call(message, "gainRadPerNm"))
+                writer.uint32(/* id 3, wireType 1 =*/25).double(message.gainRadPerNm);
+            if (message.motorId != null && Object.hasOwnProperty.call(message, "motorId"))
+                writer.uint32(/* id 4, wireType 0 =*/32).uint32(message.motorId);
+            if (message.torqueLimit != null && Object.hasOwnProperty.call(message, "torqueLimit"))
+                writer.uint32(/* id 5, wireType 0 =*/40).uint32(message.torqueLimit);
+            return writer;
+        };
+
+        /**
+         * Encodes the specified GravityCompCommand message, length delimited. Does not implicitly {@link motors_mirroring.GravityCompCommand.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof motors_mirroring.GravityCompCommand
+         * @static
+         * @param {motors_mirroring.IGravityCompCommand} message GravityCompCommand message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        GravityCompCommand.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes a GravityCompCommand message from the specified reader or buffer.
+         * @function decode
+         * @memberof motors_mirroring.GravityCompCommand
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {motors_mirroring.GravityCompCommand} GravityCompCommand
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        GravityCompCommand.decode = function decode(reader, length, error, long) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.motors_mirroring.GravityCompCommand();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                if (tag === error)
+                    break;
+                switch (tag >>> 3) {
+                case 1: {
+                        message.type = reader.int32();
+                        break;
+                    }
+                case 2: {
+                        message.bus = $root.motors_mirroring.MirroringBus.decode(reader, reader.uint32(), undefined, long + 1);
+                        break;
+                    }
+                case 3: {
+                        message.gainRadPerNm = reader.double();
+                        break;
+                    }
+                case 4: {
+                        message.motorId = reader.uint32();
+                        break;
+                    }
+                case 5: {
+                        message.torqueLimit = reader.uint32();
+                        break;
+                    }
+                default:
+                    reader.skipType(tag & 7, long);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes a GravityCompCommand message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof motors_mirroring.GravityCompCommand
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {motors_mirroring.GravityCompCommand} GravityCompCommand
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        GravityCompCommand.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies a GravityCompCommand message.
+         * @function verify
+         * @memberof motors_mirroring.GravityCompCommand
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        GravityCompCommand.verify = function verify(message, long) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
+            let properties = {};
+            if (message.type != null && message.hasOwnProperty("type"))
+                switch (message.type) {
+                default:
+                    return "type: enum value expected";
+                case 0:
+                case 1:
+                case 2:
+                case 3:
+                case 4:
+                    break;
+                }
+            if (message.bus != null && message.hasOwnProperty("bus")) {
+                let error = $root.motors_mirroring.MirroringBus.verify(message.bus, long + 1);
+                if (error)
+                    return "bus." + error;
+            }
+            if (message.gainRadPerNm != null && message.hasOwnProperty("gainRadPerNm")) {
+                properties._gainRadPerNm = 1;
+                if (typeof message.gainRadPerNm !== "number")
+                    return "gainRadPerNm: number expected";
+            }
+            if (message.motorId != null && message.hasOwnProperty("motorId")) {
+                properties._motorId = 1;
+                if (!$util.isInteger(message.motorId))
+                    return "motorId: integer expected";
+            }
+            if (message.torqueLimit != null && message.hasOwnProperty("torqueLimit")) {
+                properties._torqueLimit = 1;
+                if (!$util.isInteger(message.torqueLimit))
+                    return "torqueLimit: integer expected";
+            }
+            return null;
+        };
+
+        /**
+         * Creates a GravityCompCommand message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof motors_mirroring.GravityCompCommand
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {motors_mirroring.GravityCompCommand} GravityCompCommand
+         */
+        GravityCompCommand.fromObject = function fromObject(object, long) {
+            if (object instanceof $root.motors_mirroring.GravityCompCommand)
+                return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let message = new $root.motors_mirroring.GravityCompCommand();
+            switch (object.type) {
+            default:
+                if (typeof object.type === "number") {
+                    message.type = object.type;
+                    break;
+                }
+                break;
+            case "GCT_START_GRAVITY_COMP":
+            case 0:
+                message.type = 0;
+                break;
+            case "GCT_STOP_GRAVITY_COMP":
+            case 1:
+                message.type = 1;
+                break;
+            case "GCT_SET_GAIN":
+            case 2:
+                message.type = 2;
+                break;
+            case "GCT_SET_TORQUE_LIMIT":
+            case 3:
+                message.type = 3;
+                break;
+            case "GCT_SAVE_SETTINGS":
+            case 4:
+                message.type = 4;
+                break;
+            }
+            if (object.bus != null) {
+                if (typeof object.bus !== "object")
+                    throw TypeError(".motors_mirroring.GravityCompCommand.bus: object expected");
+                message.bus = $root.motors_mirroring.MirroringBus.fromObject(object.bus, long + 1);
+            }
+            if (object.gainRadPerNm != null)
+                message.gainRadPerNm = Number(object.gainRadPerNm);
+            if (object.motorId != null)
+                message.motorId = object.motorId >>> 0;
+            if (object.torqueLimit != null)
+                message.torqueLimit = object.torqueLimit >>> 0;
+            return message;
+        };
+
+        /**
+         * Creates a plain object from a GravityCompCommand message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof motors_mirroring.GravityCompCommand
+         * @static
+         * @param {motors_mirroring.GravityCompCommand} message GravityCompCommand
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        GravityCompCommand.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.defaults) {
+                object.type = options.enums === String ? "GCT_START_GRAVITY_COMP" : 0;
+                object.bus = null;
+            }
+            if (message.type != null && message.hasOwnProperty("type"))
+                object.type = options.enums === String ? $root.motors_mirroring.GravityCompCommandType[message.type] === undefined ? message.type : $root.motors_mirroring.GravityCompCommandType[message.type] : message.type;
+            if (message.bus != null && message.hasOwnProperty("bus"))
+                object.bus = $root.motors_mirroring.MirroringBus.toObject(message.bus, options);
+            if (message.gainRadPerNm != null && message.hasOwnProperty("gainRadPerNm")) {
+                object.gainRadPerNm = options.json && !isFinite(message.gainRadPerNm) ? String(message.gainRadPerNm) : message.gainRadPerNm;
+                if (options.oneofs)
+                    object._gainRadPerNm = "gainRadPerNm";
+            }
+            if (message.motorId != null && message.hasOwnProperty("motorId")) {
+                object.motorId = message.motorId;
+                if (options.oneofs)
+                    object._motorId = "motorId";
+            }
+            if (message.torqueLimit != null && message.hasOwnProperty("torqueLimit")) {
+                object.torqueLimit = message.torqueLimit;
+                if (options.oneofs)
+                    object._torqueLimit = "torqueLimit";
+            }
+            return object;
+        };
+
+        /**
+         * Converts this GravityCompCommand to JSON.
+         * @function toJSON
+         * @memberof motors_mirroring.GravityCompCommand
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        GravityCompCommand.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for GravityCompCommand
+         * @function getTypeUrl
+         * @memberof motors_mirroring.GravityCompCommand
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        GravityCompCommand.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+            if (typeUrlPrefix === undefined) {
+                typeUrlPrefix = "type.googleapis.com";
+            }
+            return typeUrlPrefix + "/motors_mirroring.GravityCompCommand";
+        };
+
+        return GravityCompCommand;
+    })();
+
+    motors_mirroring.GravityCompBusState = (function() {
+
+        /**
+         * Properties of a GravityCompBusState.
+         * @memberof motors_mirroring
+         * @interface IGravityCompBusState
+         * @property {motors_mirroring.IMirroringBus|null} [id] GravityCompBusState id
+         * @property {motors_mirroring.GravityCompState|null} [state] GravityCompBusState state
+         * @property {Array.<number>|null} [jointGainsRadPerNm] GravityCompBusState jointGainsRadPerNm
+         * @property {number|null} [torqueLimit] GravityCompBusState torqueLimit
+         */
+
+        /**
+         * Constructs a new GravityCompBusState.
+         * @memberof motors_mirroring
+         * @classdesc Represents a GravityCompBusState.
+         * @implements IGravityCompBusState
+         * @constructor
+         * @param {motors_mirroring.IGravityCompBusState=} [properties] Properties to set
+         */
+        function GravityCompBusState(properties) {
+            this.jointGainsRadPerNm = [];
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * GravityCompBusState id.
+         * @member {motors_mirroring.IMirroringBus|null|undefined} id
+         * @memberof motors_mirroring.GravityCompBusState
+         * @instance
+         */
+        GravityCompBusState.prototype.id = null;
+
+        /**
+         * GravityCompBusState state.
+         * @member {motors_mirroring.GravityCompState} state
+         * @memberof motors_mirroring.GravityCompBusState
+         * @instance
+         */
+        GravityCompBusState.prototype.state = 0;
+
+        /**
+         * GravityCompBusState jointGainsRadPerNm.
+         * @member {Array.<number>} jointGainsRadPerNm
+         * @memberof motors_mirroring.GravityCompBusState
+         * @instance
+         */
+        GravityCompBusState.prototype.jointGainsRadPerNm = $util.emptyArray;
+
+        /**
+         * GravityCompBusState torqueLimit.
+         * @member {number|null|undefined} torqueLimit
+         * @memberof motors_mirroring.GravityCompBusState
+         * @instance
+         */
+        GravityCompBusState.prototype.torqueLimit = null;
+
+        // OneOf field names bound to virtual getters and setters
+        let $oneOfFields;
+
+        // Virtual OneOf for proto3 optional field
+        Object.defineProperty(GravityCompBusState.prototype, "_torqueLimit", {
+            get: $util.oneOfGetter($oneOfFields = ["torqueLimit"]),
+            set: $util.oneOfSetter($oneOfFields)
+        });
+
+        /**
+         * Creates a new GravityCompBusState instance using the specified properties.
+         * @function create
+         * @memberof motors_mirroring.GravityCompBusState
+         * @static
+         * @param {motors_mirroring.IGravityCompBusState=} [properties] Properties to set
+         * @returns {motors_mirroring.GravityCompBusState} GravityCompBusState instance
+         */
+        GravityCompBusState.create = function create(properties) {
+            return new GravityCompBusState(properties);
+        };
+
+        /**
+         * Encodes the specified GravityCompBusState message. Does not implicitly {@link motors_mirroring.GravityCompBusState.verify|verify} messages.
+         * @function encode
+         * @memberof motors_mirroring.GravityCompBusState
+         * @static
+         * @param {motors_mirroring.IGravityCompBusState} message GravityCompBusState message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        GravityCompBusState.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.id != null && Object.hasOwnProperty.call(message, "id"))
+                $root.motors_mirroring.MirroringBus.encode(message.id, writer.uint32(/* id 1, wireType 2 =*/10).fork()).ldelim();
+            if (message.state != null && Object.hasOwnProperty.call(message, "state"))
+                writer.uint32(/* id 2, wireType 0 =*/16).int32(message.state);
+            if (message.jointGainsRadPerNm != null && message.jointGainsRadPerNm.length) {
+                writer.uint32(/* id 4, wireType 2 =*/34).fork();
+                for (let i = 0; i < message.jointGainsRadPerNm.length; ++i)
+                    writer.double(message.jointGainsRadPerNm[i]);
+                writer.ldelim();
+            }
+            if (message.torqueLimit != null && Object.hasOwnProperty.call(message, "torqueLimit"))
+                writer.uint32(/* id 5, wireType 0 =*/40).uint32(message.torqueLimit);
+            return writer;
+        };
+
+        /**
+         * Encodes the specified GravityCompBusState message, length delimited. Does not implicitly {@link motors_mirroring.GravityCompBusState.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof motors_mirroring.GravityCompBusState
+         * @static
+         * @param {motors_mirroring.IGravityCompBusState} message GravityCompBusState message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        GravityCompBusState.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes a GravityCompBusState message from the specified reader or buffer.
+         * @function decode
+         * @memberof motors_mirroring.GravityCompBusState
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {motors_mirroring.GravityCompBusState} GravityCompBusState
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        GravityCompBusState.decode = function decode(reader, length, error, long) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.motors_mirroring.GravityCompBusState();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                if (tag === error)
+                    break;
+                switch (tag >>> 3) {
+                case 1: {
+                        message.id = $root.motors_mirroring.MirroringBus.decode(reader, reader.uint32(), undefined, long + 1);
+                        break;
+                    }
+                case 2: {
+                        message.state = reader.int32();
+                        break;
+                    }
+                case 4: {
+                        if (!(message.jointGainsRadPerNm && message.jointGainsRadPerNm.length))
+                            message.jointGainsRadPerNm = [];
+                        if ((tag & 7) === 2) {
+                            let end2 = reader.uint32() + reader.pos;
+                            while (reader.pos < end2)
+                                message.jointGainsRadPerNm.push(reader.double());
+                        } else
+                            message.jointGainsRadPerNm.push(reader.double());
+                        break;
+                    }
+                case 5: {
+                        message.torqueLimit = reader.uint32();
+                        break;
+                    }
+                default:
+                    reader.skipType(tag & 7, long);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes a GravityCompBusState message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof motors_mirroring.GravityCompBusState
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {motors_mirroring.GravityCompBusState} GravityCompBusState
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        GravityCompBusState.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies a GravityCompBusState message.
+         * @function verify
+         * @memberof motors_mirroring.GravityCompBusState
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        GravityCompBusState.verify = function verify(message, long) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
+            let properties = {};
+            if (message.id != null && message.hasOwnProperty("id")) {
+                let error = $root.motors_mirroring.MirroringBus.verify(message.id, long + 1);
+                if (error)
+                    return "id." + error;
+            }
+            if (message.state != null && message.hasOwnProperty("state"))
+                switch (message.state) {
+                default:
+                    return "state: enum value expected";
+                case 0:
+                case 1:
+                case 2:
+                    break;
+                }
+            if (message.jointGainsRadPerNm != null && message.hasOwnProperty("jointGainsRadPerNm")) {
+                if (!Array.isArray(message.jointGainsRadPerNm))
+                    return "jointGainsRadPerNm: array expected";
+                for (let i = 0; i < message.jointGainsRadPerNm.length; ++i)
+                    if (typeof message.jointGainsRadPerNm[i] !== "number")
+                        return "jointGainsRadPerNm: number[] expected";
+            }
+            if (message.torqueLimit != null && message.hasOwnProperty("torqueLimit")) {
+                properties._torqueLimit = 1;
+                if (!$util.isInteger(message.torqueLimit))
+                    return "torqueLimit: integer expected";
+            }
+            return null;
+        };
+
+        /**
+         * Creates a GravityCompBusState message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof motors_mirroring.GravityCompBusState
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {motors_mirroring.GravityCompBusState} GravityCompBusState
+         */
+        GravityCompBusState.fromObject = function fromObject(object, long) {
+            if (object instanceof $root.motors_mirroring.GravityCompBusState)
+                return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let message = new $root.motors_mirroring.GravityCompBusState();
+            if (object.id != null) {
+                if (typeof object.id !== "object")
+                    throw TypeError(".motors_mirroring.GravityCompBusState.id: object expected");
+                message.id = $root.motors_mirroring.MirroringBus.fromObject(object.id, long + 1);
+            }
+            switch (object.state) {
+            default:
+                if (typeof object.state === "number") {
+                    message.state = object.state;
+                    break;
+                }
+                break;
+            case "GC_UNKNOWN":
+            case 0:
+                message.state = 0;
+                break;
+            case "GC_DISABLED":
+            case 1:
+                message.state = 1;
+                break;
+            case "GC_ENABLED":
+            case 2:
+                message.state = 2;
+                break;
+            }
+            if (object.jointGainsRadPerNm) {
+                if (!Array.isArray(object.jointGainsRadPerNm))
+                    throw TypeError(".motors_mirroring.GravityCompBusState.jointGainsRadPerNm: array expected");
+                message.jointGainsRadPerNm = [];
+                for (let i = 0; i < object.jointGainsRadPerNm.length; ++i)
+                    message.jointGainsRadPerNm[i] = Number(object.jointGainsRadPerNm[i]);
+            }
+            if (object.torqueLimit != null)
+                message.torqueLimit = object.torqueLimit >>> 0;
+            return message;
+        };
+
+        /**
+         * Creates a plain object from a GravityCompBusState message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof motors_mirroring.GravityCompBusState
+         * @static
+         * @param {motors_mirroring.GravityCompBusState} message GravityCompBusState
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        GravityCompBusState.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.arrays || options.defaults)
+                object.jointGainsRadPerNm = [];
+            if (options.defaults) {
+                object.id = null;
+                object.state = options.enums === String ? "GC_UNKNOWN" : 0;
+            }
+            if (message.id != null && message.hasOwnProperty("id"))
+                object.id = $root.motors_mirroring.MirroringBus.toObject(message.id, options);
+            if (message.state != null && message.hasOwnProperty("state"))
+                object.state = options.enums === String ? $root.motors_mirroring.GravityCompState[message.state] === undefined ? message.state : $root.motors_mirroring.GravityCompState[message.state] : message.state;
+            if (message.jointGainsRadPerNm && message.jointGainsRadPerNm.length) {
+                object.jointGainsRadPerNm = [];
+                for (let j = 0; j < message.jointGainsRadPerNm.length; ++j)
+                    object.jointGainsRadPerNm[j] = options.json && !isFinite(message.jointGainsRadPerNm[j]) ? String(message.jointGainsRadPerNm[j]) : message.jointGainsRadPerNm[j];
+            }
+            if (message.torqueLimit != null && message.hasOwnProperty("torqueLimit")) {
+                object.torqueLimit = message.torqueLimit;
+                if (options.oneofs)
+                    object._torqueLimit = "torqueLimit";
+            }
+            return object;
+        };
+
+        /**
+         * Converts this GravityCompBusState to JSON.
+         * @function toJSON
+         * @memberof motors_mirroring.GravityCompBusState
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        GravityCompBusState.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for GravityCompBusState
+         * @function getTypeUrl
+         * @memberof motors_mirroring.GravityCompBusState
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        GravityCompBusState.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+            if (typeUrlPrefix === undefined) {
+                typeUrlPrefix = "type.googleapis.com";
+            }
+            return typeUrlPrefix + "/motors_mirroring.GravityCompBusState";
+        };
+
+        return GravityCompBusState;
+    })();
+
+    motors_mirroring.GravityCompSettingsEnvelope = (function() {
+
+        /**
+         * Properties of a GravityCompSettingsEnvelope.
+         * @memberof motors_mirroring
+         * @interface IGravityCompSettingsEnvelope
+         * @property {Long|null} [monotonicStampNs] GravityCompSettingsEnvelope monotonicStampNs
+         * @property {Long|null} [localStampNs] GravityCompSettingsEnvelope localStampNs
+         * @property {Long|null} [appStartId] GravityCompSettingsEnvelope appStartId
+         * @property {motors_mirroring.IMirroringBus|null} [bus] GravityCompSettingsEnvelope bus
+         * @property {Array.<number>|null} [jointGainsRadPerNm] GravityCompSettingsEnvelope jointGainsRadPerNm
+         * @property {number|null} [torqueLimit] GravityCompSettingsEnvelope torqueLimit
+         */
+
+        /**
+         * Constructs a new GravityCompSettingsEnvelope.
+         * @memberof motors_mirroring
+         * @classdesc Represents a GravityCompSettingsEnvelope.
+         * @implements IGravityCompSettingsEnvelope
+         * @constructor
+         * @param {motors_mirroring.IGravityCompSettingsEnvelope=} [properties] Properties to set
+         */
+        function GravityCompSettingsEnvelope(properties) {
+            this.jointGainsRadPerNm = [];
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * GravityCompSettingsEnvelope monotonicStampNs.
+         * @member {Long} monotonicStampNs
+         * @memberof motors_mirroring.GravityCompSettingsEnvelope
+         * @instance
+         */
+        GravityCompSettingsEnvelope.prototype.monotonicStampNs = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+
+        /**
+         * GravityCompSettingsEnvelope localStampNs.
+         * @member {Long} localStampNs
+         * @memberof motors_mirroring.GravityCompSettingsEnvelope
+         * @instance
+         */
+        GravityCompSettingsEnvelope.prototype.localStampNs = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+
+        /**
+         * GravityCompSettingsEnvelope appStartId.
+         * @member {Long} appStartId
+         * @memberof motors_mirroring.GravityCompSettingsEnvelope
+         * @instance
+         */
+        GravityCompSettingsEnvelope.prototype.appStartId = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+
+        /**
+         * GravityCompSettingsEnvelope bus.
+         * @member {motors_mirroring.IMirroringBus|null|undefined} bus
+         * @memberof motors_mirroring.GravityCompSettingsEnvelope
+         * @instance
+         */
+        GravityCompSettingsEnvelope.prototype.bus = null;
+
+        /**
+         * GravityCompSettingsEnvelope jointGainsRadPerNm.
+         * @member {Array.<number>} jointGainsRadPerNm
+         * @memberof motors_mirroring.GravityCompSettingsEnvelope
+         * @instance
+         */
+        GravityCompSettingsEnvelope.prototype.jointGainsRadPerNm = $util.emptyArray;
+
+        /**
+         * GravityCompSettingsEnvelope torqueLimit.
+         * @member {number} torqueLimit
+         * @memberof motors_mirroring.GravityCompSettingsEnvelope
+         * @instance
+         */
+        GravityCompSettingsEnvelope.prototype.torqueLimit = 0;
+
+        /**
+         * Creates a new GravityCompSettingsEnvelope instance using the specified properties.
+         * @function create
+         * @memberof motors_mirroring.GravityCompSettingsEnvelope
+         * @static
+         * @param {motors_mirroring.IGravityCompSettingsEnvelope=} [properties] Properties to set
+         * @returns {motors_mirroring.GravityCompSettingsEnvelope} GravityCompSettingsEnvelope instance
+         */
+        GravityCompSettingsEnvelope.create = function create(properties) {
+            return new GravityCompSettingsEnvelope(properties);
+        };
+
+        /**
+         * Encodes the specified GravityCompSettingsEnvelope message. Does not implicitly {@link motors_mirroring.GravityCompSettingsEnvelope.verify|verify} messages.
+         * @function encode
+         * @memberof motors_mirroring.GravityCompSettingsEnvelope
+         * @static
+         * @param {motors_mirroring.IGravityCompSettingsEnvelope} message GravityCompSettingsEnvelope message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        GravityCompSettingsEnvelope.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.monotonicStampNs != null && Object.hasOwnProperty.call(message, "monotonicStampNs"))
+                writer.uint32(/* id 1, wireType 0 =*/8).uint64(message.monotonicStampNs);
+            if (message.localStampNs != null && Object.hasOwnProperty.call(message, "localStampNs"))
+                writer.uint32(/* id 2, wireType 0 =*/16).uint64(message.localStampNs);
+            if (message.appStartId != null && Object.hasOwnProperty.call(message, "appStartId"))
+                writer.uint32(/* id 3, wireType 0 =*/24).uint64(message.appStartId);
+            if (message.bus != null && Object.hasOwnProperty.call(message, "bus"))
+                $root.motors_mirroring.MirroringBus.encode(message.bus, writer.uint32(/* id 4, wireType 2 =*/34).fork()).ldelim();
+            if (message.jointGainsRadPerNm != null && message.jointGainsRadPerNm.length) {
+                writer.uint32(/* id 5, wireType 2 =*/42).fork();
+                for (let i = 0; i < message.jointGainsRadPerNm.length; ++i)
+                    writer.double(message.jointGainsRadPerNm[i]);
+                writer.ldelim();
+            }
+            if (message.torqueLimit != null && Object.hasOwnProperty.call(message, "torqueLimit"))
+                writer.uint32(/* id 6, wireType 0 =*/48).uint32(message.torqueLimit);
+            return writer;
+        };
+
+        /**
+         * Encodes the specified GravityCompSettingsEnvelope message, length delimited. Does not implicitly {@link motors_mirroring.GravityCompSettingsEnvelope.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof motors_mirroring.GravityCompSettingsEnvelope
+         * @static
+         * @param {motors_mirroring.IGravityCompSettingsEnvelope} message GravityCompSettingsEnvelope message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        GravityCompSettingsEnvelope.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes a GravityCompSettingsEnvelope message from the specified reader or buffer.
+         * @function decode
+         * @memberof motors_mirroring.GravityCompSettingsEnvelope
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {motors_mirroring.GravityCompSettingsEnvelope} GravityCompSettingsEnvelope
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        GravityCompSettingsEnvelope.decode = function decode(reader, length, error, long) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.motors_mirroring.GravityCompSettingsEnvelope();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                if (tag === error)
+                    break;
+                switch (tag >>> 3) {
+                case 1: {
+                        message.monotonicStampNs = reader.uint64();
+                        break;
+                    }
+                case 2: {
+                        message.localStampNs = reader.uint64();
+                        break;
+                    }
+                case 3: {
+                        message.appStartId = reader.uint64();
+                        break;
+                    }
+                case 4: {
+                        message.bus = $root.motors_mirroring.MirroringBus.decode(reader, reader.uint32(), undefined, long + 1);
+                        break;
+                    }
+                case 5: {
+                        if (!(message.jointGainsRadPerNm && message.jointGainsRadPerNm.length))
+                            message.jointGainsRadPerNm = [];
+                        if ((tag & 7) === 2) {
+                            let end2 = reader.uint32() + reader.pos;
+                            while (reader.pos < end2)
+                                message.jointGainsRadPerNm.push(reader.double());
+                        } else
+                            message.jointGainsRadPerNm.push(reader.double());
+                        break;
+                    }
+                case 6: {
+                        message.torqueLimit = reader.uint32();
+                        break;
+                    }
+                default:
+                    reader.skipType(tag & 7, long);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes a GravityCompSettingsEnvelope message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof motors_mirroring.GravityCompSettingsEnvelope
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {motors_mirroring.GravityCompSettingsEnvelope} GravityCompSettingsEnvelope
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        GravityCompSettingsEnvelope.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies a GravityCompSettingsEnvelope message.
+         * @function verify
+         * @memberof motors_mirroring.GravityCompSettingsEnvelope
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        GravityCompSettingsEnvelope.verify = function verify(message, long) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
+            if (message.monotonicStampNs != null && message.hasOwnProperty("monotonicStampNs"))
+                if (!$util.isInteger(message.monotonicStampNs) && !(message.monotonicStampNs && $util.isInteger(message.monotonicStampNs.low) && $util.isInteger(message.monotonicStampNs.high)))
+                    return "monotonicStampNs: integer|Long expected";
+            if (message.localStampNs != null && message.hasOwnProperty("localStampNs"))
+                if (!$util.isInteger(message.localStampNs) && !(message.localStampNs && $util.isInteger(message.localStampNs.low) && $util.isInteger(message.localStampNs.high)))
+                    return "localStampNs: integer|Long expected";
+            if (message.appStartId != null && message.hasOwnProperty("appStartId"))
+                if (!$util.isInteger(message.appStartId) && !(message.appStartId && $util.isInteger(message.appStartId.low) && $util.isInteger(message.appStartId.high)))
+                    return "appStartId: integer|Long expected";
+            if (message.bus != null && message.hasOwnProperty("bus")) {
+                let error = $root.motors_mirroring.MirroringBus.verify(message.bus, long + 1);
+                if (error)
+                    return "bus." + error;
+            }
+            if (message.jointGainsRadPerNm != null && message.hasOwnProperty("jointGainsRadPerNm")) {
+                if (!Array.isArray(message.jointGainsRadPerNm))
+                    return "jointGainsRadPerNm: array expected";
+                for (let i = 0; i < message.jointGainsRadPerNm.length; ++i)
+                    if (typeof message.jointGainsRadPerNm[i] !== "number")
+                        return "jointGainsRadPerNm: number[] expected";
+            }
+            if (message.torqueLimit != null && message.hasOwnProperty("torqueLimit"))
+                if (!$util.isInteger(message.torqueLimit))
+                    return "torqueLimit: integer expected";
+            return null;
+        };
+
+        /**
+         * Creates a GravityCompSettingsEnvelope message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof motors_mirroring.GravityCompSettingsEnvelope
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {motors_mirroring.GravityCompSettingsEnvelope} GravityCompSettingsEnvelope
+         */
+        GravityCompSettingsEnvelope.fromObject = function fromObject(object, long) {
+            if (object instanceof $root.motors_mirroring.GravityCompSettingsEnvelope)
+                return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let message = new $root.motors_mirroring.GravityCompSettingsEnvelope();
+            if (object.monotonicStampNs != null)
+                if ($util.Long)
+                    (message.monotonicStampNs = $util.Long.fromValue(object.monotonicStampNs)).unsigned = true;
+                else if (typeof object.monotonicStampNs === "string")
+                    message.monotonicStampNs = parseInt(object.monotonicStampNs, 10);
+                else if (typeof object.monotonicStampNs === "number")
+                    message.monotonicStampNs = object.monotonicStampNs;
+                else if (typeof object.monotonicStampNs === "object")
+                    message.monotonicStampNs = new $util.LongBits(object.monotonicStampNs.low >>> 0, object.monotonicStampNs.high >>> 0).toNumber(true);
+            if (object.localStampNs != null)
+                if ($util.Long)
+                    (message.localStampNs = $util.Long.fromValue(object.localStampNs)).unsigned = true;
+                else if (typeof object.localStampNs === "string")
+                    message.localStampNs = parseInt(object.localStampNs, 10);
+                else if (typeof object.localStampNs === "number")
+                    message.localStampNs = object.localStampNs;
+                else if (typeof object.localStampNs === "object")
+                    message.localStampNs = new $util.LongBits(object.localStampNs.low >>> 0, object.localStampNs.high >>> 0).toNumber(true);
+            if (object.appStartId != null)
+                if ($util.Long)
+                    (message.appStartId = $util.Long.fromValue(object.appStartId)).unsigned = true;
+                else if (typeof object.appStartId === "string")
+                    message.appStartId = parseInt(object.appStartId, 10);
+                else if (typeof object.appStartId === "number")
+                    message.appStartId = object.appStartId;
+                else if (typeof object.appStartId === "object")
+                    message.appStartId = new $util.LongBits(object.appStartId.low >>> 0, object.appStartId.high >>> 0).toNumber(true);
+            if (object.bus != null) {
+                if (typeof object.bus !== "object")
+                    throw TypeError(".motors_mirroring.GravityCompSettingsEnvelope.bus: object expected");
+                message.bus = $root.motors_mirroring.MirroringBus.fromObject(object.bus, long + 1);
+            }
+            if (object.jointGainsRadPerNm) {
+                if (!Array.isArray(object.jointGainsRadPerNm))
+                    throw TypeError(".motors_mirroring.GravityCompSettingsEnvelope.jointGainsRadPerNm: array expected");
+                message.jointGainsRadPerNm = [];
+                for (let i = 0; i < object.jointGainsRadPerNm.length; ++i)
+                    message.jointGainsRadPerNm[i] = Number(object.jointGainsRadPerNm[i]);
+            }
+            if (object.torqueLimit != null)
+                message.torqueLimit = object.torqueLimit >>> 0;
+            return message;
+        };
+
+        /**
+         * Creates a plain object from a GravityCompSettingsEnvelope message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof motors_mirroring.GravityCompSettingsEnvelope
+         * @static
+         * @param {motors_mirroring.GravityCompSettingsEnvelope} message GravityCompSettingsEnvelope
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        GravityCompSettingsEnvelope.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.arrays || options.defaults)
+                object.jointGainsRadPerNm = [];
+            if (options.defaults) {
+                if ($util.Long) {
+                    let long = new $util.Long(0, 0, true);
+                    object.monotonicStampNs = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+                } else
+                    object.monotonicStampNs = options.longs === String ? "0" : 0;
+                if ($util.Long) {
+                    let long = new $util.Long(0, 0, true);
+                    object.localStampNs = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+                } else
+                    object.localStampNs = options.longs === String ? "0" : 0;
+                if ($util.Long) {
+                    let long = new $util.Long(0, 0, true);
+                    object.appStartId = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+                } else
+                    object.appStartId = options.longs === String ? "0" : 0;
+                object.bus = null;
+                object.torqueLimit = 0;
+            }
+            if (message.monotonicStampNs != null && message.hasOwnProperty("monotonicStampNs"))
+                if (typeof message.monotonicStampNs === "number")
+                    object.monotonicStampNs = options.longs === String ? String(message.monotonicStampNs) : message.monotonicStampNs;
+                else
+                    object.monotonicStampNs = options.longs === String ? $util.Long.prototype.toString.call(message.monotonicStampNs) : options.longs === Number ? new $util.LongBits(message.monotonicStampNs.low >>> 0, message.monotonicStampNs.high >>> 0).toNumber(true) : message.monotonicStampNs;
+            if (message.localStampNs != null && message.hasOwnProperty("localStampNs"))
+                if (typeof message.localStampNs === "number")
+                    object.localStampNs = options.longs === String ? String(message.localStampNs) : message.localStampNs;
+                else
+                    object.localStampNs = options.longs === String ? $util.Long.prototype.toString.call(message.localStampNs) : options.longs === Number ? new $util.LongBits(message.localStampNs.low >>> 0, message.localStampNs.high >>> 0).toNumber(true) : message.localStampNs;
+            if (message.appStartId != null && message.hasOwnProperty("appStartId"))
+                if (typeof message.appStartId === "number")
+                    object.appStartId = options.longs === String ? String(message.appStartId) : message.appStartId;
+                else
+                    object.appStartId = options.longs === String ? $util.Long.prototype.toString.call(message.appStartId) : options.longs === Number ? new $util.LongBits(message.appStartId.low >>> 0, message.appStartId.high >>> 0).toNumber(true) : message.appStartId;
+            if (message.bus != null && message.hasOwnProperty("bus"))
+                object.bus = $root.motors_mirroring.MirroringBus.toObject(message.bus, options);
+            if (message.jointGainsRadPerNm && message.jointGainsRadPerNm.length) {
+                object.jointGainsRadPerNm = [];
+                for (let j = 0; j < message.jointGainsRadPerNm.length; ++j)
+                    object.jointGainsRadPerNm[j] = options.json && !isFinite(message.jointGainsRadPerNm[j]) ? String(message.jointGainsRadPerNm[j]) : message.jointGainsRadPerNm[j];
+            }
+            if (message.torqueLimit != null && message.hasOwnProperty("torqueLimit"))
+                object.torqueLimit = message.torqueLimit;
+            return object;
+        };
+
+        /**
+         * Converts this GravityCompSettingsEnvelope to JSON.
+         * @function toJSON
+         * @memberof motors_mirroring.GravityCompSettingsEnvelope
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        GravityCompSettingsEnvelope.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for GravityCompSettingsEnvelope
+         * @function getTypeUrl
+         * @memberof motors_mirroring.GravityCompSettingsEnvelope
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        GravityCompSettingsEnvelope.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+            if (typeUrlPrefix === undefined) {
+                typeUrlPrefix = "type.googleapis.com";
+            }
+            return typeUrlPrefix + "/motors_mirroring.GravityCompSettingsEnvelope";
+        };
+
+        return GravityCompSettingsEnvelope;
     })();
 
     return motors_mirroring;

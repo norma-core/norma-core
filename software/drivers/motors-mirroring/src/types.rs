@@ -13,6 +13,7 @@ pub enum MotorCommand {
     Accel(u16),
     Goal(u16),
     Torque(u8),
+    TorqueLimit(u16),
 }
 
 #[derive(Hash, Eq, PartialEq, Clone, Debug)]

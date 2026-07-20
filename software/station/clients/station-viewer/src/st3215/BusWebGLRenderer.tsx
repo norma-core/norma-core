@@ -17,6 +17,8 @@ interface BusWebGLRendererProps {
   isLeader?: boolean;
   inCalibrationView?: boolean;
   isWebControlled?: boolean;
+  gravityCompJointGains?: Record<number, number>;
+  onGravityCompJointGainChange?: (motorId: number, value: number) => void;
 }
 
 export interface BusWebGLRendererRef {
@@ -32,7 +34,7 @@ const BusWebGLRendererComponent = forwardRef<BusWebGLRendererRef, BusWebGLRender
     },
   }));
 
-  const { bus, showMotorData, busIndex, isWebControlled, selectedVideoSourceId, showCalibrateButton, needsCalibration, inCalibrationView } = props;
+  const { bus, showMotorData, busIndex, isWebControlled, selectedVideoSourceId, showCalibrateButton, needsCalibration, inCalibrationView, gravityCompJointGains, onGravityCompJointGainChange } = props;
 
   return (
     <div className="relative w-full h-full">
@@ -40,7 +42,13 @@ const BusWebGLRendererComponent = forwardRef<BusWebGLRendererRef, BusWebGLRender
       <div className="absolute inset-0 w-full h-full z-20 pointer-events-none">
         {showMotorData &&
           <div className="pointer-events-auto">
-            <MotorDataTable bus={bus} busIndex={busIndex} isWebControlled={isWebControlled} />
+            <MotorDataTable
+              bus={bus}
+              busIndex={busIndex}
+              isWebControlled={isWebControlled}
+              gravityCompJointGains={gravityCompJointGains}
+              onGravityCompJointGainChange={onGravityCompJointGainChange}
+            />
           </div>
         }
         {selectedVideoSourceId && (

@@ -1,9 +1,9 @@
 #![allow(clippy::collapsible_if)]
 #![allow(clippy::needless_borrow)]
 
-mod model;
+pub(crate) mod model;
 mod mirror;
-mod normalize;
+pub(crate) mod normalize;
 use bytes::Bytes;
 use prost::Message;
 use station_iface::iface_proto::commands::{DriverCommand, StationCommandsPack};
@@ -15,11 +15,13 @@ use crate::{config, proto::mirroring::inference_state::Mirroring, proto::mirrori
 use crate::proto::mirroring;
 
 /// Maximum acceptable data age before considering it stale (100ms in nanoseconds)
-const MAX_DATA_AGE_NS: u64 = 100_000_000;
+pub(crate) const MAX_DATA_AGE_NS: u64 = 100_000_000;
 
 pub struct Inference {
     state: Arc<RwLock<model::State>>,
     normfs: Arc<NormFS>,
+    config: config::MotorConfig,
+    gravity_comp: crate::gravity_comp::GravityComp,
 }
 
 impl Inference {
@@ -30,6 +32,8 @@ impl Inference {
         let res = Self {
             state: Arc::new(RwLock::new(model::State::default())),
             normfs,
+            config: config.clone(),
+            gravity_comp: crate::gravity_comp::GravityComp::new(),
         };
 
         let state = Arc::clone(&res.state);
@@ -39,6 +43,73 @@ impl Inference {
         });
 
         res
+    }
+
+    /// Starts gravity compensation for `bus`. No-op if already running.
+    /// `initial_gains`/`initial_torque_limit`, if provided (e.g. from
+    /// previously-saved settings), override the configured defaults for
+    /// this run (still hard-clamped either way). `on_self_stop` is called if
+    /// the control loop terminates itself for safety reasons (stale data or
+    /// sustained overcurrent), so the caller can keep displayed mode state
+    /// truthful.
+    pub fn start_gravity_comp<F>(
+        &self,
+        bus: BusKey,
+        initial_gains: Option<crate::gravity_comp::JointGains>,
+        initial_torque_limit: Option<u16>,
+        on_self_stop: F,
+    ) where
+        F: Fn(BusKey) + Send + Sync + 'static,
+    {
+        self.gravity_comp.start(bus, self.config.clone(), initial_gains, initial_torque_limit, Arc::clone(&self.normfs), on_self_stop);
+    }
+
+    /// Stops gravity compensation for `bus` (if running) and disables torque
+    /// on its arm motors.
+    pub fn stop_gravity_comp(&self, bus: BusKey) {
+        self.gravity_comp.stop(&bus, &self.normfs);
+    }
+
+    /// Live-updates the gain of one arm joint (`motor_id`, 1-7) for `bus`
+    /// without restarting it. Returns `false` if gravity comp isn't
+    /// currently running on that bus, or `motor_id` isn't a compensated
+    /// joint.
+    pub fn set_gravity_comp_gain(&self, bus: &BusKey, motor_id: u8, gain: f64) -> bool {
+        self.gravity_comp.set_gain(bus, motor_id, gain)
+    }
+
+    /// Live-updates the gravity-comp torque limit for `bus` without
+    /// restarting it. Returns `false` if gravity comp isn't currently
+    /// running on that bus.
+    pub fn set_gravity_comp_torque_limit(&self, bus: &BusKey, torque_limit: u16) -> bool {
+        self.gravity_comp.set_torque_limit(bus, torque_limit, &self.normfs)
+    }
+
+    /// Returns the currently active per-joint gravity-comp gains for `bus`,
+    /// or `None` if it isn't running on that bus.
+    pub fn get_gravity_comp_gains(&self, bus: &BusKey) -> Option<crate::gravity_comp::JointGains> {
+        self.gravity_comp.get_gains(bus)
+    }
+
+    /// Returns the currently active gravity-comp torque limit for `bus`, or
+    /// `None` if it isn't running on that bus.
+    pub fn get_gravity_comp_torque_limit(&self, bus: &BusKey) -> Option<u16> {
+        self.gravity_comp.get_torque_limit(bus)
+    }
+
+    /// Stops every currently-running gravity-comp task. Called during
+    /// graceful process shutdown.
+    pub fn stop_all_gravity_comp(&self) {
+        self.gravity_comp.stop_all(&self.normfs);
+    }
+
+    /// The configured defaults (from YAML, or built-in if unset) for a bus
+    /// that has no running task and no staged/saved settings yet.
+    pub fn gravity_comp_defaults(&self) -> crate::gravity_comp::GravitySettings {
+        crate::gravity_comp::GravitySettings {
+            joint_gains: [self.config.gravity_comp.gain_rad_per_nm; 7],
+            torque_limit: self.config.gravity_comp.torque_limit,
+        }
     }
 
     pub fn start(&self, from: BusKey, to: Vec<BusKey>) {
@@ -394,7 +465,7 @@ impl Inference {
         });
     }
 
-    fn send_st3215_commands(
+    pub(crate) fn send_st3215_commands(
         normfs: &Arc<NormFS>,
         state_id: &Bytes,
         commands: Vec<Command>,
@@ -408,6 +479,7 @@ impl Inference {
         };
 
         // Group commands by (bus_id, address) for SyncWrite batching
+        let mut torque_limit_cmds: HashMap<String, Vec<(u32, Bytes)>> = HashMap::new();
         let mut torque_cmds: HashMap<String, Vec<(u32, Bytes)>> = HashMap::new();
         let mut speed_cmds: HashMap<String, Vec<(u32, Bytes)>> = HashMap::new();
         let mut accel_cmds: HashMap<String, Vec<(u32, Bytes)>> = HashMap::new();
@@ -415,6 +487,12 @@ impl Inference {
 
         for cmd in &commands {
             match cmd.command {
+                MotorCommand::TorqueLimit(limit) => {
+                    torque_limit_cmds
+                        .entry(cmd.target_bus_id.clone())
+                        .or_default()
+                        .push((cmd.motor_id, Bytes::from(limit.to_le_bytes().to_vec())));
+                }
                 MotorCommand::Torque(torque) => {
                     torque_cmds
                         .entry(cmd.target_bus_id.clone())
@@ -442,8 +520,18 @@ impl Inference {
             }
         }
 
-        // Maintain order: torque → speed/accel → goal
-        // 1. Torque enable
+        // Maintain order: torque limit → torque enable → speed/accel → goal
+        // 1. Torque limit (so the very first torque-enable already respects it)
+        for (bus_id, motors) in torque_limit_cmds {
+            Self::add_sync_write_to_pack(
+                &mut pack,
+                bus_id,
+                st3215::protocol::RamRegister::TorqueLimit.address() as u32,
+                motors,
+            );
+        }
+
+        // 2. Torque enable
         for (bus_id, motors) in torque_cmds {
             Self::add_sync_write_to_pack(
                 &mut pack,
@@ -453,7 +541,7 @@ impl Inference {
             );
         }
 
-        // 2. Speed
+        // 3. Speed
         for (bus_id, motors) in speed_cmds {
             Self::add_sync_write_to_pack(
                 &mut pack,

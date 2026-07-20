@@ -24,6 +24,8 @@ interface RobotCameraViewProps {
   showMotorData?: boolean;
   showCalibrateButton?: boolean;
   needsCalibration?: boolean;
+  gravityCompJointGains?: Record<number, number>;
+  onGravityCompJointGainChange?: (motorId: number, value: number) => void;
 }
 
 const RobotCameraView = memo(function RobotCameraView({
@@ -40,6 +42,8 @@ const RobotCameraView = memo(function RobotCameraView({
   showMotorData = true,
   showCalibrateButton,
   needsCalibration,
+  gravityCompJointGains,
+  onGravityCompJointGainChange,
 }: RobotCameraViewProps) {
   const motorCount = bus.motors?.length ?? 0;
   const motorPanelHeight =
@@ -57,6 +61,8 @@ const RobotCameraView = memo(function RobotCameraView({
         busIndex={busIndex}
         isWebControlled={isWebControlled}
         layout="panel"
+        gravityCompJointGains={gravityCompJointGains}
+        onGravityCompJointGainChange={onGravityCompJointGainChange}
       />
     ) : (
       <CameraMotorStrip bus={bus} />

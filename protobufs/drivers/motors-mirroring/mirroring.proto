@@ -53,6 +53,8 @@ message RxEnvelope {
 
     InferenceState state   = 10;
     Command        command = 11;
+
+    GravityCompCommand gravity_command = 12;
 }
 
 message InferenceState {
@@ -69,4 +71,87 @@ message InferenceState {
 
     repeated Bus       modes     = 10;
     repeated Mirroring mirroring = 11;
+
+    repeated GravityCompBusState gravity_comp = 12;
+}
+
+// Gravity compensation is an orthogonal per-bus flag, independent of BusMode:
+// a bus can be BR_LEADER (mirroring source) and gravity-comp-enabled at the
+// same time, so this is modeled as its own enum/messages rather than a new
+// BusMode variant.
+enum GravityCompState {
+    GC_UNKNOWN  = 0;
+    GC_DISABLED = 1;
+    GC_ENABLED  = 2;
+}
+
+message GravityCompModeEnvelope {
+    uint64 monotonic_stamp_ns = 1;
+    uint64 local_stamp_ns     = 2;
+    uint64 app_start_id       = 3;
+
+    MirroringBus     bus   = 4;
+    GravityCompState state = 5;
+}
+
+enum GravityCompCommandType {
+    GCT_START_GRAVITY_COMP = 0;
+    GCT_STOP_GRAVITY_COMP  = 1;
+    // Live-updates the gain of one arm joint on an already-running
+    // gravity-comp task, without restarting it. Requires motor_id and
+    // gain_rad_per_nm. No-op (logged) if gravity comp isn't running on `bus`.
+    GCT_SET_GAIN           = 2;
+    // Live-updates the torque limit (applies to all 7 arm motors), without
+    // restarting. Requires torque_limit. Unlike gain (a pure software
+    // multiplier), this re-sends the TorqueLimit register write immediately.
+    GCT_SET_TORQUE_LIMIT   = 3;
+    // Persists the bus's current per-joint gains and torque limit (whether
+    // running or not) so they're pre-filled as defaults next time gravity
+    // comp is started on this bus, surviving a station restart. This is
+    // display/pre-fill data only - saving never re-arms gravity comp itself.
+    GCT_SAVE_SETTINGS      = 4;
+}
+
+message GravityCompCommand {
+    GravityCompCommandType type = 1;
+    MirroringBus            bus  = 2;
+
+    // GCT_SET_GAIN: the new gain for `motor_id`. Hard-clamped server-side
+    // regardless of what's sent (see GRAVITY_COMP_GAIN_CEILING).
+    optional double gain_rad_per_nm = 3;
+
+    // GCT_SET_GAIN: which arm motor (1-7) `gain_rad_per_nm` applies to.
+    optional uint32 motor_id = 4;
+
+    // GCT_SET_TORQUE_LIMIT: the new torque limit for all 7 arm motors.
+    // Hard-clamped server-side (see GRAVITY_COMP_TORQUE_LIMIT_CEILING).
+    optional uint32 torque_limit = 5;
+}
+
+message GravityCompBusState {
+    MirroringBus     id    = 1;
+    GravityCompState state = 2;
+
+    // Per-joint gains for the 7 arm motors, index 0..6 = rev_motor_01..07.
+    // Reflects live values while running, or the last-saved values
+    // (GCT_SAVE_SETTINGS) otherwise, so the UI has something sensible to
+    // show/edit even before gravity comp is started.
+    repeated double joint_gains_rad_per_nm = 4;
+
+    // Torque limit for all 7 arm motors - live value while running, or the
+    // last-saved value otherwise.
+    optional uint32 torque_limit = 5;
+}
+
+// Persisted per-bus gravity-comp tuning (motors_mirroring/gravity_comp_settings
+// queue). Restored on startup for display/pre-fill only - never re-arms
+// gravity comp itself, matching GravityCompModeEnvelope's restore semantics.
+message GravityCompSettingsEnvelope {
+    uint64 monotonic_stamp_ns = 1;
+    uint64 local_stamp_ns     = 2;
+    uint64 app_start_id       = 3;
+
+    MirroringBus    bus                     = 4;
+    repeated double joint_gains_rad_per_nm  = 5;
+    uint32          torque_limit             = 6;
 }

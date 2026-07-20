@@ -81,6 +81,8 @@ struct Station {
 
     #[cfg(feature = "ov5647")]
     ov5647_handle: Mutex<Option<ov5647::Ov5647Handle>>,
+
+    motors_mirroring_inference: Mutex<Option<Arc<motors_mirroring::inference::Inference>>>,
 }
 
 struct Engine {
@@ -132,6 +134,7 @@ impl Station {
             usbvideo_instances: parking_lot::Mutex::new(Vec::new()),
             #[cfg(feature = "ov5647")]
             ov5647_handle: Mutex::new(None),
+            motors_mirroring_inference: Mutex::new(None),
         })
     }
 
@@ -234,11 +237,12 @@ impl Station {
             // Start motors mirroring driver
             let motor_config = motors_mirroring::config::MotorConfig::from(st3215);
 
-            motors_mirroring::start(
+            let mirroring_inference = motors_mirroring::start(
                 self.normfs.clone(),
                 self.engine.clone(),
                 motor_config,
             ).await?;
+            *self.motors_mirroring_inference.lock() = Some(mirroring_inference);
         } else {
             log::info!("No motor drivers available for mirroring");
         }
@@ -396,6 +400,11 @@ impl Station {
             log::info!("Stopping OV5647 driver...");
             handle.stop().await;
             log::info!("OV5647 driver stopped");
+        }
+
+        if let Some(mirroring_inference) = self.motors_mirroring_inference.lock().as_ref() {
+            log::info!("Stopping any active gravity compensation tasks...");
+            mirroring_inference.stop_all_gravity_comp();
         }
 
         log::info!("Closing NormFS (writing WAL)...");

@@ -88,6 +88,11 @@ pub struct St3215Config {
     /// and goal to trigger movement. Default is 20.
     #[serde(default = "default_deadband")]
     pub deadband: u16,
+
+    /// Gravity compensation tuning for the leader arm (ElRobot only). Optional -
+    /// if not specified, gravity compensation uses conservative built-in defaults.
+    #[serde(rename = "gravity-comp", default, skip_serializing_if = "Option::is_none")]
+    pub gravity_comp: Option<GravityCompConfig>,
 }
 
 fn default_st3215_enabled() -> bool {
@@ -109,6 +114,62 @@ impl Default for St3215Config {
             current_threshold: 100,
             motor_current_thresholds: None,
             deadband: 20,
+            gravity_comp: None,
+        }
+    }
+}
+
+/// Gravity compensation tuning. `gain_rad_per_nm` cannot be derived from the
+/// servo's internal PID coefficients (undocumented firmware units) - it must
+/// be tuned empirically on real hardware. `torque_limit` and `max_offset_ticks`
+/// are hard-clamped to safety ceilings in the motors-mirroring crate
+/// regardless of what's configured here.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct GravityCompConfig {
+    #[serde(rename = "gain-rad-per-nm", default = "default_gravity_comp_gain")]
+    pub gain_rad_per_nm: f64,
+
+    #[serde(rename = "max-offset-ticks", default = "default_gravity_comp_max_offset_ticks")]
+    pub max_offset_ticks: u16,
+
+    #[serde(rename = "torque-limit", default = "default_gravity_comp_torque_limit")]
+    pub torque_limit: u16,
+
+    #[serde(rename = "current-cutoff", default = "default_gravity_comp_current_cutoff")]
+    pub current_cutoff: u16,
+
+    #[serde(rename = "stale-cutoff-cycles", default = "default_gravity_comp_stale_cutoff_cycles")]
+    pub stale_cutoff_cycles: u32,
+}
+
+fn default_gravity_comp_gain() -> f64 {
+    0.05
+}
+
+fn default_gravity_comp_max_offset_ticks() -> u16 {
+    60
+}
+
+fn default_gravity_comp_torque_limit() -> u16 {
+    100
+}
+
+fn default_gravity_comp_current_cutoff() -> u16 {
+    60
+}
+
+fn default_gravity_comp_stale_cutoff_cycles() -> u32 {
+    5
+}
+
+impl Default for GravityCompConfig {
+    fn default() -> Self {
+        Self {
+            gain_rad_per_nm: default_gravity_comp_gain(),
+            max_offset_ticks: default_gravity_comp_max_offset_ticks(),
+            torque_limit: default_gravity_comp_torque_limit(),
+            current_cutoff: default_gravity_comp_current_cutoff(),
+            stale_cutoff_cycles: default_gravity_comp_stale_cutoff_cycles(),
         }
     }
 }

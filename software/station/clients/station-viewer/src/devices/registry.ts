@@ -86,3 +86,11 @@ export function findSt3215DeviceKinematicConfig(
 export function supportsSt3215Device(bus: st3215.InferenceState.IBusState): boolean {
   return findSt3215DeviceDefinition(bus) !== null;
 }
+
+// Gravity compensation depends on a mass/inertia model that today only
+// exists for ElRobot (see hardware/elrobot/simulation/elrobot_follower.urdf).
+// Gated here, not in shared st3215/ components, per this package's rule
+// against hardcoding device names outside the registry.
+export function supportsGravityComp(bus: st3215.InferenceState.IBusState): boolean {
+  return findSt3215DeviceDefinition(bus)?.id === ELROBOT_DEVICE_ID;
+}

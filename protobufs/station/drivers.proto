@@ -19,6 +19,8 @@ enum QueueDataType {
 
     QDT_MOTOR_MIRRORING_MODES = 30;
     QDT_MOTOR_MIRRORING_RX    = 32;
+    QDT_MOTOR_MIRRORING_GRAVITY_COMP_MODES = 33; // motors_mirroring.GravityCompModeEnvelope
+    QDT_MOTOR_MIRRORING_GRAVITY_COMP_SETTINGS = 34; // motors_mirroring.GravityCompSettingsEnvelope
 
     QDT_YAHBOOM_DOGZILLA_LITE_SERIAL_TX = 40; // yahboom_dogzilla_lite.TxEnvelope
     QDT_YAHBOOM_DOGZILLA_LITE_SERIAL_RX = 41; // yahboom_dogzilla_lite.RxEnvelope
@@ -30,4 +32,5 @@ enum StationCommandType {
     STC_MOTOR_MIRRORING_COMMAND = 1; // motors_mirroring.Command
     STC_INFERENCE_TAG_COMMAND   = 2; // inference_tags.Command
     STC_YAHBOOM_DOGZILLA_LITE_COMMAND        = 3; // yahboom_dogzilla_lite.Command
+    STC_GRAVITY_COMP_COMMAND    = 4; // motors_mirroring.GravityCompCommand
 }

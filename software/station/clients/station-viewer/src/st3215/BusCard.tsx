@@ -3,7 +3,7 @@ import Long from 'long';
 import { Camera } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { commandManager } from '@/api/commands';
-import { supportsSt3215Device } from '@/devices/registry';
+import { supportsGravityComp, supportsSt3215Device } from '@/devices/registry';
 import { FrameEntry } from '@/api/frame-parser';
 import { useElementFullscreen } from '@/hooks/useElementFullscreen';
 import { motors_mirroring, st3215, usbvideo } from '@/api/proto.js';
@@ -32,6 +32,13 @@ const MIN_CALIBRATED_RANGE = 100;
 const WEB_CONTROL_STORAGE_TTL_MS = 60_000;
 const WEB_CONTROL_MIRROR_IGNORE_AFTER_LOCAL_REQUEST_MS = 5_000;
 const WEB_CONTROL_MIRROR_CONFIRM_MS = 800;
+// Matches motors-mirroring's GravityCompConfig defaults and hard ceilings
+// (software/drivers/motors-mirroring/src/config.rs) - needs empirical
+// tuning on real hardware, these are just starting points.
+const DEFAULT_GRAVITY_COMP_GAIN = 0.05;
+const MAX_GRAVITY_COMP_GAIN = 1.0;
+const DEFAULT_GRAVITY_COMP_TORQUE_LIMIT = 100;
+const MAX_GRAVITY_COMP_TORQUE_LIMIT = 150;
 
 type RobotViewMode = 'model' | 'camera';
 type CameraLayoutMode = 'pip' | 'side-by-side' | 'stacked';
@@ -122,6 +129,54 @@ const BusCard: React.FC<BusCardProps> = ({
   const currentMirror = mirroringState?.mirroring?.find((m) =>
     m.targets?.some((t) => t.id?.uniqueId === busSerialNumber),
   );
+
+  const gravityCompEntry = mirroringState?.gravityComp?.find(
+    (g) => g.id?.uniqueId === busSerialNumber,
+  );
+  const isGravityCompEnabled = gravityCompEntry?.state === motors_mirroring.GravityCompState.GC_ENABLED;
+  const isFollowerBus = mirroringState?.modes?.some(
+    (m) => m.id?.uniqueId === busSerialNumber && m.mode === motors_mirroring.BusMode.BR_FOLLOWER,
+  );
+  const gravityCompSupported = supportsGravityComp(bus);
+
+  // Per-joint gains (motor 1-7 -> gain), falling back to the built-in
+  // default for any joint the backend hasn't reported yet (e.g. never
+  // touched on this bus).
+  const gravityCompJointGains = useMemo(() => {
+    const gains: Record<number, number> = {};
+    for (let motorId = 1; motorId <= 7; motorId++) {
+      gains[motorId] = gravityCompEntry?.jointGainsRadPerNm?.[motorId - 1] ?? DEFAULT_GRAVITY_COMP_GAIN;
+    }
+    return gains;
+  }, [gravityCompEntry?.jointGainsRadPerNm]);
+
+  const [gravityCompTorqueLimit, setGravityCompTorqueLimit] = useState<number>(DEFAULT_GRAVITY_COMP_TORQUE_LIMIT);
+  const isEditingTorqueLimitRef = useRef(false);
+
+  useEffect(() => {
+    if (isEditingTorqueLimitRef.current) {
+      return;
+    }
+    if (typeof gravityCompEntry?.torqueLimit === 'number') {
+      setGravityCompTorqueLimit(gravityCompEntry.torqueLimit);
+    }
+  }, [gravityCompEntry?.torqueLimit]);
+
+  useEffect(() => {
+    if (!busSerialNumber || !gravityCompSupported) {
+      return;
+    }
+    // Deliberately excludes `bus` from deps - it's a new object reference
+    // every poll (~50Hz), which would fire this on every frame regardless
+    // of whether anything actually changed. This only logs on real
+    // transitions.
+    console.log('[GravityComp] state', {
+      bus: busSerialNumber,
+      enabled: isGravityCompEnabled,
+      jointGainsRadPerNm: gravityCompEntry?.jointGainsRadPerNm,
+      torqueLimit: gravityCompEntry?.torqueLimit,
+    });
+  }, [gravityCompSupported, busSerialNumber, isGravityCompEnabled, gravityCompEntry?.jointGainsRadPerNm, gravityCompEntry?.torqueLimit]);
 
   const setWebControlledState = useCallback((nextState: boolean) => {
     setIsWebControlled(nextState);
@@ -278,6 +333,18 @@ const BusCard: React.FC<BusCardProps> = ({
       return;
     }
 
+    // Gravity comp and any other control source (web-controlled or
+    // mirroring) both continuously write GoalPosition to this bus's own
+    // motors - if gravity comp were left running, it would fight whatever
+    // this control source tries to do 20ms later. Stop it first.
+    if (isGravityCompEnabled) {
+      console.log('[GravityComp] stopping: control source changed', { bus: busSerialNumber, sourceBusSerial });
+      await commandManager.sendGravityCompCommand({
+        type: motors_mirroring.GravityCompCommandType.GCT_STOP_GRAVITY_COMP,
+        bus: { type: motors_mirroring.BusType.MBT_ST3215, uniqueId: busSerialNumber },
+      });
+    }
+
     if (sourceBusSerial === 'web-controlled') {
       const target: motors_mirroring.IMirroringBus = {
         type: motors_mirroring.BusType.MBT_ST3215,
@@ -344,7 +411,94 @@ const BusCard: React.FC<BusCardProps> = ({
       });
       setWebControlledState(false);
     }
-  }, [bus.motors, busSerialNumber, setWebControlledState]);
+  }, [bus.motors, busSerialNumber, isGravityCompEnabled, setWebControlledState]);
+
+  const handleGravityCompToggle = useCallback(async () => {
+    if (!busSerialNumber) {
+      return;
+    }
+
+    const target: motors_mirroring.IMirroringBus = {
+      type: motors_mirroring.BusType.MBT_ST3215,
+      uniqueId: busSerialNumber,
+    };
+
+    // No gain/torque-limit payload needed on start - the backend seeds the
+    // running task from whatever's already staged/saved for this bus (or
+    // its configured defaults), so per-joint table edits and the torque
+    // limit field made before pressing this button already take effect.
+    const command: motors_mirroring.IGravityCompCommand = {
+      type: isGravityCompEnabled
+        ? motors_mirroring.GravityCompCommandType.GCT_STOP_GRAVITY_COMP
+        : motors_mirroring.GravityCompCommandType.GCT_START_GRAVITY_COMP,
+      bus: target,
+    };
+
+    console.log('[GravityComp] sending command', command);
+    await commandManager.sendGravityCompCommand(command);
+  }, [busSerialNumber, isGravityCompEnabled]);
+
+  // Per-joint gain edit (from the "Gravity" column in MotorDataTable).
+  // Applies live if gravity comp is running, and is always remembered
+  // (staged) server-side regardless, ready for the next Start or an
+  // explicit Save.
+  const handleGravityCompJointGainChange = useCallback(async (motorId: number, nextGain: number) => {
+    if (!busSerialNumber) {
+      return;
+    }
+
+    const clamped = Math.min(Math.max(nextGain, 0), MAX_GRAVITY_COMP_GAIN);
+    const target: motors_mirroring.IMirroringBus = {
+      type: motors_mirroring.BusType.MBT_ST3215,
+      uniqueId: busSerialNumber,
+    };
+
+    console.log('[GravityComp] setting joint gain', { bus: busSerialNumber, motorId, gainRadPerNm: clamped });
+    await commandManager.sendGravityCompCommand({
+      type: motors_mirroring.GravityCompCommandType.GCT_SET_GAIN,
+      bus: target,
+      motorId,
+      gainRadPerNm: clamped,
+    });
+  }, [busSerialNumber]);
+
+  const commitGravityCompTorqueLimit = useCallback(async (nextValue: number) => {
+    if (!busSerialNumber) {
+      return;
+    }
+
+    const clamped = Math.min(Math.max(Math.round(nextValue), 0), MAX_GRAVITY_COMP_TORQUE_LIMIT);
+    setGravityCompTorqueLimit(clamped);
+
+    const target: motors_mirroring.IMirroringBus = {
+      type: motors_mirroring.BusType.MBT_ST3215,
+      uniqueId: busSerialNumber,
+    };
+
+    console.log('[GravityComp] setting torque limit', { bus: busSerialNumber, torqueLimit: clamped });
+    await commandManager.sendGravityCompCommand({
+      type: motors_mirroring.GravityCompCommandType.GCT_SET_TORQUE_LIMIT,
+      bus: target,
+      torqueLimit: clamped,
+    });
+  }, [busSerialNumber]);
+
+  const handleSaveGravitySettings = useCallback(async () => {
+    if (!busSerialNumber) {
+      return;
+    }
+
+    const target: motors_mirroring.IMirroringBus = {
+      type: motors_mirroring.BusType.MBT_ST3215,
+      uniqueId: busSerialNumber,
+    };
+
+    console.log('[GravityComp] saving settings', { bus: busSerialNumber });
+    await commandManager.sendGravityCompCommand({
+      type: motors_mirroring.GravityCompCommandType.GCT_SAVE_SETTINGS,
+      bus: target,
+    });
+  }, [busSerialNumber]);
 
   // Function to calculate moving average for latency (15 second window)
   const getMovingAverageLatency = (
@@ -455,6 +609,73 @@ const BusCard: React.FC<BusCardProps> = ({
               <Camera className="h-4 w-4" aria-hidden="true" />
             </button>
           </div>
+          {gravityCompSupported && (
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={handleGravityCompToggle}
+                disabled={!busSerialNumber || isFollowerBus}
+                className={`flex h-9 items-center gap-1.5 rounded-md border px-3 text-xs font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${
+                  isGravityCompEnabled
+                    ? "border-accent-warning-deep bg-accent-warning-deep text-surface-base"
+                    : "border-border-subtle bg-surface-primary text-text-muted hover:text-text-primary"
+                }`}
+                title={
+                  isFollowerBus
+                    ? "Gravity compensation is only available on a self-controlled or leader arm"
+                    : isGravityCompEnabled
+                      ? "Disable gravity compensation"
+                      : "Enable gravity compensation"
+                }
+              >
+                <span
+                  className={`h-2 w-2 rounded-full ${isGravityCompEnabled ? "animate-pulse bg-surface-base" : "bg-text-muted"}`}
+                  aria-hidden="true"
+                />
+                {isGravityCompEnabled ? "Gravity Comp: ON" : "Gravity Comp"}
+              </button>
+              <label
+                className="flex items-center gap-1 text-[10px] font-semibold uppercase text-text-muted"
+                htmlFor={`gravity-comp-torque-limit-${busSerialNumber ?? "unknown"}`}
+              >
+                Torque
+                <input
+                  id={`gravity-comp-torque-limit-${busSerialNumber ?? "unknown"}`}
+                  type="number"
+                  min={0}
+                  max={MAX_GRAVITY_COMP_TORQUE_LIMIT}
+                  step={1}
+                  value={gravityCompTorqueLimit}
+                  disabled={!busSerialNumber || isFollowerBus}
+                  onFocus={() => {
+                    isEditingTorqueLimitRef.current = true;
+                  }}
+                  onChange={(e) => setGravityCompTorqueLimit(Number(e.target.value))}
+                  onBlur={(e) => {
+                    isEditingTorqueLimitRef.current = false;
+                    void commitGravityCompTorqueLimit(Number(e.target.value));
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      (e.target as HTMLInputElement).blur();
+                    }
+                  }}
+                  className="h-9 w-16 rounded-md border border-border-subtle bg-surface-primary px-2 text-xs font-normal normal-case text-text-primary disabled:cursor-not-allowed disabled:opacity-60"
+                  title="Gravity comp torque limit (global, all arm motors) - hard-capped in firmware regardless of value entered here"
+                  aria-label="Gravity compensation torque limit"
+                />
+              </label>
+              <button
+                type="button"
+                onClick={() => void handleSaveGravitySettings()}
+                disabled={!busSerialNumber || isFollowerBus}
+                className="flex h-9 items-center rounded-md border border-border-subtle bg-surface-primary px-2 text-xs font-bold text-text-muted transition-colors hover:text-text-primary disabled:cursor-not-allowed disabled:opacity-60"
+                title="Persist the current per-joint gains and torque limit so they're restored after a restart"
+              >
+                Save Gravity
+              </button>
+            </div>
+          )}
           <select
             value={
               isWebControlled
@@ -596,6 +817,8 @@ const BusCard: React.FC<BusCardProps> = ({
               secondaryCameraFit={secondaryCameraFit}
               onPrimaryCameraFitToggle={() => setPrimaryCameraFit((fit) => (fit === "contain" ? "cover" : "contain"))}
               onSecondaryCameraFitToggle={() => setSecondaryCameraFit((fit) => (fit === "contain" ? "cover" : "contain"))}
+              gravityCompJointGains={gravityCompSupported ? gravityCompJointGains : undefined}
+              onGravityCompJointGainChange={handleGravityCompJointGainChange}
             />
             <CameraHudControls
               cameraLayout={cameraLayout}
@@ -622,6 +845,8 @@ const BusCard: React.FC<BusCardProps> = ({
             showCalibrateButton={true}
             needsCalibration={needsCalibration}
             isWebControlled={isWebControlled}
+            gravityCompJointGains={gravityCompSupported ? gravityCompJointGains : undefined}
+            onGravityCompJointGainChange={handleGravityCompJointGainChange}
           />
         ) : (
           <>
@@ -673,6 +898,8 @@ const BusCard: React.FC<BusCardProps> = ({
                   bus={bus}
                   busIndex={busIndex}
                   isWebControlled={isWebControlled}
+                  gravityCompJointGains={gravityCompSupported ? gravityCompJointGains : undefined}
+                  onGravityCompJointGainChange={handleGravityCompJointGainChange}
                 />
               </div>
             </div>

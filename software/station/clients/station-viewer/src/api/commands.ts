@@ -56,6 +56,11 @@ export class CommandManager {
         await this.sendCommand(drivers.StationCommandType.STC_MOTOR_MIRRORING_COMMAND, body);
     }
 
+    public async sendGravityCompCommand(command: motors_mirroring.IGravityCompCommand): Promise<void> {
+        const body = motors_mirroring.GravityCompCommand.encode(command).finish();
+        await this.sendCommand(drivers.StationCommandType.STC_GRAVITY_COMP_COMMAND, body);
+    }
+
     public async sendInferenceTagCommand(command: inference_tags.ICommand): Promise<void> {
         const body = inference_tags.Command.encode(command).finish();
         await this.sendCommand(drivers.StationCommandType.STC_INFERENCE_TAG_COMMAND, body);
