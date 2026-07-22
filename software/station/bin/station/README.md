@@ -4,9 +4,9 @@ Physical operations platform for robotics - real-time data collection, inference
 
 ## 📥 Download
 
-**Latest Release: [v0.1.0-beta.9](https://github.com/norma-core/norma-core/releases/tag/v0.1.0-beta.9)**
+**Latest Release: [v0.1.0-beta.10](https://github.com/norma-core/norma-core/releases/tag/v0.1.0-beta.10)**
 
-Download pre-built binaries from the [releases page](https://github.com/norma-core/norma-core/releases/tag/v0.1.0-beta.9):
+Download pre-built binaries from the [releases page](https://github.com/norma-core/norma-core/releases/tag/v0.1.0-beta.10):
 
 - **macOS ARM64** (Apple Silicon): `station-macos-arm64.dmg` - Desktop app with bundled station binary
 - **macOS ARM64** (Apple Silicon): `station-macos-arm64.zip` - Command-line binaries archive
@@ -148,7 +148,7 @@ asyncio.run(main())
 |  | FreeBSD | 📋 Planned |
 | **Robots & Actuators** | [SO-101 arm / ST3215 arms](../../../drivers/st3215) | ✅ Supported |
 |  | [ElRobot](../../../../hardware/elrobot/) | ✅ Supported |
-|  | [Yahboom DOGZILLA-Lite / Luwu XGO2-Lite family](../../../drivers/yahboom-dogzilla-lite) | 🚧 Feature-gated |
+|  | [Yahboom DOGZILLA-Lite / Luwu XGO2-Lite family](../../../drivers/yahboom-dogzilla-lite) | ✅ Supported |
 |  | OpenArm | 🚧 Work in Progress |
 |  | Waveshare RoArm-M2 | 📋 Planned |
 |  | Yahboom ROSMASTER X3 | 📋 Planned |
@@ -157,7 +157,7 @@ asyncio.run(main())
 |  | [INA226 power/current monitor](../../../drivers/ina226) | ✅ Linux supported |
 |  | [HIKMICRO thermal sensors](../../../drivers/hikmicro-thermal) | ✅ Linux supported |
 | **Cameras & Devices** | [UVC USB cameras](../../../drivers/usbvideo) | ✅ Supported |
-|  | [Raspberry Pi OV5647 camera](../../../drivers/ov5647) | 🚧 Feature-gated |
+|  | [Raspberry Pi OV5647 camera](../../../drivers/ov5647) | ✅ Supported |
 |  | [VESC Trampa motor controllers](../../../drivers/vesc-trampa) | ✅ Supported |
 |  | [Victron SmartSolar MPPT](../../../drivers/victron-smartsolar-mppt) | ✅ Supported |
 |  | IP cameras | 🚧 Work in Progress |
@@ -167,7 +167,7 @@ asyncio.run(main())
 |  | TypeScript | 📋 Planned |
 | **Robotics Frameworks** | ROS | 📋 Planned |
 
-Feature-gated integrations are available in source and need a build with the matching Cargo feature.
+Some supported integrations are optional Cargo features when building from source.
 
 **Want integration for your robot, sensor, or device?** [Open an issue](https://github.com/norma-core/norma-core/issues) with your hardware details!
 
