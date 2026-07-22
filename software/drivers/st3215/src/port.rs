@@ -369,8 +369,9 @@ impl St3215Port {
         // not evict a known-good motor.
         const DISCONNECT_GRACE_MS: u128 = 100;
         let now = Instant::now();
+        let responded_motors = currently_seen_motors.clone();
         let missing: Vec<u8> = last_seen_motors
-            .difference(&currently_seen_motors)
+            .difference(&responded_motors)
             .copied()
             .collect();
         for motor_id in missing {
@@ -386,8 +387,8 @@ impl St3215Port {
                 currently_seen_motors.insert(motor_id);
             }
         }
-        // Clear grace tracker for motors that are responding again.
-        for motor_id in &currently_seen_motors {
+        // Clear grace tracker for motors that responded this tick.
+        for motor_id in &responded_motors {
             missing_since.remove(motor_id);
         }
 
