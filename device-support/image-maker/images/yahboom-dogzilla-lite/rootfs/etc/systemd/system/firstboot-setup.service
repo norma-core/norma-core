@@ -1,0 +1,14 @@
+[Unit]
+Description=First boot setup
+ConditionPathExists=!/etc/.firstboot_done
+ConditionPathExists=/etc/firstboot.conf
+After=local-fs.target systemd-sysusers.service systemd-tmpfiles-setup.service NetworkManager.service
+Wants=NetworkManager.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/firstboot.sh
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
