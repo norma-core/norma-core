@@ -122,7 +122,7 @@ asyncio.run(main())
 - **[SO101 Auto-Calibration (Python)](../../examples/so101-autocalibration-py/)** - Motor control workflow with state subscription and command sending
 - **[SO101/ElRobot Remote Teleop (Python)](../../examples/st3215-remote-teleop-py/)** - Mirror motor positions from leader arm to follower arm across stations
 - **[SmolVLA Fine-tune (Python)](../../../ai/smolvla_py/)** - Train and deploy vision-language-action policy on SO101 arm
-- **[Dataset Export Guide](../../../docs/datasets/export-parquet/)** - Export Parquet datasets from station history for ML training
+- **[Dataset Export Guide](../../../../docs/datasets/export-parquet/)** - Export Parquet datasets from station history for ML training
 
 ## ✨ Features
 
@@ -140,27 +140,36 @@ asyncio.run(main())
 
 ## 🗂️ Platform & Feature Support
 
-| Category | Feature | Status |
-|----------|---------|--------|
+| Category | Integration | Status |
+|----------|-------------|--------|
 | **Operating Systems** | macOS | ✅ Supported |
 |  | Linux | ✅ Supported |
 |  | Windows | 📋 Planned |
 |  | FreeBSD | 📋 Planned |
-| **Devices** | [UVC USB Cameras](../../../drivers/usbvideo) | ✅ Done |
-|  | [SO101](../../../drivers/st3215) | ✅ Done |
-|  | [ElRobot](../../../drivers/st3215) | ✅ Done |
+| **Robots & Actuators** | [SO-101 arm / ST3215 arms](../../../drivers/st3215) | ✅ Supported |
+|  | [ElRobot](../../../../hardware/elrobot/) | ✅ Supported |
+|  | [Yahboom DOGZILLA-Lite / Luwu XGO2-Lite family](../../../drivers/yahboom-dogzilla-lite) | 🚧 Feature-gated |
 |  | OpenArm | 🚧 Work in Progress |
-|  | Yahboom Dogzilla Lite | 🚧 Work in Progress |
-|  | IP Cameras | 🚧 Work in Progress |
 |  | Waveshare RoArm-M2 | 📋 Planned |
 |  | Yahboom ROSMASTER X3 | 📋 Planned |
+| **Sensors** | [AirGradient Open Air O-1PST](../../../drivers/airgradient-open-air-o-1pst) | ✅ Supported |
+|  | [Arduino Nicla Sense Env](../../../drivers/arduino-nicla-sense-env) | ✅ Linux supported |
+|  | [INA226 power/current monitor](../../../drivers/ina226) | ✅ Linux supported |
+|  | [HIKMICRO thermal sensors](../../../drivers/hikmicro-thermal) | ✅ Linux supported |
+| **Cameras & Devices** | [UVC USB cameras](../../../drivers/usbvideo) | ✅ Supported |
+|  | [Raspberry Pi OV5647 camera](../../../drivers/ov5647) | 🚧 Feature-gated |
+|  | [VESC Trampa motor controllers](../../../drivers/vesc-trampa) | ✅ Supported |
+|  | [Victron SmartSolar MPPT](../../../drivers/victron-smartsolar-mppt) | ✅ Supported |
+|  | IP cameras | 🚧 Work in Progress |
 | **Client Libraries** | Golang | 🚧 Work in Progress ([examples available](../../shared/station/)) |
 |  | Python | 🚧 Work in Progress ([examples available](../../shared/station_py/)) |
 |  | JavaScript | 📋 Planned |
 |  | TypeScript | 📋 Planned |
 | **Robotics Frameworks** | ROS | 📋 Planned |
 
-**Want integration for your robot?** [Open an issue](https://github.com/norma-core/norma-core/issues) with your device details!
+Feature-gated integrations are available in source and need a build with the matching Cargo feature.
+
+**Want integration for your robot, sensor, or device?** [Open an issue](https://github.com/norma-core/norma-core/issues) with your hardware details!
 
 ## 📖 Usage
 
@@ -303,4 +312,4 @@ cargo zigbuild --target x86_64-unknown-linux-gnu --release -p station
 
 ## 📖 License
 
-MIT - See [LICENSE](../../LICENSE)
+MIT - See [LICENSE](LICENSE)
