@@ -369,10 +369,6 @@ impl St3215Port {
         // not evict a known-good motor.
         const DISCONNECT_GRACE_MS: u128 = 100;
         let now = Instant::now();
-        // Motors that genuinely responded this tick, captured before the grace path below
-        // re-inserts still-missing motors into `currently_seen_motors`. Only these should
-        // have their grace timer cleared — otherwise a motor kept alive purely to retry
-        // would reset its timer every tick and never accumulate the grace window.
         let responded_motors = currently_seen_motors.clone();
         let missing: Vec<u8> = last_seen_motors
             .difference(&responded_motors)
@@ -388,12 +384,10 @@ impl St3215Port {
                 }
             } else {
                 // Still within grace — keep the motor in last_seen so we retry next tick.
-                // Its `missing_since` timer is intentionally preserved so the grace window
-                // can actually elapse.
                 currently_seen_motors.insert(motor_id);
             }
         }
-        // Clear grace tracker only for motors that actually responded this tick.
+        // Clear grace tracker for motors that responded this tick.
         for motor_id in &responded_motors {
             missing_since.remove(motor_id);
         }
