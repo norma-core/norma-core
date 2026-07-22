@@ -1,0 +1,328 @@
+name: Station Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Release tag (e.g. v0.1.0-beta.10). Leave empty to auto-generate: v<workspace-version>-<run-number>"
+        required: false
+        type: string
+        default: ""
+      prerelease:
+        description: "Mark as a pre-release"
+        required: true
+        type: boolean
+        default: true
+      features:
+        description: "Cargo features for the ARM64 build only, comma-separated (e.g. yahboom-dogzilla-lite)"
+        required: false
+        type: string
+        default: ""
+      glibc:
+        description: "ARM64 glibc target: 2.36 (Bookworm) or 2.31 (Bullseye). Defaults to 2.36 when yahboom-dogzilla-lite is in features, otherwise unset (base target)."
+        required: false
+        type: string
+        default: ""
+
+concurrency:
+  group: station-release
+
+env:
+  NODE_VERSION: "22"
+
+jobs:
+  setup:
+    name: Resolve release configuration
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.resolve.outputs.tag }}
+      features: ${{ steps.resolve.outputs.features }}
+      glibc: ${{ steps.resolve.outputs.glibc }}
+      variant: ${{ steps.resolve.outputs.variant }}
+      needs_libcamera: ${{ steps.resolve.outputs.needs_libcamera }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Resolve release configuration
+        id: resolve
+        env:
+          VERSION: ${{ inputs.version }}
+          FEATURES: ${{ inputs.features }}
+          GLIBC: ${{ inputs.glibc }}
+        run: |
+          features="$FEATURES"
+          case ",$features," in
+            *,yahboom-dogzilla-lite,*)
+              case ",$features," in
+                *,ov5647,*) ;;
+                *) features="$features,ov5647" ;;
+              esac
+              ;;
+          esac
+
+          needs_libcamera=false
+          glibc="$GLIBC"
+          variant=""
+          case ",$features," in
+            *,ov5647,*)
+              needs_libcamera=true
+              glibc="${glibc:-2.36}"
+              case "$glibc" in
+                2.36) variant=bookworm ;;
+                2.31) variant=bullseye ;;
+                *) echo "::error::ov5647 requires glibc=2.36 or glibc=2.31 (got '$glibc')"; exit 1 ;;
+              esac
+              ;;
+          esac
+
+          if [ -n "$VERSION" ]; then
+            tag="$VERSION"
+          else
+            base_version=$(grep -m1 '^version' Cargo.toml | sed -E 's/version = "(.*)"/\1/')
+            suffix=""
+            if [ "$needs_libcamera" = "true" ]; then
+              suffix="-dogzilla"
+              if [ "$glibc" = "2.31" ]; then
+                suffix="$suffix-bullseye"
+              fi
+            fi
+            tag="v${base_version}${suffix}-${{ github.run_number }}"
+          fi
+
+          echo "Resolved release tag: $tag"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "features=$features" >> "$GITHUB_OUTPUT"
+          echo "glibc=$glibc" >> "$GITHUB_OUTPUT"
+          echo "variant=$variant" >> "$GITHUB_OUTPUT"
+          echo "needs_libcamera=$needs_libcamera" >> "$GITHUB_OUTPUT"
+
+  build-libcamera:
+    name: Build libcamera (${{ needs.setup.outputs.variant }})
+    needs: setup
+    if: needs.setup.outputs.needs_libcamera == 'true'
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Cache built libcamera
+        id: cache
+        uses: actions/cache@v4
+        with:
+          path: shared/libcamera/library/0.7.0-${{ needs.setup.outputs.variant }}
+          key: libcamera-0.7.0-${{ needs.setup.outputs.variant }}-${{ hashFiles('shared/libcamera/Dockerfile', 'shared/libcamera/build.sh', 'shared/libcamera/Makefile', 'shared/libcamera-sys-static/wrapper.cpp', 'shared/libcamera-sys-static/wrapper.hpp') }}
+
+      - name: Build libcamera
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: make -C shared/libcamera build-libcamera LIBCAMERA_VARIANT=${{ needs.setup.outputs.variant }}
+
+      - name: Upload libcamera artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: libcamera-${{ needs.setup.outputs.variant }}
+          path: shared/libcamera/library/0.7.0-${{ needs.setup.outputs.variant }}
+
+  build-frontend:
+    name: Build station-viewer frontend
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: software/station/clients/station-viewer
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+          cache-dependency-path: software/station/clients/station-viewer/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build (hashes + proto + typecheck + vite build)
+        run: npm run build
+
+      - name: Upload frontend dist
+        uses: actions/upload-artifact@v4
+        with:
+          name: station-viewer-dist
+          path: software/station/clients/station-viewer/dist
+
+  build-linux:
+    name: Build Linux binaries (amd64 + arm64)
+    needs: [setup, build-frontend, build-libcamera]
+    if: |
+      always() &&
+      needs.build-frontend.result == 'success' &&
+      (needs.build-libcamera.result == 'success' || needs.build-libcamera.result == 'skipped')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download frontend dist
+        uses: actions/download-artifact@v4
+        with:
+          name: station-viewer-dist
+          path: software/station/clients/station-viewer/dist
+
+      - name: Download built libcamera (${{ needs.setup.outputs.variant }})
+        if: needs.setup.outputs.needs_libcamera == 'true'
+        uses: actions/download-artifact@v4
+        with:
+          name: libcamera-${{ needs.setup.outputs.variant }}
+          path: shared/libcamera/library/0.7.0-${{ needs.setup.outputs.variant }}
+
+      - name: Setup protoc
+        uses: arduino/setup-protoc@v3
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@1.97.1
+        with:
+          targets: x86_64-unknown-linux-gnu,aarch64-unknown-linux-gnu
+
+      # zig-linux-x86_64-VERSION naming (used by mlugg/setup-zig@v1) 404s from
+      # 0.14.1 onward, which renamed to zig-x86_64-linux-VERSION.
+      - name: Setup zig (for cargo-zigbuild cross-compilation)
+        env:
+          ZIG_VERSION: "0.15.1"
+          ZIG_SHA256: "c61c5da6edeea14ca51ecd5e4520c6f4189ef5250383db33d01848293bfafe05"
+        run: |
+          curl -sL "https://ziglang.org/download/${ZIG_VERSION}/zig-x86_64-linux-${ZIG_VERSION}.tar.xz" -o /tmp/zig.tar.xz
+          echo "${ZIG_SHA256}  /tmp/zig.tar.xz" | sha256sum -c -
+          tar xf /tmp/zig.tar.xz -C /tmp
+          echo "/tmp/zig-x86_64-linux-${ZIG_VERSION}" >> "$GITHUB_PATH"
+
+      - name: Install nasm (required by turbojpeg-sys)
+        run: sudo apt-get update && sudo apt-get install -y nasm
+
+      - name: Install cargo-zigbuild
+        run: cargo install cargo-zigbuild@0.23.0 --locked
+
+      # amd64 is native to this runner - zigbuild's cross-compilation wrapper
+      # confuses turbojpeg-sys's CMake bit-width detection otherwise.
+      - name: Build amd64
+        run: cargo build --release --package=station --target=x86_64-unknown-linux-gnu
+
+      - name: Build arm64
+        env:
+          FEATURES: ${{ needs.setup.outputs.features }}
+          GLIBC: ${{ needs.setup.outputs.glibc }}
+          VARIANT: ${{ needs.setup.outputs.variant }}
+        run: |
+          target=aarch64-unknown-linux-gnu
+          if [ -n "$GLIBC" ]; then
+            target="aarch64-unknown-linux-gnu.$GLIBC"
+          fi
+
+          cargo_features_flag=""
+          if [ -n "$FEATURES" ]; then
+            cargo_features_flag="--features $FEATURES"
+          fi
+
+          if [ -n "$VARIANT" ]; then
+            libcamera_dir="$PWD/shared/libcamera/library/0.7.0-$VARIANT"
+            export PKG_CONFIG_PATH="$libcamera_dir/usr/lib/aarch64-linux-gnu/pkgconfig"
+            export PKG_CONFIG_ALLOW_CROSS=1
+            export LIBCAMERA_LIB_DIR="$libcamera_dir/usr/lib/aarch64-linux-gnu"
+          fi
+
+          cargo zigbuild --release --package=station $cargo_features_flag --target="$target"
+
+      - name: Package tarballs
+        run: |
+          mkdir -p dist-out
+          tar czf dist-out/station-linux-amd64.tar.gz -C target/x86_64-unknown-linux-gnu/release station
+          tar czf dist-out/station-linux-arm64.tar.gz -C target/aarch64-unknown-linux-gnu/release station
+
+      - name: Upload Linux binaries
+        uses: actions/upload-artifact@v4
+        with:
+          name: station-linux-binaries
+          path: dist-out/*.tar.gz
+
+  build-macos:
+    name: Build macOS binary (arm64)
+    needs: build-frontend
+    runs-on: macos-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download frontend dist
+        uses: actions/download-artifact@v4
+        with:
+          name: station-viewer-dist
+          path: software/station/clients/station-viewer/dist
+
+      - name: Setup protoc
+        uses: arduino/setup-protoc@v3
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@1.97.1
+
+      - name: Install nasm (required by turbojpeg-sys)
+        run: brew install nasm
+
+      - name: Build
+        run: cargo build --release --package=station
+
+      - name: Package zip
+        run: |
+          mkdir -p dist-out
+          cp target/release/station dist-out/station
+          cd dist-out && zip station-macos-arm64.zip station && rm station
+
+      - name: Upload macOS binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: station-macos-binary
+          path: dist-out/*.zip
+
+  create-release:
+    name: Create GitHub Release
+    needs: [setup, build-linux, build-macos]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download Linux binaries
+        uses: actions/download-artifact@v4
+        with:
+          name: station-linux-binaries
+          path: release-assets
+
+      - name: Download macOS binary
+        uses: actions/download-artifact@v4
+        with:
+          name: station-macos-binary
+          path: release-assets
+
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ needs.setup.outputs.tag }}
+        run: |
+          PRERELEASE_FLAG=""
+          if [ "${{ inputs.prerelease }}" = "true" ]; then
+            PRERELEASE_FLAG="--prerelease"
+          fi
+
+          gh release create "$TAG" \
+            release-assets/*.tar.gz release-assets/*.zip \
+            --repo "${{ github.repository }}" \
+            --title "$TAG" \
+            --target "${{ github.sha }}" \
+            --notes "Automated build via the Station Release workflow, from commit ${{ github.sha }}." \
+            $PRERELEASE_FLAG

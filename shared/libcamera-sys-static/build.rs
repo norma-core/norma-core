@@ -17,7 +17,26 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     let target = env::var("TARGET").unwrap_or_default();
     let host = env::var("HOST").unwrap_or_default();
-    let is_cross = target != host && target.contains("linux") && !host.contains("linux");
+    // A same-arch cross-compile (e.g. amd64 CI -> arm64) still needs the
+    // pre-built wrapper, not just non-Linux hosts.
+    let is_cross = target != host;
+
+    // The checked-in .pc files bake in an absolute Cflags path from wherever
+    // the vendored artifacts were built, so derive the include dir from
+    // LIBCAMERA_LIB_DIR instead when it's set. Falls back to pkg-config's
+    // paths for a native build against a system libcamera-dev install.
+    // libcamera installs public headers under <includedir>/libcamera/libcamera,
+    // so the extra "libcamera" segment below is intentional.
+    let vendored_include_dir = env::var("LIBCAMERA_LIB_DIR").ok().and_then(|lib_dir| {
+        Path::new(&lib_dir)
+            .parent()
+            .and_then(Path::parent)
+            .map(|usr| usr.join("include").join("libcamera"))
+    });
+    let include_paths: Vec<PathBuf> = match &vendored_include_dir {
+        Some(dir) => vec![dir.clone()],
+        None => libcamera.include_paths.clone(),
+    };
 
     if is_cross {
         let lib_dir = env::var("LIBCAMERA_LIB_DIR").map_err(|_| {
@@ -42,15 +61,19 @@ fn main() -> Result<(), Box<dyn Error>> {
             .file("wrapper.cpp")
             .warnings(false);
 
-        for path in &libcamera.include_paths {
+        for path in &include_paths {
             build.include(path);
         }
 
         build.compile("camera_wrapper");
     }
 
-    for path in &libcamera.link_paths {
-        println!("cargo:rustc-link-search=native={}", path.display());
+    if vendored_include_dir.is_none() {
+        // Same baked-in-path issue as above; LIBCAMERA_LIB_DIR below covers
+        // the vendored case instead.
+        for path in &libcamera.link_paths {
+            println!("cargo:rustc-link-search=native={}", path.display());
+        }
     }
     if let Ok(lib_dir) = env::var("LIBCAMERA_LIB_DIR") {
         println!("cargo:rustc-link-search=native={lib_dir}");
@@ -74,7 +97,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         .allowlist_var("LC_.*")
         .parse_callbacks(Box::new(bindgen::CargoCallbacks::new()));
 
-    for path in &libcamera.include_paths {
+    for path in &include_paths {
         builder = builder.clang_arg(format!("-I{}", path.display()));
     }
 

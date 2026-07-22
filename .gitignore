@@ -3,3 +3,9 @@
 __pycache__
 # Local vendored JS package tarballs for offline installs.
 js-vendor/
+
+# Output of `make -C shared/libcamera build-libcamera` (local dev only) -
+# CI builds these from source per-release rather than vendoring them; see
+# shared/libcamera/Makefile and the build-libcamera job in
+# .github/workflows/station-release.yml.
+shared/libcamera/library/

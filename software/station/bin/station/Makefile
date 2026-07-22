@@ -2,7 +2,6 @@
 
 # Configuration
 TARGET_ARM64_BASE := aarch64-unknown-linux-gnu
-TARGET_ARM64_GLIBC_236 := $(TARGET_ARM64_BASE).2.36
 TARGET_AMD64 := x86_64-unknown-linux-gnu
 
 # Use rustup-managed rustc (Homebrew rustc lacks cross-compilation targets)
@@ -14,9 +13,6 @@ OUTPUT_DIR_AMD64 := target/$(TARGET_AMD64)/release
 PACKAGE := station
 WORKSPACE_ROOT := $(shell cd ../../../.. && pwd)
 LIBCAMERA_VERSION ?= 0.7.0
-LIBCAMERA_INSTALL_DIR := $(WORKSPACE_ROOT)/shared/libcamera/library/$(LIBCAMERA_VERSION)
-LIBCAMERA_LIB_DIR := $(LIBCAMERA_INSTALL_DIR)/usr/lib/aarch64-linux-gnu
-LIBCAMERA_PKG_CONFIG_PATH := $(LIBCAMERA_LIB_DIR)/pkgconfig
 
 # Build flags
 FEATURES ?=
@@ -30,17 +26,27 @@ CARGO_FEATURES := $(if $(FEATURES_UNIQUE),--features $(FEATURES_UNIQUE),)
 CARGO_FLAGS := --release --package=$(PACKAGE) $(CARGO_FEATURES)
 
 HAS_LIBCAMERA := $(filter ov5647,$(FEATURES_EXPANDED))
-HAS_YAHBOOM_DOGZILLA_LITE := $(filter yahboom-dogzilla-lite,$(FEATURES_EXPANDED))
+
+# 2.36 (default when ov5647 is on) = Raspberry Pi OS 5 / Debian Bookworm
+# 2.31 = Raspberry Pi OS 4 / Debian Bullseye
+GLIBC ?= $(if $(HAS_LIBCAMERA),2.36,)
+LIBCAMERA_VARIANT_2.36 := bookworm
+LIBCAMERA_VARIANT_2.31 := bullseye
+LIBCAMERA_VARIANT := $(LIBCAMERA_VARIANT_$(GLIBC))
+LIBCAMERA_DIR_SUFFIX := $(if $(LIBCAMERA_VARIANT),-$(LIBCAMERA_VARIANT),)
+LIBCAMERA_INSTALL_DIR := $(WORKSPACE_ROOT)/shared/libcamera/library/$(LIBCAMERA_VERSION)$(LIBCAMERA_DIR_SUFFIX)
+LIBCAMERA_LIB_DIR := $(LIBCAMERA_INSTALL_DIR)/usr/lib/aarch64-linux-gnu
+LIBCAMERA_PKG_CONFIG_PATH := $(LIBCAMERA_LIB_DIR)/pkgconfig
+
 LIBCAMERA_ENV := \
 	PKG_CONFIG_LIBDIR=$(LIBCAMERA_PKG_CONFIG_PATH) \
 	PKG_CONFIG_ALLOW_CROSS=1 \
 	LIBCAMERA_LIB_DIR=$(LIBCAMERA_LIB_DIR)
 BUILD_ENV := $(if $(HAS_LIBCAMERA),$(LIBCAMERA_ENV),)
 
-# Target glibc 2.36 (Raspberry Pi OS 5 / Debian Bookworm) only for Yahboom Dogzilla Lite.
-TARGET_ARM64 := $(if $(HAS_YAHBOOM_DOGZILLA_LITE),$(TARGET_ARM64_GLIBC_236),$(TARGET_ARM64_BASE))
+TARGET_ARM64 := $(if $(GLIBC),$(TARGET_ARM64_BASE).$(GLIBC),$(TARGET_ARM64_BASE))
 
-.PHONY: all build client build-macos build-arm64 build-amd64 clean help
+.PHONY: all build client build-macos build-arm64 build-amd64 clean help libcamera-preflight
 
 all: build
 
@@ -51,8 +57,19 @@ build: client
 	@echo "Binary built at: "
 	@realpath ../../../../target/release/$(BINARY_NAME)
 
+libcamera-preflight:
+	@if [ -n "$(HAS_LIBCAMERA)" ] && [ -z "$(LIBCAMERA_VARIANT)" ]; then \
+		echo "ov5647 requires GLIBC=2.36 or GLIBC=2.31 (got '$(GLIBC)')"; \
+		exit 1; \
+	fi
+	@if [ -n "$(HAS_LIBCAMERA)" ] && [ ! -d "$(LIBCAMERA_INSTALL_DIR)" ]; then \
+		echo "Missing $(LIBCAMERA_INSTALL_DIR)."; \
+		echo "Build it first: make -C $(WORKSPACE_ROOT)/shared/libcamera build-libcamera LIBCAMERA_VARIANT=$(LIBCAMERA_VARIANT)"; \
+		exit 1; \
+	fi
+
 # Build the station binary for ARM64 Linux
-build-arm64: client
+build-arm64: libcamera-preflight client
 	@echo "Building station for ARM64 Linux using cargo-zigbuild..."
 	ulimit -n 10240 && $(BUILD_ENV) cargo zigbuild $(CARGO_FLAGS) --target=$(TARGET_ARM64)
 	@echo "Binary built at: $(OUTPUT_DIR_ARM64)/$(BINARY_NAME)"
@@ -79,7 +96,6 @@ help:
 	@echo ""
 	@echo "Prerequisites:"
 	@echo "  cargo-zigbuild must be installed: cargo install cargo-zigbuild"
-	@echo "  For ov5647 feature: pre-built libcamera libraries at shared/libcamera/library/$(LIBCAMERA_VERSION)/"
 	@echo ""
 	@echo "Targets:"
 	@echo "  all         - Build binaries for both architectures (default)"

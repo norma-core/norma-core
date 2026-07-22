@@ -1,9 +1,0 @@
-prefix=${pcfiledir}/../../..
-includedir=${prefix}/include
-libdir=${prefix}/lib/aarch64-linux-gnu
-
-Name: libcamera-base
-Description: Camera support base utility library
-Version: 0.7.0
-Libs: -L${libdir} -lcamera-base
-Cflags: -I${includedir}/libcamera
