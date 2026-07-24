@@ -438,15 +438,20 @@ impl Station {
         // Start USB camera monitoring if configured
         if let Some(usb_video) = &self.config.drivers.usb_video {
             if usb_video.enabled {
-                match usbvideo::parse_resolution(&usb_video.resolution) {
-                    Ok(resolution) => {
+                match usbvideo::parse_format_preferences(
+                    usb_video
+                        .formats
+                        .iter()
+                        .map(|format| format.format.as_str()),
+                ) {
+                    Ok(formats) => {
                         let usb_instance = usbvideo::start_usbvideo(
                             self.normfs.clone(),
                             self.engine.clone(),
                             self.base_path.clone(),
                             usbvideo::USBVideoConfig {
                                 resize_target: usb_video.resize_target,
-                                resolution,
+                                formats,
                                 frame_skip: usb_video.frame_skip,
                             },
                         )
@@ -455,11 +460,12 @@ impl Station {
                     }
                     Err(e) => {
                         // Do not silently fall back to automatic format selection:
-                        // a misconfigured resolution disables the driver so cameras
-                        // are ignored rather than captured at an unintended size.
+                        // a misconfigured format list disables the driver so cameras
+                        // are ignored rather than captured with unintended settings.
                         log::error!(
-                            "Invalid usb-video.resolution {:?}: {}. usb-video driver disabled; cameras ignored (set resolution to \"auto\" to capture at an automatic format)",
-                            usb_video.resolution, e
+                            "Invalid usb-video.formats {:?}: {}. usb-video driver disabled; cameras ignored (omit formats to use automatic format selection)",
+                            usb_video.formats,
+                            e
                         );
                     }
                 }

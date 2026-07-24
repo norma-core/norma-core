@@ -57,8 +57,8 @@ impl<T: StationEngine> StateTracker<T> {
         self.normfs.resolve(queue_id)
     }
 
-    pub fn resolution(&self) -> Option<crate::Resolution> {
-        self.config.resolution
+    pub fn formats(&self) -> &[crate::CameraFormatPreference] {
+        &self.config.formats
     }
 
     pub async fn handle_queue_start(&self, queue_id: &normfs::QueueId) {

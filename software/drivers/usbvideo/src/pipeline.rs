@@ -270,15 +270,13 @@ impl<K: USBCameraDriver> USBVideoManager<K> {
 
                         let selection = converters::filter_and_sort_cameras_formats(
                             &src_formats,
-                            cam_tracker.resolution(),
+                            cam_tracker.formats(),
                         );
 
-                        if selection.resolution_unavailable
-                            && let Some(requested) = cam_tracker.resolution()
-                        {
+                        if selection.requested_formats_unavailable {
                             warn!(
-                                "Camera {}: requested resolution {}x{} is not available, ignoring camera",
-                                camera.unique_id, requested.width, requested.height,
+                                "Camera {}: none of the configured formats are available, ignoring camera",
+                                camera.unique_id,
                             );
                             return;
                         }

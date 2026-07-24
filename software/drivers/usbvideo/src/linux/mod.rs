@@ -137,6 +137,7 @@ impl USBCameraDriver for CameraLinuxDriver {
             let mut has_frames = false;
             let mut last_frame_time = Instant::now();
             let mut frame_count = 0u64;
+            let mut error_message = None;
 
             loop {
                 if stop_flag.load(Ordering::Acquire) {
@@ -144,8 +145,20 @@ impl USBCameraDriver for CameraLinuxDriver {
                     break;
                 }
 
-                if last_frame_time.elapsed() > Duration::from_secs(300) {
-                    log::error!("No frames received from camera {} for 5 minutes, stopping capture", camera_clone.unique_id);
+                let no_frame_timeout = if has_frames {
+                    Duration::from_secs(300)
+                } else {
+                    Duration::from_secs(5)
+                };
+
+                if last_frame_time.elapsed() > no_frame_timeout {
+                    if has_frames {
+                        log::error!("No frames received from camera {} for 5 minutes, stopping capture", camera_clone.unique_id);
+                        error_message = Some("No frames received for 5 minutes".to_string());
+                    } else {
+                        log::warn!("No frames received from camera {} within 5 seconds, stopping capture so another format can be tried", camera_clone.unique_id);
+                        error_message = Some("No frames received within 5 seconds".to_string());
+                    }
                     break;
                 }
 
@@ -205,7 +218,7 @@ impl USBCameraDriver for CameraLinuxDriver {
 
             CaptureResult {
                 has_frames,
-                error_message: None,
+                error_message,
             }
         }).await;
 

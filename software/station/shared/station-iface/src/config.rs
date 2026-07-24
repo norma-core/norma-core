@@ -263,12 +263,11 @@ pub struct UsbVideoConfig {
     #[serde(default = "default_resize_target", alias = "resize-target")]
     pub resize_target: u32,
 
-    /// Requested camera capture resolution: "auto" or "<width>x<height>".
-    /// Selects which camera format to open; does not affect the stored frame
-    /// size, which `resize_target` controls. An unparseable value logs a
-    /// warning at startup and behaves as "auto".
-    #[serde(default = "default_resolution")]
-    pub resolution: String,
+    /// Ordered camera capture format preferences. Each entry's `format` field
+    /// must use "<resolution>@<fps>,<format>", for example
+    /// "1024x768@20fps,mjpeg". An empty list uses automatic format selection.
+    #[serde(default)]
+    pub formats: Vec<UsbVideoFormatConfig>,
 
     /// Drop this many frames after each frame that is kept, so 1 of every
     /// `frame_skip + 1` frames is recorded. Default 0 keeps every frame.
@@ -276,12 +275,16 @@ pub struct UsbVideoConfig {
     pub frame_skip: u32,
 }
 
-fn default_resize_target() -> u32 {
-    224
+#[derive(Debug, Serialize, Deserialize, Clone, Default, PartialEq, Eq)]
+pub struct UsbVideoFormatConfig {
+    /// Complete capture format preference. Kept as a string for now so the
+    /// per-entry object can grow additional fields later.
+    #[serde(default)]
+    pub format: String,
 }
 
-fn default_resolution() -> String {
-    "auto".to_string()
+fn default_resize_target() -> u32 {
+    224
 }
 
 impl Default for UsbVideoConfig {
@@ -289,7 +292,7 @@ impl Default for UsbVideoConfig {
         Self {
             enabled: true,
             resize_target: 224,
-            resolution: default_resolution(),
+            formats: Vec::new(),
             frame_skip: 0,
         }
     }
@@ -627,22 +630,27 @@ mod config_tests {
 
 #[cfg(test)]
 mod usb_video_config_tests {
-    use super::UsbVideoConfig;
+    use super::{UsbVideoConfig, UsbVideoFormatConfig};
 
     #[test]
     fn test_defaults_when_only_enabled_is_given() {
         let cfg: UsbVideoConfig = serde_yaml::from_str("enabled: true").unwrap();
         assert!(cfg.enabled);
         assert_eq!(cfg.resize_target, 224);
-        assert_eq!(cfg.resolution, "auto");
+        assert!(cfg.formats.is_empty());
         assert_eq!(cfg.frame_skip, 0);
     }
 
     #[test]
-    fn test_parses_resolution_and_frame_skip() {
-        let yaml = "enabled: true\nresolution: \"1280x720\"\nframe-skip: 2\n";
+    fn test_parses_formats_and_frame_skip() {
+        let yaml = "enabled: true\nformats:\n  - format: \"1280x720@30fps,mjpeg\"\nframe-skip: 2\n";
         let cfg: UsbVideoConfig = serde_yaml::from_str(yaml).unwrap();
-        assert_eq!(cfg.resolution, "1280x720");
+        assert_eq!(
+            cfg.formats,
+            vec![UsbVideoFormatConfig {
+                format: "1280x720@30fps,mjpeg".to_string(),
+            }]
+        );
         assert_eq!(cfg.frame_skip, 2);
     }
 
@@ -658,12 +666,17 @@ mod usb_video_config_tests {
     }
 
     #[test]
-    fn test_bad_resolution_string_still_deserializes() {
+    fn test_bad_format_string_still_deserializes() {
         // Validation happens at the usbvideo boundary, not in serde,
         // so a typo must never block startup.
         let cfg: UsbVideoConfig =
-            serde_yaml::from_str("enabled: true\nresolution: \"720p\"\n").unwrap();
-        assert_eq!(cfg.resolution, "720p");
+            serde_yaml::from_str("enabled: true\nformats:\n  - format: \"720p\"\n").unwrap();
+        assert_eq!(
+            cfg.formats,
+            vec![UsbVideoFormatConfig {
+                format: "720p".to_string(),
+            }]
+        );
     }
 }
 
