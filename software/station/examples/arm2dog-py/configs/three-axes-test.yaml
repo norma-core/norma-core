@@ -1,0 +1,71 @@
+# arm2dog config: M1 -> yaw, M6 -> follower motor 52 (shoulder), M4 ->
+# follower motor 53 (base), M8 -> follower motor 51 (gripper).
+#
+# Forward/backward (M2+M3 mixed) was tried and removed again -- simplifying
+# back down to just yaw + arm while those get proven out on their own. See
+# git history for the mixed-axis version (config.MixedAxisConfig /
+# mirror.compute_mixed_axis_command) if forward/backward comes back later --
+# that code is still in place, just unused by this file.
+#
+# Load with:
+#   uv run python main.py --config configs/three-axes-test.yaml
+
+leader_server: 192.168.68.66
+follower_server: 192.168.68.64
+# leader_bus: auto        # default, only needed for multi-bus leader stations
+# follower_device: auto   # default, only needed for multi-device follower stations
+
+joints:
+  # M6 -> follower 52 (shoulder). Window from M6's *actual sampled rest
+  # position* (not a hardcoded 50%, since M6 won't rest at exactly 50% in
+  # practice) up to its calibrated 100%: at rest -> follower=0 (clamped to
+  # 5, the margin floor); from there, as M6 rises toward its calibrated max
+  # -> follower ramps up to 255 (clamped to 250, the margin ceiling). Below
+  # rest, it clamps to the same 5 as at rest. This is the inverted direction
+  # from the previous version -- same reference points (rest and calibrated
+  # 100%), just swapped which end each maps to (leader_range_pct: ["rest",
+  # 100] instead of [100, "rest"] -- swapping the endpoints, not setting
+  # invert:true, keeps the shape clean; invert would flip the raw
+  # percentage *before* windowing and distort this already-reversed window
+  # asymmetrically). The "resolved 'rest' leader_range_pct endpoint" log
+  # line after pressing SPACE shows what it actually resolved to.
+  #
+  # No safety/collision limit is applied to 52 (or any servo) by default --
+  # explicitly disabled per instruction, no automatic follower_limits. Add
+  # an entry below yourself if you want one.
+  - leader_id: 6
+    follower_id: 52
+    leader_range_pct: ["rest", 100]
+
+  # M4 -> follower 53 (base). At M4's actual sampled rest position (~100%,
+  # but not assumed exactly 100% -- resolved the same way as M6 above) ->
+  # follower=255; as M4 moves down toward its calibrated 0% -> follower
+  # ramps down to 0. Beyond rest (if M4 has any travel past its sampled rest
+  # toward its calibrated max), it clamps to the same 255 as at rest.
+  # Inverted from the previous version the same way as M6 above --
+  # endpoints swapped ([0, "rest"] instead of ["rest", 0]), not invert:true.
+  # No collision limit for 53 either. Watch the first few moves closely --
+  # direction/window here is a first attempt, not yet confirmed on the real
+  # rig.
+  - leader_id: 4
+    follower_id: 53
+    leader_range_pct: [0, "rest"]
+
+  # M8 -> follower 51 (gripper). Full-arc, no windowing, no invert -- both
+  # sides already agree on sense (leader 0%=closed/100%=open, dog
+  # 0=closed/255=open), confirmed empirically early on.
+  - leader_id: 8
+    follower_id: 51
+
+# follower_limits:
+#   52: [low, high]  # no default guard anymore -- add one here if you want it
+#   53: [low, high]
+
+yaw:
+  leader_id: 1
+  invert: false   # toward min -> left (Q, move_yaw=255); toward max -> right (E, move_yaw=1)
+  # deadzone_steps: 100   # default
+  # ramp_step_per_tick: 6 # default
+  # center_pct:           # omitted: use the sampled rest position (M1 rests ~50%)
+
+# fwd: intentionally omitted -- forward/backward disabled.
