@@ -45,52 +45,31 @@ AXIS_CENTER_EXTREME_PCT = 15.0
 
 # Known-safe home pose for the follower's arm servos, sent once at startup
 # before live tracking begins -- matches the Dogzilla driver's own
-# DEFAULT_SERVO_POSITIONS for these ids (see
-# software/drivers/yahboom-dogzilla-lite/src/shared.rs). Note: 52's value
-# here (255) actually falls inside FOLLOWER_DEFAULT_LIMITS below -- it gets
-# clamped to that range at reset time, same as any other target.
-#
-# 51 (gripper): per the real hardware (confirmed empirically, not from the
-# proto/viewer docs, which say the opposite and are wrong for this rig --
-# see "Gripper ranges and direction" in the README), 0 = closed, 255 = open.
-# So 51: 0 below resets the gripper *closed*, not open -- despite this
-# constant's own name, "home" here means "the driver's own default pose",
-# not "safe/open". Watch for this on first run.
+# DEFAULT_SERVO_POSITIONS (software/drivers/yahboom-dogzilla-lite/src/shared.rs).
+# 51 (gripper): 0 = closed, 255 = open (confirmed empirically -- the
+# proto/viewer docs say the opposite; see README "Gripper ranges and
+# direction"), so 51: 0 resets the gripper *closed* despite this constant's
+# name.
 FOLLOWER_HOME_POSITIONS: dict[int, int] = {51: 0, 52: 255, 53: 0}
 
-# No default self-collision guard -- explicitly disabled per user
-# instruction (no automatic safety limits on any follower servo). There was
-# previously a geometric estimate here (derived from the 3D model in
-# software/station/clients/station-viewer/src/yahboom_dogzilla_lite/
-# YahboomDogzillaLiteViewer.tsx, since there's no URDF for this robot)
-# capping 52 (shoulder) at raw 200 to keep the gripper clear of the
-# head/screen zone -- that was never verified against the real hardware's
-# exact dimensions and has been removed. Every follower servo now uses only
-# the generic margin-padded 0-255 span (see resolve_follower_range) unless
-# you explicitly pass --follower-limits / a YAML follower_limits entry.
+# No default self-collision guard for any follower servo -- every id uses
+# the generic margin-padded 0-255 span (resolve_follower_range) unless you
+# pass --follower-limits / a YAML follower_limits entry. See README "Safety"
+# for the geometric guard this repo previously had here and why it was
+# removed.
 FOLLOWER_DEFAULT_LIMITS: dict[int, tuple[int, int]] = {}
 
 # How long to let the startup reset's software ramp counter converge before
-# giving up and starting live control anyway (this loop finishes in ~1.3s
-# for a full 0-255 sweep at the default max_step_per_tick -- 8s is generous
-# headroom, not a real physical bound).
+# giving up (~1.3s for a full sweep at the default max_step_per_tick -- 8s
+# is generous headroom, not a physical bound).
 RESET_TIMEOUT_S = 8.0
 
-# Extra fixed wait after the reset ramp's commanded values reach their
-# targets, to give the physical servo time to actually catch up before live
-# tracking starts. This is a genuine gap: the yahboom-dogzilla-lite driver's
-# servo_positions telemetry is just an echo of the last-written byte (no
-# real closed-loop position sensing, no current/moving-status field either
-# -- confirmed by reading the Rust driver's protocol/feedback-packet code),
-# so there is no way to actually detect physical arrival. This value is
-# sized from the driver's own simulator model (sim.rs: SIM_MAX_UNITS_PER_SEC
-# = 255, scaled by arm_servo_speed/255 for the shoulder/base servos, default
-# arm_servo_speed=127 -> ~127 raw units/sec -> ~2.0s for a full 0-255 sweep;
-# the gripper always moves at the fixed 255 units/sec rate -> ~1.0s) plus
-# margin -- NOT a verified real-hardware spec, since arm_servo_speed isn't
-# currently set by this script and the real board's actual default speed is
-# undocumented anywhere in this repo. If the arm still hasn't visibly
-# finished moving by the time live control starts, raise this.
+# Extra fixed wait after the reset ramp's commanded values reach target, for
+# the physical servo to actually catch up -- the driver's servo_positions
+# telemetry is just a command echo (no real position/current/moving-status
+# feedback), so there's no way to confirm arrival directly. Sized from the
+# driver's simulator model (sim.rs), not a verified real-hardware spec --
+# see startup.reset_follower_to_home.
 RESET_SETTLE_S = 2.5
 
 # 0x80: neutral/stop for MovementCommand.move_x/move_y/move_yaw.
@@ -135,27 +114,16 @@ class AxisConfig:
     """Tuning for one binary rate-controlled movement axis (yaw or forward/
     backward), driven by a leader motor's deviation from its resting
     position. Used for both --yaw-* and --fwd-* -- two independent
-    instances, one per axis.
+    instances, one per axis. Disabled unless `leader_id` is set.
 
-    Disabled unless `leader_id` is set. When enabled, the leader motor's
-    deviation from its sampled resting position picks a direction, not a
-    proportional rate: past `deadzone_steps` raw encoder steps from center
-    it targets the same full-throw byte the web UI's keys send (255 or 1)
-    -- Q/E for yaw, W/S for forward/backward, both using the identical
-    convention -- exactly matching "press and hold" one of those keys.
-    Within the deadzone it targets neutral (128, stop).
-
-    Deliberately step-based rather than a percentage of the leader's
-    calibrated arc: the leader motor driving an axis (e.g. a base-rotation
-    or shoulder-pitch joint) may never have been calibrated, since
-    calibration is otherwise only needed for position mirroring. An earlier
-    percentage-based version silently never fired when
-    range_min == range_max == 0 (uncalibrated) -- this doesn't depend on
-    calibration at all.
-
-    The web UI's keys themselves snap instantly with zero ramp --
-    `ramp_step_per_tick` is what adds the missing "speed up / slow down"
-    feel on top of that target.
+    Deviation past `deadzone_steps` raw encoder steps from center targets
+    the same full-throw byte the web UI's keys send (255/1, Q/E or W/S) --
+    a direction pick, not a proportional rate. Within the deadzone targets
+    neutral (128). Step-based rather than a percentage of the leader's
+    calibrated arc, since an axis leader motor may never have been
+    calibrated (calibration is otherwise only needed for position
+    mirroring). `ramp_step_per_tick` adds the "speed up/slow down" feel the
+    web UI's keys don't have natively (they snap instantly).
     """
 
     leader_id: int | None = None
@@ -172,15 +140,12 @@ class AxisConfig:
 
     deadband: int = 2
 
-    # Override for where "center" (the deadzone's reference point) sits, as
-    # a percentage of the leader motor's own calibrated arc. None (default)
-    # means "wherever the operator actually rests the arm" -- the sampled
-    # rest-position median (see startup.sample_leader_rest_state). Set this
-    # when the natural rest position sits at (or near) a hard joint limit --
-    # which makes the axis only ever detect one direction from *that* point
-    # (see AXIS_CENTER_EXTREME_PCT) -- and you'd rather the operator actively
-    # hold the arm at a chosen percentage of its arc to get both directions,
-    # instead of wherever it naturally settles.
+    # Fixed override for the deadzone's center, as a percentage of the
+    # leader motor's own calibrated arc, instead of the sampled resting
+    # position (see startup.sample_leader_rest_state). Useful when the
+    # natural rest position sits at a hard joint limit (see
+    # AXIS_CENTER_EXTREME_PCT) and you want the operator to actively hold
+    # the arm at a chosen percentage to get both directions.
     center_pct: float | None = None
 
     @property
@@ -201,16 +166,13 @@ class MixedAxisInput:
     be greater than `limit_pct` -- e.g. rest at 93%, limit at 50% -- meaning
     the contribution grows as the leader moves *down* toward 50%, not up.
 
-    `rest_pct: None` (the default) means "use the live rest-sample" (see
-    `main._resolve_axis_center`), the same safety posture the single-leader
-    AxisConfig already uses -- resolved once at startup, filled into this
-    field in place. Only set it explicitly if you deliberately want a fixed
-    reference point instead of wherever the arm actually rests this session.
-    A hardcoded value here previously caused a real incident: the follower
-    immediately walked backward at full ramp because the configured
-    rest_pct (a one-off earlier estimate) didn't match the arm's actual live
-    rest position closely enough, and this input's zero-deadzone proportional
-    math treated that gap as a deliberate command. Prefer the default.
+    `rest_pct: None` (the default) means "use this session's live
+    rest-sample" (see `main._resolve_axis_center`), resolved once at startup
+    and filled into this field in place. Prefer the default over a hardcoded
+    value -- a `rest_pct` that doesn't match the arm's actual rest position
+    closely enough reads as a real deviation to this input's proportional
+    math, commanding a false push beyond what `MixedAxisConfig.deadzone_pct`
+    absorbs.
     """
     leader_id: int
     limit_pct: float
@@ -239,12 +201,11 @@ class MixedAxisConfig:
     deadband: int = 2
 
     # Percentage points of deviation from an input's rest_pct treated as
-    # "still at rest, no push" -- a genuine buffer against sensor noise and
-    # rest-position imprecision, applied *before* rewindowing (so it's a
-    # real dead zone, not just the ~2-byte output deadband `deadband` gives
-    # you). Given a rest_pct-vs-limit_pct window can be narrow (M3's is 43
-    # points wide), even a few points of real-world mismatch is a
-    # meaningful fraction of full signal without this.
+    # "still at rest, no push", applied *before* rewindowing (a real dead
+    # zone, not just the ~2-byte output deadband `deadband` gives you) --
+    # a rest_pct-vs-limit_pct window can be narrow, so without this even a
+    # few points of sensor noise or rest-position imprecision is a
+    # meaningful fraction of full signal.
     deadzone_pct: float = 5.0
 
     @property
@@ -277,22 +238,18 @@ class JointMap:
 
     `leader_lo_pct`/`leader_hi_pct` re-window the leader's percentage before
     projection (see `mirror.rewindow_percentage`) -- default (0, 100) is a
-    no-op (the full arc drives the full follower range). Set a narrower
-    window, e.g. (0, 50), to let only part of the leader's travel drive the
-    follower's *entire* output range, with the rest of the leader's travel
-    clamping to the nearest endpoint. Only expressible via a YAML config
+    no-op. Set a narrower window, e.g. (0, 50), to let only part of the
+    leader's travel drive the follower's *entire* output range, clamping
+    the rest to the nearest endpoint. Only expressible via a YAML config
     file (see `load_config_file`) -- not the `--map` CLI flag.
 
     Either endpoint can be `None` instead of a fixed percentage, meaning
-    "use this session's live rest-sample of `leader_id`" -- the same safe
-    default posture `AxisConfig.center_pct`/`MixedAxisInput.rest_pct` already
-    use, for when the "ideal" reference point (e.g. "M6 rests at 50%") is
-    only approximately known and shouldn't be hardcoded. `main._resolve_joint_windows`
-    resolves any `None` endpoint into a concrete percentage right after the
-    startup rest-sample (i.e. right after the operator presses SPACE),
-    replacing the `JointMap` with a resolved copy before live tracking
-    starts -- nothing downstream of that (`mirror.py`, the teleop loop) ever
-    sees `None`.
+    "use this session's live rest-sample of `leader_id`" (same posture as
+    `AxisConfig.center_pct`/`MixedAxisInput.rest_pct`), for a reference
+    point that's only approximately known and shouldn't be hardcoded.
+    `main._resolve_joint_windows` resolves any `None` endpoint right after
+    the startup rest-sample, replacing the `JointMap` with a resolved copy
+    -- nothing downstream ever sees `None`.
     """
 
     leader_id: int

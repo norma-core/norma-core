@@ -524,9 +524,11 @@ If motion looks twitchy, two independent causes are worth separating:
 
 ## Safety
 
-- Only the follower servo ids listed in `--map` are ever written to --
-  other servos on the follower (e.g. the dog's leg servos) are never
-  touched.
+- Only servo ids in `config.FOLLOWER_HOME_POSITIONS` (`51`, `52`, `53`) or
+  listed in `--map` are ever written to. Note the startup home-reset writes
+  all three unconditionally (see "Startup sequence" above), not just
+  whichever ones this session's `--map`/`joints` maps -- other servos on
+  the follower (e.g. the dog's leg servos) are never touched either way.
 - **No current-based overload protection on the follower side.** The
   `yahboom-dogzilla-lite` driver's telemetry (`YahboomDogzillaLiteStatus`)
   has no per-servo current field, unlike ST3215 -- there's no signal to

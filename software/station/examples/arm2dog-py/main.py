@@ -11,8 +11,10 @@ for why a step-rate limiter stands in for ST3215-style overload protection
 here.
 
 Leader and follower motor ids are explicitly paired (they don't need to
-match), and only the mapped follower servo ids are ever written to -- other
-servos on the follower (e.g. the dog's legs) are never touched.
+match). Only `--map`-mapped servo ids plus `config.FOLLOWER_HOME_POSITIONS`
+(51/52/53, written unconditionally at startup regardless of `--map` -- see
+below) are ever written to; other servos on the follower (e.g. the dog's
+legs) are never touched.
 
 Beyond arm-joint mirroring, two optional rate-controlled movement axes can
 be driven the same way -- a leader motor's deviation from its resting
@@ -23,11 +25,12 @@ Both share one `MovementCommand` register triple on the wire, so whenever
 either changes, both axes' current values are sent together (see
 `commands.send_follower_commands`).
 
-Before live tracking starts, `startup.py` runs a pre-flight sequence: the
-follower's mapped arm servos are ramped (not jumped) to a known-safe home
-pose, the leader's M1-M8 resting position is sampled (after an explicit
-SPACE-bar confirmation) and median-filtered, and a preview of the first
-live command is written to a calibration log.
+Before live tracking starts, `startup.py` runs a pre-flight sequence: all
+three of the follower's arm servos are ramped (not jumped) to a known-safe
+home pose (unconditionally, not just whichever are mapped this session),
+the leader's M1-M8 resting position is sampled (after an explicit SPACE-bar
+confirmation) and median-filtered, and a preview of the first live command
+is written to a calibration log.
 
 Usage:
     uv run python main.py \
@@ -361,8 +364,6 @@ def _compute_axis_value(leader_motors, axis_config, axis_center, axis_state) -> 
     if axis_config.leader_id is None:
         return None
     leader_state = leader_motors.get(axis_config.leader_id)
-    if leader_state is None:
-        return None
     return compute_axis_command(leader_state, axis_center, axis_state.last_commanded, axis_config)
 
 
@@ -808,14 +809,9 @@ async def main_async(args):
 
     config = FollowerConfig()
 
-    # (a0) Immediately silence any movement the follower might already be
-    # doing -- e.g. left over from a previous session that didn't shut down
-    # cleanly (the Dogzilla has no torque-disable, so a stale non-neutral
-    # move_x/move_yaw just keeps the robot moving until explicitly told
-    # otherwise). This runs before anything else touches the follower,
-    # including the position reset below, and well before the operator
-    # gets to press SPACE -- there's no window where a pre-existing runaway
-    # command goes unaddressed.
+    # (a0) Silence any movement left running from a previous session (no
+    # torque-disable on this driver, so a stale non-neutral move_x/move_yaw
+    # just keeps going) before anything else touches the follower.
     if yaw_enabled or fwd_enabled:
         try:
             await send_follower_commands(
@@ -826,24 +822,11 @@ async def main_async(args):
         except Exception:
             logger.exception("Failed to send startup movement-neutral")
 
-    # (a) Ramp the follower's whole arm (all of FOLLOWER_HOME_POSITIONS --
-    # gripper 51, shoulder 52, base 53) to a known-safe home pose before
-    # touching the leader at all, clamped to any *explicit* safety limit for
-    # that id (built-in collision guard or --follower-limits override) --
-    # NOT the generic margin-padded default range. That generic (margin,
-    # 255-margin) fallback in resolve_follower_range exists to keep
-    # live-tracked joints off the raw byte's hard edges when nothing more
-    # specific is known about them; it has nothing to do with whether
-    # FOLLOWER_HOME_POSITIONS' own values (the driver's own hardcoded
-    # defaults) are safe -- they already are, by construction, so an id with
-    # no explicit override should reset to its exact home value, not get
-    # nudged a few units off it. Deliberately unconditional, not filtered to
-    # just this session's --map/joints: the point is a known-safe starting
-    # pose for the whole arm, not just whichever servo happens to be
-    # actively tested this session -- otherwise a servo left out of this
-    # session's mapping would just sit wherever a previous session left it.
-    # Leg servos are never touched either way -- they're not in
-    # FOLLOWER_HOME_POSITIONS at all.
+    # (a) Ramp all of FOLLOWER_HOME_POSITIONS to a known-safe pose,
+    # unconditionally (not just this session's --map/joints -- see README
+    # "Safety"), clamped only to an *explicit* limit for that id (not the
+    # generic margin-padded default, which exists for live-tracked joints
+    # with no more specific info, not for these already-known-safe values).
     home_targets = {}
     for sid, home_pos in FOLLOWER_HOME_POSITIONS.items():
         if sid in limits:

@@ -194,6 +194,14 @@ class LeaderSmoother:
     twitch on the follower. `alpha` close to 1.0 is ~no smoothing (trusts
     each new sample fully); smaller values smooth more but add lag --
     roughly `tick_interval / alpha` of settling time.
+
+    Averages in delta space via `signed_shortest_delta`, not a plain scalar
+    average of the raw positions -- a joint can sit near the encoder's wrap
+    point (e.g. center at step 4090), and a naive `alpha*new + (1-alpha)*prev`
+    across that boundary (prev=4090, new=5) lands on a garbage midpoint
+    (~2660) that's nowhere near either real reading, feeding a wrong
+    direction to the wrap-aware math downstream (`signed_shortest_delta`,
+    `normalize_position`) that assumes its input is a real position.
     """
     alpha: float
     state: dict[int, float] = field(default_factory=dict)
@@ -208,8 +216,9 @@ class LeaderSmoother:
         if prev is None:
             self.state[motor_id] = float(raw_position)
         else:
-            self.state[motor_id] = self.alpha * raw_position + (1.0 - self.alpha) * prev
-        return round(self.state[motor_id])
+            delta = signed_shortest_delta(raw_position, round(prev) % LEADER_MAX_STEPS, LEADER_MAX_STEPS)
+            self.state[motor_id] = (prev + self.alpha * delta) % LEADER_MAX_STEPS
+        return round(self.state[motor_id]) % LEADER_MAX_STEPS
 
 
 @dataclass
@@ -237,35 +246,27 @@ def signed_shortest_delta(position: int, center: int, max_steps: int) -> int:
 
 
 def compute_axis_command(
-    leader: LeaderMotorState,
+    leader: LeaderMotorState | None,
     leader_center: int,
     last_commanded: int,
     config: AxisConfig,
 ) -> int | None:
     """Decide the next byte for one rate-controlled movement axis (move_yaw
-    or move_x), binary-target style -- matches Q/E (yaw) and W/S (forward/
-    backward) in the web UI, which all use the same convention.
+    or move_x), binary-target style -- see README "Movement axes".
 
-    Center (leader within `deadzone_steps` raw encoder steps of its resting
-    position) targets neutral (128, stop). Past the deadzone in either
-    direction targets the same full-throw byte the web UI's keys send (1 or
-    255) -- not a proportional rate, a direction pick, exactly like pressing
-    and holding a key. `step_toward` then ramps `last_commanded` towards
-    that target at `ramp_step_per_tick`, which is the "momentum" none of
-    those keys have natively (they snap instantly) -- smooth spin/speed-up
-    and -down instead of a jolt.
-
-    Deliberately uses raw encoder steps, not a percentage of the leader's
-    calibrated arc (range_min/range_max) -- unlike the position joints, this
-    doesn't need calibration at all, and a joint used purely for its
-    direction of deviation (e.g. a rotation or reach axis that was never
-    calibrated because it isn't used for position mirroring) would silently
-    never trigger under a calibration-relative scheme.
+    `leader=None` (motor missing from this tick's frame), a real fault, or a
+    stale zero-position reading all ramp toward neutral rather than
+    returning None -- a movement axis is a standing command, so treating bad
+    leader data as "skip this tick" would leave the dog moving indefinitely
+    at whatever it was last told. Matches `_mixed_contribution`'s fail-safe
+    posture (contributes 0, i.e. drives toward neutral).
     """
-    if (leader.error_status & ~STATUS_VOLTAGE_BIT) != 0:
-        return None
-    if leader.present_position == 0:
-        return None
+    if (
+        leader is None
+        or (leader.error_status & ~STATUS_VOLTAGE_BIT) != 0
+        or leader.present_position == 0
+    ):
+        return step_toward(last_commanded, MOVEMENT_NEUTRAL, config.ramp_step_per_tick, config.deadband)
 
     delta = signed_shortest_delta(leader.present_position, leader_center, LEADER_MAX_STEPS)
     if config.invert:
@@ -285,20 +286,14 @@ def _mixed_contribution(
     leader: LeaderMotorState | None, input_cfg: MixedAxisInput | None, deadzone_pct: float,
 ) -> float:
     """One input's 0-100% contribution to a MixedAxisConfig -- see
-    `compute_mixed_axis_command`. 0 if this input isn't configured, its
-    leader isn't reporting yet, is faulted, or `rest_pct` hasn't been
-    resolved yet (should always happen at startup -- see
-    `main._resolve_axis_center` -- but fail safe if it somehow hasn't) --
-    fails toward "no push from this side" rather than raising, same
-    fail-safe posture as the rest of this module.
+    `compute_mixed_axis_command` and README "Mixed forward/backward". 0 if
+    unconfigured, not reporting, faulted, or `rest_pct` unresolved -- fails
+    toward "no push from this side" rather than raising.
 
-    Deliberately dead-zones *before* rewindowing: `deadzone_pct` percentage
-    points of raw deviation from `rest_pct` are treated as still-at-rest,
-    zero contribution, not just left to whatever tiny byte-level deadband
-    `step_toward` gives you at the output end. A rest_pct-vs-limit_pct
-    window can be narrow (tens of points), so without this, ordinary sensor
-    noise or rest-position imprecision is a meaningful fraction of full
-    signal, not truly zero.
+    Dead-zones *before* rewindowing (`deadzone_pct` of raw deviation from
+    `rest_pct`), not just the byte-level `deadband` at the output end --
+    a narrow rest_pct-vs-limit_pct window would otherwise turn ordinary
+    sensor noise into a meaningful fraction of full signal.
     """
     if input_cfg is None or leader is None or input_cfg.rest_pct is None:
         return 0.0
@@ -318,18 +313,11 @@ def compute_mixed_axis_command(
     last_commanded: int,
     config: MixedAxisConfig,
 ) -> int | None:
-    """Decide the next byte for a mixed/proportional movement axis (see
-    config.MixedAxisConfig) -- two independent leader inputs, one pushing
-    toward 255, one toward 1, net-summed. Unlike `compute_axis_command`
-    (binary target pick), this scales continuously: net = forward% -
-    backward% (each 0-100%, from `_mixed_contribution`), mapped linearly
-    onto [1, 255] with 128 as the zero point, then rate-limited the same way
-    (`step_toward`) for smooth acceleration instead of a jolt.
-
-    A leader that isn't configured, isn't reporting, or is faulted
-    contributes 0 rather than blocking the whole axis -- the other side (if
-    healthy) still works, and "no signal" fails safe to "no push", not to
-    ignoring the fault.
+    """Decide the next byte for a mixed/proportional movement axis -- see
+    config.MixedAxisConfig and README "Mixed forward/backward". Unlike
+    `compute_axis_command` (binary target pick), scales continuously:
+    net = forward% - backward% (from `_mixed_contribution`, each already
+    fail-safe to 0), mapped onto [1, 255] with 128 as the zero point.
     """
     fwd_pct = _mixed_contribution(forward_leader, config.forward, config.deadzone_pct)
     back_pct = _mixed_contribution(backward_leader, config.backward, config.deadzone_pct)

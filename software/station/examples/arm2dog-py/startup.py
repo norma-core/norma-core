@@ -1,8 +1,10 @@
 """Pre-flight sequence run once before live tracking starts:
 
-  1. `reset_follower_to_home`: ramp the follower's mapped arm servos to a
-     known-safe pose (gripper open), rate-limited the same way live tracking
-     is -- never an instant jump, even at startup.
+  1. `reset_follower_to_home`: ramp all three follower arm servos (51/52/53,
+     unconditionally, regardless of which are mapped this session) to a
+     known-safe pose -- gripper *closed* (51: 0), matching the driver's own
+     default pose, not open despite the name -- rate-limited the same way
+     live tracking is, never an instant jump, even at startup.
   2. `sample_leader_rest_state`: characterize the leader's M1-M8 resting
      position (median-filtered) and calibrated range, so we have a record of
      what "at rest" looked like and can sanity-check it before trusting the
@@ -26,7 +28,9 @@ from config import (
     TELEOP_REFRESH_INTERVAL_S,
 )
 from commands import send_follower_commands
-from mirror import RateLimiterTable, leader_percent, project_percentage, resolve_follower_range, step_toward
+from mirror import (
+    LeaderMotorState, RateLimiterTable, leader_percent, project_percentage, resolve_follower_range, step_toward,
+)
 from state import parse_follower_positions, parse_leader_motor_state
 
 logger = logging.getLogger(__name__)
@@ -171,8 +175,6 @@ def preview_follower_targets(
     projected the same way live tracking projects it -- a sanity-check
     preview of the very first live command, before anything is actually sent.
     """
-    from mirror import LeaderMotorState  # local import: avoids a cycle at module load
-
     preview: dict[int, FollowerPreview] = {}
     for joint in joints:
         info = rest_state.get(joint.leader_id)
