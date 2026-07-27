@@ -355,10 +355,13 @@ def _compute_axis_value(leader_motors, axis_config, axis_center, axis_state) -> 
     independent leaders, proportional, no external center needed).
     """
     if isinstance(axis_config, MixedAxisConfig):
+        # No early-exit when both leaders are missing -- compute_mixed_axis_command
+        # (via _mixed_contribution) already fails safe to 0 contribution per
+        # side, which nets to neutral. Shortcutting here (as an earlier
+        # version did) would skip that fail-safe entirely if both leaders
+        # drop off mid-session while the axis is non-neutral.
         fwd_leader = leader_motors.get(axis_config.forward.leader_id) if axis_config.forward else None
         back_leader = leader_motors.get(axis_config.backward.leader_id) if axis_config.backward else None
-        if fwd_leader is None and back_leader is None:
-            return None
         return compute_mixed_axis_command(fwd_leader, back_leader, axis_state.last_commanded, axis_config)
 
     if axis_config.leader_id is None:

@@ -202,6 +202,16 @@ class LeaderSmoother:
     (~2660) that's nowhere near either real reading, feeding a wrong
     direction to the wrap-aware math downstream (`signed_shortest_delta`,
     `normalize_position`) that assumes its input is a real position.
+
+    Never returns exactly 0 for a genuinely-smoothed reading, even though 0
+    is a mathematically valid point on the wrap. 0 is this codebase's "not
+    reporting" sentinel (checked against `present_position` everywhere
+    downstream, including the movement-axis fail-safe), so a smoothed value
+    that legitimately lands there -- routine for a joint parked at the wrap
+    point, not a rare coincidence -- would get misread as "leader gone" and
+    spuriously drive an axis toward neutral. Nudged to the nearest
+    non-sentinel step instead, in the direction the reading was already
+    moving.
     """
     alpha: float
     state: dict[int, float] = field(default_factory=dict)
@@ -215,10 +225,14 @@ class LeaderSmoother:
         prev = self.state.get(motor_id)
         if prev is None:
             self.state[motor_id] = float(raw_position)
-        else:
-            delta = signed_shortest_delta(raw_position, round(prev) % LEADER_MAX_STEPS, LEADER_MAX_STEPS)
-            self.state[motor_id] = (prev + self.alpha * delta) % LEADER_MAX_STEPS
-        return round(self.state[motor_id]) % LEADER_MAX_STEPS
+            return raw_position
+
+        delta = signed_shortest_delta(raw_position, round(prev) % LEADER_MAX_STEPS, LEADER_MAX_STEPS)
+        self.state[motor_id] = (prev + self.alpha * delta) % LEADER_MAX_STEPS
+        result = round(self.state[motor_id]) % LEADER_MAX_STEPS
+        if result == 0:
+            result = 1 if delta >= 0 else LEADER_MAX_STEPS - 1
+        return result
 
 
 @dataclass
