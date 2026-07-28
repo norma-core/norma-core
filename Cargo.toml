@@ -4,6 +4,7 @@ members = [
   "shared/i2c-async",
   "software/drivers/airgradient-open-air-o-1pst",
   "software/drivers/arduino-nicla-sense-env",
+  "software/drivers/dfrobot-rs485",
   "software/drivers/ina226",
   "software/drivers/inferences",
   "software/drivers/hikmicro-thermal",
