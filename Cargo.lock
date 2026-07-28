@@ -496,6 +496,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "dfrobot-rs485"
+version = "0.1.0-beta.10"
+dependencies = [
+ "bytes",
+ "log",
+ "normfs",
+ "prost",
+ "prost-build",
+ "station_iface",
+ "systime",
+ "tokio",
+ "tokio-serial",
+]
+
+[[package]]
 name = "digest"
 version = "0.10.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
