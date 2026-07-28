@@ -315,10 +315,15 @@ def _compute_tick_commands(
         m.get_id(): parse_leader_motor_state(m)
         for m in (leader_bus.get_motors() or [])
     }
-    # Smooth every leader reading we touch this tick (position joints and
-    # movement axes alike) before any of the position/axis math sees it.
+    # Smooth every *real* leader reading we touch this tick (position joints
+    # and movement axes alike) before any of the position/axis math sees it.
+    # Skip smoothing entirely on 0 (not reporting) instead of handing it to
+    # LeaderSmoother -- keeps a dropout looking exactly like one to every
+    # downstream gate, and leaves the smoother's internal state alone so a
+    # motor that comes back resumes from its last real position.
     for mid, state in leader_motors.items():
-        state.present_position = smoother.update(mid, state.present_position)
+        if state.present_position != 0:
+            state.present_position = smoother.update(mid, state.present_position)
 
     follower_positions = parse_follower_positions(follower_device)
 

@@ -212,16 +212,17 @@ class LeaderSmoother:
     spuriously drive an axis toward neutral. Nudged to the nearest
     non-sentinel step instead, in the direction the reading was already
     moving.
+
+    Assumes `raw_position` is a real reading -- callers must not pass 0
+    (not reporting) through here; skip the call entirely instead, same as
+    `startup.sample_leader_rest_state` already does, so a dropout can't be
+    smoothed into something that no longer looks like one. Deciding what
+    counts as real data is the caller's job, not this class's.
     """
     alpha: float
     state: dict[int, float] = field(default_factory=dict)
 
     def update(self, motor_id: int, raw_position: int) -> int:
-        if raw_position == 0:
-            # Not reporting -- don't let a single dropout drag the average
-            # toward zero; just pass it through so callers' existing
-            # "present_position == 0" checks keep working.
-            return 0
         prev = self.state.get(motor_id)
         if prev is None:
             self.state[motor_id] = float(raw_position)
