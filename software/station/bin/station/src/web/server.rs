@@ -17,11 +17,6 @@ use tokio::net::TcpListener;
 #[folder = "../../clients/station-viewer/dist"]
 struct Asset;
 
-// Asset key `rust_embed` uses for the ElRobot follower URDF (matches
-// `elrobotUrdfPath` in station-viewer's `devices/elrobot/config.ts`), the
-// only asset `--elrobot-urdf-path` is allowed to override.
-const ELROBOT_FOLLOWER_URDF_ASSET: &str = "devices/elrobot/elrobot_follower.urdf";
-
 fn empty() -> BoxBody<Bytes, hyper::Error> {
     Empty::<Bytes>::new()
         .map_err(|never| match never {})
@@ -36,7 +31,7 @@ fn full<T: Into<Bytes>>(chunk: T) -> BoxBody<Bytes, hyper::Error> {
 
 struct WebServer {
     normfs: Arc<NormFS>,
-    elrobot_urdf_override: Option<PathBuf>,
+    static_path_override: Option<PathBuf>,
 }
 
 // Routes taken from `software/station/clients/station-viewer/src/App.tsx`.
@@ -60,6 +55,21 @@ impl WebServer {
     fn is_spa_route(path: &str) -> bool {
         let normalized = Self::normalize_route_path(path);
         SPA_ROUTE_ALLOWLIST.contains(&normalized)
+    }
+
+    /// Resolves `asset_path` against the `--static-path` override directory,
+    /// rejecting anything that escapes it (e.g. `../../etc/passwd`) since
+    /// unlike the old single-file `--elrobot-urdf-path` override, this is a
+    /// whole directory tree exposed over HTTP.
+    async fn resolve_static_override(static_dir: &std::path::Path, asset_path: &str) -> Option<PathBuf> {
+        let candidate = static_dir.join(asset_path);
+        let canonical_dir = tokio::fs::canonicalize(static_dir).await.ok()?;
+        let canonical_candidate = tokio::fs::canonicalize(&candidate).await.ok()?;
+        if canonical_candidate.starts_with(&canonical_dir) {
+            Some(canonical_candidate)
+        } else {
+            None
+        }
     }
 
     async fn handle_client(
@@ -99,10 +109,10 @@ impl WebServer {
             asset_path
         };
 
-        if asset_path == ELROBOT_FOLLOWER_URDF_ASSET
-            && let Some(override_path) = &self.elrobot_urdf_override
+        if let Some(static_dir) = &self.static_path_override
+            && let Some(override_path) = Self::resolve_static_override(static_dir, asset_path).await
         {
-            match tokio::fs::read(override_path).await {
+            match tokio::fs::read(&override_path).await {
                 Ok(bytes) => {
                     let mime = mime_guess::from_path(asset_path).first_or_octet_stream();
                     let mut response = Response::new(full(bytes));
@@ -112,7 +122,7 @@ impl WebServer {
                     );
                     // Deliberately not immutable/long-lived like the embedded
                     // asset's cache header: the whole point of this override
-                    // is to iterate on the file on disk between reloads.
+                    // is to iterate on files on disk between reloads.
                     response.headers_mut().insert(
                         hyper::header::CACHE_CONTROL,
                         hyper::header::HeaderValue::from_static("no-store, no-cache, must-revalidate"),
@@ -121,7 +131,7 @@ impl WebServer {
                 }
                 Err(e) => {
                     log::error!(
-                        "Failed to read ElRobot URDF override at {override_path:?}: {e:#}. Falling back to the embedded asset."
+                        "Failed to read static override at {override_path:?}: {e:#}. Falling back to the embedded asset."
                     );
                 }
             }
@@ -225,13 +235,13 @@ pub async fn start_server(
     addr: SocketAddr,
     normfs: Arc<NormFS>,
     shutdown: Arc<AtomicBool>,
-    elrobot_urdf_override: Option<PathBuf>,
+    static_path_override: Option<PathBuf>,
 ) -> Result<(), Box<dyn Error + Send + Sync>> {
     let listener = TcpListener::bind(addr).await?;
     log::info!("WebSocket server listening on {}", addr);
     let server = Arc::new(WebServer {
         normfs,
-        elrobot_urdf_override,
+        static_path_override,
     });
 
     loop {
