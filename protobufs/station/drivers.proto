@@ -42,6 +42,7 @@ enum QueueDataType {
     QDT_PWM_OUTPUT_RX = 56; // pwm_output.RxEnvelope
 
     QDT_DMESG_RX = 57; // dmesg.RxEnvelope
+    QDT_DFROBOT_RS485_RX = 58; // dfrobot_rs485.RxEnvelope
 }
 
 enum StationCommandType {
