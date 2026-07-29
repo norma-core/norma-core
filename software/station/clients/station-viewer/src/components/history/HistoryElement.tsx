@@ -59,7 +59,7 @@ function formatSensorValue(value: number | null, unit = '', decimals = 2): strin
 }
 
 function HistoryElement({ element, index, dataQueueType, dataQueueId }: HistoryElementProps) {
-  const [isExpanded, setIsExpanded] = useState(element.type === 'usbvideo' || element.type === 'usbvideo-tx' || element.type === 'hikmicro-thermal' || element.type === 'st3215' || element.type === 'yahboom_dogzilla_lite' || element.type === 'arduino-nicla-sense-env' || element.type === 'ina226' || element.type === 'airgradient-open-air-o-1pst' || element.type === 'victron-smartsolar-mppt' || element.type === 'normvla' || element.type === 'st3215tx' || element.type === 'vesc-trampa' || element.type === 'vesc-trampa-rx' || element.type === 'vesc-trampa-tx' || element.type === 'dfrobot-rs485');
+  const [isExpanded, setIsExpanded] = useState(element.type === 'usbvideo' || element.type === 'usbvideo-tx' || element.type === 'hikmicro-thermal' || element.type === 'st3215' || element.type === 'yahboom_dogzilla_lite' || element.type === 'arduino-nicla-sense-env' || element.type === 'ina226' || element.type === 'airgradient-open-air-o-1pst' || element.type === 'victron-smartsolar-mppt' || element.type === 'normvla' || element.type === 'st3215tx' || element.type === 'vesc-trampa' || element.type === 'vesc-trampa-rx' || element.type === 'vesc-trampa-tx');
   const displayQueueId = formatQueueIdForDisplay(element.queueId);
 
   const usbVideoData = element.type === 'usbvideo' && element.data ? parseUsbVideoData(element.data) : null;
