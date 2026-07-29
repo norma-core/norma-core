@@ -23,10 +23,13 @@ joints:
     follower_id: 53
     leader_range_pct: [0, "rest"]
 
-  # M8 full-arc, no windowing: leader 0%=closed/100%=open matches dog
-  # 0=closed/255=open, confirmed empirically.
+  # M8 full-arc, no windowing. invert:true -- confirmed on this rig against
+  # the real DogZilla (leader 0%=closed/100%=open does NOT match dog
+  # 0=closed/255=open here; the two sides disagree on sense, opposite of
+  # an earlier assumption based on leader-side calibration alone).
   - leader_id: 8
     follower_id: 51
+    invert: true
 
 # follower_limits:
 #   52: [low, high]
@@ -34,7 +37,10 @@ joints:
 
 yaw:
   leader_id: 1
-  invert: false   # toward min -> left (Q, move_yaw=255); toward max -> right (E, move_yaw=1)
+  invert: true   # confirmed on this rig against the real DogZilla: uninverted
+                 # spins the dog the wrong way (which absolute direction is
+                 # Q/E is still just the sim.rs-inferred label, not verified
+                 # -- see README "Direction was inferred").
   # deadzone_steps: 100   # default
   # ramp_step_per_tick: 6 # default
   # center_pct:           # omitted: use the sampled rest position

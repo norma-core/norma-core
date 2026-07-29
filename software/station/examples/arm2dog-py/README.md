@@ -35,22 +35,22 @@ these examples use `192.168.68.66` (Elrobot) / `192.168.68.56` (dog).
 **0. First-time setup**, if `uv run` fails with `ModuleNotFoundError` for
 `yahboom_dogzilla_lite` -- see the subsection right below this list.
 
-**1. Gripper only** -- the one pair whose direction is already confirmed
-(see "Gripper ranges and direction" below), so this just proves the
-plumbing (both stations reachable, protobufs generated, reset-to-home runs,
-calib.log gets written):
+**1. Gripper only.** Direction is rig-dependent (see "Gripper ranges and
+direction" below) -- `:inv` shown here matches what a real DogZilla needed
+on the rig this was built on, but verify it on yours, don't assume it:
 
 ```bash
 uv run python main.py \
     --leader-server 192.168.68.66 --follower-server 192.168.68.56 \
-    --map 8:51
+    --map 8:51:inv
 ```
 
 Watch the console for the startup sequence (reset ramp -> SPACE prompt ->
 rest-sample -> calibration snapshot written to `calib.log`),
 then open `calib.log` and sanity-check the preview line for `8 -> 51`
 against where the leader gripper actually was. Then open/close the leader
-gripper and confirm the dog gripper follows the same way.
+gripper and confirm the dog gripper follows the same way -- drop `:inv` if
+it's backwards on your rig.
 
 **2. Add the other two arm joints, watch direction.** `6:52` and `4:53`
 haven't been empirically checked (unlike the gripper):
@@ -58,11 +58,11 @@ haven't been empirically checked (unlike the gripper):
 ```bash
 uv run python main.py \
     --leader-server 192.168.68.66 --follower-server 192.168.68.56 \
-    --map "8:51,6:52,4:53"
+    --map "8:51:inv,6:52,4:53"
 ```
 
 Move M6 and M4 slowly, one at a time. If either joint moves opposite to the
-leader, stop (Ctrl+C) and add `:inv` to that pair, e.g. `--map "8:51,6:52:inv,4:53"`.
+leader, stop (Ctrl+C) and add `:inv` to that pair, e.g. `--map "8:51:inv,6:52:inv,4:53"`.
 Also watch `52` doesn't get anywhere near the dog's screen -- **there is no
 default guard against this** (see "Safety" below), so this is on you to
 confirm visually every time, not something the script prevents.
@@ -74,7 +74,7 @@ unconfirmed arm-joint direction:
 ```bash
 uv run python main.py \
     --leader-server 192.168.68.66 --follower-server 192.168.68.56 \
-    --map 8:51 --yaw-leader-id 1
+    --map 8:51:inv --yaw-leader-id 1
 ```
 
 Leave M1 centered (from the rest-sample) and confirm the dog doesn't
@@ -89,7 +89,7 @@ if it rotates when M1 is nominally centered but slightly jittery.
 ```bash
 uv run python main.py \
     --leader-server 192.168.68.66 --follower-server 192.168.68.56 \
-    --map 8:51 --fwd-leader-id 2
+    --map 8:51:inv --fwd-leader-id 2
 ```
 
 Leave M2 centered and confirm the dog stays put. Move M2 the one direction
@@ -106,7 +106,7 @@ turns out to be near a joint limit, it'll say so.
 ```bash
 uv run python main.py \
     --leader-server 192.168.68.66 --follower-server 192.168.68.56 \
-    --map "8:51,6:52:inv,4:53" --yaw-leader-id 1 --fwd-leader-id 2
+    --map "8:51:inv,6:52:inv,4:53" --yaw-leader-id 1 --fwd-leader-id 2
 ```
 
 (`:inv` here is illustrative -- only include it if step 2 actually showed
@@ -155,8 +155,9 @@ All three are YAML-only (`AxisConfig.center_pct`, `JointMap.leader_range_pct`,
 Session-level flags (`--verbose`, `--rest-sample-s`, `--calib-log`,
 `--leader-smoothing-alpha`) still come from the CLI either way. See
 `configs/three-axes-test.yaml` for a worked example currently covering yaw
-and the arm (M1 -> yaw, M6 -> follower `52` using only the leader's lower
-half of travel `[0, 50]`, M8 -> follower `51` gripper) -- forward/backward
+(M1, inverted) and the arm (M6 -> follower `52`, M4 -> follower `53`, both
+windowed from each leader's live-sampled rest position via the `"rest"`
+sentinel; M8 -> follower `51` gripper, inverted) -- forward/backward
 (`MixedAxisConfig`) was tried and removed again while yaw + arm get proven
 out on their own; the mixed-axis code is still there, just unused by this
 file for now:
@@ -255,18 +256,23 @@ Each tick:
 2. Projects that percentage linearly onto the follower's `0-255` range
    (padded by a small margin so a literal `0` or `255` is never commanded).
 
-So as long as the **leader gripper is calibrated** on its own station (fully
+As long as the **leader gripper is calibrated** on its own station (fully
 open/closed taught, e.g. via `st3215-calibration-dump-py` or the station's
-calibration flow), "leader fully closed" maps to "follower fully closed"
-regardless of how different the raw ranges are. The follower side has no
-calibration to read -- `0x00`/`0xFF` are its actual fully-closed/fully-open
-endpoints by hardware design, not arbitrary raw values.
+calibration flow), "leader fully closed" *should* map to "follower fully
+closed" regardless of how different the raw ranges are, on the assumption
+that the leader's calibrated `0%` and the dog's raw `0x00` both mean
+"closed." The follower side has no calibration to read -- `0x00`/`0xFF` are
+its actual fully-closed/fully-open endpoints by hardware design, not
+arbitrary raw values.
 
-**Direction**, confirmed on this rig: the leader's station-viewer reports
-`0% = closed, 100% = open`, and the dog gripper is `0 = closed, 255 = open`.
-Both sides already agree on sense, so the default (no `:inv`) is correct for
-`8:51` -- **no inversion needed for the gripper**. Use `:inv` only for a pair
-where the two mechanisms disagree on which end is "closed".
+**Direction is rig-dependent -- don't assume, verify against the real
+follower.** An earlier pass here assumed the leader's station-viewer
+(`0% = closed, 100% = open`) and the dog gripper (`0 = closed, 255 = open`)
+already agreed on sense, so no inversion was needed. Confirmed against a
+real DogZilla, that assumption was wrong on this rig -- the two sides
+disagree, and `8:51` needs `:inv` (`invert: true` in a YAML config, matching
+`configs/three-axes-test.yaml`) to actually close when the leader closes.
+Verify this on your own rig before trusting either direction.
 
 ## Movement axes: yaw and forward/backward
 
@@ -277,7 +283,7 @@ forward, the whole dog creeps toward it:
 ```bash
 uv run python main.py \
     --leader-server 192.168.68.66 --follower-server 192.168.68.56 \
-    --map "8:51,6:52,4:53" --yaw-leader-id 1 --fwd-leader-id 2
+    --map "8:51:inv,6:52,4:53" --yaw-leader-id 1 --fwd-leader-id 2
 ```
 
 Both work identically, just wired to different `MovementCommand` fields and
