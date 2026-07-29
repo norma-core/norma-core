@@ -453,21 +453,27 @@ impl Station {
                     }
                 }
 
-                let config = dfrobot_rs485::DfrobotRs485DriverConfig {
-                    ports: dfrobot_config.ports.clone(),
-                    baud: dfrobot_config.baud,
-                    poll_interval: dfrobot_config.poll_interval,
-                    sensors,
-                };
+                if sensors.is_empty() && !dfrobot_config.sensors.is_empty() {
+                    log::error!(
+                        "DFRobot RS485 driver disabled: no valid sensors after config translation"
+                    );
+                } else {
+                    let config = dfrobot_rs485::DfrobotRs485DriverConfig {
+                        ports: dfrobot_config.ports.clone(),
+                        baud: dfrobot_config.baud,
+                        poll_interval: dfrobot_config.poll_interval,
+                        sensors,
+                    };
 
-                if let Err(error) = dfrobot_rs485::start_dfrobot_rs485_driver(
-                    self.normfs.clone(),
-                    self.engine.clone(),
-                    config,
-                )
-                .await
-                {
-                    log::error!("Failed to start DFRobot RS485 driver: {}", error);
+                    if let Err(error) = dfrobot_rs485::start_dfrobot_rs485_driver(
+                        self.normfs.clone(),
+                        self.engine.clone(),
+                        config,
+                    )
+                    .await
+                    {
+                        log::error!("Failed to start DFRobot RS485 driver: {}", error);
+                    }
                 }
             } else {
                 log::info!("DFRobot RS485 driver disabled by configuration");

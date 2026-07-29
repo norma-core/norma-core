@@ -24,6 +24,9 @@ const RESPONSE_TIMEOUT: Duration = Duration::from_millis(300);
 const INTER_FRAME_GAP: Duration = Duration::from_millis(5);
 /// How often to rescan candidate ports while no port is claimed.
 const PORT_SCAN_INTERVAL: Duration = Duration::from_secs(3);
+/// Fallback poll interval substituted when configured with a zero Duration
+/// (which would otherwise panic `tokio::time::interval`).
+const DEFAULT_POLL_INTERVAL: Duration = Duration::from_secs(1);
 
 type DriverResult<T> = Result<T, Box<dyn std::error::Error + Send + Sync>>;
 
@@ -95,10 +98,18 @@ impl DfrobotRs485Driver {
     pub async fn new<T: StationEngine>(
         normfs: Arc<NormFS>,
         station_engine: Arc<T>,
-        config: DfrobotRs485DriverConfig,
+        mut config: DfrobotRs485DriverConfig,
     ) -> DriverResult<Self> {
         if config.sensors.is_empty() {
             warn!("DFRobot RS485 driver enabled with no sensors configured");
+        }
+
+        if config.poll_interval.is_zero() {
+            warn!(
+                "DFRobot RS485 poll-interval is zero, using {:?}",
+                DEFAULT_POLL_INTERVAL
+            );
+            config.poll_interval = DEFAULT_POLL_INTERVAL;
         }
 
         let mut states = Vec::with_capacity(config.sensors.len());
@@ -344,7 +355,8 @@ fn expand_port_globs(patterns: &[String]) -> Vec<String> {
         matched.sort();
         candidates.extend(matched);
     }
-    candidates.dedup();
+    let mut seen = std::collections::HashSet::new();
+    candidates.retain(|candidate| seen.insert(candidate.clone()));
     candidates
 }
 
@@ -418,6 +430,52 @@ mod tests {
             modbus_id: 3,
         });
         assert_eq!(sensor.id, "uv-3");
+    }
+
+    #[test]
+    fn envelope_encoding_round_trip() {
+        let envelope = RxEnvelope {
+            monotonic_stamp_ns: 111,
+            local_stamp_ns: 222,
+            app_start_id: 333,
+            signal_type: DfrobotSignalType::DfrobotRegistersSnapshot as i32,
+            device: Some(DfrobotDevice {
+                id: "irradiance-1".to_string(),
+                model: SensorModel::Irradiance.proto() as i32,
+                modbus_id: 1,
+                port_name: "/dev/ttyUSB0".to_string(),
+                baud: 9600,
+            }),
+            ranges: vec![
+                RegisterRange {
+                    start_register: 0x07D0,
+                    data: Bytes::from_static(&[0x00, 0x01, 0x02, 0x03]),
+                },
+                RegisterRange {
+                    start_register: 0x07D4,
+                    data: Bytes::from_static(&[0xAA, 0xBB]),
+                },
+            ],
+            error: "boom".to_string(),
+        };
+
+        let mut buffer = Vec::new();
+        Message::encode(&envelope, &mut buffer).expect("encode should succeed");
+
+        let decoded = RxEnvelope::decode(buffer.as_slice()).expect("decode should succeed");
+
+        assert_eq!(decoded.signal_type, envelope.signal_type);
+        let device = decoded.device.expect("device should be present");
+        let expected_device = envelope.device.unwrap();
+        assert_eq!(device.id, expected_device.id);
+        assert_eq!(device.model, expected_device.model);
+        assert_eq!(device.modbus_id, expected_device.modbus_id);
+        assert_eq!(decoded.ranges.len(), 2);
+        assert_eq!(decoded.ranges[0].start_register, 0x07D0);
+        assert_eq!(decoded.ranges[0].data.as_ref(), &[0x00, 0x01, 0x02, 0x03]);
+        assert_eq!(decoded.ranges[1].start_register, 0x07D4);
+        assert_eq!(decoded.ranges[1].data.as_ref(), &[0xAA, 0xBB]);
+        assert_eq!(decoded.error, "boom");
     }
 
     #[test]
