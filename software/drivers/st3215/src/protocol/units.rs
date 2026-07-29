@@ -3,6 +3,23 @@ use super::memory::RamRegister;
 pub const MAX_ANGLE_STEP: u16 = 4095;
 const SIGN_BIT_MASK: u16 = 0x8000;
 
+/// Encodes a signed magnitude using Feetech's "direction bit" convention, used
+/// by Speed/Load/PWM-style 16-bit registers (distinct from `PresentPosition`'s
+/// bit-15 sign-extension handled by `normal_position` above): bits
+/// `0..bit_pos` hold the magnitude, and `bit_pos` itself is the sign (1 =
+/// negative). `magnitude` is clamped to what fits below `bit_pos` before
+/// encoding, so an out-of-range caller can't corrupt the sign bit or bits
+/// above it.
+pub fn encode_direction_bit(value: i16, bit_pos: u8) -> u16 {
+    let max_magnitude = (1u16 << bit_pos) - 1;
+    let magnitude = (value.unsigned_abs()).min(max_magnitude);
+    if value < 0 {
+        magnitude | (1u16 << bit_pos)
+    } else {
+        magnitude
+    }
+}
+
 pub fn normal_position(position: u16) -> u16 {
     if position & SIGN_BIT_MASK != 0 {
         let magnitude = position & MAX_ANGLE_STEP;

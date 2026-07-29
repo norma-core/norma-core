@@ -423,6 +423,7 @@ impl Station {
         if let Some(mirroring_inference) = self.motors_mirroring_inference.lock().as_ref() {
             log::info!("Stopping any active gravity compensation tasks...");
             mirroring_inference.stop_all_gravity_comp();
+            mirroring_inference.stop_all_pwm_gravity_comp();
         }
 
         log::info!("Closing NormFS (writing WAL)...");

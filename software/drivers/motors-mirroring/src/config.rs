@@ -28,6 +28,34 @@ pub fn clamp_gravity_comp_gain(gain: f64) -> f64 {
     gain.clamp(0.0, GRAVITY_COMP_GAIN_CEILING)
 }
 
+/// Hard ceiling on PWM duty cycle (out of the servo's native ±1000 open-loop
+/// range), including when set live from the UI - independent of any
+/// config-file value. Deliberately more conservative than
+/// `GRAVITY_COMP_TORQUE_LIMIT_CEILING`'s ratio (150/1000): this control law is
+/// fully open-loop (no position feedback stops a joint at a mechanical limit)
+/// and has not been validated on real hardware the way the offset-based
+/// `gravity_comp` module was before merge.
+pub const PWM_GRAVITY_COMP_MAX_DUTY_CEILING: u16 = 100;
+
+pub fn clamp_pwm_gravity_comp_max_duty(value: u16) -> u16 {
+    value.min(PWM_GRAVITY_COMP_MAX_DUTY_CEILING)
+}
+
+/// Hard ceiling on `duty_per_nm`, including when set live from the UI (see
+/// `gravity_comp_pwm::GravityCompPwm::set_duty_gain`) - independent of any
+/// config-file value. `duty_per_nm` has no natural physical ceiling the way
+/// `gain_rad_per_nm` does (there's no joint-angle range to overshoot), so this
+/// value is chosen generously loose - `PWM_GRAVITY_COMP_MAX_DUTY_CEILING` is
+/// the ceiling that actually matters day-to-day.
+pub const PWM_GRAVITY_COMP_DUTY_GAIN_CEILING: f64 = 1000.0;
+
+pub fn clamp_pwm_gravity_comp_duty_gain(duty_per_nm: f64) -> f64 {
+    if !duty_per_nm.is_finite() {
+        return 0.0;
+    }
+    duty_per_nm.clamp(0.0, PWM_GRAVITY_COMP_DUTY_GAIN_CEILING)
+}
+
 #[derive(Clone)]
 pub struct MotorConfig {
     pub safety_margin: u16,
@@ -45,6 +73,7 @@ pub struct MotorConfig {
     /// If a motor_id is in this map, its value overrides the default current_threshold.
     pub per_motor_current_threshold: HashMap<u8, u16>,
     pub gravity_comp: GravityCompConfig,
+    pub pwm_gravity_comp: PwmGravityCompConfig,
 }
 
 /// Tunables for the leader-arm gravity compensation control loop.
@@ -86,6 +115,46 @@ impl Default for GravityCompConfig {
     }
 }
 
+/// Tunables for the leader-arm PWM (open-loop) gravity compensation control
+/// loop - a direct feedforward-torque alternative to `GravityCompConfig`'s
+/// position-offset approximation. See `gravity_comp_pwm::CLAUDE.md` for why
+/// this is a fundamentally different (and less proven) control law.
+///
+/// `duty_per_nm` cannot be derived analytically any more than
+/// `gain_rad_per_nm` can - it must be tuned empirically on real hardware.
+/// Unlike `gain_rad_per_nm`, it defaults to exactly zero: this control law has
+/// never been validated on real hardware, so enabling it should do nothing
+/// until an operator deliberately dials it up.
+#[derive(Clone, Copy)]
+pub struct PwmGravityCompConfig {
+    pub duty_per_nm: f64,
+    pub max_duty: u16,
+    pub current_cutoff: u16,
+    pub stale_cutoff_cycles: u32,
+}
+
+impl PwmGravityCompConfig {
+    /// Clamp user-supplied values to hard safety ceilings - never trust
+    /// configured values alone.
+    pub fn clamped(mut self) -> Self {
+        self.max_duty = clamp_pwm_gravity_comp_max_duty(self.max_duty);
+        self.duty_per_nm = clamp_pwm_gravity_comp_duty_gain(self.duty_per_nm);
+        self
+    }
+}
+
+impl Default for PwmGravityCompConfig {
+    fn default() -> Self {
+        Self {
+            duty_per_nm: 0.0,
+            max_duty: 60,
+            current_cutoff: 60,
+            stale_cutoff_cycles: 5,
+        }
+        .clamped()
+    }
+}
+
 impl MotorConfig {
     /// Get the effective current threshold for a specific motor.
     /// Returns the per-motor override if set, otherwise the default threshold.
@@ -120,6 +189,7 @@ impl Default for MotorConfig {
             current_threshold: 100, // enabled by default with threshold of 100
             per_motor_current_threshold: HashMap::new(),
             gravity_comp: GravityCompConfig::default(),
+            pwm_gravity_comp: PwmGravityCompConfig::default(),
         }
     }
 }
@@ -138,11 +208,23 @@ impl From<&station_iface::config::St3215Config> for MotorConfig {
             }.clamped())
             .unwrap_or_default();
 
+        let pwm_gravity_comp = config
+            .pwm_gravity_comp
+            .as_ref()
+            .map(|pgc| PwmGravityCompConfig {
+                duty_per_nm: pgc.duty_per_nm,
+                max_duty: pgc.max_duty,
+                current_cutoff: pgc.current_cutoff,
+                stale_cutoff_cycles: pgc.stale_cutoff_cycles,
+            }.clamped())
+            .unwrap_or_default();
+
         Self {
             current_threshold: config.current_threshold,
             deadband: config.deadband,
             per_motor_current_threshold: config.motor_current_thresholds.clone().unwrap_or_default(),
             gravity_comp,
+            pwm_gravity_comp,
             ..Default::default()
         }
     }

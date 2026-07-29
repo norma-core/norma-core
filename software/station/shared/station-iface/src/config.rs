@@ -93,6 +93,13 @@ pub struct St3215Config {
     /// if not specified, gravity compensation uses conservative built-in defaults.
     #[serde(rename = "gravity-comp", default, skip_serializing_if = "Option::is_none")]
     pub gravity_comp: Option<GravityCompConfig>,
+
+    /// PWM (open-loop) gravity compensation tuning for the leader arm (ElRobot
+    /// only) - a direct feedforward-torque alternative to `gravity_comp`'s
+    /// position-offset approximation. Optional - if not specified, defaults to
+    /// zero duty gain (enabling it does nothing until tuned live from the UI).
+    #[serde(rename = "pwm-gravity-comp", default, skip_serializing_if = "Option::is_none")]
+    pub pwm_gravity_comp: Option<PwmGravityCompConfig>,
 }
 
 fn default_st3215_enabled() -> bool {
@@ -115,6 +122,7 @@ impl Default for St3215Config {
             motor_current_thresholds: None,
             deadband: 20,
             gravity_comp: None,
+            pwm_gravity_comp: None,
         }
     }
 }
@@ -170,6 +178,56 @@ impl Default for GravityCompConfig {
             torque_limit: default_gravity_comp_torque_limit(),
             current_cutoff: default_gravity_comp_current_cutoff(),
             stale_cutoff_cycles: default_gravity_comp_stale_cutoff_cycles(),
+        }
+    }
+}
+
+/// PWM (open-loop) gravity compensation tuning - see `GravityCompConfig`'s
+/// doc comment for the general rationale (`duty_per_nm` is likewise not
+/// derivable and must be tuned empirically). Unlike `gain_rad_per_nm`,
+/// `duty_per_nm` defaults to exactly zero: this control law switches the
+/// servo out of position mode entirely and has not been validated on real
+/// hardware, so enabling it should do nothing until an operator deliberately
+/// dials it up. `max_duty` is hard-clamped to a safety ceiling in the
+/// motors-mirroring crate regardless of what's configured here.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct PwmGravityCompConfig {
+    #[serde(rename = "duty-per-nm", default = "default_pwm_gravity_comp_duty_per_nm")]
+    pub duty_per_nm: f64,
+
+    #[serde(rename = "max-duty", default = "default_pwm_gravity_comp_max_duty")]
+    pub max_duty: u16,
+
+    #[serde(rename = "current-cutoff", default = "default_pwm_gravity_comp_current_cutoff")]
+    pub current_cutoff: u16,
+
+    #[serde(rename = "stale-cutoff-cycles", default = "default_pwm_gravity_comp_stale_cutoff_cycles")]
+    pub stale_cutoff_cycles: u32,
+}
+
+fn default_pwm_gravity_comp_duty_per_nm() -> f64 {
+    0.0
+}
+
+fn default_pwm_gravity_comp_max_duty() -> u16 {
+    60
+}
+
+fn default_pwm_gravity_comp_current_cutoff() -> u16 {
+    60
+}
+
+fn default_pwm_gravity_comp_stale_cutoff_cycles() -> u32 {
+    5
+}
+
+impl Default for PwmGravityCompConfig {
+    fn default() -> Self {
+        Self {
+            duty_per_nm: default_pwm_gravity_comp_duty_per_nm(),
+            max_duty: default_pwm_gravity_comp_max_duty(),
+            current_cutoff: default_pwm_gravity_comp_current_cutoff(),
+            stale_cutoff_cycles: default_pwm_gravity_comp_stale_cutoff_cycles(),
         }
     }
 }

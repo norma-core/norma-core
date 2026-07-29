@@ -22,6 +22,7 @@ pub struct Inference {
     normfs: Arc<NormFS>,
     config: config::MotorConfig,
     gravity_comp: crate::gravity_comp::GravityComp,
+    gravity_comp_pwm: crate::gravity_comp_pwm::GravityCompPwm,
 }
 
 impl Inference {
@@ -34,6 +35,7 @@ impl Inference {
             normfs,
             config: config.clone(),
             gravity_comp: crate::gravity_comp::GravityComp::new(),
+            gravity_comp_pwm: crate::gravity_comp_pwm::GravityCompPwm::new(),
         };
 
         let state = Arc::clone(&res.state);
@@ -52,6 +54,10 @@ impl Inference {
     /// the control loop terminates itself for safety reasons (stale data or
     /// sustained overcurrent), so the caller can keep displayed mode state
     /// truthful.
+    ///
+    /// Stops PWM gravity comp on `bus` first if it's running - the two
+    /// control laws write conflicting servo state (`Mode` position vs.
+    /// open-loop) and must never run concurrently on the same bus.
     pub fn start_gravity_comp<F>(
         &self,
         bus: BusKey,
@@ -61,6 +67,9 @@ impl Inference {
     ) where
         F: Fn(BusKey) + Send + Sync + 'static,
     {
+        if self.gravity_comp_pwm.is_running(&bus) {
+            self.gravity_comp_pwm.stop(&bus, &self.normfs);
+        }
         self.gravity_comp.start(bus, self.config.clone(), initial_gains, initial_torque_limit, Arc::clone(&self.normfs), on_self_stop);
     }
 
@@ -109,6 +118,74 @@ impl Inference {
         crate::gravity_comp::GravitySettings {
             joint_gains: [self.config.gravity_comp.gain_rad_per_nm; 7],
             torque_limit: self.config.gravity_comp.torque_limit,
+        }
+    }
+
+    /// Starts PWM (open-loop) gravity compensation for `bus`. No-op if
+    /// already running. Mirrors `start_gravity_comp` in every respect except
+    /// tuning units and control law - see `gravity_comp_pwm::CLAUDE.md`.
+    ///
+    /// Stops the offset-based gravity comp on `bus` first if it's running -
+    /// the two control laws write conflicting servo state and must never run
+    /// concurrently on the same bus.
+    pub fn start_pwm_gravity_comp<F>(
+        &self,
+        bus: BusKey,
+        initial_duty_gains: Option<crate::gravity_comp_pwm::JointDutyGains>,
+        initial_max_duty: Option<u16>,
+        on_self_stop: F,
+    ) where
+        F: Fn(BusKey) + Send + Sync + 'static,
+    {
+        self.gravity_comp.stop(&bus, &self.normfs);
+        self.gravity_comp_pwm.start(bus, self.config.clone(), initial_duty_gains, initial_max_duty, Arc::clone(&self.normfs), on_self_stop);
+    }
+
+    /// Stops PWM gravity compensation for `bus` (if running): zeroes PWM
+    /// output, disables torque, and restores position mode.
+    pub fn stop_pwm_gravity_comp(&self, bus: BusKey) {
+        self.gravity_comp_pwm.stop(&bus, &self.normfs);
+    }
+
+    /// Live-updates the duty gain of one arm joint (`motor_id`, 1-7) for
+    /// `bus` without restarting it. Returns `false` if PWM gravity comp isn't
+    /// currently running on that bus, or `motor_id` isn't a compensated joint.
+    pub fn set_pwm_gravity_comp_duty_gain(&self, bus: &BusKey, motor_id: u8, duty_per_nm: f64) -> bool {
+        self.gravity_comp_pwm.set_duty_gain(bus, motor_id, duty_per_nm)
+    }
+
+    /// Live-updates the PWM-gravity-comp max duty for `bus` without
+    /// restarting it. Returns `false` if it isn't currently running on that
+    /// bus.
+    pub fn set_pwm_gravity_comp_max_duty(&self, bus: &BusKey, max_duty: u16) -> bool {
+        self.gravity_comp_pwm.set_max_duty(bus, max_duty)
+    }
+
+    /// Returns the currently active per-joint PWM-gravity-comp duty gains
+    /// for `bus`, or `None` if it isn't running on that bus.
+    pub fn get_pwm_gravity_comp_duty_gains(&self, bus: &BusKey) -> Option<crate::gravity_comp_pwm::JointDutyGains> {
+        self.gravity_comp_pwm.get_duty_gains(bus)
+    }
+
+    /// Returns the currently active PWM-gravity-comp max duty for `bus`, or
+    /// `None` if it isn't running on that bus.
+    pub fn get_pwm_gravity_comp_max_duty(&self, bus: &BusKey) -> Option<u16> {
+        self.gravity_comp_pwm.get_max_duty(bus)
+    }
+
+    /// Stops every currently-running PWM-gravity-comp task. Called during
+    /// graceful process shutdown, alongside `stop_all_gravity_comp`.
+    pub fn stop_all_pwm_gravity_comp(&self) {
+        self.gravity_comp_pwm.stop_all(&self.normfs);
+    }
+
+    /// The configured defaults (from YAML, or built-in if unset) for a bus
+    /// that has no running PWM-gravity-comp task and no staged/saved settings
+    /// yet.
+    pub fn pwm_gravity_comp_defaults(&self) -> crate::gravity_comp_pwm::PwmGravitySettings {
+        crate::gravity_comp_pwm::PwmGravitySettings {
+            joint_duty_gains: [self.config.pwm_gravity_comp.duty_per_nm; 7],
+            max_duty: self.config.pwm_gravity_comp.max_duty,
         }
     }
 
@@ -479,14 +556,29 @@ impl Inference {
         };
 
         // Group commands by (bus_id, address) for SyncWrite batching
+        let mut eeprom_lock_cmds: HashMap<String, Vec<(u32, Bytes)>> = HashMap::new();
+        let mut mode_cmds: HashMap<String, Vec<(u32, Bytes)>> = HashMap::new();
         let mut torque_limit_cmds: HashMap<String, Vec<(u32, Bytes)>> = HashMap::new();
         let mut torque_cmds: HashMap<String, Vec<(u32, Bytes)>> = HashMap::new();
         let mut speed_cmds: HashMap<String, Vec<(u32, Bytes)>> = HashMap::new();
         let mut accel_cmds: HashMap<String, Vec<(u32, Bytes)>> = HashMap::new();
         let mut goal_cmds: HashMap<String, Vec<(u32, Bytes)>> = HashMap::new();
+        let mut pwm_cmds: HashMap<String, Vec<(u32, Bytes)>> = HashMap::new();
 
         for cmd in &commands {
             match cmd.command {
+                MotorCommand::EepromLock(lock) => {
+                    eeprom_lock_cmds
+                        .entry(cmd.target_bus_id.clone())
+                        .or_default()
+                        .push((cmd.motor_id, Bytes::from(vec![lock])));
+                }
+                MotorCommand::Mode(mode) => {
+                    mode_cmds
+                        .entry(cmd.target_bus_id.clone())
+                        .or_default()
+                        .push((cmd.motor_id, Bytes::from(vec![mode])));
+                }
                 MotorCommand::TorqueLimit(limit) => {
                     torque_limit_cmds
                         .entry(cmd.target_bus_id.clone())
@@ -517,10 +609,43 @@ impl Inference {
                         .or_default()
                         .push((cmd.motor_id, Bytes::from(pos.to_le_bytes().to_vec())));
                 }
+                MotorCommand::Pwm(duty) => {
+                    let encoded = st3215::protocol::encode_direction_bit(duty, 10);
+                    pwm_cmds
+                        .entry(cmd.target_bus_id.clone())
+                        .or_default()
+                        .push((cmd.motor_id, Bytes::from(encoded.to_le_bytes().to_vec())));
+                }
             }
         }
 
-        // Maintain order: torque limit → torque enable → speed/accel → goal
+        // Maintain order: eeprom lock → mode → torque limit → torque enable →
+        // speed/accel → goal → pwm. A single call can only carry one value per
+        // register per motor (the grouping above collapses duplicates), so
+        // callers that need the *same* register written twice with different
+        // values in sequence (e.g. unlock EEPROM, write Mode, re-lock EEPROM)
+        // must split that into multiple `send_st3215_commands` calls - see
+        // `gravity_comp_pwm::{send_setup_commands, send_teardown_commands}`.
+        // 0a. EEPROM lock/unlock (gates the Mode write just below)
+        for (bus_id, motors) in eeprom_lock_cmds {
+            Self::add_sync_write_to_pack(
+                &mut pack,
+                bus_id,
+                st3215::protocol::RamRegister::Lock.address() as u32,
+                motors,
+            );
+        }
+
+        // 0b. Servo mode (position vs. open-loop PWM)
+        for (bus_id, motors) in mode_cmds {
+            Self::add_sync_write_to_pack(
+                &mut pack,
+                bus_id,
+                st3215::protocol::EepromRegister::Mode.address() as u32,
+                motors,
+            );
+        }
+
         // 1. Torque limit (so the very first torque-enable already respects it)
         for (bus_id, motors) in torque_limit_cmds {
             Self::add_sync_write_to_pack(
@@ -567,6 +692,16 @@ impl Inference {
                 &mut pack,
                 bus_id,
                 st3215::protocol::RamRegister::GoalPosition.address() as u32,
+                motors,
+            );
+        }
+
+        // 5. PWM duty cycle (GoalTime register, only meaningful while Mode == 2)
+        for (bus_id, motors) in pwm_cmds {
+            Self::add_sync_write_to_pack(
+                &mut pack,
+                bus_id,
+                st3215::protocol::RamRegister::GoalTime.address() as u32,
                 motors,
             );
         }

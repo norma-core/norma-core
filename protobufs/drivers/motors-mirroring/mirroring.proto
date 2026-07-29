@@ -55,6 +55,7 @@ message RxEnvelope {
     Command        command = 11;
 
     GravityCompCommand gravity_command = 12;
+    PwmGravityCompCommand pwm_gravity_command = 13;
 }
 
 message InferenceState {
@@ -73,6 +74,7 @@ message InferenceState {
     repeated Mirroring mirroring = 11;
 
     repeated GravityCompBusState gravity_comp = 12;
+    repeated PwmGravityCompBusState pwm_gravity_comp = 13;
 }
 
 // Gravity compensation is an orthogonal per-bus flag, independent of BusMode:
@@ -154,4 +156,84 @@ message GravityCompSettingsEnvelope {
     MirroringBus    bus                     = 4;
     repeated double joint_gains_rad_per_nm  = 5;
     uint32          torque_limit             = 6;
+}
+
+// PWM (open-loop) gravity compensation: a direct feedforward-torque
+// alternative to the position-offset approach above, switching the servo's
+// Mode register to open-loop PWM instead of nudging GoalPosition. Reuses
+// GravityCompState (generic enabled/disabled) rather than duplicating it.
+// Modeled the same way as the offset-based feature - an orthogonal per-bus
+// flag, its own dedicated command type (STC_PWM_GRAVITY_COMP_COMMAND) to
+// avoid proto3 decode ambiguity between different message shapes on the same
+// wire type - and is mutually exclusive with GravityCompCommand on the same
+// bus (both actively drive the same servos' registers; see
+// gravity_comp_pwm::CLAUDE.md).
+message PwmGravityCompModeEnvelope {
+    uint64 monotonic_stamp_ns = 1;
+    uint64 local_stamp_ns     = 2;
+    uint64 app_start_id       = 3;
+
+    MirroringBus     bus   = 4;
+    GravityCompState state = 5;
+}
+
+enum PwmGravityCompCommandType {
+    PGCT_START_PWM_GRAVITY_COMP = 0;
+    PGCT_STOP_PWM_GRAVITY_COMP  = 1;
+    // Live-updates the duty-per-Nm gain of one arm joint on an already-running
+    // PWM gravity-comp task, without restarting it. Requires motor_id and
+    // duty_per_nm. No-op (logged) if PWM gravity comp isn't running on `bus`.
+    PGCT_SET_DUTY_GAIN          = 2;
+    // Live-updates the max duty (applies to all 7 arm motors), without
+    // restarting. Requires max_duty.
+    PGCT_SET_MAX_DUTY           = 3;
+    // Persists the bus's current per-joint duty gains and max duty (whether
+    // running or not) so they're pre-filled as defaults next time PWM gravity
+    // comp is started on this bus, surviving a station restart. This is
+    // display/pre-fill data only - saving never re-arms it.
+    PGCT_SAVE_SETTINGS          = 4;
+}
+
+message PwmGravityCompCommand {
+    PwmGravityCompCommandType type = 1;
+    MirroringBus              bus  = 2;
+
+    // PGCT_SET_DUTY_GAIN: the new duty-per-Nm gain for `motor_id`.
+    // Hard-clamped server-side (see PWM_GRAVITY_COMP_DUTY_GAIN_CEILING).
+    optional double duty_per_nm = 3;
+
+    // PGCT_SET_DUTY_GAIN: which arm motor (1-7) `duty_per_nm` applies to.
+    optional uint32 motor_id = 4;
+
+    // PGCT_SET_MAX_DUTY: the new max duty for all 7 arm motors.
+    // Hard-clamped server-side (see PWM_GRAVITY_COMP_MAX_DUTY_CEILING).
+    optional uint32 max_duty = 5;
+}
+
+message PwmGravityCompBusState {
+    MirroringBus     id    = 1;
+    GravityCompState state = 2;
+
+    // Per-joint duty gains for the 7 arm motors, index 0..6 = rev_motor_01..07.
+    // Reflects live values while running, or the last-saved values
+    // (PGCT_SAVE_SETTINGS) otherwise.
+    repeated double joint_duty_gains = 4;
+
+    // Max duty for all 7 arm motors - live value while running, or the
+    // last-saved value otherwise.
+    optional uint32 max_duty = 5;
+}
+
+// Persisted per-bus PWM-gravity-comp tuning
+// (motors_mirroring/pwm_gravity_comp_settings queue). Restored on startup for
+// display/pre-fill only - never re-arms PWM gravity comp itself, matching
+// PwmGravityCompModeEnvelope's restore semantics.
+message PwmGravityCompSettingsEnvelope {
+    uint64 monotonic_stamp_ns = 1;
+    uint64 local_stamp_ns     = 2;
+    uint64 app_start_id       = 3;
+
+    MirroringBus    bus               = 4;
+    repeated double joint_duty_gains  = 5;
+    uint32          max_duty          = 6;
 }

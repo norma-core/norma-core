@@ -248,6 +248,8 @@ export namespace drivers {
         QDT_MOTOR_MIRRORING_RX = 32,
         QDT_MOTOR_MIRRORING_GRAVITY_COMP_MODES = 33,
         QDT_MOTOR_MIRRORING_GRAVITY_COMP_SETTINGS = 34,
+        QDT_MOTOR_MIRRORING_PWM_GRAVITY_COMP_MODES = 35,
+        QDT_MOTOR_MIRRORING_PWM_GRAVITY_COMP_SETTINGS = 36,
         QDT_YAHBOOM_DOGZILLA_LITE_SERIAL_TX = 40,
         QDT_YAHBOOM_DOGZILLA_LITE_SERIAL_RX = 41,
         QDT_YAHBOOM_DOGZILLA_LITE_INFERENCE = 42
@@ -259,7 +261,8 @@ export namespace drivers {
         STC_MOTOR_MIRRORING_COMMAND = 1,
         STC_INFERENCE_TAG_COMMAND = 2,
         STC_YAHBOOM_DOGZILLA_LITE_COMMAND = 3,
-        STC_GRAVITY_COMP_COMMAND = 4
+        STC_GRAVITY_COMP_COMMAND = 4,
+        STC_PWM_GRAVITY_COMP_COMMAND = 5
     }
 }
 
@@ -5055,6 +5058,9 @@ export namespace motors_mirroring {
 
         /** RxEnvelope gravityCommand */
         gravityCommand?: (motors_mirroring.IGravityCompCommand|null);
+
+        /** RxEnvelope pwmGravityCommand */
+        pwmGravityCommand?: (motors_mirroring.IPwmGravityCompCommand|null);
     }
 
     /** Represents a RxEnvelope. */
@@ -5083,6 +5089,9 @@ export namespace motors_mirroring {
 
         /** RxEnvelope gravityCommand. */
         public gravityCommand?: (motors_mirroring.IGravityCompCommand|null);
+
+        /** RxEnvelope pwmGravityCommand. */
+        public pwmGravityCommand?: (motors_mirroring.IPwmGravityCompCommand|null);
 
         /**
          * Creates a new RxEnvelope instance using the specified properties.
@@ -5173,6 +5182,9 @@ export namespace motors_mirroring {
 
         /** InferenceState gravityComp */
         gravityComp?: (motors_mirroring.IGravityCompBusState[]|null);
+
+        /** InferenceState pwmGravityComp */
+        pwmGravityComp?: (motors_mirroring.IPwmGravityCompBusState[]|null);
     }
 
     /** Represents an InferenceState. */
@@ -5192,6 +5204,9 @@ export namespace motors_mirroring {
 
         /** InferenceState gravityComp. */
         public gravityComp: motors_mirroring.IGravityCompBusState[];
+
+        /** InferenceState pwmGravityComp. */
+        public pwmGravityComp: motors_mirroring.IPwmGravityCompBusState[];
 
         /**
          * Creates a new InferenceState instance using the specified properties.
@@ -5974,6 +5989,499 @@ export namespace motors_mirroring {
 
         /**
          * Gets the default type url for GravityCompSettingsEnvelope
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
+    /** Properties of a PwmGravityCompModeEnvelope. */
+    interface IPwmGravityCompModeEnvelope {
+
+        /** PwmGravityCompModeEnvelope monotonicStampNs */
+        monotonicStampNs?: (Long|null);
+
+        /** PwmGravityCompModeEnvelope localStampNs */
+        localStampNs?: (Long|null);
+
+        /** PwmGravityCompModeEnvelope appStartId */
+        appStartId?: (Long|null);
+
+        /** PwmGravityCompModeEnvelope bus */
+        bus?: (motors_mirroring.IMirroringBus|null);
+
+        /** PwmGravityCompModeEnvelope state */
+        state?: (motors_mirroring.GravityCompState|null);
+    }
+
+    /** Represents a PwmGravityCompModeEnvelope. */
+    class PwmGravityCompModeEnvelope implements IPwmGravityCompModeEnvelope {
+
+        /**
+         * Constructs a new PwmGravityCompModeEnvelope.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: motors_mirroring.IPwmGravityCompModeEnvelope);
+
+        /** PwmGravityCompModeEnvelope monotonicStampNs. */
+        public monotonicStampNs: Long;
+
+        /** PwmGravityCompModeEnvelope localStampNs. */
+        public localStampNs: Long;
+
+        /** PwmGravityCompModeEnvelope appStartId. */
+        public appStartId: Long;
+
+        /** PwmGravityCompModeEnvelope bus. */
+        public bus?: (motors_mirroring.IMirroringBus|null);
+
+        /** PwmGravityCompModeEnvelope state. */
+        public state: motors_mirroring.GravityCompState;
+
+        /**
+         * Creates a new PwmGravityCompModeEnvelope instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns PwmGravityCompModeEnvelope instance
+         */
+        public static create(properties?: motors_mirroring.IPwmGravityCompModeEnvelope): motors_mirroring.PwmGravityCompModeEnvelope;
+
+        /**
+         * Encodes the specified PwmGravityCompModeEnvelope message. Does not implicitly {@link motors_mirroring.PwmGravityCompModeEnvelope.verify|verify} messages.
+         * @param message PwmGravityCompModeEnvelope message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: motors_mirroring.IPwmGravityCompModeEnvelope, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified PwmGravityCompModeEnvelope message, length delimited. Does not implicitly {@link motors_mirroring.PwmGravityCompModeEnvelope.verify|verify} messages.
+         * @param message PwmGravityCompModeEnvelope message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: motors_mirroring.IPwmGravityCompModeEnvelope, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes a PwmGravityCompModeEnvelope message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns PwmGravityCompModeEnvelope
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): motors_mirroring.PwmGravityCompModeEnvelope;
+
+        /**
+         * Decodes a PwmGravityCompModeEnvelope message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns PwmGravityCompModeEnvelope
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): motors_mirroring.PwmGravityCompModeEnvelope;
+
+        /**
+         * Verifies a PwmGravityCompModeEnvelope message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates a PwmGravityCompModeEnvelope message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns PwmGravityCompModeEnvelope
+         */
+        public static fromObject(object: { [k: string]: any }): motors_mirroring.PwmGravityCompModeEnvelope;
+
+        /**
+         * Creates a plain object from a PwmGravityCompModeEnvelope message. Also converts values to other types if specified.
+         * @param message PwmGravityCompModeEnvelope
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: motors_mirroring.PwmGravityCompModeEnvelope, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this PwmGravityCompModeEnvelope to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for PwmGravityCompModeEnvelope
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
+    /** PwmGravityCompCommandType enum. */
+    enum PwmGravityCompCommandType {
+        PGCT_START_PWM_GRAVITY_COMP = 0,
+        PGCT_STOP_PWM_GRAVITY_COMP = 1,
+        PGCT_SET_DUTY_GAIN = 2,
+        PGCT_SET_MAX_DUTY = 3,
+        PGCT_SAVE_SETTINGS = 4
+    }
+
+    /** Properties of a PwmGravityCompCommand. */
+    interface IPwmGravityCompCommand {
+
+        /** PwmGravityCompCommand type */
+        type?: (motors_mirroring.PwmGravityCompCommandType|null);
+
+        /** PwmGravityCompCommand bus */
+        bus?: (motors_mirroring.IMirroringBus|null);
+
+        /** PwmGravityCompCommand dutyPerNm */
+        dutyPerNm?: (number|null);
+
+        /** PwmGravityCompCommand motorId */
+        motorId?: (number|null);
+
+        /** PwmGravityCompCommand maxDuty */
+        maxDuty?: (number|null);
+    }
+
+    /** Represents a PwmGravityCompCommand. */
+    class PwmGravityCompCommand implements IPwmGravityCompCommand {
+
+        /**
+         * Constructs a new PwmGravityCompCommand.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: motors_mirroring.IPwmGravityCompCommand);
+
+        /** PwmGravityCompCommand type. */
+        public type: motors_mirroring.PwmGravityCompCommandType;
+
+        /** PwmGravityCompCommand bus. */
+        public bus?: (motors_mirroring.IMirroringBus|null);
+
+        /** PwmGravityCompCommand dutyPerNm. */
+        public dutyPerNm?: (number|null);
+
+        /** PwmGravityCompCommand motorId. */
+        public motorId?: (number|null);
+
+        /** PwmGravityCompCommand maxDuty. */
+        public maxDuty?: (number|null);
+
+        /**
+         * Creates a new PwmGravityCompCommand instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns PwmGravityCompCommand instance
+         */
+        public static create(properties?: motors_mirroring.IPwmGravityCompCommand): motors_mirroring.PwmGravityCompCommand;
+
+        /**
+         * Encodes the specified PwmGravityCompCommand message. Does not implicitly {@link motors_mirroring.PwmGravityCompCommand.verify|verify} messages.
+         * @param message PwmGravityCompCommand message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: motors_mirroring.IPwmGravityCompCommand, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified PwmGravityCompCommand message, length delimited. Does not implicitly {@link motors_mirroring.PwmGravityCompCommand.verify|verify} messages.
+         * @param message PwmGravityCompCommand message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: motors_mirroring.IPwmGravityCompCommand, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes a PwmGravityCompCommand message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns PwmGravityCompCommand
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): motors_mirroring.PwmGravityCompCommand;
+
+        /**
+         * Decodes a PwmGravityCompCommand message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns PwmGravityCompCommand
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): motors_mirroring.PwmGravityCompCommand;
+
+        /**
+         * Verifies a PwmGravityCompCommand message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates a PwmGravityCompCommand message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns PwmGravityCompCommand
+         */
+        public static fromObject(object: { [k: string]: any }): motors_mirroring.PwmGravityCompCommand;
+
+        /**
+         * Creates a plain object from a PwmGravityCompCommand message. Also converts values to other types if specified.
+         * @param message PwmGravityCompCommand
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: motors_mirroring.PwmGravityCompCommand, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this PwmGravityCompCommand to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for PwmGravityCompCommand
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
+    /** Properties of a PwmGravityCompBusState. */
+    interface IPwmGravityCompBusState {
+
+        /** PwmGravityCompBusState id */
+        id?: (motors_mirroring.IMirroringBus|null);
+
+        /** PwmGravityCompBusState state */
+        state?: (motors_mirroring.GravityCompState|null);
+
+        /** PwmGravityCompBusState jointDutyGains */
+        jointDutyGains?: (number[]|null);
+
+        /** PwmGravityCompBusState maxDuty */
+        maxDuty?: (number|null);
+    }
+
+    /** Represents a PwmGravityCompBusState. */
+    class PwmGravityCompBusState implements IPwmGravityCompBusState {
+
+        /**
+         * Constructs a new PwmGravityCompBusState.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: motors_mirroring.IPwmGravityCompBusState);
+
+        /** PwmGravityCompBusState id. */
+        public id?: (motors_mirroring.IMirroringBus|null);
+
+        /** PwmGravityCompBusState state. */
+        public state: motors_mirroring.GravityCompState;
+
+        /** PwmGravityCompBusState jointDutyGains. */
+        public jointDutyGains: number[];
+
+        /** PwmGravityCompBusState maxDuty. */
+        public maxDuty?: (number|null);
+
+        /**
+         * Creates a new PwmGravityCompBusState instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns PwmGravityCompBusState instance
+         */
+        public static create(properties?: motors_mirroring.IPwmGravityCompBusState): motors_mirroring.PwmGravityCompBusState;
+
+        /**
+         * Encodes the specified PwmGravityCompBusState message. Does not implicitly {@link motors_mirroring.PwmGravityCompBusState.verify|verify} messages.
+         * @param message PwmGravityCompBusState message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: motors_mirroring.IPwmGravityCompBusState, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified PwmGravityCompBusState message, length delimited. Does not implicitly {@link motors_mirroring.PwmGravityCompBusState.verify|verify} messages.
+         * @param message PwmGravityCompBusState message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: motors_mirroring.IPwmGravityCompBusState, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes a PwmGravityCompBusState message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns PwmGravityCompBusState
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): motors_mirroring.PwmGravityCompBusState;
+
+        /**
+         * Decodes a PwmGravityCompBusState message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns PwmGravityCompBusState
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): motors_mirroring.PwmGravityCompBusState;
+
+        /**
+         * Verifies a PwmGravityCompBusState message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates a PwmGravityCompBusState message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns PwmGravityCompBusState
+         */
+        public static fromObject(object: { [k: string]: any }): motors_mirroring.PwmGravityCompBusState;
+
+        /**
+         * Creates a plain object from a PwmGravityCompBusState message. Also converts values to other types if specified.
+         * @param message PwmGravityCompBusState
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: motors_mirroring.PwmGravityCompBusState, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this PwmGravityCompBusState to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for PwmGravityCompBusState
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
+    /** Properties of a PwmGravityCompSettingsEnvelope. */
+    interface IPwmGravityCompSettingsEnvelope {
+
+        /** PwmGravityCompSettingsEnvelope monotonicStampNs */
+        monotonicStampNs?: (Long|null);
+
+        /** PwmGravityCompSettingsEnvelope localStampNs */
+        localStampNs?: (Long|null);
+
+        /** PwmGravityCompSettingsEnvelope appStartId */
+        appStartId?: (Long|null);
+
+        /** PwmGravityCompSettingsEnvelope bus */
+        bus?: (motors_mirroring.IMirroringBus|null);
+
+        /** PwmGravityCompSettingsEnvelope jointDutyGains */
+        jointDutyGains?: (number[]|null);
+
+        /** PwmGravityCompSettingsEnvelope maxDuty */
+        maxDuty?: (number|null);
+    }
+
+    /** Represents a PwmGravityCompSettingsEnvelope. */
+    class PwmGravityCompSettingsEnvelope implements IPwmGravityCompSettingsEnvelope {
+
+        /**
+         * Constructs a new PwmGravityCompSettingsEnvelope.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: motors_mirroring.IPwmGravityCompSettingsEnvelope);
+
+        /** PwmGravityCompSettingsEnvelope monotonicStampNs. */
+        public monotonicStampNs: Long;
+
+        /** PwmGravityCompSettingsEnvelope localStampNs. */
+        public localStampNs: Long;
+
+        /** PwmGravityCompSettingsEnvelope appStartId. */
+        public appStartId: Long;
+
+        /** PwmGravityCompSettingsEnvelope bus. */
+        public bus?: (motors_mirroring.IMirroringBus|null);
+
+        /** PwmGravityCompSettingsEnvelope jointDutyGains. */
+        public jointDutyGains: number[];
+
+        /** PwmGravityCompSettingsEnvelope maxDuty. */
+        public maxDuty: number;
+
+        /**
+         * Creates a new PwmGravityCompSettingsEnvelope instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns PwmGravityCompSettingsEnvelope instance
+         */
+        public static create(properties?: motors_mirroring.IPwmGravityCompSettingsEnvelope): motors_mirroring.PwmGravityCompSettingsEnvelope;
+
+        /**
+         * Encodes the specified PwmGravityCompSettingsEnvelope message. Does not implicitly {@link motors_mirroring.PwmGravityCompSettingsEnvelope.verify|verify} messages.
+         * @param message PwmGravityCompSettingsEnvelope message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: motors_mirroring.IPwmGravityCompSettingsEnvelope, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified PwmGravityCompSettingsEnvelope message, length delimited. Does not implicitly {@link motors_mirroring.PwmGravityCompSettingsEnvelope.verify|verify} messages.
+         * @param message PwmGravityCompSettingsEnvelope message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: motors_mirroring.IPwmGravityCompSettingsEnvelope, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes a PwmGravityCompSettingsEnvelope message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns PwmGravityCompSettingsEnvelope
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): motors_mirroring.PwmGravityCompSettingsEnvelope;
+
+        /**
+         * Decodes a PwmGravityCompSettingsEnvelope message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns PwmGravityCompSettingsEnvelope
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): motors_mirroring.PwmGravityCompSettingsEnvelope;
+
+        /**
+         * Verifies a PwmGravityCompSettingsEnvelope message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates a PwmGravityCompSettingsEnvelope message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns PwmGravityCompSettingsEnvelope
+         */
+        public static fromObject(object: { [k: string]: any }): motors_mirroring.PwmGravityCompSettingsEnvelope;
+
+        /**
+         * Creates a plain object from a PwmGravityCompSettingsEnvelope message. Also converts values to other types if specified.
+         * @param message PwmGravityCompSettingsEnvelope
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: motors_mirroring.PwmGravityCompSettingsEnvelope, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this PwmGravityCompSettingsEnvelope to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for PwmGravityCompSettingsEnvelope
          * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
          * @returns The default type url
          */

@@ -3,7 +3,7 @@ import Long from 'long';
 import { Camera } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { commandManager } from '@/api/commands';
-import { supportsGravityComp, supportsSt3215Device } from '@/devices/registry';
+import { supportsGravityComp, supportsPwmGravityComp, supportsSt3215Device } from '@/devices/registry';
 import { FrameEntry } from '@/api/frame-parser';
 import { useElementFullscreen } from '@/hooks/useElementFullscreen';
 import { motors_mirroring, st3215, usbvideo } from '@/api/proto.js';
@@ -39,6 +39,14 @@ const DEFAULT_GRAVITY_COMP_GAIN = 0.05;
 const MAX_GRAVITY_COMP_GAIN = 1.0;
 const DEFAULT_GRAVITY_COMP_TORQUE_LIMIT = 100;
 const MAX_GRAVITY_COMP_TORQUE_LIMIT = 150;
+// Matches motors-mirroring's PwmGravityCompConfig defaults and hard ceilings
+// (software/drivers/motors-mirroring/src/config.rs). Defaults to 0 (not a
+// small nonzero guess like gravity-comp gain): this control law is fully
+// open-loop and has not been validated on real hardware, so enabling it
+// should do nothing until an operator deliberately dials it up.
+const DEFAULT_PWM_GRAVITY_COMP_DUTY_GAIN = 0;
+const DEFAULT_PWM_GRAVITY_COMP_MAX_DUTY = 60;
+const MAX_PWM_GRAVITY_COMP_MAX_DUTY = 100;
 
 type RobotViewMode = 'model' | 'camera';
 type CameraLayoutMode = 'pip' | 'side-by-side' | 'stacked';
@@ -139,6 +147,12 @@ const BusCard: React.FC<BusCardProps> = ({
   );
   const gravityCompSupported = supportsGravityComp(bus);
 
+  const pwmGravityCompEntry = mirroringState?.pwmGravityComp?.find(
+    (g) => g.id?.uniqueId === busSerialNumber,
+  );
+  const isPwmGravityCompEnabled = pwmGravityCompEntry?.state === motors_mirroring.GravityCompState.GC_ENABLED;
+  const pwmGravityCompSupported = supportsPwmGravityComp(bus);
+
   // Per-joint gains (motor 1-7 -> gain), falling back to the built-in
   // default for any joint the backend hasn't reported yet (e.g. never
   // touched on this bus).
@@ -149,6 +163,14 @@ const BusCard: React.FC<BusCardProps> = ({
     }
     return gains;
   }, [gravityCompEntry?.jointGainsRadPerNm]);
+
+  const pwmGravityCompJointDutyGains = useMemo(() => {
+    const gains: Record<number, number> = {};
+    for (let motorId = 1; motorId <= 7; motorId++) {
+      gains[motorId] = pwmGravityCompEntry?.jointDutyGains?.[motorId - 1] ?? DEFAULT_PWM_GRAVITY_COMP_DUTY_GAIN;
+    }
+    return gains;
+  }, [pwmGravityCompEntry?.jointDutyGains]);
 
   const [gravityCompTorqueLimit, setGravityCompTorqueLimit] = useState<number>(DEFAULT_GRAVITY_COMP_TORQUE_LIMIT);
   const isEditingTorqueLimitRef = useRef(false);
@@ -161,6 +183,18 @@ const BusCard: React.FC<BusCardProps> = ({
       setGravityCompTorqueLimit(gravityCompEntry.torqueLimit);
     }
   }, [gravityCompEntry?.torqueLimit]);
+
+  const [pwmGravityCompMaxDuty, setPwmGravityCompMaxDuty] = useState<number>(DEFAULT_PWM_GRAVITY_COMP_MAX_DUTY);
+  const isEditingMaxDutyRef = useRef(false);
+
+  useEffect(() => {
+    if (isEditingMaxDutyRef.current) {
+      return;
+    }
+    if (typeof pwmGravityCompEntry?.maxDuty === 'number') {
+      setPwmGravityCompMaxDuty(pwmGravityCompEntry.maxDuty);
+    }
+  }, [pwmGravityCompEntry?.maxDuty]);
 
   useEffect(() => {
     if (!busSerialNumber || !gravityCompSupported) {
@@ -177,6 +211,18 @@ const BusCard: React.FC<BusCardProps> = ({
       torqueLimit: gravityCompEntry?.torqueLimit,
     });
   }, [gravityCompSupported, busSerialNumber, isGravityCompEnabled, gravityCompEntry?.jointGainsRadPerNm, gravityCompEntry?.torqueLimit]);
+
+  useEffect(() => {
+    if (!busSerialNumber || !pwmGravityCompSupported) {
+      return;
+    }
+    console.log('[PwmGravityComp] state', {
+      bus: busSerialNumber,
+      enabled: isPwmGravityCompEnabled,
+      jointDutyGains: pwmGravityCompEntry?.jointDutyGains,
+      maxDuty: pwmGravityCompEntry?.maxDuty,
+    });
+  }, [pwmGravityCompSupported, busSerialNumber, isPwmGravityCompEnabled, pwmGravityCompEntry?.jointDutyGains, pwmGravityCompEntry?.maxDuty]);
 
   const setWebControlledState = useCallback((nextState: boolean) => {
     setIsWebControlled(nextState);
@@ -345,6 +391,17 @@ const BusCard: React.FC<BusCardProps> = ({
       });
     }
 
+    // Same reasoning as above: PWM gravity comp switches the servo out of
+    // position mode entirely, so it must stop before any other control
+    // source starts writing to this bus.
+    if (isPwmGravityCompEnabled) {
+      console.log('[PwmGravityComp] stopping: control source changed', { bus: busSerialNumber, sourceBusSerial });
+      await commandManager.sendPwmGravityCompCommand({
+        type: motors_mirroring.PwmGravityCompCommandType.PGCT_STOP_PWM_GRAVITY_COMP,
+        bus: { type: motors_mirroring.BusType.MBT_ST3215, uniqueId: busSerialNumber },
+      });
+    }
+
     if (sourceBusSerial === 'web-controlled') {
       const target: motors_mirroring.IMirroringBus = {
         type: motors_mirroring.BusType.MBT_ST3215,
@@ -411,7 +468,7 @@ const BusCard: React.FC<BusCardProps> = ({
       });
       setWebControlledState(false);
     }
-  }, [bus.motors, busSerialNumber, isGravityCompEnabled, setWebControlledState]);
+  }, [bus.motors, busSerialNumber, isGravityCompEnabled, isPwmGravityCompEnabled, setWebControlledState]);
 
   const handleGravityCompToggle = useCallback(async () => {
     if (!busSerialNumber) {
@@ -496,6 +553,85 @@ const BusCard: React.FC<BusCardProps> = ({
     console.log('[GravityComp] saving settings', { bus: busSerialNumber });
     await commandManager.sendGravityCompCommand({
       type: motors_mirroring.GravityCompCommandType.GCT_SAVE_SETTINGS,
+      bus: target,
+    });
+  }, [busSerialNumber]);
+
+  const handlePwmGravityCompToggle = useCallback(async () => {
+    if (!busSerialNumber) {
+      return;
+    }
+
+    const target: motors_mirroring.IMirroringBus = {
+      type: motors_mirroring.BusType.MBT_ST3215,
+      uniqueId: busSerialNumber,
+    };
+
+    const command: motors_mirroring.IPwmGravityCompCommand = {
+      type: isPwmGravityCompEnabled
+        ? motors_mirroring.PwmGravityCompCommandType.PGCT_STOP_PWM_GRAVITY_COMP
+        : motors_mirroring.PwmGravityCompCommandType.PGCT_START_PWM_GRAVITY_COMP,
+      bus: target,
+    };
+
+    console.log('[PwmGravityComp] sending command', command);
+    await commandManager.sendPwmGravityCompCommand(command);
+  }, [busSerialNumber, isPwmGravityCompEnabled]);
+
+  const handlePwmGravityCompJointDutyGainChange = useCallback(async (motorId: number, nextDutyPerNm: number) => {
+    if (!busSerialNumber) {
+      return;
+    }
+
+    const clamped = Math.max(nextDutyPerNm, 0);
+    const target: motors_mirroring.IMirroringBus = {
+      type: motors_mirroring.BusType.MBT_ST3215,
+      uniqueId: busSerialNumber,
+    };
+
+    console.log('[PwmGravityComp] setting joint duty gain', { bus: busSerialNumber, motorId, dutyPerNm: clamped });
+    await commandManager.sendPwmGravityCompCommand({
+      type: motors_mirroring.PwmGravityCompCommandType.PGCT_SET_DUTY_GAIN,
+      bus: target,
+      motorId,
+      dutyPerNm: clamped,
+    });
+  }, [busSerialNumber]);
+
+  const commitPwmGravityCompMaxDuty = useCallback(async (nextValue: number) => {
+    if (!busSerialNumber) {
+      return;
+    }
+
+    const clamped = Math.min(Math.max(Math.round(nextValue), 0), MAX_PWM_GRAVITY_COMP_MAX_DUTY);
+    setPwmGravityCompMaxDuty(clamped);
+
+    const target: motors_mirroring.IMirroringBus = {
+      type: motors_mirroring.BusType.MBT_ST3215,
+      uniqueId: busSerialNumber,
+    };
+
+    console.log('[PwmGravityComp] setting max duty', { bus: busSerialNumber, maxDuty: clamped });
+    await commandManager.sendPwmGravityCompCommand({
+      type: motors_mirroring.PwmGravityCompCommandType.PGCT_SET_MAX_DUTY,
+      bus: target,
+      maxDuty: clamped,
+    });
+  }, [busSerialNumber]);
+
+  const handleSavePwmGravitySettings = useCallback(async () => {
+    if (!busSerialNumber) {
+      return;
+    }
+
+    const target: motors_mirroring.IMirroringBus = {
+      type: motors_mirroring.BusType.MBT_ST3215,
+      uniqueId: busSerialNumber,
+    };
+
+    console.log('[PwmGravityComp] saving settings', { bus: busSerialNumber });
+    await commandManager.sendPwmGravityCompCommand({
+      type: motors_mirroring.PwmGravityCompCommandType.PGCT_SAVE_SETTINGS,
       bus: target,
     });
   }, [busSerialNumber]);
@@ -676,6 +812,73 @@ const BusCard: React.FC<BusCardProps> = ({
               </button>
             </div>
           )}
+          {pwmGravityCompSupported && (
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => void handlePwmGravityCompToggle()}
+                disabled={!busSerialNumber || isFollowerBus}
+                className={`flex h-9 items-center gap-1.5 rounded-md border px-3 text-xs font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${
+                  isPwmGravityCompEnabled
+                    ? "border-accent-critical bg-accent-critical text-surface-base"
+                    : "border-border-subtle bg-surface-primary text-text-muted hover:text-text-primary"
+                }`}
+                title={
+                  isFollowerBus
+                    ? "PWM gravity compensation is only available on a self-controlled or leader arm"
+                    : isPwmGravityCompEnabled
+                      ? "Disable PWM gravity compensation"
+                      : "Enable PWM (open-loop) gravity compensation - experimental, not yet validated on real hardware"
+                }
+              >
+                <span
+                  className={`h-2 w-2 rounded-full ${isPwmGravityCompEnabled ? "animate-pulse bg-surface-base" : "bg-text-muted"}`}
+                  aria-hidden="true"
+                />
+                {isPwmGravityCompEnabled ? "PWM Grav Comp: ON" : "PWM Grav Comp (experimental)"}
+              </button>
+              <label
+                className="flex items-center gap-1 text-[10px] font-semibold uppercase text-text-muted"
+                htmlFor={`pwm-gravity-comp-max-duty-${busSerialNumber ?? "unknown"}`}
+              >
+                Max Duty
+                <input
+                  id={`pwm-gravity-comp-max-duty-${busSerialNumber ?? "unknown"}`}
+                  type="number"
+                  min={0}
+                  max={MAX_PWM_GRAVITY_COMP_MAX_DUTY}
+                  step={1}
+                  value={pwmGravityCompMaxDuty}
+                  disabled={!busSerialNumber || isFollowerBus}
+                  onFocus={() => {
+                    isEditingMaxDutyRef.current = true;
+                  }}
+                  onChange={(e) => setPwmGravityCompMaxDuty(Number(e.target.value))}
+                  onBlur={(e) => {
+                    isEditingMaxDutyRef.current = false;
+                    void commitPwmGravityCompMaxDuty(Number(e.target.value));
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      (e.target as HTMLInputElement).blur();
+                    }
+                  }}
+                  className="h-9 w-16 rounded-md border border-border-subtle bg-surface-primary px-2 text-xs font-normal normal-case text-text-primary disabled:cursor-not-allowed disabled:opacity-60"
+                  title="PWM gravity comp max duty cycle (global, all arm motors, out of the servo's native +/-1000 range) - hard-capped in firmware regardless of value entered here"
+                  aria-label="PWM gravity compensation max duty"
+                />
+              </label>
+              <button
+                type="button"
+                onClick={() => void handleSavePwmGravitySettings()}
+                disabled={!busSerialNumber || isFollowerBus}
+                className="flex h-9 items-center rounded-md border border-border-subtle bg-surface-primary px-2 text-xs font-bold text-text-muted transition-colors hover:text-text-primary disabled:cursor-not-allowed disabled:opacity-60"
+                title="Persist the current per-joint duty gains and max duty so they're restored after a restart"
+              >
+                Save PWM Settings
+              </button>
+            </div>
+          )}
           <select
             value={
               isWebControlled
@@ -819,6 +1022,8 @@ const BusCard: React.FC<BusCardProps> = ({
               onSecondaryCameraFitToggle={() => setSecondaryCameraFit((fit) => (fit === "contain" ? "cover" : "contain"))}
               gravityCompJointGains={gravityCompSupported ? gravityCompJointGains : undefined}
               onGravityCompJointGainChange={handleGravityCompJointGainChange}
+              pwmGravityCompJointDutyGains={pwmGravityCompSupported ? pwmGravityCompJointDutyGains : undefined}
+              onPwmGravityCompJointDutyGainChange={handlePwmGravityCompJointDutyGainChange}
             />
             <CameraHudControls
               cameraLayout={cameraLayout}

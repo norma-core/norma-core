@@ -94,3 +94,10 @@ export function supportsSt3215Device(bus: st3215.InferenceState.IBusState): bool
 export function supportsGravityComp(bus: st3215.InferenceState.IBusState): boolean {
   return findSt3215DeviceDefinition(bus)?.id === ELROBOT_DEVICE_ID;
 }
+
+// PWM (open-loop) gravity compensation is a direct feedforward-torque
+// alternative to the position-offset approach above - same mass/inertia
+// model, same ElRobot-only gate.
+export function supportsPwmGravityComp(bus: st3215.InferenceState.IBusState): boolean {
+  return findSt3215DeviceDefinition(bus)?.id === ELROBOT_DEVICE_ID;
+}

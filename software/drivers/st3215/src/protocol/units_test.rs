@@ -1,4 +1,4 @@
-use super::units::normal_position;
+use super::units::{encode_direction_bit, normal_position};
 
 #[test]
 fn test_normal_position_positive_values() {
@@ -74,4 +74,30 @@ fn test_normal_position_wraparound() {
         );
         assert_eq!(result, (4096 - i) & 4095);
     }
+}
+
+#[test]
+fn test_encode_direction_bit_zero() {
+    assert_eq!(encode_direction_bit(0, 10), 0);
+}
+
+#[test]
+fn test_encode_direction_bit_positive() {
+    assert_eq!(encode_direction_bit(500, 10), 500);
+    assert_eq!(encode_direction_bit(1000, 10), 1000);
+}
+
+#[test]
+fn test_encode_direction_bit_negative_sets_sign_bit() {
+    // -500 -> magnitude 500 with bit 10 (0x400) set, not two's complement.
+    assert_eq!(encode_direction_bit(-500, 10), 500 | 0x400);
+    assert_eq!(encode_direction_bit(-1, 10), 1 | 0x400);
+}
+
+#[test]
+fn test_encode_direction_bit_clamps_magnitude() {
+    // bit_pos=10 -> max magnitude is (1 << 10) - 1 = 1023.
+    assert_eq!(encode_direction_bit(2000, 10), 1023);
+    assert_eq!(encode_direction_bit(-2000, 10), 1023 | 0x400);
+    assert_eq!(encode_direction_bit(i16::MIN, 10), 1023 | 0x400);
 }

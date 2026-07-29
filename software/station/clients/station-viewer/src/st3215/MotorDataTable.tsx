@@ -24,6 +24,8 @@ interface MotorDataTableProps {
   layout?: 'overlay' | 'panel';
   gravityCompJointGains?: Record<number, number>;
   onGravityCompJointGainChange?: (motorId: number, value: number) => void;
+  pwmGravityCompJointDutyGains?: Record<number, number>;
+  onPwmGravityCompJointDutyGainChange?: (motorId: number, value: number) => void;
 }
 
 interface MotorControlState {
@@ -39,6 +41,8 @@ const MotorDataTable: React.FC<MotorDataTableProps> = ({
   layout = 'overlay',
   gravityCompJointGains,
   onGravityCompJointGainChange,
+  pwmGravityCompJointDutyGains,
+  onPwmGravityCompJointDutyGainChange,
 }) => {
   const now = Date.now();
   const latencyHistoryRef = useRef<Map<string, LatencyReading[]>>(new Map());
@@ -49,6 +53,9 @@ const MotorDataTable: React.FC<MotorDataTableProps> = ({
   const showGravityColumn = !!gravityCompJointGains;
   const [editedGravityGains, setEditedGravityGains] = useState<Map<number, number>>(new Map());
   const editingGravityMotorsRef = useRef<Set<number>>(new Set());
+  const showPwmGravityColumn = !!pwmGravityCompJointDutyGains;
+  const [editedPwmGravityGains, setEditedPwmGravityGains] = useState<Map<number, number>>(new Map());
+  const editingPwmGravityMotorsRef = useRef<Set<number>>(new Set());
 
   const getGravityGainDisplayValue = useCallback((motorId: number): number => {
     if (editingGravityMotorsRef.current.has(motorId)) {
@@ -56,6 +63,13 @@ const MotorDataTable: React.FC<MotorDataTableProps> = ({
     }
     return gravityCompJointGains?.[motorId] ?? 0;
   }, [editedGravityGains, gravityCompJointGains]);
+
+  const getPwmGravityGainDisplayValue = useCallback((motorId: number): number => {
+    if (editingPwmGravityMotorsRef.current.has(motorId)) {
+      return editedPwmGravityGains.get(motorId) ?? pwmGravityCompJointDutyGains?.[motorId] ?? 0;
+    }
+    return pwmGravityCompJointDutyGains?.[motorId] ?? 0;
+  }, [editedPwmGravityGains, pwmGravityCompJointDutyGains]);
 
   // Function to calculate moving average for latency (15 second window)
   const getMovingAverageLatency = (key: string, currentLatency: number): LatencyStats => {
@@ -327,6 +341,7 @@ const MotorDataTable: React.FC<MotorDataTableProps> = ({
             <th className="px-2 py-1 text-right">LAG</th>
             <th className="px-2 py-1 text-right">MAX</th>
             {showGravityColumn && <th className="px-2 py-1 text-right">GRAV</th>}
+            {showPwmGravityColumn && <th className="px-2 py-1 text-right">PWM</th>}
             <th className="px-2 py-1 text-left" colSpan={2}>STATUS</th>
           </tr>
         </thead>
@@ -518,6 +533,41 @@ const MotorDataTable: React.FC<MotorDataTableProps> = ({
                         className="h-6 w-14 rounded border border-border-subtle bg-surface-primary px-1 text-xs text-text-primary text-right disabled:cursor-not-allowed disabled:opacity-60"
                         title="Gravity comp gain (rad/Nm) for this joint"
                         aria-label={`Gravity compensation gain for motor ${motor.id}`}
+                      />
+                    ) : (
+                      <span className="text-text-muted">-</span>
+                    )}
+                  </td>
+                )}
+
+                {/* PWM gravity comp duty gain (per joint, motors 1-7 only) */}
+                {showPwmGravityColumn && (
+                  <td className="px-2 py-1.5 text-right">
+                    {motor.id && motor.id <= 7 ? (
+                      <input
+                        type="number"
+                        min={0}
+                        step={1}
+                        value={getPwmGravityGainDisplayValue(motor.id)}
+                        onFocus={() => {
+                          editingPwmGravityMotorsRef.current.add(motor.id!);
+                        }}
+                        onChange={(e) => {
+                          const nextValue = Number(e.target.value);
+                          setEditedPwmGravityGains(prev => new Map(prev).set(motor.id!, nextValue));
+                        }}
+                        onBlur={(e) => {
+                          editingPwmGravityMotorsRef.current.delete(motor.id!);
+                          onPwmGravityCompJointDutyGainChange?.(motor.id!, Number(e.target.value));
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            (e.target as HTMLInputElement).blur();
+                          }
+                        }}
+                        className="h-6 w-14 rounded border border-border-subtle bg-surface-primary px-1 text-xs text-text-primary text-right disabled:cursor-not-allowed disabled:opacity-60"
+                        title="PWM gravity comp duty gain (duty/Nm) for this joint - experimental, fully open-loop"
+                        aria-label={`PWM gravity compensation duty gain for motor ${motor.id}`}
                       />
                     ) : (
                       <span className="text-text-muted">-</span>

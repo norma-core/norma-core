@@ -199,6 +199,7 @@ export const commands = $root.commands = (() => {
                 case 2:
                 case 3:
                 case 4:
+                case 5:
                     break;
                 }
             if (message.body != null && message.hasOwnProperty("body"))
@@ -254,6 +255,10 @@ export const commands = $root.commands = (() => {
             case "STC_GRAVITY_COMP_COMMAND":
             case 4:
                 message.type = 4;
+                break;
+            case "STC_PWM_GRAVITY_COMP_COMMAND":
+            case 5:
+                message.type = 5;
                 break;
             }
             if (object.body != null)
@@ -707,6 +712,8 @@ export const drivers = $root.drivers = (() => {
      * @property {number} QDT_MOTOR_MIRRORING_RX=32 QDT_MOTOR_MIRRORING_RX value
      * @property {number} QDT_MOTOR_MIRRORING_GRAVITY_COMP_MODES=33 QDT_MOTOR_MIRRORING_GRAVITY_COMP_MODES value
      * @property {number} QDT_MOTOR_MIRRORING_GRAVITY_COMP_SETTINGS=34 QDT_MOTOR_MIRRORING_GRAVITY_COMP_SETTINGS value
+     * @property {number} QDT_MOTOR_MIRRORING_PWM_GRAVITY_COMP_MODES=35 QDT_MOTOR_MIRRORING_PWM_GRAVITY_COMP_MODES value
+     * @property {number} QDT_MOTOR_MIRRORING_PWM_GRAVITY_COMP_SETTINGS=36 QDT_MOTOR_MIRRORING_PWM_GRAVITY_COMP_SETTINGS value
      * @property {number} QDT_YAHBOOM_DOGZILLA_LITE_SERIAL_TX=40 QDT_YAHBOOM_DOGZILLA_LITE_SERIAL_TX value
      * @property {number} QDT_YAHBOOM_DOGZILLA_LITE_SERIAL_RX=41 QDT_YAHBOOM_DOGZILLA_LITE_SERIAL_RX value
      * @property {number} QDT_YAHBOOM_DOGZILLA_LITE_INFERENCE=42 QDT_YAHBOOM_DOGZILLA_LITE_INFERENCE value
@@ -728,6 +735,8 @@ export const drivers = $root.drivers = (() => {
         values[valuesById[32] = "QDT_MOTOR_MIRRORING_RX"] = 32;
         values[valuesById[33] = "QDT_MOTOR_MIRRORING_GRAVITY_COMP_MODES"] = 33;
         values[valuesById[34] = "QDT_MOTOR_MIRRORING_GRAVITY_COMP_SETTINGS"] = 34;
+        values[valuesById[35] = "QDT_MOTOR_MIRRORING_PWM_GRAVITY_COMP_MODES"] = 35;
+        values[valuesById[36] = "QDT_MOTOR_MIRRORING_PWM_GRAVITY_COMP_SETTINGS"] = 36;
         values[valuesById[40] = "QDT_YAHBOOM_DOGZILLA_LITE_SERIAL_TX"] = 40;
         values[valuesById[41] = "QDT_YAHBOOM_DOGZILLA_LITE_SERIAL_RX"] = 41;
         values[valuesById[42] = "QDT_YAHBOOM_DOGZILLA_LITE_INFERENCE"] = 42;
@@ -743,6 +752,7 @@ export const drivers = $root.drivers = (() => {
      * @property {number} STC_INFERENCE_TAG_COMMAND=2 STC_INFERENCE_TAG_COMMAND value
      * @property {number} STC_YAHBOOM_DOGZILLA_LITE_COMMAND=3 STC_YAHBOOM_DOGZILLA_LITE_COMMAND value
      * @property {number} STC_GRAVITY_COMP_COMMAND=4 STC_GRAVITY_COMP_COMMAND value
+     * @property {number} STC_PWM_GRAVITY_COMP_COMMAND=5 STC_PWM_GRAVITY_COMP_COMMAND value
      */
     drivers.StationCommandType = (function() {
         const valuesById = {}, values = Object.create(valuesById);
@@ -751,6 +761,7 @@ export const drivers = $root.drivers = (() => {
         values[valuesById[2] = "STC_INFERENCE_TAG_COMMAND"] = 2;
         values[valuesById[3] = "STC_YAHBOOM_DOGZILLA_LITE_COMMAND"] = 3;
         values[valuesById[4] = "STC_GRAVITY_COMP_COMMAND"] = 4;
+        values[valuesById[5] = "STC_PWM_GRAVITY_COMP_COMMAND"] = 5;
         return values;
     })();
 
@@ -1310,6 +1321,8 @@ export const inference = $root.inference = (() => {
                     case 32:
                     case 33:
                     case 34:
+                    case 35:
+                    case 36:
                     case 40:
                     case 41:
                     case 42:
@@ -1407,6 +1420,14 @@ export const inference = $root.inference = (() => {
                 case "QDT_MOTOR_MIRRORING_GRAVITY_COMP_SETTINGS":
                 case 34:
                     message.type = 34;
+                    break;
+                case "QDT_MOTOR_MIRRORING_PWM_GRAVITY_COMP_MODES":
+                case 35:
+                    message.type = 35;
+                    break;
+                case "QDT_MOTOR_MIRRORING_PWM_GRAVITY_COMP_SETTINGS":
+                case 36:
+                    message.type = 36;
                     break;
                 case "QDT_YAHBOOM_DOGZILLA_LITE_SERIAL_TX":
                 case 40:
@@ -14458,6 +14479,7 @@ export const motors_mirroring = $root.motors_mirroring = (() => {
          * @property {motors_mirroring.IInferenceState|null} [state] RxEnvelope state
          * @property {motors_mirroring.ICommand|null} [command] RxEnvelope command
          * @property {motors_mirroring.IGravityCompCommand|null} [gravityCommand] RxEnvelope gravityCommand
+         * @property {motors_mirroring.IPwmGravityCompCommand|null} [pwmGravityCommand] RxEnvelope pwmGravityCommand
          */
 
         /**
@@ -14524,6 +14546,14 @@ export const motors_mirroring = $root.motors_mirroring = (() => {
         RxEnvelope.prototype.gravityCommand = null;
 
         /**
+         * RxEnvelope pwmGravityCommand.
+         * @member {motors_mirroring.IPwmGravityCompCommand|null|undefined} pwmGravityCommand
+         * @memberof motors_mirroring.RxEnvelope
+         * @instance
+         */
+        RxEnvelope.prototype.pwmGravityCommand = null;
+
+        /**
          * Creates a new RxEnvelope instance using the specified properties.
          * @function create
          * @memberof motors_mirroring.RxEnvelope
@@ -14559,6 +14589,8 @@ export const motors_mirroring = $root.motors_mirroring = (() => {
                 $root.motors_mirroring.Command.encode(message.command, writer.uint32(/* id 11, wireType 2 =*/90).fork()).ldelim();
             if (message.gravityCommand != null && Object.hasOwnProperty.call(message, "gravityCommand"))
                 $root.motors_mirroring.GravityCompCommand.encode(message.gravityCommand, writer.uint32(/* id 12, wireType 2 =*/98).fork()).ldelim();
+            if (message.pwmGravityCommand != null && Object.hasOwnProperty.call(message, "pwmGravityCommand"))
+                $root.motors_mirroring.PwmGravityCompCommand.encode(message.pwmGravityCommand, writer.uint32(/* id 13, wireType 2 =*/106).fork()).ldelim();
             return writer;
         };
 
@@ -14621,6 +14653,10 @@ export const motors_mirroring = $root.motors_mirroring = (() => {
                     }
                 case 12: {
                         message.gravityCommand = $root.motors_mirroring.GravityCompCommand.decode(reader, reader.uint32(), undefined, long + 1);
+                        break;
+                    }
+                case 13: {
+                        message.pwmGravityCommand = $root.motors_mirroring.PwmGravityCompCommand.decode(reader, reader.uint32(), undefined, long + 1);
                         break;
                     }
                 default:
@@ -14686,6 +14722,11 @@ export const motors_mirroring = $root.motors_mirroring = (() => {
                 if (error)
                     return "gravityCommand." + error;
             }
+            if (message.pwmGravityCommand != null && message.hasOwnProperty("pwmGravityCommand")) {
+                let error = $root.motors_mirroring.PwmGravityCompCommand.verify(message.pwmGravityCommand, long + 1);
+                if (error)
+                    return "pwmGravityCommand." + error;
+            }
             return null;
         };
 
@@ -14747,6 +14788,11 @@ export const motors_mirroring = $root.motors_mirroring = (() => {
                     throw TypeError(".motors_mirroring.RxEnvelope.gravityCommand: object expected");
                 message.gravityCommand = $root.motors_mirroring.GravityCompCommand.fromObject(object.gravityCommand, long + 1);
             }
+            if (object.pwmGravityCommand != null) {
+                if (typeof object.pwmGravityCommand !== "object")
+                    throw TypeError(".motors_mirroring.RxEnvelope.pwmGravityCommand: object expected");
+                message.pwmGravityCommand = $root.motors_mirroring.PwmGravityCompCommand.fromObject(object.pwmGravityCommand, long + 1);
+            }
             return message;
         };
 
@@ -14782,6 +14828,7 @@ export const motors_mirroring = $root.motors_mirroring = (() => {
                 object.state = null;
                 object.command = null;
                 object.gravityCommand = null;
+                object.pwmGravityCommand = null;
             }
             if (message.monotonicStampNs != null && message.hasOwnProperty("monotonicStampNs"))
                 if (typeof message.monotonicStampNs === "number")
@@ -14804,6 +14851,8 @@ export const motors_mirroring = $root.motors_mirroring = (() => {
                 object.command = $root.motors_mirroring.Command.toObject(message.command, options);
             if (message.gravityCommand != null && message.hasOwnProperty("gravityCommand"))
                 object.gravityCommand = $root.motors_mirroring.GravityCompCommand.toObject(message.gravityCommand, options);
+            if (message.pwmGravityCommand != null && message.hasOwnProperty("pwmGravityCommand"))
+                object.pwmGravityCommand = $root.motors_mirroring.PwmGravityCompCommand.toObject(message.pwmGravityCommand, options);
             return object;
         };
 
@@ -14845,6 +14894,7 @@ export const motors_mirroring = $root.motors_mirroring = (() => {
          * @property {Array.<motors_mirroring.InferenceState.IBus>|null} [modes] InferenceState modes
          * @property {Array.<motors_mirroring.InferenceState.IMirroring>|null} [mirroring] InferenceState mirroring
          * @property {Array.<motors_mirroring.IGravityCompBusState>|null} [gravityComp] InferenceState gravityComp
+         * @property {Array.<motors_mirroring.IPwmGravityCompBusState>|null} [pwmGravityComp] InferenceState pwmGravityComp
          */
 
         /**
@@ -14859,6 +14909,7 @@ export const motors_mirroring = $root.motors_mirroring = (() => {
             this.modes = [];
             this.mirroring = [];
             this.gravityComp = [];
+            this.pwmGravityComp = [];
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
                     if (properties[keys[i]] != null && keys[i] !== "__proto__")
@@ -14888,6 +14939,14 @@ export const motors_mirroring = $root.motors_mirroring = (() => {
          * @instance
          */
         InferenceState.prototype.gravityComp = $util.emptyArray;
+
+        /**
+         * InferenceState pwmGravityComp.
+         * @member {Array.<motors_mirroring.IPwmGravityCompBusState>} pwmGravityComp
+         * @memberof motors_mirroring.InferenceState
+         * @instance
+         */
+        InferenceState.prototype.pwmGravityComp = $util.emptyArray;
 
         /**
          * Creates a new InferenceState instance using the specified properties.
@@ -14922,6 +14981,9 @@ export const motors_mirroring = $root.motors_mirroring = (() => {
             if (message.gravityComp != null && message.gravityComp.length)
                 for (let i = 0; i < message.gravityComp.length; ++i)
                     $root.motors_mirroring.GravityCompBusState.encode(message.gravityComp[i], writer.uint32(/* id 12, wireType 2 =*/98).fork()).ldelim();
+            if (message.pwmGravityComp != null && message.pwmGravityComp.length)
+                for (let i = 0; i < message.pwmGravityComp.length; ++i)
+                    $root.motors_mirroring.PwmGravityCompBusState.encode(message.pwmGravityComp[i], writer.uint32(/* id 13, wireType 2 =*/106).fork()).ldelim();
             return writer;
         };
 
@@ -14978,6 +15040,12 @@ export const motors_mirroring = $root.motors_mirroring = (() => {
                         if (!(message.gravityComp && message.gravityComp.length))
                             message.gravityComp = [];
                         message.gravityComp.push($root.motors_mirroring.GravityCompBusState.decode(reader, reader.uint32(), undefined, long + 1));
+                        break;
+                    }
+                case 13: {
+                        if (!(message.pwmGravityComp && message.pwmGravityComp.length))
+                            message.pwmGravityComp = [];
+                        message.pwmGravityComp.push($root.motors_mirroring.PwmGravityCompBusState.decode(reader, reader.uint32(), undefined, long + 1));
                         break;
                     }
                 default:
@@ -15046,6 +15114,15 @@ export const motors_mirroring = $root.motors_mirroring = (() => {
                         return "gravityComp." + error;
                 }
             }
+            if (message.pwmGravityComp != null && message.hasOwnProperty("pwmGravityComp")) {
+                if (!Array.isArray(message.pwmGravityComp))
+                    return "pwmGravityComp: array expected";
+                for (let i = 0; i < message.pwmGravityComp.length; ++i) {
+                    let error = $root.motors_mirroring.PwmGravityCompBusState.verify(message.pwmGravityComp[i], long + 1);
+                    if (error)
+                        return "pwmGravityComp." + error;
+                }
+            }
             return null;
         };
 
@@ -15095,6 +15172,16 @@ export const motors_mirroring = $root.motors_mirroring = (() => {
                     message.gravityComp[i] = $root.motors_mirroring.GravityCompBusState.fromObject(object.gravityComp[i], long + 1);
                 }
             }
+            if (object.pwmGravityComp) {
+                if (!Array.isArray(object.pwmGravityComp))
+                    throw TypeError(".motors_mirroring.InferenceState.pwmGravityComp: array expected");
+                message.pwmGravityComp = [];
+                for (let i = 0; i < object.pwmGravityComp.length; ++i) {
+                    if (typeof object.pwmGravityComp[i] !== "object")
+                        throw TypeError(".motors_mirroring.InferenceState.pwmGravityComp: object expected");
+                    message.pwmGravityComp[i] = $root.motors_mirroring.PwmGravityCompBusState.fromObject(object.pwmGravityComp[i], long + 1);
+                }
+            }
             return message;
         };
 
@@ -15115,6 +15202,7 @@ export const motors_mirroring = $root.motors_mirroring = (() => {
                 object.modes = [];
                 object.mirroring = [];
                 object.gravityComp = [];
+                object.pwmGravityComp = [];
             }
             if (message.modes && message.modes.length) {
                 object.modes = [];
@@ -15130,6 +15218,11 @@ export const motors_mirroring = $root.motors_mirroring = (() => {
                 object.gravityComp = [];
                 for (let j = 0; j < message.gravityComp.length; ++j)
                     object.gravityComp[j] = $root.motors_mirroring.GravityCompBusState.toObject(message.gravityComp[j], options);
+            }
+            if (message.pwmGravityComp && message.pwmGravityComp.length) {
+                object.pwmGravityComp = [];
+                for (let j = 0; j < message.pwmGravityComp.length; ++j)
+                    object.pwmGravityComp[j] = $root.motors_mirroring.PwmGravityCompBusState.toObject(message.pwmGravityComp[j], options);
             }
             return object;
         };
@@ -17258,6 +17351,1550 @@ export const motors_mirroring = $root.motors_mirroring = (() => {
         };
 
         return GravityCompSettingsEnvelope;
+    })();
+
+    motors_mirroring.PwmGravityCompModeEnvelope = (function() {
+
+        /**
+         * Properties of a PwmGravityCompModeEnvelope.
+         * @memberof motors_mirroring
+         * @interface IPwmGravityCompModeEnvelope
+         * @property {Long|null} [monotonicStampNs] PwmGravityCompModeEnvelope monotonicStampNs
+         * @property {Long|null} [localStampNs] PwmGravityCompModeEnvelope localStampNs
+         * @property {Long|null} [appStartId] PwmGravityCompModeEnvelope appStartId
+         * @property {motors_mirroring.IMirroringBus|null} [bus] PwmGravityCompModeEnvelope bus
+         * @property {motors_mirroring.GravityCompState|null} [state] PwmGravityCompModeEnvelope state
+         */
+
+        /**
+         * Constructs a new PwmGravityCompModeEnvelope.
+         * @memberof motors_mirroring
+         * @classdesc Represents a PwmGravityCompModeEnvelope.
+         * @implements IPwmGravityCompModeEnvelope
+         * @constructor
+         * @param {motors_mirroring.IPwmGravityCompModeEnvelope=} [properties] Properties to set
+         */
+        function PwmGravityCompModeEnvelope(properties) {
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * PwmGravityCompModeEnvelope monotonicStampNs.
+         * @member {Long} monotonicStampNs
+         * @memberof motors_mirroring.PwmGravityCompModeEnvelope
+         * @instance
+         */
+        PwmGravityCompModeEnvelope.prototype.monotonicStampNs = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+
+        /**
+         * PwmGravityCompModeEnvelope localStampNs.
+         * @member {Long} localStampNs
+         * @memberof motors_mirroring.PwmGravityCompModeEnvelope
+         * @instance
+         */
+        PwmGravityCompModeEnvelope.prototype.localStampNs = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+
+        /**
+         * PwmGravityCompModeEnvelope appStartId.
+         * @member {Long} appStartId
+         * @memberof motors_mirroring.PwmGravityCompModeEnvelope
+         * @instance
+         */
+        PwmGravityCompModeEnvelope.prototype.appStartId = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+
+        /**
+         * PwmGravityCompModeEnvelope bus.
+         * @member {motors_mirroring.IMirroringBus|null|undefined} bus
+         * @memberof motors_mirroring.PwmGravityCompModeEnvelope
+         * @instance
+         */
+        PwmGravityCompModeEnvelope.prototype.bus = null;
+
+        /**
+         * PwmGravityCompModeEnvelope state.
+         * @member {motors_mirroring.GravityCompState} state
+         * @memberof motors_mirroring.PwmGravityCompModeEnvelope
+         * @instance
+         */
+        PwmGravityCompModeEnvelope.prototype.state = 0;
+
+        /**
+         * Creates a new PwmGravityCompModeEnvelope instance using the specified properties.
+         * @function create
+         * @memberof motors_mirroring.PwmGravityCompModeEnvelope
+         * @static
+         * @param {motors_mirroring.IPwmGravityCompModeEnvelope=} [properties] Properties to set
+         * @returns {motors_mirroring.PwmGravityCompModeEnvelope} PwmGravityCompModeEnvelope instance
+         */
+        PwmGravityCompModeEnvelope.create = function create(properties) {
+            return new PwmGravityCompModeEnvelope(properties);
+        };
+
+        /**
+         * Encodes the specified PwmGravityCompModeEnvelope message. Does not implicitly {@link motors_mirroring.PwmGravityCompModeEnvelope.verify|verify} messages.
+         * @function encode
+         * @memberof motors_mirroring.PwmGravityCompModeEnvelope
+         * @static
+         * @param {motors_mirroring.IPwmGravityCompModeEnvelope} message PwmGravityCompModeEnvelope message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        PwmGravityCompModeEnvelope.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.monotonicStampNs != null && Object.hasOwnProperty.call(message, "monotonicStampNs"))
+                writer.uint32(/* id 1, wireType 0 =*/8).uint64(message.monotonicStampNs);
+            if (message.localStampNs != null && Object.hasOwnProperty.call(message, "localStampNs"))
+                writer.uint32(/* id 2, wireType 0 =*/16).uint64(message.localStampNs);
+            if (message.appStartId != null && Object.hasOwnProperty.call(message, "appStartId"))
+                writer.uint32(/* id 3, wireType 0 =*/24).uint64(message.appStartId);
+            if (message.bus != null && Object.hasOwnProperty.call(message, "bus"))
+                $root.motors_mirroring.MirroringBus.encode(message.bus, writer.uint32(/* id 4, wireType 2 =*/34).fork()).ldelim();
+            if (message.state != null && Object.hasOwnProperty.call(message, "state"))
+                writer.uint32(/* id 5, wireType 0 =*/40).int32(message.state);
+            return writer;
+        };
+
+        /**
+         * Encodes the specified PwmGravityCompModeEnvelope message, length delimited. Does not implicitly {@link motors_mirroring.PwmGravityCompModeEnvelope.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof motors_mirroring.PwmGravityCompModeEnvelope
+         * @static
+         * @param {motors_mirroring.IPwmGravityCompModeEnvelope} message PwmGravityCompModeEnvelope message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        PwmGravityCompModeEnvelope.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes a PwmGravityCompModeEnvelope message from the specified reader or buffer.
+         * @function decode
+         * @memberof motors_mirroring.PwmGravityCompModeEnvelope
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {motors_mirroring.PwmGravityCompModeEnvelope} PwmGravityCompModeEnvelope
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        PwmGravityCompModeEnvelope.decode = function decode(reader, length, error, long) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.motors_mirroring.PwmGravityCompModeEnvelope();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                if (tag === error)
+                    break;
+                switch (tag >>> 3) {
+                case 1: {
+                        message.monotonicStampNs = reader.uint64();
+                        break;
+                    }
+                case 2: {
+                        message.localStampNs = reader.uint64();
+                        break;
+                    }
+                case 3: {
+                        message.appStartId = reader.uint64();
+                        break;
+                    }
+                case 4: {
+                        message.bus = $root.motors_mirroring.MirroringBus.decode(reader, reader.uint32(), undefined, long + 1);
+                        break;
+                    }
+                case 5: {
+                        message.state = reader.int32();
+                        break;
+                    }
+                default:
+                    reader.skipType(tag & 7, long);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes a PwmGravityCompModeEnvelope message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof motors_mirroring.PwmGravityCompModeEnvelope
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {motors_mirroring.PwmGravityCompModeEnvelope} PwmGravityCompModeEnvelope
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        PwmGravityCompModeEnvelope.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies a PwmGravityCompModeEnvelope message.
+         * @function verify
+         * @memberof motors_mirroring.PwmGravityCompModeEnvelope
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        PwmGravityCompModeEnvelope.verify = function verify(message, long) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
+            if (message.monotonicStampNs != null && message.hasOwnProperty("monotonicStampNs"))
+                if (!$util.isInteger(message.monotonicStampNs) && !(message.monotonicStampNs && $util.isInteger(message.monotonicStampNs.low) && $util.isInteger(message.monotonicStampNs.high)))
+                    return "monotonicStampNs: integer|Long expected";
+            if (message.localStampNs != null && message.hasOwnProperty("localStampNs"))
+                if (!$util.isInteger(message.localStampNs) && !(message.localStampNs && $util.isInteger(message.localStampNs.low) && $util.isInteger(message.localStampNs.high)))
+                    return "localStampNs: integer|Long expected";
+            if (message.appStartId != null && message.hasOwnProperty("appStartId"))
+                if (!$util.isInteger(message.appStartId) && !(message.appStartId && $util.isInteger(message.appStartId.low) && $util.isInteger(message.appStartId.high)))
+                    return "appStartId: integer|Long expected";
+            if (message.bus != null && message.hasOwnProperty("bus")) {
+                let error = $root.motors_mirroring.MirroringBus.verify(message.bus, long + 1);
+                if (error)
+                    return "bus." + error;
+            }
+            if (message.state != null && message.hasOwnProperty("state"))
+                switch (message.state) {
+                default:
+                    return "state: enum value expected";
+                case 0:
+                case 1:
+                case 2:
+                    break;
+                }
+            return null;
+        };
+
+        /**
+         * Creates a PwmGravityCompModeEnvelope message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof motors_mirroring.PwmGravityCompModeEnvelope
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {motors_mirroring.PwmGravityCompModeEnvelope} PwmGravityCompModeEnvelope
+         */
+        PwmGravityCompModeEnvelope.fromObject = function fromObject(object, long) {
+            if (object instanceof $root.motors_mirroring.PwmGravityCompModeEnvelope)
+                return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let message = new $root.motors_mirroring.PwmGravityCompModeEnvelope();
+            if (object.monotonicStampNs != null)
+                if ($util.Long)
+                    (message.monotonicStampNs = $util.Long.fromValue(object.monotonicStampNs)).unsigned = true;
+                else if (typeof object.monotonicStampNs === "string")
+                    message.monotonicStampNs = parseInt(object.monotonicStampNs, 10);
+                else if (typeof object.monotonicStampNs === "number")
+                    message.monotonicStampNs = object.monotonicStampNs;
+                else if (typeof object.monotonicStampNs === "object")
+                    message.monotonicStampNs = new $util.LongBits(object.monotonicStampNs.low >>> 0, object.monotonicStampNs.high >>> 0).toNumber(true);
+            if (object.localStampNs != null)
+                if ($util.Long)
+                    (message.localStampNs = $util.Long.fromValue(object.localStampNs)).unsigned = true;
+                else if (typeof object.localStampNs === "string")
+                    message.localStampNs = parseInt(object.localStampNs, 10);
+                else if (typeof object.localStampNs === "number")
+                    message.localStampNs = object.localStampNs;
+                else if (typeof object.localStampNs === "object")
+                    message.localStampNs = new $util.LongBits(object.localStampNs.low >>> 0, object.localStampNs.high >>> 0).toNumber(true);
+            if (object.appStartId != null)
+                if ($util.Long)
+                    (message.appStartId = $util.Long.fromValue(object.appStartId)).unsigned = true;
+                else if (typeof object.appStartId === "string")
+                    message.appStartId = parseInt(object.appStartId, 10);
+                else if (typeof object.appStartId === "number")
+                    message.appStartId = object.appStartId;
+                else if (typeof object.appStartId === "object")
+                    message.appStartId = new $util.LongBits(object.appStartId.low >>> 0, object.appStartId.high >>> 0).toNumber(true);
+            if (object.bus != null) {
+                if (typeof object.bus !== "object")
+                    throw TypeError(".motors_mirroring.PwmGravityCompModeEnvelope.bus: object expected");
+                message.bus = $root.motors_mirroring.MirroringBus.fromObject(object.bus, long + 1);
+            }
+            switch (object.state) {
+            default:
+                if (typeof object.state === "number") {
+                    message.state = object.state;
+                    break;
+                }
+                break;
+            case "GC_UNKNOWN":
+            case 0:
+                message.state = 0;
+                break;
+            case "GC_DISABLED":
+            case 1:
+                message.state = 1;
+                break;
+            case "GC_ENABLED":
+            case 2:
+                message.state = 2;
+                break;
+            }
+            return message;
+        };
+
+        /**
+         * Creates a plain object from a PwmGravityCompModeEnvelope message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof motors_mirroring.PwmGravityCompModeEnvelope
+         * @static
+         * @param {motors_mirroring.PwmGravityCompModeEnvelope} message PwmGravityCompModeEnvelope
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        PwmGravityCompModeEnvelope.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.defaults) {
+                if ($util.Long) {
+                    let long = new $util.Long(0, 0, true);
+                    object.monotonicStampNs = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+                } else
+                    object.monotonicStampNs = options.longs === String ? "0" : 0;
+                if ($util.Long) {
+                    let long = new $util.Long(0, 0, true);
+                    object.localStampNs = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+                } else
+                    object.localStampNs = options.longs === String ? "0" : 0;
+                if ($util.Long) {
+                    let long = new $util.Long(0, 0, true);
+                    object.appStartId = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+                } else
+                    object.appStartId = options.longs === String ? "0" : 0;
+                object.bus = null;
+                object.state = options.enums === String ? "GC_UNKNOWN" : 0;
+            }
+            if (message.monotonicStampNs != null && message.hasOwnProperty("monotonicStampNs"))
+                if (typeof message.monotonicStampNs === "number")
+                    object.monotonicStampNs = options.longs === String ? String(message.monotonicStampNs) : message.monotonicStampNs;
+                else
+                    object.monotonicStampNs = options.longs === String ? $util.Long.prototype.toString.call(message.monotonicStampNs) : options.longs === Number ? new $util.LongBits(message.monotonicStampNs.low >>> 0, message.monotonicStampNs.high >>> 0).toNumber(true) : message.monotonicStampNs;
+            if (message.localStampNs != null && message.hasOwnProperty("localStampNs"))
+                if (typeof message.localStampNs === "number")
+                    object.localStampNs = options.longs === String ? String(message.localStampNs) : message.localStampNs;
+                else
+                    object.localStampNs = options.longs === String ? $util.Long.prototype.toString.call(message.localStampNs) : options.longs === Number ? new $util.LongBits(message.localStampNs.low >>> 0, message.localStampNs.high >>> 0).toNumber(true) : message.localStampNs;
+            if (message.appStartId != null && message.hasOwnProperty("appStartId"))
+                if (typeof message.appStartId === "number")
+                    object.appStartId = options.longs === String ? String(message.appStartId) : message.appStartId;
+                else
+                    object.appStartId = options.longs === String ? $util.Long.prototype.toString.call(message.appStartId) : options.longs === Number ? new $util.LongBits(message.appStartId.low >>> 0, message.appStartId.high >>> 0).toNumber(true) : message.appStartId;
+            if (message.bus != null && message.hasOwnProperty("bus"))
+                object.bus = $root.motors_mirroring.MirroringBus.toObject(message.bus, options);
+            if (message.state != null && message.hasOwnProperty("state"))
+                object.state = options.enums === String ? $root.motors_mirroring.GravityCompState[message.state] === undefined ? message.state : $root.motors_mirroring.GravityCompState[message.state] : message.state;
+            return object;
+        };
+
+        /**
+         * Converts this PwmGravityCompModeEnvelope to JSON.
+         * @function toJSON
+         * @memberof motors_mirroring.PwmGravityCompModeEnvelope
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        PwmGravityCompModeEnvelope.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for PwmGravityCompModeEnvelope
+         * @function getTypeUrl
+         * @memberof motors_mirroring.PwmGravityCompModeEnvelope
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        PwmGravityCompModeEnvelope.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+            if (typeUrlPrefix === undefined) {
+                typeUrlPrefix = "type.googleapis.com";
+            }
+            return typeUrlPrefix + "/motors_mirroring.PwmGravityCompModeEnvelope";
+        };
+
+        return PwmGravityCompModeEnvelope;
+    })();
+
+    /**
+     * PwmGravityCompCommandType enum.
+     * @name motors_mirroring.PwmGravityCompCommandType
+     * @enum {number}
+     * @property {number} PGCT_START_PWM_GRAVITY_COMP=0 PGCT_START_PWM_GRAVITY_COMP value
+     * @property {number} PGCT_STOP_PWM_GRAVITY_COMP=1 PGCT_STOP_PWM_GRAVITY_COMP value
+     * @property {number} PGCT_SET_DUTY_GAIN=2 PGCT_SET_DUTY_GAIN value
+     * @property {number} PGCT_SET_MAX_DUTY=3 PGCT_SET_MAX_DUTY value
+     * @property {number} PGCT_SAVE_SETTINGS=4 PGCT_SAVE_SETTINGS value
+     */
+    motors_mirroring.PwmGravityCompCommandType = (function() {
+        const valuesById = {}, values = Object.create(valuesById);
+        values[valuesById[0] = "PGCT_START_PWM_GRAVITY_COMP"] = 0;
+        values[valuesById[1] = "PGCT_STOP_PWM_GRAVITY_COMP"] = 1;
+        values[valuesById[2] = "PGCT_SET_DUTY_GAIN"] = 2;
+        values[valuesById[3] = "PGCT_SET_MAX_DUTY"] = 3;
+        values[valuesById[4] = "PGCT_SAVE_SETTINGS"] = 4;
+        return values;
+    })();
+
+    motors_mirroring.PwmGravityCompCommand = (function() {
+
+        /**
+         * Properties of a PwmGravityCompCommand.
+         * @memberof motors_mirroring
+         * @interface IPwmGravityCompCommand
+         * @property {motors_mirroring.PwmGravityCompCommandType|null} [type] PwmGravityCompCommand type
+         * @property {motors_mirroring.IMirroringBus|null} [bus] PwmGravityCompCommand bus
+         * @property {number|null} [dutyPerNm] PwmGravityCompCommand dutyPerNm
+         * @property {number|null} [motorId] PwmGravityCompCommand motorId
+         * @property {number|null} [maxDuty] PwmGravityCompCommand maxDuty
+         */
+
+        /**
+         * Constructs a new PwmGravityCompCommand.
+         * @memberof motors_mirroring
+         * @classdesc Represents a PwmGravityCompCommand.
+         * @implements IPwmGravityCompCommand
+         * @constructor
+         * @param {motors_mirroring.IPwmGravityCompCommand=} [properties] Properties to set
+         */
+        function PwmGravityCompCommand(properties) {
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * PwmGravityCompCommand type.
+         * @member {motors_mirroring.PwmGravityCompCommandType} type
+         * @memberof motors_mirroring.PwmGravityCompCommand
+         * @instance
+         */
+        PwmGravityCompCommand.prototype.type = 0;
+
+        /**
+         * PwmGravityCompCommand bus.
+         * @member {motors_mirroring.IMirroringBus|null|undefined} bus
+         * @memberof motors_mirroring.PwmGravityCompCommand
+         * @instance
+         */
+        PwmGravityCompCommand.prototype.bus = null;
+
+        /**
+         * PwmGravityCompCommand dutyPerNm.
+         * @member {number|null|undefined} dutyPerNm
+         * @memberof motors_mirroring.PwmGravityCompCommand
+         * @instance
+         */
+        PwmGravityCompCommand.prototype.dutyPerNm = null;
+
+        /**
+         * PwmGravityCompCommand motorId.
+         * @member {number|null|undefined} motorId
+         * @memberof motors_mirroring.PwmGravityCompCommand
+         * @instance
+         */
+        PwmGravityCompCommand.prototype.motorId = null;
+
+        /**
+         * PwmGravityCompCommand maxDuty.
+         * @member {number|null|undefined} maxDuty
+         * @memberof motors_mirroring.PwmGravityCompCommand
+         * @instance
+         */
+        PwmGravityCompCommand.prototype.maxDuty = null;
+
+        // OneOf field names bound to virtual getters and setters
+        let $oneOfFields;
+
+        // Virtual OneOf for proto3 optional field
+        Object.defineProperty(PwmGravityCompCommand.prototype, "_dutyPerNm", {
+            get: $util.oneOfGetter($oneOfFields = ["dutyPerNm"]),
+            set: $util.oneOfSetter($oneOfFields)
+        });
+
+        // Virtual OneOf for proto3 optional field
+        Object.defineProperty(PwmGravityCompCommand.prototype, "_motorId", {
+            get: $util.oneOfGetter($oneOfFields = ["motorId"]),
+            set: $util.oneOfSetter($oneOfFields)
+        });
+
+        // Virtual OneOf for proto3 optional field
+        Object.defineProperty(PwmGravityCompCommand.prototype, "_maxDuty", {
+            get: $util.oneOfGetter($oneOfFields = ["maxDuty"]),
+            set: $util.oneOfSetter($oneOfFields)
+        });
+
+        /**
+         * Creates a new PwmGravityCompCommand instance using the specified properties.
+         * @function create
+         * @memberof motors_mirroring.PwmGravityCompCommand
+         * @static
+         * @param {motors_mirroring.IPwmGravityCompCommand=} [properties] Properties to set
+         * @returns {motors_mirroring.PwmGravityCompCommand} PwmGravityCompCommand instance
+         */
+        PwmGravityCompCommand.create = function create(properties) {
+            return new PwmGravityCompCommand(properties);
+        };
+
+        /**
+         * Encodes the specified PwmGravityCompCommand message. Does not implicitly {@link motors_mirroring.PwmGravityCompCommand.verify|verify} messages.
+         * @function encode
+         * @memberof motors_mirroring.PwmGravityCompCommand
+         * @static
+         * @param {motors_mirroring.IPwmGravityCompCommand} message PwmGravityCompCommand message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        PwmGravityCompCommand.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.type != null && Object.hasOwnProperty.call(message, "type"))
+                writer.uint32(/* id 1, wireType 0 =*/8).int32(message.type);
+            if (message.bus != null && Object.hasOwnProperty.call(message, "bus"))
+                $root.motors_mirroring.MirroringBus.encode(message.bus, writer.uint32(/* id 2, wireType 2 =*/18).fork()).ldelim();
+            if (message.dutyPerNm != null && Object.hasOwnProperty.call(message, "dutyPerNm"))
+                writer.uint32(/* id 3, wireType 1 =*/25).double(message.dutyPerNm);
+            if (message.motorId != null && Object.hasOwnProperty.call(message, "motorId"))
+                writer.uint32(/* id 4, wireType 0 =*/32).uint32(message.motorId);
+            if (message.maxDuty != null && Object.hasOwnProperty.call(message, "maxDuty"))
+                writer.uint32(/* id 5, wireType 0 =*/40).uint32(message.maxDuty);
+            return writer;
+        };
+
+        /**
+         * Encodes the specified PwmGravityCompCommand message, length delimited. Does not implicitly {@link motors_mirroring.PwmGravityCompCommand.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof motors_mirroring.PwmGravityCompCommand
+         * @static
+         * @param {motors_mirroring.IPwmGravityCompCommand} message PwmGravityCompCommand message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        PwmGravityCompCommand.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes a PwmGravityCompCommand message from the specified reader or buffer.
+         * @function decode
+         * @memberof motors_mirroring.PwmGravityCompCommand
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {motors_mirroring.PwmGravityCompCommand} PwmGravityCompCommand
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        PwmGravityCompCommand.decode = function decode(reader, length, error, long) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.motors_mirroring.PwmGravityCompCommand();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                if (tag === error)
+                    break;
+                switch (tag >>> 3) {
+                case 1: {
+                        message.type = reader.int32();
+                        break;
+                    }
+                case 2: {
+                        message.bus = $root.motors_mirroring.MirroringBus.decode(reader, reader.uint32(), undefined, long + 1);
+                        break;
+                    }
+                case 3: {
+                        message.dutyPerNm = reader.double();
+                        break;
+                    }
+                case 4: {
+                        message.motorId = reader.uint32();
+                        break;
+                    }
+                case 5: {
+                        message.maxDuty = reader.uint32();
+                        break;
+                    }
+                default:
+                    reader.skipType(tag & 7, long);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes a PwmGravityCompCommand message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof motors_mirroring.PwmGravityCompCommand
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {motors_mirroring.PwmGravityCompCommand} PwmGravityCompCommand
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        PwmGravityCompCommand.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies a PwmGravityCompCommand message.
+         * @function verify
+         * @memberof motors_mirroring.PwmGravityCompCommand
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        PwmGravityCompCommand.verify = function verify(message, long) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
+            let properties = {};
+            if (message.type != null && message.hasOwnProperty("type"))
+                switch (message.type) {
+                default:
+                    return "type: enum value expected";
+                case 0:
+                case 1:
+                case 2:
+                case 3:
+                case 4:
+                    break;
+                }
+            if (message.bus != null && message.hasOwnProperty("bus")) {
+                let error = $root.motors_mirroring.MirroringBus.verify(message.bus, long + 1);
+                if (error)
+                    return "bus." + error;
+            }
+            if (message.dutyPerNm != null && message.hasOwnProperty("dutyPerNm")) {
+                properties._dutyPerNm = 1;
+                if (typeof message.dutyPerNm !== "number")
+                    return "dutyPerNm: number expected";
+            }
+            if (message.motorId != null && message.hasOwnProperty("motorId")) {
+                properties._motorId = 1;
+                if (!$util.isInteger(message.motorId))
+                    return "motorId: integer expected";
+            }
+            if (message.maxDuty != null && message.hasOwnProperty("maxDuty")) {
+                properties._maxDuty = 1;
+                if (!$util.isInteger(message.maxDuty))
+                    return "maxDuty: integer expected";
+            }
+            return null;
+        };
+
+        /**
+         * Creates a PwmGravityCompCommand message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof motors_mirroring.PwmGravityCompCommand
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {motors_mirroring.PwmGravityCompCommand} PwmGravityCompCommand
+         */
+        PwmGravityCompCommand.fromObject = function fromObject(object, long) {
+            if (object instanceof $root.motors_mirroring.PwmGravityCompCommand)
+                return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let message = new $root.motors_mirroring.PwmGravityCompCommand();
+            switch (object.type) {
+            default:
+                if (typeof object.type === "number") {
+                    message.type = object.type;
+                    break;
+                }
+                break;
+            case "PGCT_START_PWM_GRAVITY_COMP":
+            case 0:
+                message.type = 0;
+                break;
+            case "PGCT_STOP_PWM_GRAVITY_COMP":
+            case 1:
+                message.type = 1;
+                break;
+            case "PGCT_SET_DUTY_GAIN":
+            case 2:
+                message.type = 2;
+                break;
+            case "PGCT_SET_MAX_DUTY":
+            case 3:
+                message.type = 3;
+                break;
+            case "PGCT_SAVE_SETTINGS":
+            case 4:
+                message.type = 4;
+                break;
+            }
+            if (object.bus != null) {
+                if (typeof object.bus !== "object")
+                    throw TypeError(".motors_mirroring.PwmGravityCompCommand.bus: object expected");
+                message.bus = $root.motors_mirroring.MirroringBus.fromObject(object.bus, long + 1);
+            }
+            if (object.dutyPerNm != null)
+                message.dutyPerNm = Number(object.dutyPerNm);
+            if (object.motorId != null)
+                message.motorId = object.motorId >>> 0;
+            if (object.maxDuty != null)
+                message.maxDuty = object.maxDuty >>> 0;
+            return message;
+        };
+
+        /**
+         * Creates a plain object from a PwmGravityCompCommand message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof motors_mirroring.PwmGravityCompCommand
+         * @static
+         * @param {motors_mirroring.PwmGravityCompCommand} message PwmGravityCompCommand
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        PwmGravityCompCommand.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.defaults) {
+                object.type = options.enums === String ? "PGCT_START_PWM_GRAVITY_COMP" : 0;
+                object.bus = null;
+            }
+            if (message.type != null && message.hasOwnProperty("type"))
+                object.type = options.enums === String ? $root.motors_mirroring.PwmGravityCompCommandType[message.type] === undefined ? message.type : $root.motors_mirroring.PwmGravityCompCommandType[message.type] : message.type;
+            if (message.bus != null && message.hasOwnProperty("bus"))
+                object.bus = $root.motors_mirroring.MirroringBus.toObject(message.bus, options);
+            if (message.dutyPerNm != null && message.hasOwnProperty("dutyPerNm")) {
+                object.dutyPerNm = options.json && !isFinite(message.dutyPerNm) ? String(message.dutyPerNm) : message.dutyPerNm;
+                if (options.oneofs)
+                    object._dutyPerNm = "dutyPerNm";
+            }
+            if (message.motorId != null && message.hasOwnProperty("motorId")) {
+                object.motorId = message.motorId;
+                if (options.oneofs)
+                    object._motorId = "motorId";
+            }
+            if (message.maxDuty != null && message.hasOwnProperty("maxDuty")) {
+                object.maxDuty = message.maxDuty;
+                if (options.oneofs)
+                    object._maxDuty = "maxDuty";
+            }
+            return object;
+        };
+
+        /**
+         * Converts this PwmGravityCompCommand to JSON.
+         * @function toJSON
+         * @memberof motors_mirroring.PwmGravityCompCommand
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        PwmGravityCompCommand.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for PwmGravityCompCommand
+         * @function getTypeUrl
+         * @memberof motors_mirroring.PwmGravityCompCommand
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        PwmGravityCompCommand.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+            if (typeUrlPrefix === undefined) {
+                typeUrlPrefix = "type.googleapis.com";
+            }
+            return typeUrlPrefix + "/motors_mirroring.PwmGravityCompCommand";
+        };
+
+        return PwmGravityCompCommand;
+    })();
+
+    motors_mirroring.PwmGravityCompBusState = (function() {
+
+        /**
+         * Properties of a PwmGravityCompBusState.
+         * @memberof motors_mirroring
+         * @interface IPwmGravityCompBusState
+         * @property {motors_mirroring.IMirroringBus|null} [id] PwmGravityCompBusState id
+         * @property {motors_mirroring.GravityCompState|null} [state] PwmGravityCompBusState state
+         * @property {Array.<number>|null} [jointDutyGains] PwmGravityCompBusState jointDutyGains
+         * @property {number|null} [maxDuty] PwmGravityCompBusState maxDuty
+         */
+
+        /**
+         * Constructs a new PwmGravityCompBusState.
+         * @memberof motors_mirroring
+         * @classdesc Represents a PwmGravityCompBusState.
+         * @implements IPwmGravityCompBusState
+         * @constructor
+         * @param {motors_mirroring.IPwmGravityCompBusState=} [properties] Properties to set
+         */
+        function PwmGravityCompBusState(properties) {
+            this.jointDutyGains = [];
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * PwmGravityCompBusState id.
+         * @member {motors_mirroring.IMirroringBus|null|undefined} id
+         * @memberof motors_mirroring.PwmGravityCompBusState
+         * @instance
+         */
+        PwmGravityCompBusState.prototype.id = null;
+
+        /**
+         * PwmGravityCompBusState state.
+         * @member {motors_mirroring.GravityCompState} state
+         * @memberof motors_mirroring.PwmGravityCompBusState
+         * @instance
+         */
+        PwmGravityCompBusState.prototype.state = 0;
+
+        /**
+         * PwmGravityCompBusState jointDutyGains.
+         * @member {Array.<number>} jointDutyGains
+         * @memberof motors_mirroring.PwmGravityCompBusState
+         * @instance
+         */
+        PwmGravityCompBusState.prototype.jointDutyGains = $util.emptyArray;
+
+        /**
+         * PwmGravityCompBusState maxDuty.
+         * @member {number|null|undefined} maxDuty
+         * @memberof motors_mirroring.PwmGravityCompBusState
+         * @instance
+         */
+        PwmGravityCompBusState.prototype.maxDuty = null;
+
+        // OneOf field names bound to virtual getters and setters
+        let $oneOfFields;
+
+        // Virtual OneOf for proto3 optional field
+        Object.defineProperty(PwmGravityCompBusState.prototype, "_maxDuty", {
+            get: $util.oneOfGetter($oneOfFields = ["maxDuty"]),
+            set: $util.oneOfSetter($oneOfFields)
+        });
+
+        /**
+         * Creates a new PwmGravityCompBusState instance using the specified properties.
+         * @function create
+         * @memberof motors_mirroring.PwmGravityCompBusState
+         * @static
+         * @param {motors_mirroring.IPwmGravityCompBusState=} [properties] Properties to set
+         * @returns {motors_mirroring.PwmGravityCompBusState} PwmGravityCompBusState instance
+         */
+        PwmGravityCompBusState.create = function create(properties) {
+            return new PwmGravityCompBusState(properties);
+        };
+
+        /**
+         * Encodes the specified PwmGravityCompBusState message. Does not implicitly {@link motors_mirroring.PwmGravityCompBusState.verify|verify} messages.
+         * @function encode
+         * @memberof motors_mirroring.PwmGravityCompBusState
+         * @static
+         * @param {motors_mirroring.IPwmGravityCompBusState} message PwmGravityCompBusState message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        PwmGravityCompBusState.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.id != null && Object.hasOwnProperty.call(message, "id"))
+                $root.motors_mirroring.MirroringBus.encode(message.id, writer.uint32(/* id 1, wireType 2 =*/10).fork()).ldelim();
+            if (message.state != null && Object.hasOwnProperty.call(message, "state"))
+                writer.uint32(/* id 2, wireType 0 =*/16).int32(message.state);
+            if (message.jointDutyGains != null && message.jointDutyGains.length) {
+                writer.uint32(/* id 4, wireType 2 =*/34).fork();
+                for (let i = 0; i < message.jointDutyGains.length; ++i)
+                    writer.double(message.jointDutyGains[i]);
+                writer.ldelim();
+            }
+            if (message.maxDuty != null && Object.hasOwnProperty.call(message, "maxDuty"))
+                writer.uint32(/* id 5, wireType 0 =*/40).uint32(message.maxDuty);
+            return writer;
+        };
+
+        /**
+         * Encodes the specified PwmGravityCompBusState message, length delimited. Does not implicitly {@link motors_mirroring.PwmGravityCompBusState.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof motors_mirroring.PwmGravityCompBusState
+         * @static
+         * @param {motors_mirroring.IPwmGravityCompBusState} message PwmGravityCompBusState message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        PwmGravityCompBusState.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes a PwmGravityCompBusState message from the specified reader or buffer.
+         * @function decode
+         * @memberof motors_mirroring.PwmGravityCompBusState
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {motors_mirroring.PwmGravityCompBusState} PwmGravityCompBusState
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        PwmGravityCompBusState.decode = function decode(reader, length, error, long) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.motors_mirroring.PwmGravityCompBusState();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                if (tag === error)
+                    break;
+                switch (tag >>> 3) {
+                case 1: {
+                        message.id = $root.motors_mirroring.MirroringBus.decode(reader, reader.uint32(), undefined, long + 1);
+                        break;
+                    }
+                case 2: {
+                        message.state = reader.int32();
+                        break;
+                    }
+                case 4: {
+                        if (!(message.jointDutyGains && message.jointDutyGains.length))
+                            message.jointDutyGains = [];
+                        if ((tag & 7) === 2) {
+                            let end2 = reader.uint32() + reader.pos;
+                            while (reader.pos < end2)
+                                message.jointDutyGains.push(reader.double());
+                        } else
+                            message.jointDutyGains.push(reader.double());
+                        break;
+                    }
+                case 5: {
+                        message.maxDuty = reader.uint32();
+                        break;
+                    }
+                default:
+                    reader.skipType(tag & 7, long);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes a PwmGravityCompBusState message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof motors_mirroring.PwmGravityCompBusState
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {motors_mirroring.PwmGravityCompBusState} PwmGravityCompBusState
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        PwmGravityCompBusState.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies a PwmGravityCompBusState message.
+         * @function verify
+         * @memberof motors_mirroring.PwmGravityCompBusState
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        PwmGravityCompBusState.verify = function verify(message, long) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
+            let properties = {};
+            if (message.id != null && message.hasOwnProperty("id")) {
+                let error = $root.motors_mirroring.MirroringBus.verify(message.id, long + 1);
+                if (error)
+                    return "id." + error;
+            }
+            if (message.state != null && message.hasOwnProperty("state"))
+                switch (message.state) {
+                default:
+                    return "state: enum value expected";
+                case 0:
+                case 1:
+                case 2:
+                    break;
+                }
+            if (message.jointDutyGains != null && message.hasOwnProperty("jointDutyGains")) {
+                if (!Array.isArray(message.jointDutyGains))
+                    return "jointDutyGains: array expected";
+                for (let i = 0; i < message.jointDutyGains.length; ++i)
+                    if (typeof message.jointDutyGains[i] !== "number")
+                        return "jointDutyGains: number[] expected";
+            }
+            if (message.maxDuty != null && message.hasOwnProperty("maxDuty")) {
+                properties._maxDuty = 1;
+                if (!$util.isInteger(message.maxDuty))
+                    return "maxDuty: integer expected";
+            }
+            return null;
+        };
+
+        /**
+         * Creates a PwmGravityCompBusState message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof motors_mirroring.PwmGravityCompBusState
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {motors_mirroring.PwmGravityCompBusState} PwmGravityCompBusState
+         */
+        PwmGravityCompBusState.fromObject = function fromObject(object, long) {
+            if (object instanceof $root.motors_mirroring.PwmGravityCompBusState)
+                return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let message = new $root.motors_mirroring.PwmGravityCompBusState();
+            if (object.id != null) {
+                if (typeof object.id !== "object")
+                    throw TypeError(".motors_mirroring.PwmGravityCompBusState.id: object expected");
+                message.id = $root.motors_mirroring.MirroringBus.fromObject(object.id, long + 1);
+            }
+            switch (object.state) {
+            default:
+                if (typeof object.state === "number") {
+                    message.state = object.state;
+                    break;
+                }
+                break;
+            case "GC_UNKNOWN":
+            case 0:
+                message.state = 0;
+                break;
+            case "GC_DISABLED":
+            case 1:
+                message.state = 1;
+                break;
+            case "GC_ENABLED":
+            case 2:
+                message.state = 2;
+                break;
+            }
+            if (object.jointDutyGains) {
+                if (!Array.isArray(object.jointDutyGains))
+                    throw TypeError(".motors_mirroring.PwmGravityCompBusState.jointDutyGains: array expected");
+                message.jointDutyGains = [];
+                for (let i = 0; i < object.jointDutyGains.length; ++i)
+                    message.jointDutyGains[i] = Number(object.jointDutyGains[i]);
+            }
+            if (object.maxDuty != null)
+                message.maxDuty = object.maxDuty >>> 0;
+            return message;
+        };
+
+        /**
+         * Creates a plain object from a PwmGravityCompBusState message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof motors_mirroring.PwmGravityCompBusState
+         * @static
+         * @param {motors_mirroring.PwmGravityCompBusState} message PwmGravityCompBusState
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        PwmGravityCompBusState.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.arrays || options.defaults)
+                object.jointDutyGains = [];
+            if (options.defaults) {
+                object.id = null;
+                object.state = options.enums === String ? "GC_UNKNOWN" : 0;
+            }
+            if (message.id != null && message.hasOwnProperty("id"))
+                object.id = $root.motors_mirroring.MirroringBus.toObject(message.id, options);
+            if (message.state != null && message.hasOwnProperty("state"))
+                object.state = options.enums === String ? $root.motors_mirroring.GravityCompState[message.state] === undefined ? message.state : $root.motors_mirroring.GravityCompState[message.state] : message.state;
+            if (message.jointDutyGains && message.jointDutyGains.length) {
+                object.jointDutyGains = [];
+                for (let j = 0; j < message.jointDutyGains.length; ++j)
+                    object.jointDutyGains[j] = options.json && !isFinite(message.jointDutyGains[j]) ? String(message.jointDutyGains[j]) : message.jointDutyGains[j];
+            }
+            if (message.maxDuty != null && message.hasOwnProperty("maxDuty")) {
+                object.maxDuty = message.maxDuty;
+                if (options.oneofs)
+                    object._maxDuty = "maxDuty";
+            }
+            return object;
+        };
+
+        /**
+         * Converts this PwmGravityCompBusState to JSON.
+         * @function toJSON
+         * @memberof motors_mirroring.PwmGravityCompBusState
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        PwmGravityCompBusState.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for PwmGravityCompBusState
+         * @function getTypeUrl
+         * @memberof motors_mirroring.PwmGravityCompBusState
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        PwmGravityCompBusState.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+            if (typeUrlPrefix === undefined) {
+                typeUrlPrefix = "type.googleapis.com";
+            }
+            return typeUrlPrefix + "/motors_mirroring.PwmGravityCompBusState";
+        };
+
+        return PwmGravityCompBusState;
+    })();
+
+    motors_mirroring.PwmGravityCompSettingsEnvelope = (function() {
+
+        /**
+         * Properties of a PwmGravityCompSettingsEnvelope.
+         * @memberof motors_mirroring
+         * @interface IPwmGravityCompSettingsEnvelope
+         * @property {Long|null} [monotonicStampNs] PwmGravityCompSettingsEnvelope monotonicStampNs
+         * @property {Long|null} [localStampNs] PwmGravityCompSettingsEnvelope localStampNs
+         * @property {Long|null} [appStartId] PwmGravityCompSettingsEnvelope appStartId
+         * @property {motors_mirroring.IMirroringBus|null} [bus] PwmGravityCompSettingsEnvelope bus
+         * @property {Array.<number>|null} [jointDutyGains] PwmGravityCompSettingsEnvelope jointDutyGains
+         * @property {number|null} [maxDuty] PwmGravityCompSettingsEnvelope maxDuty
+         */
+
+        /**
+         * Constructs a new PwmGravityCompSettingsEnvelope.
+         * @memberof motors_mirroring
+         * @classdesc Represents a PwmGravityCompSettingsEnvelope.
+         * @implements IPwmGravityCompSettingsEnvelope
+         * @constructor
+         * @param {motors_mirroring.IPwmGravityCompSettingsEnvelope=} [properties] Properties to set
+         */
+        function PwmGravityCompSettingsEnvelope(properties) {
+            this.jointDutyGains = [];
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * PwmGravityCompSettingsEnvelope monotonicStampNs.
+         * @member {Long} monotonicStampNs
+         * @memberof motors_mirroring.PwmGravityCompSettingsEnvelope
+         * @instance
+         */
+        PwmGravityCompSettingsEnvelope.prototype.monotonicStampNs = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+
+        /**
+         * PwmGravityCompSettingsEnvelope localStampNs.
+         * @member {Long} localStampNs
+         * @memberof motors_mirroring.PwmGravityCompSettingsEnvelope
+         * @instance
+         */
+        PwmGravityCompSettingsEnvelope.prototype.localStampNs = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+
+        /**
+         * PwmGravityCompSettingsEnvelope appStartId.
+         * @member {Long} appStartId
+         * @memberof motors_mirroring.PwmGravityCompSettingsEnvelope
+         * @instance
+         */
+        PwmGravityCompSettingsEnvelope.prototype.appStartId = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+
+        /**
+         * PwmGravityCompSettingsEnvelope bus.
+         * @member {motors_mirroring.IMirroringBus|null|undefined} bus
+         * @memberof motors_mirroring.PwmGravityCompSettingsEnvelope
+         * @instance
+         */
+        PwmGravityCompSettingsEnvelope.prototype.bus = null;
+
+        /**
+         * PwmGravityCompSettingsEnvelope jointDutyGains.
+         * @member {Array.<number>} jointDutyGains
+         * @memberof motors_mirroring.PwmGravityCompSettingsEnvelope
+         * @instance
+         */
+        PwmGravityCompSettingsEnvelope.prototype.jointDutyGains = $util.emptyArray;
+
+        /**
+         * PwmGravityCompSettingsEnvelope maxDuty.
+         * @member {number} maxDuty
+         * @memberof motors_mirroring.PwmGravityCompSettingsEnvelope
+         * @instance
+         */
+        PwmGravityCompSettingsEnvelope.prototype.maxDuty = 0;
+
+        /**
+         * Creates a new PwmGravityCompSettingsEnvelope instance using the specified properties.
+         * @function create
+         * @memberof motors_mirroring.PwmGravityCompSettingsEnvelope
+         * @static
+         * @param {motors_mirroring.IPwmGravityCompSettingsEnvelope=} [properties] Properties to set
+         * @returns {motors_mirroring.PwmGravityCompSettingsEnvelope} PwmGravityCompSettingsEnvelope instance
+         */
+        PwmGravityCompSettingsEnvelope.create = function create(properties) {
+            return new PwmGravityCompSettingsEnvelope(properties);
+        };
+
+        /**
+         * Encodes the specified PwmGravityCompSettingsEnvelope message. Does not implicitly {@link motors_mirroring.PwmGravityCompSettingsEnvelope.verify|verify} messages.
+         * @function encode
+         * @memberof motors_mirroring.PwmGravityCompSettingsEnvelope
+         * @static
+         * @param {motors_mirroring.IPwmGravityCompSettingsEnvelope} message PwmGravityCompSettingsEnvelope message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        PwmGravityCompSettingsEnvelope.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.monotonicStampNs != null && Object.hasOwnProperty.call(message, "monotonicStampNs"))
+                writer.uint32(/* id 1, wireType 0 =*/8).uint64(message.monotonicStampNs);
+            if (message.localStampNs != null && Object.hasOwnProperty.call(message, "localStampNs"))
+                writer.uint32(/* id 2, wireType 0 =*/16).uint64(message.localStampNs);
+            if (message.appStartId != null && Object.hasOwnProperty.call(message, "appStartId"))
+                writer.uint32(/* id 3, wireType 0 =*/24).uint64(message.appStartId);
+            if (message.bus != null && Object.hasOwnProperty.call(message, "bus"))
+                $root.motors_mirroring.MirroringBus.encode(message.bus, writer.uint32(/* id 4, wireType 2 =*/34).fork()).ldelim();
+            if (message.jointDutyGains != null && message.jointDutyGains.length) {
+                writer.uint32(/* id 5, wireType 2 =*/42).fork();
+                for (let i = 0; i < message.jointDutyGains.length; ++i)
+                    writer.double(message.jointDutyGains[i]);
+                writer.ldelim();
+            }
+            if (message.maxDuty != null && Object.hasOwnProperty.call(message, "maxDuty"))
+                writer.uint32(/* id 6, wireType 0 =*/48).uint32(message.maxDuty);
+            return writer;
+        };
+
+        /**
+         * Encodes the specified PwmGravityCompSettingsEnvelope message, length delimited. Does not implicitly {@link motors_mirroring.PwmGravityCompSettingsEnvelope.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof motors_mirroring.PwmGravityCompSettingsEnvelope
+         * @static
+         * @param {motors_mirroring.IPwmGravityCompSettingsEnvelope} message PwmGravityCompSettingsEnvelope message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        PwmGravityCompSettingsEnvelope.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes a PwmGravityCompSettingsEnvelope message from the specified reader or buffer.
+         * @function decode
+         * @memberof motors_mirroring.PwmGravityCompSettingsEnvelope
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {motors_mirroring.PwmGravityCompSettingsEnvelope} PwmGravityCompSettingsEnvelope
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        PwmGravityCompSettingsEnvelope.decode = function decode(reader, length, error, long) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.motors_mirroring.PwmGravityCompSettingsEnvelope();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                if (tag === error)
+                    break;
+                switch (tag >>> 3) {
+                case 1: {
+                        message.monotonicStampNs = reader.uint64();
+                        break;
+                    }
+                case 2: {
+                        message.localStampNs = reader.uint64();
+                        break;
+                    }
+                case 3: {
+                        message.appStartId = reader.uint64();
+                        break;
+                    }
+                case 4: {
+                        message.bus = $root.motors_mirroring.MirroringBus.decode(reader, reader.uint32(), undefined, long + 1);
+                        break;
+                    }
+                case 5: {
+                        if (!(message.jointDutyGains && message.jointDutyGains.length))
+                            message.jointDutyGains = [];
+                        if ((tag & 7) === 2) {
+                            let end2 = reader.uint32() + reader.pos;
+                            while (reader.pos < end2)
+                                message.jointDutyGains.push(reader.double());
+                        } else
+                            message.jointDutyGains.push(reader.double());
+                        break;
+                    }
+                case 6: {
+                        message.maxDuty = reader.uint32();
+                        break;
+                    }
+                default:
+                    reader.skipType(tag & 7, long);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes a PwmGravityCompSettingsEnvelope message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof motors_mirroring.PwmGravityCompSettingsEnvelope
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {motors_mirroring.PwmGravityCompSettingsEnvelope} PwmGravityCompSettingsEnvelope
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        PwmGravityCompSettingsEnvelope.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies a PwmGravityCompSettingsEnvelope message.
+         * @function verify
+         * @memberof motors_mirroring.PwmGravityCompSettingsEnvelope
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        PwmGravityCompSettingsEnvelope.verify = function verify(message, long) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
+            if (message.monotonicStampNs != null && message.hasOwnProperty("monotonicStampNs"))
+                if (!$util.isInteger(message.monotonicStampNs) && !(message.monotonicStampNs && $util.isInteger(message.monotonicStampNs.low) && $util.isInteger(message.monotonicStampNs.high)))
+                    return "monotonicStampNs: integer|Long expected";
+            if (message.localStampNs != null && message.hasOwnProperty("localStampNs"))
+                if (!$util.isInteger(message.localStampNs) && !(message.localStampNs && $util.isInteger(message.localStampNs.low) && $util.isInteger(message.localStampNs.high)))
+                    return "localStampNs: integer|Long expected";
+            if (message.appStartId != null && message.hasOwnProperty("appStartId"))
+                if (!$util.isInteger(message.appStartId) && !(message.appStartId && $util.isInteger(message.appStartId.low) && $util.isInteger(message.appStartId.high)))
+                    return "appStartId: integer|Long expected";
+            if (message.bus != null && message.hasOwnProperty("bus")) {
+                let error = $root.motors_mirroring.MirroringBus.verify(message.bus, long + 1);
+                if (error)
+                    return "bus." + error;
+            }
+            if (message.jointDutyGains != null && message.hasOwnProperty("jointDutyGains")) {
+                if (!Array.isArray(message.jointDutyGains))
+                    return "jointDutyGains: array expected";
+                for (let i = 0; i < message.jointDutyGains.length; ++i)
+                    if (typeof message.jointDutyGains[i] !== "number")
+                        return "jointDutyGains: number[] expected";
+            }
+            if (message.maxDuty != null && message.hasOwnProperty("maxDuty"))
+                if (!$util.isInteger(message.maxDuty))
+                    return "maxDuty: integer expected";
+            return null;
+        };
+
+        /**
+         * Creates a PwmGravityCompSettingsEnvelope message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof motors_mirroring.PwmGravityCompSettingsEnvelope
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {motors_mirroring.PwmGravityCompSettingsEnvelope} PwmGravityCompSettingsEnvelope
+         */
+        PwmGravityCompSettingsEnvelope.fromObject = function fromObject(object, long) {
+            if (object instanceof $root.motors_mirroring.PwmGravityCompSettingsEnvelope)
+                return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let message = new $root.motors_mirroring.PwmGravityCompSettingsEnvelope();
+            if (object.monotonicStampNs != null)
+                if ($util.Long)
+                    (message.monotonicStampNs = $util.Long.fromValue(object.monotonicStampNs)).unsigned = true;
+                else if (typeof object.monotonicStampNs === "string")
+                    message.monotonicStampNs = parseInt(object.monotonicStampNs, 10);
+                else if (typeof object.monotonicStampNs === "number")
+                    message.monotonicStampNs = object.monotonicStampNs;
+                else if (typeof object.monotonicStampNs === "object")
+                    message.monotonicStampNs = new $util.LongBits(object.monotonicStampNs.low >>> 0, object.monotonicStampNs.high >>> 0).toNumber(true);
+            if (object.localStampNs != null)
+                if ($util.Long)
+                    (message.localStampNs = $util.Long.fromValue(object.localStampNs)).unsigned = true;
+                else if (typeof object.localStampNs === "string")
+                    message.localStampNs = parseInt(object.localStampNs, 10);
+                else if (typeof object.localStampNs === "number")
+                    message.localStampNs = object.localStampNs;
+                else if (typeof object.localStampNs === "object")
+                    message.localStampNs = new $util.LongBits(object.localStampNs.low >>> 0, object.localStampNs.high >>> 0).toNumber(true);
+            if (object.appStartId != null)
+                if ($util.Long)
+                    (message.appStartId = $util.Long.fromValue(object.appStartId)).unsigned = true;
+                else if (typeof object.appStartId === "string")
+                    message.appStartId = parseInt(object.appStartId, 10);
+                else if (typeof object.appStartId === "number")
+                    message.appStartId = object.appStartId;
+                else if (typeof object.appStartId === "object")
+                    message.appStartId = new $util.LongBits(object.appStartId.low >>> 0, object.appStartId.high >>> 0).toNumber(true);
+            if (object.bus != null) {
+                if (typeof object.bus !== "object")
+                    throw TypeError(".motors_mirroring.PwmGravityCompSettingsEnvelope.bus: object expected");
+                message.bus = $root.motors_mirroring.MirroringBus.fromObject(object.bus, long + 1);
+            }
+            if (object.jointDutyGains) {
+                if (!Array.isArray(object.jointDutyGains))
+                    throw TypeError(".motors_mirroring.PwmGravityCompSettingsEnvelope.jointDutyGains: array expected");
+                message.jointDutyGains = [];
+                for (let i = 0; i < object.jointDutyGains.length; ++i)
+                    message.jointDutyGains[i] = Number(object.jointDutyGains[i]);
+            }
+            if (object.maxDuty != null)
+                message.maxDuty = object.maxDuty >>> 0;
+            return message;
+        };
+
+        /**
+         * Creates a plain object from a PwmGravityCompSettingsEnvelope message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof motors_mirroring.PwmGravityCompSettingsEnvelope
+         * @static
+         * @param {motors_mirroring.PwmGravityCompSettingsEnvelope} message PwmGravityCompSettingsEnvelope
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        PwmGravityCompSettingsEnvelope.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.arrays || options.defaults)
+                object.jointDutyGains = [];
+            if (options.defaults) {
+                if ($util.Long) {
+                    let long = new $util.Long(0, 0, true);
+                    object.monotonicStampNs = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+                } else
+                    object.monotonicStampNs = options.longs === String ? "0" : 0;
+                if ($util.Long) {
+                    let long = new $util.Long(0, 0, true);
+                    object.localStampNs = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+                } else
+                    object.localStampNs = options.longs === String ? "0" : 0;
+                if ($util.Long) {
+                    let long = new $util.Long(0, 0, true);
+                    object.appStartId = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+                } else
+                    object.appStartId = options.longs === String ? "0" : 0;
+                object.bus = null;
+                object.maxDuty = 0;
+            }
+            if (message.monotonicStampNs != null && message.hasOwnProperty("monotonicStampNs"))
+                if (typeof message.monotonicStampNs === "number")
+                    object.monotonicStampNs = options.longs === String ? String(message.monotonicStampNs) : message.monotonicStampNs;
+                else
+                    object.monotonicStampNs = options.longs === String ? $util.Long.prototype.toString.call(message.monotonicStampNs) : options.longs === Number ? new $util.LongBits(message.monotonicStampNs.low >>> 0, message.monotonicStampNs.high >>> 0).toNumber(true) : message.monotonicStampNs;
+            if (message.localStampNs != null && message.hasOwnProperty("localStampNs"))
+                if (typeof message.localStampNs === "number")
+                    object.localStampNs = options.longs === String ? String(message.localStampNs) : message.localStampNs;
+                else
+                    object.localStampNs = options.longs === String ? $util.Long.prototype.toString.call(message.localStampNs) : options.longs === Number ? new $util.LongBits(message.localStampNs.low >>> 0, message.localStampNs.high >>> 0).toNumber(true) : message.localStampNs;
+            if (message.appStartId != null && message.hasOwnProperty("appStartId"))
+                if (typeof message.appStartId === "number")
+                    object.appStartId = options.longs === String ? String(message.appStartId) : message.appStartId;
+                else
+                    object.appStartId = options.longs === String ? $util.Long.prototype.toString.call(message.appStartId) : options.longs === Number ? new $util.LongBits(message.appStartId.low >>> 0, message.appStartId.high >>> 0).toNumber(true) : message.appStartId;
+            if (message.bus != null && message.hasOwnProperty("bus"))
+                object.bus = $root.motors_mirroring.MirroringBus.toObject(message.bus, options);
+            if (message.jointDutyGains && message.jointDutyGains.length) {
+                object.jointDutyGains = [];
+                for (let j = 0; j < message.jointDutyGains.length; ++j)
+                    object.jointDutyGains[j] = options.json && !isFinite(message.jointDutyGains[j]) ? String(message.jointDutyGains[j]) : message.jointDutyGains[j];
+            }
+            if (message.maxDuty != null && message.hasOwnProperty("maxDuty"))
+                object.maxDuty = message.maxDuty;
+            return object;
+        };
+
+        /**
+         * Converts this PwmGravityCompSettingsEnvelope to JSON.
+         * @function toJSON
+         * @memberof motors_mirroring.PwmGravityCompSettingsEnvelope
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        PwmGravityCompSettingsEnvelope.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for PwmGravityCompSettingsEnvelope
+         * @function getTypeUrl
+         * @memberof motors_mirroring.PwmGravityCompSettingsEnvelope
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        PwmGravityCompSettingsEnvelope.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+            if (typeUrlPrefix === undefined) {
+                typeUrlPrefix = "type.googleapis.com";
+            }
+            return typeUrlPrefix + "/motors_mirroring.PwmGravityCompSettingsEnvelope";
+        };
+
+        return PwmGravityCompSettingsEnvelope;
     })();
 
     return motors_mirroring;

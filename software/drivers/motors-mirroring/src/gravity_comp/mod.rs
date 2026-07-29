@@ -7,9 +7,9 @@
 //! using the servo's internal position gain as an implicit spring. See
 //! `elrobot_dynamics` for the torque model and `control` for the offset law.
 
-mod control;
-mod elrobot_dynamics;
-mod kinematics;
+pub(crate) mod control;
+pub(crate) mod elrobot_dynamics;
+pub(crate) mod kinematics;
 
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, Ordering};
