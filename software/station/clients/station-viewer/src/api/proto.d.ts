@@ -261,7 +261,8 @@ export namespace drivers {
         QDT_VICTRON_SMARTSOLAR_MPPT_RX = 54,
         QDT_PWM_OUTPUT_TX = 55,
         QDT_PWM_OUTPUT_RX = 56,
-        QDT_DMESG_RX = 57
+        QDT_DMESG_RX = 57,
+        QDT_DFROBOT_RS485_RX = 58
     }
 
     /** StationCommandType enum. */
@@ -15550,6 +15551,385 @@ export namespace dmesg {
          * @returns Plain object
          */
         public static toObject(message: dmesg.RxEnvelope, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this RxEnvelope to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for RxEnvelope
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+}
+
+/** Namespace dfrobot_rs485. */
+export namespace dfrobot_rs485 {
+
+    /** DfrobotSignalType enum. */
+    enum DfrobotSignalType {
+        DFROBOT_SIGNAL_TYPE_UNSPECIFIED = 0,
+        DFROBOT_CONNECTED = 1,
+        DFROBOT_DISCONNECTED = 2,
+        DFROBOT_REGISTERS_SNAPSHOT = 3,
+        DFROBOT_ERROR = 4
+    }
+
+    /** DfrobotSensorModel enum. */
+    enum DfrobotSensorModel {
+        DFROBOT_MODEL_UNSPECIFIED = 0,
+        DFROBOT_SEN0640_IRRADIANCE = 1,
+        DFROBOT_SEN0641_PAR = 2,
+        DFROBOT_SEN0642_UV = 3,
+        DFROBOT_SEN0644_LIGHT = 4
+    }
+
+    /** Properties of a DfrobotDevice. */
+    interface IDfrobotDevice {
+
+        /** DfrobotDevice id */
+        id?: (string|null);
+
+        /** DfrobotDevice model */
+        model?: (dfrobot_rs485.DfrobotSensorModel|null);
+
+        /** DfrobotDevice modbusId */
+        modbusId?: (number|null);
+
+        /** DfrobotDevice portName */
+        portName?: (string|null);
+
+        /** DfrobotDevice baud */
+        baud?: (number|null);
+    }
+
+    /** Represents a DfrobotDevice. */
+    class DfrobotDevice implements IDfrobotDevice {
+
+        /**
+         * Constructs a new DfrobotDevice.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: dfrobot_rs485.IDfrobotDevice);
+
+        /** DfrobotDevice id. */
+        public id: string;
+
+        /** DfrobotDevice model. */
+        public model: dfrobot_rs485.DfrobotSensorModel;
+
+        /** DfrobotDevice modbusId. */
+        public modbusId: number;
+
+        /** DfrobotDevice portName. */
+        public portName: string;
+
+        /** DfrobotDevice baud. */
+        public baud: number;
+
+        /**
+         * Creates a new DfrobotDevice instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns DfrobotDevice instance
+         */
+        public static create(properties?: dfrobot_rs485.IDfrobotDevice): dfrobot_rs485.DfrobotDevice;
+
+        /**
+         * Encodes the specified DfrobotDevice message. Does not implicitly {@link dfrobot_rs485.DfrobotDevice.verify|verify} messages.
+         * @param message DfrobotDevice message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: dfrobot_rs485.IDfrobotDevice, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified DfrobotDevice message, length delimited. Does not implicitly {@link dfrobot_rs485.DfrobotDevice.verify|verify} messages.
+         * @param message DfrobotDevice message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: dfrobot_rs485.IDfrobotDevice, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes a DfrobotDevice message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns DfrobotDevice
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): dfrobot_rs485.DfrobotDevice;
+
+        /**
+         * Decodes a DfrobotDevice message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns DfrobotDevice
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): dfrobot_rs485.DfrobotDevice;
+
+        /**
+         * Verifies a DfrobotDevice message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates a DfrobotDevice message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns DfrobotDevice
+         */
+        public static fromObject(object: { [k: string]: any }): dfrobot_rs485.DfrobotDevice;
+
+        /**
+         * Creates a plain object from a DfrobotDevice message. Also converts values to other types if specified.
+         * @param message DfrobotDevice
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: dfrobot_rs485.DfrobotDevice, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this DfrobotDevice to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for DfrobotDevice
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
+    /** Properties of a RegisterRange. */
+    interface IRegisterRange {
+
+        /** RegisterRange startRegister */
+        startRegister?: (number|null);
+
+        /** RegisterRange data */
+        data?: (Uint8Array|null);
+    }
+
+    /** Represents a RegisterRange. */
+    class RegisterRange implements IRegisterRange {
+
+        /**
+         * Constructs a new RegisterRange.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: dfrobot_rs485.IRegisterRange);
+
+        /** RegisterRange startRegister. */
+        public startRegister: number;
+
+        /** RegisterRange data. */
+        public data: Uint8Array;
+
+        /**
+         * Creates a new RegisterRange instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns RegisterRange instance
+         */
+        public static create(properties?: dfrobot_rs485.IRegisterRange): dfrobot_rs485.RegisterRange;
+
+        /**
+         * Encodes the specified RegisterRange message. Does not implicitly {@link dfrobot_rs485.RegisterRange.verify|verify} messages.
+         * @param message RegisterRange message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: dfrobot_rs485.IRegisterRange, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified RegisterRange message, length delimited. Does not implicitly {@link dfrobot_rs485.RegisterRange.verify|verify} messages.
+         * @param message RegisterRange message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: dfrobot_rs485.IRegisterRange, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes a RegisterRange message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns RegisterRange
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): dfrobot_rs485.RegisterRange;
+
+        /**
+         * Decodes a RegisterRange message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns RegisterRange
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): dfrobot_rs485.RegisterRange;
+
+        /**
+         * Verifies a RegisterRange message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates a RegisterRange message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns RegisterRange
+         */
+        public static fromObject(object: { [k: string]: any }): dfrobot_rs485.RegisterRange;
+
+        /**
+         * Creates a plain object from a RegisterRange message. Also converts values to other types if specified.
+         * @param message RegisterRange
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: dfrobot_rs485.RegisterRange, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this RegisterRange to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for RegisterRange
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
+    /** Properties of a RxEnvelope. */
+    interface IRxEnvelope {
+
+        /** RxEnvelope monotonicStampNs */
+        monotonicStampNs?: (Long|null);
+
+        /** RxEnvelope localStampNs */
+        localStampNs?: (Long|null);
+
+        /** RxEnvelope appStartId */
+        appStartId?: (Long|null);
+
+        /** RxEnvelope signalType */
+        signalType?: (dfrobot_rs485.DfrobotSignalType|null);
+
+        /** RxEnvelope device */
+        device?: (dfrobot_rs485.IDfrobotDevice|null);
+
+        /** RxEnvelope ranges */
+        ranges?: (dfrobot_rs485.IRegisterRange[]|null);
+
+        /** RxEnvelope error */
+        error?: (string|null);
+    }
+
+    /** Represents a RxEnvelope. */
+    class RxEnvelope implements IRxEnvelope {
+
+        /**
+         * Constructs a new RxEnvelope.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: dfrobot_rs485.IRxEnvelope);
+
+        /** RxEnvelope monotonicStampNs. */
+        public monotonicStampNs: Long;
+
+        /** RxEnvelope localStampNs. */
+        public localStampNs: Long;
+
+        /** RxEnvelope appStartId. */
+        public appStartId: Long;
+
+        /** RxEnvelope signalType. */
+        public signalType: dfrobot_rs485.DfrobotSignalType;
+
+        /** RxEnvelope device. */
+        public device?: (dfrobot_rs485.IDfrobotDevice|null);
+
+        /** RxEnvelope ranges. */
+        public ranges: dfrobot_rs485.IRegisterRange[];
+
+        /** RxEnvelope error. */
+        public error: string;
+
+        /**
+         * Creates a new RxEnvelope instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns RxEnvelope instance
+         */
+        public static create(properties?: dfrobot_rs485.IRxEnvelope): dfrobot_rs485.RxEnvelope;
+
+        /**
+         * Encodes the specified RxEnvelope message. Does not implicitly {@link dfrobot_rs485.RxEnvelope.verify|verify} messages.
+         * @param message RxEnvelope message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: dfrobot_rs485.IRxEnvelope, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified RxEnvelope message, length delimited. Does not implicitly {@link dfrobot_rs485.RxEnvelope.verify|verify} messages.
+         * @param message RxEnvelope message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: dfrobot_rs485.IRxEnvelope, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes a RxEnvelope message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns RxEnvelope
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): dfrobot_rs485.RxEnvelope;
+
+        /**
+         * Decodes a RxEnvelope message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns RxEnvelope
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): dfrobot_rs485.RxEnvelope;
+
+        /**
+         * Verifies a RxEnvelope message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates a RxEnvelope message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns RxEnvelope
+         */
+        public static fromObject(object: { [k: string]: any }): dfrobot_rs485.RxEnvelope;
+
+        /**
+         * Creates a plain object from a RxEnvelope message. Also converts values to other types if specified.
+         * @param message RxEnvelope
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: dfrobot_rs485.RxEnvelope, options?: $protobuf.IConversionOptions): { [k: string]: any };
 
         /**
          * Converts this RxEnvelope to JSON.
