@@ -116,6 +116,12 @@ pub struct Drivers {
 
     #[serde(rename = "dmesg", default, skip_serializing_if = "Option::is_none")]
     pub dmesg: Option<DmesgConfig>,
+    #[serde(
+        rename = "dfrobot-rs485",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub dfrobot_rs485: Option<DfrobotRs485Config>,
 }
 
 /// ST3215 servo bus configuration
@@ -551,6 +557,71 @@ pub struct DmesgConfig {
     pub enabled: bool,
 }
 
+/// DFRobot RS-485 Modbus-RTU sensors (SEN0640/0641/0642/0644) behind a
+/// USB-to-RS485 adapter. One queue per sensor; the driver is read-only.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct DfrobotRs485Config {
+    #[serde(default)]
+    pub enabled: bool,
+
+    /// Candidate port paths, tried in order. '*' globs are supported.
+    #[serde(default = "default_dfrobot_rs485_ports")]
+    pub ports: Vec<String>,
+
+    #[serde(default = "default_dfrobot_rs485_baud")]
+    pub baud: u32,
+
+    #[serde(
+        rename = "poll-interval",
+        with = "humantime_serde",
+        default = "default_dfrobot_rs485_poll_interval"
+    )]
+    pub poll_interval: std::time::Duration,
+
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub sensors: Vec<DfrobotRs485SensorConfig>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct DfrobotRs485SensorConfig {
+    /// Optional queue key override; defaults to "<model>-<modbus_id>".
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+
+    /// One of: irradiance, par, uv, light
+    pub model: String,
+
+    #[serde(rename = "modbus-id")]
+    pub modbus_id: u8,
+}
+
+fn default_dfrobot_rs485_ports() -> Vec<String> {
+    vec![
+        "/dev/ttyUSB*".to_string(),
+        "/dev/cu.usbserial-*".to_string(),
+    ]
+}
+
+fn default_dfrobot_rs485_baud() -> u32 {
+    9600
+}
+
+fn default_dfrobot_rs485_poll_interval() -> std::time::Duration {
+    std::time::Duration::from_secs(1)
+}
+
+impl Default for DfrobotRs485Config {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            ports: default_dfrobot_rs485_ports(),
+            baud: default_dfrobot_rs485_baud(),
+            poll_interval: default_dfrobot_rs485_poll_interval(),
+            sensors: Vec::new(),
+        }
+    }
+}
+
 fn default_ov5647_dimension() -> String {
     "320x240".to_string()
 }
@@ -590,6 +661,7 @@ impl Default for Drivers {
             airgradient_open_air_o_1pst: None,
             victron_smartsolar_mppt: None,
             dmesg: None,
+            dfrobot_rs485: None,
         }
     }
 }
@@ -692,6 +764,36 @@ mod config_tests {
         let steering = &pwm_output.outputs[0];
         assert_eq!(steering.id, "steering");
         assert_eq!(cfg.inference.as_ref().map(Vec::len), Some(0));
+    }
+
+    #[test]
+    fn parses_dfrobot_rs485_config() {
+        let cfg: Config = serde_yaml::from_str(
+            "drivers:\n  system-info: true\n  dfrobot-rs485:\n    enabled: true\n    ports: [\"/dev/ttyUSB*\", \"/dev/cu.usbserial-*\"]\n    baud: 9600\n    poll-interval: 1s\n    sensors:\n      - { model: irradiance, modbus-id: 1 }\n      - { model: par, modbus-id: 2 }\n      - { model: uv, modbus-id: 3 }\n      - { model: light, modbus-id: 4, id: greenhouse-light }\ninference:\n",
+        )
+        .unwrap();
+        let dfrobot = cfg.drivers.dfrobot_rs485.unwrap();
+        assert!(dfrobot.enabled);
+        assert_eq!(dfrobot.ports, vec!["/dev/ttyUSB*", "/dev/cu.usbserial-*"]);
+        assert_eq!(dfrobot.baud, 9600);
+        assert_eq!(dfrobot.poll_interval, std::time::Duration::from_secs(1));
+        assert_eq!(dfrobot.sensors.len(), 4);
+        assert_eq!(dfrobot.sensors[0].model, "irradiance");
+        assert_eq!(dfrobot.sensors[0].modbus_id, 1);
+        assert_eq!(dfrobot.sensors[3].id.as_deref(), Some("greenhouse-light"));
+    }
+
+    #[test]
+    fn dfrobot_rs485_config_defaults() {
+        let cfg: Config = serde_yaml::from_str(
+            "drivers:\n  system-info: true\n  dfrobot-rs485:\n    enabled: true\ninference:\n",
+        )
+        .unwrap();
+        let dfrobot = cfg.drivers.dfrobot_rs485.unwrap();
+        assert_eq!(dfrobot.baud, 9600);
+        assert_eq!(dfrobot.poll_interval, std::time::Duration::from_secs(1));
+        assert!(!dfrobot.ports.is_empty());
+        assert!(dfrobot.sensors.is_empty());
     }
 }
 

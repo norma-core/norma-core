@@ -435,6 +435,58 @@ impl Station {
             log::warn!("INA226 driver requested but is Linux-only");
         }
 
+        #[cfg(feature = "dfrobot-rs485")]
+        if let Some(dfrobot_config) = &self.config.drivers.dfrobot_rs485 {
+            if dfrobot_config.enabled {
+                let mut sensors = Vec::with_capacity(dfrobot_config.sensors.len());
+                for sensor in &dfrobot_config.sensors {
+                    match dfrobot_rs485::SensorModel::from_config_name(&sensor.model) {
+                        Some(model) => sensors.push(dfrobot_rs485::DfrobotSensorConfig {
+                            id: sensor.id.clone(),
+                            model,
+                            modbus_id: sensor.modbus_id,
+                        }),
+                        None => log::error!(
+                            "Unknown DFRobot RS485 sensor model '{}' (expected irradiance/par/uv/light); sensor skipped",
+                            sensor.model
+                        ),
+                    }
+                }
+
+                let config = dfrobot_rs485::DfrobotRs485DriverConfig {
+                    ports: dfrobot_config.ports.clone(),
+                    baud: dfrobot_config.baud,
+                    poll_interval: dfrobot_config.poll_interval,
+                    sensors,
+                };
+
+                if let Err(error) = dfrobot_rs485::start_dfrobot_rs485_driver(
+                    self.normfs.clone(),
+                    self.engine.clone(),
+                    config,
+                )
+                .await
+                {
+                    log::error!("Failed to start DFRobot RS485 driver: {}", error);
+                }
+            } else {
+                log::info!("DFRobot RS485 driver disabled by configuration");
+            }
+        }
+
+        #[cfg(not(feature = "dfrobot-rs485"))]
+        if self
+            .config
+            .drivers
+            .dfrobot_rs485
+            .as_ref()
+            .is_some_and(|config| config.enabled)
+        {
+            log::warn!(
+                "DFRobot RS485 driver requested but not compiled (missing 'dfrobot-rs485' feature)"
+            );
+        }
+
         // Start ST3215 bus if configured
         let st3215_config = if let Some(st3215) = &self.config.drivers.st3215 {
             if st3215.enabled {

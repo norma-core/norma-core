@@ -4,11 +4,12 @@ version.workspace = true
 edition = "2024"
 
 [features]
-default = ["arduino", "ina226"]
+default = ["arduino", "ina226", "dfrobot-rs485"]
 arduino = ["dep:arduino-nicla-sense-env"]
 ina226 = ["dep:ina226"]
 ov5647 = ["dep:ov5647"]
 yahboom-dogzilla-lite = ["dep:yahboom-dogzilla-lite"]
+dfrobot-rs485 = ["dep:dfrobot-rs485"]
 
 [dependencies]
 prost = { workspace = true }
@@ -23,6 +24,7 @@ airgradient-open-air-o-1pst = { path = "../../../drivers/airgradient-open-air-o-
 victron-smartsolar-mppt = { path = "../../../drivers/victron-smartsolar-mppt" }
 pwm-output = { path = "../../../drivers/pwm-output" }
 dmesg = { path = "../../../drivers/dmesg" }
+dfrobot-rs485 = { path = "../../../drivers/dfrobot-rs485", optional = true }
 yahboom-dogzilla-lite = { path = "../../../drivers/yahboom-dogzilla-lite", optional = true }
 ov5647 = { path = "../../../drivers/ov5647", optional = true }
 systime = { path = "../../shared/systime-rs" }

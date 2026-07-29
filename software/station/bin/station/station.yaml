@@ -19,6 +19,16 @@ drivers:
   yahboom-dogzilla-lite:
     enabled: true
     mode: simulation
+  dfrobot-rs485:
+    enabled: true
+    ports: ["/dev/ttyUSB*", "/dev/cu.usbserial-*"]
+    baud: 9600
+    poll-interval: 1s
+    sensors:
+      - { model: irradiance, modbus-id: 1 }
+      - { model: par,        modbus-id: 2 }
+      - { model: uv,         modbus-id: 3 }
+      - { model: light,      modbus-id: 4 }
 inference:
 - queue-id: inference/normvla
   shm: /tmp/normvla
