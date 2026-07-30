@@ -481,9 +481,32 @@ impl Station {
                     }
                 };
 
+                let bauds = {
+                    let resolved: Vec<u32> = match (dfrobot_config.baud, &dfrobot_config.bauds) {
+                        (Some(baud), Some(list)) => {
+                            log::error!(
+                                "DFRobot RS485: both 'baud' ({baud}) and 'bauds' are set; ignoring 'baud'"
+                            );
+                            dfrobot_rs485::sanitize_bauds(list)
+                        }
+                        (None, Some(list)) => dfrobot_rs485::sanitize_bauds(list),
+                        (Some(baud), None) => dfrobot_rs485::sanitize_bauds(&[baud]),
+                        (None, None) => dfrobot_rs485::default_bauds(),
+                    };
+                    if resolved.is_empty() {
+                        log::error!(
+                            "DFRobot RS485: no valid baud rates configured; using default {:?}",
+                            dfrobot_rs485::default_bauds()
+                        );
+                        dfrobot_rs485::default_bauds()
+                    } else {
+                        resolved
+                    }
+                };
+
                 let config = dfrobot_rs485::DfrobotRs485DriverConfig {
                     ports: dfrobot_config.ports.clone(),
-                    baud: dfrobot_config.baud,
+                    bauds,
                     poll_interval: dfrobot_config.poll_interval,
                     scan_ids,
                     sensors,
