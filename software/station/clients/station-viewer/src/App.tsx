@@ -10,6 +10,7 @@ const HomePage = lazy(() => import('./pages/HomePage'));
 const HistoryPage = lazy(() => import('./pages/HistoryPage'));
 const St3215MotorConfigPage = lazy(() => import('./pages/St3215MotorConfigPage'));
 const St3215BusCalibrationPage = lazy(() => import('./pages/St3215BusCalibrationPage'));
+const DfrobotSensorConfigPage = lazy(() => import('./pages/DfrobotSensorConfigPage'));
 
 function App() {
   return (
@@ -22,6 +23,7 @@ function App() {
           </Route>
           <Route path="/st3215-bus-calibration" element={<St3215BusCalibrationPage />} />
           <Route path="/st3215-bind-motors" element={<St3215MotorConfigPage />} />
+          <Route path="/dfrobot-sensor-config" element={<DfrobotSensorConfigPage />} />
         </Routes>
       </Suspense>
     </Router>

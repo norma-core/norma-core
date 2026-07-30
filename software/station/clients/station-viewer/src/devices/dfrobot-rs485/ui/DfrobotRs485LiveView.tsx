@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { dfrobot_rs485 } from '@/api/proto.js';
 import type { FrameEntry } from '@/api/frame-parser';
 import DeviceWidgetShell from '@/components/DeviceWidgetShell';
@@ -18,6 +19,9 @@ export interface DfrobotRs485LiveViewProps {
 function DfrobotRs485LiveView({ entries }: DfrobotRs485LiveViewProps) {
   const sorted = [...entries].sort((a, b) => a.queueId.localeCompare(b.queueId));
   const firstError = sorted.map((entry) => entry.data.error).find((error) => !!error);
+  const onlineCount = sorted.filter((entry) =>
+    ONLINE_SIGNALS.has(entry.data.signalType ?? 0),
+  ).length;
 
   return (
     <DeviceWidgetShell title="DFRobot RS485" subtitle="Modbus sensor bus" error={firstError}>
@@ -46,6 +50,14 @@ function DfrobotRs485LiveView({ entries }: DfrobotRs485LiveViewProps) {
             </div>
           );
         })}
+        {onlineCount === 1 && (
+          <Link
+            to="/dfrobot-sensor-config"
+            className="block pt-1 text-xs text-accent-data hover:underline"
+          >
+            Configure sensor →
+          </Link>
+        )}
       </div>
     </DeviceWidgetShell>
   );
