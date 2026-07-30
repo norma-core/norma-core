@@ -4,6 +4,7 @@ use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio_serial::SerialStream;
 
 pub const FUNCTION_READ_HOLDING: u8 = 0x03;
+pub const FUNCTION_WRITE_SINGLE: u8 = 0x06;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ModbusError {
@@ -79,6 +80,109 @@ pub fn parse_read_response(id: u8, count: u16, response: &[u8]) -> Result<Bytes,
     check_crc(response)?;
 
     Ok(Bytes::copy_from_slice(&response[3..3 + 2 * count as usize]))
+}
+
+pub fn build_write_request(id: u8, register: u16, value: u16) -> [u8; 8] {
+    let mut frame = [
+        id,
+        FUNCTION_WRITE_SINGLE,
+        (register >> 8) as u8,
+        (register & 0xFF) as u8,
+        (value >> 8) as u8,
+        (value & 0xFF) as u8,
+        0,
+        0,
+    ];
+    let crc = crc16(&frame[..6]);
+    frame[6] = (crc & 0xFF) as u8;
+    frame[7] = (crc >> 8) as u8;
+    frame
+}
+
+/// Validates an fc 0x06 response: success is a byte-exact echo of the
+/// request; exceptions come back as a 5-byte fc|0x80 frame.
+pub fn parse_write_response(
+    id: u8,
+    register: u16,
+    value: u16,
+    response: &[u8],
+) -> Result<(), ModbusError> {
+    if response.len() >= 5 && response[0] == id && response[1] == (FUNCTION_WRITE_SINGLE | 0x80) {
+        check_crc(&response[..5])?;
+        return Err(ModbusError::Exception(response[2]));
+    }
+
+    let expected = build_write_request(id, register, value);
+    if response.len() != expected.len() {
+        return Err(ModbusError::BadEcho);
+    }
+    check_crc(response)?;
+    if response != expected {
+        return Err(ModbusError::BadEcho);
+    }
+    Ok(())
+}
+
+/// One half-duplex fc 0x06 transaction, mirroring `transact`.
+pub async fn write_register(
+    port: &mut SerialStream,
+    id: u8,
+    register: u16,
+    value: u16,
+    timeout: Duration,
+) -> Result<(), ModbusError> {
+    use tokio_serial::SerialPort;
+
+    let _ = port.clear(tokio_serial::ClearBuffer::Input);
+
+    let request = build_write_request(id, register, value);
+
+    let expected_len = request.len();
+    let mut response = vec![0u8; expected_len];
+    let mut filled = 0usize;
+
+    let result = tokio::time::timeout(timeout, async {
+        port.write_all(&request)
+            .await
+            .map_err(|error| ModbusError::Io(error.to_string()))?;
+        port.flush()
+            .await
+            .map_err(|error| ModbusError::Io(error.to_string()))?;
+
+        // Read the 3-byte header first so a 5-byte exception frame doesn't
+        // stall waiting for the full 8-byte echo.
+        while filled < 3 {
+            let n = port
+                .read(&mut response[filled..])
+                .await
+                .map_err(|error| ModbusError::Io(error.to_string()))?;
+            if n == 0 {
+                return Err(ModbusError::Io("port closed".to_string()));
+            }
+            filled += n;
+        }
+        let total = if response[1] & 0x80 != 0 { 5 } else { expected_len };
+        while filled < total {
+            let n = port
+                .read(&mut response[filled..total])
+                .await
+                .map_err(|error| ModbusError::Io(error.to_string()))?;
+            if n == 0 {
+                return Err(ModbusError::Io("port closed".to_string()));
+            }
+            filled += n;
+        }
+        Ok(total)
+    })
+    .await;
+
+    let total = match result {
+        Ok(Ok(total)) => total,
+        Ok(Err(error)) => return Err(error),
+        Err(_) => return Err(ModbusError::Timeout),
+    };
+
+    parse_write_response(id, register, value, &response[..total])
 }
 
 fn check_crc(frame: &[u8]) -> Result<(), ModbusError> {
@@ -244,6 +348,64 @@ mod tests {
         assert!(matches!(
             parse_read_response(1, 1, &frame),
             Err(ModbusError::Exception(0x02))
+        ));
+    }
+
+    #[test]
+    fn builds_write_request_with_valid_crc() {
+        // Radiation-family address change: write 5 to 0x07D0 on id 1.
+        let frame = build_write_request(1, 0x07D0, 5);
+        assert_eq!(&frame[..6], &[0x01, 0x06, 0x07, 0xD0, 0x00, 0x05]);
+        let crc = crc16(&frame[..6]);
+        assert_eq!(frame[6], (crc & 0xFF) as u8);
+        assert_eq!(frame[7], (crc >> 8) as u8);
+    }
+
+    #[test]
+    fn write_accepts_exact_echo() {
+        // fc 0x06 success response is a byte-exact echo of the request.
+        let frame = build_write_request(4, 0x0065, 3);
+        assert!(parse_write_response(4, 0x0065, 3, &frame).is_ok());
+    }
+
+    #[test]
+    fn write_rejects_mismatched_echo() {
+        let frame = build_write_request(4, 0x0065, 3);
+        assert!(matches!(
+            parse_write_response(4, 0x0065, 2, &frame),
+            Err(ModbusError::BadEcho)
+        ));
+    }
+
+    #[test]
+    fn write_rejects_bad_crc_echo() {
+        let mut frame = build_write_request(4, 0x0065, 3);
+        frame[7] ^= 0xFF;
+        assert!(matches!(
+            parse_write_response(4, 0x0065, 3, &frame),
+            Err(ModbusError::CrcMismatch)
+        ));
+    }
+
+    #[test]
+    fn write_surfaces_modbus_exception() {
+        // Exception frame: id, fc|0x80, exception code, crc.
+        let mut frame = vec![0x01, 0x86, 0x02];
+        let crc = crc16(&frame);
+        frame.push((crc & 0xFF) as u8);
+        frame.push((crc >> 8) as u8);
+        assert!(matches!(
+            parse_write_response(1, 0x07D0, 5, &frame),
+            Err(ModbusError::Exception(0x02))
+        ));
+    }
+
+    #[test]
+    fn write_rejects_short_frame() {
+        let frame = build_write_request(1, 0x07D0, 5);
+        assert!(matches!(
+            parse_write_response(1, 0x07D0, 5, &frame[..6]),
+            Err(ModbusError::BadEcho)
         ));
     }
 }
