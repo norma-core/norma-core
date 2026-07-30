@@ -10,6 +10,10 @@ pub enum SensorModel {
     Uv,
     /// SEN0644 ambient light, Lux (32-bit)
     Light,
+    /// A device that answers the bus but does not match any known model's
+    /// signatures. Polled with a generic register set so its data is captured
+    /// and can be identified later from history.
+    Unknown,
 }
 
 // Poll plans: (start_register, register_count), documented + undocumented-live
@@ -47,6 +51,22 @@ const LIGHT_RANGES: &[(u16, u16)] = &[
     (0x0064, 4), // address, baud code, parity, version
 ];
 
+const UNKNOWN_RANGES: &[(u16, u16)] = &[
+    (0x0000, 17), // measurement cluster incl. 0x0009 hw id and 0x0010
+    (0x0046, 1),  // SEN0644-style settings — single reads required
+    (0x0047, 1),
+    (0x0048, 1),
+    (0x0064, 1), // SEN0644-style comms + version
+    (0x0065, 1),
+    (0x0066, 1),
+    (0x0067, 1),
+    (0x07D0, 1), // radiation-style comms + serial pair
+    (0x07D1, 1),
+    (0x07D3, 1),
+    (0x07D4, 1),
+    (0x083B, 1), // full-scale range constant
+];
+
 impl SensorModel {
     pub fn from_config_name(name: &str) -> Option<Self> {
         match name.trim().to_ascii_lowercase().as_str() {
@@ -54,6 +74,7 @@ impl SensorModel {
             "par" => Some(SensorModel::Par),
             "uv" => Some(SensorModel::Uv),
             "light" => Some(SensorModel::Light),
+            "unknown" => Some(SensorModel::Unknown),
             _ => None,
         }
     }
@@ -64,6 +85,7 @@ impl SensorModel {
             SensorModel::Par => "par",
             SensorModel::Uv => "uv",
             SensorModel::Light => "light",
+            SensorModel::Unknown => "unknown",
         }
     }
 
@@ -73,6 +95,7 @@ impl SensorModel {
             SensorModel::Par => DfrobotSensorModel::DfrobotSen0641Par,
             SensorModel::Uv => DfrobotSensorModel::DfrobotSen0642Uv,
             SensorModel::Light => DfrobotSensorModel::DfrobotSen0644Light,
+            SensorModel::Unknown => DfrobotSensorModel::DfrobotModelUnspecified,
         }
     }
 
@@ -82,19 +105,58 @@ impl SensorModel {
             SensorModel::Par => PAR_RANGES,
             SensorModel::Uv => UV_RANGES,
             SensorModel::Light => LIGHT_RANGES,
+            SensorModel::Unknown => UNKNOWN_RANGES,
         }
     }
+}
+
+/// Detection registers (single-register reads only — see UNKNOWN_RANGES note).
+pub const REG_RADIATION_ADDRESS: u16 = 0x07D0;
+pub const REG_LIGHT_ADDRESS: u16 = 0x0064;
+pub const REG_RANGE_CONSTANT: u16 = 0x083B;
+pub const REG_HARDWARE_ID: u16 = 0x0009;
+pub const REG_LIGHT_VERSION: u16 = 0x0067;
+
+/// Classifies a responding device from its detection-register reads.
+///
+/// `radiation_addr` / `light_addr` are single reads of 0x07D0 / 0x0064: the
+/// register that echoes the device's own Modbus id identifies its config
+/// family (the other family's register reads 0 on real hardware, and ids
+/// start at 1, so there is no ambiguity; radiation is checked first).
+/// `range` / `hw_id` are reads of 0x083B / 0x0009, meaningful only for the
+/// radiation family; callers pass 0 when unread.
+pub fn classify(
+    modbus_id: u8,
+    radiation_addr: u16,
+    light_addr: u16,
+    range: u16,
+    hw_id: u16,
+) -> SensorModel {
+    let id = modbus_id as u16;
+    if radiation_addr == id {
+        return match (range, hw_id) {
+            (1800, 0x0104) => SensorModel::Irradiance,
+            (2500, 0x0102) => SensorModel::Par,
+            (1500, 0x0202) => SensorModel::Uv,
+            _ => SensorModel::Unknown,
+        };
+    }
+    if light_addr == id {
+        return SensorModel::Light;
+    }
+    SensorModel::Unknown
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    const ALL: [SensorModel; 4] = [
+    const ALL: [SensorModel; 5] = [
         SensorModel::Irradiance,
         SensorModel::Par,
         SensorModel::Uv,
         SensorModel::Light,
+        SensorModel::Unknown,
     ];
 
     #[test]
@@ -154,5 +216,58 @@ mod tests {
         protos.sort();
         protos.dedup();
         assert_eq!(protos.len(), ALL.len());
+    }
+
+    #[test]
+    fn classify_radiation_models_from_sweep_values() {
+        // Hardware-verified triples from deep-sweep-2026-07-29
+        assert_eq!(classify(1, 1, 0, 1800, 0x0104), SensorModel::Irradiance);
+        assert_eq!(classify(2, 2, 0, 2500, 0x0102), SensorModel::Par);
+        assert_eq!(classify(3, 3, 0, 1500, 0x0202), SensorModel::Uv);
+    }
+
+    #[test]
+    fn classify_light_family() {
+        // SEN0644 echoes its id at 0x0064, reads 0 at 0x07D0
+        assert_eq!(classify(4, 0, 4, 0, 0), SensorModel::Light);
+    }
+
+    #[test]
+    fn classify_unknown_range_value() {
+        // radiation family but unrecognized full-scale range
+        assert_eq!(classify(5, 5, 0, 3000, 0x0104), SensorModel::Unknown);
+    }
+
+    #[test]
+    fn classify_hw_id_contradiction() {
+        // range says par, hw id says uv -> refuse to guess
+        assert_eq!(classify(2, 2, 0, 2500, 0x0202), SensorModel::Unknown);
+    }
+
+    #[test]
+    fn classify_neither_family() {
+        // answers the bus but neither config register echoes the id
+        assert_eq!(classify(6, 0, 0, 0, 0), SensorModel::Unknown);
+        assert_eq!(classify(6, 3, 9, 0, 0), SensorModel::Unknown);
+    }
+
+    #[test]
+    fn classify_radiation_takes_precedence() {
+        // pathological double echo: radiation branch wins (documented order)
+        assert_eq!(classify(7, 7, 7, 1800, 0x0104), SensorModel::Irradiance);
+    }
+
+    #[test]
+    fn unknown_model_identity() {
+        assert_eq!(SensorModel::Unknown.config_name(), "unknown");
+        assert_eq!(
+            SensorModel::from_config_name("unknown"),
+            Some(SensorModel::Unknown)
+        );
+        assert_eq!(
+            SensorModel::Unknown.proto(),
+            DfrobotSensorModel::DfrobotModelUnspecified
+        );
+        assert!(!SensorModel::Unknown.poll_ranges().is_empty());
     }
 }
