@@ -16,11 +16,18 @@ pub enum SensorModel {
     Unknown,
 }
 
-/// Uniform per-cycle read for every model: the low window 0x0000..=0x0020
-/// (measurements, derived channels, raw ADC, hardware id, uv constant).
-/// Verified safe as one 33-register block on real hardware (2026-07-30);
+/// Per-cycle read, radiation family: the low window 0x0000..=0x0020
+/// (measurements, derived channels, hardware id, uv constant 0x0020).
+/// Verified safe as one 33-register block on SEN0640/0641/0642 (2026-07-30);
 /// 125-register blocks zero out 0x0020 — NEVER enlarge this block.
-const PER_CYCLE_RANGES: &[(u16, u16)] = &[(0x0000, 33)];
+const RADIATION_PER_CYCLE_RANGES: &[(u16, u16)] = &[(0x0000, 33)];
+
+/// Per-cycle read, SEN0644 light family and unknown devices: 0x0000..=0x0009
+/// (lux hi/lo at 0x0002/0x0003 plus the low spare registers).
+/// SEN0644 answers block reads of AT MOST 13 registers (hardware-verified
+/// 2026-07-30: x13 OK, x14+ malformed) — NEVER enlarge past 13. Unknown
+/// devices use this plan too, since they may be light-family.
+const LIGHT_PER_CYCLE_RANGES: &[(u16, u16)] = &[(0x0000, 10)];
 
 /// Connection-static registers, radiation family (SEN0640/0641/0642).
 /// Read once at connect and cached; the 0x0830 block and 0x00F0 answer
@@ -97,7 +104,12 @@ impl SensorModel {
     }
 
     pub fn poll_ranges(&self) -> &'static [(u16, u16)] {
-        PER_CYCLE_RANGES
+        match self {
+            SensorModel::Irradiance | SensorModel::Par | SensorModel::Uv => {
+                RADIATION_PER_CYCLE_RANGES
+            }
+            SensorModel::Light | SensorModel::Unknown => LIGHT_PER_CYCLE_RANGES,
+        }
     }
 
     pub fn static_ranges(&self) -> &'static [(u16, u16)] {
@@ -196,13 +208,22 @@ mod tests {
     }
 
     #[test]
-    fn per_cycle_plan_is_uniform_low_block() {
+    fn per_cycle_plans_respect_block_limits() {
+        assert_eq!(SensorModel::Irradiance.poll_ranges(), &[(0x0000, 33)]);
+        assert_eq!(SensorModel::Par.poll_ranges(), &[(0x0000, 33)]);
+        assert_eq!(SensorModel::Uv.poll_ranges(), &[(0x0000, 33)]);
+        assert_eq!(SensorModel::Light.poll_ranges(), &[(0x0000, 10)]);
+        assert_eq!(SensorModel::Unknown.poll_ranges(), &[(0x0000, 10)]);
+
         for model in ALL {
-            assert_eq!(
-                model.poll_ranges(),
-                &[(0x0000, 33)],
-                "{model:?} must poll exactly the verified low block"
-            );
+            let total: u16 = model.poll_ranges().iter().map(|(_, count)| *count).sum();
+            assert!(total <= 33, "{model:?} per-cycle read exceeds 33 registers");
+            if matches!(model, SensorModel::Light | SensorModel::Unknown) {
+                assert!(
+                    total <= 13,
+                    "{model:?} per-cycle read exceeds the SEN0644 13-register block limit"
+                );
+            }
         }
     }
 
