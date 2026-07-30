@@ -13,7 +13,7 @@ use std::sync::Arc;
 use std::time::Duration;
 use tokio::task::JoinHandle;
 use tokio::time::{MissedTickBehavior, interval, sleep};
-use tokio_serial::SerialPortBuilderExt;
+use tokio_serial::{SerialPort, SerialPortBuilderExt};
 
 pub const QUEUE_PREFIX: &str = "dfrobot-rs485";
 
@@ -33,7 +33,7 @@ type DriverResult<T> = Result<T, Box<dyn std::error::Error + Send + Sync>>;
 #[derive(Debug, Clone)]
 pub struct DfrobotRs485DriverConfig {
     pub ports: Vec<String>,
-    pub baud: u32,
+    pub bauds: Vec<u32>,
     pub poll_interval: Duration,
     pub sensors: Vec<DfrobotSensorConfig>,
     pub scan_ids: Vec<u8>,
@@ -117,14 +117,22 @@ impl DfrobotRs485Driver {
             config.poll_interval = DEFAULT_POLL_INTERVAL;
         }
 
+        if config.bauds.is_empty() {
+            warn!(
+                "DFRobot RS485 baud candidate list is empty, using {:?}",
+                default_bauds()
+            );
+            config.bauds = default_bauds();
+        }
+
         if config.scan_ids.is_empty() && config.sensors.is_empty() {
             warn!("DFRobot RS485 driver enabled with no scan range and no sensors configured");
         }
 
         info!(
-            "Started DFRobot RS485 driver: ports {:?}, {} baud, scan ids {:?}, {} explicit sensor(s)",
+            "Started DFRobot RS485 driver: ports {:?}, bauds {:?}, scan ids {:?}, {} explicit sensor(s)",
             config.ports,
-            config.baud,
+            config.bauds,
             config.scan_ids,
             config.sensors.len()
         );
@@ -156,7 +164,7 @@ async fn run_bus_worker<T: StationEngine + Send + Sync + 'static>(
         std::collections::HashMap::new();
 
     loop {
-        let (mut port, port_name, discovered) = acquire_and_scan(&config).await;
+        let (mut port, port_name, claimed_baud, discovered) = acquire_and_scan(&config).await;
 
         let mut states: Vec<SensorState> = Vec::new();
         for sensor in discovered {
@@ -191,7 +199,7 @@ async fn run_bus_worker<T: StationEngine + Send + Sync + 'static>(
         }
 
         info!(
-            "DFRobot RS485 claimed port {port_name} with {} sensor(s): {}",
+            "DFRobot RS485 claimed port {port_name} at {claimed_baud} baud with {} sensor(s): {}",
             states.len(),
             states
                 .iter()
@@ -215,7 +223,7 @@ async fn run_bus_worker<T: StationEngine + Send + Sync + 'static>(
                                 &normfs,
                                 state,
                                 &port_name,
-                                config.baud,
+                                claimed_baud,
                                 DfrobotSignalType::DfrobotConnected,
                                 ranges.clone(),
                                 None,
@@ -226,7 +234,7 @@ async fn run_bus_worker<T: StationEngine + Send + Sync + 'static>(
                             &normfs,
                             state,
                             &port_name,
-                            config.baud,
+                            claimed_baud,
                             DfrobotSignalType::DfrobotRegistersSnapshot,
                             ranges,
                             None,
@@ -243,7 +251,7 @@ async fn run_bus_worker<T: StationEngine + Send + Sync + 'static>(
                                 &normfs,
                                 state,
                                 &port_name,
-                                config.baud,
+                                claimed_baud,
                                 DfrobotSignalType::DfrobotDisconnected,
                                 Vec::new(),
                                 Some(message.clone()),
@@ -255,7 +263,7 @@ async fn run_bus_worker<T: StationEngine + Send + Sync + 'static>(
                                 &normfs,
                                 state,
                                 &port_name,
-                                config.baud,
+                                claimed_baud,
                                 DfrobotSignalType::DfrobotError,
                                 Vec::new(),
                                 Some(message.clone()),
@@ -274,7 +282,7 @@ async fn run_bus_worker<T: StationEngine + Send + Sync + 'static>(
                             &normfs,
                             state,
                             &port_name,
-                            config.baud,
+                            claimed_baud,
                             DfrobotSignalType::DfrobotDisconnected,
                             Vec::new(),
                             Some("serial port lost".to_string()),
@@ -378,17 +386,27 @@ async fn detect_sensor(
     Some(Sensor::detected(model, modbus_id))
 }
 
-/// Builds the sensor set for one candidate port. Explicit config entries are
-/// always included (their queues surface timeouts if the device is offline,
-/// as before) and skip detection; the scan range covers the remaining IDs.
-/// Returns an empty Vec when nothing on the bus answered — the port is then
-/// not claimed.
+/// Result of one scan pass at one baud rate.
+struct ScanOutcome {
+    /// The sensor set for this pass: all explicit-config sensors plus every
+    /// detected responder.
+    sensors: Vec<Sensor>,
+    /// Modbus IDs that actually answered during this pass — the claim and
+    /// mixed-bus decisions count these, not `sensors` (which includes
+    /// offline explicit entries).
+    responding_ids: Vec<u8>,
+}
+
+/// Builds the sensor set for one candidate port at the port's current baud.
+/// Explicit config entries are always included (their queues surface
+/// timeouts if the device is offline) and skip detection; the scan range
+/// covers the remaining IDs. `responding_ids` records which IDs answered.
 async fn scan_bus(
     port: &mut tokio_serial::SerialStream,
     config: &DfrobotRs485DriverConfig,
-) -> Vec<Sensor> {
-    let mut discovered = Vec::new();
-    let mut any_response = false;
+) -> ScanOutcome {
+    let mut sensors = Vec::new();
+    let mut responding_ids = Vec::new();
     let mut taken: std::collections::HashSet<u8> = std::collections::HashSet::new();
 
     for sensor_config in &config.sensors {
@@ -398,11 +416,11 @@ async fn scan_bus(
             .await
             .is_ok()
         {
-            any_response = true;
+            responding_ids.push(sensor.modbus_id);
         }
         sleep(INTER_FRAME_GAP).await;
         taken.insert(sensor.modbus_id);
-        discovered.push(sensor);
+        sensors.push(sensor);
     }
 
     for id in &config.scan_ids {
@@ -410,23 +428,28 @@ async fn scan_bus(
             continue;
         }
         if let Some(sensor) = detect_sensor(port, *id).await {
-            any_response = true;
-            discovered.push(sensor);
+            responding_ids.push(*id);
+            sensors.push(sensor);
         }
     }
 
-    if any_response { discovered } else { Vec::new() }
+    ScanOutcome {
+        sensors,
+        responding_ids,
+    }
 }
 
-/// Tries candidate ports (glob/fallback list, in order) until one has at
-/// least one responding device; runs the full scan-and-identify on each
-/// candidate. Returns the claimed port plus the discovered sensor set.
+/// Tries candidate ports (glob/fallback list, in order). On each port, runs
+/// the full ID scan at every candidate baud rate, then claims the baud with
+/// the most responding devices (tie: earlier in the list). Devices answering
+/// at a non-claimed baud are warned about and not polled (mixed bus).
 async fn acquire_and_scan(
     config: &DfrobotRs485DriverConfig,
-) -> (tokio_serial::SerialStream, String, Vec<Sensor>) {
+) -> (tokio_serial::SerialStream, String, u32, Vec<Sensor>) {
     loop {
         for candidate in expand_port_globs(&config.ports) {
-            let mut port = match tokio_serial::new(&candidate, config.baud).open_native_async() {
+            let initial_baud = config.bauds.first().copied().unwrap_or(9600);
+            let mut port = match tokio_serial::new(&candidate, initial_baud).open_native_async() {
                 Ok(port) => port,
                 Err(open_error) => {
                     log::debug!("DFRobot RS485: cannot open {candidate}: {open_error}");
@@ -434,11 +457,46 @@ async fn acquire_and_scan(
                 }
             };
 
-            let discovered = scan_bus(&mut port, config).await;
-            if !discovered.is_empty() {
-                return (port, candidate, discovered);
+            let mut passes: Vec<(u32, ScanOutcome)> = Vec::new();
+            for &baud in &config.bauds {
+                if let Err(error) = port.set_baud_rate(baud) {
+                    warn!("DFRobot RS485: cannot set {baud} baud on {candidate}: {error}");
+                    continue;
+                }
+                let _ = port.clear(tokio_serial::ClearBuffer::Input);
+                let outcome = scan_bus(&mut port, config).await;
+                passes.push((baud, outcome));
             }
-            log::debug!("DFRobot RS485: no responders on {candidate}");
+
+            let counts: Vec<(u32, usize)> = passes
+                .iter()
+                .map(|(baud, outcome)| (*baud, outcome.responding_ids.len()))
+                .collect();
+            let Some(best_index) = best_baud(&counts) else {
+                log::debug!("DFRobot RS485: no responders on {candidate} at any baud");
+                continue;
+            };
+
+            for (index, (baud, outcome)) in passes.iter().enumerate() {
+                if index != best_index && !outcome.responding_ids.is_empty() {
+                    warn!(
+                        "DFRobot RS485: mixed bus on {candidate}: {} device(s) answering at \
+                         {baud} baud (ids {:?}) will not be polled — unify the bus baud",
+                        outcome.responding_ids.len(),
+                        outcome.responding_ids
+                    );
+                }
+            }
+
+            let (claimed_baud, outcome) = passes.swap_remove(best_index);
+            if let Err(error) = port.set_baud_rate(claimed_baud) {
+                warn!(
+                    "DFRobot RS485: cannot return {candidate} to {claimed_baud} baud: {error}"
+                );
+                continue;
+            }
+            let _ = port.clear(tokio_serial::ClearBuffer::Input);
+            return (port, candidate, claimed_baud, outcome.sensors);
         }
         sleep(PORT_SCAN_INTERVAL).await;
     }
@@ -754,5 +812,22 @@ mod tests {
     fn best_baud_none_when_all_silent() {
         assert_eq!(best_baud(&[(4800, 0), (9600, 0)]), None);
         assert_eq!(best_baud(&[]), None);
+    }
+
+    #[test]
+    fn scan_outcome_counts_only_responders() {
+        let outcome = ScanOutcome {
+            sensors: vec![
+                Sensor::detected(SensorModel::Par, 2),
+                Sensor::from_config(&DfrobotSensorConfig {
+                    id: None,
+                    model: SensorModel::Uv,
+                    modbus_id: 3,
+                }),
+            ],
+            responding_ids: vec![2],
+        };
+        assert_eq!(outcome.responding_ids.len(), 1);
+        assert_eq!(outcome.sensors.len(), 2);
     }
 }
