@@ -447,33 +447,47 @@ impl Station {
                             modbus_id: sensor.modbus_id,
                         }),
                         None => log::error!(
-                            "Unknown DFRobot RS485 sensor model '{}' (expected irradiance/par/uv/light); sensor skipped",
+                            "Unknown DFRobot RS485 sensor model '{}' (expected irradiance/par/uv/light/unknown); sensor skipped",
                             sensor.model
                         ),
                     }
                 }
 
-                if sensors.is_empty() && !dfrobot_config.sensors.is_empty() {
-                    log::error!(
-                        "DFRobot RS485 driver disabled: no valid sensors after config translation"
-                    );
-                } else {
-                    let config = dfrobot_rs485::DfrobotRs485DriverConfig {
-                        ports: dfrobot_config.ports.clone(),
-                        baud: dfrobot_config.baud,
-                        poll_interval: dfrobot_config.poll_interval,
-                        sensors,
-                    };
-
-                    if let Err(error) = dfrobot_rs485::start_dfrobot_rs485_driver(
-                        self.normfs.clone(),
-                        self.engine.clone(),
-                        config,
-                    )
-                    .await
-                    {
-                        log::error!("Failed to start DFRobot RS485 driver: {}", error);
+                let scan_ids = match &dfrobot_config.scan_ids {
+                    None => dfrobot_rs485::default_scan_ids(),
+                    Some(station_iface::config::DfrobotScanIds::Range(spec)) => {
+                        match dfrobot_rs485::parse_scan_ids(spec) {
+                            Some(ids) => ids,
+                            None => {
+                                log::error!(
+                                    "Invalid DFRobot RS485 scan-ids '{}' (expected e.g. \"1-10\"); using default 1-10",
+                                    spec
+                                );
+                                dfrobot_rs485::default_scan_ids()
+                            }
+                        }
                     }
+                    Some(station_iface::config::DfrobotScanIds::List(ids)) => {
+                        dfrobot_rs485::sanitize_scan_ids(ids)
+                    }
+                };
+
+                let config = dfrobot_rs485::DfrobotRs485DriverConfig {
+                    ports: dfrobot_config.ports.clone(),
+                    baud: dfrobot_config.baud,
+                    poll_interval: dfrobot_config.poll_interval,
+                    scan_ids,
+                    sensors,
+                };
+
+                if let Err(error) = dfrobot_rs485::start_dfrobot_rs485_driver(
+                    self.normfs.clone(),
+                    self.engine.clone(),
+                    config,
+                )
+                .await
+                {
+                    log::error!("Failed to start DFRobot RS485 driver: {}", error);
                 }
             } else {
                 log::info!("DFRobot RS485 driver disabled by configuration");

@@ -21,14 +21,12 @@ drivers:
     mode: simulation
   dfrobot-rs485:
     enabled: true
-    ports: ["/dev/ttyUSB*", "/dev/cu.usbserial-*"]
+    ports: ["/dev/cu.usbserial-*", "/dev/ttyUSB*"]
     baud: 9600
     poll-interval: 1s
-    sensors:
-      - { model: irradiance, modbus-id: 1 }
-      - { model: par,        modbus-id: 2 }
-      - { model: uv,         modbus-id: 3 }
-      - { model: light,      modbus-id: 4 }
+    # scan-ids: "1-10"   # default; models are auto-detected.
+    # sensors:           # optional explicit override, skips detection:
+    #   - { model: uv, modbus-id: 3 }
 inference:
 - queue-id: inference/normvla
   shm: /tmp/normvla
