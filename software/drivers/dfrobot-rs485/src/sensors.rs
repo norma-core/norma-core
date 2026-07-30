@@ -16,55 +16,52 @@ pub enum SensorModel {
     Unknown,
 }
 
-// Poll plans: (start_register, register_count), documented + undocumented-live
-// registers from the hardware-verified register maps
-// (~/projects/study/tmp/dfrobot/REGISTERS.md). Contiguous ranges keep the
-// transaction count low; unimplemented registers inside a range read as 0 on
-// these devices, which is harmless. To poll a new register later, extend or
-// add a range here — storage is self-describing, nothing else changes.
-const IRRADIANCE_RANGES: &[(u16, u16)] = &[
-    (0x0000, 2), // 0x0000 value W/m², 0x0001 undocumented (derived)
-    (0x0009, 1), // undocumented, static — model/hardware id?
-    (0x0010, 1), // undocumented (derived)
+/// Uniform per-cycle read for every model: the low window 0x0000..=0x0020
+/// (measurements, derived channels, raw ADC, hardware id, uv constant).
+/// Verified safe as one 33-register block on real hardware (2026-07-30);
+/// 125-register blocks zero out 0x0020 — NEVER enlarge this block.
+const PER_CYCLE_RANGES: &[(u16, u16)] = &[(0x0000, 33)];
+
+/// Connection-static registers, radiation family (SEN0640/0641/0642).
+/// Read once at connect and cached; the 0x0830 block and 0x00F0 answer
+/// only small/single reads (deep-sweep finding 2026-07-29).
+const RADIATION_STATIC_RANGES: &[(u16, u16)] = &[
     (0x0052, 1), // deviation setting
-    (0x07D0, 5), // address, baud, 0x07D2 (unused), 0x07D3/0x07D4 serial pair
+    (0x07D0, 5), // address, baud, 0x07D2, serial pair 0x07D3/0x07D4
+    (0x0834, 1),
+    (0x0837, 1),
+    (0x0839, 1),
+    (0x083B, 1), // full-scale range constant (1800/2500/1500)
+    (0x0840, 1),
+    (0x0841, 1),
+    (0x0842, 1),
+    (0x0844, 1),
+    (0x0849, 1),
+    (0x00F0, 1), // factory-reset magic 0xDAA5 (read-only here; never written)
 ];
 
-const PAR_RANGES: &[(u16, u16)] = &[
-    (0x0000, 4), // 0x0000 value µmol/m²·s, 0x0003 undocumented raw ADC
-    (0x0009, 1),
-    (0x0052, 1), // deviation setting (signed)
-    (0x07D0, 5),
-];
-
-const UV_RANGES: &[(u16, u16)] = &[
-    (0x0000, 2), // 0x0000 intensity (÷100), 0x0001 UV index
-    (0x0009, 1),
-    (0x0020, 1), // undocumented, static 0x3F80 — calibration coefficient?
-    (0x0052, 1), // intensity deviation (÷100)
-    (0x07D0, 5),
-];
-
-const LIGHT_RANGES: &[(u16, u16)] = &[
-    (0x0002, 2), // illuminance hi/lo, (hi*65536+lo)/1000 Lux
+/// Connection-static registers, SEN0644 light.
+const LIGHT_STATIC_RANGES: &[(u16, u16)] = &[
     (0x0046, 3), // acquisition rate, calibration enable, calibration compensation
     (0x0064, 4), // address, baud code, parity, version
 ];
 
-const UNKNOWN_RANGES: &[(u16, u16)] = &[
-    (0x0000, 17), // measurement cluster incl. 0x0009 hw id and 0x0010
-    (0x0046, 1),  // SEN0644-style settings — single reads required
-    (0x0047, 1),
-    (0x0048, 1),
-    (0x0064, 1), // SEN0644-style comms + version
-    (0x0065, 1),
-    (0x0066, 1),
-    (0x0067, 1),
-    (0x07D0, 1), // radiation-style comms + serial pair
-    (0x07D1, 1),
-    (0x07D3, 1),
-    (0x07D4, 1),
-    (0x083B, 1), // full-scale range constant
+/// Unknown devices capture both families' static sets.
+const UNKNOWN_STATIC_RANGES: &[(u16, u16)] = &[
+    (0x0046, 3),
+    (0x0064, 4),
+    (0x0052, 1),
+    (0x07D0, 5),
+    (0x0834, 1),
+    (0x0837, 1),
+    (0x0839, 1),
+    (0x083B, 1),
+    (0x0840, 1),
+    (0x0841, 1),
+    (0x0842, 1),
+    (0x0844, 1),
+    (0x0849, 1),
+    (0x00F0, 1),
 ];
 
 impl SensorModel {
@@ -100,12 +97,16 @@ impl SensorModel {
     }
 
     pub fn poll_ranges(&self) -> &'static [(u16, u16)] {
+        PER_CYCLE_RANGES
+    }
+
+    pub fn static_ranges(&self) -> &'static [(u16, u16)] {
         match self {
-            SensorModel::Irradiance => IRRADIANCE_RANGES,
-            SensorModel::Par => PAR_RANGES,
-            SensorModel::Uv => UV_RANGES,
-            SensorModel::Light => LIGHT_RANGES,
-            SensorModel::Unknown => UNKNOWN_RANGES,
+            SensorModel::Irradiance | SensorModel::Par | SensorModel::Uv => {
+                RADIATION_STATIC_RANGES
+            }
+            SensorModel::Light => LIGHT_STATIC_RANGES,
+            SensorModel::Unknown => UNKNOWN_STATIC_RANGES,
         }
     }
 }
@@ -195,19 +196,73 @@ mod tests {
     }
 
     #[test]
-    fn measurement_registers_are_covered() {
-        let covers = |model: SensorModel, register: u16| {
-            model
-                .poll_ranges()
+    fn per_cycle_plan_is_uniform_low_block() {
+        for model in ALL {
+            assert_eq!(
+                model.poll_ranges(),
+                &[(0x0000, 33)],
+                "{model:?} must poll exactly the verified low block"
+            );
+        }
+    }
+
+    #[test]
+    fn static_ranges_are_sane() {
+        for model in ALL {
+            let ranges = model.static_ranges();
+            assert!(!ranges.is_empty(), "{model:?} has no static ranges");
+            for (start, count) in ranges {
+                assert!(*count > 0, "{model:?} empty static range at 0x{start:04X}");
+                assert!(*count <= 125, "{model:?} static range too long");
+                // statics must not overlap the per-cycle block (0x0000..=0x0020)
+                assert!(*start > 0x0020, "{model:?} static 0x{start:04X} overlaps low block");
+            }
+            let mut spans: Vec<(u16, u16)> = ranges
+                .iter()
+                .map(|(start, count)| (*start, start + count - 1))
+                .collect();
+            spans.sort();
+            for pair in spans.windows(2) {
+                assert!(pair[0].1 < pair[1].0, "{model:?} static ranges overlap");
+            }
+        }
+    }
+
+    #[test]
+    fn radiation_family_shares_one_static_set() {
+        assert_eq!(
+            SensorModel::Irradiance.static_ranges(),
+            SensorModel::Par.static_ranges()
+        );
+        assert_eq!(
+            SensorModel::Par.static_ranges(),
+            SensorModel::Uv.static_ranges()
+        );
+        assert_ne!(
+            SensorModel::Light.static_ranges(),
+            SensorModel::Irradiance.static_ranges()
+        );
+    }
+
+    #[test]
+    fn static_ranges_cover_spec_registers() {
+        let covers = |ranges: &[(u16, u16)], register: u16| {
+            ranges
                 .iter()
                 .any(|(start, count)| register >= *start && register < start + count)
         };
-        assert!(covers(SensorModel::Irradiance, 0x0000));
-        assert!(covers(SensorModel::Par, 0x0000));
-        assert!(covers(SensorModel::Uv, 0x0000)); // intensity
-        assert!(covers(SensorModel::Uv, 0x0001)); // UV index
-        assert!(covers(SensorModel::Light, 0x0002)); // lux high word
-        assert!(covers(SensorModel::Light, 0x0003)); // lux low word
+        let radiation = SensorModel::Uv.static_ranges();
+        for register in [0x0052, 0x07D0, 0x07D4, 0x0834, 0x083B, 0x0849, 0x00F0] {
+            assert!(covers(radiation, register), "radiation missing 0x{register:04X}");
+        }
+        let light = SensorModel::Light.static_ranges();
+        for register in [0x0046, 0x0048, 0x0064, 0x0067] {
+            assert!(covers(light, register), "light missing 0x{register:04X}");
+        }
+        let unknown = SensorModel::Unknown.static_ranges();
+        for register in [0x0046, 0x0067, 0x0052, 0x07D0, 0x083B, 0x00F0] {
+            assert!(covers(unknown, register), "unknown missing 0x{register:04X}");
+        }
     }
 
     #[test]
