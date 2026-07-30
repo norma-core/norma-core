@@ -561,6 +561,41 @@ pub fn sanitize_scan_ids(ids: &[u8]) -> Vec<u8> {
         .collect()
 }
 
+/// Default candidate baud rates for baud auto-detection, in try order.
+/// The radiation-family sensors ship at 4800, SEN0644 at 9600.
+pub fn default_bauds() -> Vec<u32> {
+    vec![4800, 9600]
+}
+
+/// Sanitizes a configured baud list: keeps first-occurrence order, drops
+/// duplicates and the invalid value 0.
+pub fn sanitize_bauds(bauds: &[u32]) -> Vec<u32> {
+    let mut seen = std::collections::HashSet::new();
+    bauds
+        .iter()
+        .copied()
+        .filter(|baud| *baud != 0 && seen.insert(*baud))
+        .collect()
+}
+
+/// Picks the scan pass to claim: the one with the most responding devices.
+/// Ties go to the earlier candidate (strictly-greater comparison); passes
+/// with zero responders never win. Returns the index into `counts`.
+fn best_baud(counts: &[(u32, usize)]) -> Option<usize> {
+    let mut best: Option<usize> = None;
+    for (index, (_, count)) in counts.iter().enumerate() {
+        if *count == 0 {
+            continue;
+        }
+        match best {
+            None => best = Some(index),
+            Some(current) if *count > counts[current].1 => best = Some(index),
+            _ => {}
+        }
+    }
+    best
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -690,5 +725,34 @@ mod tests {
         let unknown = Sensor::detected(SensorModel::Unknown, 5);
         assert_eq!(unknown.id, "unknown-5");
         assert_eq!(unknown.rx_queue_path(), "dfrobot-rs485/unknown-5/rx");
+    }
+
+    #[test]
+    fn default_bauds_is_4800_then_9600() {
+        assert_eq!(default_bauds(), vec![4800, 9600]);
+    }
+
+    #[test]
+    fn sanitize_bauds_dedups_and_drops_zero() {
+        assert_eq!(sanitize_bauds(&[9600, 4800, 9600, 0]), vec![9600, 4800]);
+        assert_eq!(sanitize_bauds(&[]), Vec::<u32>::new());
+        assert_eq!(sanitize_bauds(&[0]), Vec::<u32>::new());
+    }
+
+    #[test]
+    fn best_baud_picks_most_responders() {
+        assert_eq!(best_baud(&[(4800, 0), (9600, 4)]), Some(1));
+        assert_eq!(best_baud(&[(4800, 3), (9600, 1)]), Some(0));
+    }
+
+    #[test]
+    fn best_baud_tie_goes_to_earlier_candidate() {
+        assert_eq!(best_baud(&[(4800, 2), (9600, 2)]), Some(0));
+    }
+
+    #[test]
+    fn best_baud_none_when_all_silent() {
+        assert_eq!(best_baud(&[(4800, 0), (9600, 0)]), None);
+        assert_eq!(best_baud(&[]), None);
     }
 }
