@@ -274,7 +274,8 @@ export namespace drivers {
         STC_VESC_TRAMPA_COMMAND = 4,
         STC_ARDUINO_NICLA_SENSE_ENV_COMMAND = 5,
         STC_PWM_OUTPUT_COMMAND = 6,
-        STC_USB_VIDEO_COMMAND = 7
+        STC_USB_VIDEO_COMMAND = 7,
+        STC_DFROBOT_RS485_COMMAND = 8
     }
 }
 
@@ -15576,7 +15577,10 @@ export namespace dfrobot_rs485 {
         DFROBOT_CONNECTED = 1,
         DFROBOT_DISCONNECTED = 2,
         DFROBOT_REGISTERS_SNAPSHOT = 3,
-        DFROBOT_ERROR = 4
+        DFROBOT_ERROR = 4,
+        DFROBOT_COMMAND_SUCCESS = 5,
+        DFROBOT_COMMAND_REJECTED = 6,
+        DFROBOT_COMMAND_FAILED = 7
     }
 
     /** DfrobotSensorModel enum. */
@@ -15812,6 +15816,315 @@ export namespace dfrobot_rs485 {
         public static getTypeUrl(typeUrlPrefix?: string): string;
     }
 
+    /** Properties of a WriteRegisterCommand. */
+    interface IWriteRegisterCommand {
+
+        /** WriteRegisterCommand modbusId */
+        modbusId?: (number|null);
+
+        /** WriteRegisterCommand register */
+        register?: (number|null);
+
+        /** WriteRegisterCommand value */
+        value?: (number|null);
+    }
+
+    /** Represents a WriteRegisterCommand. */
+    class WriteRegisterCommand implements IWriteRegisterCommand {
+
+        /**
+         * Constructs a new WriteRegisterCommand.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: dfrobot_rs485.IWriteRegisterCommand);
+
+        /** WriteRegisterCommand modbusId. */
+        public modbusId: number;
+
+        /** WriteRegisterCommand register. */
+        public register: number;
+
+        /** WriteRegisterCommand value. */
+        public value: number;
+
+        /**
+         * Creates a new WriteRegisterCommand instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns WriteRegisterCommand instance
+         */
+        public static create(properties?: dfrobot_rs485.IWriteRegisterCommand): dfrobot_rs485.WriteRegisterCommand;
+
+        /**
+         * Encodes the specified WriteRegisterCommand message. Does not implicitly {@link dfrobot_rs485.WriteRegisterCommand.verify|verify} messages.
+         * @param message WriteRegisterCommand message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: dfrobot_rs485.IWriteRegisterCommand, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified WriteRegisterCommand message, length delimited. Does not implicitly {@link dfrobot_rs485.WriteRegisterCommand.verify|verify} messages.
+         * @param message WriteRegisterCommand message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: dfrobot_rs485.IWriteRegisterCommand, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes a WriteRegisterCommand message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns WriteRegisterCommand
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): dfrobot_rs485.WriteRegisterCommand;
+
+        /**
+         * Decodes a WriteRegisterCommand message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns WriteRegisterCommand
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): dfrobot_rs485.WriteRegisterCommand;
+
+        /**
+         * Verifies a WriteRegisterCommand message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates a WriteRegisterCommand message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns WriteRegisterCommand
+         */
+        public static fromObject(object: { [k: string]: any }): dfrobot_rs485.WriteRegisterCommand;
+
+        /**
+         * Creates a plain object from a WriteRegisterCommand message. Also converts values to other types if specified.
+         * @param message WriteRegisterCommand
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: dfrobot_rs485.WriteRegisterCommand, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this WriteRegisterCommand to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for WriteRegisterCommand
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
+    /** Properties of a Command. */
+    interface ICommand {
+
+        /** Command writeRegister */
+        writeRegister?: (dfrobot_rs485.IWriteRegisterCommand|null);
+    }
+
+    /** Represents a Command. */
+    class Command implements ICommand {
+
+        /**
+         * Constructs a new Command.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: dfrobot_rs485.ICommand);
+
+        /** Command writeRegister. */
+        public writeRegister?: (dfrobot_rs485.IWriteRegisterCommand|null);
+
+        /**
+         * Creates a new Command instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns Command instance
+         */
+        public static create(properties?: dfrobot_rs485.ICommand): dfrobot_rs485.Command;
+
+        /**
+         * Encodes the specified Command message. Does not implicitly {@link dfrobot_rs485.Command.verify|verify} messages.
+         * @param message Command message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: dfrobot_rs485.ICommand, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified Command message, length delimited. Does not implicitly {@link dfrobot_rs485.Command.verify|verify} messages.
+         * @param message Command message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: dfrobot_rs485.ICommand, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes a Command message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns Command
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): dfrobot_rs485.Command;
+
+        /**
+         * Decodes a Command message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns Command
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): dfrobot_rs485.Command;
+
+        /**
+         * Verifies a Command message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates a Command message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns Command
+         */
+        public static fromObject(object: { [k: string]: any }): dfrobot_rs485.Command;
+
+        /**
+         * Creates a plain object from a Command message. Also converts values to other types if specified.
+         * @param message Command
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: dfrobot_rs485.Command, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this Command to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for Command
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
+    /** Properties of a CommandResult. */
+    interface ICommandResult {
+
+        /** CommandResult commandId */
+        commandId?: (Uint8Array|null);
+
+        /** CommandResult description */
+        description?: (string|null);
+    }
+
+    /** Represents a CommandResult. */
+    class CommandResult implements ICommandResult {
+
+        /**
+         * Constructs a new CommandResult.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: dfrobot_rs485.ICommandResult);
+
+        /** CommandResult commandId. */
+        public commandId: Uint8Array;
+
+        /** CommandResult description. */
+        public description: string;
+
+        /**
+         * Creates a new CommandResult instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns CommandResult instance
+         */
+        public static create(properties?: dfrobot_rs485.ICommandResult): dfrobot_rs485.CommandResult;
+
+        /**
+         * Encodes the specified CommandResult message. Does not implicitly {@link dfrobot_rs485.CommandResult.verify|verify} messages.
+         * @param message CommandResult message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: dfrobot_rs485.ICommandResult, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified CommandResult message, length delimited. Does not implicitly {@link dfrobot_rs485.CommandResult.verify|verify} messages.
+         * @param message CommandResult message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: dfrobot_rs485.ICommandResult, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes a CommandResult message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns CommandResult
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): dfrobot_rs485.CommandResult;
+
+        /**
+         * Decodes a CommandResult message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns CommandResult
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): dfrobot_rs485.CommandResult;
+
+        /**
+         * Verifies a CommandResult message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates a CommandResult message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns CommandResult
+         */
+        public static fromObject(object: { [k: string]: any }): dfrobot_rs485.CommandResult;
+
+        /**
+         * Creates a plain object from a CommandResult message. Also converts values to other types if specified.
+         * @param message CommandResult
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: dfrobot_rs485.CommandResult, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this CommandResult to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for CommandResult
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
     /** Properties of a RxEnvelope. */
     interface IRxEnvelope {
 
@@ -15832,6 +16145,9 @@ export namespace dfrobot_rs485 {
 
         /** RxEnvelope ranges */
         ranges?: (dfrobot_rs485.IRegisterRange[]|null);
+
+        /** RxEnvelope command */
+        command?: (dfrobot_rs485.ICommandResult|null);
 
         /** RxEnvelope error */
         error?: (string|null);
@@ -15863,6 +16179,9 @@ export namespace dfrobot_rs485 {
 
         /** RxEnvelope ranges. */
         public ranges: dfrobot_rs485.IRegisterRange[];
+
+        /** RxEnvelope command. */
+        public command?: (dfrobot_rs485.ICommandResult|null);
 
         /** RxEnvelope error. */
         public error: string;

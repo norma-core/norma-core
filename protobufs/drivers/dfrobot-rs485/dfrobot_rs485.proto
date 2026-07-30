@@ -8,6 +8,9 @@ enum DfrobotSignalType {
     DFROBOT_DISCONNECTED            = 2;
     DFROBOT_REGISTERS_SNAPSHOT      = 3;
     DFROBOT_ERROR                   = 4;
+    DFROBOT_COMMAND_SUCCESS         = 5;
+    DFROBOT_COMMAND_REJECTED        = 6;
+    DFROBOT_COMMAND_FAILED          = 7;
 }
 
 enum DfrobotSensorModel {
@@ -36,6 +39,28 @@ message RegisterRange {
     bytes data = 2;
 }
 
+// One Modbus fc 0x06 single-register write. The driver refuses the reset
+// registers 0x00E0 / 0x00F0 (writing them factory-resets the sensor).
+message WriteRegisterCommand {
+    uint32 modbus_id = 1; // 1-254
+    uint32 register  = 2; // 16-bit register address
+    uint32 value     = 3; // 16-bit value
+}
+
+// Client-facing command envelope: the body of a commands.DriverCommand with
+// type STC_DFROBOT_RS485_COMMAND.
+message Command {
+    WriteRegisterCommand write_register = 10;
+}
+
+// Echo of a processed command, attached to DFROBOT_COMMAND_* envelopes.
+message CommandResult {
+    // commands.DriverCommand.command_id, verbatim.
+    bytes command_id = 1;
+    // Success summary or rejection/failure reason.
+    string description = 2;
+}
+
 message RxEnvelope {
     uint64 monotonic_stamp_ns = 1;
     uint64 local_stamp_ns     = 2;
@@ -48,6 +73,9 @@ message RxEnvelope {
     // Decoders look registers up by address, so the polled register list can
     // grow over time without breaking old recordings.
     repeated RegisterRange ranges = 20;
+
+    // Present on DFROBOT_COMMAND_* signals: the ack for one command.
+    CommandResult command = 30;
 
     string error = 50;
 }

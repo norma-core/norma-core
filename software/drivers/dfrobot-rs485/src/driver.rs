@@ -613,6 +613,7 @@ fn send_signal(
         device: Some(state.sensor.proto(port_name, baud)),
         ranges,
         error: error_message.unwrap_or_default(),
+        command: None,
     };
 
     if let Err(send_error) = send_proto(normfs, &state.rx_queue_id, &envelope) {
@@ -765,6 +766,7 @@ mod tests {
                 },
             ],
             error: "boom".to_string(),
+            command: None,
         };
 
         let mut buffer = Vec::new();

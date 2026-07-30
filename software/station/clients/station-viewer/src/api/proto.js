@@ -202,6 +202,7 @@ export const commands = $root.commands = (() => {
                 case 5:
                 case 6:
                 case 7:
+                case 8:
                     break;
                 }
             if (message.body != null && message.hasOwnProperty("body"))
@@ -269,6 +270,10 @@ export const commands = $root.commands = (() => {
             case "STC_USB_VIDEO_COMMAND":
             case 7:
                 message.type = 7;
+                break;
+            case "STC_DFROBOT_RS485_COMMAND":
+            case 8:
+                message.type = 8;
                 break;
             }
             if (object.body != null)
@@ -785,6 +790,7 @@ export const drivers = $root.drivers = (() => {
      * @property {number} STC_ARDUINO_NICLA_SENSE_ENV_COMMAND=5 STC_ARDUINO_NICLA_SENSE_ENV_COMMAND value
      * @property {number} STC_PWM_OUTPUT_COMMAND=6 STC_PWM_OUTPUT_COMMAND value
      * @property {number} STC_USB_VIDEO_COMMAND=7 STC_USB_VIDEO_COMMAND value
+     * @property {number} STC_DFROBOT_RS485_COMMAND=8 STC_DFROBOT_RS485_COMMAND value
      */
     drivers.StationCommandType = (function() {
         const valuesById = {}, values = Object.create(valuesById);
@@ -796,6 +802,7 @@ export const drivers = $root.drivers = (() => {
         values[valuesById[5] = "STC_ARDUINO_NICLA_SENSE_ENV_COMMAND"] = 5;
         values[valuesById[6] = "STC_PWM_OUTPUT_COMMAND"] = 6;
         values[valuesById[7] = "STC_USB_VIDEO_COMMAND"] = 7;
+        values[valuesById[8] = "STC_DFROBOT_RS485_COMMAND"] = 8;
         return values;
     })();
 
@@ -45362,6 +45369,9 @@ export const dfrobot_rs485 = $root.dfrobot_rs485 = (() => {
      * @property {number} DFROBOT_DISCONNECTED=2 DFROBOT_DISCONNECTED value
      * @property {number} DFROBOT_REGISTERS_SNAPSHOT=3 DFROBOT_REGISTERS_SNAPSHOT value
      * @property {number} DFROBOT_ERROR=4 DFROBOT_ERROR value
+     * @property {number} DFROBOT_COMMAND_SUCCESS=5 DFROBOT_COMMAND_SUCCESS value
+     * @property {number} DFROBOT_COMMAND_REJECTED=6 DFROBOT_COMMAND_REJECTED value
+     * @property {number} DFROBOT_COMMAND_FAILED=7 DFROBOT_COMMAND_FAILED value
      */
     dfrobot_rs485.DfrobotSignalType = (function() {
         const valuesById = {}, values = Object.create(valuesById);
@@ -45370,6 +45380,9 @@ export const dfrobot_rs485 = $root.dfrobot_rs485 = (() => {
         values[valuesById[2] = "DFROBOT_DISCONNECTED"] = 2;
         values[valuesById[3] = "DFROBOT_REGISTERS_SNAPSHOT"] = 3;
         values[valuesById[4] = "DFROBOT_ERROR"] = 4;
+        values[valuesById[5] = "DFROBOT_COMMAND_SUCCESS"] = 5;
+        values[valuesById[6] = "DFROBOT_COMMAND_REJECTED"] = 6;
+        values[valuesById[7] = "DFROBOT_COMMAND_FAILED"] = 7;
         return values;
     })();
 
@@ -45987,6 +46000,742 @@ export const dfrobot_rs485 = $root.dfrobot_rs485 = (() => {
         return RegisterRange;
     })();
 
+    dfrobot_rs485.WriteRegisterCommand = (function() {
+
+        /**
+         * Properties of a WriteRegisterCommand.
+         * @memberof dfrobot_rs485
+         * @interface IWriteRegisterCommand
+         * @property {number|null} [modbusId] WriteRegisterCommand modbusId
+         * @property {number|null} [register] WriteRegisterCommand register
+         * @property {number|null} [value] WriteRegisterCommand value
+         */
+
+        /**
+         * Constructs a new WriteRegisterCommand.
+         * @memberof dfrobot_rs485
+         * @classdesc Represents a WriteRegisterCommand.
+         * @implements IWriteRegisterCommand
+         * @constructor
+         * @param {dfrobot_rs485.IWriteRegisterCommand=} [properties] Properties to set
+         */
+        function WriteRegisterCommand(properties) {
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * WriteRegisterCommand modbusId.
+         * @member {number} modbusId
+         * @memberof dfrobot_rs485.WriteRegisterCommand
+         * @instance
+         */
+        WriteRegisterCommand.prototype.modbusId = 0;
+
+        /**
+         * WriteRegisterCommand register.
+         * @member {number} register
+         * @memberof dfrobot_rs485.WriteRegisterCommand
+         * @instance
+         */
+        WriteRegisterCommand.prototype.register = 0;
+
+        /**
+         * WriteRegisterCommand value.
+         * @member {number} value
+         * @memberof dfrobot_rs485.WriteRegisterCommand
+         * @instance
+         */
+        WriteRegisterCommand.prototype.value = 0;
+
+        /**
+         * Creates a new WriteRegisterCommand instance using the specified properties.
+         * @function create
+         * @memberof dfrobot_rs485.WriteRegisterCommand
+         * @static
+         * @param {dfrobot_rs485.IWriteRegisterCommand=} [properties] Properties to set
+         * @returns {dfrobot_rs485.WriteRegisterCommand} WriteRegisterCommand instance
+         */
+        WriteRegisterCommand.create = function create(properties) {
+            return new WriteRegisterCommand(properties);
+        };
+
+        /**
+         * Encodes the specified WriteRegisterCommand message. Does not implicitly {@link dfrobot_rs485.WriteRegisterCommand.verify|verify} messages.
+         * @function encode
+         * @memberof dfrobot_rs485.WriteRegisterCommand
+         * @static
+         * @param {dfrobot_rs485.IWriteRegisterCommand} message WriteRegisterCommand message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        WriteRegisterCommand.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.modbusId != null && Object.hasOwnProperty.call(message, "modbusId"))
+                writer.uint32(/* id 1, wireType 0 =*/8).uint32(message.modbusId);
+            if (message.register != null && Object.hasOwnProperty.call(message, "register"))
+                writer.uint32(/* id 2, wireType 0 =*/16).uint32(message.register);
+            if (message.value != null && Object.hasOwnProperty.call(message, "value"))
+                writer.uint32(/* id 3, wireType 0 =*/24).uint32(message.value);
+            return writer;
+        };
+
+        /**
+         * Encodes the specified WriteRegisterCommand message, length delimited. Does not implicitly {@link dfrobot_rs485.WriteRegisterCommand.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof dfrobot_rs485.WriteRegisterCommand
+         * @static
+         * @param {dfrobot_rs485.IWriteRegisterCommand} message WriteRegisterCommand message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        WriteRegisterCommand.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes a WriteRegisterCommand message from the specified reader or buffer.
+         * @function decode
+         * @memberof dfrobot_rs485.WriteRegisterCommand
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {dfrobot_rs485.WriteRegisterCommand} WriteRegisterCommand
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        WriteRegisterCommand.decode = function decode(reader, length, error, long) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.dfrobot_rs485.WriteRegisterCommand();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                if (tag === error)
+                    break;
+                switch (tag >>> 3) {
+                case 1: {
+                        message.modbusId = reader.uint32();
+                        break;
+                    }
+                case 2: {
+                        message.register = reader.uint32();
+                        break;
+                    }
+                case 3: {
+                        message.value = reader.uint32();
+                        break;
+                    }
+                default:
+                    reader.skipType(tag & 7, long);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes a WriteRegisterCommand message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof dfrobot_rs485.WriteRegisterCommand
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {dfrobot_rs485.WriteRegisterCommand} WriteRegisterCommand
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        WriteRegisterCommand.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies a WriteRegisterCommand message.
+         * @function verify
+         * @memberof dfrobot_rs485.WriteRegisterCommand
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        WriteRegisterCommand.verify = function verify(message, long) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
+            if (message.modbusId != null && message.hasOwnProperty("modbusId"))
+                if (!$util.isInteger(message.modbusId))
+                    return "modbusId: integer expected";
+            if (message.register != null && message.hasOwnProperty("register"))
+                if (!$util.isInteger(message.register))
+                    return "register: integer expected";
+            if (message.value != null && message.hasOwnProperty("value"))
+                if (!$util.isInteger(message.value))
+                    return "value: integer expected";
+            return null;
+        };
+
+        /**
+         * Creates a WriteRegisterCommand message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof dfrobot_rs485.WriteRegisterCommand
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {dfrobot_rs485.WriteRegisterCommand} WriteRegisterCommand
+         */
+        WriteRegisterCommand.fromObject = function fromObject(object, long) {
+            if (object instanceof $root.dfrobot_rs485.WriteRegisterCommand)
+                return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let message = new $root.dfrobot_rs485.WriteRegisterCommand();
+            if (object.modbusId != null)
+                message.modbusId = object.modbusId >>> 0;
+            if (object.register != null)
+                message.register = object.register >>> 0;
+            if (object.value != null)
+                message.value = object.value >>> 0;
+            return message;
+        };
+
+        /**
+         * Creates a plain object from a WriteRegisterCommand message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof dfrobot_rs485.WriteRegisterCommand
+         * @static
+         * @param {dfrobot_rs485.WriteRegisterCommand} message WriteRegisterCommand
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        WriteRegisterCommand.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.defaults) {
+                object.modbusId = 0;
+                object.register = 0;
+                object.value = 0;
+            }
+            if (message.modbusId != null && message.hasOwnProperty("modbusId"))
+                object.modbusId = message.modbusId;
+            if (message.register != null && message.hasOwnProperty("register"))
+                object.register = message.register;
+            if (message.value != null && message.hasOwnProperty("value"))
+                object.value = message.value;
+            return object;
+        };
+
+        /**
+         * Converts this WriteRegisterCommand to JSON.
+         * @function toJSON
+         * @memberof dfrobot_rs485.WriteRegisterCommand
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        WriteRegisterCommand.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for WriteRegisterCommand
+         * @function getTypeUrl
+         * @memberof dfrobot_rs485.WriteRegisterCommand
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        WriteRegisterCommand.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+            if (typeUrlPrefix === undefined) {
+                typeUrlPrefix = "type.googleapis.com";
+            }
+            return typeUrlPrefix + "/dfrobot_rs485.WriteRegisterCommand";
+        };
+
+        return WriteRegisterCommand;
+    })();
+
+    dfrobot_rs485.Command = (function() {
+
+        /**
+         * Properties of a Command.
+         * @memberof dfrobot_rs485
+         * @interface ICommand
+         * @property {dfrobot_rs485.IWriteRegisterCommand|null} [writeRegister] Command writeRegister
+         */
+
+        /**
+         * Constructs a new Command.
+         * @memberof dfrobot_rs485
+         * @classdesc Represents a Command.
+         * @implements ICommand
+         * @constructor
+         * @param {dfrobot_rs485.ICommand=} [properties] Properties to set
+         */
+        function Command(properties) {
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * Command writeRegister.
+         * @member {dfrobot_rs485.IWriteRegisterCommand|null|undefined} writeRegister
+         * @memberof dfrobot_rs485.Command
+         * @instance
+         */
+        Command.prototype.writeRegister = null;
+
+        /**
+         * Creates a new Command instance using the specified properties.
+         * @function create
+         * @memberof dfrobot_rs485.Command
+         * @static
+         * @param {dfrobot_rs485.ICommand=} [properties] Properties to set
+         * @returns {dfrobot_rs485.Command} Command instance
+         */
+        Command.create = function create(properties) {
+            return new Command(properties);
+        };
+
+        /**
+         * Encodes the specified Command message. Does not implicitly {@link dfrobot_rs485.Command.verify|verify} messages.
+         * @function encode
+         * @memberof dfrobot_rs485.Command
+         * @static
+         * @param {dfrobot_rs485.ICommand} message Command message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        Command.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.writeRegister != null && Object.hasOwnProperty.call(message, "writeRegister"))
+                $root.dfrobot_rs485.WriteRegisterCommand.encode(message.writeRegister, writer.uint32(/* id 10, wireType 2 =*/82).fork()).ldelim();
+            return writer;
+        };
+
+        /**
+         * Encodes the specified Command message, length delimited. Does not implicitly {@link dfrobot_rs485.Command.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof dfrobot_rs485.Command
+         * @static
+         * @param {dfrobot_rs485.ICommand} message Command message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        Command.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes a Command message from the specified reader or buffer.
+         * @function decode
+         * @memberof dfrobot_rs485.Command
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {dfrobot_rs485.Command} Command
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        Command.decode = function decode(reader, length, error, long) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.dfrobot_rs485.Command();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                if (tag === error)
+                    break;
+                switch (tag >>> 3) {
+                case 10: {
+                        message.writeRegister = $root.dfrobot_rs485.WriteRegisterCommand.decode(reader, reader.uint32(), undefined, long + 1);
+                        break;
+                    }
+                default:
+                    reader.skipType(tag & 7, long);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes a Command message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof dfrobot_rs485.Command
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {dfrobot_rs485.Command} Command
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        Command.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies a Command message.
+         * @function verify
+         * @memberof dfrobot_rs485.Command
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        Command.verify = function verify(message, long) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
+            if (message.writeRegister != null && message.hasOwnProperty("writeRegister")) {
+                let error = $root.dfrobot_rs485.WriteRegisterCommand.verify(message.writeRegister, long + 1);
+                if (error)
+                    return "writeRegister." + error;
+            }
+            return null;
+        };
+
+        /**
+         * Creates a Command message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof dfrobot_rs485.Command
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {dfrobot_rs485.Command} Command
+         */
+        Command.fromObject = function fromObject(object, long) {
+            if (object instanceof $root.dfrobot_rs485.Command)
+                return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let message = new $root.dfrobot_rs485.Command();
+            if (object.writeRegister != null) {
+                if (typeof object.writeRegister !== "object")
+                    throw TypeError(".dfrobot_rs485.Command.writeRegister: object expected");
+                message.writeRegister = $root.dfrobot_rs485.WriteRegisterCommand.fromObject(object.writeRegister, long + 1);
+            }
+            return message;
+        };
+
+        /**
+         * Creates a plain object from a Command message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof dfrobot_rs485.Command
+         * @static
+         * @param {dfrobot_rs485.Command} message Command
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        Command.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.defaults)
+                object.writeRegister = null;
+            if (message.writeRegister != null && message.hasOwnProperty("writeRegister"))
+                object.writeRegister = $root.dfrobot_rs485.WriteRegisterCommand.toObject(message.writeRegister, options);
+            return object;
+        };
+
+        /**
+         * Converts this Command to JSON.
+         * @function toJSON
+         * @memberof dfrobot_rs485.Command
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        Command.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for Command
+         * @function getTypeUrl
+         * @memberof dfrobot_rs485.Command
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        Command.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+            if (typeUrlPrefix === undefined) {
+                typeUrlPrefix = "type.googleapis.com";
+            }
+            return typeUrlPrefix + "/dfrobot_rs485.Command";
+        };
+
+        return Command;
+    })();
+
+    dfrobot_rs485.CommandResult = (function() {
+
+        /**
+         * Properties of a CommandResult.
+         * @memberof dfrobot_rs485
+         * @interface ICommandResult
+         * @property {Uint8Array|null} [commandId] CommandResult commandId
+         * @property {string|null} [description] CommandResult description
+         */
+
+        /**
+         * Constructs a new CommandResult.
+         * @memberof dfrobot_rs485
+         * @classdesc Represents a CommandResult.
+         * @implements ICommandResult
+         * @constructor
+         * @param {dfrobot_rs485.ICommandResult=} [properties] Properties to set
+         */
+        function CommandResult(properties) {
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * CommandResult commandId.
+         * @member {Uint8Array} commandId
+         * @memberof dfrobot_rs485.CommandResult
+         * @instance
+         */
+        CommandResult.prototype.commandId = $util.newBuffer([]);
+
+        /**
+         * CommandResult description.
+         * @member {string} description
+         * @memberof dfrobot_rs485.CommandResult
+         * @instance
+         */
+        CommandResult.prototype.description = "";
+
+        /**
+         * Creates a new CommandResult instance using the specified properties.
+         * @function create
+         * @memberof dfrobot_rs485.CommandResult
+         * @static
+         * @param {dfrobot_rs485.ICommandResult=} [properties] Properties to set
+         * @returns {dfrobot_rs485.CommandResult} CommandResult instance
+         */
+        CommandResult.create = function create(properties) {
+            return new CommandResult(properties);
+        };
+
+        /**
+         * Encodes the specified CommandResult message. Does not implicitly {@link dfrobot_rs485.CommandResult.verify|verify} messages.
+         * @function encode
+         * @memberof dfrobot_rs485.CommandResult
+         * @static
+         * @param {dfrobot_rs485.ICommandResult} message CommandResult message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        CommandResult.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.commandId != null && Object.hasOwnProperty.call(message, "commandId"))
+                writer.uint32(/* id 1, wireType 2 =*/10).bytes(message.commandId);
+            if (message.description != null && Object.hasOwnProperty.call(message, "description"))
+                writer.uint32(/* id 2, wireType 2 =*/18).string(message.description);
+            return writer;
+        };
+
+        /**
+         * Encodes the specified CommandResult message, length delimited. Does not implicitly {@link dfrobot_rs485.CommandResult.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof dfrobot_rs485.CommandResult
+         * @static
+         * @param {dfrobot_rs485.ICommandResult} message CommandResult message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        CommandResult.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes a CommandResult message from the specified reader or buffer.
+         * @function decode
+         * @memberof dfrobot_rs485.CommandResult
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {dfrobot_rs485.CommandResult} CommandResult
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        CommandResult.decode = function decode(reader, length, error, long) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.dfrobot_rs485.CommandResult();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                if (tag === error)
+                    break;
+                switch (tag >>> 3) {
+                case 1: {
+                        message.commandId = reader.bytes();
+                        break;
+                    }
+                case 2: {
+                        message.description = reader.string();
+                        break;
+                    }
+                default:
+                    reader.skipType(tag & 7, long);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes a CommandResult message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof dfrobot_rs485.CommandResult
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {dfrobot_rs485.CommandResult} CommandResult
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        CommandResult.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies a CommandResult message.
+         * @function verify
+         * @memberof dfrobot_rs485.CommandResult
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        CommandResult.verify = function verify(message, long) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
+            if (message.commandId != null && message.hasOwnProperty("commandId"))
+                if (!(message.commandId && typeof message.commandId.length === "number" || $util.isString(message.commandId)))
+                    return "commandId: buffer expected";
+            if (message.description != null && message.hasOwnProperty("description"))
+                if (!$util.isString(message.description))
+                    return "description: string expected";
+            return null;
+        };
+
+        /**
+         * Creates a CommandResult message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof dfrobot_rs485.CommandResult
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {dfrobot_rs485.CommandResult} CommandResult
+         */
+        CommandResult.fromObject = function fromObject(object, long) {
+            if (object instanceof $root.dfrobot_rs485.CommandResult)
+                return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let message = new $root.dfrobot_rs485.CommandResult();
+            if (object.commandId != null)
+                if (typeof object.commandId === "string")
+                    $util.base64.decode(object.commandId, message.commandId = $util.newBuffer($util.base64.length(object.commandId)), 0);
+                else if (object.commandId.length >= 0)
+                    message.commandId = object.commandId;
+            if (object.description != null)
+                message.description = String(object.description);
+            return message;
+        };
+
+        /**
+         * Creates a plain object from a CommandResult message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof dfrobot_rs485.CommandResult
+         * @static
+         * @param {dfrobot_rs485.CommandResult} message CommandResult
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        CommandResult.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.defaults) {
+                if (options.bytes === String)
+                    object.commandId = "";
+                else {
+                    object.commandId = [];
+                    if (options.bytes !== Array)
+                        object.commandId = $util.newBuffer(object.commandId);
+                }
+                object.description = "";
+            }
+            if (message.commandId != null && message.hasOwnProperty("commandId"))
+                object.commandId = options.bytes === String ? $util.base64.encode(message.commandId, 0, message.commandId.length) : options.bytes === Array ? Array.prototype.slice.call(message.commandId) : message.commandId;
+            if (message.description != null && message.hasOwnProperty("description"))
+                object.description = message.description;
+            return object;
+        };
+
+        /**
+         * Converts this CommandResult to JSON.
+         * @function toJSON
+         * @memberof dfrobot_rs485.CommandResult
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        CommandResult.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for CommandResult
+         * @function getTypeUrl
+         * @memberof dfrobot_rs485.CommandResult
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        CommandResult.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+            if (typeUrlPrefix === undefined) {
+                typeUrlPrefix = "type.googleapis.com";
+            }
+            return typeUrlPrefix + "/dfrobot_rs485.CommandResult";
+        };
+
+        return CommandResult;
+    })();
+
     dfrobot_rs485.RxEnvelope = (function() {
 
         /**
@@ -45999,6 +46748,7 @@ export const dfrobot_rs485 = $root.dfrobot_rs485 = (() => {
          * @property {dfrobot_rs485.DfrobotSignalType|null} [signalType] RxEnvelope signalType
          * @property {dfrobot_rs485.IDfrobotDevice|null} [device] RxEnvelope device
          * @property {Array.<dfrobot_rs485.IRegisterRange>|null} [ranges] RxEnvelope ranges
+         * @property {dfrobot_rs485.ICommandResult|null} [command] RxEnvelope command
          * @property {string|null} [error] RxEnvelope error
          */
 
@@ -46067,6 +46817,14 @@ export const dfrobot_rs485 = $root.dfrobot_rs485 = (() => {
         RxEnvelope.prototype.ranges = $util.emptyArray;
 
         /**
+         * RxEnvelope command.
+         * @member {dfrobot_rs485.ICommandResult|null|undefined} command
+         * @memberof dfrobot_rs485.RxEnvelope
+         * @instance
+         */
+        RxEnvelope.prototype.command = null;
+
+        /**
          * RxEnvelope error.
          * @member {string} error
          * @memberof dfrobot_rs485.RxEnvelope
@@ -46111,6 +46869,8 @@ export const dfrobot_rs485 = $root.dfrobot_rs485 = (() => {
             if (message.ranges != null && message.ranges.length)
                 for (let i = 0; i < message.ranges.length; ++i)
                     $root.dfrobot_rs485.RegisterRange.encode(message.ranges[i], writer.uint32(/* id 20, wireType 2 =*/162).fork()).ldelim();
+            if (message.command != null && Object.hasOwnProperty.call(message, "command"))
+                $root.dfrobot_rs485.CommandResult.encode(message.command, writer.uint32(/* id 30, wireType 2 =*/242).fork()).ldelim();
             if (message.error != null && Object.hasOwnProperty.call(message, "error"))
                 writer.uint32(/* id 50, wireType 2 =*/402).string(message.error);
             return writer;
@@ -46179,6 +46939,10 @@ export const dfrobot_rs485 = $root.dfrobot_rs485 = (() => {
                         message.ranges.push($root.dfrobot_rs485.RegisterRange.decode(reader, reader.uint32(), undefined, long + 1));
                         break;
                     }
+                case 30: {
+                        message.command = $root.dfrobot_rs485.CommandResult.decode(reader, reader.uint32(), undefined, long + 1);
+                        break;
+                    }
                 case 50: {
                         message.error = reader.string();
                         break;
@@ -46240,6 +47004,9 @@ export const dfrobot_rs485 = $root.dfrobot_rs485 = (() => {
                 case 2:
                 case 3:
                 case 4:
+                case 5:
+                case 6:
+                case 7:
                     break;
                 }
             if (message.device != null && message.hasOwnProperty("device")) {
@@ -46255,6 +47022,11 @@ export const dfrobot_rs485 = $root.dfrobot_rs485 = (() => {
                     if (error)
                         return "ranges." + error;
                 }
+            }
+            if (message.command != null && message.hasOwnProperty("command")) {
+                let error = $root.dfrobot_rs485.CommandResult.verify(message.command, long + 1);
+                if (error)
+                    return "command." + error;
             }
             if (message.error != null && message.hasOwnProperty("error"))
                 if (!$util.isString(message.error))
@@ -46332,6 +47104,18 @@ export const dfrobot_rs485 = $root.dfrobot_rs485 = (() => {
             case 4:
                 message.signalType = 4;
                 break;
+            case "DFROBOT_COMMAND_SUCCESS":
+            case 5:
+                message.signalType = 5;
+                break;
+            case "DFROBOT_COMMAND_REJECTED":
+            case 6:
+                message.signalType = 6;
+                break;
+            case "DFROBOT_COMMAND_FAILED":
+            case 7:
+                message.signalType = 7;
+                break;
             }
             if (object.device != null) {
                 if (typeof object.device !== "object")
@@ -46347,6 +47131,11 @@ export const dfrobot_rs485 = $root.dfrobot_rs485 = (() => {
                         throw TypeError(".dfrobot_rs485.RxEnvelope.ranges: object expected");
                     message.ranges[i] = $root.dfrobot_rs485.RegisterRange.fromObject(object.ranges[i], long + 1);
                 }
+            }
+            if (object.command != null) {
+                if (typeof object.command !== "object")
+                    throw TypeError(".dfrobot_rs485.RxEnvelope.command: object expected");
+                message.command = $root.dfrobot_rs485.CommandResult.fromObject(object.command, long + 1);
             }
             if (object.error != null)
                 message.error = String(object.error);
@@ -46386,6 +47175,7 @@ export const dfrobot_rs485 = $root.dfrobot_rs485 = (() => {
                     object.appStartId = options.longs === String ? "0" : 0;
                 object.signalType = options.enums === String ? "DFROBOT_SIGNAL_TYPE_UNSPECIFIED" : 0;
                 object.device = null;
+                object.command = null;
                 object.error = "";
             }
             if (message.monotonicStampNs != null && message.hasOwnProperty("monotonicStampNs"))
@@ -46412,6 +47202,8 @@ export const dfrobot_rs485 = $root.dfrobot_rs485 = (() => {
                 for (let j = 0; j < message.ranges.length; ++j)
                     object.ranges[j] = $root.dfrobot_rs485.RegisterRange.toObject(message.ranges[j], options);
             }
+            if (message.command != null && message.hasOwnProperty("command"))
+                object.command = $root.dfrobot_rs485.CommandResult.toObject(message.command, options);
             if (message.error != null && message.hasOwnProperty("error"))
                 object.error = message.error;
             return object;
