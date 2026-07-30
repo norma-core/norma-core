@@ -27,6 +27,10 @@ const PORT_SCAN_INTERVAL: Duration = Duration::from_secs(3);
 /// Fallback poll interval substituted when configured with a zero Duration
 /// (which would otherwise panic `tokio::time::interval`).
 const DEFAULT_POLL_INTERVAL: Duration = Duration::from_secs(1);
+/// Consecutive all-sensors-silent polls before the worker abandons the
+/// claimed port and re-runs the full scan. A re-addressed or re-bauded bus
+/// (config editor, power-cycled sensor) looks exactly like this.
+const SILENT_POLLS_BEFORE_RESCAN: u32 = 3;
 
 type DriverResult<T> = Result<T, Box<dyn std::error::Error + Send + Sync>>;
 
@@ -158,6 +162,27 @@ pub async fn start_dfrobot_rs485_driver<T: StationEngine + Send + Sync + 'static
     Ok(Arc::new(driver))
 }
 
+/// Counts consecutive polls with zero responding sensors; `record` returns
+/// true when the bus has been silent long enough to warrant a re-scan.
+struct SilentBusTracker {
+    consecutive: u32,
+}
+
+impl SilentBusTracker {
+    fn new() -> Self {
+        Self { consecutive: 0 }
+    }
+
+    fn record(&mut self, any_sensor_ok: bool) -> bool {
+        if any_sensor_ok {
+            self.consecutive = 0;
+        } else {
+            self.consecutive += 1;
+        }
+        self.consecutive >= SILENT_POLLS_BEFORE_RESCAN
+    }
+}
+
 async fn run_bus_worker<T: StationEngine + Send + Sync + 'static>(
     normfs: Arc<NormFS>,
     station_engine: Arc<T>,
@@ -218,9 +243,11 @@ async fn run_bus_worker<T: StationEngine + Send + Sync + 'static>(
         let mut tick = interval(config.poll_interval);
         tick.set_missed_tick_behavior(MissedTickBehavior::Skip);
 
+        let mut silent_tracker = SilentBusTracker::new();
         'poll: loop {
             tick.tick().await;
 
+            let mut any_sensor_ok = false;
             let mut port_lost = false;
             for state in states.iter_mut() {
                 let poll_result = match read_ranges(
@@ -281,6 +308,7 @@ async fn run_bus_worker<T: StationEngine + Send + Sync + 'static>(
                             None,
                         );
                         state.last_error = None;
+                        any_sensor_ok = true;
                     }
                     Err(modbus_error) => {
                         state.static_ranges = None;
@@ -334,6 +362,14 @@ async fn run_bus_worker<T: StationEngine + Send + Sync + 'static>(
                         state.last_error = Some("serial port lost".to_string());
                     }
                 }
+                break 'poll;
+            }
+
+            if silent_tracker.record(any_sensor_ok) {
+                warn!(
+                    "DFRobot RS485: no sensor answered for {SILENT_POLLS_BEFORE_RESCAN} polls \
+                     on {port_name}, rescanning"
+                );
                 break 'poll;
             }
         }
@@ -909,5 +945,24 @@ mod tests {
         };
         assert_eq!(outcome.responding_ids.len(), 1);
         assert_eq!(outcome.sensors.len(), 2);
+    }
+
+    #[test]
+    fn silent_bus_tracker_triggers_after_three_silent_polls() {
+        let mut tracker = SilentBusTracker::new();
+        assert!(!tracker.record(false));
+        assert!(!tracker.record(false));
+        assert!(tracker.record(false));
+    }
+
+    #[test]
+    fn silent_bus_tracker_resets_on_any_response() {
+        let mut tracker = SilentBusTracker::new();
+        assert!(!tracker.record(false));
+        assert!(!tracker.record(false));
+        assert!(!tracker.record(true));
+        assert!(!tracker.record(false));
+        assert!(!tracker.record(false));
+        assert!(tracker.record(false));
     }
 }
