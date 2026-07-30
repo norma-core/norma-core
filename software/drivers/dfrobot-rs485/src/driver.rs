@@ -101,6 +101,11 @@ struct SensorState {
     rx_queue_id: QueueId,
     connected: bool,
     last_error: Option<String>,
+    /// Connection-static registers, read once at the connect transition and
+    /// appended to every snapshot (ST3215 EEPROM-cache pattern). Cleared on
+    /// disconnect/port loss; the driver never writes, so nothing else can
+    /// invalidate it.
+    static_ranges: Option<Vec<RegisterRange>>,
 }
 
 impl DfrobotRs485Driver {
@@ -191,6 +196,7 @@ async fn run_bus_worker<T: StationEngine + Send + Sync + 'static>(
                 rx_queue_id,
                 connected: false,
                 last_error: None,
+                static_ranges: None,
             });
         }
 
@@ -217,8 +223,42 @@ async fn run_bus_worker<T: StationEngine + Send + Sync + 'static>(
 
             let mut port_lost = false;
             for state in states.iter_mut() {
-                match poll_sensor(&mut port, state).await {
-                    Ok(ranges) => {
+                let poll_result = match read_ranges(
+                    &mut port,
+                    state.sensor.modbus_id,
+                    state.sensor.model.poll_ranges(),
+                )
+                .await
+                {
+                    Ok(dynamic) => {
+                        if state.static_ranges.is_none() {
+                            // Connect transition: capture the static set once.
+                            // Both reads must succeed before CONNECTED is
+                            // emitted (spec; mirrors the ST3215 full first read).
+                            match read_ranges(
+                                &mut port,
+                                state.sensor.modbus_id,
+                                state.sensor.model.static_ranges(),
+                            )
+                            .await
+                            {
+                                Ok(statics) => {
+                                    state.static_ranges = Some(statics);
+                                    Ok(dynamic)
+                                }
+                                Err(error) => Err(error),
+                            }
+                        } else {
+                            Ok(dynamic)
+                        }
+                    }
+                    Err(error) => Err(error),
+                };
+
+                match poll_result {
+                    Ok(dynamic) => {
+                        let ranges =
+                            assemble_ranges(dynamic, state.static_ranges.as_deref());
                         if !state.connected {
                             send_signal(
                                 &normfs,
@@ -243,6 +283,7 @@ async fn run_bus_worker<T: StationEngine + Send + Sync + 'static>(
                         state.last_error = None;
                     }
                     Err(modbus_error) => {
+                        state.static_ranges = None;
                         if matches!(modbus_error, ModbusError::Io(_)) {
                             port_lost = true;
                         }
@@ -278,6 +319,7 @@ async fn run_bus_worker<T: StationEngine + Send + Sync + 'static>(
             if port_lost {
                 warn!("DFRobot RS485 lost port {port_name}, rescanning");
                 for state in states.iter_mut() {
+                    state.static_ranges = None;
                     if state.connected {
                         send_signal(
                             &normfs,
@@ -298,30 +340,37 @@ async fn run_bus_worker<T: StationEngine + Send + Sync + 'static>(
     }
 }
 
-/// Reads every configured range of one sensor. All ranges must succeed for
-/// the poll to count as a success — a partial snapshot is treated as the
-/// error of the range that failed.
-async fn poll_sensor(
+/// Reads a list of register ranges from one sensor. All ranges must succeed
+/// — a partial result is treated as the error of the range that failed.
+async fn read_ranges(
     port: &mut tokio_serial::SerialStream,
-    state: &SensorState,
+    modbus_id: u8,
+    ranges: &[(u16, u16)],
 ) -> Result<Vec<RegisterRange>, ModbusError> {
-    let mut ranges = Vec::new();
-    for (start, count) in state.sensor.model.poll_ranges() {
-        let data = modbus::transact(
-            port,
-            state.sensor.modbus_id,
-            *start,
-            *count,
-            RESPONSE_TIMEOUT,
-        )
-        .await?;
-        ranges.push(RegisterRange {
+    let mut out = Vec::with_capacity(ranges.len());
+    for (start, count) in ranges {
+        let data = modbus::transact(port, modbus_id, *start, *count, RESPONSE_TIMEOUT).await?;
+        out.push(RegisterRange {
             start_register: *start as u32,
             data,
         });
         sleep(INTER_FRAME_GAP).await;
     }
-    Ok(ranges)
+    Ok(out)
+}
+
+/// Envelope ranges for CONNECTED/SNAPSHOT: fresh dynamic ranges followed by
+/// the cached static ranges. Consumers decode by register address, so order
+/// carries no meaning.
+fn assemble_ranges(
+    dynamic: Vec<RegisterRange>,
+    statics: Option<&[RegisterRange]>,
+) -> Vec<RegisterRange> {
+    let mut ranges = dynamic;
+    if let Some(statics) = statics {
+        ranges.extend_from_slice(statics);
+    }
+    ranges
 }
 
 /// One single-register read (count = 1). Detection MUST use these: the
@@ -813,6 +862,33 @@ mod tests {
     fn best_baud_none_when_all_silent() {
         assert_eq!(best_baud(&[(4800, 0), (9600, 0)]), None);
         assert_eq!(best_baud(&[]), None);
+    }
+
+    #[test]
+    fn assemble_ranges_appends_cached_statics() {
+        let dynamic = vec![RegisterRange {
+            start_register: 0x0000,
+            data: Bytes::from_static(&[0x00, 0x02]),
+        }];
+        let statics = vec![
+            RegisterRange {
+                start_register: 0x07D0,
+                data: Bytes::from_static(&[0x00, 0x03]),
+            },
+            RegisterRange {
+                start_register: 0x083B,
+                data: Bytes::from_static(&[0x05, 0xDC]),
+            },
+        ];
+
+        let with_statics = assemble_ranges(dynamic.clone(), Some(&statics));
+        assert_eq!(with_statics.len(), 3);
+        assert_eq!(with_statics[0].start_register, 0x0000);
+        assert_eq!(with_statics[1].start_register, 0x07D0);
+        assert_eq!(with_statics[2].start_register, 0x083B);
+
+        let without = assemble_ranges(dynamic, None);
+        assert_eq!(without.len(), 1);
     }
 
     #[test]
