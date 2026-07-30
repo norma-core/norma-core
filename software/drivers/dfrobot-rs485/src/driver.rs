@@ -36,6 +36,7 @@ pub struct DfrobotRs485DriverConfig {
     pub baud: u32,
     pub poll_interval: Duration,
     pub sensors: Vec<DfrobotSensorConfig>,
+    pub scan_ids: Vec<u8>,
 }
 
 #[derive(Debug, Clone)]
@@ -397,6 +398,43 @@ fn send_proto<M: Message>(
     Ok(normfs.enqueue(queue_id, Bytes::from(buffer))?)
 }
 
+/// Default Modbus ID scan range: 1-10 inclusive (design decision, spec §Decisions).
+pub fn default_scan_ids() -> Vec<u8> {
+    (1..=10).collect()
+}
+
+/// Parses a scan-ids spec: "A-B" (inclusive) or a single "A".
+/// Valid Modbus unit IDs are 1-254 (0 and 255 are broadcast addresses).
+pub fn parse_scan_ids(spec: &str) -> Option<Vec<u8>> {
+    let spec = spec.trim();
+    let (low, high) = match spec.split_once('-') {
+        Some((low, high)) => {
+            if high.contains('-') {
+                return None;
+            }
+            (low.trim().parse::<u8>().ok()?, high.trim().parse::<u8>().ok()?)
+        }
+        None => {
+            let single = spec.parse::<u8>().ok()?;
+            (single, single)
+        }
+    };
+    if low == 0 || high < low || high > 254 {
+        return None;
+    }
+    Some((low..=high).collect())
+}
+
+/// Sanitizes an explicit ID list from config: keeps first occurrence order,
+/// drops duplicates and the broadcast addresses 0/255.
+pub fn sanitize_scan_ids(ids: &[u8]) -> Vec<u8> {
+    let mut seen = std::collections::HashSet::new();
+    ids.iter()
+        .copied()
+        .filter(|id| (1..=254).contains(id) && seen.insert(*id))
+        .collect()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -486,5 +524,34 @@ mod tests {
         assert!(!matches_glob("ttyUSB*", "ttyACM0"));
         assert!(!matches_glob("ttyUSB?", "ttyUSB0")); // '?' is not supported
         assert!(matches_glob("*usb*", "cu.usbserial-0001"));
+    }
+
+    #[test]
+    fn default_scan_ids_is_one_to_ten() {
+        assert_eq!(default_scan_ids(), (1..=10).collect::<Vec<u8>>());
+    }
+
+    #[test]
+    fn parse_scan_ids_accepts_ranges_and_singles() {
+        assert_eq!(parse_scan_ids("1-10"), Some((1..=10).collect()));
+        assert_eq!(parse_scan_ids(" 2 - 4 "), Some(vec![2, 3, 4]));
+        assert_eq!(parse_scan_ids("5"), Some(vec![5]));
+        assert_eq!(parse_scan_ids("254-254"), Some(vec![254]));
+    }
+
+    #[test]
+    fn parse_scan_ids_rejects_invalid_specs() {
+        assert_eq!(parse_scan_ids("10-1"), None); // reversed
+        assert_eq!(parse_scan_ids("0-5"), None);  // 0 is broadcast
+        assert_eq!(parse_scan_ids("1-255"), None); // 255 is broadcast (SEN0644)
+        assert_eq!(parse_scan_ids("abc"), None);
+        assert_eq!(parse_scan_ids(""), None);
+        assert_eq!(parse_scan_ids("1-2-3"), None);
+    }
+
+    #[test]
+    fn sanitize_scan_ids_dedups_and_drops_invalid() {
+        assert_eq!(sanitize_scan_ids(&[3, 3, 0, 255, 7, 3]), vec![3, 7]);
+        assert_eq!(sanitize_scan_ids(&[]), Vec::<u8>::new());
     }
 }
