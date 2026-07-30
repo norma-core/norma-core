@@ -2,7 +2,7 @@ use crate::dfrobot_rs485_proto::{
     DfrobotDevice, DfrobotSignalType, RegisterRange, RxEnvelope,
 };
 use crate::modbus::{self, ModbusError};
-use crate::sensors::SensorModel;
+use crate::sensors::{self, SensorModel};
 use bytes::Bytes;
 use log::{error, info, warn};
 use normfs::{NormFS, QueueId, UintN};
@@ -71,6 +71,14 @@ impl Sensor {
         }
     }
 
+    fn detected(model: SensorModel, modbus_id: u8) -> Self {
+        Self {
+            id: format!("{}-{}", model.config_name(), modbus_id),
+            model,
+            modbus_id,
+        }
+    }
+
     fn rx_queue_path(&self) -> String {
         format!("{QUEUE_PREFIX}/{}/rx", self.id)
     }
@@ -96,15 +104,11 @@ struct SensorState {
 }
 
 impl DfrobotRs485Driver {
-    pub async fn new<T: StationEngine>(
+    pub async fn new<T: StationEngine + Send + Sync + 'static>(
         normfs: Arc<NormFS>,
         station_engine: Arc<T>,
         mut config: DfrobotRs485DriverConfig,
     ) -> DriverResult<Self> {
-        if config.sensors.is_empty() {
-            warn!("DFRobot RS485 driver enabled with no sensors configured");
-        }
-
         if config.poll_interval.is_zero() {
             warn!(
                 "DFRobot RS485 poll-interval is zero, using {:?}",
@@ -113,34 +117,25 @@ impl DfrobotRs485Driver {
             config.poll_interval = DEFAULT_POLL_INTERVAL;
         }
 
-        let mut states = Vec::with_capacity(config.sensors.len());
-        for sensor_config in &config.sensors {
-            let sensor = Sensor::from_config(sensor_config);
-            let rx_queue_id = normfs.resolve(&sensor.rx_queue_path());
-            normfs.ensure_queue_exists_for_write(&rx_queue_id).await?;
-            station_engine.register_queue(&rx_queue_id, QueueDataType::QdtDfrobotRs485Rx, vec![]);
-            states.push(SensorState {
-                sensor,
-                rx_queue_id,
-                connected: false,
-                last_error: None,
-            });
+        if config.scan_ids.is_empty() && config.sensors.is_empty() {
+            warn!("DFRobot RS485 driver enabled with no scan range and no sensors configured");
         }
 
         info!(
-            "Started DFRobot RS485 driver for {} sensor(s), ports {:?}, {} baud",
-            states.len(),
+            "Started DFRobot RS485 driver: ports {:?}, {} baud, scan ids {:?}, {} explicit sensor(s)",
             config.ports,
-            config.baud
+            config.baud,
+            config.scan_ids,
+            config.sensors.len()
         );
 
-        let worker = tokio::spawn(run_bus_worker(normfs, config, states));
+        let worker = tokio::spawn(run_bus_worker(normfs, station_engine, config));
 
         Ok(Self { _worker: worker })
     }
 }
 
-pub async fn start_dfrobot_rs485_driver<T: StationEngine>(
+pub async fn start_dfrobot_rs485_driver<T: StationEngine + Send + Sync + 'static>(
     normfs: Arc<NormFS>,
     station_engine: Arc<T>,
     config: DfrobotRs485DriverConfig,
@@ -149,18 +144,61 @@ pub async fn start_dfrobot_rs485_driver<T: StationEngine>(
     Ok(Arc::new(driver))
 }
 
-async fn run_bus_worker(
+async fn run_bus_worker<T: StationEngine + Send + Sync + 'static>(
     normfs: Arc<NormFS>,
+    station_engine: Arc<T>,
     config: DfrobotRs485DriverConfig,
-    mut states: Vec<SensorState>,
 ) {
-    if states.is_empty() {
-        return;
-    }
+    // Queues survive re-acquisition: the same sensor id maps to the same
+    // queue (history continuity), and register_queue runs once per queue
+    // per process.
+    let mut registered: std::collections::HashMap<String, QueueId> =
+        std::collections::HashMap::new();
 
     loop {
-        let (mut port, port_name) = acquire_port(&config, &states).await;
-        info!("DFRobot RS485 claimed port {port_name}");
+        let (mut port, port_name, discovered) = acquire_and_scan(&config).await;
+
+        let mut states: Vec<SensorState> = Vec::new();
+        for sensor in discovered {
+            let path = sensor.rx_queue_path();
+            let rx_queue_id = if let Some(existing) = registered.get(&path) {
+                existing.clone()
+            } else {
+                let queue_id = normfs.resolve(&path);
+                if let Err(error) = normfs.ensure_queue_exists_for_write(&queue_id).await {
+                    error!("DFRobot RS485: cannot create queue {path}: {error}");
+                    continue;
+                }
+                station_engine.register_queue(
+                    &queue_id,
+                    QueueDataType::QdtDfrobotRs485Rx,
+                    vec![],
+                );
+                registered.insert(path, queue_id.clone());
+                queue_id
+            };
+            states.push(SensorState {
+                sensor,
+                rx_queue_id,
+                connected: false,
+                last_error: None,
+            });
+        }
+
+        if states.is_empty() {
+            sleep(PORT_SCAN_INTERVAL).await;
+            continue;
+        }
+
+        info!(
+            "DFRobot RS485 claimed port {port_name} with {} sensor(s): {}",
+            states.len(),
+            states
+                .iter()
+                .map(|state| state.sensor.id.as_str())
+                .collect::<Vec<_>>()
+                .join(", ")
+        );
 
         let mut tick = interval(config.poll_interval);
         tick.set_missed_tick_behavior(MissedTickBehavior::Skip);
@@ -277,15 +315,115 @@ async fn poll_sensor(
     Ok(ranges)
 }
 
-/// Tries candidate ports (from the configured glob/fallback list, in order)
-/// until one has at least one configured sensor answering. Probes every
-/// configured Modbus ID per candidate: any answer claims the port; silent
-/// sensors are retried by the normal poll loop afterwards. No bus scanning
-/// beyond the configured IDs (design decision — see the spec).
-async fn acquire_port(
+/// One single-register read (count = 1). Detection MUST use these: the
+/// 0x083B/0x0009 block and the SEN0644 config cluster return zeros in larger
+/// block reads (deep-sweep finding, 2026-07-29).
+async fn read_single(
+    port: &mut tokio_serial::SerialStream,
+    modbus_id: u8,
+    register: u16,
+) -> Result<u16, ModbusError> {
+    let data = modbus::transact(port, modbus_id, register, 1, RESPONSE_TIMEOUT).await?;
+    sleep(INTER_FRAME_GAP).await;
+    Ok(((data[0] as u16) << 8) | data[1] as u16)
+}
+
+/// Probes one Modbus ID and classifies the device behind it.
+/// Returns None when the ID does not answer (or stops answering mid-probe).
+async fn detect_sensor(
+    port: &mut tokio_serial::SerialStream,
+    modbus_id: u8,
+) -> Option<Sensor> {
+    read_single(port, modbus_id, 0x0000).await.ok()?;
+    let radiation_addr = read_single(port, modbus_id, sensors::REG_RADIATION_ADDRESS)
+        .await
+        .ok()?;
+    let light_addr = read_single(port, modbus_id, sensors::REG_LIGHT_ADDRESS)
+        .await
+        .ok()?;
+
+    let (range, hw_id) = if radiation_addr == modbus_id as u16 {
+        let range = read_single(port, modbus_id, sensors::REG_RANGE_CONSTANT)
+            .await
+            .ok()?;
+        let hw_id = read_single(port, modbus_id, sensors::REG_HARDWARE_ID)
+            .await
+            .ok()?;
+        (range, hw_id)
+    } else {
+        (0, 0)
+    };
+
+    let model = sensors::classify(modbus_id, radiation_addr, light_addr, range, hw_id);
+    match model {
+        SensorModel::Unknown => info!(
+            "DFRobot RS485: unclassified device at id {modbus_id} \
+             (0x07D0={radiation_addr}, 0x0064={light_addr}, 0x083B={range}, \
+             0x0009=0x{hw_id:04X}) — recording as unknown"
+        ),
+        SensorModel::Light => {
+            let version = read_single(port, modbus_id, sensors::REG_LIGHT_VERSION)
+                .await
+                .unwrap_or(0);
+            info!(
+                "DFRobot RS485: detected {} at id {modbus_id} (version {version})",
+                model.config_name()
+            );
+        }
+        _ => info!(
+            "DFRobot RS485: detected {} at id {modbus_id} (0x083B={range}, 0x0009=0x{hw_id:04X})",
+            model.config_name()
+        ),
+    }
+    Some(Sensor::detected(model, modbus_id))
+}
+
+/// Builds the sensor set for one candidate port. Explicit config entries are
+/// always included (their queues surface timeouts if the device is offline,
+/// as before) and skip detection; the scan range covers the remaining IDs.
+/// Returns an empty Vec when nothing on the bus answered — the port is then
+/// not claimed.
+async fn scan_bus(
+    port: &mut tokio_serial::SerialStream,
     config: &DfrobotRs485DriverConfig,
-    states: &[SensorState],
-) -> (tokio_serial::SerialStream, String) {
+) -> Vec<Sensor> {
+    let mut discovered = Vec::new();
+    let mut any_response = false;
+    let mut taken: std::collections::HashSet<u8> = std::collections::HashSet::new();
+
+    for sensor_config in &config.sensors {
+        let sensor = Sensor::from_config(sensor_config);
+        let (start, count) = sensor.model.poll_ranges()[0];
+        if modbus::transact(port, sensor.modbus_id, start, count, RESPONSE_TIMEOUT)
+            .await
+            .is_ok()
+        {
+            any_response = true;
+        }
+        sleep(INTER_FRAME_GAP).await;
+        taken.insert(sensor.modbus_id);
+        discovered.push(sensor);
+    }
+
+    for id in &config.scan_ids {
+        if taken.contains(id) {
+            continue;
+        }
+        if let Some(sensor) = detect_sensor(port, *id).await {
+            any_response = true;
+            discovered.push(sensor);
+        }
+    }
+
+    if any_response { discovered } else { Vec::new() }
+}
+
+/// Tries candidate ports (glob/fallback list, in order) until one has at
+/// least one responding device; runs the full scan-and-identify on each
+/// candidate. Returns the claimed port plus the discovered sensor set.
+async fn acquire_and_scan(
+    config: &DfrobotRs485DriverConfig,
+) -> (tokio_serial::SerialStream, String, Vec<Sensor>) {
     loop {
         for candidate in expand_port_globs(&config.ports) {
             let mut port = match tokio_serial::new(&candidate, config.baud).open_native_async() {
@@ -296,23 +434,11 @@ async fn acquire_port(
                 }
             };
 
-            for state in states.iter() {
-                let (start, count) = state.sensor.model.poll_ranges()[0];
-                if modbus::transact(
-                    &mut port,
-                    state.sensor.modbus_id,
-                    start,
-                    count,
-                    RESPONSE_TIMEOUT,
-                )
-                .await
-                .is_ok()
-                {
-                    return (port, candidate);
-                }
-                sleep(INTER_FRAME_GAP).await;
+            let discovered = scan_bus(&mut port, config).await;
+            if !discovered.is_empty() {
+                return (port, candidate, discovered);
             }
-            log::debug!("DFRobot RS485: no configured sensor answered on {candidate}");
+            log::debug!("DFRobot RS485: no responders on {candidate}");
         }
         sleep(PORT_SCAN_INTERVAL).await;
     }
@@ -553,5 +679,16 @@ mod tests {
     fn sanitize_scan_ids_dedups_and_drops_invalid() {
         assert_eq!(sanitize_scan_ids(&[3, 3, 0, 255, 7, 3]), vec![3, 7]);
         assert_eq!(sanitize_scan_ids(&[]), Vec::<u8>::new());
+    }
+
+    #[test]
+    fn detected_sensor_naming() {
+        let known = Sensor::detected(SensorModel::Par, 2);
+        assert_eq!(known.id, "par-2");
+        assert_eq!(known.rx_queue_path(), "dfrobot-rs485/par-2/rx");
+
+        let unknown = Sensor::detected(SensorModel::Unknown, 5);
+        assert_eq!(unknown.id, "unknown-5");
+        assert_eq!(unknown.rx_queue_path(), "dfrobot-rs485/unknown-5/rx");
     }
 }
