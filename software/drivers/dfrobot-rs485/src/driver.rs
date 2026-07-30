@@ -1,5 +1,6 @@
 use crate::dfrobot_rs485_proto::{
-    DfrobotDevice, DfrobotSignalType, RegisterRange, RxEnvelope,
+    Command, CommandResult, DfrobotDevice, DfrobotSignalType, RegisterRange, RxEnvelope,
+    WriteRegisterCommand,
 };
 use crate::modbus::{self, ModbusError};
 use crate::sensors::{self, SensorModel};
@@ -8,9 +9,11 @@ use log::{error, info, warn};
 use normfs::{NormFS, QueueId, UintN};
 use prost::Message;
 use station_iface::StationEngine;
-use station_iface::iface_proto::drivers::QueueDataType;
+use station_iface::iface_proto::commands;
+use station_iface::iface_proto::drivers::{QueueDataType, StationCommandType};
 use std::sync::Arc;
 use std::time::Duration;
+use tokio::sync::mpsc;
 use tokio::task::JoinHandle;
 use tokio::time::{MissedTickBehavior, interval, sleep};
 use tokio_serial::{SerialPort, SerialPortBuilderExt};
@@ -31,6 +34,9 @@ const DEFAULT_POLL_INTERVAL: Duration = Duration::from_secs(1);
 /// claimed port and re-runs the full scan. A re-addressed or re-bauded bus
 /// (config editor, power-cycled sensor) looks exactly like this.
 const SILENT_POLLS_BEFORE_RESCAN: u32 = 3;
+/// Soft-reset / factory-reset registers — writing them wipes the sensor's
+/// address and baud (see spec + REGISTERS.md). Never written, ever.
+const BLOCKED_WRITE_REGISTERS: [u16; 2] = [0x00E0, 0x00F0];
 
 type DriverResult<T> = Result<T, Box<dyn std::error::Error + Send + Sync>>;
 
@@ -147,7 +153,40 @@ impl DfrobotRs485Driver {
             config.sensors.len()
         );
 
-        let worker = tokio::spawn(run_bus_worker(normfs, station_engine, config));
+        let (command_tx, command_rx) =
+            mpsc::unbounded_channel::<(Vec<u8>, WriteRegisterCommand)>();
+        let commands_queue_id = normfs.resolve("commands");
+        normfs.subscribe(
+            &commands_queue_id,
+            Box::new(move |entries: &[(UintN, Bytes)]| {
+                for (_, data) in entries {
+                    let Ok(pack) = commands::StationCommandsPack::decode(data.as_ref()) else {
+                        continue;
+                    };
+                    for cmd in &pack.commands {
+                        if cmd.r#type() != StationCommandType::StcDfrobotRs485Command {
+                            continue;
+                        }
+                        let command = match Command::decode(cmd.body.clone()) {
+                            Ok(command) => command,
+                            Err(decode_error) => {
+                                error!("Failed to decode DFRobot RS485 command: {decode_error}");
+                                continue;
+                            }
+                        };
+                        let Some(write) = command.write_register else {
+                            continue;
+                        };
+                        if command_tx.send((cmd.command_id.to_vec(), write)).is_err() {
+                            error!("DFRobot RS485: command channel closed");
+                        }
+                    }
+                }
+                true
+            }),
+        )?;
+
+        let worker = tokio::spawn(run_bus_worker(normfs, station_engine, config, command_rx));
 
         Ok(Self { _worker: worker })
     }
@@ -183,10 +222,143 @@ impl SilentBusTracker {
     }
 }
 
+/// Checks a write command's fields; returns (modbus_id, register, value)
+/// narrowed to their wire widths, or a human-readable rejection reason.
+fn validate_write(write: &WriteRegisterCommand) -> Result<(u8, u16, u16), String> {
+    let modbus_id = u8::try_from(write.modbus_id)
+        .ok()
+        .filter(|id| (1..=254).contains(id))
+        .ok_or_else(|| format!("modbus id {} outside 1-254", write.modbus_id))?;
+    let register = u16::try_from(write.register)
+        .map_err(|_| format!("register 0x{:X} outside 16-bit range", write.register))?;
+    if BLOCKED_WRITE_REGISTERS.contains(&register) {
+        return Err(format!(
+            "register 0x{register:04X} is a reset register and must never be written"
+        ));
+    }
+    let value = u16::try_from(write.value)
+        .map_err(|_| format!("value {} outside 16-bit range", write.value))?;
+    Ok((modbus_id, register, value))
+}
+
+/// Emits a DFROBOT_COMMAND_* ack on the target sensor's queue. A write
+/// addressed to a just-changed ID has no matching state, so fall back to
+/// the first sensor — well-defined because the editor is single-sensor
+/// gated (spec §2).
+fn send_command_result(
+    normfs: &Arc<NormFS>,
+    states: &[SensorState],
+    modbus_id: u32,
+    port_name: &str,
+    baud: u32,
+    signal_type: DfrobotSignalType,
+    command_id: Vec<u8>,
+    description: String,
+) {
+    let Some(state) = states
+        .iter()
+        .find(|state| state.sensor.modbus_id as u32 == modbus_id)
+        .or_else(|| states.first())
+    else {
+        warn!("DFRobot RS485: no sensor queue to ack command for id {modbus_id}");
+        return;
+    };
+
+    let is_error = signal_type != DfrobotSignalType::DfrobotCommandSuccess;
+    let envelope = RxEnvelope {
+        monotonic_stamp_ns: systime::get_monotonic_stamp_ns(),
+        local_stamp_ns: systime::get_local_stamp_ns(),
+        app_start_id: systime::get_app_start_id(),
+        signal_type: signal_type as i32,
+        device: Some(state.sensor.proto(port_name, baud)),
+        ranges: Vec::new(),
+        error: if is_error { description.clone() } else { String::new() },
+        command: Some(CommandResult {
+            command_id: command_id.into(),
+            description,
+        }),
+    };
+
+    if let Err(send_error) = send_proto(normfs, &state.rx_queue_id, &envelope) {
+        error!(
+            "Failed to send DFRobot RS485 command ack for {}: {}",
+            state.sensor.id, send_error
+        );
+    }
+}
+
+/// Validates and executes one write command, acks it, and invalidates the
+/// target sensor's static-register cache (config registers may have
+/// changed — spec §2). Returns true when the port was lost mid-write.
+async fn handle_write_command(
+    normfs: &Arc<NormFS>,
+    port: &mut tokio_serial::SerialStream,
+    states: &mut [SensorState],
+    port_name: &str,
+    baud: u32,
+    command_id: Vec<u8>,
+    write: &WriteRegisterCommand,
+) -> bool {
+    let (modbus_id, register, value) = match validate_write(write) {
+        Ok(target) => target,
+        Err(reason) => {
+            warn!("DFRobot RS485: rejected write command: {reason}");
+            send_command_result(
+                normfs,
+                states,
+                write.modbus_id,
+                port_name,
+                baud,
+                DfrobotSignalType::DfrobotCommandRejected,
+                command_id,
+                reason,
+            );
+            return false;
+        }
+    };
+
+    info!("DFRobot RS485: write 0x{register:04X} = {value} on id {modbus_id}");
+    match modbus::write_register(port, modbus_id, register, value, RESPONSE_TIMEOUT).await {
+        Ok(()) => {
+            for state in states.iter_mut() {
+                if state.sensor.modbus_id == modbus_id {
+                    state.static_ranges = None;
+                }
+            }
+            send_command_result(
+                normfs,
+                states,
+                write.modbus_id,
+                port_name,
+                baud,
+                DfrobotSignalType::DfrobotCommandSuccess,
+                command_id,
+                format!("wrote 0x{register:04X} = {value} on id {modbus_id}"),
+            );
+            false
+        }
+        Err(modbus_error) => {
+            let port_lost = matches!(modbus_error, ModbusError::Io(_));
+            send_command_result(
+                normfs,
+                states,
+                write.modbus_id,
+                port_name,
+                baud,
+                DfrobotSignalType::DfrobotCommandFailed,
+                command_id,
+                modbus_error.to_string(),
+            );
+            port_lost
+        }
+    }
+}
+
 async fn run_bus_worker<T: StationEngine + Send + Sync + 'static>(
     normfs: Arc<NormFS>,
     station_engine: Arc<T>,
     config: DfrobotRs485DriverConfig,
+    mut command_rx: mpsc::UnboundedReceiver<(Vec<u8>, WriteRegisterCommand)>,
 ) {
     // Queues survive re-acquisition: the same sensor id maps to the same
     // queue (history continuity), and register_queue runs once per queue
@@ -245,132 +417,155 @@ async fn run_bus_worker<T: StationEngine + Send + Sync + 'static>(
 
         let mut silent_tracker = SilentBusTracker::new();
         'poll: loop {
-            tick.tick().await;
+            tokio::select! {
+                command = command_rx.recv() => {
+                    let Some((command_id, write)) = command else {
+                        // Channel closed: driver shutting down.
+                        return;
+                    };
+                    if handle_write_command(
+                        &normfs,
+                        &mut port,
+                        &mut states,
+                        &port_name,
+                        claimed_baud,
+                        command_id,
+                        &write,
+                    )
+                    .await
+                    {
+                        warn!("DFRobot RS485 lost port {port_name} during write, rescanning");
+                        break 'poll;
+                    }
+                }
+                _ = tick.tick() => {
 
-            let mut any_sensor_ok = false;
-            let mut port_lost = false;
-            for state in states.iter_mut() {
-                let poll_result = match read_ranges(
-                    &mut port,
-                    state.sensor.modbus_id,
-                    state.sensor.model.poll_ranges(),
-                )
-                .await
-                {
-                    Ok(dynamic) => {
-                        if state.static_ranges.is_none() {
-                            // Connect transition: capture the static set once.
-                            // Both reads must succeed before CONNECTED is
-                            // emitted (spec; mirrors the ST3215 full first read).
-                            match read_ranges(
-                                &mut port,
-                                state.sensor.modbus_id,
-                                state.sensor.model.static_ranges(),
-                            )
-                            .await
-                            {
-                                Ok(statics) => {
-                                    state.static_ranges = Some(statics);
+                    let mut any_sensor_ok = false;
+                    let mut port_lost = false;
+                    for state in states.iter_mut() {
+                        let poll_result = match read_ranges(
+                            &mut port,
+                            state.sensor.modbus_id,
+                            state.sensor.model.poll_ranges(),
+                        )
+                        .await
+                        {
+                            Ok(dynamic) => {
+                                if state.static_ranges.is_none() {
+                                    // Connect transition: capture the static set once.
+                                    // Both reads must succeed before CONNECTED is
+                                    // emitted (spec; mirrors the ST3215 full first read).
+                                    match read_ranges(
+                                        &mut port,
+                                        state.sensor.modbus_id,
+                                        state.sensor.model.static_ranges(),
+                                    )
+                                    .await
+                                    {
+                                        Ok(statics) => {
+                                            state.static_ranges = Some(statics);
+                                            Ok(dynamic)
+                                        }
+                                        Err(error) => Err(error),
+                                    }
+                                } else {
                                     Ok(dynamic)
                                 }
-                                Err(error) => Err(error),
                             }
-                        } else {
-                            Ok(dynamic)
-                        }
-                    }
-                    Err(error) => Err(error),
-                };
+                            Err(error) => Err(error),
+                        };
 
-                match poll_result {
-                    Ok(dynamic) => {
-                        let ranges =
-                            assemble_ranges(dynamic, state.static_ranges.as_deref());
-                        if !state.connected {
-                            send_signal(
-                                &normfs,
-                                state,
-                                &port_name,
-                                claimed_baud,
-                                DfrobotSignalType::DfrobotConnected,
-                                ranges.clone(),
-                                None,
-                            );
-                            state.connected = true;
+                        match poll_result {
+                            Ok(dynamic) => {
+                                let ranges =
+                                    assemble_ranges(dynamic, state.static_ranges.as_deref());
+                                if !state.connected {
+                                    send_signal(
+                                        &normfs,
+                                        state,
+                                        &port_name,
+                                        claimed_baud,
+                                        DfrobotSignalType::DfrobotConnected,
+                                        ranges.clone(),
+                                        None,
+                                    );
+                                    state.connected = true;
+                                }
+                                send_signal(
+                                    &normfs,
+                                    state,
+                                    &port_name,
+                                    claimed_baud,
+                                    DfrobotSignalType::DfrobotRegistersSnapshot,
+                                    ranges,
+                                    None,
+                                );
+                                state.last_error = None;
+                                any_sensor_ok = true;
+                            }
+                            Err(modbus_error) => {
+                                state.static_ranges = None;
+                                if matches!(modbus_error, ModbusError::Io(_)) {
+                                    port_lost = true;
+                                }
+                                let message = modbus_error.to_string();
+                                if state.connected {
+                                    send_signal(
+                                        &normfs,
+                                        state,
+                                        &port_name,
+                                        claimed_baud,
+                                        DfrobotSignalType::DfrobotDisconnected,
+                                        Vec::new(),
+                                        Some(message.clone()),
+                                    );
+                                    state.connected = false;
+                                }
+                                if state.last_error.as_deref() != Some(message.as_str()) {
+                                    send_signal(
+                                        &normfs,
+                                        state,
+                                        &port_name,
+                                        claimed_baud,
+                                        DfrobotSignalType::DfrobotError,
+                                        Vec::new(),
+                                        Some(message.clone()),
+                                    );
+                                    state.last_error = Some(message);
+                                }
+                            }
                         }
-                        send_signal(
-                            &normfs,
-                            state,
-                            &port_name,
-                            claimed_baud,
-                            DfrobotSignalType::DfrobotRegistersSnapshot,
-                            ranges,
-                            None,
-                        );
-                        state.last_error = None;
-                        any_sensor_ok = true;
                     }
-                    Err(modbus_error) => {
-                        state.static_ranges = None;
-                        if matches!(modbus_error, ModbusError::Io(_)) {
-                            port_lost = true;
+
+                    if port_lost {
+                        warn!("DFRobot RS485 lost port {port_name}, rescanning");
+                        for state in states.iter_mut() {
+                            state.static_ranges = None;
+                            if state.connected {
+                                send_signal(
+                                    &normfs,
+                                    state,
+                                    &port_name,
+                                    claimed_baud,
+                                    DfrobotSignalType::DfrobotDisconnected,
+                                    Vec::new(),
+                                    Some("serial port lost".to_string()),
+                                );
+                                state.connected = false;
+                                state.last_error = Some("serial port lost".to_string());
+                            }
                         }
-                        let message = modbus_error.to_string();
-                        if state.connected {
-                            send_signal(
-                                &normfs,
-                                state,
-                                &port_name,
-                                claimed_baud,
-                                DfrobotSignalType::DfrobotDisconnected,
-                                Vec::new(),
-                                Some(message.clone()),
-                            );
-                            state.connected = false;
-                        }
-                        if state.last_error.as_deref() != Some(message.as_str()) {
-                            send_signal(
-                                &normfs,
-                                state,
-                                &port_name,
-                                claimed_baud,
-                                DfrobotSignalType::DfrobotError,
-                                Vec::new(),
-                                Some(message.clone()),
-                            );
-                            state.last_error = Some(message);
-                        }
+                        break 'poll;
+                    }
+
+                    if silent_tracker.record(any_sensor_ok) {
+                        warn!(
+                            "DFRobot RS485: no sensor answered for {SILENT_POLLS_BEFORE_RESCAN} polls \
+                             on {port_name}, rescanning"
+                        );
+                        break 'poll;
                     }
                 }
-            }
-
-            if port_lost {
-                warn!("DFRobot RS485 lost port {port_name}, rescanning");
-                for state in states.iter_mut() {
-                    state.static_ranges = None;
-                    if state.connected {
-                        send_signal(
-                            &normfs,
-                            state,
-                            &port_name,
-                            claimed_baud,
-                            DfrobotSignalType::DfrobotDisconnected,
-                            Vec::new(),
-                            Some("serial port lost".to_string()),
-                        );
-                        state.connected = false;
-                        state.last_error = Some("serial port lost".to_string());
-                    }
-                }
-                break 'poll;
-            }
-
-            if silent_tracker.record(any_sensor_ok) {
-                warn!(
-                    "DFRobot RS485: no sensor answered for {SILENT_POLLS_BEFORE_RESCAN} polls \
-                     on {port_name}, rescanning"
-                );
-                break 'poll;
             }
         }
     }
@@ -964,5 +1159,40 @@ mod tests {
         assert!(!tracker.record(false));
         assert!(!tracker.record(false));
         assert!(tracker.record(false));
+    }
+
+    #[test]
+    fn validate_write_accepts_config_register() {
+        let write = WriteRegisterCommand {
+            modbus_id: 2,
+            register: 0x07D0,
+            value: 5,
+        };
+        assert_eq!(validate_write(&write), Ok((2, 0x07D0, 5)));
+    }
+
+    #[test]
+    fn validate_write_rejects_reset_registers() {
+        for register in [0x00E0u32, 0x00F0] {
+            let write = WriteRegisterCommand {
+                modbus_id: 1,
+                register,
+                value: 1,
+            };
+            assert!(validate_write(&write).is_err());
+        }
+    }
+
+    #[test]
+    fn validate_write_rejects_out_of_range_fields() {
+        // modbus id 0 and 255 are broadcast addresses; register/value are 16-bit.
+        for write in [
+            WriteRegisterCommand { modbus_id: 0, register: 0x07D0, value: 1 },
+            WriteRegisterCommand { modbus_id: 255, register: 0x07D0, value: 1 },
+            WriteRegisterCommand { modbus_id: 1, register: 0x1_0000, value: 1 },
+            WriteRegisterCommand { modbus_id: 1, register: 0x07D0, value: 0x1_0000 },
+        ] {
+            assert!(validate_write(&write).is_err(), "{write:?} should be rejected");
+        }
     }
 }
