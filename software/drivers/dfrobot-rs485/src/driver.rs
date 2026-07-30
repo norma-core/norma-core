@@ -117,6 +117,7 @@ impl DfrobotRs485Driver {
             config.poll_interval = DEFAULT_POLL_INTERVAL;
         }
 
+        config.bauds = sanitize_bauds(&config.bauds);
         if config.bauds.is_empty() {
             warn!(
                 "DFRobot RS485 baud candidate list is empty, using {:?}",
@@ -481,7 +482,7 @@ async fn acquire_and_scan(
                 if index != best_index && !outcome.responding_ids.is_empty() {
                     warn!(
                         "DFRobot RS485: mixed bus on {candidate}: {} device(s) answering at \
-                         {baud} baud (ids {:?}) will not be polled — unify the bus baud",
+                         {baud} baud (ids {:?}) will not be polled at the claimed baud — unify the bus baud",
                         outcome.responding_ids.len(),
                         outcome.responding_ids
                     );
