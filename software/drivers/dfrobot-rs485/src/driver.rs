@@ -461,6 +461,7 @@ async fn scan_bus(
 
     for sensor_config in &config.sensors {
         let sensor = Sensor::from_config(sensor_config);
+        // The plan is always the single uniform block; this probe is intentionally the same read the poll loop does.
         let (start, count) = sensor.model.poll_ranges()[0];
         if modbus::transact(port, sensor.modbus_id, start, count, RESPONSE_TIMEOUT)
             .await

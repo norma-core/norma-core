@@ -111,7 +111,7 @@ impl SensorModel {
     }
 }
 
-/// Detection registers (single-register reads only — see UNKNOWN_RANGES note).
+/// Detection registers (single-register reads only — see RADIATION_STATIC_RANGES note).
 pub const REG_RADIATION_ADDRESS: u16 = 0x07D0;
 pub const REG_LIGHT_ADDRESS: u16 = 0x0064;
 pub const REG_RANGE_CONSTANT: u16 = 0x083B;
