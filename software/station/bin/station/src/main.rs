@@ -468,7 +468,16 @@ impl Station {
                         }
                     }
                     Some(station_iface::config::DfrobotScanIds::List(ids)) => {
-                        dfrobot_rs485::sanitize_scan_ids(ids)
+                        let sanitized = dfrobot_rs485::sanitize_scan_ids(ids);
+                        if sanitized.is_empty() && !ids.is_empty() {
+                            log::error!(
+                                "Invalid DFRobot RS485 scan-ids list {:?} (no valid ids in 1-254); using default 1-10",
+                                ids
+                            );
+                            dfrobot_rs485::default_scan_ids()
+                        } else {
+                            sanitized
+                        }
                     }
                 };
 

@@ -601,7 +601,7 @@ pub struct DfrobotRs485SensorConfig {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
 
-    /// One of: irradiance, par, uv, light
+    /// One of: irradiance, par, uv, light, unknown
     pub model: String,
 
     #[serde(rename = "modbus-id")]

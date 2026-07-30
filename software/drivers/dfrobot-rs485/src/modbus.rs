@@ -107,18 +107,19 @@ pub async fn transact(
     let _ = port.clear(tokio_serial::ClearBuffer::Input);
 
     let request = build_read_request(id, start, count);
-    port.write_all(&request)
-        .await
-        .map_err(|error| ModbusError::Io(error.to_string()))?;
-    port.flush()
-        .await
-        .map_err(|error| ModbusError::Io(error.to_string()))?;
 
     let expected_len = 5 + 2 * count as usize;
     let mut response = vec![0u8; expected_len];
     let mut filled = 0usize;
 
     let result = tokio::time::timeout(timeout, async {
+        port.write_all(&request)
+            .await
+            .map_err(|error| ModbusError::Io(error.to_string()))?;
+        port.flush()
+            .await
+            .map_err(|error| ModbusError::Io(error.to_string()))?;
+
         // Read the 3-byte header first so an exception frame (5 bytes total)
         // doesn't stall waiting for a full-length response that never comes.
         while filled < 3 {
