@@ -27,6 +27,20 @@ const COMMS_RADIATION: DfrobotRegisterSpec[] = [
   { register: 0x07d4, name: 'serial_lo', scale: 1, width: 16, kind: 'info' },
 ];
 
+// Connection-static registers captured once at connect (0x0830 block +
+// factory-reset magic). Values are constants on real hardware.
+const STATIC_RADIATION: DfrobotRegisterSpec[] = [
+  { register: 0x0834, name: 'reg_0x0834', scale: 1, width: 16, kind: 'undocumented' },
+  { register: 0x0837, name: 'reg_0x0837', scale: 1, width: 16, kind: 'undocumented' },
+  { register: 0x0839, name: 'reg_0x0839', scale: 1, width: 16, kind: 'undocumented' },
+  { register: 0x0840, name: 'reg_0x0840', scale: 1, width: 16, kind: 'undocumented' },
+  { register: 0x0841, name: 'reg_0x0841', scale: 1, width: 16, kind: 'undocumented' },
+  { register: 0x0842, name: 'reg_0x0842', scale: 1, width: 16, kind: 'undocumented' },
+  { register: 0x0844, name: 'reg_0x0844', scale: 1, width: 16, kind: 'undocumented' },
+  { register: 0x0849, name: 'reg_0x0849', scale: 1, width: 16, kind: 'undocumented' },
+  { register: 0x00f0, name: 'factory_reset_magic', scale: 1, width: 16, kind: 'info' },
+];
+
 export const DFROBOT_SPECS: Record<number, DfrobotRegisterSpec[]> = {
   [Model.DFROBOT_SEN0640_IRRADIANCE]: [
     { register: 0x0000, name: 'irradiance', unit: 'W/m²', scale: 1, width: 16, kind: 'measurement', decimals: 0 },
@@ -34,7 +48,9 @@ export const DFROBOT_SPECS: Record<number, DfrobotRegisterSpec[]> = {
     { register: 0x0009, name: 'hardware_id', scale: 1, width: 16, kind: 'info' },
     { register: 0x0010, name: 'reg_0x0010', scale: 1, width: 16, kind: 'undocumented' },
     { register: 0x0052, name: 'deviation', unit: 'W/m²', scale: 1, width: 16, signed: true, kind: 'setting' },
+    { register: 0x083b, name: 'range_max', unit: 'W/m²', scale: 1, width: 16, kind: 'info', decimals: 0 },
     ...COMMS_RADIATION,
+    ...STATIC_RADIATION,
   ],
   [Model.DFROBOT_SEN0641_PAR]: [
     { register: 0x0000, name: 'par', unit: 'µmol/m²·s', scale: 1, width: 16, kind: 'measurement', decimals: 0 },
@@ -43,15 +59,20 @@ export const DFROBOT_SPECS: Record<number, DfrobotRegisterSpec[]> = {
     { register: 0x0003, name: 'raw_adc', scale: 1, width: 16, kind: 'undocumented' },
     { register: 0x0009, name: 'hardware_id', scale: 1, width: 16, kind: 'info' },
     { register: 0x0052, name: 'deviation', unit: 'µmol/m²·s', scale: 1, width: 16, signed: true, kind: 'setting' },
+    { register: 0x083b, name: 'range_max', unit: 'µmol/m²·s', scale: 1, width: 16, kind: 'info', decimals: 0 },
     ...COMMS_RADIATION,
+    ...STATIC_RADIATION,
   ],
   [Model.DFROBOT_SEN0642_UV]: [
     { register: 0x0000, name: 'uv_intensity', unit: 'mW/cm²', scale: 0.01, width: 16, kind: 'measurement', decimals: 2 },
     { register: 0x0001, name: 'uv_index', unit: 'UVI', scale: 1, width: 16, kind: 'measurement', decimals: 0 },
     { register: 0x0009, name: 'hardware_id', scale: 1, width: 16, kind: 'info' },
+    { register: 0x0010, name: 'reg_0x0010', scale: 1, width: 16, kind: 'undocumented' },
     { register: 0x0020, name: 'reg_0x0020', scale: 1, width: 16, kind: 'undocumented' },
     { register: 0x0052, name: 'deviation', unit: 'mW/cm²', scale: 0.01, width: 16, signed: true, kind: 'setting', decimals: 2 },
+    { register: 0x083b, name: 'range_max', unit: 'mW/cm²', scale: 0.01, width: 16, kind: 'info', decimals: 2 },
     ...COMMS_RADIATION,
+    ...STATIC_RADIATION,
   ],
   [Model.DFROBOT_SEN0644_LIGHT]: [
     { register: 0x0002, name: 'illuminance', unit: 'Lux', scale: 0.001, width: 32, kind: 'measurement', decimals: 3 },

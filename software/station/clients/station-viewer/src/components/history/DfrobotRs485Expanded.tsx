@@ -60,6 +60,9 @@ export default function DfrobotRs485Expanded({ data }: DfrobotRs485ExpandedProps
   const device = data.device ?? null;
   const model = device?.model;
   const { known, unknown } = decodeDfrobotRegisters(model, data.ranges);
+  // These devices return 0 for unimplemented registers — zeros carry no information.
+  const visibleUnknown = unknown.filter((entry) => entry.raw !== 0);
+  const hiddenZeroCount = unknown.length - visibleUnknown.length;
   const specCount = (DFROBOT_SPECS[model ?? -1] ?? []).length;
 
   return (
@@ -112,12 +115,17 @@ export default function DfrobotRs485Expanded({ data }: DfrobotRs485ExpandedProps
           <div className="mb-2 border-b border-border-default pb-1 text-xs text-text-label">
             Unmapped registers (polled but not yet named)
           </div>
-          {unknown.map(({ register, raw }) => (
+          {visibleUnknown.map(({ register, raw }) => (
             <div key={register} className="grid grid-cols-[4.5rem_1fr] gap-2 border-b border-border-subtle py-1 text-xs last:border-b-0">
               <span className="font-mono text-text-muted">{hexWord(register)}</span>
               <span className="font-mono text-text-secondary">{hexWord(raw)}</span>
             </div>
           ))}
+          {hiddenZeroCount > 0 && (
+            <div className="py-1 text-[10px] text-text-muted">
+              {hiddenZeroCount} zero register{hiddenZeroCount === 1 ? '' : 's'} hidden
+            </div>
+          )}
         </div>
       )}
     </div>

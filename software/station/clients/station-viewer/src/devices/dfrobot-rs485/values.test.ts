@@ -91,3 +91,33 @@ describe('dfrobotPrimaryText', () => {
     expect(dfrobotPrimaryText(DfrobotSensorModel.DFROBOT_SEN0640_IRRADIANCE, [])).toBe('N/A');
   });
 });
+
+describe('static register specs', () => {
+  it('decodes range_max per model with model-native scaling', () => {
+    const irr = DFROBOT_SPECS[DfrobotSensorModel.DFROBOT_SEN0640_IRRADIANCE]
+      .find((s) => s.name === 'range_max')!;
+    expect(readDfrobotValue([range(0x083b, [1800])], irr)).toBe(1800);
+    expect(irr.unit).toBe('W/m²');
+
+    const uv = DFROBOT_SPECS[DfrobotSensorModel.DFROBOT_SEN0642_UV]
+      .find((s) => s.name === 'range_max')!;
+    expect(readDfrobotValue([range(0x083b, [1500])], uv)).toBeCloseTo(15.0);
+
+    const par = DFROBOT_SPECS[DfrobotSensorModel.DFROBOT_SEN0641_PAR]
+      .find((s) => s.name === 'range_max')!;
+    expect(readDfrobotValue([range(0x083b, [2500])], par)).toBe(2500);
+  });
+
+  it('names the factory reset magic and 0x0830-block registers', () => {
+    const specs = DFROBOT_SPECS[DfrobotSensorModel.DFROBOT_SEN0641_PAR];
+    expect(specs.some((s) => s.name === 'factory_reset_magic' && s.register === 0x00f0)).toBe(true);
+    for (const register of [0x0834, 0x0837, 0x0839, 0x0840, 0x0841, 0x0842, 0x0844, 0x0849]) {
+      expect(specs.some((s) => s.register === register)).toBe(true);
+    }
+  });
+
+  it('uv keeps 0x0010 named so a live value does not show as unmapped', () => {
+    const specs = DFROBOT_SPECS[DfrobotSensorModel.DFROBOT_SEN0642_UV];
+    expect(specs.some((s) => s.register === 0x0010)).toBe(true);
+  });
+});
