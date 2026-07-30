@@ -230,3 +230,91 @@ export function dfrobotModelLabel(model: number | null | undefined): string {
       return 'Unknown';
   }
 }
+
+export interface DfrobotCommsProfile {
+  addressRegister: number;
+  baudRegister: number;
+  baudToCode: Record<number, number>;
+  latchesOnPowerCycle: boolean;
+}
+
+// Config-register profiles, hardware-verified (REGISTERS.md / spec).
+// Radiation changes apply immediately; SEN0644 latches on power-cycle.
+const RADIATION_COMMS_PROFILE: DfrobotCommsProfile = {
+  addressRegister: 0x07d0,
+  baudRegister: 0x07d1,
+  baudToCode: { 2400: 0, 4800: 1, 9600: 2 },
+  latchesOnPowerCycle: false,
+};
+
+const LIGHT_COMMS_PROFILE: DfrobotCommsProfile = {
+  addressRegister: 0x0064,
+  baudRegister: 0x0065,
+  baudToCode: { 1200: 0, 2400: 1, 4800: 2, 9600: 3, 19200: 4, 38400: 5, 57600: 6 },
+  latchesOnPowerCycle: true,
+};
+
+export function dfrobotCommsProfile(
+  model: number | null | undefined,
+): DfrobotCommsProfile | null {
+  switch (model) {
+    case Model.DFROBOT_SEN0640_IRRADIANCE:
+    case Model.DFROBOT_SEN0641_PAR:
+    case Model.DFROBOT_SEN0642_UV:
+      return RADIATION_COMMS_PROFILE;
+    case Model.DFROBOT_SEN0644_LIGHT:
+      return LIGHT_COMMS_PROFILE;
+    default:
+      return null;
+  }
+}
+
+export interface DfrobotConfigWrite {
+  modbusId: number;
+  register: number;
+  value: number;
+  label: string;
+}
+
+// The ordered fc 0x06 writes for an ID/baud change. Radiation applies each
+// write immediately, so the ID goes first and the baud write is addressed
+// to the NEW id; the light sensor latches everything on power-cycle, so
+// both writes target the current id (USAGE.md change-log order).
+export function planDfrobotConfigWrites(
+  model: number | null | undefined,
+  currentId: number,
+  newId: number | null,
+  newBaud: number | null,
+): DfrobotConfigWrite[] | null {
+  const profile = dfrobotCommsProfile(model);
+  if (!profile) {
+    return null;
+  }
+  const baudCode = newBaud !== null ? profile.baudToCode[newBaud] : undefined;
+  if (newBaud !== null && baudCode === undefined) {
+    return null;
+  }
+
+  const idWrite = (modbusId: number): DfrobotConfigWrite => ({
+    modbusId,
+    register: profile.addressRegister,
+    value: newId!,
+    label: `ID → ${newId}`,
+  });
+  const baudWrite = (modbusId: number): DfrobotConfigWrite => ({
+    modbusId,
+    register: profile.baudRegister,
+    value: baudCode!,
+    label: `baud → ${newBaud}`,
+  });
+
+  const writes: DfrobotConfigWrite[] = [];
+  if (profile.latchesOnPowerCycle) {
+    if (newBaud !== null) writes.push(baudWrite(currentId));
+    if (newId !== null) writes.push(idWrite(currentId));
+  } else {
+    if (newId !== null) writes.push(idWrite(currentId));
+    if (newBaud !== null) writes.push(baudWrite(newId ?? currentId));
+  }
+  return writes;
+}

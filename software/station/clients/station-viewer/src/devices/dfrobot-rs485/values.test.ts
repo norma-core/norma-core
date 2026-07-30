@@ -3,7 +3,9 @@ import { dfrobot_rs485 } from '@/api/proto.js';
 import {
   DFROBOT_SPECS,
   decodeDfrobotRegisters,
+  dfrobotCommsProfile,
   dfrobotPrimaryText,
+  planDfrobotConfigWrites,
   readDfrobotValue,
   readDfrobotWord,
 } from './values';
@@ -119,5 +121,73 @@ describe('static register specs', () => {
   it('uv keeps 0x0010 named so a live value does not show as unmapped', () => {
     const specs = DFROBOT_SPECS[DfrobotSensorModel.DFROBOT_SEN0642_UV];
     expect(specs.some((s) => s.register === 0x0010)).toBe(true);
+  });
+});
+
+describe('dfrobotCommsProfile', () => {
+  const Model = dfrobot_rs485.DfrobotSensorModel;
+
+  it('maps the radiation family to 0x07D0/0x07D1 with immediate effect', () => {
+    for (const model of [
+      Model.DFROBOT_SEN0640_IRRADIANCE,
+      Model.DFROBOT_SEN0641_PAR,
+      Model.DFROBOT_SEN0642_UV,
+    ]) {
+      const profile = dfrobotCommsProfile(model);
+      expect(profile).toEqual({
+        addressRegister: 0x07d0,
+        baudRegister: 0x07d1,
+        baudToCode: { 2400: 0, 4800: 1, 9600: 2 },
+        latchesOnPowerCycle: false,
+      });
+    }
+  });
+
+  it('maps the light sensor to 0x0064/0x0065 with power-cycle latch', () => {
+    const profile = dfrobotCommsProfile(Model.DFROBOT_SEN0644_LIGHT);
+    expect(profile).toEqual({
+      addressRegister: 0x0064,
+      baudRegister: 0x0065,
+      baudToCode: { 1200: 0, 2400: 1, 4800: 2, 9600: 3, 19200: 4, 38400: 5, 57600: 6 },
+      latchesOnPowerCycle: true,
+    });
+  });
+
+  it('returns null for unknown models', () => {
+    expect(dfrobotCommsProfile(Model.DFROBOT_MODEL_UNSPECIFIED)).toBeNull();
+    expect(dfrobotCommsProfile(null)).toBeNull();
+  });
+});
+
+describe('planDfrobotConfigWrites', () => {
+  const Model = dfrobot_rs485.DfrobotSensorModel;
+
+  it('radiation: writes ID first, then baud addressed to the NEW id', () => {
+    expect(planDfrobotConfigWrites(Model.DFROBOT_SEN0641_PAR, 2, 5, 9600)).toEqual([
+      { modbusId: 2, register: 0x07d0, value: 5, label: 'ID → 5' },
+      { modbusId: 5, register: 0x07d1, value: 2, label: 'baud → 9600' },
+    ]);
+  });
+
+  it('radiation: baud-only change stays addressed to the current id', () => {
+    expect(planDfrobotConfigWrites(Model.DFROBOT_SEN0640_IRRADIANCE, 1, null, 4800)).toEqual([
+      { modbusId: 1, register: 0x07d1, value: 1, label: 'baud → 4800' },
+    ]);
+  });
+
+  it('light: both writes go to the current id, baud first', () => {
+    expect(planDfrobotConfigWrites(Model.DFROBOT_SEN0644_LIGHT, 4, 6, 4800)).toEqual([
+      { modbusId: 4, register: 0x0065, value: 2, label: 'baud → 4800' },
+      { modbusId: 4, register: 0x0064, value: 6, label: 'ID → 6' },
+    ]);
+  });
+
+  it('returns an empty list when nothing changes', () => {
+    expect(planDfrobotConfigWrites(Model.DFROBOT_SEN0641_PAR, 2, null, null)).toEqual([]);
+  });
+
+  it('returns null for unsupported baud or unknown model', () => {
+    expect(planDfrobotConfigWrites(Model.DFROBOT_SEN0641_PAR, 2, null, 19200)).toBeNull();
+    expect(planDfrobotConfigWrites(Model.DFROBOT_MODEL_UNSPECIFIED, 1, 2, null)).toBeNull();
   });
 });
