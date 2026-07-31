@@ -195,6 +195,11 @@ const DfrobotSensorConfigPage: React.FC = () => {
             '⚠ Other writes in this run were also sent — the sensor may be in a mixed state. Re-open this page to see its current settings.',
           );
         }
+        // Abandon this run so the in-flight send loop's runRef guards catch
+        // this abort at its next checkpoint and cannot clobber ERROR back to
+        // a WAITING_* state once the still-pending writes finish sending.
+        runRef.current += 1;
+        pendingCommandIdsRef.current = [];
         setProgress(ConfigProgress.ERROR);
         return;
       }
