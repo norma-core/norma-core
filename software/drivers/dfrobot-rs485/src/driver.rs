@@ -116,6 +116,12 @@ struct SensorState {
     /// disconnect/port loss; the driver never writes, so nothing else can
     /// invalidate it.
     static_ranges: Option<Vec<RegisterRange>>,
+    /// Set by the write-sniff trigger when a device-address write just
+    /// changed this identity's Modbus ID. The state stays in `states` (and
+    /// keeps receiving command acks via the normal lookup/fallback) until
+    /// the top of the next tick, which flushes it: emits FORGOTTEN and
+    /// removes it, before any polling happens that tick.
+    pending_forget: bool,
 }
 
 impl DfrobotRs485Driver {
@@ -329,7 +335,6 @@ async fn handle_write_command(
     baud: u32,
     command_id: Vec<u8>,
     write: &WriteRegisterCommand,
-    forgotten: &mut std::collections::HashSet<String>,
 ) -> bool {
     let (modbus_id, register, value) = match validate_write(write) {
         Ok(target) => target,
@@ -370,33 +375,24 @@ async fn handle_write_command(
 
             // Sniff trigger (st3215 parity): a write to the family's
             // device-address register that actually changes the ID means
-            // this identity just left the bus under its old address. Emit a
-            // final FORGOTTEN marker on its queue and drop the state so no
-            // further DISCONNECTED/ERROR poll can land on it and resurrect
-            // the row — FORGOTTEN must be the last envelope on this queue.
-            // Do not break the poll loop here: a queued follow-up write
-            // (e.g. radiation ID+baud sends the baud write addressed to the
-            // new id) must still be processed by this same command arm. On a
-            // single-sensor bus `states` becomes empty here, every tick is
-            // all-silent, and SilentBusTracker triggers the rescan after 3
-            // ticks — that ordering is intentional.
-            if let Some(index) = states.iter().position(|state| {
+            // this identity is about to leave the bus under its old
+            // address. Defer the FORGOTTEN marker and the state's removal
+            // to the top of the next tick — do NOT act immediately here.
+            // `states` must stay intact so a follow-up write already queued
+            // in this same burst (e.g. radiation ID+baud sends the baud
+            // write addressed to the new id) can still be looked up and
+            // acked via send_command_result's normal lookup/fallback. The
+            // select loop is `biased` with the command arm first, so every
+            // queued command drains completely before a tick can fire —
+            // the deferred flush (see the tick arm) still runs before any
+            // poll, so FORGOTTEN remains the LAST envelope on this queue,
+            // and a pending state is never polled.
+            if let Some(state) = states.iter_mut().find(|state| {
                 state.sensor.modbus_id == modbus_id
                     && address_register_for(state.sensor.model) == Some(register)
                     && value != state.sensor.modbus_id as u16
             }) {
-                let state = states.remove(index);
-                let path = state.sensor.rx_queue_path();
-                send_signal(
-                    normfs,
-                    &state,
-                    port_name,
-                    baud,
-                    DfrobotSignalType::DfrobotForgotten,
-                    Vec::new(),
-                    None,
-                );
-                forgotten.insert(path);
+                state.pending_forget = true;
             }
 
             false
@@ -483,6 +479,7 @@ async fn run_bus_worker<T: StationEngine + Send + Sync + 'static>(
                 connected: false,
                 last_error: None,
                 static_ranges: None,
+                pending_forget: false,
             });
         }
 
@@ -505,6 +502,7 @@ async fn run_bus_worker<T: StationEngine + Send + Sync + 'static>(
                     connected: false,
                     last_error: None,
                     static_ranges: None,
+                    pending_forget: false,
                 };
                 send_signal(
                     &normfs,
@@ -540,6 +538,8 @@ async fn run_bus_worker<T: StationEngine + Send + Sync + 'static>(
         let mut silent_tracker = SilentBusTracker::new();
         'poll: loop {
             tokio::select! {
+                biased;
+
                 command = command_rx.recv() => {
                     let Some((command_id, write)) = command else {
                         // Channel closed: driver shutting down.
@@ -553,7 +553,6 @@ async fn run_bus_worker<T: StationEngine + Send + Sync + 'static>(
                         claimed_baud,
                         command_id,
                         &write,
-                        &mut forgotten,
                     )
                     .await
                     {
@@ -562,6 +561,31 @@ async fn run_bus_worker<T: StationEngine + Send + Sync + 'static>(
                     }
                 }
                 _ = tick.tick() => {
+                    // Flush sniff-triggered forgets before any polling this
+                    // tick. `biased` above drains every queued command
+                    // first, so by the time a tick fires, all acks for a
+                    // burst (e.g. radiation ID+baud) have already landed on
+                    // the old queue via send_command_result's lookup/
+                    // fallback — this flush's FORGOTTEN is therefore still
+                    // the LAST envelope on that queue, and the removal here
+                    // guarantees a pending state is never polled.
+                    states.retain(|state| {
+                        if !state.pending_forget {
+                            return true;
+                        }
+                        let path = state.sensor.rx_queue_path();
+                        send_signal(
+                            &normfs,
+                            state,
+                            &port_name,
+                            claimed_baud,
+                            DfrobotSignalType::DfrobotForgotten,
+                            Vec::new(),
+                            None,
+                        );
+                        forgotten.insert(path);
+                        false
+                    });
 
                     let mut any_sensor_ok = false;
                     let mut port_lost = false;
