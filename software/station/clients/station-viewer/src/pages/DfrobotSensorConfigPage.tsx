@@ -147,7 +147,7 @@ const DfrobotSensorConfigPage: React.FC = () => {
     if (powerCycle) {
       setProgress(ConfigProgress.WAITING_POWER_CYCLE);
       appendLog(
-        'All writes sent. Now power-cycle the light sensor: unplug its power, wait ~1 s, reconnect it.',
+        'All writes sent. Now power-cycle the light sensor: cut power to the sensor itself (not the USB adapter), wait ~1 s, reconnect it.',
       );
     } else {
       setProgress(ConfigProgress.WAITING_REAPPEAR);
@@ -471,9 +471,12 @@ const DfrobotSensorConfigPage: React.FC = () => {
                   ⚡ Power-cycle the light sensor now
                 </div>
                 <div className="text-text-secondary text-sm">
-                  The SEN0644 applies ID/baud changes only after a power-cycle: unplug the sensor's
-                  power, wait about a second, and reconnect it. This page will confirm automatically
-                  when the sensor comes back at ID {target?.id} @ {target?.baud} baud.
+                  The SEN0644 applies baud changes only after a power-cycle: cut power to the
+                  sensor itself (disconnect its supply wires or switch off its power source), wait
+                  about a second, and reconnect it. Replugging the USB adapter does NOT power-cycle
+                  the sensor — it usually has its own power supply. This page will confirm
+                  automatically when the sensor comes back at ID {target?.id} @ {target?.baud}{' '}
+                  baud.
                 </div>
               </div>
             )}
