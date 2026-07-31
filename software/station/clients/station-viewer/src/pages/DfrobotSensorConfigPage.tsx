@@ -27,7 +27,6 @@ const SCAN_ID_MIN = 1;
 const SCAN_ID_MAX = 10;
 const BAUD_CHOICES = [4800, 9600];
 
-const ACK_TIMEOUT_MS = 5000;
 // 3 silent polls at 1 s + full port/baud/ID re-scan, with margin.
 const REAPPEAR_TIMEOUT_MS = 25000;
 
@@ -56,12 +55,20 @@ const DfrobotSensorConfigPage: React.FC = () => {
   const [commandLog, setCommandLog] = useState<string[]>([]);
   const [newId, setNewId] = useState<number>(1);
   const [newBaud, setNewBaud] = useState<number>(9600);
-  const [pendingCommandId, setPendingCommandId] = useState<number | null>(null);
   const [target, setTarget] = useState<{ id: number; baud: number; powerCycle: boolean } | null>(
     null,
   );
-  const writePlanRef = useRef<DfrobotConfigWrite[]>([]);
-  const stepIndexRef = useRef(0);
+  // Command ids sent in the current run. Acks are best-effort: they share the
+  // sensor's rx queue with 1 Hz register snapshots, and only the latest queue
+  // entry survives, so a snapshot landing right after an ack can evict it
+  // before this page ever polls it. A missing ack is therefore not an error —
+  // completion is judged solely by the sensor reappearing at the new settings
+  // (or, for the light sensor, by the power-cycle wait).
+  const pendingCommandIdsRef = useRef<number[]>([]);
+  const loggedAckIdsRef = useRef<Set<number>>(new Set());
+  // Bumped on every new Apply/Cancel so a write's promise resolving after the
+  // run it belongs to was abandoned cannot mutate state for a later run.
+  const runRef = useRef(0);
 
   const entries = useMemo(() => frame?.dfrobotRs485 ?? [], [frame]);
   const onlineEntries = useMemo(
@@ -102,75 +109,99 @@ const DfrobotSensorConfigPage: React.FC = () => {
 
   const appendLog = (line: string) => setCommandLog((prev) => [...prev, line]);
 
-  const finishWithError = () => {
-    setProgress(ConfigProgress.ERROR);
-    setPendingCommandId(null);
-  };
-
-  const sendStep = async (index: number) => {
-    const write = writePlanRef.current[index];
-    stepIndexRef.current = index;
-    appendLog(
-      `Writing ${write.label} (register 0x${write.register
-        .toString(16)
-        .toUpperCase()
-        .padStart(4, '0')} on id ${write.modbusId})...`,
-    );
-    try {
-      const commandId = await webSocketManager.commands.sendDfrobotRs485Command({
-        writeRegister: {
-          modbusId: write.modbusId,
-          register: write.register,
-          value: write.value,
-        },
-      });
-      setPendingCommandId(commandId);
-    } catch (error) {
-      appendLog(`✗ Failed to send command: ${error instanceof Error ? error.message : error}`);
-      finishWithError();
-    }
-  };
-
-  // Watch for the ack of the in-flight write.
-  useEffect(() => {
-    if (progress !== ConfigProgress.WRITING || pendingCommandId === null) {
-      return;
-    }
-    const ack = entries.find(
-      (entry) =>
-        ACK_SIGNALS.has(entry.data.signalType ?? 0) &&
-        commandIdMatches(entry.data.command?.commandId as Uint8Array, pendingCommandId),
-    );
-    if (!ack) {
-      return;
-    }
-    const description = ack.data.command?.description || ack.data.error || 'no details';
-    if ((ack.data.signalType ?? 0) !== SignalType.DFROBOT_COMMAND_SUCCESS) {
-      appendLog(`✗ Write failed: ${description}`);
-      if (stepIndexRef.current > 0) {
+  // Sends every write in the plan back-to-back, fire-and-forget: the driver
+  // applies them in order, and we do not wait for an ack before sending the
+  // next one (acks are best-effort — see pendingCommandIdsRef above). Bails
+  // out silently if the run was cancelled while a send was in flight.
+  const sendAllWrites = async (
+    run: number,
+    plan: DfrobotConfigWrite[],
+    targetId: number,
+    targetBaud: number,
+    powerCycle: boolean,
+  ) => {
+    for (const write of plan) {
+      try {
+        const commandId = await webSocketManager.commands.sendDfrobotRs485Command({
+          writeRegister: {
+            modbusId: write.modbusId,
+            register: write.register,
+            value: write.value,
+          },
+        });
+        if (runRef.current !== run) {
+          return;
+        }
+        pendingCommandIdsRef.current.push(commandId);
         appendLog(
-          '⚠ Earlier writes in this run were already applied — the sensor may be in a mixed state. Re-open this page to see its current settings.',
+          `Sent ${write.label} (register 0x${write.register
+            .toString(16)
+            .toUpperCase()
+            .padStart(4, '0')} on id ${write.modbusId})`,
         );
+      } catch (error) {
+        if (runRef.current !== run) {
+          return;
+        }
+        appendLog(`✗ Failed to send command: ${error instanceof Error ? error.message : error}`);
+        setProgress(ConfigProgress.ERROR);
+        return;
       }
-      finishWithError();
+    }
+    if (runRef.current !== run) {
       return;
     }
-    appendLog(`✓ ${description}`);
-    setPendingCommandId(null);
-    const nextIndex = stepIndexRef.current + 1;
-    if (nextIndex < writePlanRef.current.length) {
-      void sendStep(nextIndex);
-    } else if (target?.powerCycle) {
+    if (powerCycle) {
       setProgress(ConfigProgress.WAITING_POWER_CYCLE);
       appendLog(
-        'All writes acknowledged. Now power-cycle the light sensor: unplug its power, wait ~1 s, reconnect it.',
+        'All writes sent. Now power-cycle the light sensor: unplug its power, wait ~1 s, reconnect it.',
       );
     } else {
       setProgress(ConfigProgress.WAITING_REAPPEAR);
-      appendLog(`Waiting for the sensor to reappear at ID ${target?.id} @ ${target?.baud} baud...`);
+      appendLog(`Waiting for the sensor to reappear at ID ${targetId} @ ${targetBaud} baud...`);
+    }
+  };
+
+  // Watch for acks of the writes sent in this run. This is best-effort only:
+  // acks share the sensor's rx queue with 1 Hz register snapshots, and only
+  // the latest queue entry survives, so a snapshot landing right after an ack
+  // can evict it before this page polls again. A missing ack is therefore
+  // never treated as an error — only an explicit REJECTED/FAILED ack is.
+  useEffect(() => {
+    if (
+      progress !== ConfigProgress.WRITING &&
+      progress !== ConfigProgress.WAITING_REAPPEAR &&
+      progress !== ConfigProgress.WAITING_POWER_CYCLE
+    ) {
+      return;
+    }
+    for (const entry of entries) {
+      const signalType = entry.data.signalType ?? 0;
+      if (!ACK_SIGNALS.has(signalType)) {
+        continue;
+      }
+      const commandId = pendingCommandIdsRef.current.find((id) =>
+        commandIdMatches(entry.data.command?.commandId as Uint8Array, id),
+      );
+      if (commandId === undefined || loggedAckIdsRef.current.has(commandId)) {
+        continue;
+      }
+      loggedAckIdsRef.current.add(commandId);
+      const description = entry.data.command?.description || entry.data.error || 'no details';
+      if (signalType !== SignalType.DFROBOT_COMMAND_SUCCESS) {
+        appendLog(`✗ Write failed: ${description}`);
+        if (pendingCommandIdsRef.current.length > 1) {
+          appendLog(
+            '⚠ Other writes in this run were also sent — the sensor may be in a mixed state. Re-open this page to see its current settings.',
+          );
+        }
+        setProgress(ConfigProgress.ERROR);
+        return;
+      }
+      appendLog(`✓ ${description}`);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [entries, progress, pendingCommandId, target]);
+  }, [entries, progress]);
 
   // Watch for the sensor coming back at the new settings.
   useEffect(() => {
@@ -194,19 +225,6 @@ const DfrobotSensorConfigPage: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [entries, progress, target]);
 
-  // Ack timeout.
-  useEffect(() => {
-    if (progress !== ConfigProgress.WRITING || pendingCommandId === null) {
-      return;
-    }
-    const timer = setTimeout(() => {
-      appendLog('✗ Timeout: no acknowledgement from the driver within 5 s');
-      finishWithError();
-    }, ACK_TIMEOUT_MS);
-    return () => clearTimeout(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [progress, pendingCommandId]);
-
   // Reappearance timeout — radiation family only; the power-cycle wait is
   // indefinite because it depends on the user unplugging the sensor.
   useEffect(() => {
@@ -217,9 +235,10 @@ const DfrobotSensorConfigPage: React.FC = () => {
       appendLog(
         `✗ Timeout: the sensor did not reappear at ID ${target.id} @ ${target.baud} baud within 25 s. ` +
           'The write may still have taken effect. Check wiring and power, and that the target ID/baud ' +
-          'are inside scan-ids / bauds in station.yaml.',
+          'are inside scan-ids / bauds in station.yaml. One of the writes may also have been rejected ' +
+          'without the page seeing the ack.',
       );
-      finishWithError();
+      setProgress(ConfigProgress.ERROR);
     }, REAPPEAR_TIMEOUT_MS);
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -240,24 +259,29 @@ const DfrobotSensorConfigPage: React.FC = () => {
       setProgress(ConfigProgress.ERROR);
       return;
     }
-    writePlanRef.current = plan;
-    setTarget({
-      id: changedId ?? current.modbusId,
-      baud: changedBaud ?? current.baud,
-      powerCycle: profile.latchesOnPowerCycle,
-    });
+    const targetId = changedId ?? current.modbusId;
+    const targetBaud = changedBaud ?? current.baud;
+    const powerCycle = profile.latchesOnPowerCycle;
+
+    runRef.current += 1;
+    const run = runRef.current;
+    pendingCommandIdsRef.current = [];
+    loggedAckIdsRef.current = new Set();
+
+    setTarget({ id: targetId, baud: targetBaud, powerCycle });
     setCommandLog([
       `Starting config change on ${dfrobotModelLabel(current.model)} ` +
         `(ID ${current.modbusId} @ ${current.baud} baud)`,
     ]);
     setProgress(ConfigProgress.WRITING);
-    void sendStep(0);
+    void sendAllWrites(run, plan, targetId, targetBaud, powerCycle);
   };
 
   const handleCancel = () => {
+    runRef.current += 1;
+    pendingCommandIdsRef.current = [];
     appendLog('Cancelled by user. The sensor may already carry the new settings.');
     setProgress(ConfigProgress.IDLE);
-    setPendingCommandId(null);
   };
 
   const idValid = newId >= SCAN_ID_MIN && newId <= SCAN_ID_MAX;
