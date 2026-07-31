@@ -37,6 +37,11 @@ const SILENT_POLLS_BEFORE_RESCAN: u32 = 3;
 /// Soft-reset / factory-reset registers — writing them wipes the sensor's
 /// address and baud (see spec + REGISTERS.md). Never written, ever.
 const BLOCKED_WRITE_REGISTERS: [u16; 2] = [0x00E0, 0x00F0];
+/// USB serial numbers of RS-485 adapters known to carry the DFRobot bus
+/// (bench + rover FTDI FT232R). Discovered by USB metadata so the same
+/// binary finds the adapter on macOS and Linux without config changes;
+/// deliberately hardcoded — user decision, no config surface.
+const KNOWN_ADAPTER_USB_SERIALS: &[&str] = &["BH001F1W"];
 
 type DriverResult<T> = Result<T, Box<dyn std::error::Error + Send + Sync>>;
 
@@ -876,7 +881,7 @@ async fn acquire_and_scan(
     config: &DfrobotRs485DriverConfig,
 ) -> (tokio_serial::SerialStream, String, u32, Vec<Sensor>) {
     loop {
-        for candidate in expand_port_globs(&config.ports) {
+        for candidate in candidate_ports(&config.ports) {
             let initial_baud = config.bauds.first().copied().unwrap_or(9600);
             let mut port = match tokio_serial::new(&candidate, initial_baud).open_native_async() {
                 Ok(port) => port,
@@ -929,6 +934,55 @@ async fn acquire_and_scan(
         }
         sleep(PORT_SCAN_INTERVAL).await;
     }
+}
+
+/// Port names whose USB serial number is in `known`. Pure for testing.
+fn select_known_adapter_ports(
+    ports: &[tokio_serial::SerialPortInfo],
+    known: &[&str],
+) -> Vec<String> {
+    ports
+        .iter()
+        .filter(|info| match &info.port_type {
+            tokio_serial::SerialPortType::UsbPort(usb) => usb
+                .serial_number
+                .as_deref()
+                .is_some_and(|serial| known.contains(&serial)),
+            _ => false,
+        })
+        .map(|info| info.port_name.clone())
+        .collect()
+}
+
+/// macOS lists serial devices as /dev/tty.*, but those block on carrier
+/// detect; prefer the /dev/cu.* sibling when it exists.
+fn prefer_cu_variant(path: &str, exists: impl Fn(&str) -> bool) -> String {
+    if let Some(rest) = path.strip_prefix("/dev/tty.") {
+        let cu = format!("/dev/cu.{rest}");
+        if exists(&cu) {
+            return cu;
+        }
+    }
+    path.to_string()
+}
+
+/// Candidate ports: known adapters (by USB serial) first, then the
+/// configured glob masks; deduped, order-preserving.
+fn candidate_ports(patterns: &[String]) -> Vec<String> {
+    let mut candidates: Vec<String> = match tokio_serial::available_ports() {
+        Ok(ports) => select_known_adapter_ports(&ports, KNOWN_ADAPTER_USB_SERIALS)
+            .into_iter()
+            .map(|path| prefer_cu_variant(&path, |p| std::path::Path::new(p).exists()))
+            .collect(),
+        Err(error) => {
+            log::debug!("DFRobot RS485: cannot enumerate serial ports: {error}");
+            Vec::new()
+        }
+    };
+    candidates.extend(expand_port_globs(patterns));
+    let mut seen = std::collections::HashSet::new();
+    candidates.retain(|candidate| seen.insert(candidate.clone()));
+    candidates
 }
 
 /// Minimal '*'-only glob matching — enough for /dev/ttyUSB* style patterns
@@ -1366,5 +1420,55 @@ mod tests {
             forget_candidates(&registered, &current, &explicit, &already),
             vec!["light-5".to_string()]
         );
+    }
+
+    #[test]
+    fn selects_ports_by_known_usb_serial() {
+        use tokio_serial::{SerialPortInfo, SerialPortType, UsbPortInfo};
+        let ports = vec![
+            SerialPortInfo {
+                port_name: "/dev/ttyUSB0".to_string(),
+                port_type: SerialPortType::UsbPort(UsbPortInfo {
+                    vid: 0x0403,
+                    pid: 0x6001,
+                    serial_number: Some("BH001F1W".to_string()),
+                    manufacturer: Some("FTDI".to_string()),
+                    product: Some("FT232R USB UART".to_string()),
+                }),
+            },
+            SerialPortInfo {
+                port_name: "/dev/ttyUSB1".to_string(),
+                port_type: SerialPortType::UsbPort(UsbPortInfo {
+                    vid: 0x1a86,
+                    pid: 0x7523,
+                    serial_number: None,
+                    manufacturer: None,
+                    product: None,
+                }),
+            },
+            SerialPortInfo {
+                port_name: "/dev/ttyS0".to_string(),
+                port_type: SerialPortType::Unknown,
+            },
+        ];
+        assert_eq!(
+            select_known_adapter_ports(&ports, &["BH001F1W"]),
+            vec!["/dev/ttyUSB0".to_string()]
+        );
+        assert!(select_known_adapter_ports(&ports, &["OTHER"]).is_empty());
+    }
+
+    #[test]
+    fn prefers_cu_sibling_only_when_it_exists() {
+        assert_eq!(
+            prefer_cu_variant("/dev/tty.usbserial-BH001F1W", |p| p
+                == "/dev/cu.usbserial-BH001F1W"),
+            "/dev/cu.usbserial-BH001F1W"
+        );
+        assert_eq!(
+            prefer_cu_variant("/dev/tty.usbserial-BH001F1W", |_| false),
+            "/dev/tty.usbserial-BH001F1W"
+        );
+        assert_eq!(prefer_cu_variant("/dev/ttyUSB0", |_| true), "/dev/ttyUSB0");
     }
 }
