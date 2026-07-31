@@ -18,15 +18,18 @@ export interface DfrobotRs485LiveViewProps {
 
 function DfrobotRs485LiveView({ entries }: DfrobotRs485LiveViewProps) {
   const sorted = [...entries].sort((a, b) => a.queueId.localeCompare(b.queueId));
-  const firstError = sorted.map((entry) => entry.data.error).find((error) => !!error);
-  const onlineCount = sorted.filter((entry) =>
+  const visible = sorted.filter(
+    (entry) => (entry.data.signalType ?? 0) !== dfrobot_rs485.DfrobotSignalType.DFROBOT_FORGOTTEN,
+  );
+  const firstError = visible.map((entry) => entry.data.error).find((error) => !!error);
+  const onlineCount = visible.filter((entry) =>
     ONLINE_SIGNALS.has(entry.data.signalType ?? 0),
   ).length;
 
   return (
     <DeviceWidgetShell title="DFRobot RS485" subtitle="Modbus sensor bus" error={firstError}>
       <div className="space-y-1">
-        {sorted.map((entry) => {
+        {visible.map((entry) => {
           const data = entry.data;
           const online = ONLINE_SIGNALS.has(data.signalType ?? 0);
           const label = data.device?.id || dfrobotModelLabel(data.device?.model);

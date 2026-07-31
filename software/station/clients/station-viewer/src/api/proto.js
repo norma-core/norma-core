@@ -45372,6 +45372,7 @@ export const dfrobot_rs485 = $root.dfrobot_rs485 = (() => {
      * @property {number} DFROBOT_COMMAND_SUCCESS=5 DFROBOT_COMMAND_SUCCESS value
      * @property {number} DFROBOT_COMMAND_REJECTED=6 DFROBOT_COMMAND_REJECTED value
      * @property {number} DFROBOT_COMMAND_FAILED=7 DFROBOT_COMMAND_FAILED value
+     * @property {number} DFROBOT_FORGOTTEN=8 DFROBOT_FORGOTTEN value
      */
     dfrobot_rs485.DfrobotSignalType = (function() {
         const valuesById = {}, values = Object.create(valuesById);
@@ -45383,6 +45384,7 @@ export const dfrobot_rs485 = $root.dfrobot_rs485 = (() => {
         values[valuesById[5] = "DFROBOT_COMMAND_SUCCESS"] = 5;
         values[valuesById[6] = "DFROBOT_COMMAND_REJECTED"] = 6;
         values[valuesById[7] = "DFROBOT_COMMAND_FAILED"] = 7;
+        values[valuesById[8] = "DFROBOT_FORGOTTEN"] = 8;
         return values;
     })();
 
@@ -47007,6 +47009,7 @@ export const dfrobot_rs485 = $root.dfrobot_rs485 = (() => {
                 case 5:
                 case 6:
                 case 7:
+                case 8:
                     break;
                 }
             if (message.device != null && message.hasOwnProperty("device")) {
@@ -47115,6 +47118,10 @@ export const dfrobot_rs485 = $root.dfrobot_rs485 = (() => {
             case "DFROBOT_COMMAND_FAILED":
             case 7:
                 message.signalType = 7;
+                break;
+            case "DFROBOT_FORGOTTEN":
+            case 8:
+                message.signalType = 8;
                 break;
             }
             if (object.device != null) {

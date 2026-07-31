@@ -222,6 +222,37 @@ impl SilentBusTracker {
     }
 }
 
+/// The family's device-address register, if the model has a known one.
+fn address_register_for(model: SensorModel) -> Option<u16> {
+    match model {
+        SensorModel::Light => Some(sensors::REG_LIGHT_ADDRESS),
+        SensorModel::Irradiance | SensorModel::Par | SensorModel::Uv => {
+            Some(sensors::REG_RADIATION_ADDRESS)
+        }
+        SensorModel::Unknown => None,
+    }
+}
+
+/// Registered queue paths that should receive a final FORGOTTEN marker:
+/// previously-seen auto sensors absent from the current scan, minus explicit
+/// config entries (never forgotten) and paths already marked.
+fn forget_candidates(
+    registered_paths: &[String],
+    current_paths: &std::collections::HashSet<String>,
+    explicit_paths: &std::collections::HashSet<String>,
+    already_forgotten: &std::collections::HashSet<String>,
+) -> Vec<String> {
+    registered_paths
+        .iter()
+        .filter(|path| {
+            !current_paths.contains(*path)
+                && !explicit_paths.contains(*path)
+                && !already_forgotten.contains(*path)
+        })
+        .cloned()
+        .collect()
+}
+
 /// Checks a write command's fields; returns (modbus_id, register, value)
 /// narrowed to their wire widths, or a human-readable rejection reason.
 fn validate_write(write: &WriteRegisterCommand) -> Result<(u8, u16, u16), String> {
@@ -293,11 +324,12 @@ fn send_command_result(
 async fn handle_write_command(
     normfs: &Arc<NormFS>,
     port: &mut tokio_serial::SerialStream,
-    states: &mut [SensorState],
+    states: &mut Vec<SensorState>,
     port_name: &str,
     baud: u32,
     command_id: Vec<u8>,
     write: &WriteRegisterCommand,
+    forgotten: &mut std::collections::HashSet<String>,
 ) -> bool {
     let (modbus_id, register, value) = match validate_write(write) {
         Ok(target) => target,
@@ -335,6 +367,38 @@ async fn handle_write_command(
                 command_id,
                 format!("wrote 0x{register:04X} = {value} on id {modbus_id}"),
             );
+
+            // Sniff trigger (st3215 parity): a write to the family's
+            // device-address register that actually changes the ID means
+            // this identity just left the bus under its old address. Emit a
+            // final FORGOTTEN marker on its queue and drop the state so no
+            // further DISCONNECTED/ERROR poll can land on it and resurrect
+            // the row — FORGOTTEN must be the last envelope on this queue.
+            // Do not break the poll loop here: a queued follow-up write
+            // (e.g. radiation ID+baud sends the baud write addressed to the
+            // new id) must still be processed by this same command arm. On a
+            // single-sensor bus `states` becomes empty here, every tick is
+            // all-silent, and SilentBusTracker triggers the rescan after 3
+            // ticks — that ordering is intentional.
+            if let Some(index) = states.iter().position(|state| {
+                state.sensor.modbus_id == modbus_id
+                    && address_register_for(state.sensor.model) == Some(register)
+                    && value != state.sensor.modbus_id as u16
+            }) {
+                let state = states.remove(index);
+                let path = state.sensor.rx_queue_path();
+                send_signal(
+                    normfs,
+                    &state,
+                    port_name,
+                    baud,
+                    DfrobotSignalType::DfrobotForgotten,
+                    Vec::new(),
+                    None,
+                );
+                forgotten.insert(path);
+            }
+
             false
         }
         Err(modbus_error) => {
@@ -362,9 +426,21 @@ async fn run_bus_worker<T: StationEngine + Send + Sync + 'static>(
 ) {
     // Queues survive re-acquisition: the same sensor id maps to the same
     // queue (history continuity), and register_queue runs once per queue
-    // per process.
-    let mut registered: std::collections::HashMap<String, QueueId> =
+    // per process. The Sensor is retained alongside the QueueId so a later
+    // absence-triggered FORGOTTEN envelope can still carry a `device` field
+    // after the sensor has dropped out of `states`.
+    let mut registered: std::collections::HashMap<String, (QueueId, Sensor)> =
         std::collections::HashMap::new();
+    // Paths already marked FORGOTTEN: guards against re-emitting the marker
+    // on every subsequent rescan while the identity stays absent.
+    let mut forgotten: std::collections::HashSet<String> = Default::default();
+    // Explicit config entries are never forgotten — their queues are
+    // intended to keep surfacing offline/error rows while unplugged.
+    let explicit_paths: std::collections::HashSet<String> = config
+        .sensors
+        .iter()
+        .map(|c| Sensor::from_config(c).rx_queue_path())
+        .collect();
 
     loop {
         let (mut port, port_name, claimed_baud, discovered) = acquire_and_scan(&config).await;
@@ -385,7 +461,7 @@ async fn run_bus_worker<T: StationEngine + Send + Sync + 'static>(
         let mut states: Vec<SensorState> = Vec::new();
         for sensor in discovered {
             let path = sensor.rx_queue_path();
-            let rx_queue_id = if let Some(existing) = registered.get(&path) {
+            let rx_queue_id = if let Some((existing, _)) = registered.get(&path) {
                 existing.clone()
             } else {
                 let queue_id = normfs.resolve(&path);
@@ -398,7 +474,7 @@ async fn run_bus_worker<T: StationEngine + Send + Sync + 'static>(
                     QueueDataType::QdtDfrobotRs485Rx,
                     vec![],
                 );
-                registered.insert(path, queue_id.clone());
+                registered.insert(path.clone(), (queue_id.clone(), sensor.clone()));
                 queue_id
             };
             states.push(SensorState {
@@ -408,6 +484,39 @@ async fn run_bus_worker<T: StationEngine + Send + Sync + 'static>(
                 last_error: None,
                 static_ranges: None,
             });
+        }
+
+        // Absence trigger (st3215 scan_motors missing_since parallel): a
+        // previously-registered auto-detected identity that's no longer
+        // present in this scan (and isn't an explicit config entry, and
+        // isn't already marked) gets one final FORGOTTEN marker so its
+        // stale offline/error row doesn't linger on the tile.
+        let current_paths: std::collections::HashSet<String> =
+            states.iter().map(|state| state.sensor.rx_queue_path()).collect();
+        for path in &current_paths {
+            forgotten.remove(path);
+        }
+        let registered_paths: Vec<String> = registered.keys().cloned().collect();
+        for path in forget_candidates(&registered_paths, &current_paths, &explicit_paths, &forgotten) {
+            if let Some((queue_id, sensor)) = registered.get(&path) {
+                let transient = SensorState {
+                    sensor: sensor.clone(),
+                    rx_queue_id: queue_id.clone(),
+                    connected: false,
+                    last_error: None,
+                    static_ranges: None,
+                };
+                send_signal(
+                    &normfs,
+                    &transient,
+                    &port_name,
+                    claimed_baud,
+                    DfrobotSignalType::DfrobotForgotten,
+                    Vec::new(),
+                    None,
+                );
+            }
+            forgotten.insert(path);
         }
 
         if states.is_empty() {
@@ -444,6 +553,7 @@ async fn run_bus_worker<T: StationEngine + Send + Sync + 'static>(
                         claimed_baud,
                         command_id,
                         &write,
+                        &mut forgotten,
                     )
                     .await
                     {
@@ -1207,5 +1317,30 @@ mod tests {
         ] {
             assert!(validate_write(&write).is_err(), "{write:?} should be rejected");
         }
+    }
+
+    #[test]
+    fn address_register_matches_family() {
+        assert_eq!(address_register_for(SensorModel::Light), Some(sensors::REG_LIGHT_ADDRESS));
+        for model in [SensorModel::Irradiance, SensorModel::Par, SensorModel::Uv] {
+            assert_eq!(address_register_for(model), Some(sensors::REG_RADIATION_ADDRESS));
+        }
+        assert_eq!(address_register_for(SensorModel::Unknown), None);
+    }
+
+    #[test]
+    fn forget_candidates_skips_current_explicit_and_already_forgotten() {
+        let registered: Vec<String> = ["light-4", "light-5", "uv-3", "par-2"]
+            .iter().map(|s| s.to_string()).collect();
+        let current: std::collections::HashSet<String> =
+            ["light-4"].iter().map(|s| s.to_string()).collect();
+        let explicit: std::collections::HashSet<String> =
+            ["uv-3"].iter().map(|s| s.to_string()).collect();
+        let already: std::collections::HashSet<String> =
+            ["par-2"].iter().map(|s| s.to_string()).collect();
+        assert_eq!(
+            forget_candidates(&registered, &current, &explicit, &already),
+            vec!["light-5".to_string()]
+        );
     }
 }

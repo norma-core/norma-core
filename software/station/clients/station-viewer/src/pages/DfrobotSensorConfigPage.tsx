@@ -63,7 +63,16 @@ const DfrobotSensorConfigPage: React.FC = () => {
   // run it belongs to was abandoned cannot mutate state for a later run.
   const runRef = useRef(0);
 
-  const entries = useMemo(() => frame?.dfrobotRs485 ?? [], [frame]);
+  // FORGOTTEN is a final tombstone for a departed identity's queue — never
+  // meaningful to this page's logic. COMMAND_* acks must stay visible: the
+  // ack effect below reads them.
+  const entries = useMemo(
+    () =>
+      (frame?.dfrobotRs485 ?? []).filter(
+        (entry) => (entry.data.signalType ?? 0) !== SignalType.DFROBOT_FORGOTTEN,
+      ),
+    [frame],
+  );
   const onlineEntries = useMemo(
     () => entries.filter((entry) => ONLINE_SIGNALS.has(entry.data.signalType ?? 0)),
     [entries],

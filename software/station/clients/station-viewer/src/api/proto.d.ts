@@ -15580,7 +15580,8 @@ export namespace dfrobot_rs485 {
         DFROBOT_ERROR = 4,
         DFROBOT_COMMAND_SUCCESS = 5,
         DFROBOT_COMMAND_REJECTED = 6,
-        DFROBOT_COMMAND_FAILED = 7
+        DFROBOT_COMMAND_FAILED = 7,
+        DFROBOT_FORGOTTEN = 8
     }
 
     /** DfrobotSensorModel enum. */
