@@ -369,6 +369,19 @@ async fn run_bus_worker<T: StationEngine + Send + Sync + 'static>(
     loop {
         let (mut port, port_name, claimed_baud, discovered) = acquire_and_scan(&config).await;
 
+        // Commands sent while the worker sat in acquire_and_scan (no bus
+        // claimed) would otherwise linger and execute against whatever bus
+        // is claimed next — possibly a different, just-plugged sensor. Drop
+        // them; the sender sees this as the reappearance timeout, which
+        // carries its own recovery hints.
+        let mut dropped = 0usize;
+        while command_rx.try_recv().is_ok() {
+            dropped += 1;
+        }
+        if dropped > 0 {
+            warn!("DFRobot RS485: dropped {dropped} stale command(s) queued while no bus was claimed");
+        }
+
         let mut states: Vec<SensorState> = Vec::new();
         for sensor in discovered {
             let path = sensor.rx_queue_path();

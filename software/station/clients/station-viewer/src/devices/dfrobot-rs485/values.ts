@@ -269,6 +269,17 @@ export function dfrobotCommsProfile(
   }
 }
 
+// Matches a DFROBOT_COMMAND_* ack's raw commandId bytes (4-byte big-endian)
+// against a locally tracked command id. Used to find which pending write an
+// ack belongs to.
+export function commandIdMatches(bytes: Uint8Array | null | undefined, id: number | null): boolean {
+  if (!bytes || bytes.length !== 4 || id === null) {
+    return false;
+  }
+  const received = (bytes[0] << 24) | (bytes[1] << 16) | (bytes[2] << 8) | bytes[3];
+  return (received >>> 0) === id;
+}
+
 export interface DfrobotConfigWrite {
   modbusId: number;
   register: number;

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { dfrobot_rs485 } from '@/api/proto.js';
 import {
   DFROBOT_SPECS,
+  commandIdMatches,
   decodeDfrobotRegisters,
   dfrobotCommsProfile,
   dfrobotPrimaryText,
@@ -156,6 +157,36 @@ describe('dfrobotCommsProfile', () => {
   it('returns null for unknown models', () => {
     expect(dfrobotCommsProfile(Model.DFROBOT_MODEL_UNSPECIFIED)).toBeNull();
     expect(dfrobotCommsProfile(null)).toBeNull();
+  });
+});
+
+function idBytes(id: number): Uint8Array {
+  const buffer = new ArrayBuffer(4);
+  new DataView(buffer).setUint32(0, id, false); // false for Big Endian
+  return new Uint8Array(buffer);
+}
+
+describe('commandIdMatches', () => {
+  it('matches the 4-byte big-endian encoding of an id', () => {
+    expect(commandIdMatches(idBytes(1), 1)).toBe(true);
+    expect(commandIdMatches(idBytes(12345), 12345)).toBe(true);
+  });
+
+  it('returns false for wrong length', () => {
+    expect(commandIdMatches(new Uint8Array([0, 0, 1]), 1)).toBe(false);
+    expect(commandIdMatches(new Uint8Array([0, 0, 0, 0, 1]), 1)).toBe(false);
+    expect(commandIdMatches(new Uint8Array([]), 0)).toBe(false);
+  });
+
+  it('returns false for null/undefined bytes or null id', () => {
+    expect(commandIdMatches(null, 1)).toBe(false);
+    expect(commandIdMatches(undefined, 1)).toBe(false);
+    expect(commandIdMatches(idBytes(1), null)).toBe(false);
+  });
+
+  it('matches a high-bit id (e.g. 0x80000001) to its own encoding', () => {
+    const highBitId = 0x80000001;
+    expect(commandIdMatches(idBytes(highBitId), highBitId)).toBe(true);
   });
 });
 

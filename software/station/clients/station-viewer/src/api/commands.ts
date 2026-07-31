@@ -8,7 +8,11 @@ function commandIdToBytes(id: number): Uint8Array {
     return new Uint8Array(buffer);
 }
 
-let nextCommandId = 1;
+// Seeded per page load so ids never collide with a previous session's acks
+// still lingering on the wire (a stale COMMAND_FAILED for id 1 could
+// otherwise match and abort a brand-new run). Stays well inside u32 range
+// even after many increments.
+let nextCommandId = (Date.now() & 0x3fffffff) >>> 0;
 
 export class CommandManager {
     private readonly COMMANDS_QUEUE = "commands";

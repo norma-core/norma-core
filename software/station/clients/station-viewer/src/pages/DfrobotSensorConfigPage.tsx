@@ -4,6 +4,7 @@ import webSocketManager from '../api/websocket';
 import { useInferenceState, useWakeLock } from '../hooks';
 import { dfrobot_rs485 } from '../api/proto';
 import {
+  commandIdMatches,
   dfrobotCommsProfile,
   dfrobotModelLabel,
   planDfrobotConfigWrites,
@@ -39,14 +40,6 @@ enum ConfigProgress {
   ERROR = 'error',
 }
 
-function commandIdMatches(bytes: Uint8Array | null | undefined, id: number | null): boolean {
-  if (!bytes || bytes.length !== 4 || id === null) {
-    return false;
-  }
-  const received = (bytes[0] << 24) | (bytes[1] << 16) | (bytes[2] << 8) | bytes[3];
-  return (received >>> 0) === id;
-}
-
 const DfrobotSensorConfigPage: React.FC = () => {
   useWakeLock();
   const frame = useInferenceState();
@@ -64,7 +57,7 @@ const DfrobotSensorConfigPage: React.FC = () => {
   // before this page ever polls it. A missing ack is therefore not an error —
   // completion is judged solely by the sensor reappearing at the new settings
   // (or, for the light sensor, by the power-cycle wait).
-  const pendingCommandIdsRef = useRef<number[]>([]);
+  const pendingCommandIdsRef = useRef<{ id: number; label: string }[]>([]);
   const loggedAckIdsRef = useRef<Set<number>>(new Set());
   // Bumped on every new Apply/Cancel so a write's promise resolving after the
   // run it belongs to was abandoned cannot mutate state for a later run.
@@ -132,7 +125,7 @@ const DfrobotSensorConfigPage: React.FC = () => {
         if (runRef.current !== run) {
           return;
         }
-        pendingCommandIdsRef.current.push(commandId);
+        pendingCommandIdsRef.current.push({ id: commandId, label: write.label });
         appendLog(
           `Sent ${write.label} (register 0x${write.register
             .toString(16)
@@ -180,17 +173,29 @@ const DfrobotSensorConfigPage: React.FC = () => {
       if (!ACK_SIGNALS.has(signalType)) {
         continue;
       }
-      const commandId = pendingCommandIdsRef.current.find((id) =>
-        commandIdMatches(entry.data.command?.commandId as Uint8Array, id),
+      const matchIndex = pendingCommandIdsRef.current.findIndex((pending) =>
+        commandIdMatches(entry.data.command?.commandId as Uint8Array, pending.id),
       );
-      if (commandId === undefined || loggedAckIdsRef.current.has(commandId)) {
+      if (matchIndex === -1) {
+        continue;
+      }
+      const { id: commandId } = pendingCommandIdsRef.current[matchIndex];
+      if (loggedAckIdsRef.current.has(commandId)) {
         continue;
       }
       loggedAckIdsRef.current.add(commandId);
       const description = entry.data.command?.description || entry.data.error || 'no details';
       if (signalType !== SignalType.DFROBOT_COMMAND_SUCCESS) {
         appendLog(`✗ Write failed: ${description}`);
-        if (pendingCommandIdsRef.current.length > 1) {
+        if (matchIndex > 0) {
+          const earlierLabels = pendingCommandIdsRef.current
+            .slice(0, matchIndex)
+            .map((pending) => pending.label)
+            .join(', ');
+          appendLog(
+            `⚠ Earlier write(s) already applied: ${earlierLabels}. The sensor may now be in a mixed state.`,
+          );
+        } else if (pendingCommandIdsRef.current.length > 1) {
           appendLog(
             '⚠ Other writes in this run were also sent — the sensor may be in a mixed state. Re-open this page to see its current settings.',
           );
@@ -291,6 +296,12 @@ const DfrobotSensorConfigPage: React.FC = () => {
 
   const idValid = newId >= SCAN_ID_MIN && newId <= SCAN_ID_MAX;
   const hasChange = current !== null && (newId !== current.modbusId || newBaud !== current.baud);
+
+  // A custom station.yaml baud outside BAUD_CHOICES must still show up as a
+  // selectable (already-selected) option, or the controlled <select> renders
+  // blank.
+  const baudOptions =
+    current && !BAUD_CHOICES.includes(current.baud) ? [current.baud, ...BAUD_CHOICES] : BAUD_CHOICES;
 
   const addressReadback =
     current && profile ? readDfrobotWord(current.ranges, profile.addressRegister) : null;
@@ -419,7 +430,7 @@ const DfrobotSensorConfigPage: React.FC = () => {
                     disabled={inFlight}
                     className="px-3 py-2 bg-surface-secondary text-accent-success border border-border-subtle rounded focus:border-accent-data focus:outline-none disabled:opacity-50"
                   >
-                    {BAUD_CHOICES.map((baud) => (
+                    {baudOptions.map((baud) => (
                       <option key={baud} value={baud}>
                         {baud}
                       </option>
@@ -449,7 +460,8 @@ const DfrobotSensorConfigPage: React.FC = () => {
               <div className="text-text-muted text-xs">
                 The driver only rediscovers sensors at IDs {SCAN_ID_MIN}-{SCAN_ID_MAX} and bauds{' '}
                 {BAUD_CHOICES.join(' / ')}. Wider values are possible by editing scan-ids / bauds in
-                station.yaml first.
+                station.yaml first. If this sensor is pinned in station.yaml's sensors: list, update
+                its modbus-id there after changing the ID here.
               </div>
             </div>
 
