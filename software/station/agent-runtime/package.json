@@ -1,0 +1,12 @@
+{
+  "name": "@norma-core/station-agent-runtime",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Pinned pi RPC runtime used by the Station agent host",
+  "engines": {
+    "node": ">=22.19.0"
+  },
+  "dependencies": {
+    "@earendil-works/pi-coding-agent": "0.82.1"
+  }
+}
