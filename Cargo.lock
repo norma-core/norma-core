@@ -2524,6 +2524,8 @@ dependencies = [
  "prost",
  "prost-build",
  "rust-embed",
+ "serde",
+ "serde_json",
  "st3215",
  "station_iface",
  "sysinfod",

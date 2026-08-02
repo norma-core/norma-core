@@ -184,6 +184,41 @@ body {
   50% { opacity: 0; }
 }
 
+@keyframes agent-event-enter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes agent-status-pulse {
+  0%, 100% {
+    opacity: 0.45;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.agent-event-enter {
+  animation: agent-event-enter 180ms ease-out both;
+}
+
+.agent-status-pulse {
+  animation: agent-status-pulse 900ms ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .agent-event-enter,
+  .agent-status-pulse {
+    animation: none;
+  }
+}
+
 .logo-first-load {
   animation: logo-pulse 1.2s ease-in-out forwards;
 }

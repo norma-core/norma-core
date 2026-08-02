@@ -8,6 +8,7 @@ const Router = isElectron() ? HashRouter : BrowserRouter;
 
 const HomePage = lazy(() => import('./pages/HomePage'));
 const HistoryPage = lazy(() => import('./pages/HistoryPage'));
+const AgentPage = lazy(() => import('./pages/AgentPage'));
 const St3215MotorConfigPage = lazy(() => import('./pages/St3215MotorConfigPage'));
 const St3215BusCalibrationPage = lazy(() => import('./pages/St3215BusCalibrationPage'));
 
@@ -19,6 +20,7 @@ function App() {
           <Route element={<MainLayout />}>
             <Route path="/" element={<HomePage />} />
             <Route path="/history" element={<HistoryPage />} />
+            <Route path="/agent" element={<AgentPage />} />
           </Route>
           <Route path="/st3215-bus-calibration" element={<St3215BusCalibrationPage />} />
           <Route path="/st3215-bind-motors" element={<St3215MotorConfigPage />} />

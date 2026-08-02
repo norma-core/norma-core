@@ -30,6 +30,7 @@ pub mod station_proto {
     }
 }
 
+mod agent;
 mod inference;
 mod queues;
 mod size;
@@ -735,10 +736,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
 
         let normfs_clone = station.normfs.clone();
+        let agent = agent::AgentModule::open(station.base_path.join("agent")).await?;
         let web_shutdown_clone = web_shutdown.clone();
         web_server_handle = Some(tokio::spawn(async move {
             if let Err(e) =
-                web::server::start_server(web_addr, normfs_clone, web_shutdown_clone).await
+                web::server::start_server(web_addr, normfs_clone, agent, web_shutdown_clone).await
             {
                 log::error!("Web server error: {}", e);
             }
