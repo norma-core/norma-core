@@ -559,6 +559,8 @@ pub struct DmesgConfig {
 
 /// DFRobot RS-485 Modbus-RTU sensors (SEN0640/0641/0642/0644) behind a
 /// USB-to-RS485 adapter. One queue per sensor; the driver is read-only.
+/// Poll interval and baud candidates are fixed (1s; [4800, 9600]) and all
+/// sensors are auto-detected — neither is configurable.
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct DfrobotRs485Config {
     #[serde(default)]
@@ -568,29 +570,9 @@ pub struct DfrobotRs485Config {
     #[serde(default = "default_dfrobot_rs485_ports")]
     pub ports: Vec<String>,
 
-    /// Fixed baud rate — disables baud auto-detection. Mutually exclusive
-    /// with `bauds` (if both are set, `bauds` wins and an error is logged).
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub baud: Option<u32>,
-
-    /// Candidate baud rates for auto-detection, tried in order.
-    /// Default when neither `baud` nor `bauds` is set: [4800, 9600].
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub bauds: Option<Vec<u32>>,
-
-    #[serde(
-        rename = "poll-interval",
-        with = "humantime_serde",
-        default = "default_dfrobot_rs485_poll_interval"
-    )]
-    pub poll_interval: std::time::Duration,
-
     /// Modbus IDs to scan for auto-detection, e.g. "1-10" (default) or [1, 2, 3].
     #[serde(rename = "scan-ids", default, skip_serializing_if = "Option::is_none")]
     pub scan_ids: Option<DfrobotScanIds>,
-
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub sensors: Vec<DfrobotRs485SensorConfig>,
 }
 
 /// Modbus ID scan range for auto-detection: either a "A-B" string or an
@@ -602,19 +584,6 @@ pub enum DfrobotScanIds {
     Range(String),
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct DfrobotRs485SensorConfig {
-    /// Optional queue key override; defaults to "<model>-<modbus_id>".
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-
-    /// One of: irradiance, par, uv, light, unknown
-    pub model: String,
-
-    #[serde(rename = "modbus-id")]
-    pub modbus_id: u8,
-}
-
 fn default_dfrobot_rs485_ports() -> Vec<String> {
     vec![
         "/dev/ttyUSB*".to_string(),
@@ -622,20 +591,12 @@ fn default_dfrobot_rs485_ports() -> Vec<String> {
     ]
 }
 
-fn default_dfrobot_rs485_poll_interval() -> std::time::Duration {
-    std::time::Duration::from_secs(1)
-}
-
 impl Default for DfrobotRs485Config {
     fn default() -> Self {
         Self {
             enabled: false,
             ports: default_dfrobot_rs485_ports(),
-            baud: None,
-            bauds: None,
-            poll_interval: default_dfrobot_rs485_poll_interval(),
             scan_ids: None,
-            sensors: Vec::new(),
         }
     }
 }
@@ -787,18 +748,16 @@ mod config_tests {
     #[test]
     fn parses_dfrobot_rs485_config() {
         let cfg: Config = serde_yaml::from_str(
-            "drivers:\n  system-info: true\n  dfrobot-rs485:\n    enabled: true\n    ports: [\"/dev/ttyUSB*\", \"/dev/cu.usbserial-*\"]\n    baud: 9600\n    poll-interval: 1s\n    sensors:\n      - { model: irradiance, modbus-id: 1 }\n      - { model: par, modbus-id: 2 }\n      - { model: uv, modbus-id: 3 }\n      - { model: light, modbus-id: 4, id: greenhouse-light }\ninference:\n",
+            "drivers:\n  system-info: true\n  dfrobot-rs485:\n    enabled: true\n    ports: [\"/dev/ttyUSB*\", \"/dev/cu.usbserial-*\"]\n    scan-ids: \"1-10\"\ninference:\n",
         )
         .unwrap();
         let dfrobot = cfg.drivers.dfrobot_rs485.unwrap();
         assert!(dfrobot.enabled);
         assert_eq!(dfrobot.ports, vec!["/dev/ttyUSB*", "/dev/cu.usbserial-*"]);
-        assert_eq!(dfrobot.baud, Some(9600));
-        assert_eq!(dfrobot.poll_interval, std::time::Duration::from_secs(1));
-        assert_eq!(dfrobot.sensors.len(), 4);
-        assert_eq!(dfrobot.sensors[0].model, "irradiance");
-        assert_eq!(dfrobot.sensors[0].modbus_id, 1);
-        assert_eq!(dfrobot.sensors[3].id.as_deref(), Some("greenhouse-light"));
+        match dfrobot.scan_ids {
+            Some(DfrobotScanIds::Range(ref spec)) => assert_eq!(spec, "1-10"),
+            other => panic!("expected Range, got {:?}", other),
+        }
     }
 
     #[test]
@@ -808,33 +767,8 @@ mod config_tests {
         )
         .unwrap();
         let dfrobot = cfg.drivers.dfrobot_rs485.unwrap();
-        assert!(dfrobot.baud.is_none());
-        assert_eq!(dfrobot.poll_interval, std::time::Duration::from_secs(1));
         assert!(!dfrobot.ports.is_empty());
-        assert!(dfrobot.sensors.is_empty());
-    }
-
-    #[test]
-    fn parses_dfrobot_rs485_bauds_list() {
-        let cfg: Config = serde_yaml::from_str(
-            "drivers:\n  system-info: true\n  dfrobot-rs485:\n    enabled: true\n    bauds: [4800, 9600]\ninference:\n",
-        )
-        .unwrap();
-        let dfrobot = cfg.drivers.dfrobot_rs485.unwrap();
-        assert_eq!(dfrobot.bauds, Some(vec![4800, 9600]));
-        assert!(dfrobot.baud.is_none());
-    }
-
-    #[test]
-    fn parses_dfrobot_rs485_baud_and_bauds_together() {
-        // Both keys parse; precedence (bauds wins, error logged) is main.rs logic.
-        let cfg: Config = serde_yaml::from_str(
-            "drivers:\n  system-info: true\n  dfrobot-rs485:\n    enabled: true\n    baud: 9600\n    bauds: [4800]\ninference:\n",
-        )
-        .unwrap();
-        let dfrobot = cfg.drivers.dfrobot_rs485.unwrap();
-        assert_eq!(dfrobot.baud, Some(9600));
-        assert_eq!(dfrobot.bauds, Some(vec![4800]));
+        assert!(dfrobot.scan_ids.is_none());
     }
 
     #[test]
@@ -861,17 +795,6 @@ mod config_tests {
             Some(DfrobotScanIds::List(ref ids)) => assert_eq!(ids, &vec![1, 2, 3, 4]),
             other => panic!("expected List, got {:?}", other),
         }
-    }
-
-    #[test]
-    fn dfrobot_rs485_scan_ids_defaults_to_none_and_sensors_optional() {
-        let cfg: Config = serde_yaml::from_str(
-            "drivers:\n  system-info: true\n  dfrobot-rs485:\n    enabled: true\ninference:\n",
-        )
-        .unwrap();
-        let dfrobot = cfg.drivers.dfrobot_rs485.unwrap();
-        assert!(dfrobot.scan_ids.is_none());
-        assert!(dfrobot.sensors.is_empty());
     }
 }
 

@@ -7,7 +7,7 @@ mod modbus;
 mod sensors;
 
 pub use driver::{
-    DfrobotRs485Driver, DfrobotRs485DriverConfig, DfrobotSensorConfig, default_bauds,
-    default_scan_ids, parse_scan_ids, sanitize_bauds, sanitize_scan_ids, start_dfrobot_rs485_driver,
+    DfrobotRs485Driver, DfrobotRs485DriverConfig, default_scan_ids, parse_scan_ids,
+    sanitize_scan_ids, start_dfrobot_rs485_driver,
 };
 pub use sensors::SensorModel;

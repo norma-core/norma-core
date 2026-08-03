@@ -27,9 +27,12 @@ const RESPONSE_TIMEOUT: Duration = Duration::from_millis(300);
 const INTER_FRAME_GAP: Duration = Duration::from_millis(5);
 /// How often to rescan candidate ports while no port is claimed.
 const PORT_SCAN_INTERVAL: Duration = Duration::from_secs(3);
-/// Fallback poll interval substituted when configured with a zero Duration
-/// (which would otherwise panic `tokio::time::interval`).
+/// Fixed poll interval — no longer configurable (user decision).
 const DEFAULT_POLL_INTERVAL: Duration = Duration::from_secs(1);
+/// Fixed candidate baud rates for auto-detection, tried in order — no
+/// longer configurable (user decision). The radiation-family sensors ship
+/// at 4800, SEN0644 at 9600.
+const BAUD_CANDIDATES: [u32; 2] = [4800, 9600];
 /// Consecutive all-sensors-silent polls before the worker abandons the
 /// claimed port and re-runs the full scan. A re-addressed or re-bauded bus
 /// (config editor, power-cycled sensor) looks exactly like this.
@@ -48,17 +51,7 @@ type DriverResult<T> = Result<T, Box<dyn std::error::Error + Send + Sync>>;
 #[derive(Debug, Clone)]
 pub struct DfrobotRs485DriverConfig {
     pub ports: Vec<String>,
-    pub bauds: Vec<u32>,
-    pub poll_interval: Duration,
-    pub sensors: Vec<DfrobotSensorConfig>,
     pub scan_ids: Vec<u8>,
-}
-
-#[derive(Debug, Clone)]
-pub struct DfrobotSensorConfig {
-    pub id: Option<String>,
-    pub model: SensorModel,
-    pub modbus_id: u8,
 }
 
 pub struct DfrobotRs485Driver {
@@ -73,19 +66,6 @@ struct Sensor {
 }
 
 impl Sensor {
-    fn from_config(config: &DfrobotSensorConfig) -> Self {
-        let default_id = format!("{}-{}", config.model.config_name(), config.modbus_id);
-        Self {
-            id: config
-                .id
-                .clone()
-                .filter(|id| !id.trim().is_empty())
-                .unwrap_or(default_id),
-            model: config.model,
-            modbus_id: config.modbus_id,
-        }
-    }
-
     fn detected(model: SensorModel, modbus_id: u8) -> Self {
         Self {
             id: format!("{}-{}", model.config_name(), modbus_id),
@@ -133,35 +113,15 @@ impl DfrobotRs485Driver {
     pub async fn new<T: StationEngine + Send + Sync + 'static>(
         normfs: Arc<NormFS>,
         station_engine: Arc<T>,
-        mut config: DfrobotRs485DriverConfig,
+        config: DfrobotRs485DriverConfig,
     ) -> DriverResult<Self> {
-        if config.poll_interval.is_zero() {
-            warn!(
-                "DFRobot RS485 poll-interval is zero, using {:?}",
-                DEFAULT_POLL_INTERVAL
-            );
-            config.poll_interval = DEFAULT_POLL_INTERVAL;
-        }
-
-        config.bauds = sanitize_bauds(&config.bauds);
-        if config.bauds.is_empty() {
-            warn!(
-                "DFRobot RS485 baud candidate list is empty, using {:?}",
-                default_bauds()
-            );
-            config.bauds = default_bauds();
-        }
-
-        if config.scan_ids.is_empty() && config.sensors.is_empty() {
-            warn!("DFRobot RS485 driver enabled with no scan range and no sensors configured");
+        if config.scan_ids.is_empty() {
+            warn!("DFRobot RS485 driver enabled with no scan range configured");
         }
 
         info!(
-            "Started DFRobot RS485 driver: ports {:?}, bauds {:?}, scan ids {:?}, {} explicit sensor(s)",
-            config.ports,
-            config.bauds,
-            config.scan_ids,
-            config.sensors.len()
+            "Started DFRobot RS485 driver: ports {:?}, bauds {:?}, scan ids {:?}",
+            config.ports, BAUD_CANDIDATES, config.scan_ids
         );
 
         let (command_tx, command_rx) =
@@ -245,21 +205,17 @@ fn address_register_for(model: SensorModel) -> Option<u16> {
 }
 
 /// Registered queue paths that should receive a final FORGOTTEN marker:
-/// previously-seen auto sensors absent from the current scan, minus explicit
-/// config entries (never forgotten) and paths already marked.
+/// previously-seen auto sensors absent from the current scan, minus paths
+/// already marked. All sensors are auto-detected, so any previously-seen
+/// sensor absent from a re-scan is forgotten uniformly.
 fn forget_candidates(
     registered_paths: &[String],
     current_paths: &std::collections::HashSet<String>,
-    explicit_paths: &std::collections::HashSet<String>,
     already_forgotten: &std::collections::HashSet<String>,
 ) -> Vec<String> {
     registered_paths
         .iter()
-        .filter(|path| {
-            !current_paths.contains(*path)
-                && !explicit_paths.contains(*path)
-                && !already_forgotten.contains(*path)
-        })
+        .filter(|path| !current_paths.contains(*path) && !already_forgotten.contains(*path))
         .cloned()
         .collect()
 }
@@ -435,13 +391,6 @@ async fn run_bus_worker<T: StationEngine + Send + Sync + 'static>(
     // Paths already marked FORGOTTEN: guards against re-emitting the marker
     // on every subsequent rescan while the identity stays absent.
     let mut forgotten: std::collections::HashSet<String> = Default::default();
-    // Explicit config entries are never forgotten — their queues are
-    // intended to keep surfacing offline/error rows while unplugged.
-    let explicit_paths: std::collections::HashSet<String> = config
-        .sensors
-        .iter()
-        .map(|c| Sensor::from_config(c).rx_queue_path())
-        .collect();
 
     loop {
         let (mut port, port_name, claimed_baud, discovered) = acquire_and_scan(&config).await;
@@ -499,7 +448,7 @@ async fn run_bus_worker<T: StationEngine + Send + Sync + 'static>(
             forgotten.remove(path);
         }
         let registered_paths: Vec<String> = registered.keys().cloned().collect();
-        for path in forget_candidates(&registered_paths, &current_paths, &explicit_paths, &forgotten) {
+        for path in forget_candidates(&registered_paths, &current_paths, &forgotten) {
             if let Some((queue_id, sensor)) = registered.get(&path) {
                 let transient = SensorState {
                     sensor: sensor.clone(),
@@ -537,7 +486,7 @@ async fn run_bus_worker<T: StationEngine + Send + Sync + 'static>(
                 .join(", ")
         );
 
-        let mut tick = interval(config.poll_interval);
+        let mut tick = interval(DEFAULT_POLL_INTERVAL);
         tick.set_missed_tick_behavior(MissedTickBehavior::Skip);
 
         let mut silent_tracker = SilentBusTracker::new();
@@ -821,46 +770,24 @@ async fn detect_sensor(
 
 /// Result of one scan pass at one baud rate.
 struct ScanOutcome {
-    /// The sensor set for this pass: all explicit-config sensors plus every
-    /// detected responder.
+    /// The sensor set for this pass: every detected responder.
     sensors: Vec<Sensor>,
     /// Modbus IDs that actually answered during this pass — the claim and
-    /// mixed-bus decisions count these, not `sensors` (which includes
-    /// offline explicit entries).
+    /// mixed-bus decisions count these.
     responding_ids: Vec<u8>,
 }
 
-/// Builds the sensor set for one candidate port at the port's current baud.
-/// Explicit config entries are always included (their queues surface
-/// timeouts if the device is offline) and skip detection; the scan range
-/// covers the remaining IDs. `responding_ids` records which IDs answered.
+/// Builds the sensor set for one candidate port at the port's current baud
+/// by probing every configured scan ID. `responding_ids` records which IDs
+/// answered.
 async fn scan_bus(
     port: &mut tokio_serial::SerialStream,
     config: &DfrobotRs485DriverConfig,
 ) -> ScanOutcome {
     let mut sensors = Vec::new();
     let mut responding_ids = Vec::new();
-    let mut taken: std::collections::HashSet<u8> = std::collections::HashSet::new();
-
-    for sensor_config in &config.sensors {
-        let sensor = Sensor::from_config(sensor_config);
-        // The plan is always the single uniform block; this probe is intentionally the same read the poll loop does.
-        let (start, count) = sensor.model.poll_ranges()[0];
-        if modbus::transact(port, sensor.modbus_id, start, count, RESPONSE_TIMEOUT)
-            .await
-            .is_ok()
-        {
-            responding_ids.push(sensor.modbus_id);
-        }
-        sleep(INTER_FRAME_GAP).await;
-        taken.insert(sensor.modbus_id);
-        sensors.push(sensor);
-    }
 
     for id in &config.scan_ids {
-        if taken.contains(id) {
-            continue;
-        }
         if let Some(sensor) = detect_sensor(port, *id).await {
             responding_ids.push(*id);
             sensors.push(sensor);
@@ -882,7 +809,7 @@ async fn acquire_and_scan(
 ) -> (tokio_serial::SerialStream, String, u32, Vec<Sensor>) {
     loop {
         for candidate in candidate_ports(&config.ports) {
-            let initial_baud = config.bauds.first().copied().unwrap_or(9600);
+            let initial_baud = BAUD_CANDIDATES[0];
             let mut port = match tokio_serial::new(&candidate, initial_baud).open_native_async() {
                 Ok(port) => port,
                 Err(open_error) => {
@@ -892,7 +819,7 @@ async fn acquire_and_scan(
             };
 
             let mut passes: Vec<(u32, ScanOutcome)> = Vec::new();
-            for &baud in &config.bauds {
+            for &baud in &BAUD_CANDIDATES {
                 if let Err(error) = port.set_baud_rate(baud) {
                     warn!("DFRobot RS485: cannot set {baud} baud on {candidate}: {error}");
                     continue;
@@ -1103,23 +1030,6 @@ pub fn sanitize_scan_ids(ids: &[u8]) -> Vec<u8> {
         .collect()
 }
 
-/// Default candidate baud rates for baud auto-detection, in try order.
-/// The radiation-family sensors ship at 4800, SEN0644 at 9600.
-pub fn default_bauds() -> Vec<u32> {
-    vec![4800, 9600]
-}
-
-/// Sanitizes a configured baud list: keeps first-occurrence order, drops
-/// duplicates and the invalid value 0.
-pub fn sanitize_bauds(bauds: &[u32]) -> Vec<u32> {
-    let mut seen = std::collections::HashSet::new();
-    bauds
-        .iter()
-        .copied()
-        .filter(|baud| *baud != 0 && seen.insert(*baud))
-        .collect()
-}
-
 /// Picks the scan pass to claim: the one with the most responding devices.
 /// Ties go to the earlier candidate (strictly-greater comparison); passes
 /// with zero responders never win. Returns the index into `counts`.
@@ -1141,37 +1051,6 @@ fn best_baud(counts: &[(u32, usize)]) -> Option<usize> {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn default_sensor_id_is_model_dash_modbus_id() {
-        let sensor = Sensor::from_config(&DfrobotSensorConfig {
-            id: None,
-            model: SensorModel::Irradiance,
-            modbus_id: 1,
-        });
-        assert_eq!(sensor.id, "irradiance-1");
-        assert_eq!(sensor.rx_queue_path(), "dfrobot-rs485/irradiance-1/rx");
-    }
-
-    #[test]
-    fn explicit_sensor_id_overrides_default() {
-        let sensor = Sensor::from_config(&DfrobotSensorConfig {
-            id: Some("greenhouse-light".to_string()),
-            model: SensorModel::Light,
-            modbus_id: 4,
-        });
-        assert_eq!(sensor.rx_queue_path(), "dfrobot-rs485/greenhouse-light/rx");
-    }
-
-    #[test]
-    fn blank_sensor_id_falls_back_to_default() {
-        let sensor = Sensor::from_config(&DfrobotSensorConfig {
-            id: Some("   ".to_string()),
-            model: SensorModel::Uv,
-            modbus_id: 3,
-        });
-        assert_eq!(sensor.id, "uv-3");
-    }
 
     #[test]
     fn envelope_encoding_round_trip() {
@@ -1271,15 +1150,8 @@ mod tests {
     }
 
     #[test]
-    fn default_bauds_is_4800_then_9600() {
-        assert_eq!(default_bauds(), vec![4800, 9600]);
-    }
-
-    #[test]
-    fn sanitize_bauds_dedups_and_drops_zero() {
-        assert_eq!(sanitize_bauds(&[9600, 4800, 9600, 0]), vec![9600, 4800]);
-        assert_eq!(sanitize_bauds(&[]), Vec::<u32>::new());
-        assert_eq!(sanitize_bauds(&[0]), Vec::<u32>::new());
+    fn baud_candidates_is_4800_then_9600() {
+        assert_eq!(BAUD_CANDIDATES, [4800, 9600]);
     }
 
     #[test]
@@ -1331,11 +1203,7 @@ mod tests {
         let outcome = ScanOutcome {
             sensors: vec![
                 Sensor::detected(SensorModel::Par, 2),
-                Sensor::from_config(&DfrobotSensorConfig {
-                    id: None,
-                    model: SensorModel::Uv,
-                    modbus_id: 3,
-                }),
+                Sensor::detected(SensorModel::Uv, 3),
             ],
             responding_ids: vec![2],
         };
@@ -1407,18 +1275,16 @@ mod tests {
     }
 
     #[test]
-    fn forget_candidates_skips_current_explicit_and_already_forgotten() {
+    fn forget_candidates_skips_current_and_already_forgotten() {
         let registered: Vec<String> = ["light-4", "light-5", "uv-3", "par-2"]
             .iter().map(|s| s.to_string()).collect();
         let current: std::collections::HashSet<String> =
             ["light-4"].iter().map(|s| s.to_string()).collect();
-        let explicit: std::collections::HashSet<String> =
-            ["uv-3"].iter().map(|s| s.to_string()).collect();
         let already: std::collections::HashSet<String> =
             ["par-2"].iter().map(|s| s.to_string()).collect();
         assert_eq!(
-            forget_candidates(&registered, &current, &explicit, &already),
-            vec!["light-5".to_string()]
+            forget_candidates(&registered, &current, &already),
+            vec!["light-5".to_string(), "uv-3".to_string()]
         );
     }
 

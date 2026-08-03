@@ -438,21 +438,6 @@ impl Station {
         #[cfg(feature = "dfrobot-rs485")]
         if let Some(dfrobot_config) = &self.config.drivers.dfrobot_rs485 {
             if dfrobot_config.enabled {
-                let mut sensors = Vec::with_capacity(dfrobot_config.sensors.len());
-                for sensor in &dfrobot_config.sensors {
-                    match dfrobot_rs485::SensorModel::from_config_name(&sensor.model) {
-                        Some(model) => sensors.push(dfrobot_rs485::DfrobotSensorConfig {
-                            id: sensor.id.clone(),
-                            model,
-                            modbus_id: sensor.modbus_id,
-                        }),
-                        None => log::error!(
-                            "Unknown DFRobot RS485 sensor model '{}' (expected irradiance/par/uv/light/unknown); sensor skipped",
-                            sensor.model
-                        ),
-                    }
-                }
-
                 let scan_ids = match &dfrobot_config.scan_ids {
                     None => dfrobot_rs485::default_scan_ids(),
                     Some(station_iface::config::DfrobotScanIds::Range(spec)) => {
@@ -481,35 +466,9 @@ impl Station {
                     }
                 };
 
-                let bauds = {
-                    let resolved: Vec<u32> = match (dfrobot_config.baud, &dfrobot_config.bauds) {
-                        (Some(baud), Some(list)) => {
-                            log::error!(
-                                "DFRobot RS485: both 'baud' ({baud}) and 'bauds' are set; ignoring 'baud'"
-                            );
-                            dfrobot_rs485::sanitize_bauds(list)
-                        }
-                        (None, Some(list)) => dfrobot_rs485::sanitize_bauds(list),
-                        (Some(baud), None) => dfrobot_rs485::sanitize_bauds(&[baud]),
-                        (None, None) => dfrobot_rs485::default_bauds(),
-                    };
-                    if resolved.is_empty() {
-                        log::error!(
-                            "DFRobot RS485: no valid baud rates configured; using default {:?}",
-                            dfrobot_rs485::default_bauds()
-                        );
-                        dfrobot_rs485::default_bauds()
-                    } else {
-                        resolved
-                    }
-                };
-
                 let config = dfrobot_rs485::DfrobotRs485DriverConfig {
                     ports: dfrobot_config.ports.clone(),
-                    bauds,
-                    poll_interval: dfrobot_config.poll_interval,
                     scan_ids,
-                    sensors,
                 };
 
                 if let Err(error) = dfrobot_rs485::start_dfrobot_rs485_driver(
