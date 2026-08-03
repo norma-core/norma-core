@@ -1520,9 +1520,9 @@ dependencies = [
 
 [[package]]
 name = "normfs"
-version = "0.1.0-beta.1"
+version = "0.2.0-beta.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d079a9099b4c75d095aff45be7e64122d66a54d474512bd8096436751477f3ba"
+checksum = "d6fbeacc6ca9faff585dc0b5d4d38a61d862ff010fa1b882ac0915deb433cdcd"
 dependencies = [
  "bytes",
  "fastwebsockets",
@@ -1546,9 +1546,9 @@ dependencies = [
 
 [[package]]
 name = "normfs-cloud"
-version = "0.1.0-beta.1"
+version = "0.2.0-beta.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c4ba7582e95347a0c85673784a9f77868bddba07b71c4ba5a0cbf5e70aa73c57"
+checksum = "4888ad53cea454f3365289f0e4998dad10e7dfa34357a5508c32084f375af6e2"
 dependencies = [
  "bytes",
  "log",
@@ -1567,9 +1567,9 @@ dependencies = [
 
 [[package]]
 name = "normfs-crypto"
-version = "0.1.0-beta.1"
+version = "0.2.0-beta.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cdd3bc30fa5a9bd70bf3a59b3f07e3d1a5d63dccdc5a9c32ae3ad5c9826fd66b"
+checksum = "c372bfdd06b56f89ec5b1e5bb2efa7106912bd2beea35d296b0185bbaafde1ca"
 dependencies = [
  "aes-gcm",
  "bytes",
@@ -1586,11 +1586,12 @@ dependencies = [
 
 [[package]]
 name = "normfs-store"
-version = "0.1.0-beta.1"
+version = "0.2.0-beta.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "05c3e74eb837cf7f7e56726a8d96dfb136be0ad33b78d9ec9238466a05d8f36c"
+checksum = "ca3aad1c7166e5afdfecd21227e1deb0f0937bd783251af6050cce43ebd855d4"
 dependencies = [
  "bytes",
+ "cc",
  "log",
  "lzma-rust2",
  "normfs-crypto",
@@ -1604,9 +1605,9 @@ dependencies = [
 
 [[package]]
 name = "normfs-types"
-version = "0.1.0-beta.1"
+version = "0.2.0-beta.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2e73df6acb76230588f3cd21502f90156b15c8463c96621bf5e0fec815bb12bc"
+checksum = "54c405576859831b459ea166a187950ca839bc3632c99e6c0b415b082b3963b6"
 dependencies = [
  "bytes",
  "uintn",
@@ -1614,11 +1615,12 @@ dependencies = [
 
 [[package]]
 name = "normfs-wal"
-version = "0.1.0-beta.1"
+version = "0.2.0-beta.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "796d89309a2b0627db6d7b4e2948b09e9bda93429931f0469c68c41451008034"
+checksum = "495eac3643b363054caed8f0924520b3331e126e5fcbc630683783102eb5f411"
 dependencies = [
  "bytes",
+ "cc",
  "log",
  "normfs-types",
  "tokio",
@@ -2947,11 +2949,12 @@ checksum = "1dccffe3ce07af9386bfd29e80c0ab1a8205a2fc34e4bcd40364df902cfa8f3f"
 
 [[package]]
 name = "uintn"
-version = "0.1.0-beta.1"
+version = "0.2.0-beta.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "09ec954b36d0445c911d79d30dc67da58f617a45d0c3025c26c0d0f8133a8b8a"
+checksum = "39a3191ae258f57ecd34734468262dccb555b7385bd3becbe71b6936ed42043c"
 dependencies = [
  "bytes",
+ "cc",
  "dashu-int",
  "hex",
  "walkdir",
