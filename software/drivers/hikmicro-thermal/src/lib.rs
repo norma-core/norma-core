@@ -12,7 +12,7 @@ use log::warn;
 use normfs::NormFS;
 use prost::Message;
 use station_iface::{StationEngine, iface_proto::drivers::QueueDataType};
-use tokio::{sync::Notify, task::JoinHandle};
+use tokio::task::{JoinHandle, JoinSet};
 
 pub mod hikmicro_proto {
     pub mod hikmicro {
@@ -53,15 +53,18 @@ impl Default for HikmicroThermalConfig {
 
 pub struct HikmicroThermalHandle {
     stop: Arc<AtomicBool>,
-    stopped: Arc<Notify>,
     worker: JoinHandle<()>,
 }
 
 impl HikmicroThermalHandle {
     pub async fn stop(self) {
         self.stop.store(true, Ordering::Release);
-        self.stopped.notified().await;
-        let _ = self.worker.await;
+        if let Err(e) = self.worker.await {
+            warn!(
+                "HIKMICRO thermal manager task failed during shutdown: {}",
+                e
+            );
+        }
     }
 }
 
@@ -71,20 +74,13 @@ pub async fn start_hikmicro_thermal<T: StationEngine + Send + Sync + 'static>(
     config: HikmicroThermalConfig,
 ) -> Result<HikmicroThermalHandle, String> {
     let stop = Arc::new(AtomicBool::new(false));
-    let stopped = Arc::new(Notify::new());
     let worker_stop = stop.clone();
-    let worker_stopped = stopped.clone();
 
     let worker = tokio::spawn(async move {
         run_manager(normfs, station_engine, worker_stop, config).await;
-        worker_stopped.notify_waiters();
     });
 
-    Ok(HikmicroThermalHandle {
-        stop,
-        stopped,
-        worker,
-    })
+    Ok(HikmicroThermalHandle { stop, worker })
 }
 
 async fn run_manager<T: StationEngine + Send + Sync + 'static>(
@@ -94,8 +90,15 @@ async fn run_manager<T: StationEngine + Send + Sync + 'static>(
     config: HikmicroThermalConfig,
 ) {
     let running = Arc::new(Mutex::new(HashSet::<String>::new()));
+    let mut captures = JoinSet::new();
 
     loop {
+        while let Some(result) = captures.try_join_next() {
+            if let Err(e) = result {
+                warn!("HIKMICRO capture task failed to join: {}", e);
+            }
+        }
+
         if stop.load(Ordering::Acquire) {
             break;
         }
@@ -132,7 +135,7 @@ async fn run_manager<T: StationEngine + Send + Sync + 'static>(
                     let timeout = config.frame_timeout;
                     let frame_skip = config.frame_skip;
 
-                    tokio::spawn(async move {
+                    captures.spawn(async move {
                         let result = run_camera_capture(
                             camera,
                             normfs_capture,
@@ -159,6 +162,15 @@ async fn run_manager<T: StationEngine + Send + Sync + 'static>(
         }
 
         tokio::time::sleep(DISCOVERY_POLL_INTERVAL).await;
+    }
+
+    while let Some(result) = captures.join_next().await {
+        if let Err(e) = result {
+            warn!(
+                "HIKMICRO capture task failed to join during shutdown: {}",
+                e
+            );
+        }
     }
 }
 

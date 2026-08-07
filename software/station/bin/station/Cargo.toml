@@ -13,7 +13,7 @@ yahboom-dogzilla-lite = ["dep:yahboom-dogzilla-lite"]
 [dependencies]
 prost = { workspace = true }
 normfs = { workspace = true, features = ["websocket"] }
-normfs-types = "0.2.0-beta.0"
+normfs-types = "0.2.0-beta.1"
 clap = { version = "4.5", features = ["derive"] }
 tokio = { workspace = true }
 station_iface = { path = "../../shared/station-iface" }

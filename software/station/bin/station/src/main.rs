@@ -4,6 +4,7 @@ use normfs::{CloudSettings, NormFS, NormFsSettings, QueueConfig, QueueSettings};
 use normfs_types::{CompressionType, EncryptionType};
 use parking_lot::Mutex;
 use station_iface::StationEngine;
+use std::io;
 use std::net::SocketAddr;
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -50,6 +51,10 @@ struct Args {
     #[arg(long, default_value = "256M", value_parser = size::parse_size::<usize>)]
     max_memory_usage: usize,
 
+    /// Maximum NormFS WAL file size before rotation, e.g. `128M`, `1G`, or a plain byte count
+    #[arg(long, default_value = "128M", value_parser = size::parse_size::<usize>)]
+    normfs_file_size: usize,
+
     /// Base folder for normfs storage
     #[arg(long, default_value = "./station_data")]
     normfs_base_folder: PathBuf,
@@ -65,6 +70,40 @@ struct Args {
     /// Addr to listen for websocket server. If provided without a value, it will listen on 0.0.0.0:8889.
     #[arg(long, num_args = 0..=1, default_missing_value = "0.0.0.0:8889")]
     web: Option<String>,
+}
+
+fn validate_normfs_file_size(args: &Args) -> Result<(), io::Error> {
+    if args.normfs_file_size == 0 {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidInput,
+            "--normfs-file-size must be greater than 0",
+        ));
+    }
+
+    let file_size = u64::try_from(args.normfs_file_size).map_err(|_| {
+        io::Error::new(
+            io::ErrorKind::InvalidInput,
+            "--normfs-file-size is too large for NormFS disk-limit validation",
+        )
+    })?;
+    let min_queue_disk_size = file_size.checked_mul(3).ok_or_else(|| {
+        io::Error::new(
+            io::ErrorKind::InvalidInput,
+            "--normfs-file-size is too large for NormFS disk-limit validation",
+        )
+    })?;
+
+    if args.max_queue_disk_size < min_queue_disk_size {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidInput,
+            format!(
+                "--max-queue-disk-size must be at least 3x --normfs-file-size ({} bytes)",
+                min_queue_disk_size
+            ),
+        ));
+    }
+
+    Ok(())
 }
 
 struct Station {
@@ -153,11 +192,18 @@ impl Station {
         args: &Args,
         config: &station_iface::config::Config,
     ) -> Result<Arc<NormFS>, Box<dyn std::error::Error>> {
+        validate_normfs_file_size(args)?;
+
         let mut settings = NormFsSettings {
             max_disk_usage_per_queue: Some(args.max_queue_disk_size),
             max_memory_usage: args.max_memory_usage,
             ..Default::default()
         };
+        settings.wal_settings.max_file_size = args.normfs_file_size;
+        settings.wal_settings.write_buffer_size = settings
+            .wal_settings
+            .write_buffer_size
+            .min(args.normfs_file_size);
 
         // Configure queue-specific settings
         settings.queue_settings = QueueSettings::new(
@@ -660,6 +706,13 @@ impl Station {
         }
         log::info!("USB video instances stopped");
 
+        #[cfg(target_os = "linux")]
+        if let Some(handle) = self.hikmicro_thermal_handle.lock().take() {
+            log::info!("Stopping HIKMICRO thermal driver...");
+            handle.stop().await;
+            log::info!("HIKMICRO thermal driver stopped");
+        }
+
         #[cfg(feature = "ov5647")]
         if let Some(handle) = self.ov5647_handle.lock().take() {
             log::info!("Stopping OV5647 driver...");
@@ -693,6 +746,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     log::info!("TCP address: {:?}", args.tcp);
     log::info!("Max queue disk size: {} bytes", args.max_queue_disk_size);
+    log::info!("NormFS file size: {} bytes", args.normfs_file_size);
     log::info!("NormFS base folder: {:?}", args.normfs_base_folder);
     log::info!("Configuration file: {:?}", args.config);
 
