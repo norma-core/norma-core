@@ -25,6 +25,7 @@ const XU_INTERFACE: u8 = 0;
 const XU_W_INDEX: u16 = (XU_UNIT_ID as u16) << 8;
 const USB_TIMEOUT_MS: u32 = 1_000;
 const FRAMES_PER_RX_ENVELOPE: usize = 25;
+const SHORT_FRAME_LOG_INTERVAL: Duration = Duration::from_secs(5);
 
 /// `frame_skip` is the number of frames dropped after each kept frame,
 /// so we keep 1 of every `frame_skip + 1`. `0` keeps every frame.
@@ -137,24 +138,52 @@ pub fn capture_continuous(
     stream.start()?;
 
     let mut block_sequence = 0u32;
-    let mut last_frame = Instant::now();
+    let mut last_valid_frame = Instant::now();
+    let mut short_frame_count = 0u64;
+    let mut last_short_frame_warn = None;
     let mut valid_frame_count = 0u64;
     let mut frames = Vec::with_capacity(FRAMES_PER_RX_ENVELOPE);
     while !stop.load(Ordering::Acquire) {
-        if last_frame.elapsed() > frame_timeout {
+        if last_valid_frame.elapsed() > frame_timeout {
+            flush_frames_block(
+                normfs,
+                queue_id,
+                &device_info,
+                &mut block_sequence,
+                &mut frames,
+            )?;
             return Err(format!(
-                "no HIKMICRO frames for {:.1}s",
+                "no complete HIKMICRO frames for {:.1}s",
                 frame_timeout.as_secs_f32()
             ));
         }
 
         match stream.read_frame(200_000) {
             Ok(frame) => {
-                last_frame = Instant::now();
+                let now = Instant::now();
                 if frame.data.len() < COMPACT_PAYLOAD_LEN {
-                    log::warn!("Skipping short HIKMICRO frame: {} bytes", frame.data.len());
+                    short_frame_count = short_frame_count.wrapping_add(1);
+                    let should_warn = match last_short_frame_warn {
+                        Some(last_warn) => {
+                            now.duration_since(last_warn) >= SHORT_FRAME_LOG_INTERVAL
+                        }
+                        None => true,
+                    };
+                    if should_warn {
+                        log::warn!(
+                            "Skipping short HIKMICRO frames: latest={} bytes, expected={} bytes, count_since_valid={}",
+                            frame.data.len(),
+                            COMPACT_PAYLOAD_LEN,
+                            short_frame_count
+                        );
+                        last_short_frame_warn = Some(now);
+                    }
                     continue;
                 }
+
+                last_valid_frame = now;
+                short_frame_count = 0;
+                last_short_frame_warn = None;
 
                 let count = valid_frame_count;
                 valid_frame_count = valid_frame_count.wrapping_add(1);
@@ -164,26 +193,60 @@ pub fn capture_continuous(
 
                 frames.push(thermal_frame_from_capture(frame));
                 if frames.len() >= FRAMES_PER_RX_ENVELOPE {
-                    enqueue_frames_block(
+                    flush_frames_block(
                         normfs,
                         queue_id,
                         &device_info,
-                        block_sequence,
-                        std::mem::take(&mut frames),
+                        &mut block_sequence,
+                        &mut frames,
                     )?;
-                    block_sequence = block_sequence.wrapping_add(1);
-                    frames.reserve(FRAMES_PER_RX_ENVELOPE);
                 }
             }
             Err(e) if e == uvc_error_UVC_ERROR_TIMEOUT => {}
-            Err(e) => return Err(format!("uvc_stream_get_frame failed: {}", e)),
+            Err(e) => {
+                flush_frames_block(
+                    normfs,
+                    queue_id,
+                    &device_info,
+                    &mut block_sequence,
+                    &mut frames,
+                )?;
+                return Err(format!("uvc_stream_get_frame failed: {}", e));
+            }
         }
     }
 
-    if !frames.is_empty() {
-        enqueue_frames_block(normfs, queue_id, &device_info, block_sequence, frames)?;
+    flush_frames_block(
+        normfs,
+        queue_id,
+        &device_info,
+        &mut block_sequence,
+        &mut frames,
+    )?;
+
+    Ok(())
+}
+
+fn flush_frames_block(
+    normfs: &NormFS,
+    queue_id: &normfs::QueueId,
+    device_info: &hikmicro::DeviceInfo,
+    block_sequence: &mut u32,
+    frames: &mut Vec<hikmicro::ThermalFrame>,
+) -> Result<(), String> {
+    if frames.is_empty() {
+        return Ok(());
     }
 
+    enqueue_frames_block(
+        normfs,
+        queue_id,
+        device_info,
+        *block_sequence,
+        std::mem::take(frames),
+    )?;
+    *block_sequence = block_sequence.wrapping_add(1);
+    frames.reserve(FRAMES_PER_RX_ENVELOPE);
     Ok(())
 }
 

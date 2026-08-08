@@ -8,7 +8,7 @@ use std::{
 };
 
 use bytes::BytesMut;
-use log::warn;
+use log::{info, warn};
 use normfs::NormFS;
 use prost::Message;
 use station_iface::{StationEngine, iface_proto::drivers::QueueDataType};
@@ -146,7 +146,12 @@ async fn run_manager<T: StationEngine + Send + Sync + 'static>(
                         )
                         .await;
                         if let Err(e) = result {
-                            warn!("HIKMICRO capture {} ended with error: {}", unique_id, e);
+                            warn!(
+                                "HIKMICRO capture {} ended with error: {}; reconnect will be attempted",
+                                unique_id, e
+                            );
+                        } else {
+                            info!("HIKMICRO capture {} stopped", unique_id);
                         }
                         running_capture.lock().unwrap().remove(&unique_id);
                     });
