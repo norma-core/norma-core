@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+image_maker_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+usage() {
+  cat >&2 <<EOF
+Usage:
+  image-maker build     --image <name> [options]   build a credential-free golden image
+  image-maker customize --input <img> --output <img> [options]
+                                                    write credentials into a golden image
+
+Run a subcommand with --help for its options.
+EOF
+}
+
+case "${1:-}" in
+  build) shift; exec "$image_maker_dir/build.sh" build "$@" ;;
+  customize) shift; exec "$image_maker_dir/customize.sh" "$@" ;;
+  -h|--help|"") usage ;;
+  *) usage; exit 1 ;;
+esac

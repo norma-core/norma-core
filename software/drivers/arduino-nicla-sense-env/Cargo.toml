@@ -1,0 +1,20 @@
+[package]
+name = "arduino-nicla-sense-env"
+version.workspace = true
+edition = "2024"
+
+[dependencies]
+prost = { workspace = true }
+bytes = { workspace = true }
+i2c-async = { path = "../../../shared/i2c-async" }
+log = { workspace = true }
+normfs = { workspace = true }
+station_iface = { path = "../../station/shared/station-iface" }
+systime = { path = "../../station/shared/systime-rs" }
+tokio = { workspace = true }
+
+[build-dependencies]
+prost-build = { workspace = true }
+
+[lib]
+path = "src/lib.rs"

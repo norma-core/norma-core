@@ -47,6 +47,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "airgradient-open-air-o-1pst"
+version = "0.1.0-beta.10"
+dependencies = [
+ "bytes",
+ "log",
+ "normfs",
+ "prost",
+ "prost-build",
+ "station_iface",
+ "systime",
+ "tokio",
+ "tokio-serial",
+]
+
+[[package]]
 name = "anstream"
 version = "0.6.20"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -109,6 +124,21 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6a3a1fd6f75306b68087b831f025c712524bcb19aad54e557b1129cfa0a2b207"
 dependencies = [
  "rustversion",
+]
+
+[[package]]
+name = "arduino-nicla-sense-env"
+version = "0.1.0-beta.10"
+dependencies = [
+ "bytes",
+ "i2c-async",
+ "log",
+ "normfs",
+ "prost",
+ "prost-build",
+ "station_iface",
+ "systime",
+ "tokio",
 ]
 
 [[package]]
@@ -197,6 +227,12 @@ name = "bumpalo"
 version = "3.19.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "46c5e41b57b8bba42a04676d81cb89e9ee8e859a1a66f80a5a72e1cb76b34d43"
+
+[[package]]
+name = "byteorder"
+version = "1.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1fd0f2584146f6f2ef48085050886acf353beff7305ebd1ae69500e27c67f64b"
 
 [[package]]
 name = "bytes"
@@ -811,6 +847,24 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7f24254aa9a54b5c858eaee2f5bccdb46aaf0e486a595ed5fd8f86ba55232a70"
 
 [[package]]
+name = "hikmicro-thermal"
+version = "0.1.0-beta.10"
+dependencies = [
+ "bytes",
+ "libc",
+ "libusb1-sys",
+ "log",
+ "md5",
+ "norm-uvc-sys",
+ "normfs",
+ "prost",
+ "prost-build",
+ "station_iface",
+ "systime",
+ "tokio",
+]
+
+[[package]]
 name = "hkdf"
 version = "0.12.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -957,6 +1011,28 @@ dependencies = [
 ]
 
 [[package]]
+name = "i2c-async"
+version = "0.1.0"
+dependencies = [
+ "bytes",
+ "i2cdev",
+ "libc",
+ "tokio",
+]
+
+[[package]]
+name = "i2cdev"
+version = "0.6.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9b940f7497c4f95b863b21cd34c3737b53a67d80d94cf29055d7f7eeca6ffdb4"
+dependencies = [
+ "bitflags 2.9.4",
+ "byteorder",
+ "libc",
+ "nix 0.26.4",
+]
+
+[[package]]
 name = "icu_collections"
 version = "2.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1064,6 +1140,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "ina226"
+version = "0.1.0-beta.10"
+dependencies = [
+ "bytes",
+ "i2c-async",
+ "log",
+ "normfs",
+ "prost",
+ "prost-build",
+ "station_iface",
+ "systime",
+ "tokio",
+]
+
+[[package]]
 name = "indexmap"
 version = "2.11.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1075,7 +1166,7 @@ dependencies = [
 
 [[package]]
 name = "inferences"
-version = "0.1.0-beta.9"
+version = "0.1.0-beta.10"
 dependencies = [
  "bytes",
  "lazy_static",
@@ -1354,7 +1445,7 @@ dependencies = [
 
 [[package]]
 name = "motors-mirroring"
-version = "0.1.0-beta.9"
+version = "0.1.0-beta.10"
 dependencies = [
  "bytes",
  "log",
@@ -1429,9 +1520,9 @@ dependencies = [
 
 [[package]]
 name = "normfs"
-version = "0.1.0-beta.1"
+version = "0.2.0-beta.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d079a9099b4c75d095aff45be7e64122d66a54d474512bd8096436751477f3ba"
+checksum = "4c17fc1098cd32e7e46bdc97faf12901473352109abe5695a34c68e8328b9c00"
 dependencies = [
  "bytes",
  "fastwebsockets",
@@ -1455,9 +1546,9 @@ dependencies = [
 
 [[package]]
 name = "normfs-cloud"
-version = "0.1.0-beta.1"
+version = "0.2.0-beta.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c4ba7582e95347a0c85673784a9f77868bddba07b71c4ba5a0cbf5e70aa73c57"
+checksum = "d2c02a0a5fc4e4faa68e6e9b898030ffe47ac098907ac55ab12e16c28b2746ed"
 dependencies = [
  "bytes",
  "log",
@@ -1476,14 +1567,14 @@ dependencies = [
 
 [[package]]
 name = "normfs-crypto"
-version = "0.1.0-beta.1"
+version = "0.2.0-beta.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cdd3bc30fa5a9bd70bf3a59b3f07e3d1a5d63dccdc5a9c32ae3ad5c9826fd66b"
+checksum = "1b950026ddf23fa62b6b47e371c0cad1506cc89a52d54e4d99dcc06d73a8707c"
 dependencies = [
  "aes-gcm",
  "bytes",
+ "cc",
  "ed25519-dalek",
- "getrandom 0.2.16",
  "hkdf",
  "normfs-types",
  "rand_chacha 0.3.1",
@@ -1495,11 +1586,12 @@ dependencies = [
 
 [[package]]
 name = "normfs-store"
-version = "0.1.0-beta.1"
+version = "0.2.0-beta.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "05c3e74eb837cf7f7e56726a8d96dfb136be0ad33b78d9ec9238466a05d8f36c"
+checksum = "650ebec3814129ba050ebb50e41ecf04667e4e24bb9d591a472f6d5a905cb51f"
 dependencies = [
  "bytes",
+ "cc",
  "log",
  "lzma-rust2",
  "normfs-crypto",
@@ -1513,9 +1605,9 @@ dependencies = [
 
 [[package]]
 name = "normfs-types"
-version = "0.1.0-beta.1"
+version = "0.2.0-beta.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2e73df6acb76230588f3cd21502f90156b15c8463c96621bf5e0fec815bb12bc"
+checksum = "eb408edfe9cbd15c43573ebb1e5e411d4978b818f8d02548ea710d309de7d248"
 dependencies = [
  "bytes",
  "uintn",
@@ -1523,11 +1615,12 @@ dependencies = [
 
 [[package]]
 name = "normfs-wal"
-version = "0.1.0-beta.1"
+version = "0.2.0-beta.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "796d89309a2b0627db6d7b4e2948b09e9bda93429931f0469c68c41451008034"
+checksum = "156ac9aeb6cef206fad8e030bb72f8a600685f592b461c6f860274ac9d695b01"
 dependencies = [
  "bytes",
+ "cc",
  "log",
  "normfs-types",
  "tokio",
@@ -2379,7 +2472,7 @@ dependencies = [
 
 [[package]]
 name = "st3215"
-version = "0.1.0-beta.9"
+version = "0.1.0-beta.10"
 dependencies = [
  "bytes",
  "log",
@@ -2407,17 +2500,21 @@ checksum = "a2eb9349b6444b326872e140eb1cf5e7c522154d69e7a0ffb0fb81c06b37543f"
 
 [[package]]
 name = "station"
-version = "0.1.0-beta.9"
+version = "0.1.0-beta.10"
 dependencies = [
+ "airgradient-open-air-o-1pst",
  "anyhow",
+ "arduino-nicla-sense-env",
  "bytes",
  "clap",
  "dashmap",
  "env_logger",
  "fastwebsockets",
+ "hikmicro-thermal",
  "http-body-util",
  "hyper",
  "hyper-util",
+ "ina226",
  "inferences",
  "log",
  "mime_guess",
@@ -2435,12 +2532,14 @@ dependencies = [
  "systime",
  "tokio",
  "usbvideo",
+ "vesc-trampa",
+ "victron-smartsolar-mppt",
  "yahboom-dogzilla-lite",
 ]
 
 [[package]]
 name = "station_iface"
-version = "0.1.0-beta.9"
+version = "0.1.0-beta.10"
 dependencies = [
  "humantime-serde",
  "normfs",
@@ -2509,9 +2608,10 @@ dependencies = [
 
 [[package]]
 name = "sysinfod"
-version = "0.1.0-beta.9"
+version = "0.1.0-beta.10"
 dependencies = [
  "bytes",
+ "i2c-async",
  "libc",
  "normfs",
  "prost",
@@ -2545,7 +2645,7 @@ dependencies = [
 
 [[package]]
 name = "systime"
-version = "0.1.0-beta.9"
+version = "0.1.0-beta.10"
 dependencies = [
  "libc",
  "log",
@@ -2849,11 +2949,12 @@ checksum = "1dccffe3ce07af9386bfd29e80c0ab1a8205a2fc34e4bcd40364df902cfa8f3f"
 
 [[package]]
 name = "uintn"
-version = "0.1.0-beta.1"
+version = "0.2.0-beta.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "09ec954b36d0445c911d79d30dc67da58f617a45d0c3025c26c0d0f8133a8b8a"
+checksum = "2ee89e9c4b89d58c0722aeb1869d7dad660b3fdac3abf7559fd305af5ea29121"
 dependencies = [
  "bytes",
+ "cc",
  "dashu-int",
  "hex",
  "walkdir",
@@ -2922,7 +3023,7 @@ checksum = "daf8dba3b7eb870caf1ddeed7bc9d2a049f3cfdfae7cb521b087cc33ae4c49da"
 
 [[package]]
 name = "usbvideo"
-version = "0.1.0-beta.9"
+version = "0.1.0-beta.10"
 dependencies = [
  "bytes",
  "libc",
@@ -2930,6 +3031,7 @@ dependencies = [
  "md5",
  "norm-uvc-sys",
  "normfs",
+ "parking_lot",
  "prost",
  "prost-build",
  "station_iface",
@@ -2980,6 +3082,37 @@ name = "version_check"
 version = "0.9.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0b928f33d975fc6ad9f86c8f283853ad26bdd5b10b7f1542aa2fa15e2289105a"
+
+[[package]]
+name = "vesc-trampa"
+version = "0.1.0-beta.10"
+dependencies = [
+ "bytes",
+ "log",
+ "normfs",
+ "parking_lot",
+ "prost",
+ "prost-build",
+ "station_iface",
+ "systime",
+ "tokio",
+ "tokio-serial",
+]
+
+[[package]]
+name = "victron-smartsolar-mppt"
+version = "0.1.0-beta.10"
+dependencies = [
+ "bytes",
+ "log",
+ "normfs",
+ "prost",
+ "prost-build",
+ "station_iface",
+ "systime",
+ "tokio",
+ "tokio-serial",
+]
 
 [[package]]
 name = "walkdir"

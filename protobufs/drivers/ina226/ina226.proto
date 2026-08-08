@@ -1,0 +1,48 @@
+syntax = "proto3";
+
+package ina226;
+
+enum Ina226SignalType {
+    INA226_SIGNAL_TYPE_UNSPECIFIED = 0;
+    INA226_CONNECTED               = 1;
+    INA226_DISCONNECTED            = 2;
+    INA226_REGISTERS_SNAPSHOT      = 3;
+    INA226_ERROR                   = 4;
+}
+
+message Ina226DeviceInfo {
+    // Register 0x0E on the observed board. Expected value is 0x5449 for TI.
+    uint32 manufacturer_id = 1;
+
+    // Register 0x0F bits 15..4.
+    uint32 die_id = 2;
+
+    // Register 0x0F bits 3..0.
+    uint32 revision_id = 3;
+
+    // Configured shunt resistance in ohms. Used with register 0x01 to derive current.
+    double shunt_resistance_ohms = 4;
+}
+
+message Ina226Device {
+    string id          = 1;
+    uint32 i2c_bus     = 2;
+    uint32 i2c_address = 3;
+
+    Ina226DeviceInfo info = 10;
+}
+
+message RxEnvelope {
+    uint64 monotonic_stamp_ns = 1;
+    uint64 local_stamp_ns     = 2;
+    uint64 app_start_id       = 3;
+
+    Ina226SignalType signal_type = 10;
+    Ina226Device     device      = 11;
+
+    // Exact INA226 dump: ten 16-bit register values, MSB first, in this order:
+    // 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x0E, 0x0F.
+    bytes data = 20;
+
+    string error = 50;
+}

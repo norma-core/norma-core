@@ -4,9 +4,9 @@ Physical operations platform for robotics - real-time data collection, inference
 
 ## 📥 Download
 
-**Latest Release: [v0.1.0-beta.9](https://github.com/norma-core/norma-core/releases/tag/v0.1.0-beta.9)**
+**Latest Release: [v0.1.0-beta.10](https://github.com/norma-core/norma-core/releases/tag/v0.1.0-beta.10)**
 
-Download pre-built binaries from the [releases page](https://github.com/norma-core/norma-core/releases/tag/v0.1.0-beta.9):
+Download pre-built binaries from the [releases page](https://github.com/norma-core/norma-core/releases/tag/v0.1.0-beta.10):
 
 - **macOS ARM64** (Apple Silicon): `station-macos-arm64.dmg` - Desktop app with bundled station binary
 - **macOS ARM64** (Apple Silicon): `station-macos-arm64.zip` - Command-line binaries archive
@@ -122,7 +122,7 @@ asyncio.run(main())
 - **[SO101 Auto-Calibration (Python)](../../examples/so101-autocalibration-py/)** - Motor control workflow with state subscription and command sending
 - **[SO101/ElRobot Remote Teleop (Python)](../../examples/st3215-remote-teleop-py/)** - Mirror motor positions from leader arm to follower arm across stations
 - **[SmolVLA Fine-tune (Python)](../../../ai/smolvla_py/)** - Train and deploy vision-language-action policy on SO101 arm
-- **[Dataset Export Guide](../../../docs/datasets/export-parquet/)** - Export Parquet datasets from station history for ML training
+- **[Dataset Export Guide](../../../../docs/datasets/export-parquet/)** - Export Parquet datasets from station history for ML training
 
 ## ✨ Features
 
@@ -140,27 +140,36 @@ asyncio.run(main())
 
 ## 🗂️ Platform & Feature Support
 
-| Category | Feature | Status |
-|----------|---------|--------|
+| Category | Integration | Status |
+|----------|-------------|--------|
 | **Operating Systems** | macOS | ✅ Supported |
 |  | Linux | ✅ Supported |
 |  | Windows | 📋 Planned |
 |  | FreeBSD | 📋 Planned |
-| **Devices** | [UVC USB Cameras](../../../drivers/usbvideo) | ✅ Done |
-|  | [SO101](../../../drivers/st3215) | ✅ Done |
-|  | [ElRobot](../../../drivers/st3215) | ✅ Done |
+| **Robots & Actuators** | [SO-101 arm / ST3215 arms](../../../drivers/st3215) | ✅ Supported |
+|  | [ElRobot](../../../../hardware/elrobot/) | ✅ Supported |
+|  | [Yahboom DOGZILLA-Lite / Luwu XGO2-Lite family](../../../drivers/yahboom-dogzilla-lite) | ✅ Supported |
 |  | OpenArm | 🚧 Work in Progress |
-|  | Yahboom Dogzilla Lite | 🚧 Work in Progress |
-|  | IP Cameras | 🚧 Work in Progress |
 |  | Waveshare RoArm-M2 | 📋 Planned |
 |  | Yahboom ROSMASTER X3 | 📋 Planned |
+| **Sensors** | [AirGradient Open Air O-1PST](../../../drivers/airgradient-open-air-o-1pst) | ✅ Supported |
+|  | [Arduino Nicla Sense Env](../../../drivers/arduino-nicla-sense-env) | ✅ Linux supported |
+|  | [INA226 power/current monitor](../../../drivers/ina226) | ✅ Linux supported |
+|  | [HIKMICRO thermal sensors](../../../drivers/hikmicro-thermal) | ✅ Linux supported |
+| **Cameras & Devices** | [UVC USB cameras](../../../drivers/usbvideo) | ✅ Supported |
+|  | [Raspberry Pi OV5647 camera](../../../drivers/ov5647) | ✅ Supported |
+|  | [VESC Trampa motor controllers](../../../drivers/vesc-trampa) | ✅ Supported |
+|  | [Victron SmartSolar MPPT](../../../drivers/victron-smartsolar-mppt) | ✅ Supported |
+|  | IP cameras | 🚧 Work in Progress |
 | **Client Libraries** | Golang | 🚧 Work in Progress ([examples available](../../shared/station/)) |
 |  | Python | 🚧 Work in Progress ([examples available](../../shared/station_py/)) |
 |  | JavaScript | 📋 Planned |
 |  | TypeScript | 📋 Planned |
 | **Robotics Frameworks** | ROS | 📋 Planned |
 
-**Want integration for your robot?** [Open an issue](https://github.com/norma-core/norma-core/issues) with your device details!
+Some supported integrations are optional Cargo features when building from source.
+
+**Want integration for your robot, sensor, or device?** [Open an issue](https://github.com/norma-core/norma-core/issues) with your hardware details!
 
 ## 📖 Usage
 
@@ -175,7 +184,9 @@ Usage: station [OPTIONS]
 
 Options:
       --max-queue-disk-size <MAX_QUEUE_DISK_SIZE>
-          Maximum queue disk size in bytes [default: 2147483648]
+          Maximum queue disk size, e.g. `2G`, `512M`, or a plain byte count [default: 2G]
+      --max-memory-usage <MAX_MEMORY_USAGE>
+          Maximum in-memory buffer size, e.g. `256M`, `1.5G`, or a plain byte count [default: 256M]
       --normfs-base-folder <NORMFS_BASE_FOLDER>
           Base folder for normfs storage [default: ./station_data]
   -c, --config <CONFIG>
@@ -206,7 +217,8 @@ station --config my-robot.yaml
 station \
   --config robot.yaml \
   --normfs-base-folder ./data \
-  --max-queue-disk-size 5368709120 \
+  --max-queue-disk-size 5G \
+  --max-memory-usage 256M \
   --tcp 0.0.0.0:8888 \
   --web 0.0.0.0:8889
 ```
@@ -232,8 +244,25 @@ drivers:
   # USB video capture
   usb-video:
     enabled: true
-    resize-target: 224  # Resize shortest dimension to 224px
+    resolution: auto      # Capture format: "auto" or "<width>x<height>", e.g. "1280x720"
+    resize_target: 224    # Resize shortest dimension of stored frames to 224px
+    frame-skip: 0         # Drop N frames after each kept frame; 0 records every frame
+```
 
+`resolution` chooses which camera format to open. With `auto` the best available
+format is picked automatically. When an explicit `<width>x<height>` is requested,
+only formats at exactly that resolution are used — a camera that does not offer
+it logs a warning and is ignored rather than capturing at a different resolution.
+It is independent of `resize_target`, which controls the size of the stored
+frames: you can capture at `1280x720` and store at `224`.
+
+`frame-skip` thins the recorded stream — `frame-skip: 2` drops two frames after
+each frame it keeps, recording one of every three. Skipped frames are discarded
+before any image conversion, so this reduces CPU load. Note that the live camera
+view in `station-viewer` reads the same queue as the recorder, so `frame-skip`
+also thins the live preview by the same factor.
+
+```yaml
 # ML inference integration
 inference:
   - queue-id: "inference/normvla"
@@ -283,4 +312,4 @@ cargo zigbuild --target x86_64-unknown-linux-gnu --release -p station
 
 ## 📖 License
 
-MIT - See [LICENSE](../../LICENSE)
+MIT - See [LICENSE](LICENSE)

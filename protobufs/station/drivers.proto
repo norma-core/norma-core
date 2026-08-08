@@ -12,10 +12,15 @@ enum QueueDataType {
     QDT_ST3215_SERIAL_RX    = 11; // states
     QDT_ST3215_META         = 12; // meta
     QDT_ST3215_INFERENCE    = 13; // inference state
+
+    QDT_VESC_TRAMPA_SERIAL_RX = 14; // board connect/disconnect states
+    QDT_VESC_TRAMPA_SERIAL_TX = 15; // commands
+    QDT_VESC_TRAMPA_INFERENCE = 16; // inference state
     
     QDT_FFMPEG_VIDEO_STREAM_RX = 20; // FFMPEGQueueHeader
     QDT_USB_VIDEO_FRAMES       = 21;
     QDT_INFERENCE_FRAMES       = 22; // inference frames (normvla, etc)
+    QDT_HIKMICRO_THERMAL       = 23; // hikmicro.RxEnvelope
 
     QDT_MOTOR_MIRRORING_MODES = 30;
     QDT_MOTOR_MIRRORING_RX    = 32;
@@ -23,11 +28,21 @@ enum QueueDataType {
     QDT_YAHBOOM_DOGZILLA_LITE_SERIAL_TX = 40; // yahboom_dogzilla_lite.TxEnvelope
     QDT_YAHBOOM_DOGZILLA_LITE_SERIAL_RX = 41; // yahboom_dogzilla_lite.RxEnvelope
     QDT_YAHBOOM_DOGZILLA_LITE_INFERENCE = 42; // yahboom_dogzilla_lite.InferenceState
+
+    QDT_ARDUINO_NICLA_SENSE_ENV_TX = 50; // arduino_nicla_sense_env.TxEnvelope
+    QDT_ARDUINO_NICLA_SENSE_ENV_RX = 51; // arduino_nicla_sense_env.RxEnvelope
+    QDT_INA226_RX                  = 52; // ina226.RxEnvelope
+
+    QDT_AIRGRADIENT_OPEN_AIR_O_1PST_RX = 53; // airgradient_open_air_o_1pst.RxEnvelope
+
+    QDT_VICTRON_SMARTSOLAR_MPPT_RX = 54; // victron_smartsolar_mppt.RxEnvelope
 }
 
 enum StationCommandType {
-    STC_ST3215_COMMAND          = 0; // st3215.Command
-    STC_MOTOR_MIRRORING_COMMAND = 1; // motors_mirroring.Command
-    STC_INFERENCE_TAG_COMMAND   = 2; // inference_tags.Command
-    STC_YAHBOOM_DOGZILLA_LITE_COMMAND        = 3; // yahboom_dogzilla_lite.Command
+    STC_ST3215_COMMAND                = 0; // st3215.Command
+    STC_MOTOR_MIRRORING_COMMAND       = 1; // motors_mirroring.Command
+    STC_INFERENCE_TAG_COMMAND         = 2; // inference_tags.Command
+    STC_YAHBOOM_DOGZILLA_LITE_COMMAND = 3; // yahboom_dogzilla_lite.Command
+    STC_VESC_TRAMPA_COMMAND           = 4; // vesc_trampa.Command
+    STC_ARDUINO_NICLA_SENSE_ENV_COMMAND = 5; // arduino_nicla_sense_env.Command
 }

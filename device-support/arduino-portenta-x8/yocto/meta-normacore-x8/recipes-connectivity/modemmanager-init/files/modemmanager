@@ -1,0 +1,62 @@
+#!/bin/sh
+
+### BEGIN INIT INFO
+# Provides:          modemmanager
+# Required-Start:    $remote_fs dbus
+# Required-Stop:     $remote_fs dbus
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: ModemManager daemon
+### END INIT INFO
+
+PIDFILE=/run/ModemManager.pid
+
+find_daemon() {
+    for p in /usr/sbin/ModemManager /usr/bin/ModemManager /sbin/ModemManager /bin/ModemManager; do
+        [ -x "$p" ] && echo "$p" && return 0
+    done
+    command -v ModemManager 2>/dev/null || true
+}
+
+DAEMON="$(find_daemon)"
+
+case "$1" in
+    start)
+        [ -n "$DAEMON" ] || {
+            echo "ModemManager not found"
+            exit 1
+        }
+
+        mkdir -p /run
+        echo "Starting ModemManager"
+        start-stop-daemon -S -b -m -p "$PIDFILE" -x "$DAEMON"
+        ;;
+
+    stop)
+        echo "Stopping ModemManager"
+        start-stop-daemon -K -p "$PIDFILE" 2>/dev/null || true
+        rm -f "$PIDFILE"
+        ;;
+
+    restart)
+        "$0" stop
+        sleep 1
+        "$0" start
+        ;;
+
+    status)
+        if [ -f "$PIDFILE" ] && kill -0 "$(cat "$PIDFILE")" 2>/dev/null; then
+            echo "ModemManager running"
+            exit 0
+        fi
+        echo "ModemManager not running"
+        exit 3
+        ;;
+
+    *)
+        echo "Usage: $0 {start|stop|restart|status}"
+        exit 1
+        ;;
+esac
+
+exit 0

@@ -25,16 +25,32 @@ export function getQueueType(queueType: drivers.QueueDataType): string | undefin
   switch (queueType) {
     case drivers.QueueDataType.QDT_USB_VIDEO_FRAMES:
       return 'usbvideo';
+    case drivers.QueueDataType.QDT_HIKMICRO_THERMAL:
+      return 'hikmicro-thermal';
     case drivers.QueueDataType.QDT_ST3215_INFERENCE:
       return 'st3215';
     case drivers.QueueDataType.QDT_ST3215_SERIAL_TX:
       return 'st3215tx';
+    case drivers.QueueDataType.QDT_VESC_TRAMPA_INFERENCE:
+      return 'vesc-trampa';
+    case drivers.QueueDataType.QDT_VESC_TRAMPA_SERIAL_RX:
+      return 'vesc-trampa-rx';
+    case drivers.QueueDataType.QDT_VESC_TRAMPA_SERIAL_TX:
+      return 'vesc-trampa-tx';
     case drivers.QueueDataType.QDT_MOTOR_MIRRORING_RX:
       return 'mirroring';
     case drivers.QueueDataType.QDT_SYSTEM:
       return 'sysinfo';
     case drivers.QueueDataType.QDT_YAHBOOM_DOGZILLA_LITE_INFERENCE:
       return 'yahboom_dogzilla_lite';
+    case drivers.QueueDataType.QDT_ARDUINO_NICLA_SENSE_ENV_RX:
+      return 'arduino-nicla-sense-env';
+    case drivers.QueueDataType.QDT_INA226_RX:
+      return 'ina226';
+    case drivers.QueueDataType.QDT_AIRGRADIENT_OPEN_AIR_O_1PST_RX:
+      return 'airgradient-open-air-o-1pst';
+    case drivers.QueueDataType.QDT_VICTRON_SMARTSOLAR_MPPT_RX:
+      return 'victron-smartsolar-mppt';
     default:
       return undefined;
   }

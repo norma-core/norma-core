@@ -1,6 +1,6 @@
+use std::env;
 use std::io::Result;
 use std::path::PathBuf;
-use std::env;
 
 fn main() -> Result<()> {
     let out_dir = PathBuf::from("src/proto");
@@ -40,7 +40,10 @@ fn main() -> Result<()> {
         println!("cargo:rustc-link-lib=framework=Foundation");
 
         // Rerun if the library changes
-        println!("cargo:rerun-if-changed={}", lib_path.join("libavf.a").display());
+        println!(
+            "cargo:rerun-if-changed={}",
+            lib_path.join("libavf.a").display()
+        );
         println!("cargo:rerun-if-changed={}", header_path.display());
     }
 

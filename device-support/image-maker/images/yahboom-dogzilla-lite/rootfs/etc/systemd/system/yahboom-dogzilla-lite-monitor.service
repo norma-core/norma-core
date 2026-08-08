@@ -1,0 +1,32 @@
+[Unit]
+Description=Yahboom Dogzilla Lite monitor
+Requires=systemd-sysusers.service systemd-tmpfiles-setup.service
+Wants=firstboot-setup.service station.service
+After=systemd-sysusers.service systemd-tmpfiles-setup.service firstboot-setup.service station.service NetworkManager.service
+
+[Service]
+Type=simple
+User=station
+Group=station
+SupplementaryGroups=gpio spi netdev
+
+StateDirectory=station
+CacheDirectory=station
+
+Environment=HOME=/var/lib/station
+Environment=UV_CACHE_DIR=/var/cache/station
+Environment=UV_PROJECT_ENVIRONMENT=/var/lib/station/.venv
+Environment=UV_NO_CACHE=0
+Environment=PYTHONPATH=/opt/yahboom-dogzilla-lite-monitor
+
+WorkingDirectory=/opt/yahboom-dogzilla-lite-monitor
+ExecStartPre=/bin/sh -c 'if [ -e "$UV_PROJECT_ENVIRONMENT" ] && { [ ! -x "$UV_PROJECT_ENVIRONMENT/bin/python3" ] || ! "$UV_PROJECT_ENVIRONMENT/bin/python3" -c "import sys" >/dev/null 2>&1; }; then rm -rf "$UV_PROJECT_ENVIRONMENT"; fi'
+ExecStart=/usr/local/bin/uv run --frozen --no-dev --project /opt/yahboom-dogzilla-lite-monitor yahboom-dogzilla-lite-monitor --station-tcp 127.0.0.1:8888 --dogzilla-queue yahboom-dogzilla-lite/inference --system-queue system/rx
+
+Restart=on-failure
+RestartSec=3
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

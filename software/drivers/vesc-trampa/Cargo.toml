@@ -1,0 +1,30 @@
+[package]
+name = "vesc-trampa"
+version.workspace = true
+edition = "2024"
+authors = ["Alex Batsuev <ab@elrobot.eu>"]
+description = "Trampa VESC serial board driver"
+repository = "https://github.com/norma_core/norma_core/"
+license = "MIT OR Apache-2.0"
+keywords = ["vesc", "trampa", "serial", "motor", "robotics"]
+categories = ["hardware-support"]
+
+[features]
+default = []
+
+[dependencies]
+tokio = { workspace = true }
+normfs = { workspace = true }
+systime = { path = "../../station/shared/systime-rs" }
+station_iface = { path = "../../station/shared/station-iface" }
+prost = { workspace = true }
+bytes = { workspace = true }
+log = { workspace = true }
+tokio-serial = { workspace = true }
+parking_lot = { workspace = true }
+
+[lib]
+path = "src/lib.rs"
+
+[build-dependencies]
+prost-build = { workspace = true }

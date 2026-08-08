@@ -1,11 +1,18 @@
 [workspace]
 resolver = "3"
 members = [
+  "shared/i2c-async",
+  "software/drivers/airgradient-open-air-o-1pst",
+  "software/drivers/arduino-nicla-sense-env",
+  "software/drivers/ina226",
   "software/drivers/inferences",
+  "software/drivers/hikmicro-thermal",
   "software/drivers/motors-mirroring",
   "software/drivers/st3215",
   "software/drivers/sysinfod",
   "software/drivers/usbvideo",
+  "software/drivers/vesc-trampa",
+  "software/drivers/victron-smartsolar-mppt",
   "software/drivers/yahboom-dogzilla-lite",
   "software/drivers/ov5647",
   "software/station/bin/station",
@@ -14,10 +21,10 @@ members = [
 ]
 
 [workspace.package]
-version = "0.1.0-beta.9"
+version = "0.1.0-beta.10"
 
 [workspace.dependencies]
-normfs = "0.1.0-beta.1"
+normfs = "0.2.0-beta.1"
 tokio = { version = "1.49", features = ["full"] }
 prost = "0.12"
 prost-build = "0.12"
@@ -25,3 +32,4 @@ bytes = "1.11"
 log = "0.4.28"
 parking_lot = "0.12"
 lazy_static = "1.5"
+tokio-serial = "5.4.5"

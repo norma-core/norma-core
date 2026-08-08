@@ -4,18 +4,23 @@ version.workspace = true
 edition = "2024"
 
 [features]
-default = []
+default = ["arduino", "ina226"]
+arduino = ["dep:arduino-nicla-sense-env"]
+ina226 = ["dep:ina226"]
 ov5647 = ["dep:ov5647"]
 yahboom-dogzilla-lite = ["dep:yahboom-dogzilla-lite"]
 
 [dependencies]
 prost = { workspace = true }
 normfs = { workspace = true, features = ["websocket"] }
-normfs-types = "0.1.0-beta.1"
+normfs-types = "0.2.0-beta.1"
 clap = { version = "4.5", features = ["derive"] }
 tokio = { workspace = true }
 station_iface = { path = "../../shared/station-iface" }
 st3215 = { path = "../../../drivers/st3215" }
+vesc-trampa = { path = "../../../drivers/vesc-trampa" }
+airgradient-open-air-o-1pst = { path = "../../../drivers/airgradient-open-air-o-1pst" }
+victron-smartsolar-mppt = { path = "../../../drivers/victron-smartsolar-mppt" }
 yahboom-dogzilla-lite = { path = "../../../drivers/yahboom-dogzilla-lite", optional = true }
 ov5647 = { path = "../../../drivers/ov5647", optional = true }
 systime = { path = "../../shared/systime-rs" }
@@ -35,6 +40,11 @@ rust-embed = "8.9.0"
 mime_guess = "2.0.5"
 parking_lot = { workspace = true }
 dashmap = "6.1"
+
+[target.'cfg(target_os = "linux")'.dependencies]
+arduino-nicla-sense-env = { path = "../../../drivers/arduino-nicla-sense-env", optional = true }
+hikmicro-thermal = { path = "../../../drivers/hikmicro-thermal" }
+ina226 = { path = "../../../drivers/ina226", optional = true }
 
 [build-dependencies]
 prost-build = { workspace = true }

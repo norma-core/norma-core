@@ -1,0 +1,14 @@
+drivers:
+  st3215:
+    enabled: false
+    motor-current-thresholds:
+      8: 100
+    deadband: 5
+  yahboom-dogzilla-lite:
+    enabled: true
+  ov5647:
+    enabled: true
+  system-info: true
+  usb-video:
+    enabled: true
+inference: []

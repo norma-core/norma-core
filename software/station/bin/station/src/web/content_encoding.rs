@@ -87,10 +87,7 @@ fn parse_accept_encoding(headers: &HeaderMap) -> Vec<EncodingWithQuality> {
 ///
 /// # Returns
 /// The best encoding to use based on client preferences and availability
-pub fn negotiate_encoding(
-    headers: &HeaderMap,
-    available_encodings: &[Encoding],
-) -> Encoding {
+pub fn negotiate_encoding(headers: &HeaderMap, available_encodings: &[Encoding]) -> Encoding {
     let client_prefs = parse_accept_encoding(headers);
 
     // If no Accept-Encoding header or parsing failed, return best available
@@ -122,9 +119,9 @@ pub fn negotiate_encoding(
         }
 
         // Check if encoding was explicitly rejected (q=0)
-        let explicitly_rejected = client_prefs.iter().any(|pref| {
-            matches!(pref.encoding, Some(enc) if enc == available && pref.quality == 0.0)
-        });
+        let explicitly_rejected = client_prefs.iter().any(
+            |pref| matches!(pref.encoding, Some(enc) if enc == available && pref.quality == 0.0),
+        );
 
         if found && !explicitly_rejected && max_quality > 0.0 {
             candidates.push((available, max_quality));
@@ -134,12 +131,12 @@ pub fn negotiate_encoding(
     // Identity is implicitly acceptable unless explicitly rejected
     // If Identity is available and not in candidates, add it with default quality
     if available_encodings.contains(&Encoding::Identity) {
-        let identity_explicitly_mentioned = client_prefs.iter().any(|pref| {
-            matches!(pref.encoding, Some(Encoding::Identity))
-        });
-        let identity_explicitly_rejected = client_prefs.iter().any(|pref| {
-            matches!(pref.encoding, Some(Encoding::Identity)) && pref.quality == 0.0
-        });
+        let identity_explicitly_mentioned = client_prefs
+            .iter()
+            .any(|pref| matches!(pref.encoding, Some(Encoding::Identity)));
+        let identity_explicitly_rejected = client_prefs
+            .iter()
+            .any(|pref| matches!(pref.encoding, Some(Encoding::Identity)) && pref.quality == 0.0);
 
         if !identity_explicitly_mentioned && !identity_explicitly_rejected {
             // Identity is implicitly acceptable with low priority
@@ -181,11 +178,14 @@ fn prefer_best_available(available: &[Encoding]) -> Encoding {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use hyper::header::{HeaderMap, HeaderValue, ACCEPT_ENCODING};
+    use hyper::header::{ACCEPT_ENCODING, HeaderMap, HeaderValue};
 
     fn make_headers(accept_encoding: &str) -> HeaderMap {
         let mut headers = HeaderMap::new();
-        headers.insert(ACCEPT_ENCODING, HeaderValue::from_str(accept_encoding).unwrap());
+        headers.insert(
+            ACCEPT_ENCODING,
+            HeaderValue::from_str(accept_encoding).unwrap(),
+        );
         headers
     }
 

@@ -268,9 +268,20 @@ impl<K: USBCameraDriver> USBVideoManager<K> {
                             );
                         }
 
-                        let formats = converters::filter_and_sort_cameras_formats(
-                            &src_formats
+                        let selection = converters::filter_and_sort_cameras_formats(
+                            &src_formats,
+                            cam_tracker.formats(),
                         );
+
+                        if selection.requested_formats_unavailable {
+                            warn!(
+                                "Camera {}: none of the configured formats are available, ignoring camera",
+                                camera.unique_id,
+                            );
+                            return;
+                        }
+
+                        let formats = selection.formats;
 
                         if formats.is_empty() {
                             warn!("Camera {} has no available formats", camera.unique_id);

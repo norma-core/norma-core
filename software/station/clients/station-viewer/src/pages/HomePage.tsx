@@ -1,16 +1,18 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import Long from 'long';
 import { Tag as TagIcon } from 'lucide-react';
-import { useInferenceState, useConnectionStatsWithUptime, useLatestEntryId, useWakeLock, invalidateTagsCache } from "@/hooks";
-import BusViewer from "@/st3215/BusViewer";
-import YahboomDogzillaLiteDeviceViewer from "@/yahboom_dogzilla_lite/YahboomDogzillaLiteDeviceViewer";
-import AsciiRobot from "@/components/AsciiRobot";
-import TagDialog from "@/components/TagDialog";
-import { copyToClipboard } from "@/api/clipboard-utils";
-import { commandManager } from "@/api/commands";
-import { inference_tags } from "@/api/proto.js";
-import { defaultTag } from "@/utils/tag-phrases";
+import { copyToClipboard } from '@/api/clipboard-utils';
+import { commandManager } from '@/api/commands';
+import { inference_tags } from '@/api/proto.js';
+import AsciiRobot from '@/components/AsciiRobot';
+import ConnectionUptime from '@/components/ConnectionUptime';
+import TagDialog from '@/components/TagDialog';
+import { useConnectionStats, useLiveSnapshot, useWakeLock, invalidateTagsCache } from '@/hooks';
+import LiveDeviceSurface from '@/devices/LiveDeviceSurface';
+import { resolveLiveDevices } from '@/devices/live-registry';
+import CameraSurface from '@/usbvideo/CameraSurface';
 import { getFPSColor } from '@/utils/color-utils';
+import { defaultTag } from '@/utils/tag-phrases';
 
 interface TagDialogState {
   entryId: number | null;
@@ -25,26 +27,30 @@ function formatBytes(bytes: number): string {
   return `${(bytes / Math.pow(k, i)).toFixed(2)} ${sizes[i]}`;
 }
 
-function formatUptime(connectedAt: number | null): string {
-  if (!connectedAt) return 'N/A';
-  const seconds = Math.floor((Date.now() - connectedAt) / 1000);
-  const hours = Math.floor(seconds / 3600);
-  const minutes = Math.floor((seconds % 3600) / 60);
-  const secs = seconds % 60;
-  return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-}
-
 function HomePage() {
   useWakeLock();
-  const inferenceState = useInferenceState();
-  const latestEntryId = useLatestEntryId();
-  const connectionStats = useConnectionStatsWithUptime();
+  const { frame: inferenceState, latestEntryId } = useLiveSnapshot();
+  const connectionStats = useConnectionStats();
   const [copied, setCopied] = useState(false);
   const [tagDialog, setTagDialog] = useState<TagDialogState | null>(null);
   const [isTagSubmitting, setIsTagSubmitting] = useState(false);
   const [tagError, setTagError] = useState<string | null>(null);
-  const hasRobotData = Boolean(inferenceState?.st3215?.data?.buses?.length);
-  const hasYahboomDogzillaLiteData = Boolean(inferenceState?.yahboom_dogzilla_lite?.data?.devices?.length);
+  const liveDevicePlan = useMemo(
+    () => resolveLiveDevices(inferenceState),
+    [inferenceState],
+  );
+  const hasLiveDeviceViews = !liveDevicePlan.isEmpty;
+  const videoSources = inferenceState?.videoQueues ?? [];
+  const hasConnectedArms = Boolean(inferenceState?.st3215?.data.buses?.length);
+  const hasConnectedDog = Boolean(inferenceState?.yahboom_dogzilla_lite?.data.devices?.length);
+  const shouldShowStandaloneCameras = videoSources.length > 0
+    && !hasConnectedArms
+    && !hasConnectedDog;
+  const hasOnlySummaryDeviceViews = liveDevicePlan.views.length > 0
+    && liveDevicePlan.views.every((view) => view.slot === 'summary')
+    && liveDevicePlan.errors.length === 0;
+  const shouldUseCameraSensorLayout = shouldShowStandaloneCameras
+    && hasOnlySummaryDeviceViews;
   const isDesktopApp = window.stationDesktop?.isDesktop === true;
 
   useEffect(() => {
@@ -123,7 +129,7 @@ function HomePage() {
                     }`} aria-label={connectionStats.status}></span>
                   </div>
                 )}
-                {connectionStats.status === 'connected' && inferenceState?.st3215?.data?.buses && inferenceState.st3215.data.buses.length > 0 && (
+                {connectionStats.status === 'connected' && liveDevicePlan.hasRealtimeDevice && (
                   <div className="hidden sm:flex items-center gap-2 px-2 py-1 bg-surface-secondary rounded border border-border-default">
                     <span className="text-text-label text-xs uppercase tracking-wide">FPS</span>
                     <span className={`font-bold text-xs font-mono ${connectionStats.isFpsReady ? getFPSColor(connectionStats.fps) : 'text-text-label'}`}>
@@ -166,7 +172,9 @@ function HomePage() {
                 </div>
                 <div className="flex items-center gap-1.5">
                   <span className="text-text-muted">Uptime:</span>
-                  <span className="text-accent-success font-semibold">{formatUptime(connectionStats.connectedAt)}</span>
+                  <span className="text-accent-success font-semibold">
+                    <ConnectionUptime connectedAt={connectionStats.connectedAt} />
+                  </span>
                 </div>
               </div>
             </>
@@ -185,23 +193,31 @@ function HomePage() {
       )}
       <div className="flex-1 min-h-0 overflow-auto p-4">
         <div className="flex min-h-full w-full flex-col gap-4">
-          {hasYahboomDogzillaLiteData && inferenceState?.yahboom_dogzilla_lite?.data && (
-            <YahboomDogzillaLiteDeviceViewer
-              inferenceState={inferenceState.yahboom_dogzilla_lite.data}
-              videoSources={inferenceState.videoQueues}
-            />
+          {shouldUseCameraSensorLayout ? (
+            <div className="grid w-full gap-4 xl:grid-cols-[minmax(0,2fr)_minmax(20rem,1fr)] xl:items-start">
+              <CameraSurface
+                videoSources={videoSources}
+                desktopAspectRatio
+              />
+              <LiveDeviceSurface
+                plan={liveDevicePlan}
+                summaryLayout="stacked"
+              />
+            </div>
+          ) : (
+            <>
+              {shouldShowStandaloneCameras && (
+                <CameraSurface videoSources={videoSources} />
+              )}
+              {hasLiveDeviceViews && (
+                <LiveDeviceSurface plan={liveDevicePlan} />
+              )}
+            </>
           )}
-          {hasRobotData && inferenceState?.st3215?.data && (
-            <BusViewer
-              inferenceState={inferenceState.st3215.data}
-              videoSources={inferenceState.videoQueues}
-              mirroringState={inferenceState.mirroring?.data.state || undefined}
-            />
-          )}
-          {!hasYahboomDogzillaLiteData && !hasRobotData && (
-          <div className="flex flex-1 min-h-full w-full items-center justify-center rounded-lg border border-dashed border-border-default bg-surface-primary/40 px-6">
-            <AsciiRobot />
-          </div>
+          {!hasLiveDeviceViews && !shouldShowStandaloneCameras && (
+            <div className="flex flex-1 min-h-full w-full items-center justify-center rounded-lg border border-dashed border-border-default bg-surface-primary/40 px-6">
+              <AsciiRobot />
+            </div>
           )}
         </div>
       </div>

@@ -3,10 +3,19 @@ drivers:
     enabled: true
     current-threshold: 100
     deadband: 20
+  vesc-trampa:
+    enabled: true
+    port-baud-rate: 115200
   system-info: true
   usb-video:
     enabled: true
-    resize_target: 224
+    resolution: auto      # "auto" or "<width>x<height>", e.g. "1280x720"
+    resize_target: 224    # Resize shortest dimension of stored frames to 224px
+    frame-skip: 0         # Drop N frames after each kept frame; 0 records every frame
+  hikmicro-thermal:
+    enabled: false
+    frame-timeout: 5s
+    frame-skip: 0         # Drop N frames after each kept frame; 0 records every frame
   yahboom-dogzilla-lite:
     enabled: true
     mode: simulation

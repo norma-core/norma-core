@@ -1,0 +1,59 @@
+#!/bin/sh
+
+### BEGIN INIT INFO
+# Provides:          x8-watchdogd
+# Required-Start:    $remote_fs $network tailscaled
+# Required-Stop:     $remote_fs $network tailscaled
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: Portenta X8 hardware network watchdog daemon
+### END INIT INFO
+
+DAEMON=/usr/sbin/x8-watchdogd
+PIDFILE=/run/x8-watchdogd.pid
+
+case "$1" in
+    start)
+        [ -x "$DAEMON" ] || {
+            echo "x8-watchdogd not found"
+            exit 1
+        }
+
+        if [ -f "$PIDFILE" ] && kill -0 "$(cat "$PIDFILE")" 2>/dev/null; then
+            echo "x8-watchdogd already running"
+            exit 0
+        fi
+
+        mkdir -p /run
+        echo "Starting x8-watchdogd"
+        start-stop-daemon -S -b -m -p "$PIDFILE" -x "$DAEMON"
+        ;;
+
+    stop)
+        echo "Stopping x8-watchdogd; hardware watchdog may remain armed"
+        start-stop-daemon -K -p "$PIDFILE" 2>/dev/null || true
+        rm -f "$PIDFILE"
+        ;;
+
+    restart)
+        "$0" stop
+        sleep 1
+        "$0" start
+        ;;
+
+    status)
+        if [ -f "$PIDFILE" ] && kill -0 "$(cat "$PIDFILE")" 2>/dev/null; then
+            echo "x8-watchdogd running"
+            exit 0
+        fi
+        echo "x8-watchdogd not running"
+        exit 3
+        ;;
+
+    *)
+        echo "Usage: $0 {start|stop|restart|status}"
+        exit 1
+        ;;
+esac
+
+exit 0

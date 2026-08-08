@@ -1,0 +1,90 @@
+esphome:
+  name: airgradient-serial
+
+esp32:
+  board: esp32-c3-devkitm-1
+  framework:
+    type: arduino
+
+# Disable all networking and OTA (Over-The-Air) updates
+# wifi:
+# captive_portal:
+# api:
+# ota:
+
+logger:
+  baud_rate: 115200
+  # Suppress standard INFO logs to keep the serial stream strictly for JSON
+  level: WARN 
+
+# --- HARDWARE BUS MAPPING ---
+uart:
+  # Bus for Plantower PMS5003T
+  - id: uart_pm
+    tx_pin: GPIO21
+    rx_pin: GPIO20
+    baud_rate: 9600
+  
+  # Bus for SenseAir S8
+  - id: uart_co2
+    tx_pin: GPIO1
+    rx_pin: GPIO0
+    baud_rate: 9600
+
+i2c:
+  # Bus for Sensirion SGP41
+  sda: GPIO7
+  scl: GPIO6
+
+# --- SENSOR CONFIGURATIONS ---
+sensor:
+  # 1. Plantower PMS5003T (Particulate Matter, Temp, Humidity)
+  - platform: pmsx003
+    type: PMS5003T
+    uart_id: uart_pm
+    pm_1_0:
+      id: pm1_0
+    pm_2_5:
+      id: pm2_5
+    pm_10_0:
+      id: pm10_0
+    temperature:
+      id: pm_temp
+    humidity:
+      id: pm_hum
+
+  # 2. SenseAir S8 (CO2)
+  - platform: senseair
+    uart_id: uart_co2
+    co2:
+      id: co2_val
+
+  # 3. Sensirion SGP41 (TVOC & NOx)
+  - platform: sgp4x
+    voc:
+      id: voc_val
+    nox:
+      id: nox_val
+    # Feed Plantower temp/humidity into the Gas Index Algorithm
+    compensation:
+      temperature_source: pm_temp
+      humidity_source: pm_hum
+
+# --- JSON SERIAL OUTPUT ---
+interval:
+  - interval: 1s
+    then:
+      - logger.log:
+          level: WARN
+          # Format the output as a clean JSON string
+          format: '{"device_id": "%s", "pm1_0": %.0f, "pm2_5": %.0f, "pm10_0": %.0f, "temp_c": %.1f, "humidity": %.1f, "co2": %.0f, "voc_index": %.0f, "nox_index": %.0f}'
+          args: 
+            - esphome::get_mac_address_pretty().c_str()
+            - id(pm1_0).state
+            - id(pm2_5).state
+            - id(pm10_0).state
+            - id(pm_temp).state
+            - id(pm_hum).state
+            - id(co2_val).state
+            - id(voc_val).state
+            - id(nox_val).state

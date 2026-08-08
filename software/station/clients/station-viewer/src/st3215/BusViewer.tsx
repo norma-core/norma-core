@@ -4,7 +4,7 @@ import BusCard from "./BusCard";
 
 import { FrameEntry } from "../api/frame-parser";
 
-interface BusViewerProps {
+export interface BusViewerProps {
   inferenceState: st3215.IInferenceState;
   videoSources?: FrameEntry<usbvideo.IRxEnvelope>[];
   mirroringState?: motors_mirroring.IInferenceState;

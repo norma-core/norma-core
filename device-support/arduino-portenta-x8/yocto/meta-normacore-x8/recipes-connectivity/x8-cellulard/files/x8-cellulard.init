@@ -1,0 +1,79 @@
+#!/bin/sh
+
+### BEGIN INIT INFO
+# Provides:          x8-cellulard
+# Required-Start:    $remote_fs dbus modemmanager
+# Required-Stop:     $remote_fs dbus modemmanager
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: Portenta X8 cellular supervisor daemon
+### END INIT INFO
+
+CONFIG=/etc/default/x8-cellulard
+DAEMON=/usr/sbin/x8-cellulard
+PIDFILE=/run/x8-cellulard.pid
+
+X8_CELLULARD_EXTERNAL_APN=""
+X8_CELLULARD_SARA_APN=""
+X8_CELLULARD_INTERVAL_SEC="30"
+
+[ -f "$CONFIG" ] && . "$CONFIG"
+
+has_apn() {
+    [ -n "$X8_CELLULARD_EXTERNAL_APN" ] || [ -n "$X8_CELLULARD_SARA_APN" ]
+}
+
+case "$1" in
+    start)
+        [ -x "$DAEMON" ] || {
+            echo "x8-cellulard not found"
+            exit 1
+        }
+
+        if ! has_apn; then
+            echo "x8-cellulard: no APN configured in $CONFIG; not starting"
+            exit 0
+        fi
+
+        mkdir -p /run
+        echo "Starting x8-cellulard"
+
+        set -- --interval-sec "${X8_CELLULARD_INTERVAL_SEC:-30}"
+        if [ -n "$X8_CELLULARD_EXTERNAL_APN" ]; then
+            set -- "$@" --external-apn "$X8_CELLULARD_EXTERNAL_APN"
+        fi
+        if [ -n "$X8_CELLULARD_SARA_APN" ]; then
+            set -- "$@" --sara-apn "$X8_CELLULARD_SARA_APN"
+        fi
+
+        start-stop-daemon -S -b -m -p "$PIDFILE" -x "$DAEMON" -- "$@"
+        ;;
+
+    stop)
+        echo "Stopping x8-cellulard"
+        start-stop-daemon -K -p "$PIDFILE" 2>/dev/null || true
+        rm -f "$PIDFILE"
+        ;;
+
+    restart)
+        "$0" stop
+        sleep 1
+        "$0" start
+        ;;
+
+    status)
+        if [ -f "$PIDFILE" ] && kill -0 "$(cat "$PIDFILE")" 2>/dev/null; then
+            echo "x8-cellulard running"
+            exit 0
+        fi
+        echo "x8-cellulard not running"
+        exit 3
+        ;;
+
+    *)
+        echo "Usage: $0 {start|stop|restart|status}"
+        exit 1
+        ;;
+esac
+
+exit 0

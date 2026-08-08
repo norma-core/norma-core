@@ -30,29 +30,50 @@ function HistoryPage() {
   const timelineControlsRef = useRef<TimelineControlsRef>(null);
 
   const {
-    currentFrame,
     parsedFrame,
     isLoading: isReadingEntry,
     error: entryError,
-    selectFrame: selectFrameData,
-  } = useFrameData();
-
-  useEffect(() => {
-    if (timelineState.currentFrame !== currentFrame) {
-      selectFrameData(timelineState.currentFrame, timelineState.isNavigationImmediate);
-    }
-  }, [timelineState.currentFrame, currentFrame, selectFrameData, timelineState.isNavigationImmediate]);
+  } = useFrameData({
+    frameNumber: timelineState.isLoading || timelineState.error
+      ? null
+      : timelineState.currentFrame,
+    immediate: timelineState.isNavigationImmediate,
+  });
 
   useKeyboardNavigation(timelineActions, timelineState, { gotoInputRef: timelineControlsRef });
 
-  useEffect(() => {
-    webSocketManager.stopUpdating();
-    return () => {
-      webSocketManager.resumeUpdating();
-    };
-  }, []);
+  useEffect(() => webSocketManager.acquireHistoryMode(), []);
 
   const videoQueueCount = parsedFrame?.videoQueues?.length ?? 0;
+  const hikmicroThermalCount = parsedFrame?.hikmicroThermal?.length ?? 0;
+  const st3215Count = parsedFrame?.st3215 ? 1 : 0;
+  const vescTrampaCount = parsedFrame?.vescTrampa ? 1 : 0;
+  const vescTrampaRxCount = parsedFrame?.vescTrampaRx ? 1 : 0;
+  const vescTrampaTxCount = parsedFrame?.vescTrampaTx ? 1 : 0;
+  const mirroringCount = parsedFrame?.mirroring ? 1 : 0;
+  const sysinfoCount = parsedFrame?.sysinfo ? 1 : 0;
+  const arduinoNiclaSenseEnvCount = parsedFrame?.arduinoNiclaSenseEnv ? 1 : 0;
+  const ina226Count = parsedFrame?.ina226?.length ?? 0;
+  const airgradientOpenAirCount = parsedFrame?.airgradientOpenAir?.length ?? 0;
+  const victronSmartSolarCount = parsedFrame?.victronSmartSolar?.length ?? 0;
+  const yahboomDogzillaLiteCount = parsedFrame?.yahboom_dogzilla_lite ? 1 : 0;
+  const normvlaCount = parsedFrame?.normvla ? 1 : 0;
+  const st3215TxCount = parsedFrame?.st3215Tx ? 1 : 0;
+  const vescTrampaIndex = st3215Count;
+  const vescTrampaRxIndex = vescTrampaIndex + vescTrampaCount;
+  const vescTrampaTxIndex = vescTrampaRxIndex + vescTrampaRxCount;
+  const videoQueuesIndex = vescTrampaTxIndex + vescTrampaTxCount;
+  const hikmicroThermalIndex = videoQueuesIndex + videoQueueCount;
+  const mirroringIndex = hikmicroThermalIndex + hikmicroThermalCount;
+  const sysinfoIndex = mirroringIndex + mirroringCount;
+  const arduinoNiclaSenseEnvIndex = sysinfoIndex + sysinfoCount;
+  const ina226Index = arduinoNiclaSenseEnvIndex + arduinoNiclaSenseEnvCount;
+  const airgradientOpenAirIndex = ina226Index + ina226Count;
+  const victronSmartSolarIndex = airgradientOpenAirIndex + airgradientOpenAirCount;
+  const yahboomDogzillaLiteIndex = victronSmartSolarIndex + victronSmartSolarCount;
+  const normvlaIndex = yahboomDogzillaLiteIndex + yahboomDogzillaLiteCount;
+  const st3215TxIndex = normvlaIndex + normvlaCount;
+  const otherEntriesIndex = st3215TxIndex + st3215TxCount;
 
   return (
     <div className="w-full h-full flex flex-col">
@@ -101,7 +122,7 @@ function HistoryPage() {
               {isReadingEntry && (
                 <div className="flex items-center gap-2 text-accent-info">
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-accent-info"></div>
-                  <span>Reading entry {currentFrame.toLocaleString()}...</span>
+                  <span>Reading entry {timelineState.currentFrame.toLocaleString()}...</span>
                 </div>
               )}
 
@@ -167,6 +188,39 @@ function HistoryPage() {
                             </div>
                           </div>
                         )}
+                        {parsedFrame.vescTrampaRx && (
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <span className="text-accent-warning font-mono">{parsedFrame.vescTrampaRx.queueId}</span>
+                              <span className="text-accent-data text-xs px-1 py-0.5 bg-accent-data/10 rounded">VESC</span>
+                            </div>
+                            <div className="text-text-label font-mono">
+                              {formatPtrBytes(parsedFrame.vescTrampaRx.ptr)}
+                            </div>
+                          </div>
+                        )}
+                        {parsedFrame.vescTrampa && (
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <span className="text-accent-warning font-mono">{parsedFrame.vescTrampa.queueId}</span>
+                              <span className="text-accent-data text-xs px-1 py-0.5 bg-accent-data/10 rounded">VESC STATE</span>
+                            </div>
+                            <div className="text-text-label font-mono">
+                              {formatPtrBytes(parsedFrame.vescTrampa.ptr)}
+                            </div>
+                          </div>
+                        )}
+                        {parsedFrame.vescTrampaTx && (
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <span className="text-accent-warning font-mono">{parsedFrame.vescTrampaTx.queueId}</span>
+                              <span className="text-accent-data text-xs px-1 py-0.5 bg-accent-data/10 rounded">VESC TX</span>
+                            </div>
+                            <div className="text-text-label font-mono">
+                              {formatPtrBytes(parsedFrame.vescTrampaTx.ptr)}
+                            </div>
+                          </div>
+                        )}
                         {parsedFrame.videoQueues?.map((video) => (
                           <div key={video.queueId} className="flex items-center justify-between">
                             <div className="flex items-center gap-3">
@@ -175,6 +229,17 @@ function HistoryPage() {
                             </div>
                             <div className="text-text-label font-mono">
                               {formatPtrBytes(video.ptr)}
+                            </div>
+                          </div>
+                        ))}
+                        {parsedFrame.hikmicroThermal?.map((entry) => (
+                          <div key={entry.queueId} className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <span className="text-accent-warning font-mono">{entry.queueId}</span>
+                              <span className="text-accent-warning text-xs px-1 py-0.5 bg-accent-warning/10 rounded">HIKMICRO</span>
+                            </div>
+                            <div className="text-text-label font-mono">
+                              {formatPtrBytes(entry.ptr)}
                             </div>
                           </div>
                         ))}
@@ -211,6 +276,39 @@ function HistoryPage() {
                             </div>
                           </div>
                         )}
+                        {parsedFrame.arduinoNiclaSenseEnv && (
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <span className="text-accent-warning font-mono">{parsedFrame.arduinoNiclaSenseEnv.queueId}</span>
+                              <span className="text-accent-success text-xs px-1 py-0.5 bg-accent-success/10 rounded">NICLA ENV</span>
+                            </div>
+                            <div className="text-text-label font-mono">
+                              {formatPtrBytes(parsedFrame.arduinoNiclaSenseEnv.ptr)}
+                            </div>
+                          </div>
+                        )}
+                        {parsedFrame.ina226?.map((entry) => (
+                          <div key={entry.queueId} className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <span className="text-accent-warning font-mono">{entry.queueId}</span>
+                              <span className="text-accent-warning text-xs px-1 py-0.5 bg-accent-warning/10 rounded">INA226</span>
+                            </div>
+                            <div className="text-text-label font-mono">
+                              {formatPtrBytes(entry.ptr)}
+                            </div>
+                          </div>
+                        ))}
+                        {parsedFrame.victronSmartSolar?.map((entry) => (
+                          <div key={entry.queueId} className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <span className="text-accent-warning font-mono">{entry.queueId}</span>
+                              <span className="text-accent-success text-xs px-1 py-0.5 bg-accent-success/10 rounded">VICTRON MPPT</span>
+                            </div>
+                            <div className="text-text-label font-mono">
+                              {formatPtrBytes(entry.ptr)}
+                            </div>
+                          </div>
+                        ))}
                         {parsedFrame.yahboom_dogzilla_lite && (
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3">
@@ -265,6 +363,51 @@ function HistoryPage() {
                       dataQueueId={parsedFrame.st3215.queueId}
                     />
                   )}
+                  {parsedFrame.vescTrampa && (
+                    <HistoryElement
+                      element={{
+                        queueId: parsedFrame.vescTrampa.queueId,
+                        entryId: parsedFrame.vescTrampa.ptr,
+                        data: parsedFrame.vescTrampa.data,
+                        rawData: parsedFrame.vescTrampa.rawData ?? null,
+                        type: getQueueType(parsedFrame.vescTrampa.queueType),
+                        queueType: parsedFrame.vescTrampa.queueType,
+                      }}
+                      index={vescTrampaIndex}
+                      dataQueueType="vesc-trampa"
+                      dataQueueId={parsedFrame.vescTrampa.queueId}
+                    />
+                  )}
+                  {parsedFrame.vescTrampaRx && (
+                    <HistoryElement
+                      element={{
+                        queueId: parsedFrame.vescTrampaRx.queueId,
+                        entryId: parsedFrame.vescTrampaRx.ptr,
+                        data: parsedFrame.vescTrampaRx.data,
+                        rawData: parsedFrame.vescTrampaRx.rawData ?? null,
+                        type: getQueueType(parsedFrame.vescTrampaRx.queueType),
+                        queueType: parsedFrame.vescTrampaRx.queueType,
+                      }}
+                      index={vescTrampaRxIndex}
+                      dataQueueType="vesc-trampa-rx"
+                      dataQueueId={parsedFrame.vescTrampaRx.queueId}
+                    />
+                  )}
+                  {parsedFrame.vescTrampaTx && (
+                    <HistoryElement
+                      element={{
+                        queueId: parsedFrame.vescTrampaTx.queueId,
+                        entryId: parsedFrame.vescTrampaTx.ptr,
+                        data: parsedFrame.vescTrampaTx.data,
+                        rawData: parsedFrame.vescTrampaTx.rawData ?? null,
+                        type: getQueueType(parsedFrame.vescTrampaTx.queueType),
+                        queueType: parsedFrame.vescTrampaTx.queueType,
+                      }}
+                      index={vescTrampaTxIndex}
+                      dataQueueType="vesc-trampa-tx"
+                      dataQueueId={parsedFrame.vescTrampaTx.queueId}
+                    />
+                  )}
                   {parsedFrame.videoQueues?.map((video, idx) => (
                     <HistoryElement
                       key={video.queueId}
@@ -276,9 +419,25 @@ function HistoryPage() {
                         type: getQueueType(video.queueType),
                         queueType: video.queueType,
                       }}
-                      index={idx + 1}
+                      index={videoQueuesIndex + idx}
                       dataQueueType="usbvideo"
                       dataQueueId={video.queueId}
+                    />
+                  ))}
+                  {parsedFrame.hikmicroThermal?.map((entry, idx) => (
+                    <HistoryElement
+                      key={entry.queueId}
+                      element={{
+                        queueId: entry.queueId,
+                        entryId: entry.ptr,
+                        data: entry.data,
+                        rawData: entry.rawData ?? null,
+                        type: getQueueType(entry.queueType),
+                        queueType: entry.queueType,
+                      }}
+                      index={hikmicroThermalIndex + idx}
+                      dataQueueType="hikmicro-thermal"
+                      dataQueueId={entry.queueId}
                     />
                   ))}
                   {parsedFrame.mirroring && (
@@ -291,7 +450,7 @@ function HistoryPage() {
                         type: getQueueType(parsedFrame.mirroring.queueType),
                         queueType: parsedFrame.mirroring.queueType,
                       }}
-                      index={videoQueueCount + 1}
+                      index={mirroringIndex}
                       dataQueueType="mirroring"
                       dataQueueId={parsedFrame.mirroring.queueId}
                     />
@@ -306,11 +465,74 @@ function HistoryPage() {
                         type: getQueueType(parsedFrame.sysinfo.queueType),
                         queueType: parsedFrame.sysinfo.queueType,
                       }}
-                      index={videoQueueCount + (parsedFrame.mirroring ? 2 : 1)}
+                      index={sysinfoIndex}
                       dataQueueType="sysinfo"
                       dataQueueId={parsedFrame.sysinfo.queueId}
                     />
                   )}
+                  {parsedFrame.arduinoNiclaSenseEnv && (
+                    <HistoryElement
+                      element={{
+                        queueId: parsedFrame.arduinoNiclaSenseEnv.queueId,
+                        entryId: parsedFrame.arduinoNiclaSenseEnv.ptr,
+                        data: parsedFrame.arduinoNiclaSenseEnv.data,
+                        rawData: parsedFrame.arduinoNiclaSenseEnv.rawData ?? null,
+                        type: getQueueType(parsedFrame.arduinoNiclaSenseEnv.queueType),
+                        queueType: parsedFrame.arduinoNiclaSenseEnv.queueType,
+                      }}
+                      index={arduinoNiclaSenseEnvIndex}
+                      dataQueueType="arduino-nicla-sense-env"
+                      dataQueueId={parsedFrame.arduinoNiclaSenseEnv.queueId}
+                    />
+                  )}
+                  {parsedFrame.ina226?.map((entry, idx) => (
+                    <HistoryElement
+                      key={entry.queueId}
+                      element={{
+                        queueId: entry.queueId,
+                        entryId: entry.ptr,
+                        data: entry.data,
+                        rawData: entry.rawData ?? null,
+                        type: getQueueType(entry.queueType),
+                        queueType: entry.queueType,
+                      }}
+                      index={ina226Index + idx}
+                      dataQueueType="ina226"
+                      dataQueueId={entry.queueId}
+                    />
+                  ))}
+                  {parsedFrame.airgradientOpenAir?.map((entry, idx) => (
+                    <HistoryElement
+                      key={entry.queueId}
+                      element={{
+                        queueId: entry.queueId,
+                        entryId: entry.ptr,
+                        data: entry.data,
+                        rawData: entry.rawData ?? null,
+                        type: getQueueType(entry.queueType),
+                        queueType: entry.queueType,
+                      }}
+                      index={airgradientOpenAirIndex + idx}
+                      dataQueueType="airgradient-open-air-o-1pst"
+                      dataQueueId={entry.queueId}
+                    />
+                  ))}
+                  {parsedFrame.victronSmartSolar?.map((entry, idx) => (
+                    <HistoryElement
+                      key={entry.queueId}
+                      element={{
+                        queueId: entry.queueId,
+                        entryId: entry.ptr,
+                        data: entry.data,
+                        rawData: entry.rawData ?? null,
+                        type: getQueueType(entry.queueType),
+                        queueType: entry.queueType,
+                      }}
+                      index={victronSmartSolarIndex + idx}
+                      dataQueueType="victron-smartsolar-mppt"
+                      dataQueueId={entry.queueId}
+                    />
+                  ))}
                   {parsedFrame.yahboom_dogzilla_lite && (
                     <HistoryElement
                       element={{
@@ -321,7 +543,7 @@ function HistoryPage() {
                         type: getQueueType(parsedFrame.yahboom_dogzilla_lite.queueType),
                         queueType: parsedFrame.yahboom_dogzilla_lite.queueType,
                       }}
-                      index={videoQueueCount + (parsedFrame.mirroring ? 2 : 1) + (parsedFrame.sysinfo ? 1 : 0)}
+                      index={yahboomDogzillaLiteIndex}
                       dataQueueType="yahboom-dogzilla-lite"
                       dataQueueId={parsedFrame.yahboom_dogzilla_lite.queueId}
                     />
@@ -336,7 +558,7 @@ function HistoryPage() {
                         type: 'normvla',
                         queueType: parsedFrame.normvla.queueType,
                       }}
-                      index={videoQueueCount + (parsedFrame.mirroring ? 2 : 1) + (parsedFrame.sysinfo ? 1 : 0) + (parsedFrame.yahboom_dogzilla_lite ? 1 : 0)}
+                      index={normvlaIndex}
                       dataQueueType="normvla"
                       dataQueueId={parsedFrame.normvla.queueId}
                     />
@@ -351,7 +573,7 @@ function HistoryPage() {
                         type: 'st3215tx',
                         queueType: parsedFrame.st3215Tx.queueType,
                       }}
-                      index={videoQueueCount + (parsedFrame.mirroring ? 2 : 1) + (parsedFrame.sysinfo ? 1 : 0) + (parsedFrame.yahboom_dogzilla_lite ? 1 : 0) + (parsedFrame.normvla ? 1 : 0)}
+                      index={st3215TxIndex}
                       dataQueueType="st3215tx"
                       dataQueueId={parsedFrame.st3215Tx.queueId}
                     />
@@ -366,7 +588,7 @@ function HistoryPage() {
                         rawData: entry.data,
                         type: undefined,
                       }}
-                      index={videoQueueCount + (parsedFrame.mirroring ? 2 : 1) + (parsedFrame.sysinfo ? 1 : 0) + (parsedFrame.yahboom_dogzilla_lite ? 1 : 0) + (parsedFrame.normvla ? 1 : 0) + (parsedFrame.st3215Tx ? 1 : 0) + idx}
+                      index={otherEntriesIndex + idx}
                       dataQueueType="other"
                       dataQueueId={queueId}
                     />
