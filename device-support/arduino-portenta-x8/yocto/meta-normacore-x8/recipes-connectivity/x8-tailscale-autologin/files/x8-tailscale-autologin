@@ -1,0 +1,165 @@
+#!/bin/sh
+
+### BEGIN INIT INFO
+# Provides:          x8-tailscale-autologin
+# Required-Start:    $network tailscaled
+# Required-Stop:
+# Default-Start:     2 3 4 5
+# Default-Stop:
+# Short-Description: First-boot Tailscale authentication
+### END INIT INFO
+
+CONFIG=/etc/default/x8-tailscale-autologin
+DONE=/var/lib/tailscale/x8-autologin.done
+LOG=/var/log/x8-tailscale-autologin.log
+PIDFILE=/run/x8-tailscale-autologin.pid
+RETRY_DELAY_SEC=30
+
+X8_TAILSCALE_AUTHKEY=""
+X8_TAILSCALE_LOGIN_SERVER=""
+X8_TAILSCALE_HOSTNAME=""
+X8_TAILSCALE_EXTRA_ARGS=""
+
+[ -f "$CONFIG" ] && . "$CONFIG"
+
+log() {
+    mkdir -p /var/log
+    echo "$(date '+%Y-%m-%d %H:%M:%S') x8-tailscale-autologin: $*" >> "$LOG"
+}
+
+disable_service() {
+    update-rc.d -f x8-tailscale-autologin remove >/dev/null 2>&1 || true
+}
+
+already_authenticated() {
+    tailscale status >/dev/null 2>&1
+}
+
+wait_for_tailscaled() {
+    i=0
+    while [ "$i" -lt 60 ]; do
+        if tailscale status >/dev/null 2>&1; then
+            return 0
+        fi
+        if tailscale status 2>&1 | grep -qi "Logged out"; then
+            return 0
+        fi
+        sleep 2
+        i=$((i + 1))
+    done
+    return 1
+}
+
+run_worker() {
+    if [ -f "$DONE" ]; then
+        disable_service
+        return 0
+    fi
+
+    if [ -z "$X8_TAILSCALE_AUTHKEY" ]; then
+        log "no auth key configured; disabling autologin"
+        mkdir -p "$(dirname "$DONE")"
+        echo "disabled: no auth key" > "$DONE"
+        disable_service
+        return 0
+    fi
+
+    while :; do
+        if [ -f "$DONE" ]; then
+            disable_service
+            return 0
+        fi
+
+        if already_authenticated; then
+            tailscale set --accept-dns=false >> "$LOG" 2>&1 || true
+            log "already authenticated; disabling autologin"
+            mkdir -p "$(dirname "$DONE")"
+            echo "already authenticated: $(date -Iseconds)" > "$DONE"
+            disable_service
+            return 0
+        fi
+
+        if ! wait_for_tailscaled; then
+            log "tailscaled did not become ready; retrying in ${RETRY_DELAY_SEC}s"
+            sleep "$RETRY_DELAY_SEC"
+            continue
+        fi
+
+        set -- up --authkey="$X8_TAILSCALE_AUTHKEY" --accept-dns=false
+
+        if [ -n "$X8_TAILSCALE_LOGIN_SERVER" ]; then
+            set -- "$@" --login-server="$X8_TAILSCALE_LOGIN_SERVER"
+        fi
+
+        if [ -n "$X8_TAILSCALE_HOSTNAME" ]; then
+            set -- "$@" --hostname="$X8_TAILSCALE_HOSTNAME"
+        fi
+
+        if [ -n "$X8_TAILSCALE_EXTRA_ARGS" ]; then
+            # shellcheck disable=SC2086
+            set -- "$@" $X8_TAILSCALE_EXTRA_ARGS
+        fi
+
+        log "running tailscale up"
+        if tailscale "$@" >> "$LOG" 2>&1; then
+            mkdir -p "$(dirname "$DONE")"
+            echo "authenticated: $(date -Iseconds)" > "$DONE"
+            disable_service
+            log "authenticated successfully; autologin disabled"
+            return 0
+        fi
+
+        log "tailscale up failed; retrying in ${RETRY_DELAY_SEC}s"
+        sleep "$RETRY_DELAY_SEC"
+    done
+}
+
+case "$1" in
+    start)
+        mkdir -p /run
+        if [ -f "$DONE" ]; then
+            disable_service
+            exit 0
+        fi
+
+        if [ -f "$PIDFILE" ] && kill -0 "$(cat "$PIDFILE")" 2>/dev/null; then
+            log "worker already running"
+            exit 0
+        fi
+
+        log "starting worker"
+        start-stop-daemon -S -b -m -p "$PIDFILE" -x "$0" -- run
+        ;;
+
+    run)
+        run_worker
+        ;;
+
+    stop)
+        if [ -f "$PIDFILE" ]; then
+            start-stop-daemon -K -p "$PIDFILE" 2>/dev/null || true
+            rm -f "$PIDFILE"
+        fi
+        exit 0
+        ;;
+
+    restart)
+        "$0" start
+        ;;
+
+    status)
+        if [ -f "$DONE" ]; then
+            echo "x8-tailscale-autologin complete"
+            exit 0
+        fi
+        echo "x8-tailscale-autologin pending"
+        exit 3
+        ;;
+
+    *)
+        echo "Usage: $0 {start|stop|restart|status}"
+        exit 1
+        ;;
+esac
+
+exit 0

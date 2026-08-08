@@ -11,6 +11,7 @@
 
 typedef struct x8_gpio_power_modem {
     struct gpiod_chip *chip;
+    char *chip_path;
     struct gpiod_line_request *request;
     bool have_last_values;
     bool logged_initial_values;
