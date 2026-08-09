@@ -108,10 +108,12 @@ function HistoryPage() {
         {!timelineState.isLoading && !timelineState.error && (
           <>
             <Timeline state={timelineState} actions={timelineActions} startups={startups} tags={tags} />
-            <div className="mt-3">
-              <TimelineControls ref={timelineControlsRef} state={timelineState} actions={timelineActions} />
+            <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="max-w-full overflow-x-auto pb-1">
+                <TimelineControls ref={timelineControlsRef} state={timelineState} actions={timelineActions} />
+              </div>
+              <DatasetExportHelper tags={tags} />
             </div>
-            <DatasetExportHelper tags={tags} />
           </>
         )}
 

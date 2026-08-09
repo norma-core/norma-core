@@ -184,6 +184,50 @@ body {
   50% { opacity: 0; }
 }
 
+@keyframes dataset-export-enter {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes dataset-export-backdrop-enter {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.dataset-export-dialog[open] > form {
+  animation: dataset-export-enter 160ms ease-out;
+}
+
+.dataset-export-dialog[open]::backdrop {
+  animation: dataset-export-backdrop-enter 140ms ease-out;
+}
+
+@media (min-width: 640px) {
+  @keyframes dataset-export-enter {
+    from {
+      opacity: 0;
+      transform: translateY(8px) scale(0.985);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dataset-export-dialog[open] > form,
+  .dataset-export-dialog[open]::backdrop {
+    animation: none;
+  }
+}
+
 .logo-first-load {
   animation: logo-pulse 1.2s ease-in-out forwards;
 }

@@ -21,7 +21,7 @@ describe('DatasetExportHelper', () => {
     vi.unstubAllGlobals();
   });
 
-  it('uses the first and last tags as the initial export bounds', async () => {
+  it('opens on demand and uses the first and last tags as the initial export bounds', async () => {
     const container = document.createElement('div');
     document.body.append(container);
     root = createRoot(container);
@@ -35,7 +35,19 @@ describe('DatasetExportHelper', () => {
       }));
     });
 
-    const taskInput = container.querySelector<HTMLInputElement>(
+    expect(container.querySelector('dialog')).toBeNull();
+
+    const trigger = container.querySelector<HTMLButtonElement>('button[aria-haspopup="dialog"]');
+    expect(trigger?.textContent).toContain('Export dataset');
+
+    await act(async () => {
+      trigger?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    });
+
+    const dialog = container.querySelector<HTMLDialogElement>('dialog');
+    expect(dialog?.open).toBe(true);
+
+    const taskInput = dialog?.querySelector<HTMLInputElement>(
       'input[placeholder="put the cube inside box"]',
     );
     expect(taskInput).not.toBeNull();
@@ -49,9 +61,14 @@ describe('DatasetExportHelper', () => {
       taskInput?.dispatchEvent(new Event('input', { bubbles: true }));
     });
 
-    const command = container.querySelector('pre')?.textContent;
+    const command = dialog?.querySelector('pre')?.textContent;
     expect(command).toContain('-from 18979274');
     expect(command).toContain('-to 22445334');
     expect(command).toContain("-task 'put the cube inside box'");
+
+    await act(async () => {
+      dialog?.dispatchEvent(new Event('cancel', { cancelable: true }));
+    });
+    expect(container.querySelector('dialog')).toBeNull();
   });
 });
