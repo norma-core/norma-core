@@ -2,15 +2,16 @@ import { useEffect, useState } from 'react';
 import Long from 'long';
 import webSocketManager from '@/api/websocket';
 import { normfs, inference_tags } from '@/api/proto.js';
+import {
+  resolveInferenceTagEvents,
+  type InferenceTagEvent,
+  type TagMarker,
+} from '@/utils/inference-tags';
+
+export type { TagMarker } from '@/utils/inference-tags';
 
 const TAGS_QUEUE = 'inference-tags/rx';
 const MAX_TAGS = 1000;
-
-export interface TagMarker {
-  frame: number;
-  tag: string;
-  removed: boolean;
-}
 
 let cachedTags: Promise<TagMarker[]> | null = null;
 
@@ -24,7 +25,7 @@ function fetchTags(): Promise<TagMarker[]> {
       MAX_TAGS,
     );
 
-    const tags: TagMarker[] = [];
+    const events: InferenceTagEvent[] = [];
 
     const onData = (event: Event) => {
       const readResponse = (event as CustomEvent).detail as normfs.IReadResponse;
@@ -36,7 +37,7 @@ function fetchTags(): Promise<TagMarker[]> {
         const envelope = inference_tags.RxEnvelope.decode(data);
         if (!envelope.inferenceQueuePtr || envelope.inferenceQueuePtr.length === 0) return;
         const frame = Long.fromBytesLE(Array.from(envelope.inferenceQueuePtr)).toNumber();
-        tags.push({
+        events.push({
           frame,
           tag: envelope.tag || '',
           removed: envelope.type === inference_tags.CommandType.CT_REMOVE_TAG,
@@ -48,7 +49,7 @@ function fetchTags(): Promise<TagMarker[]> {
 
     const onEnd = () => {
       cleanup();
-      resolve(tags);
+      resolve(resolveInferenceTagEvents(events));
     };
 
     const onError = (event: Event) => {

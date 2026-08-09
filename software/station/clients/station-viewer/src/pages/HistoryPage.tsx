@@ -3,6 +3,7 @@ import Long from 'long';
 import webSocketManager from '@/api/websocket';
 import { getQueueType } from '@/api/queue-utils';
 import { formatPtrBytes } from '@/utils/format-bytes';
+import DatasetExportHelper from '@/components/history/DatasetExportHelper';
 import HistoryElement from '@/components/history/HistoryElement';
 import Timeline from '@/components/Timeline';
 import TimelineControls from '@/components/TimelineControls';
@@ -110,6 +111,7 @@ function HistoryPage() {
             <div className="mt-3">
               <TimelineControls ref={timelineControlsRef} state={timelineState} actions={timelineActions} />
             </div>
+            <DatasetExportHelper tags={tags} />
           </>
         )}
 
