@@ -1,52 +1,22 @@
-import { airgradient_open_air_o_1pst, arduino_nicla_sense_env, hikmicro, usbvideo, frame, st3215, motors_mirroring, sysinfo, yahboom_dogzilla_lite, normvla, ina226, victron_smartsolar_mppt } from '@/api/proto.js';
+import type { frame } from '@/api/proto.js';
 import { serverToLocal } from '@/api/timestamp-utils';
 
-type ParsedHistoryData =
-  | usbvideo.IRxEnvelope
-  | hikmicro.IRxEnvelope
-  | st3215.IInferenceState
-  | motors_mirroring.IRxEnvelope
-  | sysinfo.IEnvelope
-  | arduino_nicla_sense_env.IRxEnvelope
-  | ina226.IRxEnvelope
-  | airgradient_open_air_o_1pst.IRxEnvelope
-  | yahboom_dogzilla_lite.IInferenceState
-  | victron_smartsolar_mppt.IRxEnvelope
-  | normvla.IFrame;
-
-export function formatBytes(bytes: Uint8Array, maxBytes: number = 256): string {
-  if (!bytes) return '';
-  return Array.from(bytes.slice(0, maxBytes))
-    .map(byte => byte.toString(16).padStart(2, '0'))
-    .join(' ');
+export function formatBytes(bytes: Uint8Array, maxBytes = 256): string {
+  return Array.from(bytes.slice(0, maxBytes), (byte) => byte.toString(16).padStart(2, '0')).join(' ');
 }
 
-export function formatBytesAsText(bytes: Uint8Array, maxBytes: number = 64): string {
-  return Array.from(bytes.slice(0, maxBytes))
-    .map(byte => (byte >= 32 && byte <= 126) ? String.fromCharCode(byte) : '.')
-    .join('');
-}
-
-export function formatBytesAsHexdump(bytes: Uint8Array): string {
-  if (!bytes || bytes.length === 0) return '';
-  const bytesPerRow = 16;
-  const header = ' '.repeat(8) + '  ' + Array.from({ length: bytesPerRow }, (_, i) => i.toString(16).padStart(2, '0')).join(' ');
-  const lines = [header];
-  for (let i = 0; i < bytes.length; i += bytesPerRow) {
-    const chunk = bytes.slice(i, i + bytesPerRow);
-    const address = i.toString(16).padStart(8, '0');
-    const hex = Array.from(chunk).map(b => b.toString(16).padStart(2, '0')).join(' ');
-    lines.push(`${address}  ${hex}`);
-  }
-  return `\n${lines.join('\n')}\n`;
+export function formatBytesAsText(bytes: Uint8Array, maxBytes = 64): string {
+  return Array.from(
+    bytes.slice(0, maxBytes),
+    (byte) => (byte >= 32 && byte <= 126 ? String.fromCharCode(byte) : '.'),
+  ).join('');
 }
 
 export function formatTimestamp(stamp: frame.IFrameStamp): string {
   try {
     if (stamp.localStampNs) {
       const localTime = serverToLocal(stamp.monotonicStampNs || 0);
-      const localTimeNumber = typeof localTime === 'number' ? localTime : Number(localTime);
-      return new Date(localTimeNumber / 1000000).toISOString();
+      return new Date(Number(localTime) / 1_000_000).toISOString();
     }
     return 'No timestamp';
   } catch {
@@ -56,261 +26,10 @@ export function formatTimestamp(stamp: frame.IFrameStamp): string {
 
 export function createJpegBlobUrl(frameData: Uint8Array): string | null {
   try {
-    const newData = new Uint8Array(frameData);
-    const blob = new Blob([newData], { type: 'image/jpeg' });
+    const blob = new Blob([new Uint8Array(frameData)], { type: 'image/jpeg' });
     return URL.createObjectURL(blob);
   } catch {
     console.error('Failed to create JPEG blob');
-    return null;
-  }
-}
-
-export function createCroppedJson(data: usbvideo.RxEnvelope): string {
-  try {
-    const plainObject = usbvideo.RxEnvelope.toObject(data, {
-        longs: String,
-        enums: String,
-        bytes: String,
-        defaults: true
-      });
-
-    const croppedObject = { ...plainObject };
-
-    if (croppedObject.frames) {
-      if (croppedObject.frames.framesData && Array.isArray(croppedObject.frames.framesData)) {
-        croppedObject.frames.framesData = croppedObject.frames.framesData.map((frameData: string, idx: number) => {
-          if (typeof frameData === 'string' && frameData.length > 100) {
-            return `[Frame ${idx + 1}: ${frameData.length} bytes] ${frameData.substring(0, 50)}...`;
-          }
-          return frameData;
-        });
-      }
-
-      if (croppedObject.frames.linearData && typeof croppedObject.frames.linearData === 'string' && croppedObject.frames.linearData.length > 100) {
-        croppedObject.frames.linearData = `[${croppedObject.frames.linearData.length} bytes] ${croppedObject.frames.linearData.substring(0, 50)}...`;
-      }
-    }
-
-    return JSON.stringify(croppedObject, null, 2);
-  } catch (error) {
-    return `Error creating JSON: ${error instanceof Error ? error.message : 'Unknown error'}`;
-  }
-}
-
-function cropString(value: unknown, label: string): unknown {
-  if (typeof value === 'string' && value.length > 100) {
-    return `[${label}: ${value.length} chars] ${value.substring(0, 50)}...`;
-  }
-  return value;
-}
-
-export function createCroppedHikmicroJson(data: hikmicro.RxEnvelope): string {
-  try {
-    const plainObject = hikmicro.RxEnvelope.toObject(data, {
-      longs: String,
-      enums: String,
-      bytes: String,
-      defaults: true
-    }) as Record<string, unknown>;
-
-    const deviceInfo = plainObject.deviceInfo as Record<string, unknown> | undefined;
-    const calibration = deviceInfo?.calibration as Record<string, unknown> | undefined;
-    if (calibration) {
-      calibration.container = cropString(calibration.container, 'calibration container');
-      const chunks = calibration.chunks;
-      if (Array.isArray(chunks)) {
-        calibration.chunks = chunks.map((chunk, idx) => {
-          if (!chunk || typeof chunk !== 'object') {
-            return chunk;
-          }
-          const cropped = { ...(chunk as Record<string, unknown>) };
-          cropped.data = cropString(cropped.data, `calibration chunk ${idx + 1}`);
-          return cropped;
-        });
-      }
-    }
-
-    const framesBlock = plainObject.frames as Record<string, unknown> | undefined;
-    const frames = framesBlock?.frames;
-    if (framesBlock && Array.isArray(frames)) {
-      framesBlock.frames = frames.map((frameData, idx) => {
-        if (!frameData || typeof frameData !== 'object') {
-          return frameData;
-        }
-        const cropped = { ...(frameData as Record<string, unknown>) };
-        cropped.payload = cropString(cropped.payload, `thermal frame ${idx + 1}`);
-        return cropped;
-      });
-    }
-
-    return JSON.stringify(plainObject, null, 2);
-  } catch (error) {
-    return `Error creating JSON: ${error instanceof Error ? error.message : 'Unknown error'}`;
-  }
-}
-
-export interface St3215HexdumpResult {
-  jsonString: string;
-  hexdumps: { placeholder: string; content: string }[];
-}
-
-export function getSt3215JsonData(data: st3215.InferenceState): St3215HexdumpResult {
-  const plainObject = st3215.InferenceState.toObject(data, {
-    longs: String,
-    enums: String,
-    bytes: String,
-    defaults: true
-  });
-
-  const hexdumps: { placeholder: string; content: string }[] = [];
-
-  if (data.buses && plainObject.buses) {
-    data.buses.forEach((bus, busIndex) => {
-      if (bus.motors && plainObject.buses[busIndex] && plainObject.buses[busIndex].motors) {
-        bus.motors.forEach((motor, motorIndex) => {
-          if (motor.state && motor.state.length > 0) {
-            if (plainObject.buses[busIndex].motors[motorIndex]) {
-              const placeholder = `__HEXDUMP_PLACEHOLDER_${busIndex}_${motorIndex}__`;
-              (plainObject.buses[busIndex].motors[motorIndex] as Record<string, unknown>).state = placeholder;
-              hexdumps.push({ placeholder, content: formatBytesAsHexdump(motor.state) });
-            }
-          }
-        });
-      }
-    });
-  }
-
-  return { jsonString: JSON.stringify(plainObject, null, 2), hexdumps };
-}
-
-export function parseUsbVideoData(data: Uint8Array | ParsedHistoryData): usbvideo.RxEnvelope | null {
-  if (!(data instanceof Uint8Array)) {
-    return data as usbvideo.RxEnvelope;
-  }
-  try {
-    return usbvideo.RxEnvelope.decode(data);
-  } catch (error) {
-    console.error('Failed to parse usbvideo.RxEnvelope:', error);
-    return null;
-  }
-}
-
-export function parseHikmicroThermalData(data: Uint8Array | ParsedHistoryData): hikmicro.RxEnvelope | null {
-  if (!(data instanceof Uint8Array)) {
-    return data as hikmicro.RxEnvelope;
-  }
-  try {
-    return hikmicro.RxEnvelope.decode(data);
-  } catch (error) {
-    console.error('Failed to parse hikmicro.RxEnvelope:', error);
-    return null;
-  }
-}
-
-export function parseSt3215Data(data: Uint8Array | ParsedHistoryData): st3215.InferenceState | null {
-  if (!(data instanceof Uint8Array)) {
-    return data as st3215.InferenceState;
-  }
-  try {
-    return st3215.InferenceState.decode(data);
-  } catch (error) {
-    console.error('Failed to parse st3215.InferenceState:', error);
-    return null;
-  }
-}
-
-export function parseMirroringData(data: Uint8Array | ParsedHistoryData): motors_mirroring.RxEnvelope | null {
-  if (!(data instanceof Uint8Array)) {
-    return data as motors_mirroring.RxEnvelope;
-  }
-  try {
-    return motors_mirroring.RxEnvelope.decode(data);
-  } catch (error) {
-    console.error('Failed to parse motors_mirroring.RxEnvelope:', error);
-    return null;
-  }
-}
-
-export function parseSysinfoData(data: Uint8Array | ParsedHistoryData): sysinfo.Envelope | null {
-  if (!(data instanceof Uint8Array)) {
-    return data as sysinfo.Envelope;
-  }
-  try {
-    return sysinfo.Envelope.decode(data);
-  } catch (error) {
-    console.error('Failed to parse sysinfo.Envelope:', error);
-    return null;
-  }
-}
-
-export function parseArduinoNiclaSenseEnvData(data: Uint8Array | ParsedHistoryData): arduino_nicla_sense_env.RxEnvelope | null {
-  if (!(data instanceof Uint8Array)) {
-    return data as arduino_nicla_sense_env.RxEnvelope;
-  }
-  try {
-    return arduino_nicla_sense_env.RxEnvelope.decode(data);
-  } catch (error) {
-    console.error('Failed to parse arduino_nicla_sense_env.RxEnvelope:', error);
-    return null;
-  }
-}
-
-export function parseIna226Data(data: Uint8Array | ParsedHistoryData): ina226.RxEnvelope | null {
-  if (!(data instanceof Uint8Array)) {
-    return data as ina226.RxEnvelope;
-  }
-  try {
-    return ina226.RxEnvelope.decode(data);
-  } catch (error) {
-    console.error('Failed to parse ina226.RxEnvelope:', error);
-    return null;
-  }
-}
-
-export function parseAirGradientData(data: Uint8Array | ParsedHistoryData): airgradient_open_air_o_1pst.RxEnvelope | null {
-  if (!(data instanceof Uint8Array)) {
-    return data as airgradient_open_air_o_1pst.RxEnvelope;
-  }
-  try {
-    return airgradient_open_air_o_1pst.RxEnvelope.decode(data);
-  } catch (error) {
-    console.error('Failed to parse airgradient_open_air_o_1pst.RxEnvelope:', error);
-    return null;
-  }
-}
-
-export function parseVictronSmartSolarData(data: Uint8Array | ParsedHistoryData): victron_smartsolar_mppt.RxEnvelope | null {
-  if (!(data instanceof Uint8Array)) {
-    return data as victron_smartsolar_mppt.RxEnvelope;
-  }
-  try {
-    return victron_smartsolar_mppt.RxEnvelope.decode(data);
-  } catch (error) {
-    console.error('Failed to parse victron_smartsolar_mppt.RxEnvelope:', error);
-    return null;
-  }
-}
-
-export function parseYahboomDogzillaLiteData(data: Uint8Array | ParsedHistoryData): yahboom_dogzilla_lite.InferenceState | null {
-  if (!(data instanceof Uint8Array)) {
-    return data as yahboom_dogzilla_lite.InferenceState;
-  }
-  try {
-    return yahboom_dogzilla_lite.InferenceState.decode(data);
-  } catch (error) {
-    console.error('Failed to parse yahboom_dogzilla_lite.InferenceState:', error);
-    return null;
-  }
-}
-
-export function parseNormvlaData(data: Uint8Array | normvla.IFrame): normvla.Frame | null {
-  if (!(data instanceof Uint8Array)) {
-    return data as normvla.Frame;
-  }
-  try {
-    return normvla.Frame.decode(data);
-  } catch (error) {
-    console.error('Failed to parse normvla.Frame:', error);
     return null;
   }
 }

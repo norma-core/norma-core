@@ -1,8 +1,5 @@
 import { sysinfo } from '@/api/proto.js';
-
-interface SysinfoGridProps {
-  data: sysinfo.IEnvelope;
-}
+import type { HistoryExpandedProps } from '@/devices/history';
 
 function modemLabel(modem: sysinfo.ICellularModem): string {
   return [modem.manufacturer, modem.model].filter(Boolean).join(' ') || modem.path || modem.modemId || 'modem';
@@ -15,7 +12,8 @@ function signalMetrics(signal: sysinfo.ICellularSignal): string {
     .join(', ');
 }
 
-export default function SysinfoGrid({ data }: SysinfoGridProps) {
+export default function SysinfoHistoryView({ entry }: HistoryExpandedProps<sysinfo.IEnvelope>) {
+  const { data } = entry;
   const cellularModems = data.data?.cellularModems || [];
 
   return (

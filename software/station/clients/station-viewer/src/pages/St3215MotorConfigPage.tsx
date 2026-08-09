@@ -3,6 +3,7 @@ import webSocketManager from '../api/websocket';
 import { useInferenceState, useWakeLock, useBusMonitor } from '../hooks';
 import { st3215 } from '../api/proto';
 import { useLocation, Link } from 'react-router-dom';
+import { st3215InferenceQueue } from '@/devices/st3215/queue';
 
 enum MotorIdSetProgress {
   IDLE = 'idle',
@@ -21,6 +22,7 @@ const St3215MotorConfigPage: React.FC = () => {
   const selectedBusFromState = location.state?.bus as st3215.InferenceState.IBusState | undefined;
 
   const inferenceState = useInferenceState();
+  const latestSt3215 = inferenceState?.devices.entryOf(st3215InferenceQueue)?.data;
   const [isMotorIdSetInProgress, setIsMotorIdSetInProgress] = useState(false);
   const [newMotorId, setNewMotorId] = useState<number>(1);
   const [motorIdSetProgress, setMotorIdSetProgress] = useState<MotorIdSetProgress>(MotorIdSetProgress.IDLE);
@@ -32,12 +34,12 @@ const St3215MotorConfigPage: React.FC = () => {
     if (!selectedBusFromState?.bus?.serialNumber) return null;
 
     // Try to get updated bus from inference state
-    const updatedBus = inferenceState?.st3215?.data.buses?.find(
+    const updatedBus = latestSt3215?.buses?.find(
       (bus: st3215.InferenceState.IBusState) => bus.bus?.serialNumber === selectedBusFromState.bus?.serialNumber
     );
 
     return updatedBus || selectedBusFromState;
-  }, [inferenceState?.st3215?.data.buses, selectedBusFromState]);
+  }, [latestSt3215?.buses, selectedBusFromState]);
 
   // Monitor bus state for collision detection (ignore errors during motor ID change)
   const busStatus = useBusMonitor(selectedBus, isMotorIdSetInProgress);

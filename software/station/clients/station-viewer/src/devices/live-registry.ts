@@ -22,9 +22,10 @@ export interface LiveDevicePlan {
   errors: readonly LiveDeviceError[];
   isEmpty: boolean;
   hasRealtimeDevice: boolean;
+  hasEmbeddedCameraFeed: boolean;
 }
 
-interface LiveDeviceCatalog {
+export interface LiveDeviceCatalog {
   resolve: (frame: Frame | null) => LiveDevicePlan;
 }
 
@@ -32,10 +33,11 @@ function compareDevices(left: LiveDeviceAdapter, right: LiveDeviceAdapter): numb
   return left.order - right.order || left.id.localeCompare(right.id);
 }
 
-function createCatalog(adapters: readonly LiveDeviceAdapter[]): LiveDeviceCatalog {
+export function createLiveDeviceCatalog(
+  adapters: readonly LiveDeviceAdapter[],
+): LiveDeviceCatalog {
   const sortedAdapters = [...adapters].sort(compareDevices);
   const adapterIds = new Set<string>();
-  const adapterOrders = new Set<number>();
 
   for (const adapter of sortedAdapters) {
     if (!adapter.id) {
@@ -47,12 +49,10 @@ function createCatalog(adapters: readonly LiveDeviceAdapter[]): LiveDeviceCatalo
     if (!Number.isFinite(adapter.order)) {
       throw new Error(`Live device module ${adapter.id} has an invalid order.`);
     }
-    if (adapterOrders.has(adapter.order)) {
-      throw new Error(`Live device module order must be unique: ${adapter.order}`);
+    if (adapter.embedsCameraFeed && adapter.slot !== 'primary') {
+      throw new Error(`Live device module ${adapter.id} can only embed cameras in the primary slot.`);
     }
-
     adapterIds.add(adapter.id);
-    adapterOrders.add(adapter.order);
   }
 
   return {
@@ -63,12 +63,14 @@ function createCatalog(adapters: readonly LiveDeviceAdapter[]): LiveDeviceCatalo
           errors: [],
           isEmpty: true,
           hasRealtimeDevice: false,
+          hasEmbeddedCameraFeed: false,
         };
       }
 
       const views: ResolvedLiveDeviceView[] = [];
       const errors: LiveDeviceError[] = [];
       let hasRealtimeDevice = false;
+      let hasEmbeddedCameraFeed = false;
 
       for (const adapter of sortedAdapters) {
         try {
@@ -97,6 +99,7 @@ function createCatalog(adapters: readonly LiveDeviceAdapter[]): LiveDeviceCatalo
           }
 
           hasRealtimeDevice ||= adapter.isRealtime && selected.length > 0;
+          hasEmbeddedCameraFeed ||= adapter.embedsCameraFeed && selected.length > 0;
         } catch (error) {
           errors.push({
             moduleId: adapter.id,
@@ -111,6 +114,7 @@ function createCatalog(adapters: readonly LiveDeviceAdapter[]): LiveDeviceCatalo
         errors,
         isEmpty: views.length === 0 && errors.length === 0,
         hasRealtimeDevice,
+        hasEmbeddedCameraFeed,
       };
     },
   };
@@ -121,7 +125,7 @@ const liveDeviceModuleEntries = import.meta.glob<{ default: LiveDeviceAdapter }>
   { eager: true },
 );
 
-const liveDeviceCatalog = createCatalog(
+const liveDeviceCatalog = createLiveDeviceCatalog(
   Object.values(liveDeviceModuleEntries).map((entry) => entry.default),
 );
 

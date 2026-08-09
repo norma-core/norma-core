@@ -1,13 +1,17 @@
 import { customLive } from '@/devices/live';
 import type { BusViewerProps } from '@/st3215/BusViewer';
+import { mirroringQueue } from '@/devices/mirroring/queue';
+import { usbVideoQueue } from '@/devices/usbvideo/queue';
+import { st3215InferenceQueue } from './queue';
 
 export default customLive<BusViewerProps>({
   id: 'st3215',
   label: 'ST3215',
   order: 10,
   isRealtime: true,
+  embedsCameraFeed: true,
   select: (frame) => {
-    const inferenceState = frame.st3215?.data;
+    const inferenceState = frame.devices.entryOf(st3215InferenceQueue)?.data;
     if (!inferenceState?.buses?.length) {
       return [];
     }
@@ -16,8 +20,8 @@ export default customLive<BusViewerProps>({
       key: 'st3215',
       props: {
         inferenceState,
-        videoSources: frame.videoQueues,
-        mirroringState: frame.mirroring?.data.state ?? undefined,
+        videoSources: [...frame.devices.entriesOf(usbVideoQueue)],
+        mirroringState: frame.devices.entryOf(mirroringQueue)?.data.state ?? undefined,
       },
     }];
   },

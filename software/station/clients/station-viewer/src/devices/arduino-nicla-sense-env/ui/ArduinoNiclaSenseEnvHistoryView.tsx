@@ -1,8 +1,5 @@
 import { arduino_nicla_sense_env } from '@/api/proto.js';
-
-interface ArduinoNiclaSenseEnvExpandedProps {
-  data: arduino_nicla_sense_env.IRxEnvelope;
-}
+import type { HistoryExpandedProps } from '@/devices/history';
 
 interface ParsedValue {
   label: string;
@@ -248,7 +245,8 @@ function ValueTable({ group }: { group: ValueGroup }) {
   );
 }
 
-export default function ArduinoNiclaSenseEnvExpanded({ data }: ArduinoNiclaSenseEnvExpandedProps) {
+export default function ArduinoNiclaSenseEnvHistoryView({ entry }: HistoryExpandedProps<arduino_nicla_sense_env.IRxEnvelope>) {
+  const { data } = entry;
   const bytes = bytesFrom(data.data);
   const device = data.device ?? null;
   const info = device?.info ?? null;

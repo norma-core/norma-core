@@ -16,3 +16,4 @@ This directory records accepted architecture decisions for Station Viewer.
 | [0008](0008-make-live-and-history-acquisition-modes-explicit.md) | Make live and history acquisition modes explicit |
 | [0009](0009-arbitrate-st3215-control-authority.md) | Arbitrate ST3215 control authority explicitly |
 | [0010](0010-centralize-frame-decoding-before-device-presentation.md) | Centralize frame decoding before device presentation |
+| [0011](0011-discover-queue-and-history-adapters.md) | Discover queue and history adapters as vertical slices |

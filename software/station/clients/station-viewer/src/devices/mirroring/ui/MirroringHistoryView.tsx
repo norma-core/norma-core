@@ -1,10 +1,8 @@
-import { motors_mirroring } from '@/api/proto.js';
+import type { motors_mirroring } from '@/api/proto.js';
+import type { HistoryExpandedProps } from '@/devices/history';
 
-interface MirroringExpandedProps {
-  data: motors_mirroring.RxEnvelope;
-}
-
-export default function MirroringExpanded({ data }: MirroringExpandedProps) {
+export default function MirroringHistoryView({ entry }: HistoryExpandedProps<motors_mirroring.IRxEnvelope>) {
+  const { data } = entry;
   return (
     <div>
       <div className="text-xs text-text-label mb-1">Motors Mirroring RxEnvelope:</div>

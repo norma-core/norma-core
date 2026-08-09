@@ -1,13 +1,10 @@
 import { useEffect, useMemo } from 'react';
 import { usbvideo } from '@/api/proto.js';
 import { formatTimestamp, createJpegBlobUrl } from '@/components/history/history-utils';
+import type { HistoryExpandedProps } from '@/devices/history';
 
-interface UsbVideoExpandedProps {
-  data: usbvideo.RxEnvelope;
-  onImageClick?: (src: string, alt: string) => void;
-}
-
-export default function UsbVideoExpanded({ data, onImageClick }: UsbVideoExpandedProps) {
+export default function UsbVideoHistoryView({ entry, onImageClick }: HistoryExpandedProps<usbvideo.IRxEnvelope>) {
+  const { data } = entry;
   const firstFrameData = data.frames?.framesData?.[0];
   const firstFrameUrl = useMemo(() => {
     if (!firstFrameData || firstFrameData.length === 0) {
@@ -68,7 +65,7 @@ export default function UsbVideoExpanded({ data, onImageClick }: UsbVideoExpande
                 src={firstFrameUrl}
                 alt="First frame"
                 className="max-w-full max-h-48 object-contain rounded cursor-pointer hover:border-accent-info border border-transparent transition-colors"
-                onClick={() => onImageClick?.(firstFrameUrl, 'First frame')}
+                onClick={() => onImageClick(firstFrameUrl, 'First frame')}
               />
             ) : (
               <div className="text-accent-critical text-xs">Failed to load JPEG image</div>

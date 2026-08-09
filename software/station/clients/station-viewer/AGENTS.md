@@ -17,7 +17,7 @@ npm run preview      # Preview production build locally
 
 ## Testing
 
-Vitest runs in the Node environment. Keep tests beside the module as `*.test.ts`.
+Vitest runs in the Node environment. Keep tests beside the module as `*.test.ts` or `*.test.tsx`.
 
 Tests are regression guards, not a coverage target. Before adding a test, name the plausible bug it should catch. Prioritize behavior with a history of failure, async races, ownership or cleanup boundaries, atomic external-store updates, and non-trivial domain rules. A small set of tests around these risks is preferable to exhaustive coverage of trivial branches.
 
@@ -43,10 +43,10 @@ For a bug fix, first demonstrate that the test fails for the broken behavior, th
 
 ```
 src/
-  api/            # WebSocket, protobuf, time sync, queue, normfs, commands, clipboard, frame parsing
+  api/            # WebSocket, protobuf, time sync, normfs, commands, clipboard, generic frame parsing
   components/     # Shared UI components
-    history/      # History page detail views (ExpandedView, HistoryElement, etc.)
-  devices/        # Concrete device modules, live registry, ST3215 model manifests
+    history/      # Generic history shells and byte/JSON presentation
+  devices/        # Device queues, history/live adapters, UI, and ST3215 model manifests
   hooks/          # Custom React hooks (re-exported from index.ts)
   pages/          # Route components (suffixed with Page)
   st3215/         # Motor driver components, utilities, and robot renderers
@@ -59,19 +59,25 @@ public/
 
 ## Device Modules
 
-Concrete device code lives under `src/devices/<device-id>/`. A device module is a **vertical live slice**: its manifest, device-only UI, protocol/formatting helpers, commands, and model-specific assets live together. `HomePage` and shared protocol/rendering code must never import a concrete device.
+Concrete device code lives under `src/devices/<device-id>/`. A device directory is a vertical slice: protocol decoding, history/live adapters, device-only UI, formatting helpers, commands, and model-specific assets live together. Shared shells discover adapters; they do not enumerate concrete devices. `HomePage` may import queue declarations when it deliberately combines entries (currently `usbVideoQueue` for the shared standalone camera surface), but must not import concrete device UI or manifests.
 
-The shared implementation is deliberately split into two deep modules with different interfaces:
+The shared implementation is deliberately split into separate deep modules with different interfaces:
 
 ```
 src/devices/
   live.ts                 # live()/customLive() authoring factories
   live-registry.ts        # discovers live manifests and resolves a LiveDevicePlan
   LiveDeviceSurface.tsx   # lazy rendering, slots, and error isolation
+  queue-adapter.ts        # typed queue-adapter interface and identity-keyed Frame store
+  queue-adapter-registry.ts # discovers queue declarations and resolves queue type/id
+  history.tsx             # typed history-adapter authoring factory
+  history-registry.ts     # discovers history adapters by queue identity
   st3215-model.ts         # st3215Model() authoring factory and model contract
   st3215-models.ts        # discovers and resolves ST3215 robot models
   <device-id>/
+    queue.ts              # one queue declaration or a small queue array
     module.ts             # one live-module manifest
+    history.tsx           # optional summary/expanded/JSON history adapter
     ui/                   # lazy device UI
     values.ts             # device-only parsers/formatters when needed
     commands.ts           # device-only commands when needed
@@ -84,17 +90,18 @@ Do not recreate a general plugin framework. Live UI, ST3215 robot models, histor
 
 `live-registry.ts` discovers `src/devices/*/module.ts` using Vite's bundled `import.meta.glob`. **Never edit a central registration list and never import a concrete module from `HomePage`.** A manifest is eagerly loaded, but its UI must be loaded lazily.
 
-Use `live()` for the normal case: the data lives in one `Frame` field whose value is either one `FrameEntry` or an array of entries. The factory normalizes single/multiple entries, uses `queueId` as the stable key, supplies the typed `{ data }` prop, and creates the lazy React element.
+Use `live()` for the normal case. The factory selects entries through the typed queue identity, uses `queueId` as the stable key, supplies typed `{ data }`, and creates the lazy React element.
 
 ```typescript
 import { live } from '@/devices/live';
+import { newSensorQueue } from './queue';
 
 export default live({
   id: 'new-sensor',
   label: 'New Sensor',
   order: 40,
   slot: 'summary',
-  field: 'newSensor',
+  queue: newSensorQueue,
   when: (data) => data.readings?.length > 0,
   loadView: () => import('./ui/NewSensorLiveView'),
 });
@@ -117,9 +124,11 @@ export default customLive<NewViewerProps>({
   id: 'new-device',
   label: 'New Device',
   order: 40,
+  embedsCameraFeed: true,
   select: (frame) => {
-    const data = frame.newDevice?.data;
-    return data ? [{ key: 'new-device', props: { data, videos: frame.videoQueues } }] : [];
+    const data = frame.devices.entryOf(newDeviceQueue)?.data;
+    const videos = frame.devices.entriesOf(usbVideoQueue).map((entry) => entry.data);
+    return data ? [{ key: 'new-device', props: { data, videos } }] : [];
   },
   loadView: () => import('./ui/NewDeviceViewer'),
 });
@@ -127,12 +136,13 @@ export default customLive<NewViewerProps>({
 
 Rules and invariants:
 
-- `id` and `order` are globally unique across live manifests. The display order is deterministic: `order`, then `id`, then entry key.
+- `id` is globally unique across live manifests. Equal `order` values are allowed; display order is deterministic: `order`, then `id`, then entry key.
 - A view key must be non-empty and unique within its module. Use `queueId` for multi-instance driver entries.
 - `slot: 'summary'` renders compact cards in the shared sensor grid; the default `primary` slot renders full-width device UI. Do not add ad-hoc layout strings.
 - Use `when(data)` only to suppress an empty but valid entry. If the view needs different props or shared frame data, use `customLive()` instead.
 - Set `isRealtime: true` only for a device that actually supplies the active realtime stream. The resolved plan uses this capability to decide whether to show connection FPS.
-- Selection and lazy-render failures are isolated to the affected device. Do not catch them in `HomePage`.
+- Set `embedsCameraFeed: true` when a selected primary view renders the current USB camera feed itself. The resolved plan then suppresses the shared standalone camera surface without teaching `HomePage` about that concrete device.
+- Selection and lazy-render failures are isolated to the affected device. Render failures retry when the device receives new resolved content; do not catch them in `HomePage`.
 - Do not add wrappers that only render another component with identical props. They fail the deletion test; import the shared implementation directly from the manifest. In particular, do not add a `St3215LiveView` pass-through around `BusViewer`.
 - Keep module manifests small. Heavy React UI belongs in `ui/`, and device-only formatting, commands, or parser code stays beside that manifest rather than in generic `src/utils/`.
 
@@ -169,14 +179,14 @@ Rules and invariants:
 
 ### Adding or Extending a Device
 
-1. Add the backend/protobuf queue type and `Frame` decoding when the driver itself is new. The current module system owns live presentation, not frame decoding.
-2. Create `src/devices/<device-id>/module.ts`; use `live()` unless shared frame data makes `customLive()` necessary.
-3. Put device-only UI under `ui/` and supporting device code beside it.
-4. For a physical ST3215 robot, add `st3215-model.ts`, `Renderer.tsx`, config, and public assets in the same model directory.
-5. Put URDF/STL files in `public/devices/<device-id>/`, then run `node scripts/generate-asset-hashes.mjs` so `src/assets-manifest.json` includes them.
-6. Test through the public seams: `resolveLiveDevices(frame)` for live selection and `resolveSt3215Model(bus)` / `resolveSt3215Kinematics(count)` for robot models. Do not test factory internals or rendering past the module interface.
+1. Add the `.proto` and append its `QueueDataType` in `protobufs/station/drivers.proto`, then run `npm run build:proto`.
+2. Add `src/devices/<device-id>/queue.ts` with `defineQueueAdapter({ key, message, queueType, cardinality })`. Use `matchQueue` only to disambiguate adapters that share a queue type. Keep `decode` pure; device side effects belong in the explicit `afterDecode` hook.
+3. Create `module.ts` with `live({ queue, ... })`; use `customLive()` only when the view needs inputs from multiple queues.
+4. Add `history.tsx` with `defineHistory({ queue, Summary?, loadExpanded?, toJson? })`. Expanded UI is collapsed by default, lazy, and receives one typed `entry`; generic JSON/raw history works without an adapter. Use `defaultExpanded: true` only for a deliberately cheap view that should mount immediately.
+5. Put device-only UI and helpers under the device directory. For a physical ST3215 robot, also add its model manifest and assets.
+6. Test queue matching/parser behavior and selection through public seams. Run type-check, lint, tests, and the production build; the build validates both eager globs and lazy history imports.
 
-History rendering remains in `HistoryPage` / `HistoryElement` / `ExpandedView`. When history and decoding are deliberately migrated, introduce a real history/decoder seam with multiple device adapters; do not add speculative optional fields to live manifests now.
+Queue declarations are protocol adapters and may be imported by readers and composition code. Concrete UI, live manifests, and history adapters remain discoverable implementation details and must not be imported by shared shells.
 
 ## Code Style
 

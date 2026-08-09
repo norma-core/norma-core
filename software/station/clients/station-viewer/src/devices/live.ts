@@ -1,6 +1,7 @@
 import { createElement, lazy } from 'react';
 import type { ComponentType, ReactNode } from 'react';
-import type { Frame, FrameEntry } from '@/api/frame-parser';
+import type { Frame } from '@/api/frame-parser';
+import type { DeviceQueueAdapter } from './queue-adapter';
 
 type LazyViewLoader<Props extends object> = () => Promise<{ default: ComponentType<Props> }>;
 
@@ -17,6 +18,7 @@ export interface LiveDeviceAdapter {
   order: number;
   slot: LiveDeviceSlot;
   isRealtime: boolean;
+  embedsCameraFeed: boolean;
   resolve: (frame: Frame) => readonly LiveDeviceContent[];
 }
 
@@ -26,6 +28,7 @@ interface LiveDeviceDefinition<Props extends object> {
   order: number;
   slot?: LiveDeviceSlot;
   isRealtime?: boolean;
+  embedsCameraFeed?: boolean;
   loadView: LazyViewLoader<Props>;
 }
 
@@ -36,20 +39,10 @@ export interface CustomLiveDeviceDefinition<Props extends object> extends LiveDe
   }[];
 }
 
-type FrameEntryItem<Value> = Value extends readonly (infer Item)[] ? Item : Value;
-type FrameEntryValue<Key extends keyof Frame> = FrameEntryItem<NonNullable<Frame[Key]>>;
-
-export type LiveFrameEntryField = Extract<{
-  [Key in keyof Frame]: FrameEntryValue<Key> extends FrameEntry<unknown> ? Key : never;
-}[keyof Frame], keyof Frame>;
-
-type FrameEntryData<Key extends LiveFrameEntryField> =
-  FrameEntryValue<Key> extends FrameEntry<infer Data> ? Data : never;
-
-export interface FrameEntryLiveDeviceDefinition<Key extends LiveFrameEntryField>
-  extends LiveDeviceDefinition<{ data: FrameEntryData<Key> }> {
-  field: Key;
-  when?: (data: FrameEntryData<Key>) => boolean;
+export interface QueueLiveDeviceDefinition<T>
+  extends LiveDeviceDefinition<{ data: T }> {
+  queue: DeviceQueueAdapter<T>;
+  when?: (data: T) => boolean;
 }
 
 function defineLiveDevice<Props extends object>(
@@ -65,6 +58,7 @@ function defineLiveDevice<Props extends object>(
     order: definition.order,
     slot: definition.slot ?? 'primary',
     isRealtime: definition.isRealtime ?? false,
+    embedsCameraFeed: definition.embedsCameraFeed ?? false,
     resolve: (frame) => select(frame).map(({ key, props }) => ({
       key,
       content: createElement<Props>(TypedView, props),
@@ -78,31 +72,11 @@ export function customLive<Props extends object>(
   return defineLiveDevice(definition, definition.select);
 }
 
-function entriesFor<Key extends LiveFrameEntryField>(
-  frame: Frame,
-  field: Key,
-): readonly FrameEntry<FrameEntryData<Key>>[] {
-  const value = frame[field] as
-    | FrameEntry<FrameEntryData<Key>>
-    | readonly FrameEntry<FrameEntryData<Key>>[]
-    | undefined;
-
-  if (!value) {
-    return [];
-  }
-
-  if (Array.isArray(value)) {
-    return value as readonly FrameEntry<FrameEntryData<Key>>[];
-  }
-
-  return [value as FrameEntry<FrameEntryData<Key>>];
-}
-
-export function live<Key extends LiveFrameEntryField>(
-  definition: FrameEntryLiveDeviceDefinition<Key>,
+export function live<T>(
+  definition: QueueLiveDeviceDefinition<T>,
 ): LiveDeviceAdapter {
   return defineLiveDevice(definition, (frame) =>
-    entriesFor(frame, definition.field)
+    frame.devices.entriesOf(definition.queue)
       .filter((entry) => definition.when?.(entry.data) ?? true)
       .map((entry) => ({
         key: entry.queueId,

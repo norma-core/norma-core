@@ -10,6 +10,7 @@ import TagDialog from '@/components/TagDialog';
 import { useConnectionStats, useLiveSnapshot, useWakeLock, invalidateTagsCache } from '@/hooks';
 import LiveDeviceSurface from '@/devices/LiveDeviceSurface';
 import { resolveLiveDevices } from '@/devices/live-registry';
+import { usbVideoQueue } from '@/devices/usbvideo/queue';
 import CameraSurface from '@/usbvideo/CameraSurface';
 import { getFPSColor } from '@/utils/color-utils';
 import { defaultTag } from '@/utils/tag-phrases';
@@ -40,12 +41,9 @@ function HomePage() {
     [inferenceState],
   );
   const hasLiveDeviceViews = !liveDevicePlan.isEmpty;
-  const videoSources = inferenceState?.videoQueues ?? [];
-  const hasConnectedArms = Boolean(inferenceState?.st3215?.data.buses?.length);
-  const hasConnectedDog = Boolean(inferenceState?.yahboom_dogzilla_lite?.data.devices?.length);
+  const videoSources = inferenceState?.devices.entriesOf(usbVideoQueue) ?? [];
   const shouldShowStandaloneCameras = videoSources.length > 0
-    && !hasConnectedArms
-    && !hasConnectedDog;
+    && !liveDevicePlan.hasEmbeddedCameraFeed;
   const hasOnlySummaryDeviceViews = liveDevicePlan.views.length > 0
     && liveDevicePlan.views.every((view) => view.slot === 'summary')
     && liveDevicePlan.errors.length === 0;
