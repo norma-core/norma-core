@@ -71,6 +71,7 @@ IMAGE_INSTALL = "\
     \
     tailscale \
     tailscaled-init \
+    x8-tailscale-autologin \
     ca-certificates \
     iptables \
     \

@@ -1,0 +1,5 @@
+# aes 0.8 and polyval 0.6 keep their ARMv8 backends behind these cfgs, so
+# without them the boards run AES-GCM in software. Both detect the crypto
+# extensions at runtime on Linux, so a board without them still works.
+[build]
+rustflags = ["--cfg", "aes_armv8", "--cfg", "polyval_armv8"]

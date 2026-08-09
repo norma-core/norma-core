@@ -55,11 +55,14 @@ Failures are logged and the next supervisor cycle retries the recovery chain.
 
 ## GPIO Ownership
 
-The daemon owns and reapplies these board GPIO outputs:
+The daemon owns and reapplies these board GPIO outputs. It discovers the GPIO
+chip at runtime because `/dev/gpiochipN` numbering is not stable across boots
+and kernel/device-tree changes. The selected chip must expose the required line
+offsets; the known Max Carrier expander currently reports 34 lines.
 
-- `/dev/gpiochip5` line `29`: external LTE power
-- `/dev/gpiochip5` line `4`: SARA-R4 power
-- `/dev/gpiochip5` line `2`: SARA-R4 reset
+- line `29`: external LTE power
+- line `4`: SARA-R4 power
+- line `2`: SARA-R4 reset
 
 Configured slots are powered on. Slots without an APN are powered down.
 

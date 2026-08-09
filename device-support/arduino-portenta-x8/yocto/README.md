@@ -61,6 +61,33 @@ The target image intentionally does not include:
 The Docker container in this README is only the build environment. It is not
 installed into the Portenta X8 image.
 
+## Tailscale DNS Setup 🌐
+
+The image owns `/etc/resolv.conf` directly. It removes Yocto's volatile
+`/etc/resolv.conf` handling, installs a persistent resolver file, and prevents
+DHCP from replacing DNS while still allowing DHCP to configure IP addresses and
+routes.
+
+Do not let Tailscale manage DNS on this image. When authenticating Tailscale for
+the first time, include:
+
+```sh
+tailscale up --accept-dns=false
+```
+
+For a board that is already authenticated and has Tailscale running, persist the
+same preference with:
+
+```sh
+tailscale set --accept-dns=false
+```
+
+If Tailscale DNS management is enabled, `tailscaled` can replace
+`/etc/resolv.conf` with a generated file that points only at Tailscale DNS
+servers. That can break ordinary name resolution and NTP before Tailscale DNS is
+usable. The expected resolver file is managed by `x8-clean` and includes public
+fallback resolvers.
+
 ## Max Carrier Setup 🔌
 
 This image targets Portenta X8 on the Portenta Max Carrier. Before relying on
