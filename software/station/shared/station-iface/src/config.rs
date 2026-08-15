@@ -97,6 +97,13 @@ pub struct Drivers {
     )]
     pub arduino_nicla_sense_env: Option<ArduinoNiclaSenseEnvConfig>,
 
+    #[serde(
+        rename = "arduino-nicla-sense-me",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub arduino_nicla_sense_me: Option<ArduinoNiclaSenseMeConfig>,
+
     #[serde(rename = "ina226", skip_serializing_if = "Option::is_none")]
     pub ina226: Option<Ina226Config>,
 
@@ -451,6 +458,45 @@ impl Default for ArduinoNiclaSenseEnvConfig {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct ArduinoNiclaSenseMeConfig {
+    #[serde(default)]
+    pub enabled: bool,
+
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub boards: Vec<ArduinoNiclaSenseMeBoardConfig>,
+
+    #[serde(
+        default = "default_arduino_nicla_sense_me_poll_interval",
+        rename = "poll-interval",
+        with = "humantime_serde"
+    )]
+    pub poll_interval: std::time::Duration,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct ArduinoNiclaSenseMeBoardConfig {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+
+    #[serde(rename = "i2c-bus")]
+    pub i2c_bus: u32,
+}
+
+fn default_arduino_nicla_sense_me_poll_interval() -> std::time::Duration {
+    std::time::Duration::from_secs(1)
+}
+
+impl Default for ArduinoNiclaSenseMeConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            boards: Vec::new(),
+            poll_interval: default_arduino_nicla_sense_me_poll_interval(),
+        }
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Ina226Config {
     #[serde(default)]
     pub enabled: bool,
@@ -586,6 +632,7 @@ impl Default for Drivers {
             yahboom_dogzilla_lite: None,
             ov5647: None,
             arduino_nicla_sense_env: None,
+            arduino_nicla_sense_me: None,
             ina226: None,
             airgradient_open_air_o_1pst: None,
             victron_smartsolar_mppt: None,
@@ -765,5 +812,42 @@ mod hikmicro_thermal_config_tests {
         let cfg: HikmicroThermalConfig = serde_yaml::from_str(yaml).unwrap();
         assert_eq!(cfg.frame_timeout, std::time::Duration::from_secs(2));
         assert_eq!(cfg.frame_skip, 3);
+    }
+}
+
+#[cfg(test)]
+mod arduino_nicla_sense_me_tests {
+    use super::*;
+
+    #[test]
+    fn parses_arduino_nicla_sense_me_drivers_block() {
+        // Deserialize the Drivers struct directly so the test doesn't depend on
+        // unrelated required fields of the top-level Config.
+        let yaml = r#"
+system-info: false
+arduino-nicla-sense-me:
+  enabled: true
+  poll-interval: 500ms
+  boards:
+    - id: imu-front
+      i2c-bus: 2
+"#;
+        let drivers: Drivers = serde_yaml::from_str(yaml).expect("drivers block parses");
+        let me = drivers
+            .arduino_nicla_sense_me
+            .expect("nicla sense me block present");
+        assert!(me.enabled);
+        assert_eq!(me.poll_interval, std::time::Duration::from_millis(500));
+        assert_eq!(me.boards.len(), 1);
+        assert_eq!(me.boards[0].id.as_deref(), Some("imu-front"));
+        assert_eq!(me.boards[0].i2c_bus, 2);
+    }
+
+    #[test]
+    fn arduino_nicla_sense_me_defaults() {
+        let me = ArduinoNiclaSenseMeConfig::default();
+        assert!(!me.enabled);
+        assert!(me.boards.is_empty());
+        assert_eq!(me.poll_interval, std::time::Duration::from_secs(1));
     }
 }
