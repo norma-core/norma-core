@@ -261,7 +261,8 @@ export namespace drivers {
         QDT_VICTRON_SMARTSOLAR_MPPT_RX = 54,
         QDT_PWM_OUTPUT_TX = 55,
         QDT_PWM_OUTPUT_RX = 56,
-        QDT_DMESG_RX = 57
+        QDT_DMESG_RX = 57,
+        QDT_ARDUINO_NICLA_SENSE_ME_RX = 59
     }
 
     /** StationCommandType enum. */
@@ -13507,6 +13508,376 @@ export namespace arduino_nicla_sense_env {
          * @returns Plain object
          */
         public static toObject(message: arduino_nicla_sense_env.RxEnvelope, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this RxEnvelope to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for RxEnvelope
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+}
+
+/** Namespace arduino_nicla_sense_me. */
+export namespace arduino_nicla_sense_me {
+
+    /** ArduinoNiclaSenseMeSignalType enum. */
+    enum ArduinoNiclaSenseMeSignalType {
+        ARDUINO_NICLA_SENSE_ME_SIGNAL_TYPE_UNSPECIFIED = 0,
+        ARDUINO_NICLA_SENSE_ME_CONNECTED = 1,
+        ARDUINO_NICLA_SENSE_ME_DISCONNECTED = 2,
+        ARDUINO_NICLA_SENSE_ME_REGISTERS_SNAPSHOT = 3,
+        ARDUINO_NICLA_SENSE_ME_ERROR = 8
+    }
+
+    /** Properties of an ArduinoNiclaSenseMeDeviceInfo. */
+    interface IArduinoNiclaSenseMeDeviceInfo {
+
+        /** ArduinoNiclaSenseMeDeviceInfo softwareRevision */
+        softwareRevision?: (number|null);
+
+        /** ArduinoNiclaSenseMeDeviceInfo productId */
+        productId?: (number|null);
+
+        /** ArduinoNiclaSenseMeDeviceInfo serialNumber */
+        serialNumber?: (Uint8Array|null);
+    }
+
+    /** Represents an ArduinoNiclaSenseMeDeviceInfo. */
+    class ArduinoNiclaSenseMeDeviceInfo implements IArduinoNiclaSenseMeDeviceInfo {
+
+        /**
+         * Constructs a new ArduinoNiclaSenseMeDeviceInfo.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: arduino_nicla_sense_me.IArduinoNiclaSenseMeDeviceInfo);
+
+        /** ArduinoNiclaSenseMeDeviceInfo softwareRevision. */
+        public softwareRevision: number;
+
+        /** ArduinoNiclaSenseMeDeviceInfo productId. */
+        public productId: number;
+
+        /** ArduinoNiclaSenseMeDeviceInfo serialNumber. */
+        public serialNumber: Uint8Array;
+
+        /**
+         * Creates a new ArduinoNiclaSenseMeDeviceInfo instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns ArduinoNiclaSenseMeDeviceInfo instance
+         */
+        public static create(properties?: arduino_nicla_sense_me.IArduinoNiclaSenseMeDeviceInfo): arduino_nicla_sense_me.ArduinoNiclaSenseMeDeviceInfo;
+
+        /**
+         * Encodes the specified ArduinoNiclaSenseMeDeviceInfo message. Does not implicitly {@link arduino_nicla_sense_me.ArduinoNiclaSenseMeDeviceInfo.verify|verify} messages.
+         * @param message ArduinoNiclaSenseMeDeviceInfo message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: arduino_nicla_sense_me.IArduinoNiclaSenseMeDeviceInfo, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified ArduinoNiclaSenseMeDeviceInfo message, length delimited. Does not implicitly {@link arduino_nicla_sense_me.ArduinoNiclaSenseMeDeviceInfo.verify|verify} messages.
+         * @param message ArduinoNiclaSenseMeDeviceInfo message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: arduino_nicla_sense_me.IArduinoNiclaSenseMeDeviceInfo, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes an ArduinoNiclaSenseMeDeviceInfo message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns ArduinoNiclaSenseMeDeviceInfo
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): arduino_nicla_sense_me.ArduinoNiclaSenseMeDeviceInfo;
+
+        /**
+         * Decodes an ArduinoNiclaSenseMeDeviceInfo message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns ArduinoNiclaSenseMeDeviceInfo
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): arduino_nicla_sense_me.ArduinoNiclaSenseMeDeviceInfo;
+
+        /**
+         * Verifies an ArduinoNiclaSenseMeDeviceInfo message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates an ArduinoNiclaSenseMeDeviceInfo message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns ArduinoNiclaSenseMeDeviceInfo
+         */
+        public static fromObject(object: { [k: string]: any }): arduino_nicla_sense_me.ArduinoNiclaSenseMeDeviceInfo;
+
+        /**
+         * Creates a plain object from an ArduinoNiclaSenseMeDeviceInfo message. Also converts values to other types if specified.
+         * @param message ArduinoNiclaSenseMeDeviceInfo
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: arduino_nicla_sense_me.ArduinoNiclaSenseMeDeviceInfo, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this ArduinoNiclaSenseMeDeviceInfo to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for ArduinoNiclaSenseMeDeviceInfo
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
+    /** Properties of an ArduinoNiclaSenseMeDevice. */
+    interface IArduinoNiclaSenseMeDevice {
+
+        /** ArduinoNiclaSenseMeDevice id */
+        id?: (string|null);
+
+        /** ArduinoNiclaSenseMeDevice i2cBus */
+        i2cBus?: (number|null);
+
+        /** ArduinoNiclaSenseMeDevice i2cAddress */
+        i2cAddress?: (number|null);
+
+        /** ArduinoNiclaSenseMeDevice info */
+        info?: (arduino_nicla_sense_me.IArduinoNiclaSenseMeDeviceInfo|null);
+    }
+
+    /** Represents an ArduinoNiclaSenseMeDevice. */
+    class ArduinoNiclaSenseMeDevice implements IArduinoNiclaSenseMeDevice {
+
+        /**
+         * Constructs a new ArduinoNiclaSenseMeDevice.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: arduino_nicla_sense_me.IArduinoNiclaSenseMeDevice);
+
+        /** ArduinoNiclaSenseMeDevice id. */
+        public id: string;
+
+        /** ArduinoNiclaSenseMeDevice i2cBus. */
+        public i2cBus: number;
+
+        /** ArduinoNiclaSenseMeDevice i2cAddress. */
+        public i2cAddress: number;
+
+        /** ArduinoNiclaSenseMeDevice info. */
+        public info?: (arduino_nicla_sense_me.IArduinoNiclaSenseMeDeviceInfo|null);
+
+        /**
+         * Creates a new ArduinoNiclaSenseMeDevice instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns ArduinoNiclaSenseMeDevice instance
+         */
+        public static create(properties?: arduino_nicla_sense_me.IArduinoNiclaSenseMeDevice): arduino_nicla_sense_me.ArduinoNiclaSenseMeDevice;
+
+        /**
+         * Encodes the specified ArduinoNiclaSenseMeDevice message. Does not implicitly {@link arduino_nicla_sense_me.ArduinoNiclaSenseMeDevice.verify|verify} messages.
+         * @param message ArduinoNiclaSenseMeDevice message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: arduino_nicla_sense_me.IArduinoNiclaSenseMeDevice, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified ArduinoNiclaSenseMeDevice message, length delimited. Does not implicitly {@link arduino_nicla_sense_me.ArduinoNiclaSenseMeDevice.verify|verify} messages.
+         * @param message ArduinoNiclaSenseMeDevice message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: arduino_nicla_sense_me.IArduinoNiclaSenseMeDevice, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes an ArduinoNiclaSenseMeDevice message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns ArduinoNiclaSenseMeDevice
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): arduino_nicla_sense_me.ArduinoNiclaSenseMeDevice;
+
+        /**
+         * Decodes an ArduinoNiclaSenseMeDevice message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns ArduinoNiclaSenseMeDevice
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): arduino_nicla_sense_me.ArduinoNiclaSenseMeDevice;
+
+        /**
+         * Verifies an ArduinoNiclaSenseMeDevice message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates an ArduinoNiclaSenseMeDevice message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns ArduinoNiclaSenseMeDevice
+         */
+        public static fromObject(object: { [k: string]: any }): arduino_nicla_sense_me.ArduinoNiclaSenseMeDevice;
+
+        /**
+         * Creates a plain object from an ArduinoNiclaSenseMeDevice message. Also converts values to other types if specified.
+         * @param message ArduinoNiclaSenseMeDevice
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: arduino_nicla_sense_me.ArduinoNiclaSenseMeDevice, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this ArduinoNiclaSenseMeDevice to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for ArduinoNiclaSenseMeDevice
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
+    /** Properties of a RxEnvelope. */
+    interface IRxEnvelope {
+
+        /** RxEnvelope monotonicStampNs */
+        monotonicStampNs?: (Long|null);
+
+        /** RxEnvelope localStampNs */
+        localStampNs?: (Long|null);
+
+        /** RxEnvelope appStartId */
+        appStartId?: (Long|null);
+
+        /** RxEnvelope signalType */
+        signalType?: (arduino_nicla_sense_me.ArduinoNiclaSenseMeSignalType|null);
+
+        /** RxEnvelope device */
+        device?: (arduino_nicla_sense_me.IArduinoNiclaSenseMeDevice|null);
+
+        /** RxEnvelope data */
+        data?: (Uint8Array|null);
+
+        /** RxEnvelope error */
+        error?: (string|null);
+    }
+
+    /** Represents a RxEnvelope. */
+    class RxEnvelope implements IRxEnvelope {
+
+        /**
+         * Constructs a new RxEnvelope.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: arduino_nicla_sense_me.IRxEnvelope);
+
+        /** RxEnvelope monotonicStampNs. */
+        public monotonicStampNs: Long;
+
+        /** RxEnvelope localStampNs. */
+        public localStampNs: Long;
+
+        /** RxEnvelope appStartId. */
+        public appStartId: Long;
+
+        /** RxEnvelope signalType. */
+        public signalType: arduino_nicla_sense_me.ArduinoNiclaSenseMeSignalType;
+
+        /** RxEnvelope device. */
+        public device?: (arduino_nicla_sense_me.IArduinoNiclaSenseMeDevice|null);
+
+        /** RxEnvelope data. */
+        public data: Uint8Array;
+
+        /** RxEnvelope error. */
+        public error: string;
+
+        /**
+         * Creates a new RxEnvelope instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns RxEnvelope instance
+         */
+        public static create(properties?: arduino_nicla_sense_me.IRxEnvelope): arduino_nicla_sense_me.RxEnvelope;
+
+        /**
+         * Encodes the specified RxEnvelope message. Does not implicitly {@link arduino_nicla_sense_me.RxEnvelope.verify|verify} messages.
+         * @param message RxEnvelope message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: arduino_nicla_sense_me.IRxEnvelope, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified RxEnvelope message, length delimited. Does not implicitly {@link arduino_nicla_sense_me.RxEnvelope.verify|verify} messages.
+         * @param message RxEnvelope message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: arduino_nicla_sense_me.IRxEnvelope, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes a RxEnvelope message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns RxEnvelope
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): arduino_nicla_sense_me.RxEnvelope;
+
+        /**
+         * Decodes a RxEnvelope message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns RxEnvelope
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): arduino_nicla_sense_me.RxEnvelope;
+
+        /**
+         * Verifies a RxEnvelope message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates a RxEnvelope message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns RxEnvelope
+         */
+        public static fromObject(object: { [k: string]: any }): arduino_nicla_sense_me.RxEnvelope;
+
+        /**
+         * Creates a plain object from a RxEnvelope message. Also converts values to other types if specified.
+         * @param message RxEnvelope
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: arduino_nicla_sense_me.RxEnvelope, options?: $protobuf.IConversionOptions): { [k: string]: any };
 
         /**
          * Converts this RxEnvelope to JSON.
