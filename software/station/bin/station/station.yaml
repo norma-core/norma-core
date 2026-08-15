@@ -23,7 +23,11 @@ drivers:
     enabled: true
     poll-interval: 1s
     boards:
-      - i2c-bus: 2        # adjust to the X8 I2C bus the ESLOV/sensor is wired to
+      - id: nicla-usb
+        bus-type: usb     # autodetected by USB vid/pid 2341:0060
+      # - id: nicla-i2c
+      #   bus-type: i2c
+      #   i2c-bus: 2      # adjust to the I2C bus the ESLOV chain is wired to
 inference:
 - queue-id: inference/normvla
   shm: /tmp/normvla

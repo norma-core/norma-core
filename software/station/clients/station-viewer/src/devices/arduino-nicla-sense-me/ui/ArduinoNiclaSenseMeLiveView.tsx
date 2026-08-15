@@ -31,6 +31,9 @@ function deviceLabel(data: arduino_nicla_sense_me.IRxEnvelope): string {
   if (data.device.id) {
     return data.device.id;
   }
+  if (data.device.transport === 'usb') {
+    return `usb ${data.device.usbPort || ''}`.trim();
+  }
   return `bus ${data.device.i2cBus ?? 'N/A'} / ${hexByte(data.device.i2cAddress)}`;
 }
 

@@ -386,21 +386,42 @@ impl Station {
             log::warn!("Arduino Nicla Sense Env driver requested but is Linux-only");
         }
 
-        #[cfg(all(target_os = "linux", feature = "arduino"))]
+        #[cfg(feature = "arduino")]
         if let Some(arduino_nicla_sense_me_config) = &self.config.drivers.arduino_nicla_sense_me {
             if arduino_nicla_sense_me_config.enabled {
+                use station_iface::config::ArduinoNiclaSenseMeBusType;
+
+                let boards = arduino_nicla_sense_me_config
+                    .boards
+                    .iter()
+                    .filter_map(|board| match board.bus_type {
+                        ArduinoNiclaSenseMeBusType::I2c => match board.i2c_bus {
+                            Some(i2c_bus) => Some(arduino_nicla_sense_me::ArduinoNiclaSenseMeBoardConfig {
+                                id: board.id.clone(),
+                                transport: arduino_nicla_sense_me::ArduinoNiclaSenseMeTransport::I2c {
+                                    i2c_bus,
+                                },
+                            }),
+                            None => {
+                                log::error!(
+                                    "Arduino Nicla Sense ME board {:?} has bus-type i2c but no i2c-bus; skipping",
+                                    board.id
+                                );
+                                None
+                            }
+                        },
+                        ArduinoNiclaSenseMeBusType::Usb => {
+                            Some(arduino_nicla_sense_me::ArduinoNiclaSenseMeBoardConfig {
+                                id: board.id.clone(),
+                                transport: arduino_nicla_sense_me::ArduinoNiclaSenseMeTransport::Usb,
+                            })
+                        }
+                    })
+                    .collect();
+
                 let config = arduino_nicla_sense_me::ArduinoNiclaSenseMeDriverConfig {
                     poll_interval: arduino_nicla_sense_me_config.poll_interval,
-                    boards: arduino_nicla_sense_me_config
-                        .boards
-                        .iter()
-                        .map(
-                            |board| arduino_nicla_sense_me::ArduinoNiclaSenseMeBoardConfig {
-                                id: board.id.clone(),
-                                i2c_bus: board.i2c_bus,
-                            },
-                        )
-                        .collect(),
+                    boards,
                 };
 
                 if let Err(error) = arduino_nicla_sense_me::start_arduino_nicla_sense_me_driver(
@@ -417,7 +438,7 @@ impl Station {
             }
         }
 
-        #[cfg(all(target_os = "linux", not(feature = "arduino")))]
+        #[cfg(not(feature = "arduino"))]
         if self
             .config
             .drivers
@@ -428,17 +449,6 @@ impl Station {
             log::warn!(
                 "Arduino Nicla Sense ME driver requested but not compiled (missing 'arduino' feature)"
             );
-        }
-
-        #[cfg(not(target_os = "linux"))]
-        if self
-            .config
-            .drivers
-            .arduino_nicla_sense_me
-            .as_ref()
-            .is_some_and(|config| config.enabled)
-        {
-            log::warn!("Arduino Nicla Sense ME driver requested but is Linux-only");
         }
 
         #[cfg(all(target_os = "linux", feature = "ina226"))]

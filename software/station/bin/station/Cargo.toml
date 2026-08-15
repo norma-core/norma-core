@@ -20,6 +20,7 @@ station_iface = { path = "../../shared/station-iface" }
 st3215 = { path = "../../../drivers/st3215" }
 vesc-trampa = { path = "../../../drivers/vesc-trampa" }
 airgradient-open-air-o-1pst = { path = "../../../drivers/airgradient-open-air-o-1pst" }
+arduino-nicla-sense-me = { path = "../../../drivers/arduino-nicla-sense-me", optional = true }
 victron-smartsolar-mppt = { path = "../../../drivers/victron-smartsolar-mppt" }
 pwm-output = { path = "../../../drivers/pwm-output" }
 dmesg = { path = "../../../drivers/dmesg" }
@@ -45,7 +46,6 @@ dashmap = "6.1"
 
 [target.'cfg(target_os = "linux")'.dependencies]
 arduino-nicla-sense-env = { path = "../../../drivers/arduino-nicla-sense-env", optional = true }
-arduino-nicla-sense-me = { path = "../../../drivers/arduino-nicla-sense-me", optional = true }
 hikmicro-thermal = { path = "../../../drivers/hikmicro-thermal" }
 ina226 = { path = "../../../drivers/ina226", optional = true }
 
