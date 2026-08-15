@@ -4,7 +4,7 @@ use crate::arduino_nicla_sense_me_proto::{
 };
 use bytes::Bytes;
 use i2c_async::AsyncI2cDevice;
-use log::{error, info, warn};
+use log::{debug, error, info, warn};
 use normfs::{NormFS, QueueId, UintN};
 use prost::Message;
 use station_iface::StationEngine;
@@ -133,13 +133,21 @@ impl ArduinoNiclaSenseMeDriver {
             config.poll_interval
         };
 
-        let boards = config
-            .boards
-            .iter()
-            .map(|board| (Board::key(board.transport), Board::from_config(board)))
-            .collect::<BTreeMap<_, _>>();
+        let mut boards = BTreeMap::new();
+        for board_config in &config.boards {
+            let key = Board::key(board_config.transport);
+            if boards
+                .insert(key.clone(), Board::from_config(board_config))
+                .is_some()
+            {
+                warn!(
+                    "Arduino Nicla Sense ME board {:?} replaces an earlier board with the same transport key {key}",
+                    board_config.id
+                );
+            }
+        }
         if boards.is_empty() {
-            warn!("Arduino Nicla Sense ME driver enabled with no i2c-buses configured");
+            warn!("Arduino Nicla Sense ME driver enabled with no boards configured");
         }
 
         let tasks = boards
@@ -160,7 +168,7 @@ impl ArduinoNiclaSenseMeDriver {
             .collect::<Vec<_>>();
 
         info!(
-            "Started Arduino Nicla Sense ME driver for {} I2C bus(es)",
+            "Started Arduino Nicla Sense ME driver for {} board(s)",
             boards.len()
         );
 
@@ -331,7 +339,7 @@ async fn poll_usb_once(
             .timeout(SERIAL_RESPONSE_TIMEOUT)
             .open_native_async()
             .map_err(|error| format!("failed to open {name}: {error}"))?;
-        info!("Opened Arduino Nicla Sense ME USB port {name}");
+        debug!("Opened Arduino Nicla Sense ME USB port {name}");
         *connection = Some((stream, name));
         *verified = false;
     }
