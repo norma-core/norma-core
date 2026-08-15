@@ -26,6 +26,12 @@ message ArduinoNiclaSenseMeDevice {
     uint32 i2c_bus     = 2;
     uint32 i2c_address = 3;
 
+    // "i2c" or "usb".
+    string transport = 4;
+
+    // Serial port path when transport == "usb" (e.g. /dev/ttyACM0).
+    string usb_port = 5;
+
     ArduinoNiclaSenseMeDeviceInfo info = 10;
 }
 

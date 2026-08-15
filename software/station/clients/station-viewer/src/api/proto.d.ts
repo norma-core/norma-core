@@ -13657,6 +13657,12 @@ export namespace arduino_nicla_sense_me {
         /** ArduinoNiclaSenseMeDevice i2cAddress */
         i2cAddress?: (number|null);
 
+        /** ArduinoNiclaSenseMeDevice transport */
+        transport?: (string|null);
+
+        /** ArduinoNiclaSenseMeDevice usbPort */
+        usbPort?: (string|null);
+
         /** ArduinoNiclaSenseMeDevice info */
         info?: (arduino_nicla_sense_me.IArduinoNiclaSenseMeDeviceInfo|null);
     }
@@ -13678,6 +13684,12 @@ export namespace arduino_nicla_sense_me {
 
         /** ArduinoNiclaSenseMeDevice i2cAddress. */
         public i2cAddress: number;
+
+        /** ArduinoNiclaSenseMeDevice transport. */
+        public transport: string;
+
+        /** ArduinoNiclaSenseMeDevice usbPort. */
+        public usbPort: string;
 
         /** ArduinoNiclaSenseMeDevice info. */
         public info?: (arduino_nicla_sense_me.IArduinoNiclaSenseMeDeviceInfo|null);

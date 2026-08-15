@@ -75,6 +75,8 @@ impl Board {
             id: self.id.clone(),
             i2c_bus: self.i2c_bus,
             i2c_address: DEFAULT_I2C_ADDRESS as u32,
+            transport: "i2c".to_string(),
+            usb_port: String::new(),
             info: data.and_then(parse_device_info),
         }
     }
