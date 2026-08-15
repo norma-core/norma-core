@@ -12,6 +12,7 @@ normfs = { workspace = true }
 station_iface = { path = "../../station/shared/station-iface" }
 systime = { path = "../../station/shared/systime-rs" }
 tokio = { workspace = true }
+tokio-serial = { workspace = true }
 
 [build-dependencies]
 prost-build = { workspace = true }
