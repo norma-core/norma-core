@@ -9,6 +9,7 @@
  * synchronously latches a consistent snapshot (inside the I2C receive
  * handler) that all subsequent reads are served from, so a chunked full-map
  * read never tears.
+ * The same image is served over USB CDC serial: command 0x01 returns one CRC8-framed snapshot (see README).
  */
 
 #include "Arduino_BHY2.h"
@@ -58,6 +59,26 @@ constexpr float ACCEL_LSB_PER_G = 4096.0f;    // 32768 / 8g
 constexpr float GYRO_LSB_PER_DPS = 16.384f;   // 32768 / 2000dps
 constexpr float MAG_LSB_PER_UT = 16.0f;       // BMM150 0.0625 uT/LSB
 
+// USB serial dump protocol (contract with the station driver): the host
+// sends SERIAL_CMD_DUMP, the sketch replies with one frame:
+//   [0xA5, 0x5A, 0xA8, <168-byte register image>, crc8(payload)]
+// CRC8 is poly 0x07, init 0x00, computed over the payload only. Unknown
+// command bytes are ignored.
+constexpr uint8_t SERIAL_CMD_DUMP = 0x01;
+constexpr uint8_t SERIAL_MAGIC0 = 0xA5;
+constexpr uint8_t SERIAL_MAGIC1 = 0x5A;
+
+static uint8_t crc8(const uint8_t *data, size_t len) {
+  uint8_t crc = 0;
+  for (size_t i = 0; i < len; i++) {
+    crc ^= data[i];
+    for (uint8_t bit = 0; bit < 8; bit++) {
+      crc = (crc & 0x80) ? (uint8_t)((crc << 1) ^ 0x07) : (uint8_t)(crc << 1);
+    }
+  }
+  return crc;
+}
+
 SensorXYZ accel(SENSOR_ID_ACC);
 SensorXYZ gyro(SENSOR_ID_GYRO);
 SensorXYZ mag(SENSOR_ID_MAG);
@@ -78,6 +99,24 @@ static uint8_t stableMap[REG_MAP_SIZE];  // last complete snapshot, committed un
 static uint8_t latchedMap[REG_MAP_SIZE]; // frozen copy served to the host during a dump
 static volatile uint8_t regPointer = 0;
 static bool bhy2Ok = false;
+
+static void serviceSerialDump() {
+  while (Serial.available() > 0) {
+    int cmd = Serial.read();
+    if (cmd != SERIAL_CMD_DUMP) {
+      continue; // unknown bytes are ignored
+    }
+    uint8_t frame[3 + REG_MAP_SIZE + 1];
+    frame[0] = SERIAL_MAGIC0;
+    frame[1] = SERIAL_MAGIC1;
+    frame[2] = (uint8_t)REG_MAP_SIZE;
+    // stableMap is only ever written by loop() (this same thread), so this
+    // copy is always a complete snapshot; no interrupt guard needed.
+    memcpy(frame + 3, stableMap, REG_MAP_SIZE);
+    frame[3 + REG_MAP_SIZE] = crc8(frame + 3, REG_MAP_SIZE);
+    Serial.write(frame, sizeof(frame));
+  }
+}
 
 static void writeF32(uint8_t *map, size_t offset, float value) {
   memcpy(map + offset, &value, sizeof(value));
@@ -157,6 +196,10 @@ void setup() {
   memcpy(stableMap, liveMap, sizeof(stableMap));
   memcpy(latchedMap, stableMap, sizeof(latchedMap));
 
+  // USB CDC serial for the USB transport. Baud is irrelevant for CDC.
+  // Never wait for !Serial: the board usually runs headless.
+  Serial.begin(115200);
+
   Wire.begin(I2C_ADDRESS);
   Wire.onReceive(onI2CReceive);
   Wire.onRequest(onI2CRequest);
@@ -216,6 +259,8 @@ void loop() {
   noInterrupts();
   memcpy(stableMap, liveMap, sizeof(stableMap));
   interrupts();
+
+  serviceSerialDump();
 
   delay(10);
 }

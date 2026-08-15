@@ -45,6 +45,16 @@ is running.
 | 0xA4 | u32 | activity recognition bitfield |
 | — | — | total length 0xA8 (168 bytes) |
 
+## USB serial transport
+
+The sketch also serves the register image over the board's USB CDC serial
+port (any baud). Send the single byte `0x01`; the reply is one 172-byte
+frame: magic `0xA5 0x5A`, length byte `0xA8`, the 168-byte register image
+(latched, internally consistent), and a trailing CRC8 (poly 0x07, init 0x00)
+over the 168-byte payload. Unknown command bytes are ignored. The station's
+`arduino-nicla-sense-me` driver autodetects the board by USB VID/PID
+`2341:0060` when a board is configured with `bus-type: usb`.
+
 ## Flashing
 
 Flashing is done from a workstation over USB (not from the X8).
