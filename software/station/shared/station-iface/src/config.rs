@@ -473,13 +473,24 @@ pub struct ArduinoNiclaSenseMeConfig {
     pub poll_interval: std::time::Duration,
 }
 
+#[derive(Debug, Serialize, Deserialize, Clone, Copy, PartialEq, Eq, Default)]
+#[serde(rename_all = "lowercase")]
+pub enum ArduinoNiclaSenseMeBusType {
+    #[default]
+    I2c,
+    Usb,
+}
+
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ArduinoNiclaSenseMeBoardConfig {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
 
-    #[serde(rename = "i2c-bus")]
-    pub i2c_bus: u32,
+    #[serde(rename = "bus-type", default)]
+    pub bus_type: ArduinoNiclaSenseMeBusType,
+
+    #[serde(rename = "i2c-bus", default, skip_serializing_if = "Option::is_none")]
+    pub i2c_bus: Option<u32>,
 }
 
 fn default_arduino_nicla_sense_me_poll_interval() -> std::time::Duration {
@@ -840,7 +851,29 @@ arduino-nicla-sense-me:
         assert_eq!(me.poll_interval, std::time::Duration::from_millis(500));
         assert_eq!(me.boards.len(), 1);
         assert_eq!(me.boards[0].id.as_deref(), Some("imu-front"));
-        assert_eq!(me.boards[0].i2c_bus, 2);
+        assert_eq!(me.boards[0].bus_type, ArduinoNiclaSenseMeBusType::I2c);
+        assert_eq!(me.boards[0].i2c_bus, Some(2));
+    }
+
+    #[test]
+    fn parses_arduino_nicla_sense_me_usb_board() {
+        let yaml = r#"
+system-info: false
+arduino-nicla-sense-me:
+  enabled: true
+  boards:
+    - id: nicla-usb
+      bus-type: usb
+    - bus-type: i2c
+      i2c-bus: 3
+"#;
+        let drivers: Drivers = serde_yaml::from_str(yaml).expect("drivers block parses");
+        let me = drivers.arduino_nicla_sense_me.expect("block present");
+        assert_eq!(me.boards.len(), 2);
+        assert_eq!(me.boards[0].bus_type, ArduinoNiclaSenseMeBusType::Usb);
+        assert_eq!(me.boards[0].i2c_bus, None);
+        assert_eq!(me.boards[1].bus_type, ArduinoNiclaSenseMeBusType::I2c);
+        assert_eq!(me.boards[1].i2c_bus, Some(3));
     }
 
     #[test]
