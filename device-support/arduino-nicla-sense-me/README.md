@@ -9,14 +9,15 @@ Protocol: write one byte to set the register pointer; subsequent reads return
 sequential bytes. Writing pointer `0x00` latches a consistent snapshot of all
 values — the station driver reads the full 168-byte map in 32-byte chunks and
 always starts at `0x00`, so every dump is internally consistent. The
-`sample counter` register (0x01) increments on every firmware refresh.
+`sample counter` register (0x01) increments per firmware refresh while BHY2
+is running.
 
 ## Register map (little-endian)
 
 | Offset | Size | Field |
 |---|---|---|
 | 0x00 | u8 | status (bit0 BHY2 ok, bit1 BSEC valid) |
-| 0x01 | u8 | sample counter (increments per snapshot refresh) |
+| 0x01 | u8 | sample counter (increments per firmware refresh while BHY2 is running) |
 | 0x02–0x0B | — | reserved (zero) |
 | 0x0C | u8 | software revision |
 | 0x0D | u8 | product id = 0x4D |

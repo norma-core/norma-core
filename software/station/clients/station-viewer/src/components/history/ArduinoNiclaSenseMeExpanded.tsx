@@ -1,5 +1,5 @@
 import { arduino_nicla_sense_me } from '@/api/proto.js';
-import { ME_OFFSETS, f32le, u8, u32le, vec3 } from '@/devices/arduino-nicla-sense-me/values';
+import { ME_OFFSETS, ME_REGISTER_LENGTH, f32le, u8, u32le, vec3 } from '@/devices/arduino-nicla-sense-me/values';
 import type { Vec3 } from '@/devices/arduino-nicla-sense-me/values';
 
 interface ArduinoNiclaSenseMeExpandedProps {
@@ -102,7 +102,7 @@ function parsedGroups(bytes: Uint8Array): ValueGroup[] {
         { label: 'Product ID', value: byteValue(bytes, ME_OFFSETS.productId), tone: 'text-accent-data' },
         {
           label: 'Serial number',
-          value: bytes.length >= ME_OFFSETS.serial + 6 ? hexBytes(bytes.slice(ME_OFFSETS.serial, ME_OFFSETS.serial + 6)) : 'N/A',
+          value: bytes.length >= ME_REGISTER_LENGTH ? hexBytes(bytes.slice(ME_OFFSETS.serial, ME_OFFSETS.serial + 6)) : 'N/A',
           tone: 'text-accent-info',
         },
       ],
@@ -215,7 +215,7 @@ export default function ArduinoNiclaSenseMeExpanded({ data }: ArduinoNiclaSenseM
         <SummaryCell label="Product ID" value={hexByte(info?.productId ?? u8(bytes, ME_OFFSETS.productId))} tone="text-accent-success" />
         <SummaryCell
           label="Serial"
-          value={hexBytes(info?.serialNumber ?? (bytes.length >= ME_OFFSETS.serial + 6 ? bytes.slice(ME_OFFSETS.serial, ME_OFFSETS.serial + 6) : null))}
+          value={hexBytes(info?.serialNumber ?? (bytes.length >= ME_REGISTER_LENGTH ? bytes.slice(ME_OFFSETS.serial, ME_OFFSETS.serial + 6) : null))}
           tone="text-accent-info"
         />
         <SummaryCell label="Samples" value={uintValue(u8(bytes, ME_OFFSETS.sampleCounter))} tone="text-accent-data" />

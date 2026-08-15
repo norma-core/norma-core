@@ -6,8 +6,9 @@
  * shared with software/drivers/arduino-nicla-sense-me and the station-viewer;
  * see README.md in this directory. Register-pointer semantics: a 1-byte write
  * sets the read pointer; reads return sequential bytes. Writing pointer 0x00
- * latches a consistent snapshot that all subsequent reads are served from,
- * so a chunked full-map read never tears.
+ * synchronously latches a consistent snapshot (inside the I2C receive
+ * handler) that all subsequent reads are served from, so a chunked full-map
+ * read never tears.
  */
 
 #include "Arduino_BHY2.h"
@@ -75,7 +76,6 @@ SensorActivity activity(SENSOR_ID_AR);
 static uint8_t liveMap[REG_MAP_SIZE];
 static uint8_t latchedMap[REG_MAP_SIZE];
 static volatile uint8_t regPointer = 0;
-static volatile bool latchRequested = false;
 static bool bhy2Ok = false;
 
 static void writeF32(uint8_t *map, size_t offset, float value) {
@@ -99,7 +99,10 @@ void onI2CReceive(int count) {
       Wire.read(); // register writes are not supported; drain
     }
     if (regPointer == 0x00) {
-      latchRequested = true; // snapshot is copied in loop() to keep the ISR short
+      // Snapshot synchronously: this is a 168-byte memcpy (microseconds on
+      // the nRF52), well within I2C clock stretching, and guarantees the
+      // latch cannot land mid-dump between the host's chunked reads.
+      memcpy(latchedMap, liveMap, sizeof(latchedMap));
     }
   }
 }
@@ -198,13 +201,8 @@ void loop() {
   writeU32(liveMap, REG_ACTIVITY, (uint32_t)activity.value());
 
   liveMap[REG_STATUS] = (bhy2Ok ? 0x01 : 0x00) | (bsec.accuracy() > 0 ? 0x02 : 0x00);
-  liveMap[REG_SAMPLE_COUNTER] = liveMap[REG_SAMPLE_COUNTER] + 1;
-
-  if (latchRequested) {
-    noInterrupts();
-    latchRequested = false;
-    memcpy(latchedMap, liveMap, sizeof(latchedMap));
-    interrupts();
+  if (bhy2Ok) {
+    liveMap[REG_SAMPLE_COUNTER] = liveMap[REG_SAMPLE_COUNTER] + 1;
   }
 
   delay(10);
