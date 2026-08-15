@@ -101,7 +101,10 @@ static volatile uint8_t regPointer = 0;
 static bool bhy2Ok = false;
 
 static void serviceSerialDump() {
-  while (Serial.available() > 0) {
+  // Bounded per call: drain at most a small budget of bytes and answer at
+  // most one dump command per loop() tick, so a chatty or misbehaving host
+  // can never starve sensor updates.
+  for (int budget = 0; budget < 16 && Serial.available() > 0; budget++) {
     int cmd = Serial.read();
     if (cmd != SERIAL_CMD_DUMP) {
       continue; // unknown bytes are ignored
@@ -115,6 +118,7 @@ static void serviceSerialDump() {
     memcpy(frame + 3, stableMap, REG_MAP_SIZE);
     frame[3 + REG_MAP_SIZE] = crc8(frame + 3, REG_MAP_SIZE);
     Serial.write(frame, sizeof(frame));
+    return; // one reply per tick; remaining commands are served next tick
   }
 }
 
