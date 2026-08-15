@@ -466,6 +466,7 @@ fn send_board_signal(
         signal_type: signal_type as i32,
         device: Some(board.proto(data.map(|data| data.as_ref()), usb_port)),
         data: data.cloned().unwrap_or_default(),
+        motion: Bytes::new(),
         error: error_message.unwrap_or_default(),
     };
 

@@ -40093,6 +40093,7 @@ export const arduino_nicla_sense_me = $root.arduino_nicla_sense_me = (() => {
          * @property {arduino_nicla_sense_me.ArduinoNiclaSenseMeSignalType|null} [signalType] RxEnvelope signalType
          * @property {arduino_nicla_sense_me.IArduinoNiclaSenseMeDevice|null} [device] RxEnvelope device
          * @property {Uint8Array|null} [data] RxEnvelope data
+         * @property {Uint8Array|null} [motion] RxEnvelope motion
          * @property {string|null} [error] RxEnvelope error
          */
 
@@ -40160,6 +40161,14 @@ export const arduino_nicla_sense_me = $root.arduino_nicla_sense_me = (() => {
         RxEnvelope.prototype.data = $util.newBuffer([]);
 
         /**
+         * RxEnvelope motion.
+         * @member {Uint8Array} motion
+         * @memberof arduino_nicla_sense_me.RxEnvelope
+         * @instance
+         */
+        RxEnvelope.prototype.motion = $util.newBuffer([]);
+
+        /**
          * RxEnvelope error.
          * @member {string} error
          * @memberof arduino_nicla_sense_me.RxEnvelope
@@ -40203,6 +40212,8 @@ export const arduino_nicla_sense_me = $root.arduino_nicla_sense_me = (() => {
                 $root.arduino_nicla_sense_me.ArduinoNiclaSenseMeDevice.encode(message.device, writer.uint32(/* id 11, wireType 2 =*/90).fork()).ldelim();
             if (message.data != null && Object.hasOwnProperty.call(message, "data"))
                 writer.uint32(/* id 20, wireType 2 =*/162).bytes(message.data);
+            if (message.motion != null && Object.hasOwnProperty.call(message, "motion"))
+                writer.uint32(/* id 21, wireType 2 =*/170).bytes(message.motion);
             if (message.error != null && Object.hasOwnProperty.call(message, "error"))
                 writer.uint32(/* id 50, wireType 2 =*/402).string(message.error);
             return writer;
@@ -40267,6 +40278,10 @@ export const arduino_nicla_sense_me = $root.arduino_nicla_sense_me = (() => {
                     }
                 case 20: {
                         message.data = reader.bytes();
+                        break;
+                    }
+                case 21: {
+                        message.motion = reader.bytes();
                         break;
                     }
                 case 50: {
@@ -40340,6 +40355,9 @@ export const arduino_nicla_sense_me = $root.arduino_nicla_sense_me = (() => {
             if (message.data != null && message.hasOwnProperty("data"))
                 if (!(message.data && typeof message.data.length === "number" || $util.isString(message.data)))
                     return "data: buffer expected";
+            if (message.motion != null && message.hasOwnProperty("motion"))
+                if (!(message.motion && typeof message.motion.length === "number" || $util.isString(message.motion)))
+                    return "motion: buffer expected";
             if (message.error != null && message.hasOwnProperty("error"))
                 if (!$util.isString(message.error))
                     return "error: string expected";
@@ -40427,6 +40445,11 @@ export const arduino_nicla_sense_me = $root.arduino_nicla_sense_me = (() => {
                     $util.base64.decode(object.data, message.data = $util.newBuffer($util.base64.length(object.data)), 0);
                 else if (object.data.length >= 0)
                     message.data = object.data;
+            if (object.motion != null)
+                if (typeof object.motion === "string")
+                    $util.base64.decode(object.motion, message.motion = $util.newBuffer($util.base64.length(object.motion)), 0);
+                else if (object.motion.length >= 0)
+                    message.motion = object.motion;
             if (object.error != null)
                 message.error = String(object.error);
             return message;
@@ -40470,6 +40493,13 @@ export const arduino_nicla_sense_me = $root.arduino_nicla_sense_me = (() => {
                     if (options.bytes !== Array)
                         object.data = $util.newBuffer(object.data);
                 }
+                if (options.bytes === String)
+                    object.motion = "";
+                else {
+                    object.motion = [];
+                    if (options.bytes !== Array)
+                        object.motion = $util.newBuffer(object.motion);
+                }
                 object.error = "";
             }
             if (message.monotonicStampNs != null && message.hasOwnProperty("monotonicStampNs"))
@@ -40493,6 +40523,8 @@ export const arduino_nicla_sense_me = $root.arduino_nicla_sense_me = (() => {
                 object.device = $root.arduino_nicla_sense_me.ArduinoNiclaSenseMeDevice.toObject(message.device, options);
             if (message.data != null && message.hasOwnProperty("data"))
                 object.data = options.bytes === String ? $util.base64.encode(message.data, 0, message.data.length) : options.bytes === Array ? Array.prototype.slice.call(message.data) : message.data;
+            if (message.motion != null && message.hasOwnProperty("motion"))
+                object.motion = options.bytes === String ? $util.base64.encode(message.motion, 0, message.motion.length) : options.bytes === Array ? Array.prototype.slice.call(message.motion) : message.motion;
             if (message.error != null && message.hasOwnProperty("error"))
                 object.error = message.error;
             return object;
