@@ -1,5 +1,5 @@
 import Long from 'long';
-import { airgradient_open_air_o_1pst, arduino_nicla_sense_env, dmesg, hikmicro, ina226, yahboom_dogzilla_lite, drivers, inference, motors_mirroring, normvla, pwm_output, st3215, sysinfo, usbvideo, vesc_trampa, victron_smartsolar_mppt } from '@/api/proto.js';
+import { airgradient_open_air_o_1pst, arduino_nicla_sense_env, dmesg, hikmicro, ina226, yahboom_dogzilla_lite, drivers, inference, motors_mirroring, normvla, pwm_output, st3215, sysinfo, usbvideo, vesc_trampa, victron_smartsolar_mppt, arduino_nicla_sense_me } from '@/api/proto.js';
 import { NormFsClient } from "./normfs.js";
 import { getGlobalTimeAdjustmentNs, isTimeSyncActive } from '@/api/time-sync.js';
 import {
@@ -30,6 +30,7 @@ export interface Frame {
   mirroring?: FrameEntry<motors_mirroring.IRxEnvelope>;
   sysinfo?: FrameEntry<sysinfo.IEnvelope>;
   arduinoNiclaSenseEnv?: FrameEntry<arduino_nicla_sense_env.IRxEnvelope>;
+  arduinoNiclaSenseMe?: FrameEntry<arduino_nicla_sense_me.IRxEnvelope>;
   ina226?: FrameEntry<ina226.IRxEnvelope>[];
   airgradientOpenAir?: FrameEntry<airgradient_open_air_o_1pst.IRxEnvelope>[];
   victronSmartSolar?: FrameEntry<victron_smartsolar_mppt.IRxEnvelope>[];
@@ -53,7 +54,7 @@ export interface Frame {
 }
 
 // Find entry in previous frame with matching queue and pointer
-type DecodedEntry = st3215.IInferenceState | st3215.ITxEnvelope | usbvideo.IRxEnvelope | usbvideo.ITxEnvelope | hikmicro.IRxEnvelope | motors_mirroring.IRxEnvelope | sysinfo.IEnvelope | arduino_nicla_sense_env.IRxEnvelope | ina226.IRxEnvelope | airgradient_open_air_o_1pst.IRxEnvelope | victron_smartsolar_mppt.IRxEnvelope | dmesg.IRxEnvelope | yahboom_dogzilla_lite.IInferenceState | normvla.IFrame | vesc_trampa.IInferenceState | vesc_trampa.IRxEnvelope | vesc_trampa.ITxEnvelope | pwm_output.IRxEnvelope | pwm_output.ITxEnvelope | null;
+type DecodedEntry = st3215.IInferenceState | st3215.ITxEnvelope | usbvideo.IRxEnvelope | usbvideo.ITxEnvelope | hikmicro.IRxEnvelope | motors_mirroring.IRxEnvelope | sysinfo.IEnvelope | arduino_nicla_sense_env.IRxEnvelope | ina226.IRxEnvelope | airgradient_open_air_o_1pst.IRxEnvelope | victron_smartsolar_mppt.IRxEnvelope | dmesg.IRxEnvelope | yahboom_dogzilla_lite.IInferenceState | normvla.IFrame | vesc_trampa.IInferenceState | vesc_trampa.IRxEnvelope | vesc_trampa.ITxEnvelope | pwm_output.IRxEnvelope | pwm_output.ITxEnvelope | arduino_nicla_sense_me.IRxEnvelope | null;
 
 interface ParseFrameOptions {
   retainRawData?: boolean;
@@ -170,6 +171,14 @@ function findPreviousEntry(
     const prevPtr = previousFrame.arduinoNiclaSenseEnv.ptr;
     if (prevPtr.length === ptr.length && prevPtr.every((b, i) => b === ptr[i])) {
       return { decoded: previousFrame.arduinoNiclaSenseEnv.data, rawData: previousFrame.arduinoNiclaSenseEnv.rawData ?? null };
+    }
+  }
+
+  // Check Arduino Nicla Sense ME
+  if (previousFrame.arduinoNiclaSenseMe?.queueId === queue) {
+    const prevPtr = previousFrame.arduinoNiclaSenseMe.ptr;
+    if (prevPtr.length === ptr.length && prevPtr.every((b, i) => b === ptr[i])) {
+      return { decoded: previousFrame.arduinoNiclaSenseMe.data, rawData: previousFrame.arduinoNiclaSenseMe.rawData ?? null };
     }
   }
 
@@ -393,6 +402,13 @@ export async function parseFrame(
                 console.error("Failed to decode arduino_nicla_sense_env.RxEnvelope:", error);
               }
               break;
+            case drivers.QueueDataType.QDT_ARDUINO_NICLA_SENSE_ME_RX:
+              try {
+                decoded = arduino_nicla_sense_me.RxEnvelope.decode(streamEntry.data);
+              } catch (error) {
+                console.error("Failed to decode arduino_nicla_sense_me.RxEnvelope:", error);
+              }
+              break;
             case drivers.QueueDataType.QDT_INA226_RX:
               try {
                 decoded = ina226.RxEnvelope.decode(streamEntry.data);
@@ -563,6 +579,15 @@ export async function parseFrame(
               queueId: result.queue,
               ptr: result.ptr,
               data: result.decoded as arduino_nicla_sense_env.IRxEnvelope,
+              rawData: retainRawData ? result.rawData ?? null : null,
+              queueType: result.type
+            };
+            break;
+          case drivers.QueueDataType.QDT_ARDUINO_NICLA_SENSE_ME_RX:
+            frame.arduinoNiclaSenseMe = {
+              queueId: result.queue,
+              ptr: result.ptr,
+              data: result.decoded as arduino_nicla_sense_me.IRxEnvelope,
               rawData: retainRawData ? result.rawData ?? null : null,
               queueType: result.type
             };

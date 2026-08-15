@@ -1,4 +1,4 @@
-import { airgradient_open_air_o_1pst, arduino_nicla_sense_env, hikmicro, usbvideo, frame, st3215, motors_mirroring, sysinfo, yahboom_dogzilla_lite, normvla, ina226, victron_smartsolar_mppt } from '@/api/proto.js';
+import { airgradient_open_air_o_1pst, arduino_nicla_sense_env, arduino_nicla_sense_me, hikmicro, usbvideo, frame, st3215, motors_mirroring, sysinfo, yahboom_dogzilla_lite, normvla, ina226, victron_smartsolar_mppt } from '@/api/proto.js';
 import { serverToLocal } from '@/api/timestamp-utils';
 
 type ParsedHistoryData =
@@ -8,6 +8,7 @@ type ParsedHistoryData =
   | motors_mirroring.IRxEnvelope
   | sysinfo.IEnvelope
   | arduino_nicla_sense_env.IRxEnvelope
+  | arduino_nicla_sense_me.IRxEnvelope
   | ina226.IRxEnvelope
   | airgradient_open_air_o_1pst.IRxEnvelope
   | yahboom_dogzilla_lite.IInferenceState
@@ -251,6 +252,18 @@ export function parseArduinoNiclaSenseEnvData(data: Uint8Array | ParsedHistoryDa
     return arduino_nicla_sense_env.RxEnvelope.decode(data);
   } catch (error) {
     console.error('Failed to parse arduino_nicla_sense_env.RxEnvelope:', error);
+    return null;
+  }
+}
+
+export function parseArduinoNiclaSenseMeData(data: Uint8Array | ParsedHistoryData): arduino_nicla_sense_me.RxEnvelope | null {
+  if (!(data instanceof Uint8Array)) {
+    return data as arduino_nicla_sense_me.RxEnvelope;
+  }
+  try {
+    return arduino_nicla_sense_me.RxEnvelope.decode(data);
+  } catch (error) {
+    console.error('Failed to parse arduino_nicla_sense_me.RxEnvelope:', error);
     return null;
   }
 }
