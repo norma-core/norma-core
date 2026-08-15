@@ -5,7 +5,7 @@ edition = "2024"
 
 [features]
 default = ["arduino", "ina226"]
-arduino = ["dep:arduino-nicla-sense-env"]
+arduino = ["dep:arduino-nicla-sense-env", "dep:arduino-nicla-sense-me"]
 ina226 = ["dep:ina226"]
 ov5647 = ["dep:ov5647"]
 yahboom-dogzilla-lite = ["dep:yahboom-dogzilla-lite"]
@@ -45,6 +45,7 @@ dashmap = "6.1"
 
 [target.'cfg(target_os = "linux")'.dependencies]
 arduino-nicla-sense-env = { path = "../../../drivers/arduino-nicla-sense-env", optional = true }
+arduino-nicla-sense-me = { path = "../../../drivers/arduino-nicla-sense-me", optional = true }
 hikmicro-thermal = { path = "../../../drivers/hikmicro-thermal" }
 ina226 = { path = "../../../drivers/ina226", optional = true }
 

@@ -19,6 +19,11 @@ drivers:
   yahboom-dogzilla-lite:
     enabled: true
     mode: simulation
+  arduino-nicla-sense-me:
+    enabled: true
+    poll-interval: 1s
+    boards:
+      - i2c-bus: 2        # adjust to the X8 I2C bus the ESLOV/sensor is wired to
 inference:
 - queue-id: inference/normvla
   shm: /tmp/normvla

@@ -386,6 +386,61 @@ impl Station {
             log::warn!("Arduino Nicla Sense Env driver requested but is Linux-only");
         }
 
+        #[cfg(all(target_os = "linux", feature = "arduino"))]
+        if let Some(arduino_nicla_sense_me_config) = &self.config.drivers.arduino_nicla_sense_me {
+            if arduino_nicla_sense_me_config.enabled {
+                let config = arduino_nicla_sense_me::ArduinoNiclaSenseMeDriverConfig {
+                    poll_interval: arduino_nicla_sense_me_config.poll_interval,
+                    boards: arduino_nicla_sense_me_config
+                        .boards
+                        .iter()
+                        .map(
+                            |board| arduino_nicla_sense_me::ArduinoNiclaSenseMeBoardConfig {
+                                id: board.id.clone(),
+                                i2c_bus: board.i2c_bus,
+                            },
+                        )
+                        .collect(),
+                };
+
+                if let Err(error) = arduino_nicla_sense_me::start_arduino_nicla_sense_me_driver(
+                    self.normfs.clone(),
+                    self.engine.clone(),
+                    config,
+                )
+                .await
+                {
+                    log::error!("Failed to start Arduino Nicla Sense ME driver: {}", error);
+                }
+            } else {
+                log::info!("Arduino Nicla Sense ME driver disabled by configuration");
+            }
+        }
+
+        #[cfg(all(target_os = "linux", not(feature = "arduino")))]
+        if self
+            .config
+            .drivers
+            .arduino_nicla_sense_me
+            .as_ref()
+            .is_some_and(|config| config.enabled)
+        {
+            log::warn!(
+                "Arduino Nicla Sense ME driver requested but not compiled (missing 'arduino' feature)"
+            );
+        }
+
+        #[cfg(not(target_os = "linux"))]
+        if self
+            .config
+            .drivers
+            .arduino_nicla_sense_me
+            .as_ref()
+            .is_some_and(|config| config.enabled)
+        {
+            log::warn!("Arduino Nicla Sense ME driver requested but is Linux-only");
+        }
+
         #[cfg(all(target_os = "linux", feature = "ina226"))]
         if let Some(ina226_config) = &self.config.drivers.ina226 {
             if ina226_config.enabled {

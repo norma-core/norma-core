@@ -2549,6 +2549,7 @@ dependencies = [
  "airgradient-open-air-o-1pst",
  "anyhow",
  "arduino-nicla-sense-env",
+ "arduino-nicla-sense-me",
  "bytes",
  "clap",
  "dashmap",
