@@ -79,13 +79,16 @@ static uint8_t crc8(const uint8_t *data, size_t len) {
   return crc;
 }
 
+// IMPORTANT: the BHI260AP handles at most 11 concurrent virtual-sensor
+// subscriptions with this firmware — the 12th begin() hard-faults the
+// host library (verified empirically on hardware, 2026-08-15). We therefore
+// subscribe to exactly 11 sensors and DERIVE euler (from the quaternion),
+// gravity (quaternion-rotated 1g), and linear acceleration (accel minus
+// gravity) in software. Do not add a 12th subscription.
 SensorXYZ accel(SENSOR_ID_ACC);
 SensorXYZ gyro(SENSOR_ID_GYRO);
 SensorXYZ mag(SENSOR_ID_MAG);
-SensorXYZ linAccel(SENSOR_ID_LACC);
-SensorXYZ gravity(SENSOR_ID_GRA);
 SensorQuaternion quat(SENSOR_ID_RV);
-SensorOrientation orientation(SENSOR_ID_ORI);
 Sensor temperature(SENSOR_ID_TEMP);
 Sensor humidity(SENSOR_ID_HUM);
 Sensor pressure(SENSOR_ID_BARO);
@@ -136,6 +139,36 @@ static void writeVec3(uint8_t *map, size_t offset, SensorXYZ &sensor, float lsbP
   writeF32(map, offset + 8, sensor.z() / lsbPerUnit);
 }
 
+// Euler angles (aircraft convention, degrees; heading normalized to 0..360)
+// derived from the rotation-vector quaternion, replacing the dropped
+// SENSOR_ID_ORI subscription (see the 11-subscription note above).
+static void quatToEuler(float w, float x, float y, float z,
+                        float &headingDeg, float &pitchDeg, float &rollDeg) {
+  const float RAD_TO_DEGREES = 57.29578f;
+  float sinr_cosp = 2.0f * (w * x + y * z);
+  float cosr_cosp = 1.0f - 2.0f * (x * x + y * y);
+  rollDeg = atan2f(sinr_cosp, cosr_cosp) * RAD_TO_DEGREES;
+
+  float sinp = 2.0f * (w * y - z * x);
+  if (sinp > 1.0f) sinp = 1.0f;
+  if (sinp < -1.0f) sinp = -1.0f;
+  pitchDeg = asinf(sinp) * RAD_TO_DEGREES;
+
+  float siny_cosp = 2.0f * (w * z + x * y);
+  float cosy_cosp = 1.0f - 2.0f * (y * y + z * z);
+  float yaw = atan2f(siny_cosp, cosy_cosp) * RAD_TO_DEGREES;
+  headingDeg = yaw < 0.0f ? yaw + 360.0f : yaw;
+}
+
+// Gravity direction in the body frame (unit quaternion rotating world +Z),
+// in g. Replaces the dropped SENSOR_ID_GRA subscription.
+static void gravityFromQuat(float w, float x, float y, float z,
+                            float &gx, float &gy, float &gz) {
+  gx = 2.0f * (x * z - w * y);
+  gy = 2.0f * (y * z + w * x);
+  gz = w * w - x * x - y * y + z * z;
+}
+
 void onI2CReceive(int count) {
   if (count >= 1) {
     regPointer = Wire.read();
@@ -181,20 +214,21 @@ void setup() {
 
   bhy2Ok = BHY2.begin(NICLA_STANDALONE);
   if (bhy2Ok) {
-    accel.begin();
-    gyro.begin();
-    mag.begin();
-    linAccel.begin();
-    gravity.begin();
-    quat.begin();
-    orientation.begin();
-    temperature.begin();
-    humidity.begin();
-    pressure.begin();
-    gas.begin();
-    bsec.begin();
-    stepCounter.begin();
-    activity.begin();
+    // Exactly 11 subscriptions (hardware limit, see note at the sensor
+    // declarations). Rates: motion at 100 Hz (the loop refreshes at ~100 Hz),
+    // environment/air-quality/activity at 1 Hz — their physical processes are
+    // slow, and the default 1000 Hz overwhelms the sensor hub's FIFO path.
+    accel.begin(100);
+    gyro.begin(100);
+    mag.begin(100);
+    quat.begin(100);
+    temperature.begin(1);
+    humidity.begin(1);
+    pressure.begin(1);
+    gas.begin(1);
+    bsec.begin(1, 0);
+    stepCounter.begin(1);
+    activity.begin(1);
   }
 
   memcpy(stableMap, liveMap, sizeof(stableMap));
@@ -217,24 +251,38 @@ void loop() {
   writeVec3(liveMap, REG_ACCEL, accel, ACCEL_LSB_PER_G);
   writeVec3(liveMap, REG_GYRO, gyro, GYRO_LSB_PER_DPS);
   writeVec3(liveMap, REG_MAG, mag, MAG_LSB_PER_UT);
-  writeVec3(liveMap, REG_LACC, linAccel, ACCEL_LSB_PER_G);
-  writeVec3(liveMap, REG_GRAVITY, gravity, ACCEL_LSB_PER_G);
 
   // SensorQuaternion (Arduino_BHY2/src/sensors/SensorQuaternion.h) already
   // scales x/y/z/w/accuracy internally (constructor factor 0.000061035 ==
   // 1/16384, applied in DataParser::parseQuaternion), so the raw accessors
   // return final float units directly -- do not rescale here.
-  writeF32(liveMap, REG_QUAT, quat.w());
-  writeF32(liveMap, REG_QUAT + 4, quat.x());
-  writeF32(liveMap, REG_QUAT + 8, quat.y());
-  writeF32(liveMap, REG_QUAT + 12, quat.z());
+  float qw = quat.w();
+  float qx = quat.x();
+  float qy = quat.y();
+  float qz = quat.z();
+  writeF32(liveMap, REG_QUAT, qw);
+  writeF32(liveMap, REG_QUAT + 4, qx);
+  writeF32(liveMap, REG_QUAT + 8, qy);
+  writeF32(liveMap, REG_QUAT + 12, qz);
   writeF32(liveMap, REG_QUAT + 16, quat.accuracy());
 
-  // SensorOrientation is likewise pre-scaled to degrees (SensorList scale
-  // factor 0.01098 ~= 360/32768) in DataParser::parseEuler.
-  writeF32(liveMap, REG_EULER, orientation.heading());
-  writeF32(liveMap, REG_EULER + 4, orientation.pitch());
-  writeF32(liveMap, REG_EULER + 8, orientation.roll());
+  // Derived values (see the 11-subscription note): euler from the
+  // quaternion, gravity as the quaternion-rotated 1g vector, linear
+  // acceleration as measured acceleration minus gravity.
+  float heading, pitch, roll;
+  quatToEuler(qw, qx, qy, qz, heading, pitch, roll);
+  writeF32(liveMap, REG_EULER, heading);
+  writeF32(liveMap, REG_EULER + 4, pitch);
+  writeF32(liveMap, REG_EULER + 8, roll);
+
+  float gx, gy, gz;
+  gravityFromQuat(qw, qx, qy, qz, gx, gy, gz);
+  writeF32(liveMap, REG_GRAVITY, gx);
+  writeF32(liveMap, REG_GRAVITY + 4, gy);
+  writeF32(liveMap, REG_GRAVITY + 8, gz);
+  writeF32(liveMap, REG_LACC, accel.x() / ACCEL_LSB_PER_G - gx);
+  writeF32(liveMap, REG_LACC + 4, accel.y() / ACCEL_LSB_PER_G - gy);
+  writeF32(liveMap, REG_LACC + 8, accel.z() / ACCEL_LSB_PER_G - gz);
 
   writeF32(liveMap, REG_TEMPERATURE, temperature.value());
   writeF32(liveMap, REG_HUMIDITY, humidity.value());
