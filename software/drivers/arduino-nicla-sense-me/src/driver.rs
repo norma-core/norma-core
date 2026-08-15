@@ -315,6 +315,11 @@ pub fn find_usb_port() -> Option<String> {
 }
 
 pub async fn read_dump(port: &mut SerialStream) -> Result<Bytes, String> {
+    // The mbed-core USB CDC stack treats the port as closed until the host
+    // asserts DTR: without it Serial.available() stays 0 on the board and
+    // the command is never seen. Asserting per call is idempotent.
+    port.write_data_terminal_ready(true)
+        .map_err(|error| format!("failed to assert DTR: {error}"))?;
     port.clear(tokio_serial::ClearBuffer::Input)
         .map_err(|error| format!("failed to clear input buffer: {error}"))?;
     port.write_all(&[SERIAL_CMD_DUMP])
