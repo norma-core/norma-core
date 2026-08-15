@@ -73,8 +73,9 @@ SensorBSEC bsec(SENSOR_ID_BSEC);
 Sensor stepCounter(SENSOR_ID_STC);
 SensorActivity activity(SENSOR_ID_AR);
 
-static uint8_t liveMap[REG_MAP_SIZE];
-static uint8_t latchedMap[REG_MAP_SIZE];
+static uint8_t liveMap[REG_MAP_SIZE];    // staging: written only by loop()
+static uint8_t stableMap[REG_MAP_SIZE];  // last complete snapshot, committed under interrupt guard
+static uint8_t latchedMap[REG_MAP_SIZE]; // frozen copy served to the host during a dump
 static volatile uint8_t regPointer = 0;
 static bool bhy2Ok = false;
 
@@ -102,7 +103,10 @@ void onI2CReceive(int count) {
       // Snapshot synchronously: this is a 168-byte memcpy (microseconds on
       // the nRF52), well within I2C clock stretching, and guarantees the
       // latch cannot land mid-dump between the host's chunked reads.
-      memcpy(latchedMap, liveMap, sizeof(latchedMap));
+      // stableMap only ever holds complete snapshots (loop() commits it
+      // under an interrupt guard), so this latch can never observe a
+      // half-written update even when this ISR preempts loop().
+      memcpy(latchedMap, stableMap, sizeof(latchedMap));
     }
   }
 }
@@ -150,7 +154,8 @@ void setup() {
     activity.begin();
   }
 
-  memcpy(latchedMap, liveMap, sizeof(latchedMap));
+  memcpy(stableMap, liveMap, sizeof(stableMap));
+  memcpy(latchedMap, stableMap, sizeof(latchedMap));
 
   Wire.begin(I2C_ADDRESS);
   Wire.onReceive(onI2CReceive);
@@ -204,6 +209,13 @@ void loop() {
   if (bhy2Ok) {
     liveMap[REG_SAMPLE_COUNTER] = liveMap[REG_SAMPLE_COUNTER] + 1;
   }
+
+  // Commit the fully-written staging map as the new stable snapshot. The
+  // interrupt guard keeps the I2C receive handler from latching while the
+  // copy is in flight, so stableMap is always internally consistent.
+  noInterrupts();
+  memcpy(stableMap, liveMap, sizeof(stableMap));
+  interrupts();
 
   delay(10);
 }
