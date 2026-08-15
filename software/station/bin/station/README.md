@@ -154,6 +154,7 @@ asyncio.run(main())
 |  | Yahboom ROSMASTER X3 | 📋 Planned |
 | **Sensors** | [AirGradient Open Air O-1PST](../../../drivers/airgradient-open-air-o-1pst) | ✅ Supported |
 |  | [Arduino Nicla Sense Env](../../../drivers/arduino-nicla-sense-env) | ✅ Linux supported |
+|  | [Arduino Nicla Sense ME](../../../drivers/arduino-nicla-sense-me) | ✅ Linux supported |
 |  | [INA226 power/current monitor](../../../drivers/ina226) | ✅ Linux supported |
 |  | [HIKMICRO thermal sensors](../../../drivers/hikmicro-thermal) | ✅ Linux supported |
 | **Cameras & Devices** | [UVC USB cameras](../../../drivers/usbvideo) | ✅ Supported |
