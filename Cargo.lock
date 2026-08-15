@@ -142,6 +142,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "arduino-nicla-sense-me"
+version = "0.1.0-beta.10"
+dependencies = [
+ "bytes",
+ "i2c-async",
+ "log",
+ "normfs",
+ "prost",
+ "prost-build",
+ "station_iface",
+ "systime",
+ "tokio",
+]
+
+[[package]]
 name = "atomic-waker"
 version = "1.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"

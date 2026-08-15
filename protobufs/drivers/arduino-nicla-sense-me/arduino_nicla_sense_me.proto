@@ -1,0 +1,44 @@
+syntax = "proto3";
+
+package arduino_nicla_sense_me;
+
+enum ArduinoNiclaSenseMeSignalType {
+    ARDUINO_NICLA_SENSE_ME_SIGNAL_TYPE_UNSPECIFIED = 0;
+    ARDUINO_NICLA_SENSE_ME_CONNECTED               = 1;
+    ARDUINO_NICLA_SENSE_ME_DISCONNECTED            = 2;
+    ARDUINO_NICLA_SENSE_ME_REGISTERS_SNAPSHOT      = 3;
+    ARDUINO_NICLA_SENSE_ME_ERROR                   = 8;
+}
+
+message ArduinoNiclaSenseMeDeviceInfo {
+    // Register 0x0C.
+    uint32 software_revision = 1;
+
+    // Register 0x0D (0x4D for this firmware).
+    uint32 product_id = 2;
+
+    // Raw six-byte serial from registers 0x0E..0x13 (nRF52 FICR device id).
+    bytes serial_number = 3;
+}
+
+message ArduinoNiclaSenseMeDevice {
+    string id          = 1;
+    uint32 i2c_bus     = 2;
+    uint32 i2c_address = 3;
+
+    ArduinoNiclaSenseMeDeviceInfo info = 10;
+}
+
+message RxEnvelope {
+    uint64 monotonic_stamp_ns = 1;
+    uint64 local_stamp_ns     = 2;
+    uint64 app_start_id       = 3;
+
+    ArduinoNiclaSenseMeSignalType signal_type = 10;
+    ArduinoNiclaSenseMeDevice     device      = 11;
+
+    // Full raw register image, always starting at register 0x00.
+    bytes data = 20;
+
+    string error = 50;
+}
