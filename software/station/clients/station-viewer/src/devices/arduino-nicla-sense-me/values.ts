@@ -28,6 +28,11 @@ export const ME_OFFSETS = {
   activity: 0xa4,
 } as const;
 
+// Only offsets at or below this value are considered "header" fields that remain readable
+// from truncated/untrusted buffers. All sensor data beyond this point returns null for
+// buffers shorter than ME_REGISTER_LENGTH.
+const HEADER_SAFE_OFFSET = ME_OFFSETS.sampleCounter;
+
 export interface Vec3 {
   x: number;
   y: number;
@@ -51,9 +56,15 @@ export interface ArduinoNiclaSenseMeMainValues {
   sampleCounter: number | null;
 }
 
+// Low-level register readers (f32le, u32le, u8) enforce whole-image-trust semantics:
+// They treat the buffer as a complete 168-byte register image. Any buffer shorter than
+// ME_REGISTER_LENGTH is considered truncated/untrusted — only the header bytes at offsets
+// ≤ HEADER_SAFE_OFFSET (sampleCounter at 0x01) remain readable. All other reads from
+// short buffers return null, preventing interpretation of potentially stale or partial
+// sensor measurements. Callers must pass a full-length buffer or accept all sensor fields
+// as null.
 function hasRange(bytes: Uint8Array, offset: number, length: number): boolean {
-  // For buffers shorter than the full register size, only allow reading offset 0x00 and 0x01 (metadata)
-  if (bytes.length < ME_REGISTER_LENGTH && offset > 0x01) {
+  if (bytes.length < ME_REGISTER_LENGTH && offset > HEADER_SAFE_OFFSET) {
     return false;
   }
   return offset >= 0 && length >= 0 && offset + length <= bytes.length;
