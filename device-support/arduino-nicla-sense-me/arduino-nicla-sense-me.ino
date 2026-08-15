@@ -68,13 +68,26 @@ constexpr uint8_t SERIAL_CMD_DUMP = 0x01;
 constexpr uint8_t SERIAL_MAGIC0 = 0xA5;
 constexpr uint8_t SERIAL_MAGIC1 = 0x5A;
 
+// Motion batching (USB only): one sample per loop tick while BHY2 runs.
+// Sample layout (19 bytes, LE): dt_ms u8 (saturating), accel x/y/z i16,
+// gyro x/y/z i16, mag x/y/z i16 — raw counts; scale factors above.
+constexpr uint8_t SERIAL_CMD_MOTION = 0x02;
+constexpr uint8_t SERIAL_MAGIC1_MOTION = 0x5B;
+constexpr size_t MOTION_SAMPLE_SIZE = 19;
+constexpr size_t MOTION_RING_CAPACITY = 256;
+
+static uint8_t crc8Update(uint8_t crc, uint8_t byte) {
+  crc ^= byte;
+  for (uint8_t bit = 0; bit < 8; bit++) {
+    crc = (crc & 0x80) ? (uint8_t)((crc << 1) ^ 0x07) : (uint8_t)(crc << 1);
+  }
+  return crc;
+}
+
 static uint8_t crc8(const uint8_t *data, size_t len) {
   uint8_t crc = 0;
   for (size_t i = 0; i < len; i++) {
-    crc ^= data[i];
-    for (uint8_t bit = 0; bit < 8; bit++) {
-      crc = (crc & 0x80) ? (uint8_t)((crc << 1) ^ 0x07) : (uint8_t)(crc << 1);
-    }
+    crc = crc8Update(crc, data[i]);
   }
   return crc;
 }
@@ -103,12 +116,55 @@ static uint8_t latchedMap[REG_MAP_SIZE]; // frozen copy served to the host durin
 static volatile uint8_t regPointer = 0;
 static bool bhy2Ok = false;
 
+static uint8_t motionSamples[MOTION_RING_CAPACITY][MOTION_SAMPLE_SIZE];
+static uint32_t motionSampleMillis[MOTION_RING_CAPACITY];
+static size_t motionTail = 0;   // oldest sample
+static size_t motionCount = 0;
+static uint16_t motionDropped = 0;
+static uint32_t motionLastMillis = 0;
+
+static uint8_t motionTxCrc = 0;
+
+static void motionCrcWrite(const uint8_t *data, size_t len) {
+  for (size_t i = 0; i < len; i++) {
+    motionTxCrc = crc8Update(motionTxCrc, data[i]);
+  }
+  Serial.write(data, len);
+}
+
+static void serveMotionBatch() {
+  // Ring is only touched from loop() (same thread as this), so the drain
+  // is consistent without any guard.
+  uint16_t count = (uint16_t)motionCount;
+  uint16_t dropped = motionDropped;
+  uint32_t firstMillis = count > 0 ? motionSampleMillis[motionTail] : 0;
+
+  const uint8_t magic[2] = { SERIAL_MAGIC0, SERIAL_MAGIC1_MOTION };
+  Serial.write(magic, sizeof(magic));
+  motionTxCrc = 0;
+  motionCrcWrite((const uint8_t *)&count, sizeof(count));
+  motionCrcWrite((const uint8_t *)&dropped, sizeof(dropped));
+  motionCrcWrite((const uint8_t *)&firstMillis, sizeof(firstMillis));
+  for (uint16_t i = 0; i < count; i++) {
+    motionCrcWrite(motionSamples[(motionTail + i) % MOTION_RING_CAPACITY], MOTION_SAMPLE_SIZE);
+  }
+  Serial.write(&motionTxCrc, 1);
+
+  motionTail = (motionTail + count) % MOTION_RING_CAPACITY;
+  motionCount -= count;
+  motionDropped = 0;
+}
+
 static void serviceSerialDump() {
   // Bounded per call: drain at most a small budget of bytes and answer at
   // most one dump command per loop() tick, so a chatty or misbehaving host
   // can never starve sensor updates.
   for (int budget = 0; budget < 16 && Serial.available() > 0; budget++) {
     int cmd = Serial.read();
+    if (cmd == SERIAL_CMD_MOTION) {
+      serveMotionBatch();
+      return; // one reply per tick
+    }
     if (cmd != SERIAL_CMD_DUMP) {
       continue; // unknown bytes are ignored
     }
@@ -137,6 +193,40 @@ static void writeVec3(uint8_t *map, size_t offset, SensorXYZ &sensor, float lsbP
   writeF32(map, offset, sensor.x() / lsbPerUnit);
   writeF32(map, offset + 4, sensor.y() / lsbPerUnit);
   writeF32(map, offset + 8, sensor.z() / lsbPerUnit);
+}
+
+static void writeI16(uint8_t *out, size_t offset, int16_t value) {
+  memcpy(out + offset, &value, sizeof(value));
+}
+
+static void pushMotionSample() {
+  uint32_t now = millis();
+  uint32_t delta = motionLastMillis == 0 ? 0 : now - motionLastMillis;
+  motionLastMillis = now;
+
+  size_t slot = (motionTail + motionCount) % MOTION_RING_CAPACITY;
+  if (motionCount == MOTION_RING_CAPACITY) {
+    // Ring full: overwrite the oldest sample and account for the loss.
+    motionTail = (motionTail + 1) % MOTION_RING_CAPACITY;
+    if (motionDropped < 0xFFFF) {
+      motionDropped++;
+    }
+  } else {
+    motionCount++;
+  }
+
+  uint8_t *sample = motionSamples[slot];
+  sample[0] = delta > 255 ? 255 : (uint8_t)delta;
+  writeI16(sample, 1, accel.x());
+  writeI16(sample, 3, accel.y());
+  writeI16(sample, 5, accel.z());
+  writeI16(sample, 7, gyro.x());
+  writeI16(sample, 9, gyro.y());
+  writeI16(sample, 11, gyro.z());
+  writeI16(sample, 13, mag.x());
+  writeI16(sample, 15, mag.y());
+  writeI16(sample, 17, mag.z());
+  motionSampleMillis[slot] = now;
 }
 
 // Euler angles (aircraft convention, degrees; heading normalized to 0..360)
@@ -251,6 +341,10 @@ void loop() {
   writeVec3(liveMap, REG_ACCEL, accel, ACCEL_LSB_PER_G);
   writeVec3(liveMap, REG_GYRO, gyro, GYRO_LSB_PER_DPS);
   writeVec3(liveMap, REG_MAG, mag, MAG_LSB_PER_UT);
+
+  if (bhy2Ok) {
+    pushMotionSample();
+  }
 
   // SensorQuaternion (Arduino_BHY2/src/sensors/SensorQuaternion.h) already
   // scales x/y/z/w/accuracy internally (constructor factor 0.000061035 ==

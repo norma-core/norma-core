@@ -47,13 +47,39 @@ is running.
 
 ## USB serial transport
 
-The sketch also serves the register image over the board's USB CDC serial
-port (any baud). Send the single byte `0x01`; the reply is one 172-byte
-frame: magic `0xA5 0x5A`, length byte `0xA8`, the 168-byte register image
-(latched, internally consistent), and a trailing CRC8 (poly 0x07, init 0x00)
-over the 168-byte payload. Unknown command bytes are ignored. The station's
-`arduino-nicla-sense-me` driver autodetects the board by USB VID/PID
-`2341:0060` when a board is configured with `bus-type: usb`.
+The sketch serves two command protocols over the board's USB CDC serial port (any baud):
+
+### Command 0x01: Register dump
+
+Send the single byte `0x01`; the reply is one 172-byte frame: magic `0xA5 0x5A`, 
+length byte `0xA8`, the 168-byte register image (latched, internally consistent), 
+and a trailing CRC8 (poly 0x07, init 0x00) over the 168-byte payload.
+
+### Command 0x02: Motion batch drain
+
+Send the single byte `0x02`; the reply is a variable-length frame containing all 
+accumulated motion samples:
+
+- Magic: `0xA5 0x5B` (2 bytes)
+- Count of samples in this batch: u16 LE (2 bytes)
+- Dropped samples since last drain: u16 LE (2 bytes)
+- Timestamp of first sample (sample 0), in milliseconds: u32 LE (4 bytes)
+- Motion samples, 19 bytes each (up to 256 samples):
+  - Elapsed time since previous sample, saturating to 255 ms: u8 (1 byte)
+  - Accelerometer x, y, z: i16 LE each (6 bytes, raw counts; divide by 4096 LSB/g)
+  - Gyroscope x, y, z: i16 LE each (6 bytes, raw counts; divide by 16.384 LSB/dps)
+  - Magnetometer x, y, z: i16 LE each (6 bytes, raw counts; divide by 16 LSB/µT)
+- CRC8 (poly 0x07, init 0x00) computed over all bytes from count through the last sample: u8 (1 byte)
+
+The ring buffer is 256 samples; if the host does not drain frequently enough, older 
+samples are overwritten. The `dropped` counter tracks how many samples were lost since 
+the last successful drain. Once drained, the buffer is reset (count = 0, dropped = 0) 
+and begins accumulating the next batch. One sample is recorded per firmware refresh tick 
+(approximately every 10 ms, at ~100 Hz BHY2 rate) while BHY2 is running.
+
+Unknown command bytes are ignored. The station's `arduino-nicla-sense-me` driver 
+autodetects the board by USB VID/PID `2341:0060` when a board is configured with 
+`bus-type: usb`.
 
 ## Flashing
 
