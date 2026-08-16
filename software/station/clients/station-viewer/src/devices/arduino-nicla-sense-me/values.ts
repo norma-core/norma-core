@@ -39,10 +39,18 @@ export interface Vec3 {
   z: number;
 }
 
+export interface ArduinoNiclaSenseMeQuat {
+  w: number;
+  x: number;
+  y: number;
+  z: number;
+}
+
 export interface ArduinoNiclaSenseMeMainValues {
   accelG: Vec3 | null;
   gyroDps: Vec3 | null;
   magUt: Vec3 | null;
+  quat: ArduinoNiclaSenseMeQuat | null;
   headingDeg: number | null;
   pitchDeg: number | null;
   rollDeg: number | null;
@@ -110,6 +118,22 @@ export function cardinalName(headingDeg: number): string {
   return CARDINALS[Math.round(normalized / 45) % 8];
 }
 
+function readQuat(bytes: Uint8Array): ArduinoNiclaSenseMeQuat | null {
+  const w = f32le(bytes, ME_OFFSETS.quat);
+  const x = f32le(bytes, ME_OFFSETS.quat + 4);
+  const y = f32le(bytes, ME_OFFSETS.quat + 8);
+  const z = f32le(bytes, ME_OFFSETS.quat + 12);
+  if (w === null || x === null || y === null || z === null) {
+    return null;
+  }
+  // Unpopulated registers read as zeros; a real rotation vector is ~unit.
+  const norm = Math.hypot(w, x, y, z);
+  if (!Number.isFinite(norm) || norm < 0.5) {
+    return null;
+  }
+  return { w, x, y, z };
+}
+
 export function readArduinoNiclaSenseMeMainValues(
   data: Uint8Array | null | undefined,
 ): ArduinoNiclaSenseMeMainValues {
@@ -118,6 +142,7 @@ export function readArduinoNiclaSenseMeMainValues(
     accelG: vec3(bytes, ME_OFFSETS.accel),
     gyroDps: vec3(bytes, ME_OFFSETS.gyro),
     magUt: vec3(bytes, ME_OFFSETS.mag),
+    quat: readQuat(bytes),
     headingDeg: f32le(bytes, ME_OFFSETS.euler),
     pitchDeg: f32le(bytes, ME_OFFSETS.euler + 4),
     rollDeg: f32le(bytes, ME_OFFSETS.euler + 8),

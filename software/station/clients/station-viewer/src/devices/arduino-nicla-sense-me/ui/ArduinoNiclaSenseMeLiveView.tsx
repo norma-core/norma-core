@@ -2,6 +2,7 @@ import type { arduino_nicla_sense_me } from '@/api/proto.js';
 import DeviceMetricPill from '@/components/DeviceMetricPill';
 import DeviceWidgetShell from '@/components/DeviceWidgetShell';
 import { parseMotionBatch } from '../motion';
+import NiclaBoardScene from './NiclaBoardScene';
 import { buildDecimatedAxisPolylines, historyFor } from '../sparkline';
 import { cardinalName, readArduinoNiclaSenseMeMainValues, vecMagnitude } from '../values';
 import type { Vec3 } from '../values';
@@ -12,8 +13,6 @@ const AXIS_COLORS = {
   z: 'var(--color-accent-success)',
 } as const;
 
-const CUBE_SIZE_PX = 56;
-const CUBE_HALF_PX = CUBE_SIZE_PX / 2;
 
 function formatDecimal(value: number | null, decimals = 2): string {
   return value === null || !Number.isFinite(value) ? 'N/A' : value.toFixed(decimals);
@@ -44,61 +43,6 @@ function deviceLabel(data: arduino_nicla_sense_me.IRxEnvelope): string {
     return `usb ${data.device.usbPort || ''}`.trim();
   }
   return `bus ${data.device.i2cBus ?? 'N/A'} / ${hexByte(data.device.i2cAddress)}`;
-}
-
-const CUBE_FACES: { className: string; transform: string; background: string }[] = [
-  { className: 'front', transform: `translateZ(${CUBE_HALF_PX}px)`, background: 'rgba(28, 92, 171, 0.85)' },
-  { className: 'back', transform: `rotateY(180deg) translateZ(${CUBE_HALF_PX}px)`, background: 'rgba(13, 54, 107, 0.9)' },
-  { className: 'right', transform: `rotateY(90deg) translateZ(${CUBE_HALF_PX}px)`, background: 'rgba(37, 106, 191, 0.85)' },
-  { className: 'left', transform: `rotateY(-90deg) translateZ(${CUBE_HALF_PX}px)`, background: 'rgba(24, 79, 149, 0.85)' },
-  { className: 'top', transform: `rotateX(90deg) translateZ(${CUBE_HALF_PX}px)`, background: 'rgba(57, 135, 229, 0.85)' },
-  { className: 'bottom', transform: `rotateX(-90deg) translateZ(${CUBE_HALF_PX}px)`, background: 'rgba(16, 58, 99, 0.9)' },
-];
-
-function OrientationCube({
-  headingDeg,
-  pitchDeg,
-  rollDeg,
-}: {
-  headingDeg: number | null;
-  pitchDeg: number | null;
-  rollDeg: number | null;
-}) {
-  const heading = headingDeg ?? 0;
-  const pitch = pitchDeg ?? 0;
-  const roll = rollDeg ?? 0;
-  // Baseline isometric view, then apply the device attitude on top.
-  const transform = `rotateX(${-24 + pitch}deg) rotateY(${-30 - heading}deg) rotateZ(${roll}deg)`;
-
-  return (
-    <div style={{ width: 84, height: 84, perspective: 260 }} className="mx-auto">
-      <div
-        style={{
-          position: 'relative',
-          width: CUBE_SIZE_PX,
-          height: CUBE_SIZE_PX,
-          margin: '14px auto',
-          transformStyle: 'preserve-3d',
-          transform,
-          transition: 'transform 900ms linear',
-        }}
-      >
-        {CUBE_FACES.map((face) => (
-          <div
-            key={face.className}
-            style={{
-              position: 'absolute',
-              width: CUBE_SIZE_PX,
-              height: CUBE_SIZE_PX,
-              border: '1px solid rgba(255,255,255,0.18)',
-              background: face.background,
-              transform: face.transform,
-            }}
-          />
-        ))}
-      </div>
-    </div>
-  );
 }
 
 function CompassDial({ headingDeg }: { headingDeg: number | null }) {
@@ -217,11 +161,7 @@ function ArduinoNiclaSenseMeLiveView({ data }: ArduinoNiclaSenseMeLiveViewProps)
 
       <div className="mt-2 flex items-start justify-around gap-2">
         <div className="text-center">
-          <OrientationCube
-            headingDeg={values.headingDeg}
-            pitchDeg={values.pitchDeg}
-            rollDeg={values.rollDeg}
-          />
+          <NiclaBoardScene quat={values.quat} />
           <div className="text-[10px] uppercase text-text-label">Attitude</div>
           <div className="font-mono text-xs text-text-secondary">
             pitch {formatDecimal(values.pitchDeg, 1)}° roll {formatDecimal(values.rollDeg, 1)}°
