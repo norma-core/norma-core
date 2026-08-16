@@ -283,3 +283,26 @@ envelope stamp.
 
 **Cost.** ~2 KB/s queue growth (~170 MB/day) — acceptable against the 2 G
 queue cap.
+
+## Addendum (2026-08-16b): Direct high-rate polling (supersedes motion batching)
+
+Motion batching is removed in favor of polling the snapshot directly at
+high rate over USB — simpler, and it cuts movement→screen latency from up
+to ~1 s to ~20–40 ms.
+
+- **Firmware**: the motion ring and `0x02` are removed (frees ~6 KB RAM).
+  The loop refreshes the register map at ~100 Hz and answers one `0x01`
+  per tick, which paces the host to ≤100 Hz and always serves the freshest
+  snapshot.
+- **Config**: boards gain an optional per-board `poll-interval` override;
+  the shipped `nicla-usb` board uses `10ms`. I2C boards keep the
+  driver-wide default (the bus cannot sustain 100 Hz full-map reads).
+- **Driver**: the motion drain is removed; every poll enqueues a snapshot
+  envelope. `RxEnvelope.motion = 21` stays declared but deprecated (no
+  renumbering; previously recorded envelopes still decode).
+- **Viewer**: batch parsing is removed; at ~100 envelopes/s the ordinary
+  per-envelope history push feeds the sparklines a true 100 Hz stream, and
+  the compass transition is shortened to ~120 ms so nothing lags.
+- **Cost**: ~270 B × 100 Hz ≈ 2.3 GB/day; against the default 2 G queue cap
+  that retains ~21 h (queue rotates). The poll interval is the rate/storage
+  knob; deployments can also raise `--max-queue-disk-size`.
