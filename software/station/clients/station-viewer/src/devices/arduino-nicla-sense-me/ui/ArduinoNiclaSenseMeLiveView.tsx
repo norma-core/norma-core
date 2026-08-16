@@ -1,7 +1,8 @@
 import type { arduino_nicla_sense_me } from '@/api/proto.js';
 import DeviceMetricPill from '@/components/DeviceMetricPill';
 import DeviceWidgetShell from '@/components/DeviceWidgetShell';
-import { buildAxisPolylines, historyFor } from '../sparkline';
+import { parseMotionBatch } from '../motion';
+import { buildDecimatedAxisPolylines, historyFor } from '../sparkline';
 import { cardinalName, readArduinoNiclaSenseMeMainValues, vecMagnitude } from '../values';
 import type { Vec3 } from '../values';
 
@@ -135,7 +136,7 @@ function AxisSparkline({
   samples: readonly Vec3[];
   minSpan: number;
 }) {
-  const lines = buildAxisPolylines(samples, 220, 30, minSpan);
+  const lines = buildDecimatedAxisPolylines(samples, 220, 30, minSpan, 110);
   return (
     <div className="min-w-0">
       {/* Labels arrive pre-uppercased (units keep their case): CSS
@@ -179,13 +180,20 @@ function ArduinoNiclaSenseMeLiveView({ data }: ArduinoNiclaSenseMeLiveViewProps)
   // running this during render (incl. StrictMode double-renders) is safe.
   const historyKey = data.device?.id || 'arduino-nicla-sense-me';
   const sampleKey = `${data.monotonicStampNs ?? ''}`;
-  const accelHistory = historyFor(`${historyKey}/accel`);
-  const gyroHistory = historyFor(`${historyKey}/gyro`);
-  const magHistory = historyFor(`${historyKey}/mag`);
+  const accelHistory = historyFor(`${historyKey}/accel`, 600);
+  const gyroHistory = historyFor(`${historyKey}/gyro`, 600);
+  const magHistory = historyFor(`${historyKey}/mag`, 600);
+  const motionBatch = parseMotionBatch(data.motion);
   if (sampleKey !== '') {
-    accelHistory.push(sampleKey, values.accelG);
-    gyroHistory.push(sampleKey, values.gyroDps);
-    magHistory.push(sampleKey, values.magUt);
+    if (motionBatch && motionBatch.accel.length > 0) {
+      accelHistory.pushBatch(sampleKey, motionBatch.accel);
+      gyroHistory.pushBatch(sampleKey, motionBatch.gyro);
+      magHistory.pushBatch(sampleKey, motionBatch.mag);
+    } else {
+      accelHistory.push(sampleKey, values.accelG);
+      gyroHistory.push(sampleKey, values.gyroDps);
+      magHistory.push(sampleKey, values.magUt);
+    }
   }
 
   return (
