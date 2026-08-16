@@ -408,5 +408,19 @@ void loop() {
 
   serviceSerialDump();
 
-  delay(10);
+  // Absolute 10 ms schedule (not a fixed delay): the loop body itself takes
+  // several milliseconds, so a plain delay(10) would drop the effective
+  // motion sample rate to ~50 Hz. If a tick overruns, resynchronize instead
+  // of trying to catch up.
+  static uint32_t nextTickMillis = 0;
+  uint32_t now = millis();
+  if (nextTickMillis == 0) {
+    nextTickMillis = now;
+  }
+  nextTickMillis += 10;
+  if ((int32_t)(nextTickMillis - now) > 0) {
+    delay(nextTickMillis - now);
+  } else {
+    nextTickMillis = now;
+  }
 }
