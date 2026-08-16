@@ -18,5 +18,21 @@ async fn main() -> Result<(), String> {
     println!("humidity:       {:.1} %", f32_at(0x74));
     println!("pressure:       {:.1} hPa", f32_at(0x78));
     println!("heading:        {:.1} deg", f32_at(0x64));
+
+    let motion = arduino_nicla_sense_me::read_motion_batch(&mut stream).await?;
+    let count = u16::from_le_bytes([motion[0], motion[1]]);
+    let dropped = u16::from_le_bytes([motion[2], motion[3]]);
+    println!("motion batch:   {count} samples, {dropped} dropped");
+    if count > 0 {
+        let base = 8;
+        let i16_at = |offset: usize| i16::from_le_bytes([motion[offset], motion[offset + 1]]) as f32;
+        println!(
+            "first sample:   dt={}ms accel=({:.2},{:.2},{:.2})g",
+            motion[base],
+            i16_at(base + 1) / 4096.0,
+            i16_at(base + 3) / 4096.0,
+            i16_at(base + 5) / 4096.0
+        );
+    }
     Ok(())
 }

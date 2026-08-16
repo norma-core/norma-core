@@ -36,6 +36,12 @@ const SERIAL_BAUD: u32 = 115_200;
 const SERIAL_RESPONSE_TIMEOUT: Duration = Duration::from_millis(500);
 const PRODUCT_ID: u8 = 0x4D;
 
+pub const SERIAL_CMD_MOTION: u8 = 0x02;
+const MOTION_MAGIC: [u8; 2] = [0xA5, 0x5B];
+pub const MOTION_SAMPLE_SIZE: usize = 19;
+pub const MOTION_RING_CAPACITY: usize = 256;
+const MOTION_HEADER_LEN: usize = 10;
+
 type DriverResult<T> = Result<T, Box<dyn std::error::Error + Send + Sync>>;
 
 #[derive(Debug, Clone)]
@@ -218,6 +224,7 @@ async fn run_i2c_board_worker(
                         Some(&data),
                         None,
                         None,
+                        None,
                     );
                     connected = true;
                 }
@@ -228,6 +235,7 @@ async fn run_i2c_board_worker(
                     &board,
                     ArduinoNiclaSenseMeSignalType::ArduinoNiclaSenseMeRegistersSnapshot,
                     Some(&data),
+                    None,
                     None,
                     None,
                 );
@@ -244,6 +252,7 @@ async fn run_i2c_board_worker(
                         last_data.as_ref(),
                         Some(error.clone()),
                         None,
+                        None,
                     );
                     connected = false;
                 }
@@ -256,6 +265,7 @@ async fn run_i2c_board_worker(
                         ArduinoNiclaSenseMeSignalType::ArduinoNiclaSenseMeError,
                         last_data.as_ref(),
                         Some(error.clone()),
+                        None,
                         None,
                     );
                     last_error = Some(error);
@@ -333,10 +343,58 @@ pub async fn read_dump(port: &mut SerialStream) -> Result<Bytes, String> {
     parse_dump_frame(&frame)
 }
 
+fn check_motion_frame(header: &[u8; MOTION_HEADER_LEN], rest: &[u8]) -> Result<Bytes, String> {
+    if header[0..2] != MOTION_MAGIC {
+        return Err(format!("bad motion frame magic {:#04x} {:#04x}", header[0], header[1]));
+    }
+    let count = u16::from_le_bytes([header[2], header[3]]) as usize;
+    if count > MOTION_RING_CAPACITY {
+        return Err(format!("motion frame count {count} exceeds ring capacity"));
+    }
+    let expected_len = count * MOTION_SAMPLE_SIZE + 1;
+    if rest.len() != expected_len {
+        return Err(format!("motion frame length {} != expected {expected_len}", rest.len()));
+    }
+    let (payload, crc) = rest.split_at(rest.len() - 1);
+    let mut blob = Vec::with_capacity(MOTION_HEADER_LEN - 2 + payload.len());
+    blob.extend_from_slice(&header[2..]);
+    blob.extend_from_slice(payload);
+    let computed = crc8(&blob);
+    if computed != crc[0] {
+        return Err(format!("motion crc mismatch: computed {computed:#04x}, frame has {:#04x}", crc[0]));
+    }
+    Ok(Bytes::from(blob))
+}
+
+pub async fn read_motion_batch(port: &mut SerialStream) -> Result<Bytes, String> {
+    port.write_all(&[SERIAL_CMD_MOTION])
+        .await
+        .map_err(|error| format!("failed to send motion command: {error}"))?;
+    let mut header = [0u8; MOTION_HEADER_LEN];
+    tokio::time::timeout(SERIAL_RESPONSE_TIMEOUT, port.read_exact(&mut header))
+        .await
+        .map_err(|_| "timed out waiting for motion frame".to_string())?
+        .map_err(|error| format!("failed to read motion header: {error}"))?;
+    if header[0..2] != MOTION_MAGIC {
+        return Err(format!("bad motion frame magic {:#04x} {:#04x}", header[0], header[1]));
+    }
+    let count = u16::from_le_bytes([header[2], header[3]]) as usize;
+    if count > MOTION_RING_CAPACITY {
+        return Err(format!("motion frame count {count} exceeds ring capacity"));
+    }
+    let mut rest = vec![0u8; count * MOTION_SAMPLE_SIZE + 1];
+    tokio::time::timeout(SERIAL_RESPONSE_TIMEOUT, port.read_exact(&mut rest))
+        .await
+        .map_err(|_| "timed out waiting for motion payload".to_string())?
+        .map_err(|error| format!("failed to read motion payload: {error}"))?;
+    check_motion_frame(&header, &rest)
+}
+
 async fn poll_usb_once(
     connection: &mut Option<(SerialStream, String)>,
     verified: &mut bool,
-) -> Result<(Bytes, String), String> {
+    motion_supported: &mut bool,
+) -> Result<(Bytes, String, Option<Bytes>), String> {
     if connection.is_none() {
         let name = find_usb_port()
             .ok_or_else(|| "no Nicla Sense ME USB device found (vid 2341 pid 0060)".to_string())?;
@@ -347,6 +405,7 @@ async fn poll_usb_once(
         debug!("Opened Arduino Nicla Sense ME USB port {name}");
         *connection = Some((stream, name));
         *verified = false;
+        *motion_supported = true;
     }
     let (stream, name) = connection.as_mut().expect("connection populated above");
     let data = read_dump(stream).await.map_err(|error| format!("{name}: {error}"))?;
@@ -357,7 +416,28 @@ async fn poll_usb_once(
         }
         *verified = true;
     }
-    Ok((data, name.clone()))
+    let motion = if *motion_supported {
+        match read_motion_batch(stream).await {
+            Ok(blob) => {
+                if blob.len() == 8 {
+                    None
+                } else {
+                    Some(blob)
+                }
+            }
+            Err(error) if error.contains("timed out") => {
+                warn!(
+                    "Arduino Nicla Sense ME motion batches unsupported by firmware on {name}; polling snapshots only"
+                );
+                *motion_supported = false;
+                None
+            }
+            Err(error) => return Err(format!("{name}: {error}")),
+        }
+    } else {
+        None
+    };
+    Ok((data, name.clone(), motion))
 }
 
 async fn run_usb_board_worker(
@@ -368,6 +448,7 @@ async fn run_usb_board_worker(
 ) {
     let mut connection: Option<(SerialStream, String)> = None;
     let mut verified = false;
+    let mut motion_supported = true;
     let mut connected = false;
     let mut last_port = None::<String>;
     let mut last_data = None::<Bytes>;
@@ -378,8 +459,8 @@ async fn run_usb_board_worker(
     loop {
         tick.tick().await;
 
-        match poll_usb_once(&mut connection, &mut verified).await {
-            Ok((data, port_name)) => {
+        match poll_usb_once(&mut connection, &mut verified, &mut motion_supported).await {
+            Ok((data, port_name, motion)) => {
                 if !connected {
                     send_board_signal(
                         &normfs,
@@ -389,6 +470,7 @@ async fn run_usb_board_worker(
                         Some(&data),
                         None,
                         Some(port_name.as_str()),
+                        None,
                     );
                     connected = true;
                 }
@@ -400,6 +482,7 @@ async fn run_usb_board_worker(
                     Some(&data),
                     None,
                     Some(port_name.as_str()),
+                    motion,
                 );
                 last_port = Some(port_name);
                 last_data = Some(data);
@@ -417,6 +500,7 @@ async fn run_usb_board_worker(
                         last_data.as_ref(),
                         Some(error.clone()),
                         last_port.as_deref(),
+                        None,
                     );
                     connected = false;
                 }
@@ -429,6 +513,7 @@ async fn run_usb_board_worker(
                         last_data.as_ref(),
                         Some(error.clone()),
                         last_port.as_deref(),
+                        None,
                     );
                     last_error = Some(error);
                 }
@@ -458,6 +543,7 @@ fn send_board_signal(
     data: Option<&Bytes>,
     error_message: Option<String>,
     usb_port: Option<&str>,
+    motion: Option<Bytes>,
 ) {
     let envelope = RxEnvelope {
         monotonic_stamp_ns: systime::get_monotonic_stamp_ns(),
@@ -466,7 +552,7 @@ fn send_board_signal(
         signal_type: signal_type as i32,
         device: Some(board.proto(data.map(|data| data.as_ref()), usb_port)),
         data: data.cloned().unwrap_or_default(),
-        motion: Bytes::new(),
+        motion: motion.unwrap_or_default(),
         error: error_message.unwrap_or_default(),
     };
 
@@ -573,5 +659,58 @@ mod tests {
         assert!(parse_dump_frame(&bad_crc).is_err());
 
         assert!(parse_dump_frame(&good[..good.len() - 1]).is_err());
+    }
+
+    fn crc_of(parts: &[&[u8]]) -> u8 {
+        let mut all = Vec::new();
+        for part in parts {
+            all.extend_from_slice(part);
+        }
+        crc8(&all)
+    }
+
+    fn build_motion_frame(samples: usize, dropped: u16, first_millis: u32) -> ([u8; 10], Vec<u8>) {
+        let count = samples as u16;
+        let mut header = [0u8; 10];
+        header[0..2].copy_from_slice(&[0xA5, 0x5B]);
+        header[2..4].copy_from_slice(&count.to_le_bytes());
+        header[4..6].copy_from_slice(&dropped.to_le_bytes());
+        header[6..10].copy_from_slice(&first_millis.to_le_bytes());
+        let payload = vec![0x11u8; samples * MOTION_SAMPLE_SIZE];
+        let crc = crc_of(&[&header[2..], &payload]);
+        let mut rest = payload;
+        rest.push(crc);
+        (header, rest)
+    }
+
+    #[test]
+    fn check_motion_frame_roundtrip() {
+        let (header, rest) = build_motion_frame(3, 7, 123_456);
+        let blob = check_motion_frame(&header, &rest).expect("valid frame parses");
+        assert_eq!(blob.len(), 8 + 3 * MOTION_SAMPLE_SIZE);
+        assert_eq!(&blob[0..2], &3u16.to_le_bytes());
+        assert_eq!(&blob[2..4], &7u16.to_le_bytes());
+        assert_eq!(&blob[4..8], &123_456u32.to_le_bytes());
+    }
+
+    #[test]
+    fn check_motion_frame_accepts_empty_batch() {
+        let (header, rest) = build_motion_frame(0, 0, 0);
+        let blob = check_motion_frame(&header, &rest).expect("empty frame parses");
+        assert_eq!(blob.len(), 8);
+    }
+
+    #[test]
+    fn check_motion_frame_rejects_corruption() {
+        let (mut header, rest) = build_motion_frame(2, 0, 42);
+        header[1] = 0x5A; // wrong frame type
+        assert!(check_motion_frame(&header, &rest).is_err());
+
+        let (header, mut rest) = build_motion_frame(2, 0, 42);
+        *rest.last_mut().unwrap() ^= 0xFF; // bad crc
+        assert!(check_motion_frame(&header, &rest).is_err());
+
+        let (header, rest) = build_motion_frame(2, 0, 42);
+        assert!(check_motion_frame(&header, &rest[..rest.len() - 1]).is_err()); // short
     }
 }
