@@ -32,7 +32,9 @@ pub const USB_PID: u16 = 0x0060;
 const SERIAL_CMD_DUMP: u8 = 0x01;
 const SERIAL_MAGIC: [u8; 2] = [0xA5, 0x5A];
 const SERIAL_FRAME_LEN: usize = 3 + RAW_REGISTER_LENGTH + 1;
-const SERIAL_BAUD: u32 = 115_200;
+// Real UART baud of the SAMD11 usb-bridge link; must match the firmware's
+// Serial.begin. 115200 capped polling at ~50 Hz (~15 ms per 172-byte dump).
+const SERIAL_BAUD: u32 = 921_600;
 const SERIAL_RESPONSE_TIMEOUT: Duration = Duration::from_millis(500);
 const PRODUCT_ID: u8 = 0x4D;
 
@@ -326,14 +328,19 @@ pub fn find_usb_port() -> Option<String> {
     })
 }
 
-pub async fn read_dump(port: &mut SerialStream) -> Result<Bytes, String> {
-    // The mbed-core USB CDC stack treats the port as closed until the host
-    // asserts DTR: without it Serial.available() stays 0 on the board and
-    // the command is never seen. Asserting per call is idempotent.
+/// Prepares a freshly opened port: asserts DTR (the mbed-core USB CDC stack
+/// treats the port as closed until the host raises DTR) and clears any stale
+/// input. Run once per connection — per-request ioctls cost milliseconds on
+/// macOS and cap the achievable poll rate.
+pub fn prepare_port(port: &mut SerialStream) -> Result<(), String> {
     port.write_data_terminal_ready(true)
         .map_err(|error| format!("failed to assert DTR: {error}"))?;
     port.clear(tokio_serial::ClearBuffer::Input)
         .map_err(|error| format!("failed to clear input buffer: {error}"))?;
+    Ok(())
+}
+
+pub async fn read_dump(port: &mut SerialStream) -> Result<Bytes, String> {
     port.write_all(&[SERIAL_CMD_DUMP])
         .await
         .map_err(|error| format!("failed to send dump command: {error}"))?;
@@ -352,10 +359,11 @@ async fn poll_usb_once(
     if connection.is_none() {
         let name = find_usb_port()
             .ok_or_else(|| "no Nicla Sense ME USB device found (vid 2341 pid 0060)".to_string())?;
-        let stream = tokio_serial::new(&name, SERIAL_BAUD)
+        let mut stream = tokio_serial::new(&name, SERIAL_BAUD)
             .timeout(SERIAL_RESPONSE_TIMEOUT)
             .open_native_async()
             .map_err(|error| format!("failed to open {name}: {error}"))?;
+        prepare_port(&mut stream).map_err(|error| format!("{name}: {error}"))?;
         debug!("Opened Arduino Nicla Sense ME USB port {name}");
         *connection = Some((stream, name));
         *verified = false;
@@ -384,11 +392,16 @@ async fn run_usb_board_worker(
     let mut last_port = None::<String>;
     let mut last_data = None::<Bytes>;
     let mut last_error = None::<String>;
-    let mut tick = interval(poll_interval);
-    tick.set_missed_tick_behavior(MissedTickBehavior::Skip);
+    // Min-interval pacing rather than a fixed-boundary interval: when the
+    // poll round-trip exceeds the interval (USB bridge latency is ~15 ms),
+    // the next poll starts immediately instead of being quantized up to the
+    // next interval boundary (which halved the achievable rate).
+    let mut next_poll = tokio::time::Instant::now();
 
     loop {
-        tick.tick().await;
+        tokio::time::sleep_until(next_poll).await;
+        let poll_started = tokio::time::Instant::now();
+        next_poll = poll_started + poll_interval;
 
         match poll_usb_once(&mut connection, &mut verified).await {
             Ok((data, port_name)) => {

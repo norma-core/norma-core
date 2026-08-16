@@ -9,7 +9,7 @@ async fn main() -> Result<(), String> {
     let port = arduino_nicla_sense_me::find_usb_port()
         .ok_or("no Nicla Sense ME USB device found (vid 2341 pid 0060)")?;
     println!("monitoring {port} for 15s...");
-    let mut stream = tokio_serial::new(&port, 115_200)
+    let mut stream = tokio_serial::new(&port, 921_600)
         .open_native_async()
         .map_err(|error| format!("failed to open {port}: {error}"))?;
     stream

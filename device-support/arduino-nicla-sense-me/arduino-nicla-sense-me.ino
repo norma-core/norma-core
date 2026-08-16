@@ -239,9 +239,12 @@ void setup() {
   memcpy(stableMap, liveMap, sizeof(stableMap));
   memcpy(latchedMap, stableMap, sizeof(latchedMap));
 
-  // USB CDC serial for the USB transport. Baud is irrelevant for CDC.
-  // Never wait for !Serial: the board usually runs headless.
-  Serial.begin(115200);
+  // Serial for the USB transport. On the Nicla the USB port is a SAMD11
+  // serial-to-USB BRIDGE, so this is a real UART baud rate and directly
+  // limits throughput (115200 made a 172-byte dump take ~15 ms and capped
+  // polling at ~50 Hz). 921600 moves a dump in ~2 ms. Must match the
+  // station driver's SERIAL_BAUD. Never wait for !Serial (headless).
+  Serial.begin(921600);
 
   Wire.begin(I2C_ADDRESS);
   Wire.onReceive(onI2CReceive);
@@ -326,17 +329,21 @@ void loop() {
 
   // Absolute 10 ms schedule (not a fixed delay): the loop body itself takes
   // several milliseconds, so a plain delay(10) would drop the effective
-  // motion sample rate to ~50 Hz. If a tick overruns, resynchronize instead
-  // of trying to catch up.
+  // sample rate to ~50 Hz. Serial requests are serviced roughly every
+  // millisecond DURING the pacing wait — serving them only once per tick
+  // quantized the host's poll round-trip to whole ticks and capped USB
+  // polling at ~33 Hz (hardware-measured). If a tick overruns,
+  // resynchronize instead of trying to catch up.
   static uint32_t nextTickMillis = 0;
-  uint32_t now = millis();
   if (nextTickMillis == 0) {
-    nextTickMillis = now;
+    nextTickMillis = millis();
   }
   nextTickMillis += 10;
-  if ((int32_t)(nextTickMillis - now) > 0) {
-    delay(nextTickMillis - now);
-  } else {
-    nextTickMillis = now;
+  while ((int32_t)(nextTickMillis - millis()) > 0) {
+    serviceSerialDump();
+    delay(1);
+  }
+  if ((int32_t)(nextTickMillis - millis()) < -10) {
+    nextTickMillis = millis();
   }
 }
