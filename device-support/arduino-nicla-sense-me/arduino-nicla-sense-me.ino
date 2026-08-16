@@ -364,7 +364,12 @@ void loop() {
   // quaternion, gravity as the quaternion-rotated 1g vector, linear
   // acceleration as measured acceleration minus gravity.
   float heading, pitch, roll;
-  quatToEuler(qw, qx, qy, qz, heading, pitch, roll);
+  // The BHY2 rotation vector uses the Android/ENU body convention (z up);
+  // quatToEuler's aircraft formulas expect z down, which made a flat board
+  // read roll ~180°. Feeding q' = q ⊗ rot180x — i.e. (w,x,y,z) →
+  // (-x, w, z, -y) — reconciles the frames: flat board = pitch 0, roll 0,
+  // heading unchanged (hardware-verified 2026-08-16).
+  quatToEuler(-qx, qw, qz, -qy, heading, pitch, roll);
   writeF32(liveMap, REG_EULER, heading);
   writeF32(liveMap, REG_EULER + 4, pitch);
   writeF32(liveMap, REG_EULER + 8, roll);
