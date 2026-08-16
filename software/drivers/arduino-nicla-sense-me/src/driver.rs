@@ -373,7 +373,7 @@ pub async fn read_motion_batch(port: &mut SerialStream) -> Result<Bytes, String>
     let mut header = [0u8; MOTION_HEADER_LEN];
     tokio::time::timeout(SERIAL_RESPONSE_TIMEOUT, port.read_exact(&mut header))
         .await
-        .map_err(|_| "timed out waiting for motion frame".to_string())?
+        .map_err(|_| "timed out waiting for motion header".to_string())?
         .map_err(|error| format!("failed to read motion header: {error}"))?;
     if header[0..2] != MOTION_MAGIC {
         return Err(format!("bad motion frame magic {:#04x} {:#04x}", header[0], header[1]));
@@ -425,7 +425,7 @@ async fn poll_usb_once(
                     Some(blob)
                 }
             }
-            Err(error) if error.contains("timed out") => {
+            Err(error) if error.contains("timed out waiting for motion header") => {
                 warn!(
                     "Arduino Nicla Sense ME motion batches unsupported by firmware on {name}; polling snapshots only"
                 );

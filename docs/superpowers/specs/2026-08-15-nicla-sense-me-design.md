@@ -240,3 +240,46 @@ viewer changes.
 `usb_probe` example binary in the driver crate for direct hardware smoke
 tests; end-to-end acceptance = station running on the development Mac with
 the board on USB, live widget + history flowing.
+
+## Addendum (2026-08-16): Motion batching (USB only)
+
+The 1 Hz snapshot cadence is fine for environment values but discards ~99%
+of motion samples. The firmware therefore buffers motion samples at the
+loop rate (~100 Hz) and the station drains them once per poll — USB
+transport only (I2C keeps plain snapshots).
+
+**Firmware.** A 256-slot ring buffer (static, ~4.9 KB + 1 KB timestamps)
+records one motion sample per loop tick while BHY2 is up. The ~100 Hz loop rate
+is maintained by an absolute 10 ms schedule (a fixed delay(10) plus loop work would yield
+only ~50 Hz).
+`dt_ms (u8, saturating) + accel x,y,z + gyro x,y,z + mag x,y,z` (each i16
+raw counts, little-endian) = 19 bytes/sample. New serial command
+`0x02` ("drain motion batch") replies with one frame:
+magic `0xA5 0x5B`, then `count (u16 LE)`, `dropped (u16 LE, samples lost to
+ring overflow since last drain)`, `first_sample_millis (u32 LE, board
+millis() of the oldest sample; 0 when empty)`, then `count × 19` sample
+bytes oldest-first, then CRC8 (poly 0x07, init 0) computed over everything
+after the magic. Draining empties the ring and resets `dropped`. The reply
+is streamed (incremental CRC), not buffered. Raw i16 counts are the wire
+format; SI conversion uses the already-documented scale factors
+(4096 LSB/g, 16.384 LSB/dps, 16 LSB/µT).
+
+**Driver.** After each successful `0x01` snapshot, the USB worker sends
+`0x02` and validates the reply (magic, count ≤ 256, exact length, CRC).
+The validated blob minus magic and CRC (i.e. count/dropped/first_millis +
+samples) is attached to the SAME `RxEnvelope` as the snapshot via a new
+field `bytes motion = 21` (empty for I2C boards, connect/error signals, and
+empty batches). Backward compatibility: firmware without `0x02` ignores the
+byte, so on the first per-connection timeout of the motion request the
+driver logs once, marks the connection as motion-unsupported, and keeps
+polling snapshots alone.
+
+**Viewer.** `parseMotionBatch` decodes the blob and scales to SI; the live
+card's sparklines are fed from batches when present (fallback: the 1 Hz
+snapshot value as before). Graph history window grows to ~600 samples
+(~6 s at 100 Hz) and is decimated to the graph width with per-bucket
+min/max so short spikes stay visible. Batch pushes are deduped per
+envelope stamp.
+
+**Cost.** ~2 KB/s queue growth (~170 MB/day) — acceptable against the 2 G
+queue cap.

@@ -62,7 +62,7 @@ accumulated motion samples:
 
 - Magic: `0xA5 0x5B` (2 bytes)
 - Count of samples in this batch: u16 LE (2 bytes)
-- Dropped samples since last drain: u16 LE (2 bytes)
+- Dropped samples since last drain: u16 LE (2 bytes, saturates at 0xFFFF)
 - Timestamp of first sample (sample 0), in milliseconds: u32 LE (4 bytes)
 - Motion samples, 19 bytes each (up to 256 samples):
   - Elapsed time since previous sample, saturating to 255 ms: u8 (1 byte)
