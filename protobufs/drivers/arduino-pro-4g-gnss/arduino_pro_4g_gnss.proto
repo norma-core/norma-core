@@ -1,0 +1,65 @@
+syntax = "proto3";
+
+package arduino_pro_4g_gnss;
+
+// Arduino Pro 4G GNSS Module (Quectel EG25-G, mini PCIe on the Portenta
+// Max Carrier). The modem exposes four USB serial interfaces (USB
+// 2c7c:0125): 0 = diagnostics, 1 = NMEA stream, 2 = primary AT (held by
+// ModemManager), 3 = secondary AT. The driver reads raw NMEA 0183
+// sentences from interface 1 and uses a free AT interface only to switch
+// the GNSS engine on and configure the fix rate.
+
+enum ArduinoPro4gGnssSignalType {
+    ARDUINO_PRO_4G_GNSS_SIGNAL_TYPE_UNSPECIFIED = 0;
+    ARDUINO_PRO_4G_GNSS_CONNECTED               = 1;
+    ARDUINO_PRO_4G_GNSS_DISCONNECTED            = 2;
+    ARDUINO_PRO_4G_GNSS_NMEA_BATCH              = 3;
+    // gpsOneXTRA assistance was injected into the modem; `data` carries the
+    // xtra3grc.bin file that was loaded and `xtra_validity_minutes` how long
+    // the modem reported it valid for.
+    ARDUINO_PRO_4G_GNSS_XTRA_INJECTED           = 4;
+    ARDUINO_PRO_4G_GNSS_ERROR                   = 8;
+}
+
+message ArduinoPro4gGnssDevice {
+    string id = 1;
+
+    // Serial port the NMEA stream is read from (e.g. /dev/ttyUSB2 —
+    // numbering shifts with other adapters present; the port is found by
+    // USB VID/PID + interface number, not by name).
+    string nmea_port = 2;
+
+    // AT port used for GNSS setup, empty if setup fell back to mmcli or
+    // was skipped.
+    string at_port = 3;
+
+    uint32 usb_vid = 4;
+    uint32 usb_pid = 5;
+
+    // NMEA fix rate in Hz the driver configured via AT+QGPSCFG="fixfreq"
+    // (GSV sentences always stay at 1 Hz regardless).
+    uint32 fix_frequency_hz = 6;
+}
+
+message RxEnvelope {
+    uint64 monotonic_stamp_ns = 1;
+    uint64 local_stamp_ns     = 2;
+    uint64 app_start_id       = 3;
+
+    ArduinoPro4gGnssSignalType signal_type = 10;
+    ArduinoPro4gGnssDevice     device      = 11;
+
+    // Payload, discriminated by signal_type: for NMEA_BATCH one fix epoch's
+    // worth of raw NMEA 0183 sentences, newline separated, exactly as read
+    // off the wire (checksum-validated; an epoch starts at each $..RMC/
+    // $..GGA group — decoders parse sentences by talker/type, so the
+    // enabled sentence set can grow without breaking old recordings). For
+    // XTRA_INJECTED the raw assistance file that was loaded.
+    bytes data = 20;
+
+    // XTRA_INJECTED only: validity the modem reported after injection
+    // (10080 = the full 7 days of an xtra3 file).
+    uint32 xtra_validity_minutes = 21;
+
+    string error = 50;
+}

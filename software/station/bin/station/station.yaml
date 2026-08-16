@@ -19,6 +19,10 @@ drivers:
   yahboom-dogzilla-lite:
     enabled: true
     mode: simulation
+  arduino-pro-4g-gnss:
+    enabled: true
+    fix-frequency: 10   # NMEA rate in Hz (1/2/5/10); GSV satellite detail always 1 Hz
+    # assistance: true  # gpsOneXTRA predicted ephemeris (default on; ~27 KB from izatcloud.net when stale)
 inference:
 - queue-id: inference/normvla
   shm: /tmp/normvla

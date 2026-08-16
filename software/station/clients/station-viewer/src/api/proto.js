@@ -736,6 +736,7 @@ export const drivers = $root.drivers = (() => {
      * @property {number} QDT_PWM_OUTPUT_TX=55 QDT_PWM_OUTPUT_TX value
      * @property {number} QDT_PWM_OUTPUT_RX=56 QDT_PWM_OUTPUT_RX value
      * @property {number} QDT_DMESG_RX=57 QDT_DMESG_RX value
+     * @property {number} QDT_ARDUINO_PRO_4G_GNSS_RX=60 QDT_ARDUINO_PRO_4G_GNSS_RX value
      */
     drivers.QueueDataType = (function() {
         const valuesById = {}, values = Object.create(valuesById);
@@ -768,6 +769,7 @@ export const drivers = $root.drivers = (() => {
         values[valuesById[55] = "QDT_PWM_OUTPUT_TX"] = 55;
         values[valuesById[56] = "QDT_PWM_OUTPUT_RX"] = 56;
         values[valuesById[57] = "QDT_DMESG_RX"] = 57;
+        values[valuesById[60] = "QDT_ARDUINO_PRO_4G_GNSS_RX"] = 60;
         return values;
     })();
 
@@ -1367,6 +1369,7 @@ export const inference = $root.inference = (() => {
                     case 55:
                     case 56:
                     case 57:
+                    case 60:
                         break;
                     }
                 return null;
@@ -1517,6 +1520,10 @@ export const inference = $root.inference = (() => {
                 case "QDT_DMESG_RX":
                 case 57:
                     message.type = 57;
+                    break;
+                case "QDT_ARDUINO_PRO_4G_GNSS_RX":
+                case 60:
+                    message.type = 60;
                     break;
                 }
                 return message;
@@ -39432,6 +39439,847 @@ export const arduino_nicla_sense_env = $root.arduino_nicla_sense_env = (() => {
     })();
 
     return arduino_nicla_sense_env;
+})();
+
+export const arduino_pro_4g_gnss = $root.arduino_pro_4g_gnss = (() => {
+
+    /**
+     * Namespace arduino_pro_4g_gnss.
+     * @exports arduino_pro_4g_gnss
+     * @namespace
+     */
+    const arduino_pro_4g_gnss = {};
+
+    /**
+     * ArduinoPro4gGnssSignalType enum.
+     * @name arduino_pro_4g_gnss.ArduinoPro4gGnssSignalType
+     * @enum {number}
+     * @property {number} ARDUINO_PRO_4G_GNSS_SIGNAL_TYPE_UNSPECIFIED=0 ARDUINO_PRO_4G_GNSS_SIGNAL_TYPE_UNSPECIFIED value
+     * @property {number} ARDUINO_PRO_4G_GNSS_CONNECTED=1 ARDUINO_PRO_4G_GNSS_CONNECTED value
+     * @property {number} ARDUINO_PRO_4G_GNSS_DISCONNECTED=2 ARDUINO_PRO_4G_GNSS_DISCONNECTED value
+     * @property {number} ARDUINO_PRO_4G_GNSS_NMEA_BATCH=3 ARDUINO_PRO_4G_GNSS_NMEA_BATCH value
+     * @property {number} ARDUINO_PRO_4G_GNSS_XTRA_INJECTED=4 ARDUINO_PRO_4G_GNSS_XTRA_INJECTED value
+     * @property {number} ARDUINO_PRO_4G_GNSS_ERROR=8 ARDUINO_PRO_4G_GNSS_ERROR value
+     */
+    arduino_pro_4g_gnss.ArduinoPro4gGnssSignalType = (function() {
+        const valuesById = {}, values = Object.create(valuesById);
+        values[valuesById[0] = "ARDUINO_PRO_4G_GNSS_SIGNAL_TYPE_UNSPECIFIED"] = 0;
+        values[valuesById[1] = "ARDUINO_PRO_4G_GNSS_CONNECTED"] = 1;
+        values[valuesById[2] = "ARDUINO_PRO_4G_GNSS_DISCONNECTED"] = 2;
+        values[valuesById[3] = "ARDUINO_PRO_4G_GNSS_NMEA_BATCH"] = 3;
+        values[valuesById[4] = "ARDUINO_PRO_4G_GNSS_XTRA_INJECTED"] = 4;
+        values[valuesById[8] = "ARDUINO_PRO_4G_GNSS_ERROR"] = 8;
+        return values;
+    })();
+
+    arduino_pro_4g_gnss.ArduinoPro4gGnssDevice = (function() {
+
+        /**
+         * Properties of an ArduinoPro4gGnssDevice.
+         * @memberof arduino_pro_4g_gnss
+         * @interface IArduinoPro4gGnssDevice
+         * @property {string|null} [id] ArduinoPro4gGnssDevice id
+         * @property {string|null} [nmeaPort] ArduinoPro4gGnssDevice nmeaPort
+         * @property {string|null} [atPort] ArduinoPro4gGnssDevice atPort
+         * @property {number|null} [usbVid] ArduinoPro4gGnssDevice usbVid
+         * @property {number|null} [usbPid] ArduinoPro4gGnssDevice usbPid
+         * @property {number|null} [fixFrequencyHz] ArduinoPro4gGnssDevice fixFrequencyHz
+         */
+
+        /**
+         * Constructs a new ArduinoPro4gGnssDevice.
+         * @memberof arduino_pro_4g_gnss
+         * @classdesc Represents an ArduinoPro4gGnssDevice.
+         * @implements IArduinoPro4gGnssDevice
+         * @constructor
+         * @param {arduino_pro_4g_gnss.IArduinoPro4gGnssDevice=} [properties] Properties to set
+         */
+        function ArduinoPro4gGnssDevice(properties) {
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * ArduinoPro4gGnssDevice id.
+         * @member {string} id
+         * @memberof arduino_pro_4g_gnss.ArduinoPro4gGnssDevice
+         * @instance
+         */
+        ArduinoPro4gGnssDevice.prototype.id = "";
+
+        /**
+         * ArduinoPro4gGnssDevice nmeaPort.
+         * @member {string} nmeaPort
+         * @memberof arduino_pro_4g_gnss.ArduinoPro4gGnssDevice
+         * @instance
+         */
+        ArduinoPro4gGnssDevice.prototype.nmeaPort = "";
+
+        /**
+         * ArduinoPro4gGnssDevice atPort.
+         * @member {string} atPort
+         * @memberof arduino_pro_4g_gnss.ArduinoPro4gGnssDevice
+         * @instance
+         */
+        ArduinoPro4gGnssDevice.prototype.atPort = "";
+
+        /**
+         * ArduinoPro4gGnssDevice usbVid.
+         * @member {number} usbVid
+         * @memberof arduino_pro_4g_gnss.ArduinoPro4gGnssDevice
+         * @instance
+         */
+        ArduinoPro4gGnssDevice.prototype.usbVid = 0;
+
+        /**
+         * ArduinoPro4gGnssDevice usbPid.
+         * @member {number} usbPid
+         * @memberof arduino_pro_4g_gnss.ArduinoPro4gGnssDevice
+         * @instance
+         */
+        ArduinoPro4gGnssDevice.prototype.usbPid = 0;
+
+        /**
+         * ArduinoPro4gGnssDevice fixFrequencyHz.
+         * @member {number} fixFrequencyHz
+         * @memberof arduino_pro_4g_gnss.ArduinoPro4gGnssDevice
+         * @instance
+         */
+        ArduinoPro4gGnssDevice.prototype.fixFrequencyHz = 0;
+
+        /**
+         * Creates a new ArduinoPro4gGnssDevice instance using the specified properties.
+         * @function create
+         * @memberof arduino_pro_4g_gnss.ArduinoPro4gGnssDevice
+         * @static
+         * @param {arduino_pro_4g_gnss.IArduinoPro4gGnssDevice=} [properties] Properties to set
+         * @returns {arduino_pro_4g_gnss.ArduinoPro4gGnssDevice} ArduinoPro4gGnssDevice instance
+         */
+        ArduinoPro4gGnssDevice.create = function create(properties) {
+            return new ArduinoPro4gGnssDevice(properties);
+        };
+
+        /**
+         * Encodes the specified ArduinoPro4gGnssDevice message. Does not implicitly {@link arduino_pro_4g_gnss.ArduinoPro4gGnssDevice.verify|verify} messages.
+         * @function encode
+         * @memberof arduino_pro_4g_gnss.ArduinoPro4gGnssDevice
+         * @static
+         * @param {arduino_pro_4g_gnss.IArduinoPro4gGnssDevice} message ArduinoPro4gGnssDevice message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        ArduinoPro4gGnssDevice.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.id != null && Object.hasOwnProperty.call(message, "id"))
+                writer.uint32(/* id 1, wireType 2 =*/10).string(message.id);
+            if (message.nmeaPort != null && Object.hasOwnProperty.call(message, "nmeaPort"))
+                writer.uint32(/* id 2, wireType 2 =*/18).string(message.nmeaPort);
+            if (message.atPort != null && Object.hasOwnProperty.call(message, "atPort"))
+                writer.uint32(/* id 3, wireType 2 =*/26).string(message.atPort);
+            if (message.usbVid != null && Object.hasOwnProperty.call(message, "usbVid"))
+                writer.uint32(/* id 4, wireType 0 =*/32).uint32(message.usbVid);
+            if (message.usbPid != null && Object.hasOwnProperty.call(message, "usbPid"))
+                writer.uint32(/* id 5, wireType 0 =*/40).uint32(message.usbPid);
+            if (message.fixFrequencyHz != null && Object.hasOwnProperty.call(message, "fixFrequencyHz"))
+                writer.uint32(/* id 6, wireType 0 =*/48).uint32(message.fixFrequencyHz);
+            return writer;
+        };
+
+        /**
+         * Encodes the specified ArduinoPro4gGnssDevice message, length delimited. Does not implicitly {@link arduino_pro_4g_gnss.ArduinoPro4gGnssDevice.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof arduino_pro_4g_gnss.ArduinoPro4gGnssDevice
+         * @static
+         * @param {arduino_pro_4g_gnss.IArduinoPro4gGnssDevice} message ArduinoPro4gGnssDevice message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        ArduinoPro4gGnssDevice.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes an ArduinoPro4gGnssDevice message from the specified reader or buffer.
+         * @function decode
+         * @memberof arduino_pro_4g_gnss.ArduinoPro4gGnssDevice
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {arduino_pro_4g_gnss.ArduinoPro4gGnssDevice} ArduinoPro4gGnssDevice
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        ArduinoPro4gGnssDevice.decode = function decode(reader, length, error, long) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.arduino_pro_4g_gnss.ArduinoPro4gGnssDevice();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                if (tag === error)
+                    break;
+                switch (tag >>> 3) {
+                case 1: {
+                        message.id = reader.string();
+                        break;
+                    }
+                case 2: {
+                        message.nmeaPort = reader.string();
+                        break;
+                    }
+                case 3: {
+                        message.atPort = reader.string();
+                        break;
+                    }
+                case 4: {
+                        message.usbVid = reader.uint32();
+                        break;
+                    }
+                case 5: {
+                        message.usbPid = reader.uint32();
+                        break;
+                    }
+                case 6: {
+                        message.fixFrequencyHz = reader.uint32();
+                        break;
+                    }
+                default:
+                    reader.skipType(tag & 7, long);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes an ArduinoPro4gGnssDevice message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof arduino_pro_4g_gnss.ArduinoPro4gGnssDevice
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {arduino_pro_4g_gnss.ArduinoPro4gGnssDevice} ArduinoPro4gGnssDevice
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        ArduinoPro4gGnssDevice.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies an ArduinoPro4gGnssDevice message.
+         * @function verify
+         * @memberof arduino_pro_4g_gnss.ArduinoPro4gGnssDevice
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        ArduinoPro4gGnssDevice.verify = function verify(message, long) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
+            if (message.id != null && message.hasOwnProperty("id"))
+                if (!$util.isString(message.id))
+                    return "id: string expected";
+            if (message.nmeaPort != null && message.hasOwnProperty("nmeaPort"))
+                if (!$util.isString(message.nmeaPort))
+                    return "nmeaPort: string expected";
+            if (message.atPort != null && message.hasOwnProperty("atPort"))
+                if (!$util.isString(message.atPort))
+                    return "atPort: string expected";
+            if (message.usbVid != null && message.hasOwnProperty("usbVid"))
+                if (!$util.isInteger(message.usbVid))
+                    return "usbVid: integer expected";
+            if (message.usbPid != null && message.hasOwnProperty("usbPid"))
+                if (!$util.isInteger(message.usbPid))
+                    return "usbPid: integer expected";
+            if (message.fixFrequencyHz != null && message.hasOwnProperty("fixFrequencyHz"))
+                if (!$util.isInteger(message.fixFrequencyHz))
+                    return "fixFrequencyHz: integer expected";
+            return null;
+        };
+
+        /**
+         * Creates an ArduinoPro4gGnssDevice message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof arduino_pro_4g_gnss.ArduinoPro4gGnssDevice
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {arduino_pro_4g_gnss.ArduinoPro4gGnssDevice} ArduinoPro4gGnssDevice
+         */
+        ArduinoPro4gGnssDevice.fromObject = function fromObject(object, long) {
+            if (object instanceof $root.arduino_pro_4g_gnss.ArduinoPro4gGnssDevice)
+                return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let message = new $root.arduino_pro_4g_gnss.ArduinoPro4gGnssDevice();
+            if (object.id != null)
+                message.id = String(object.id);
+            if (object.nmeaPort != null)
+                message.nmeaPort = String(object.nmeaPort);
+            if (object.atPort != null)
+                message.atPort = String(object.atPort);
+            if (object.usbVid != null)
+                message.usbVid = object.usbVid >>> 0;
+            if (object.usbPid != null)
+                message.usbPid = object.usbPid >>> 0;
+            if (object.fixFrequencyHz != null)
+                message.fixFrequencyHz = object.fixFrequencyHz >>> 0;
+            return message;
+        };
+
+        /**
+         * Creates a plain object from an ArduinoPro4gGnssDevice message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof arduino_pro_4g_gnss.ArduinoPro4gGnssDevice
+         * @static
+         * @param {arduino_pro_4g_gnss.ArduinoPro4gGnssDevice} message ArduinoPro4gGnssDevice
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        ArduinoPro4gGnssDevice.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.defaults) {
+                object.id = "";
+                object.nmeaPort = "";
+                object.atPort = "";
+                object.usbVid = 0;
+                object.usbPid = 0;
+                object.fixFrequencyHz = 0;
+            }
+            if (message.id != null && message.hasOwnProperty("id"))
+                object.id = message.id;
+            if (message.nmeaPort != null && message.hasOwnProperty("nmeaPort"))
+                object.nmeaPort = message.nmeaPort;
+            if (message.atPort != null && message.hasOwnProperty("atPort"))
+                object.atPort = message.atPort;
+            if (message.usbVid != null && message.hasOwnProperty("usbVid"))
+                object.usbVid = message.usbVid;
+            if (message.usbPid != null && message.hasOwnProperty("usbPid"))
+                object.usbPid = message.usbPid;
+            if (message.fixFrequencyHz != null && message.hasOwnProperty("fixFrequencyHz"))
+                object.fixFrequencyHz = message.fixFrequencyHz;
+            return object;
+        };
+
+        /**
+         * Converts this ArduinoPro4gGnssDevice to JSON.
+         * @function toJSON
+         * @memberof arduino_pro_4g_gnss.ArduinoPro4gGnssDevice
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        ArduinoPro4gGnssDevice.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for ArduinoPro4gGnssDevice
+         * @function getTypeUrl
+         * @memberof arduino_pro_4g_gnss.ArduinoPro4gGnssDevice
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        ArduinoPro4gGnssDevice.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+            if (typeUrlPrefix === undefined) {
+                typeUrlPrefix = "type.googleapis.com";
+            }
+            return typeUrlPrefix + "/arduino_pro_4g_gnss.ArduinoPro4gGnssDevice";
+        };
+
+        return ArduinoPro4gGnssDevice;
+    })();
+
+    arduino_pro_4g_gnss.RxEnvelope = (function() {
+
+        /**
+         * Properties of a RxEnvelope.
+         * @memberof arduino_pro_4g_gnss
+         * @interface IRxEnvelope
+         * @property {Long|null} [monotonicStampNs] RxEnvelope monotonicStampNs
+         * @property {Long|null} [localStampNs] RxEnvelope localStampNs
+         * @property {Long|null} [appStartId] RxEnvelope appStartId
+         * @property {arduino_pro_4g_gnss.ArduinoPro4gGnssSignalType|null} [signalType] RxEnvelope signalType
+         * @property {arduino_pro_4g_gnss.IArduinoPro4gGnssDevice|null} [device] RxEnvelope device
+         * @property {Uint8Array|null} [data] RxEnvelope data
+         * @property {number|null} [xtraValidityMinutes] RxEnvelope xtraValidityMinutes
+         * @property {string|null} [error] RxEnvelope error
+         */
+
+        /**
+         * Constructs a new RxEnvelope.
+         * @memberof arduino_pro_4g_gnss
+         * @classdesc Represents a RxEnvelope.
+         * @implements IRxEnvelope
+         * @constructor
+         * @param {arduino_pro_4g_gnss.IRxEnvelope=} [properties] Properties to set
+         */
+        function RxEnvelope(properties) {
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * RxEnvelope monotonicStampNs.
+         * @member {Long} monotonicStampNs
+         * @memberof arduino_pro_4g_gnss.RxEnvelope
+         * @instance
+         */
+        RxEnvelope.prototype.monotonicStampNs = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+
+        /**
+         * RxEnvelope localStampNs.
+         * @member {Long} localStampNs
+         * @memberof arduino_pro_4g_gnss.RxEnvelope
+         * @instance
+         */
+        RxEnvelope.prototype.localStampNs = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+
+        /**
+         * RxEnvelope appStartId.
+         * @member {Long} appStartId
+         * @memberof arduino_pro_4g_gnss.RxEnvelope
+         * @instance
+         */
+        RxEnvelope.prototype.appStartId = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+
+        /**
+         * RxEnvelope signalType.
+         * @member {arduino_pro_4g_gnss.ArduinoPro4gGnssSignalType} signalType
+         * @memberof arduino_pro_4g_gnss.RxEnvelope
+         * @instance
+         */
+        RxEnvelope.prototype.signalType = 0;
+
+        /**
+         * RxEnvelope device.
+         * @member {arduino_pro_4g_gnss.IArduinoPro4gGnssDevice|null|undefined} device
+         * @memberof arduino_pro_4g_gnss.RxEnvelope
+         * @instance
+         */
+        RxEnvelope.prototype.device = null;
+
+        /**
+         * RxEnvelope data.
+         * @member {Uint8Array} data
+         * @memberof arduino_pro_4g_gnss.RxEnvelope
+         * @instance
+         */
+        RxEnvelope.prototype.data = $util.newBuffer([]);
+
+        /**
+         * RxEnvelope xtraValidityMinutes.
+         * @member {number} xtraValidityMinutes
+         * @memberof arduino_pro_4g_gnss.RxEnvelope
+         * @instance
+         */
+        RxEnvelope.prototype.xtraValidityMinutes = 0;
+
+        /**
+         * RxEnvelope error.
+         * @member {string} error
+         * @memberof arduino_pro_4g_gnss.RxEnvelope
+         * @instance
+         */
+        RxEnvelope.prototype.error = "";
+
+        /**
+         * Creates a new RxEnvelope instance using the specified properties.
+         * @function create
+         * @memberof arduino_pro_4g_gnss.RxEnvelope
+         * @static
+         * @param {arduino_pro_4g_gnss.IRxEnvelope=} [properties] Properties to set
+         * @returns {arduino_pro_4g_gnss.RxEnvelope} RxEnvelope instance
+         */
+        RxEnvelope.create = function create(properties) {
+            return new RxEnvelope(properties);
+        };
+
+        /**
+         * Encodes the specified RxEnvelope message. Does not implicitly {@link arduino_pro_4g_gnss.RxEnvelope.verify|verify} messages.
+         * @function encode
+         * @memberof arduino_pro_4g_gnss.RxEnvelope
+         * @static
+         * @param {arduino_pro_4g_gnss.IRxEnvelope} message RxEnvelope message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        RxEnvelope.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.monotonicStampNs != null && Object.hasOwnProperty.call(message, "monotonicStampNs"))
+                writer.uint32(/* id 1, wireType 0 =*/8).uint64(message.monotonicStampNs);
+            if (message.localStampNs != null && Object.hasOwnProperty.call(message, "localStampNs"))
+                writer.uint32(/* id 2, wireType 0 =*/16).uint64(message.localStampNs);
+            if (message.appStartId != null && Object.hasOwnProperty.call(message, "appStartId"))
+                writer.uint32(/* id 3, wireType 0 =*/24).uint64(message.appStartId);
+            if (message.signalType != null && Object.hasOwnProperty.call(message, "signalType"))
+                writer.uint32(/* id 10, wireType 0 =*/80).int32(message.signalType);
+            if (message.device != null && Object.hasOwnProperty.call(message, "device"))
+                $root.arduino_pro_4g_gnss.ArduinoPro4gGnssDevice.encode(message.device, writer.uint32(/* id 11, wireType 2 =*/90).fork()).ldelim();
+            if (message.data != null && Object.hasOwnProperty.call(message, "data"))
+                writer.uint32(/* id 20, wireType 2 =*/162).bytes(message.data);
+            if (message.xtraValidityMinutes != null && Object.hasOwnProperty.call(message, "xtraValidityMinutes"))
+                writer.uint32(/* id 21, wireType 0 =*/168).uint32(message.xtraValidityMinutes);
+            if (message.error != null && Object.hasOwnProperty.call(message, "error"))
+                writer.uint32(/* id 50, wireType 2 =*/402).string(message.error);
+            return writer;
+        };
+
+        /**
+         * Encodes the specified RxEnvelope message, length delimited. Does not implicitly {@link arduino_pro_4g_gnss.RxEnvelope.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof arduino_pro_4g_gnss.RxEnvelope
+         * @static
+         * @param {arduino_pro_4g_gnss.IRxEnvelope} message RxEnvelope message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        RxEnvelope.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes a RxEnvelope message from the specified reader or buffer.
+         * @function decode
+         * @memberof arduino_pro_4g_gnss.RxEnvelope
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {arduino_pro_4g_gnss.RxEnvelope} RxEnvelope
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        RxEnvelope.decode = function decode(reader, length, error, long) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.arduino_pro_4g_gnss.RxEnvelope();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                if (tag === error)
+                    break;
+                switch (tag >>> 3) {
+                case 1: {
+                        message.monotonicStampNs = reader.uint64();
+                        break;
+                    }
+                case 2: {
+                        message.localStampNs = reader.uint64();
+                        break;
+                    }
+                case 3: {
+                        message.appStartId = reader.uint64();
+                        break;
+                    }
+                case 10: {
+                        message.signalType = reader.int32();
+                        break;
+                    }
+                case 11: {
+                        message.device = $root.arduino_pro_4g_gnss.ArduinoPro4gGnssDevice.decode(reader, reader.uint32(), undefined, long + 1);
+                        break;
+                    }
+                case 20: {
+                        message.data = reader.bytes();
+                        break;
+                    }
+                case 21: {
+                        message.xtraValidityMinutes = reader.uint32();
+                        break;
+                    }
+                case 50: {
+                        message.error = reader.string();
+                        break;
+                    }
+                default:
+                    reader.skipType(tag & 7, long);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes a RxEnvelope message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof arduino_pro_4g_gnss.RxEnvelope
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {arduino_pro_4g_gnss.RxEnvelope} RxEnvelope
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        RxEnvelope.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies a RxEnvelope message.
+         * @function verify
+         * @memberof arduino_pro_4g_gnss.RxEnvelope
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        RxEnvelope.verify = function verify(message, long) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
+            if (message.monotonicStampNs != null && message.hasOwnProperty("monotonicStampNs"))
+                if (!$util.isInteger(message.monotonicStampNs) && !(message.monotonicStampNs && $util.isInteger(message.monotonicStampNs.low) && $util.isInteger(message.monotonicStampNs.high)))
+                    return "monotonicStampNs: integer|Long expected";
+            if (message.localStampNs != null && message.hasOwnProperty("localStampNs"))
+                if (!$util.isInteger(message.localStampNs) && !(message.localStampNs && $util.isInteger(message.localStampNs.low) && $util.isInteger(message.localStampNs.high)))
+                    return "localStampNs: integer|Long expected";
+            if (message.appStartId != null && message.hasOwnProperty("appStartId"))
+                if (!$util.isInteger(message.appStartId) && !(message.appStartId && $util.isInteger(message.appStartId.low) && $util.isInteger(message.appStartId.high)))
+                    return "appStartId: integer|Long expected";
+            if (message.signalType != null && message.hasOwnProperty("signalType"))
+                switch (message.signalType) {
+                default:
+                    return "signalType: enum value expected";
+                case 0:
+                case 1:
+                case 2:
+                case 3:
+                case 4:
+                case 8:
+                    break;
+                }
+            if (message.device != null && message.hasOwnProperty("device")) {
+                let error = $root.arduino_pro_4g_gnss.ArduinoPro4gGnssDevice.verify(message.device, long + 1);
+                if (error)
+                    return "device." + error;
+            }
+            if (message.data != null && message.hasOwnProperty("data"))
+                if (!(message.data && typeof message.data.length === "number" || $util.isString(message.data)))
+                    return "data: buffer expected";
+            if (message.xtraValidityMinutes != null && message.hasOwnProperty("xtraValidityMinutes"))
+                if (!$util.isInteger(message.xtraValidityMinutes))
+                    return "xtraValidityMinutes: integer expected";
+            if (message.error != null && message.hasOwnProperty("error"))
+                if (!$util.isString(message.error))
+                    return "error: string expected";
+            return null;
+        };
+
+        /**
+         * Creates a RxEnvelope message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof arduino_pro_4g_gnss.RxEnvelope
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {arduino_pro_4g_gnss.RxEnvelope} RxEnvelope
+         */
+        RxEnvelope.fromObject = function fromObject(object, long) {
+            if (object instanceof $root.arduino_pro_4g_gnss.RxEnvelope)
+                return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let message = new $root.arduino_pro_4g_gnss.RxEnvelope();
+            if (object.monotonicStampNs != null)
+                if ($util.Long)
+                    (message.monotonicStampNs = $util.Long.fromValue(object.monotonicStampNs)).unsigned = true;
+                else if (typeof object.monotonicStampNs === "string")
+                    message.monotonicStampNs = parseInt(object.monotonicStampNs, 10);
+                else if (typeof object.monotonicStampNs === "number")
+                    message.monotonicStampNs = object.monotonicStampNs;
+                else if (typeof object.monotonicStampNs === "object")
+                    message.monotonicStampNs = new $util.LongBits(object.monotonicStampNs.low >>> 0, object.monotonicStampNs.high >>> 0).toNumber(true);
+            if (object.localStampNs != null)
+                if ($util.Long)
+                    (message.localStampNs = $util.Long.fromValue(object.localStampNs)).unsigned = true;
+                else if (typeof object.localStampNs === "string")
+                    message.localStampNs = parseInt(object.localStampNs, 10);
+                else if (typeof object.localStampNs === "number")
+                    message.localStampNs = object.localStampNs;
+                else if (typeof object.localStampNs === "object")
+                    message.localStampNs = new $util.LongBits(object.localStampNs.low >>> 0, object.localStampNs.high >>> 0).toNumber(true);
+            if (object.appStartId != null)
+                if ($util.Long)
+                    (message.appStartId = $util.Long.fromValue(object.appStartId)).unsigned = true;
+                else if (typeof object.appStartId === "string")
+                    message.appStartId = parseInt(object.appStartId, 10);
+                else if (typeof object.appStartId === "number")
+                    message.appStartId = object.appStartId;
+                else if (typeof object.appStartId === "object")
+                    message.appStartId = new $util.LongBits(object.appStartId.low >>> 0, object.appStartId.high >>> 0).toNumber(true);
+            switch (object.signalType) {
+            default:
+                if (typeof object.signalType === "number") {
+                    message.signalType = object.signalType;
+                    break;
+                }
+                break;
+            case "ARDUINO_PRO_4G_GNSS_SIGNAL_TYPE_UNSPECIFIED":
+            case 0:
+                message.signalType = 0;
+                break;
+            case "ARDUINO_PRO_4G_GNSS_CONNECTED":
+            case 1:
+                message.signalType = 1;
+                break;
+            case "ARDUINO_PRO_4G_GNSS_DISCONNECTED":
+            case 2:
+                message.signalType = 2;
+                break;
+            case "ARDUINO_PRO_4G_GNSS_NMEA_BATCH":
+            case 3:
+                message.signalType = 3;
+                break;
+            case "ARDUINO_PRO_4G_GNSS_XTRA_INJECTED":
+            case 4:
+                message.signalType = 4;
+                break;
+            case "ARDUINO_PRO_4G_GNSS_ERROR":
+            case 8:
+                message.signalType = 8;
+                break;
+            }
+            if (object.device != null) {
+                if (typeof object.device !== "object")
+                    throw TypeError(".arduino_pro_4g_gnss.RxEnvelope.device: object expected");
+                message.device = $root.arduino_pro_4g_gnss.ArduinoPro4gGnssDevice.fromObject(object.device, long + 1);
+            }
+            if (object.data != null)
+                if (typeof object.data === "string")
+                    $util.base64.decode(object.data, message.data = $util.newBuffer($util.base64.length(object.data)), 0);
+                else if (object.data.length >= 0)
+                    message.data = object.data;
+            if (object.xtraValidityMinutes != null)
+                message.xtraValidityMinutes = object.xtraValidityMinutes >>> 0;
+            if (object.error != null)
+                message.error = String(object.error);
+            return message;
+        };
+
+        /**
+         * Creates a plain object from a RxEnvelope message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof arduino_pro_4g_gnss.RxEnvelope
+         * @static
+         * @param {arduino_pro_4g_gnss.RxEnvelope} message RxEnvelope
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        RxEnvelope.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.defaults) {
+                if ($util.Long) {
+                    let long = new $util.Long(0, 0, true);
+                    object.monotonicStampNs = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+                } else
+                    object.monotonicStampNs = options.longs === String ? "0" : 0;
+                if ($util.Long) {
+                    let long = new $util.Long(0, 0, true);
+                    object.localStampNs = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+                } else
+                    object.localStampNs = options.longs === String ? "0" : 0;
+                if ($util.Long) {
+                    let long = new $util.Long(0, 0, true);
+                    object.appStartId = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+                } else
+                    object.appStartId = options.longs === String ? "0" : 0;
+                object.signalType = options.enums === String ? "ARDUINO_PRO_4G_GNSS_SIGNAL_TYPE_UNSPECIFIED" : 0;
+                object.device = null;
+                if (options.bytes === String)
+                    object.data = "";
+                else {
+                    object.data = [];
+                    if (options.bytes !== Array)
+                        object.data = $util.newBuffer(object.data);
+                }
+                object.xtraValidityMinutes = 0;
+                object.error = "";
+            }
+            if (message.monotonicStampNs != null && message.hasOwnProperty("monotonicStampNs"))
+                if (typeof message.monotonicStampNs === "number")
+                    object.monotonicStampNs = options.longs === String ? String(message.monotonicStampNs) : message.monotonicStampNs;
+                else
+                    object.monotonicStampNs = options.longs === String ? $util.Long.prototype.toString.call(message.monotonicStampNs) : options.longs === Number ? new $util.LongBits(message.monotonicStampNs.low >>> 0, message.monotonicStampNs.high >>> 0).toNumber(true) : message.monotonicStampNs;
+            if (message.localStampNs != null && message.hasOwnProperty("localStampNs"))
+                if (typeof message.localStampNs === "number")
+                    object.localStampNs = options.longs === String ? String(message.localStampNs) : message.localStampNs;
+                else
+                    object.localStampNs = options.longs === String ? $util.Long.prototype.toString.call(message.localStampNs) : options.longs === Number ? new $util.LongBits(message.localStampNs.low >>> 0, message.localStampNs.high >>> 0).toNumber(true) : message.localStampNs;
+            if (message.appStartId != null && message.hasOwnProperty("appStartId"))
+                if (typeof message.appStartId === "number")
+                    object.appStartId = options.longs === String ? String(message.appStartId) : message.appStartId;
+                else
+                    object.appStartId = options.longs === String ? $util.Long.prototype.toString.call(message.appStartId) : options.longs === Number ? new $util.LongBits(message.appStartId.low >>> 0, message.appStartId.high >>> 0).toNumber(true) : message.appStartId;
+            if (message.signalType != null && message.hasOwnProperty("signalType"))
+                object.signalType = options.enums === String ? $root.arduino_pro_4g_gnss.ArduinoPro4gGnssSignalType[message.signalType] === undefined ? message.signalType : $root.arduino_pro_4g_gnss.ArduinoPro4gGnssSignalType[message.signalType] : message.signalType;
+            if (message.device != null && message.hasOwnProperty("device"))
+                object.device = $root.arduino_pro_4g_gnss.ArduinoPro4gGnssDevice.toObject(message.device, options);
+            if (message.data != null && message.hasOwnProperty("data"))
+                object.data = options.bytes === String ? $util.base64.encode(message.data, 0, message.data.length) : options.bytes === Array ? Array.prototype.slice.call(message.data) : message.data;
+            if (message.xtraValidityMinutes != null && message.hasOwnProperty("xtraValidityMinutes"))
+                object.xtraValidityMinutes = message.xtraValidityMinutes;
+            if (message.error != null && message.hasOwnProperty("error"))
+                object.error = message.error;
+            return object;
+        };
+
+        /**
+         * Converts this RxEnvelope to JSON.
+         * @function toJSON
+         * @memberof arduino_pro_4g_gnss.RxEnvelope
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        RxEnvelope.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for RxEnvelope
+         * @function getTypeUrl
+         * @memberof arduino_pro_4g_gnss.RxEnvelope
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        RxEnvelope.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+            if (typeUrlPrefix === undefined) {
+                typeUrlPrefix = "type.googleapis.com";
+            }
+            return typeUrlPrefix + "/arduino_pro_4g_gnss.RxEnvelope";
+        };
+
+        return RxEnvelope;
+    })();
+
+    return arduino_pro_4g_gnss;
 })();
 
 export const ina226 = $root.ina226 = (() => {

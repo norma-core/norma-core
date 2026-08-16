@@ -552,6 +552,27 @@ impl Station {
             }
         }
 
+        if let Some(gnss_config) = &self.config.drivers.arduino_pro_4g_gnss {
+            if gnss_config.enabled {
+                let config = arduino_pro_4g_gnss::ArduinoPro4gGnssDriverConfig {
+                    fix_frequency_hz: gnss_config.fix_frequency,
+                    assistance: gnss_config.assistance,
+                };
+
+                if let Err(e) = arduino_pro_4g_gnss::start_arduino_pro_4g_gnss_driver(
+                    self.normfs.clone(),
+                    self.engine.clone(),
+                    config,
+                )
+                .await
+                {
+                    log::error!("Failed to start Arduino Pro 4G GNSS driver: {}", e);
+                }
+            } else {
+                log::info!("Arduino Pro 4G GNSS driver disabled by configuration");
+            }
+        }
+
         if let Some(st3215) = &st3215_config {
             // Start motors mirroring driver
             let motor_config = motors_mirroring::config::MotorConfig::from(st3215);

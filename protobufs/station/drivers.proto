@@ -42,6 +42,9 @@ enum QueueDataType {
     QDT_PWM_OUTPUT_RX = 56; // pwm_output.RxEnvelope
 
     QDT_DMESG_RX = 57; // dmesg.RxEnvelope
+    // 58 = dfrobot-rs485 and 59 = arduino-nicla-sense-me on their feature
+    // branches (reconciled on debug/trx-6-sensors-v3); do not reuse.
+    QDT_ARDUINO_PRO_4G_GNSS_RX = 60; // arduino_pro_4g_gnss.RxEnvelope
 }
 
 enum StationCommandType {
