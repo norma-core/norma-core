@@ -33,30 +33,7 @@ describe('Vec3History', () => {
     expect(history.get()).toHaveLength(1);
   });
 
-  it('pushBatch appends all samples and dedupes repeated batch keys', () => {
-    const history = new Vec3History(10);
-    history.pushBatch('batch-1', [
-      { x: 1, y: 0, z: 0 },
-      { x: 2, y: 0, z: 0 },
-    ]);
-    history.pushBatch('batch-1', [{ x: 99, y: 0, z: 0 }]);
-    expect(history.get().map((s) => s.x)).toEqual([1, 2]);
-    history.pushBatch('batch-2', [{ x: 3, y: 0, z: 0 }]);
-    expect(history.get().map((s) => s.x)).toEqual([1, 2, 3]);
-  });
 
-  it('pushBatch trims to capacity, keeping the newest samples', () => {
-    const history = new Vec3History(3);
-    history.pushBatch('b1', [
-      { x: 1, y: 0, z: 0 },
-      { x: 2, y: 0, z: 0 },
-    ]);
-    history.pushBatch('b2', [
-      { x: 3, y: 0, z: 0 },
-      { x: 4, y: 0, z: 0 },
-    ]);
-    expect(history.get().map((s) => s.x)).toEqual([2, 3, 4]);
-  });
 });
 
 describe('historyFor', () => {

@@ -1,7 +1,6 @@
 import type { arduino_nicla_sense_me } from '@/api/proto.js';
 import DeviceMetricPill from '@/components/DeviceMetricPill';
 import DeviceWidgetShell from '@/components/DeviceWidgetShell';
-import { parseMotionBatch } from '../motion';
 import NiclaBoardScene from './NiclaBoardScene';
 import { buildDecimatedAxisPolylines, historyFor } from '../sparkline';
 import { cardinalName, readArduinoNiclaSenseMeMainValues, vecMagnitude } from '../values';
@@ -58,7 +57,7 @@ function CompassDial({ headingDeg }: { headingDeg: number | null }) {
         style={{
           transform: `rotate(${heading}deg)`,
           transformOrigin: '45px 45px',
-          transition: 'transform 900ms linear',
+          transition: 'transform 120ms linear',
         }}
       >
         <polygon points="45,45 41,49 45,12" fill="var(--color-accent-critical)" />
@@ -127,17 +126,10 @@ function ArduinoNiclaSenseMeLiveView({ data }: ArduinoNiclaSenseMeLiveViewProps)
   const accelHistory = historyFor(`${historyKey}/accel`, 600);
   const gyroHistory = historyFor(`${historyKey}/gyro`, 600);
   const magHistory = historyFor(`${historyKey}/mag`, 600);
-  const motionBatch = parseMotionBatch(data.motion);
   if (sampleKey !== '') {
-    if (motionBatch && motionBatch.accel.length > 0) {
-      accelHistory.pushBatch(sampleKey, motionBatch.accel);
-      gyroHistory.pushBatch(sampleKey, motionBatch.gyro);
-      magHistory.pushBatch(sampleKey, motionBatch.mag);
-    } else {
-      accelHistory.push(sampleKey, values.accelG);
-      gyroHistory.push(sampleKey, values.gyroDps);
-      magHistory.push(sampleKey, values.magUt);
-    }
+    accelHistory.push(sampleKey, values.accelG);
+    gyroHistory.push(sampleKey, values.gyroDps);
+    magHistory.push(sampleKey, values.magUt);
   }
 
   return (

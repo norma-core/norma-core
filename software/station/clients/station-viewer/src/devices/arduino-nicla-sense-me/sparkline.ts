@@ -25,19 +25,6 @@ export class Vec3History {
     this.trim();
   }
 
-  /**
-   * Appends an entire batch of samples (e.g. a decoded 100Hz motion batch) in
-   * one go. Dedupes whole batches by `batchKey` using the same last-key guard
-   * as `push`, so re-processing the same envelope on a re-render is a no-op.
-   */
-  pushBatch(batchKey: string, samples: readonly Vec3[]): void {
-    if (batchKey === this.lastKey) {
-      return;
-    }
-    this.lastKey = batchKey;
-    this.samples.push(...samples);
-    this.trim();
-  }
 
   get(): readonly Vec3[] {
     return this.samples;
