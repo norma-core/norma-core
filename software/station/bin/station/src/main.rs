@@ -401,6 +401,7 @@ impl Station {
                                 transport: arduino_nicla_sense_me::ArduinoNiclaSenseMeTransport::I2c {
                                     i2c_bus,
                                 },
+                                poll_interval: board.poll_interval,
                             }),
                             None => {
                                 log::error!(
@@ -414,6 +415,7 @@ impl Station {
                             Some(arduino_nicla_sense_me::ArduinoNiclaSenseMeBoardConfig {
                                 id: board.id.clone(),
                                 transport: arduino_nicla_sense_me::ArduinoNiclaSenseMeTransport::Usb,
+                                poll_interval: board.poll_interval,
                             })
                         }
                     })

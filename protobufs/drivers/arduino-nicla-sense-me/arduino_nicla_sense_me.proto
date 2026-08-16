@@ -46,10 +46,11 @@ message RxEnvelope {
     // Full raw register image, always starting at register 0x00.
     bytes data = 20;
 
-    // Validated motion batch blob (USB transport only): count u16 LE,
+    // DEPRECATED (2026-08-16): motion batching was removed in favor of
+    // high-rate snapshot polling; always empty in new envelopes. Kept so
+    // previously recorded envelopes still decode. Layout was: count u16 LE,
     // dropped u16 LE, first_sample_millis u32 LE, then count x 19-byte
-    // samples (dt_ms u8 + accel/gyro/mag x,y,z as raw i16 LE). Empty when
-    // no batch accompanied this snapshot.
+    // samples (dt_ms u8 + accel/gyro/mag x,y,z as raw i16 LE).
     bytes motion = 21;
 
     string error = 50;

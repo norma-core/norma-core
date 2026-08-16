@@ -491,6 +491,16 @@ pub struct ArduinoNiclaSenseMeBoardConfig {
 
     #[serde(rename = "i2c-bus", default, skip_serializing_if = "Option::is_none")]
     pub i2c_bus: Option<u32>,
+
+    /// Per-board override of the driver-wide poll interval (e.g. "10ms"
+    /// for ~100 Hz polling of a USB board).
+    #[serde(
+        rename = "poll-interval",
+        default,
+        with = "humantime_serde::option",
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub poll_interval: Option<std::time::Duration>,
 }
 
 fn default_arduino_nicla_sense_me_poll_interval() -> std::time::Duration {
@@ -864,6 +874,7 @@ arduino-nicla-sense-me:
   boards:
     - id: nicla-usb
       bus-type: usb
+      poll-interval: 10ms
     - bus-type: i2c
       i2c-bus: 3
 "#;
@@ -872,6 +883,11 @@ arduino-nicla-sense-me:
         assert_eq!(me.boards.len(), 2);
         assert_eq!(me.boards[0].bus_type, ArduinoNiclaSenseMeBusType::Usb);
         assert_eq!(me.boards[0].i2c_bus, None);
+        assert_eq!(
+            me.boards[0].poll_interval,
+            Some(std::time::Duration::from_millis(10))
+        );
+        assert_eq!(me.boards[1].poll_interval, None);
         assert_eq!(me.boards[1].bus_type, ArduinoNiclaSenseMeBusType::I2c);
         assert_eq!(me.boards[1].i2c_bus, Some(3));
     }

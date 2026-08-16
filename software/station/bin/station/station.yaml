@@ -25,6 +25,7 @@ drivers:
     boards:
       - id: nicla-usb
         bus-type: usb     # autodetected by USB vid/pid 2341:0060
+        poll-interval: 10ms  # ~100 Hz live stream (storage: ~2.3 GB/day)
       # - id: nicla-i2c
       #   bus-type: i2c
       #   i2c-bus: 2      # adjust to the I2C bus the ESLOV chain is wired to
