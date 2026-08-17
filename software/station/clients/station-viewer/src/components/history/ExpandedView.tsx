@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { airgradient_open_air_o_1pst, arduino_nicla_sense_env, dmesg, hikmicro, ina226, usbvideo, st3215, motors_mirroring, sysinfo, yahboom_dogzilla_lite, normvla, vesc_trampa, victron_smartsolar_mppt } from '@/api/proto.js';
+import { airgradient_open_air_o_1pst, arduino_nicla_sense_env, arduino_pro_4g_gnss, dmesg, hikmicro, ina226, usbvideo, st3215, motors_mirroring, sysinfo, yahboom_dogzilla_lite, normvla, vesc_trampa, victron_smartsolar_mppt } from '@/api/proto.js';
 import ArduinoNiclaSenseEnvExpanded from '@/components/history/ArduinoNiclaSenseEnvExpanded';
 import Ina226Expanded from '@/components/history/Ina226Expanded';
 import VictronSmartSolarExpanded from '@/components/history/VictronSmartSolarExpanded';
 import { airGradientDeviceLabel, airGradientLineText, readAirGradientValues } from '@/devices/airgradient-open-air-o-1pst/values';
+import { decodeBatchText, gnssDeviceLabel, parseNmeaBatch } from '@/devices/arduino-pro-4g-gnss/values';
 import { createCroppedHikmicroJson, createCroppedJson } from '@/components/history/history-utils';
 import RawBytesExpanded from '@/components/history/RawBytesExpanded';
 import MirroringExpanded from '@/components/history/MirroringExpanded';
@@ -86,6 +87,7 @@ function getAvailableTabs(
   const isMirroring = type === 'mirroring' && data instanceof motors_mirroring.RxEnvelope;
   const isSysinfo = type === 'sysinfo' && data instanceof sysinfo.Envelope;
   const isArduinoNiclaSenseEnv = type === 'arduino-nicla-sense-env' && data instanceof arduino_nicla_sense_env.RxEnvelope;
+  const isArduinoPro4gGnss = type === 'arduino-pro-4g-gnss' && data instanceof arduino_pro_4g_gnss.RxEnvelope;
   const isIna226 = type === 'ina226' && data instanceof ina226.RxEnvelope;
   const isAirGradient = type === 'airgradient-open-air-o-1pst' && data instanceof airgradient_open_air_o_1pst.RxEnvelope;
   const isVictronSmartSolar = type === 'victron-smartsolar-mppt' && data instanceof victron_smartsolar_mppt.RxEnvelope;
@@ -93,7 +95,7 @@ function getAvailableTabs(
   const isNormvla = type === 'normvla' && data instanceof normvla.Frame;
   const isVescTrampa = type === 'vesc-trampa-rx' && data instanceof vesc_trampa.RxEnvelope;
 
-  if (isUsbVideo || isUsbVideoTx || isHikmicroThermal || isSt3215 || isSt3215Tx || isMirroring || isVescTrampaTx || isSysinfo || isArduinoNiclaSenseEnv || isIna226 || isAirGradient || isVictronSmartSolar || isYahboomDogzillaLite || isNormvla) {
+  if (isUsbVideo || isUsbVideoTx || isHikmicroThermal || isSt3215 || isSt3215Tx || isMirroring || isVescTrampaTx || isSysinfo || isArduinoNiclaSenseEnv || isArduinoPro4gGnss || isIna226 || isAirGradient || isVictronSmartSolar || isYahboomDogzillaLite || isNormvla) {
     return ['visual', 'json', 'raw'];
   }
 
@@ -201,6 +203,51 @@ export default function ExpandedView({ data, type, rawData, queueId, entryId }: 
     }
     if (type === 'victron-smartsolar-mppt' && data instanceof victron_smartsolar_mppt.RxEnvelope) {
       return <VictronSmartSolarExpanded data={data} queueId={queueId} entryId={entryId} />;
+    }
+    if (type === 'arduino-pro-4g-gnss' && data instanceof arduino_pro_4g_gnss.RxEnvelope) {
+      const values = parseNmeaBatch(decodeBatchText(data.data));
+      const cells: { label: string; value: string }[] = [
+        { label: 'Latitude', value: values.latitudeDeg === null ? 'N/A' : values.latitudeDeg.toFixed(6) },
+        { label: 'Longitude', value: values.longitudeDeg === null ? 'N/A' : values.longitudeDeg.toFixed(6) },
+        { label: 'Altitude', value: values.altitudeM === null ? 'N/A' : `${values.altitudeM.toFixed(1)} m` },
+        { label: 'Speed', value: values.speedMps === null ? 'N/A' : `${values.speedMps.toFixed(2)} m/s` },
+        { label: 'Course', value: values.courseDeg === null ? 'N/A' : `${values.courseDeg.toFixed(1)} deg` },
+        { label: 'Fix', value: values.fixQuality === null ? 'N/A' : values.fixQuality > 0 ? `Quality ${values.fixQuality}` : 'No fix' },
+        { label: 'Sats used', value: values.satellitesUsed === null ? 'N/A' : String(values.satellitesUsed) },
+        { label: 'Sats seen', value: values.satellitesInView === null ? 'N/A' : String(values.satellitesInView) },
+        { label: 'PDOP', value: values.pdop === null ? 'N/A' : values.pdop.toFixed(2) },
+        { label: 'HDOP', value: values.hdop === null ? 'N/A' : values.hdop.toFixed(2) },
+        { label: 'VDOP', value: values.vdop === null ? 'N/A' : values.vdop.toFixed(2) },
+        { label: 'UTC', value: values.utcTime ?? 'N/A' },
+      ];
+      return (
+        <div className="space-y-2">
+          <div className="text-xs text-text-label">{gnssDeviceLabel(data.device)}</div>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+            {cells.map((cell) => (
+              <div key={cell.label} className="bg-surface-primary p-2 rounded">
+                <div className="text-[10px] uppercase text-text-label">{cell.label}</div>
+                <div className="font-mono text-sm text-accent-data">{cell.value}</div>
+              </div>
+            ))}
+          </div>
+          {values.satellites.length > 0 && (
+            <div className="bg-surface-primary p-2 rounded text-xs">
+              <div className="text-text-label mb-1">Satellites</div>
+              <div className="grid grid-cols-2 gap-x-4 gap-y-0.5 sm:grid-cols-3 font-mono text-accent-data">
+                {values.satellites.map((sat, idx) => (
+                  <div key={`${sat.system}-${sat.prn ?? idx}`}>
+                    {sat.system} {sat.prn ?? '?'} · {sat.snrDb === null ? '—' : `${sat.snrDb} dB`}{sat.used ? ' · in fix' : ''}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          <div className="bg-surface-primary p-2 rounded text-xs font-mono text-accent-success overflow-x-auto max-h-40 overflow-y-auto whitespace-pre">
+            {decodeBatchText(data.data) || '(no sentences)'}
+          </div>
+        </div>
+      );
     }
     if (type === 'airgradient-open-air-o-1pst' && data instanceof airgradient_open_air_o_1pst.RxEnvelope) {
       const values = readAirGradientValues(data.data);
@@ -428,6 +475,23 @@ export default function ExpandedView({ data, type, rawData, queueId, entryId }: 
           <div className="text-xs text-text-label mb-1">Arduino Nicla Sense Env RxEnvelope JSON:</div>
           <div className="bg-surface-primary p-2 rounded text-xs font-mono text-accent-data overflow-x-auto max-h-64 overflow-y-auto">
             <pre>{JSON.stringify(niclaData, null, 2)}</pre>
+          </div>
+        </div>
+      );
+    }
+    if (type === 'arduino-pro-4g-gnss' && data instanceof arduino_pro_4g_gnss.RxEnvelope) {
+      const gnssObject = arduino_pro_4g_gnss.RxEnvelope.toObject(data, {
+        longs: String,
+        enums: String,
+        bytes: String,
+        defaults: true
+      });
+      const view = { ...gnssObject, data: decodeBatchText(data.data).split('\n') };
+      return (
+        <div>
+          <div className="text-xs text-text-label mb-1">Arduino Pro 4G GNSS RxEnvelope JSON:</div>
+          <div className="bg-surface-primary p-2 rounded text-xs font-mono text-accent-data overflow-x-auto max-h-64 overflow-y-auto">
+            <pre>{JSON.stringify(view, null, 2)}</pre>
           </div>
         </div>
       );

@@ -8,6 +8,8 @@ const TALKER_SYSTEMS: Record<string, string> = {
   GA: 'Galileo',
   GB: 'BeiDou',
   BD: 'BeiDou',
+  // Quectel proprietary BeiDou sentences ($PQGSA/$PQGSV).
+  PQ: 'BeiDou',
   GQ: 'QZSS',
   GN: 'GNSS',
 };

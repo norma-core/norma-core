@@ -101,6 +101,18 @@ describe('parseNmeaBatch', () => {
     expect(galileo9?.used).toBe(false);
   });
 
+  it('classifies Quectel proprietary PQ sentences as BeiDou', () => {
+    const values = parseNmeaBatch(
+      [
+        '$PQGSV,1,1,02,201,50,100,30,205,40,200,28*00',
+        '$PQGSA,A,3,201,205,,,,,,,,,,,1.5,0.9,1.2*00',
+      ].join('\n'),
+    );
+    const beidou = values.satellites.filter(s => s.system === 'BeiDou');
+    expect(beidou).toHaveLength(2);
+    expect(beidou.every(s => s.used)).toBe(true);
+  });
+
   it('returns nulls for an empty-field no-fix batch', () => {
     const values = parseNmeaBatch(NO_FIX_BATCH);
 

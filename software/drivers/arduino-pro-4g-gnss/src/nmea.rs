@@ -40,9 +40,11 @@ fn sentence_type(sentence: &str) -> &str {
 }
 
 /// Sentence types that repeat within one epoch: GSV is multi-part and GSA
-/// appears once per constellation in multi-GNSS mode.
+/// appears once per constellation in multi-GNSS mode. Matched by suffix so
+/// Quectel's proprietary BeiDou variants ($PQGSA/$PQGSV, which keep their
+/// full address as the type) are covered too.
 fn type_repeats_within_epoch(sentence_type: &str) -> bool {
-    matches!(sentence_type, "GSV" | "GSA")
+    sentence_type.ends_with("GSV") || sentence_type.ends_with("GSA")
 }
 
 /// Groups validated NMEA sentences into fix epochs.
@@ -154,6 +156,23 @@ mod tests {
         assert_eq!(batcher.push("$GPGSV,2*00"), None);
         assert_eq!(batcher.push("$GLGSV,1*00"), None);
         assert_eq!(batcher.push("$GPRMC,a*00"), None);
+
+        let epoch = batcher.push("$GPGGA,b*00").expect("epoch should close");
+        assert_eq!(epoch.len(), 7);
+    }
+
+    #[test]
+    fn quectel_proprietary_beidou_sentences_stay_in_one_epoch() {
+        // With BeiDou NMEA output enabled the EG25-G emits proprietary
+        // $PQGSA/$PQGSV sentences, several per epoch back to back.
+        let mut batcher = EpochBatcher::new();
+        assert_eq!(batcher.push("$GPGGA,a*00"), None);
+        assert_eq!(batcher.push("$GPRMC,a*00"), None);
+        assert_eq!(batcher.push("$GPGSA,a*00"), None);
+        assert_eq!(batcher.push("$PQGSA,1*00"), None);
+        assert_eq!(batcher.push("$PQGSA,2*00"), None);
+        assert_eq!(batcher.push("$PQGSV,1*00"), None);
+        assert_eq!(batcher.push("$PQGSV,2*00"), None);
 
         let epoch = batcher.push("$GPGGA,b*00").expect("epoch should close");
         assert_eq!(epoch.len(), 7);

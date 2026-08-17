@@ -140,6 +140,20 @@ interface SatelliteSighting {
   atMs: number;
 }
 
+/** During marginal reception the receiver flaps between fix and no-fix at
+ * the epoch rate, and no-fix epochs carry empty position fields; hold the
+ * last-known navigation values (dimmed) instead of flashing N/A. */
+const NAV_SNAPSHOT_TTL_MS = 30000;
+
+interface NavSnapshot {
+  latitudeDeg: number;
+  longitudeDeg: number;
+  altitudeM: number | null;
+  speedMps: number | null;
+  courseDeg: number | null;
+  atMs: number;
+}
+
 const NMEA_BATCH =
   arduino_pro_4g_gnss.ArduinoPro4gGnssSignalType.ARDUINO_PRO_4G_GNSS_NMEA_BATCH;
 
@@ -154,7 +168,24 @@ function ArduinoPro4gGnssLiveView({ data }: ArduinoPro4gGnssLiveViewProps) {
 
   const sightings = useRef(new Map<string, SatelliteSighting>());
   const inViewCache = useRef<{ inView: number; atMs: number } | null>(null);
+  const navCache = useRef<NavSnapshot | null>(null);
   const nowMs = Date.now();
+
+  if (values.latitudeDeg !== null && values.longitudeDeg !== null) {
+    navCache.current = {
+      latitudeDeg: values.latitudeDeg,
+      longitudeDeg: values.longitudeDeg,
+      altitudeM: values.altitudeM,
+      speedMps: values.speedMps,
+      courseDeg: values.courseDeg,
+      atMs: nowMs,
+    };
+  }
+  const navLive = values.latitudeDeg !== null;
+  const nav =
+    navCache.current !== null && nowMs - navCache.current.atMs <= NAV_SNAPSHOT_TTL_MS
+      ? navCache.current
+      : null;
   if (values.satellitesInView !== null) {
     // This envelope's epoch contained GSV — merge it into the per-satellite
     // memory rather than replacing the whole list.
@@ -189,9 +220,13 @@ function ArduinoPro4gGnssLiveView({ data }: ArduinoPro4gGnssLiveViewProps) {
     >
       <div className="flex items-end gap-2">
         <div className="min-w-0">
-          <div className="text-[10px] uppercase text-text-label">Position</div>
-          <div className="font-mono text-lg font-semibold leading-none text-accent-success">
-            {formatDegrees(values.latitudeDeg)}, {formatDegrees(values.longitudeDeg)}
+          <div className="text-[10px] uppercase text-text-label">
+            Position{nav && !navLive ? ' (last known)' : ''}
+          </div>
+          <div
+            className={`font-mono text-lg font-semibold leading-none ${navLive ? 'text-accent-success' : 'text-text-muted'}`}
+          >
+            {nav ? `${formatDegrees(nav.latitudeDeg)}, ${formatDegrees(nav.longitudeDeg)}` : 'N/A, N/A'}
           </div>
         </div>
         <div className="ml-auto min-w-0 text-right">
@@ -204,9 +239,9 @@ function ArduinoPro4gGnssLiveView({ data }: ArduinoPro4gGnssLiveViewProps) {
         </div>
       </div>
       <div className="mt-2 flex min-w-0 flex-wrap gap-1.5">
-        <DeviceMetricPill label="Alt" value={formatMeasured(values.altitudeM, 'm')} tone="text-accent-data" />
-        <DeviceMetricPill label="Speed" value={formatMeasured(values.speedMps, 'm/s', 2)} tone="text-accent-warning" />
-        <DeviceMetricPill label="Course" value={formatMeasured(values.courseDeg, 'deg')} tone="text-accent-secondary" />
+        <DeviceMetricPill label="Alt" value={formatMeasured(nav?.altitudeM ?? null, 'm')} tone={navLive ? 'text-accent-data' : 'text-text-muted'} />
+        <DeviceMetricPill label="Speed" value={formatMeasured(nav?.speedMps ?? null, 'm/s', 2)} tone={navLive ? 'text-accent-warning' : 'text-text-muted'} />
+        <DeviceMetricPill label="Course" value={formatMeasured(nav?.courseDeg ?? null, 'deg')} tone={navLive ? 'text-accent-secondary' : 'text-text-muted'} />
         <DeviceMetricPill
           label="Sats"
           value={`${values.satellitesUsed ?? 0} used / ${satellitesInView ?? '?'} seen`}
