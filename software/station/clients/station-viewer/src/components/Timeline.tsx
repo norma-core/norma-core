@@ -319,7 +319,7 @@ const Timeline: React.FC<TimelineProps> = ({
 
   return (
     <div className="w-full">
-      <div className="flex items-center gap-2 mb-2">
+      <div className="flex items-center gap-2 mb-5">
         {isZoomed && (
           <button
             onClick={resetZoom}
