@@ -22,6 +22,8 @@ export interface LiveDevicePlan {
   errors: readonly LiveDeviceError[];
   isEmpty: boolean;
   hasRealtimeDevice: boolean;
+  ownsCameras: boolean;
+  isImmersive: boolean;
 }
 
 interface LiveDeviceCatalog {
@@ -63,12 +65,17 @@ function createCatalog(adapters: readonly LiveDeviceAdapter[]): LiveDeviceCatalo
           errors: [],
           isEmpty: true,
           hasRealtimeDevice: false,
+          ownsCameras: false,
+          isImmersive: false,
         };
       }
 
       const views: ResolvedLiveDeviceView[] = [];
       const errors: LiveDeviceError[] = [];
       let hasRealtimeDevice = false;
+      let ownsCameras = false;
+      let isImmersive = false;
+      const replacedModuleIds = new Set<string>();
 
       for (const adapter of sortedAdapters) {
         try {
@@ -97,6 +104,13 @@ function createCatalog(adapters: readonly LiveDeviceAdapter[]): LiveDeviceCatalo
           }
 
           hasRealtimeDevice ||= adapter.isRealtime && selected.length > 0;
+          ownsCameras ||= adapter.ownsCameras && selected.length > 0;
+          isImmersive ||= adapter.isImmersive && selected.length > 0;
+          if (selected.length > 0) {
+            for (const moduleId of adapter.replaces) {
+              replacedModuleIds.add(moduleId);
+            }
+          }
         } catch (error) {
           errors.push({
             moduleId: adapter.id,
@@ -106,11 +120,15 @@ function createCatalog(adapters: readonly LiveDeviceAdapter[]): LiveDeviceCatalo
         }
       }
 
+      const visibleViews = views.filter((view) => !replacedModuleIds.has(view.moduleId));
+
       return {
-        views,
+        views: visibleViews,
         errors,
-        isEmpty: views.length === 0 && errors.length === 0,
+        isEmpty: visibleViews.length === 0 && errors.length === 0,
         hasRealtimeDevice,
+        ownsCameras,
+        isImmersive,
       };
     },
   };
