@@ -36,6 +36,9 @@ enum QueueDataType {
     QDT_AIRGRADIENT_OPEN_AIR_O_1PST_RX = 53; // airgradient_open_air_o_1pst.RxEnvelope
 
     QDT_VICTRON_SMARTSOLAR_MPPT_RX = 54; // victron_smartsolar_mppt.RxEnvelope
+
+    QDT_PWM_OUTPUT_TX = 55; // pwm_output.TxEnvelope
+    QDT_PWM_OUTPUT_RX = 56; // pwm_output.RxEnvelope
 }
 
 enum StationCommandType {
@@ -45,4 +48,5 @@ enum StationCommandType {
     STC_YAHBOOM_DOGZILLA_LITE_COMMAND = 3; // yahboom_dogzilla_lite.Command
     STC_VESC_TRAMPA_COMMAND           = 4; // vesc_trampa.Command
     STC_ARDUINO_NICLA_SENSE_ENV_COMMAND = 5; // arduino_nicla_sense_env.Command
+    STC_PWM_OUTPUT_COMMAND              = 6; // pwm_output.Command
 }

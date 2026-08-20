@@ -257,7 +257,9 @@ export namespace drivers {
         QDT_ARDUINO_NICLA_SENSE_ENV_RX = 51,
         QDT_INA226_RX = 52,
         QDT_AIRGRADIENT_OPEN_AIR_O_1PST_RX = 53,
-        QDT_VICTRON_SMARTSOLAR_MPPT_RX = 54
+        QDT_VICTRON_SMARTSOLAR_MPPT_RX = 54,
+        QDT_PWM_OUTPUT_TX = 55,
+        QDT_PWM_OUTPUT_RX = 56
     }
 
     /** StationCommandType enum. */
@@ -267,7 +269,8 @@ export namespace drivers {
         STC_INFERENCE_TAG_COMMAND = 2,
         STC_YAHBOOM_DOGZILLA_LITE_COMMAND = 3,
         STC_VESC_TRAMPA_COMMAND = 4,
-        STC_ARDUINO_NICLA_SENSE_ENV_COMMAND = 5
+        STC_ARDUINO_NICLA_SENSE_ENV_COMMAND = 5,
+        STC_PWM_OUTPUT_COMMAND = 6
     }
 }
 
@@ -13367,6 +13370,918 @@ export namespace victron_smartsolar_mppt {
          * @returns Plain object
          */
         public static toObject(message: victron_smartsolar_mppt.RxEnvelope, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this RxEnvelope to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for RxEnvelope
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+}
+
+/** Namespace pwm_output. */
+export namespace pwm_output {
+
+    /** PwmOutputSignalType enum. */
+    enum PwmOutputSignalType {
+        PWM_OUTPUT_SIGNAL_TYPE_UNSPECIFIED = 0,
+        PWM_OUTPUT_CONFIGURED = 1,
+        PWM_OUTPUT_COMMAND = 2,
+        PWM_OUTPUT_COMMAND_SUCCESS = 3,
+        PWM_OUTPUT_COMMAND_REJECTED = 4,
+        PWM_OUTPUT_COMMAND_FAILED = 5,
+        PWM_OUTPUT_ERROR = 6
+    }
+
+    /** Properties of a PwmOutputDevice. */
+    interface IPwmOutputDevice {
+
+        /** PwmOutputDevice id */
+        id?: (string|null);
+    }
+
+    /** Represents a PwmOutputDevice. */
+    class PwmOutputDevice implements IPwmOutputDevice {
+
+        /**
+         * Constructs a new PwmOutputDevice.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: pwm_output.IPwmOutputDevice);
+
+        /** PwmOutputDevice id. */
+        public id: string;
+
+        /**
+         * Creates a new PwmOutputDevice instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns PwmOutputDevice instance
+         */
+        public static create(properties?: pwm_output.IPwmOutputDevice): pwm_output.PwmOutputDevice;
+
+        /**
+         * Encodes the specified PwmOutputDevice message. Does not implicitly {@link pwm_output.PwmOutputDevice.verify|verify} messages.
+         * @param message PwmOutputDevice message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: pwm_output.IPwmOutputDevice, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified PwmOutputDevice message, length delimited. Does not implicitly {@link pwm_output.PwmOutputDevice.verify|verify} messages.
+         * @param message PwmOutputDevice message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: pwm_output.IPwmOutputDevice, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes a PwmOutputDevice message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns PwmOutputDevice
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): pwm_output.PwmOutputDevice;
+
+        /**
+         * Decodes a PwmOutputDevice message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns PwmOutputDevice
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): pwm_output.PwmOutputDevice;
+
+        /**
+         * Verifies a PwmOutputDevice message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates a PwmOutputDevice message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns PwmOutputDevice
+         */
+        public static fromObject(object: { [k: string]: any }): pwm_output.PwmOutputDevice;
+
+        /**
+         * Creates a plain object from a PwmOutputDevice message. Also converts values to other types if specified.
+         * @param message PwmOutputDevice
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: pwm_output.PwmOutputDevice, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this PwmOutputDevice to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for PwmOutputDevice
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
+    /** Properties of an OutputState. */
+    interface IOutputState {
+
+        /** OutputState id */
+        id?: (string|null);
+
+        /** OutputState enabled */
+        enabled?: (boolean|null);
+
+        /** OutputState wave */
+        wave?: (pwm_output.IWaveCommand|null);
+    }
+
+    /** Represents an OutputState. */
+    class OutputState implements IOutputState {
+
+        /**
+         * Constructs a new OutputState.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: pwm_output.IOutputState);
+
+        /** OutputState id. */
+        public id: string;
+
+        /** OutputState enabled. */
+        public enabled: boolean;
+
+        /** OutputState wave. */
+        public wave?: (pwm_output.IWaveCommand|null);
+
+        /**
+         * Creates a new OutputState instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns OutputState instance
+         */
+        public static create(properties?: pwm_output.IOutputState): pwm_output.OutputState;
+
+        /**
+         * Encodes the specified OutputState message. Does not implicitly {@link pwm_output.OutputState.verify|verify} messages.
+         * @param message OutputState message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: pwm_output.IOutputState, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified OutputState message, length delimited. Does not implicitly {@link pwm_output.OutputState.verify|verify} messages.
+         * @param message OutputState message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: pwm_output.IOutputState, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes an OutputState message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns OutputState
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): pwm_output.OutputState;
+
+        /**
+         * Decodes an OutputState message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns OutputState
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): pwm_output.OutputState;
+
+        /**
+         * Verifies an OutputState message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates an OutputState message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns OutputState
+         */
+        public static fromObject(object: { [k: string]: any }): pwm_output.OutputState;
+
+        /**
+         * Creates a plain object from an OutputState message. Also converts values to other types if specified.
+         * @param message OutputState
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: pwm_output.OutputState, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this OutputState to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for OutputState
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
+    /** WaveLevel enum. */
+    enum WaveLevel {
+        WAVE_LEVEL_UNSPECIFIED = 0,
+        WAVE_LEVEL_LOW = 1,
+        WAVE_LEVEL_HIGH = 2
+    }
+
+    /** Properties of a WaveSegment. */
+    interface IWaveSegment {
+
+        /** WaveSegment level */
+        level?: (pwm_output.WaveLevel|null);
+
+        /** WaveSegment durationUs */
+        durationUs?: (number|null);
+    }
+
+    /** Represents a WaveSegment. */
+    class WaveSegment implements IWaveSegment {
+
+        /**
+         * Constructs a new WaveSegment.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: pwm_output.IWaveSegment);
+
+        /** WaveSegment level. */
+        public level: pwm_output.WaveLevel;
+
+        /** WaveSegment durationUs. */
+        public durationUs: number;
+
+        /**
+         * Creates a new WaveSegment instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns WaveSegment instance
+         */
+        public static create(properties?: pwm_output.IWaveSegment): pwm_output.WaveSegment;
+
+        /**
+         * Encodes the specified WaveSegment message. Does not implicitly {@link pwm_output.WaveSegment.verify|verify} messages.
+         * @param message WaveSegment message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: pwm_output.IWaveSegment, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified WaveSegment message, length delimited. Does not implicitly {@link pwm_output.WaveSegment.verify|verify} messages.
+         * @param message WaveSegment message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: pwm_output.IWaveSegment, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes a WaveSegment message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns WaveSegment
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): pwm_output.WaveSegment;
+
+        /**
+         * Decodes a WaveSegment message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns WaveSegment
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): pwm_output.WaveSegment;
+
+        /**
+         * Verifies a WaveSegment message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates a WaveSegment message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns WaveSegment
+         */
+        public static fromObject(object: { [k: string]: any }): pwm_output.WaveSegment;
+
+        /**
+         * Creates a plain object from a WaveSegment message. Also converts values to other types if specified.
+         * @param message WaveSegment
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: pwm_output.WaveSegment, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this WaveSegment to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for WaveSegment
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
+    /** Properties of a WaveCommand. */
+    interface IWaveCommand {
+
+        /** WaveCommand channel */
+        channel?: (number|null);
+
+        /** WaveCommand segments */
+        segments?: (pwm_output.IWaveSegment[]|null);
+
+        /** WaveCommand repeat */
+        repeat?: (number|null);
+    }
+
+    /** Represents a WaveCommand. */
+    class WaveCommand implements IWaveCommand {
+
+        /**
+         * Constructs a new WaveCommand.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: pwm_output.IWaveCommand);
+
+        /** WaveCommand channel. */
+        public channel: number;
+
+        /** WaveCommand segments. */
+        public segments: pwm_output.IWaveSegment[];
+
+        /** WaveCommand repeat. */
+        public repeat: number;
+
+        /**
+         * Creates a new WaveCommand instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns WaveCommand instance
+         */
+        public static create(properties?: pwm_output.IWaveCommand): pwm_output.WaveCommand;
+
+        /**
+         * Encodes the specified WaveCommand message. Does not implicitly {@link pwm_output.WaveCommand.verify|verify} messages.
+         * @param message WaveCommand message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: pwm_output.IWaveCommand, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified WaveCommand message, length delimited. Does not implicitly {@link pwm_output.WaveCommand.verify|verify} messages.
+         * @param message WaveCommand message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: pwm_output.IWaveCommand, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes a WaveCommand message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns WaveCommand
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): pwm_output.WaveCommand;
+
+        /**
+         * Decodes a WaveCommand message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns WaveCommand
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): pwm_output.WaveCommand;
+
+        /**
+         * Verifies a WaveCommand message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates a WaveCommand message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns WaveCommand
+         */
+        public static fromObject(object: { [k: string]: any }): pwm_output.WaveCommand;
+
+        /**
+         * Creates a plain object from a WaveCommand message. Also converts values to other types if specified.
+         * @param message WaveCommand
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: pwm_output.WaveCommand, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this WaveCommand to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for WaveCommand
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
+    /** Properties of a DisableCommand. */
+    interface IDisableCommand {
+
+        /** DisableCommand channel */
+        channel?: (number|null);
+    }
+
+    /** Represents a DisableCommand. */
+    class DisableCommand implements IDisableCommand {
+
+        /**
+         * Constructs a new DisableCommand.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: pwm_output.IDisableCommand);
+
+        /** DisableCommand channel. */
+        public channel: number;
+
+        /**
+         * Creates a new DisableCommand instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns DisableCommand instance
+         */
+        public static create(properties?: pwm_output.IDisableCommand): pwm_output.DisableCommand;
+
+        /**
+         * Encodes the specified DisableCommand message. Does not implicitly {@link pwm_output.DisableCommand.verify|verify} messages.
+         * @param message DisableCommand message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: pwm_output.IDisableCommand, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified DisableCommand message, length delimited. Does not implicitly {@link pwm_output.DisableCommand.verify|verify} messages.
+         * @param message DisableCommand message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: pwm_output.IDisableCommand, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes a DisableCommand message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns DisableCommand
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): pwm_output.DisableCommand;
+
+        /**
+         * Decodes a DisableCommand message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns DisableCommand
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): pwm_output.DisableCommand;
+
+        /**
+         * Verifies a DisableCommand message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates a DisableCommand message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns DisableCommand
+         */
+        public static fromObject(object: { [k: string]: any }): pwm_output.DisableCommand;
+
+        /**
+         * Creates a plain object from a DisableCommand message. Also converts values to other types if specified.
+         * @param message DisableCommand
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: pwm_output.DisableCommand, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this DisableCommand to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for DisableCommand
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
+    /** Properties of a Command. */
+    interface ICommand {
+
+        /** Command targetOutputId */
+        targetOutputId?: (string|null);
+
+        /** Command wave */
+        wave?: (pwm_output.IWaveCommand|null);
+
+        /** Command disable */
+        disable?: (pwm_output.IDisableCommand|null);
+    }
+
+    /** Represents a Command. */
+    class Command implements ICommand {
+
+        /**
+         * Constructs a new Command.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: pwm_output.ICommand);
+
+        /** Command targetOutputId. */
+        public targetOutputId: string;
+
+        /** Command wave. */
+        public wave?: (pwm_output.IWaveCommand|null);
+
+        /** Command disable. */
+        public disable?: (pwm_output.IDisableCommand|null);
+
+        /**
+         * Creates a new Command instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns Command instance
+         */
+        public static create(properties?: pwm_output.ICommand): pwm_output.Command;
+
+        /**
+         * Encodes the specified Command message. Does not implicitly {@link pwm_output.Command.verify|verify} messages.
+         * @param message Command message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: pwm_output.ICommand, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified Command message, length delimited. Does not implicitly {@link pwm_output.Command.verify|verify} messages.
+         * @param message Command message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: pwm_output.ICommand, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes a Command message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns Command
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): pwm_output.Command;
+
+        /**
+         * Decodes a Command message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns Command
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): pwm_output.Command;
+
+        /**
+         * Verifies a Command message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates a Command message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns Command
+         */
+        public static fromObject(object: { [k: string]: any }): pwm_output.Command;
+
+        /**
+         * Creates a plain object from a Command message. Also converts values to other types if specified.
+         * @param message Command
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: pwm_output.Command, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this Command to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for Command
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
+    /** Properties of a TxEnvelope. */
+    interface ITxEnvelope {
+
+        /** TxEnvelope monotonicStampNs */
+        monotonicStampNs?: (Long|null);
+
+        /** TxEnvelope localStampNs */
+        localStampNs?: (Long|null);
+
+        /** TxEnvelope appStartId */
+        appStartId?: (Long|null);
+
+        /** TxEnvelope commandId */
+        commandId?: (Uint8Array|null);
+
+        /** TxEnvelope targetOutputId */
+        targetOutputId?: (string|null);
+
+        /** TxEnvelope command */
+        command?: (pwm_output.ICommand|null);
+    }
+
+    /** Represents a TxEnvelope. */
+    class TxEnvelope implements ITxEnvelope {
+
+        /**
+         * Constructs a new TxEnvelope.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: pwm_output.ITxEnvelope);
+
+        /** TxEnvelope monotonicStampNs. */
+        public monotonicStampNs: Long;
+
+        /** TxEnvelope localStampNs. */
+        public localStampNs: Long;
+
+        /** TxEnvelope appStartId. */
+        public appStartId: Long;
+
+        /** TxEnvelope commandId. */
+        public commandId: Uint8Array;
+
+        /** TxEnvelope targetOutputId. */
+        public targetOutputId: string;
+
+        /** TxEnvelope command. */
+        public command?: (pwm_output.ICommand|null);
+
+        /**
+         * Creates a new TxEnvelope instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns TxEnvelope instance
+         */
+        public static create(properties?: pwm_output.ITxEnvelope): pwm_output.TxEnvelope;
+
+        /**
+         * Encodes the specified TxEnvelope message. Does not implicitly {@link pwm_output.TxEnvelope.verify|verify} messages.
+         * @param message TxEnvelope message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: pwm_output.ITxEnvelope, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified TxEnvelope message, length delimited. Does not implicitly {@link pwm_output.TxEnvelope.verify|verify} messages.
+         * @param message TxEnvelope message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: pwm_output.ITxEnvelope, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes a TxEnvelope message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns TxEnvelope
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): pwm_output.TxEnvelope;
+
+        /**
+         * Decodes a TxEnvelope message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns TxEnvelope
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): pwm_output.TxEnvelope;
+
+        /**
+         * Verifies a TxEnvelope message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates a TxEnvelope message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns TxEnvelope
+         */
+        public static fromObject(object: { [k: string]: any }): pwm_output.TxEnvelope;
+
+        /**
+         * Creates a plain object from a TxEnvelope message. Also converts values to other types if specified.
+         * @param message TxEnvelope
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: pwm_output.TxEnvelope, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this TxEnvelope to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for TxEnvelope
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
+    /** Properties of a RxEnvelope. */
+    interface IRxEnvelope {
+
+        /** RxEnvelope monotonicStampNs */
+        monotonicStampNs?: (Long|null);
+
+        /** RxEnvelope localStampNs */
+        localStampNs?: (Long|null);
+
+        /** RxEnvelope appStartId */
+        appStartId?: (Long|null);
+
+        /** RxEnvelope signalType */
+        signalType?: (pwm_output.PwmOutputSignalType|null);
+
+        /** RxEnvelope device */
+        device?: (pwm_output.IPwmOutputDevice|null);
+
+        /** RxEnvelope state */
+        state?: (pwm_output.IOutputState|null);
+
+        /** RxEnvelope command */
+        command?: (pwm_output.ITxEnvelope|null);
+
+        /** RxEnvelope error */
+        error?: (string|null);
+    }
+
+    /** Represents a RxEnvelope. */
+    class RxEnvelope implements IRxEnvelope {
+
+        /**
+         * Constructs a new RxEnvelope.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: pwm_output.IRxEnvelope);
+
+        /** RxEnvelope monotonicStampNs. */
+        public monotonicStampNs: Long;
+
+        /** RxEnvelope localStampNs. */
+        public localStampNs: Long;
+
+        /** RxEnvelope appStartId. */
+        public appStartId: Long;
+
+        /** RxEnvelope signalType. */
+        public signalType: pwm_output.PwmOutputSignalType;
+
+        /** RxEnvelope device. */
+        public device?: (pwm_output.IPwmOutputDevice|null);
+
+        /** RxEnvelope state. */
+        public state?: (pwm_output.IOutputState|null);
+
+        /** RxEnvelope command. */
+        public command?: (pwm_output.ITxEnvelope|null);
+
+        /** RxEnvelope error. */
+        public error: string;
+
+        /**
+         * Creates a new RxEnvelope instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns RxEnvelope instance
+         */
+        public static create(properties?: pwm_output.IRxEnvelope): pwm_output.RxEnvelope;
+
+        /**
+         * Encodes the specified RxEnvelope message. Does not implicitly {@link pwm_output.RxEnvelope.verify|verify} messages.
+         * @param message RxEnvelope message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: pwm_output.IRxEnvelope, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified RxEnvelope message, length delimited. Does not implicitly {@link pwm_output.RxEnvelope.verify|verify} messages.
+         * @param message RxEnvelope message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: pwm_output.IRxEnvelope, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes a RxEnvelope message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns RxEnvelope
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): pwm_output.RxEnvelope;
+
+        /**
+         * Decodes a RxEnvelope message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns RxEnvelope
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): pwm_output.RxEnvelope;
+
+        /**
+         * Verifies a RxEnvelope message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates a RxEnvelope message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns RxEnvelope
+         */
+        public static fromObject(object: { [k: string]: any }): pwm_output.RxEnvelope;
+
+        /**
+         * Creates a plain object from a RxEnvelope message. Also converts values to other types if specified.
+         * @param message RxEnvelope
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: pwm_output.RxEnvelope, options?: $protobuf.IConversionOptions): { [k: string]: any };
 
         /**
          * Converts this RxEnvelope to JSON.

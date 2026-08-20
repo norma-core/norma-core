@@ -12,6 +12,7 @@ fn main() -> Result<()> {
         .compile_protos(
             &[
                 "../../../../protobufs/station/opts.proto",
+                "../../../../protobufs/station/drivers.proto",
                 "../../../../protobufs/station/commands.proto",
                 "../../../../protobufs/station/startups.proto",
                 "../../../../protobufs/station/inference_tags.proto",
@@ -21,6 +22,7 @@ fn main() -> Result<()> {
 
     // Rerun if station protobufs change
     println!("cargo:rerun-if-changed=../../../../protobufs/station/opts.proto");
+    println!("cargo:rerun-if-changed=../../../../protobufs/station/drivers.proto");
     println!("cargo:rerun-if-changed=../../../../protobufs/station/commands.proto");
     println!("cargo:rerun-if-changed=../../../../protobufs/station/startups.proto");
     println!("cargo:rerun-if-changed=../../../../protobufs/station/inference_tags.proto");
