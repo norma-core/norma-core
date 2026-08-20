@@ -1,5 +1,5 @@
 import Long from 'long';
-import { airgradient_open_air_o_1pst, arduino_nicla_sense_env, hikmicro, ina226, yahboom_dogzilla_lite, drivers, inference, motors_mirroring, normvla, st3215, sysinfo, usbvideo, vesc_trampa, victron_smartsolar_mppt } from '@/api/proto.js';
+import { airgradient_open_air_o_1pst, arduino_nicla_sense_env, hikmicro, ina226, yahboom_dogzilla_lite, drivers, inference, motors_mirroring, normvla, pwm_output, st3215, sysinfo, usbvideo, vesc_trampa, victron_smartsolar_mppt } from '@/api/proto.js';
 import { NormFsClient } from "./normfs.js";
 import { getGlobalTimeAdjustmentNs, isTimeSyncActive } from '@/api/time-sync.js';
 import {
@@ -22,6 +22,8 @@ export interface Frame {
   vescTrampa?: FrameEntry<vesc_trampa.IInferenceState>;
   vescTrampaRx?: FrameEntry<vesc_trampa.IRxEnvelope>;
   vescTrampaTx?: FrameEntry<vesc_trampa.ITxEnvelope>;
+  pwmOutputRx?: FrameEntry<pwm_output.IRxEnvelope>;
+  pwmOutputTx?: FrameEntry<pwm_output.ITxEnvelope>;
   videoQueues?: FrameEntry<usbvideo.IRxEnvelope>[];
   hikmicroThermal?: FrameEntry<hikmicro.IRxEnvelope>[];
   mirroring?: FrameEntry<motors_mirroring.IRxEnvelope>;
@@ -49,7 +51,7 @@ export interface Frame {
 }
 
 // Find entry in previous frame with matching queue and pointer
-type DecodedEntry = st3215.IInferenceState | st3215.ITxEnvelope | usbvideo.IRxEnvelope | hikmicro.IRxEnvelope | motors_mirroring.IRxEnvelope | sysinfo.IEnvelope | arduino_nicla_sense_env.IRxEnvelope | ina226.IRxEnvelope | airgradient_open_air_o_1pst.IRxEnvelope | victron_smartsolar_mppt.IRxEnvelope | yahboom_dogzilla_lite.IInferenceState | normvla.IFrame | vesc_trampa.IInferenceState | vesc_trampa.IRxEnvelope | vesc_trampa.ITxEnvelope | null;
+type DecodedEntry = st3215.IInferenceState | st3215.ITxEnvelope | usbvideo.IRxEnvelope | hikmicro.IRxEnvelope | motors_mirroring.IRxEnvelope | sysinfo.IEnvelope | arduino_nicla_sense_env.IRxEnvelope | ina226.IRxEnvelope | airgradient_open_air_o_1pst.IRxEnvelope | victron_smartsolar_mppt.IRxEnvelope | yahboom_dogzilla_lite.IInferenceState | normvla.IFrame | vesc_trampa.IInferenceState | vesc_trampa.IRxEnvelope | vesc_trampa.ITxEnvelope | pwm_output.IRxEnvelope | pwm_output.ITxEnvelope | null;
 
 interface ParseFrameOptions {
   retainRawData?: boolean;
@@ -114,6 +116,22 @@ function findPreviousEntry(
     const prevPtr = previousFrame.vescTrampaTx.ptr;
     if (prevPtr.length === ptr.length && prevPtr.every((b, i) => b === ptr[i])) {
       return { decoded: previousFrame.vescTrampaTx.data, rawData: previousFrame.vescTrampaTx.rawData ?? null };
+    }
+  }
+
+  // Check pwmOutputRx
+  if (previousFrame.pwmOutputRx?.queueId === queue) {
+    const prevPtr = previousFrame.pwmOutputRx.ptr;
+    if (prevPtr.length === ptr.length && prevPtr.every((b, i) => b === ptr[i])) {
+      return { decoded: previousFrame.pwmOutputRx.data, rawData: previousFrame.pwmOutputRx.rawData ?? null };
+    }
+  }
+
+  // Check pwmOutputTx
+  if (previousFrame.pwmOutputTx?.queueId === queue) {
+    const prevPtr = previousFrame.pwmOutputTx.ptr;
+    if (prevPtr.length === ptr.length && prevPtr.every((b, i) => b === ptr[i])) {
+      return { decoded: previousFrame.pwmOutputTx.data, rawData: previousFrame.pwmOutputTx.rawData ?? null };
     }
   }
 
@@ -380,6 +398,20 @@ export async function parseFrame(
                 console.error("Failed to decode vesc_trampa.TxEnvelope:", error);
               }
               break;
+            case drivers.QueueDataType.QDT_PWM_OUTPUT_RX:
+              try {
+                decoded = pwm_output.RxEnvelope.decode(streamEntry.data);
+              } catch (error) {
+                console.error("Failed to decode pwm_output.RxEnvelope:", error);
+              }
+              break;
+            case drivers.QueueDataType.QDT_PWM_OUTPUT_TX:
+              try {
+                decoded = pwm_output.TxEnvelope.decode(streamEntry.data);
+              } catch (error) {
+                console.error("Failed to decode pwm_output.TxEnvelope:", error);
+              }
+              break;
             default:
               if (entry.queue?.endsWith('/inference/normvla')) {
                 try {
@@ -545,6 +577,24 @@ export async function parseFrame(
               queueId: result.queue,
               ptr: result.ptr,
               data: result.decoded as vesc_trampa.ITxEnvelope,
+              rawData: retainRawData ? result.rawData ?? null : null,
+              queueType: result.type
+            };
+            break;
+          case drivers.QueueDataType.QDT_PWM_OUTPUT_RX:
+            frame.pwmOutputRx = {
+              queueId: result.queue,
+              ptr: result.ptr,
+              data: result.decoded as pwm_output.IRxEnvelope,
+              rawData: retainRawData ? result.rawData ?? null : null,
+              queueType: result.type
+            };
+            break;
+          case drivers.QueueDataType.QDT_PWM_OUTPUT_TX:
+            frame.pwmOutputTx = {
+              queueId: result.queue,
+              ptr: result.ptr,
+              data: result.decoded as pwm_output.ITxEnvelope,
               rawData: retainRawData ? result.rawData ?? null : null,
               queueType: result.type
             };

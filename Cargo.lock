@@ -48,7 +48,7 @@ dependencies = [
 
 [[package]]
 name = "airgradient-open-air-o-1pst"
-version = "0.1.0-beta.10"
+version = "0.1.0-beta.11"
 dependencies = [
  "bytes",
  "log",
@@ -128,7 +128,7 @@ dependencies = [
 
 [[package]]
 name = "arduino-nicla-sense-env"
-version = "0.1.0-beta.10"
+version = "0.1.0-beta.11"
 dependencies = [
  "bytes",
  "i2c-async",
@@ -848,7 +848,7 @@ checksum = "7f24254aa9a54b5c858eaee2f5bccdb46aaf0e486a595ed5fd8f86ba55232a70"
 
 [[package]]
 name = "hikmicro-thermal"
-version = "0.1.0-beta.10"
+version = "0.1.0-beta.11"
 dependencies = [
  "bytes",
  "libc",
@@ -1141,7 +1141,7 @@ dependencies = [
 
 [[package]]
 name = "ina226"
-version = "0.1.0-beta.10"
+version = "0.1.0-beta.11"
 dependencies = [
  "bytes",
  "i2c-async",
@@ -1166,7 +1166,7 @@ dependencies = [
 
 [[package]]
 name = "inferences"
-version = "0.1.0-beta.10"
+version = "0.1.0-beta.11"
 dependencies = [
  "bytes",
  "lazy_static",
@@ -1445,7 +1445,7 @@ dependencies = [
 
 [[package]]
 name = "motors-mirroring"
-version = "0.1.0-beta.10"
+version = "0.1.0-beta.11"
 dependencies = [
  "bytes",
  "log",
@@ -1910,6 +1910,20 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9091c90b0a32608e984ff2fa4091273cbdd755d54935c51d520887f4a1dbd5b0"
 dependencies = [
  "prost",
+]
+
+[[package]]
+name = "pwm-output"
+version = "0.1.0-beta.11"
+dependencies = [
+ "bytes",
+ "log",
+ "normfs",
+ "parking_lot",
+ "prost",
+ "prost-build",
+ "station_iface",
+ "systime",
 ]
 
 [[package]]
@@ -2472,7 +2486,7 @@ dependencies = [
 
 [[package]]
 name = "st3215"
-version = "0.1.0-beta.10"
+version = "0.1.0-beta.11"
 dependencies = [
  "bytes",
  "log",
@@ -2500,7 +2514,7 @@ checksum = "a2eb9349b6444b326872e140eb1cf5e7c522154d69e7a0ffb0fb81c06b37543f"
 
 [[package]]
 name = "station"
-version = "0.1.0-beta.10"
+version = "0.1.0-beta.11"
 dependencies = [
  "airgradient-open-air-o-1pst",
  "anyhow",
@@ -2525,6 +2539,7 @@ dependencies = [
  "parking_lot",
  "prost",
  "prost-build",
+ "pwm-output",
  "rust-embed",
  "st3215",
  "station_iface",
@@ -2539,7 +2554,7 @@ dependencies = [
 
 [[package]]
 name = "station_iface"
-version = "0.1.0-beta.10"
+version = "0.1.0-beta.11"
 dependencies = [
  "humantime-serde",
  "normfs",
@@ -2608,7 +2623,7 @@ dependencies = [
 
 [[package]]
 name = "sysinfod"
-version = "0.1.0-beta.10"
+version = "0.1.0-beta.11"
 dependencies = [
  "bytes",
  "i2c-async",
@@ -2645,7 +2660,7 @@ dependencies = [
 
 [[package]]
 name = "systime"
-version = "0.1.0-beta.10"
+version = "0.1.0-beta.11"
 dependencies = [
  "libc",
  "log",
@@ -3023,7 +3038,7 @@ checksum = "daf8dba3b7eb870caf1ddeed7bc9d2a049f3cfdfae7cb521b087cc33ae4c49da"
 
 [[package]]
 name = "usbvideo"
-version = "0.1.0-beta.10"
+version = "0.1.0-beta.11"
 dependencies = [
  "bytes",
  "libc",
@@ -3085,7 +3100,7 @@ checksum = "0b928f33d975fc6ad9f86c8f283853ad26bdd5b10b7f1542aa2fa15e2289105a"
 
 [[package]]
 name = "vesc-trampa"
-version = "0.1.0-beta.10"
+version = "0.1.0-beta.11"
 dependencies = [
  "bytes",
  "log",
@@ -3101,7 +3116,7 @@ dependencies = [
 
 [[package]]
 name = "victron-smartsolar-mppt"
-version = "0.1.0-beta.10"
+version = "0.1.0-beta.11"
 dependencies = [
  "bytes",
  "log",

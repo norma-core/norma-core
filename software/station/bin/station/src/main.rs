@@ -430,6 +430,33 @@ impl Station {
             }
         }
 
+        if let Some(pwm_output_config) = &self.config.drivers.pwm_output {
+            if pwm_output_config.enabled {
+                let config = pwm_output::PwmOutputDriverConfig {
+                    device_path: pwm_output_config.device_path.clone(),
+                    outputs: pwm_output_config
+                        .outputs
+                        .iter()
+                        .map(|output| pwm_output::PwmOutputDeviceConfig {
+                            id: output.id.clone(),
+                        })
+                        .collect(),
+                };
+
+                if let Err(e) = pwm_output::start_pwm_output_driver(
+                    self.normfs.clone(),
+                    self.engine.clone(),
+                    config,
+                )
+                .await
+                {
+                    log::error!("Failed to start PWM output driver: {}", e);
+                }
+            } else {
+                log::info!("PWM output driver disabled by configuration");
+            }
+        }
+
         if let Some(airgradient_config) = &self.config.drivers.airgradient_open_air_o_1pst {
             if airgradient_config.enabled {
                 let config = airgradient_open_air_o_1pst::AirGradientOpenAirO1pstDriverConfig {
@@ -457,13 +484,12 @@ impl Station {
                     read_timeout: victron_config.read_timeout,
                 };
 
-                if let Err(e) =
-                    victron_smartsolar_mppt::start_victron_smartsolar_mppt_driver(
-                        self.normfs.clone(),
-                        self.engine.clone(),
-                        config,
-                    )
-                    .await
+                if let Err(e) = victron_smartsolar_mppt::start_victron_smartsolar_mppt_driver(
+                    self.normfs.clone(),
+                    self.engine.clone(),
+                    config,
+                )
+                .await
                 {
                     log::error!("Failed to start Victron SmartSolar MPPT driver: {}", e);
                 }

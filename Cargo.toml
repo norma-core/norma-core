@@ -15,13 +15,14 @@ members = [
   "software/drivers/victron-smartsolar-mppt",
   "software/drivers/yahboom-dogzilla-lite",
   "software/drivers/ov5647",
+  "software/drivers/pwm-output",
   "software/station/bin/station",
   "software/station/shared/station-iface",
   "software/station/shared/systime-rs",
 ]
 
 [workspace.package]
-version = "0.1.0-beta.10"
+version = "0.1.0-beta.11"
 
 [workspace.dependencies]
 normfs = "0.2.0-beta.2"

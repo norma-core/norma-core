@@ -1,0 +1,26 @@
+[package]
+name = "pwm-output"
+version.workspace = true
+edition = "2024"
+authors = ["Alex Batsuev <ab@elrobot.eu>"]
+description = "Generic Linux PWM output driver for NormaCore Station"
+repository = "https://github.com/norma_core/norma_core/"
+license = "MIT OR Apache-2.0"
+readme = "README.md"
+keywords = ["pwm", "gpio", "robotics"]
+categories = ["hardware-support"]
+
+[dependencies]
+normfs = { workspace = true }
+station_iface = { path = "../../station/shared/station-iface" }
+systime = { path = "../../station/shared/systime-rs" }
+prost = { workspace = true }
+bytes = { workspace = true }
+log = { workspace = true }
+parking_lot = { workspace = true }
+
+[lib]
+path = "src/lib.rs"
+
+[build-dependencies]
+prost-build = { workspace = true }

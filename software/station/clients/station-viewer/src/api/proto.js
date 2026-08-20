@@ -200,6 +200,7 @@ export const commands = $root.commands = (() => {
                 case 3:
                 case 4:
                 case 5:
+                case 6:
                     break;
                 }
             if (message.body != null && message.hasOwnProperty("body"))
@@ -259,6 +260,10 @@ export const commands = $root.commands = (() => {
             case "STC_ARDUINO_NICLA_SENSE_ENV_COMMAND":
             case 5:
                 message.type = 5;
+                break;
+            case "STC_PWM_OUTPUT_COMMAND":
+            case 6:
+                message.type = 6;
                 break;
             }
             if (object.body != null)
@@ -722,6 +727,8 @@ export const drivers = $root.drivers = (() => {
      * @property {number} QDT_INA226_RX=52 QDT_INA226_RX value
      * @property {number} QDT_AIRGRADIENT_OPEN_AIR_O_1PST_RX=53 QDT_AIRGRADIENT_OPEN_AIR_O_1PST_RX value
      * @property {number} QDT_VICTRON_SMARTSOLAR_MPPT_RX=54 QDT_VICTRON_SMARTSOLAR_MPPT_RX value
+     * @property {number} QDT_PWM_OUTPUT_TX=55 QDT_PWM_OUTPUT_TX value
+     * @property {number} QDT_PWM_OUTPUT_RX=56 QDT_PWM_OUTPUT_RX value
      */
     drivers.QueueDataType = (function() {
         const valuesById = {}, values = Object.create(valuesById);
@@ -750,6 +757,8 @@ export const drivers = $root.drivers = (() => {
         values[valuesById[52] = "QDT_INA226_RX"] = 52;
         values[valuesById[53] = "QDT_AIRGRADIENT_OPEN_AIR_O_1PST_RX"] = 53;
         values[valuesById[54] = "QDT_VICTRON_SMARTSOLAR_MPPT_RX"] = 54;
+        values[valuesById[55] = "QDT_PWM_OUTPUT_TX"] = 55;
+        values[valuesById[56] = "QDT_PWM_OUTPUT_RX"] = 56;
         return values;
     })();
 
@@ -763,6 +772,7 @@ export const drivers = $root.drivers = (() => {
      * @property {number} STC_YAHBOOM_DOGZILLA_LITE_COMMAND=3 STC_YAHBOOM_DOGZILLA_LITE_COMMAND value
      * @property {number} STC_VESC_TRAMPA_COMMAND=4 STC_VESC_TRAMPA_COMMAND value
      * @property {number} STC_ARDUINO_NICLA_SENSE_ENV_COMMAND=5 STC_ARDUINO_NICLA_SENSE_ENV_COMMAND value
+     * @property {number} STC_PWM_OUTPUT_COMMAND=6 STC_PWM_OUTPUT_COMMAND value
      */
     drivers.StationCommandType = (function() {
         const valuesById = {}, values = Object.create(valuesById);
@@ -772,6 +782,7 @@ export const drivers = $root.drivers = (() => {
         values[valuesById[3] = "STC_YAHBOOM_DOGZILLA_LITE_COMMAND"] = 3;
         values[valuesById[4] = "STC_VESC_TRAMPA_COMMAND"] = 4;
         values[valuesById[5] = "STC_ARDUINO_NICLA_SENSE_ENV_COMMAND"] = 5;
+        values[valuesById[6] = "STC_PWM_OUTPUT_COMMAND"] = 6;
         return values;
     })();
 
@@ -1341,6 +1352,8 @@ export const inference = $root.inference = (() => {
                     case 52:
                     case 53:
                     case 54:
+                    case 55:
+                    case 56:
                         break;
                     }
                 return null;
@@ -1475,6 +1488,14 @@ export const inference = $root.inference = (() => {
                 case "QDT_VICTRON_SMARTSOLAR_MPPT_RX":
                 case 54:
                     message.type = 54;
+                    break;
+                case "QDT_PWM_OUTPUT_TX":
+                case 55:
+                    message.type = 55;
+                    break;
+                case "QDT_PWM_OUTPUT_RX":
+                case 56:
+                    message.type = 56;
                     break;
                 }
                 return message;
@@ -38761,6 +38782,2455 @@ export const victron_smartsolar_mppt = $root.victron_smartsolar_mppt = (() => {
     })();
 
     return victron_smartsolar_mppt;
+})();
+
+export const pwm_output = $root.pwm_output = (() => {
+
+    /**
+     * Namespace pwm_output.
+     * @exports pwm_output
+     * @namespace
+     */
+    const pwm_output = {};
+
+    /**
+     * PwmOutputSignalType enum.
+     * @name pwm_output.PwmOutputSignalType
+     * @enum {number}
+     * @property {number} PWM_OUTPUT_SIGNAL_TYPE_UNSPECIFIED=0 PWM_OUTPUT_SIGNAL_TYPE_UNSPECIFIED value
+     * @property {number} PWM_OUTPUT_CONFIGURED=1 PWM_OUTPUT_CONFIGURED value
+     * @property {number} PWM_OUTPUT_COMMAND=2 PWM_OUTPUT_COMMAND value
+     * @property {number} PWM_OUTPUT_COMMAND_SUCCESS=3 PWM_OUTPUT_COMMAND_SUCCESS value
+     * @property {number} PWM_OUTPUT_COMMAND_REJECTED=4 PWM_OUTPUT_COMMAND_REJECTED value
+     * @property {number} PWM_OUTPUT_COMMAND_FAILED=5 PWM_OUTPUT_COMMAND_FAILED value
+     * @property {number} PWM_OUTPUT_ERROR=6 PWM_OUTPUT_ERROR value
+     */
+    pwm_output.PwmOutputSignalType = (function() {
+        const valuesById = {}, values = Object.create(valuesById);
+        values[valuesById[0] = "PWM_OUTPUT_SIGNAL_TYPE_UNSPECIFIED"] = 0;
+        values[valuesById[1] = "PWM_OUTPUT_CONFIGURED"] = 1;
+        values[valuesById[2] = "PWM_OUTPUT_COMMAND"] = 2;
+        values[valuesById[3] = "PWM_OUTPUT_COMMAND_SUCCESS"] = 3;
+        values[valuesById[4] = "PWM_OUTPUT_COMMAND_REJECTED"] = 4;
+        values[valuesById[5] = "PWM_OUTPUT_COMMAND_FAILED"] = 5;
+        values[valuesById[6] = "PWM_OUTPUT_ERROR"] = 6;
+        return values;
+    })();
+
+    pwm_output.PwmOutputDevice = (function() {
+
+        /**
+         * Properties of a PwmOutputDevice.
+         * @memberof pwm_output
+         * @interface IPwmOutputDevice
+         * @property {string|null} [id] PwmOutputDevice id
+         */
+
+        /**
+         * Constructs a new PwmOutputDevice.
+         * @memberof pwm_output
+         * @classdesc Represents a PwmOutputDevice.
+         * @implements IPwmOutputDevice
+         * @constructor
+         * @param {pwm_output.IPwmOutputDevice=} [properties] Properties to set
+         */
+        function PwmOutputDevice(properties) {
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * PwmOutputDevice id.
+         * @member {string} id
+         * @memberof pwm_output.PwmOutputDevice
+         * @instance
+         */
+        PwmOutputDevice.prototype.id = "";
+
+        /**
+         * Creates a new PwmOutputDevice instance using the specified properties.
+         * @function create
+         * @memberof pwm_output.PwmOutputDevice
+         * @static
+         * @param {pwm_output.IPwmOutputDevice=} [properties] Properties to set
+         * @returns {pwm_output.PwmOutputDevice} PwmOutputDevice instance
+         */
+        PwmOutputDevice.create = function create(properties) {
+            return new PwmOutputDevice(properties);
+        };
+
+        /**
+         * Encodes the specified PwmOutputDevice message. Does not implicitly {@link pwm_output.PwmOutputDevice.verify|verify} messages.
+         * @function encode
+         * @memberof pwm_output.PwmOutputDevice
+         * @static
+         * @param {pwm_output.IPwmOutputDevice} message PwmOutputDevice message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        PwmOutputDevice.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.id != null && Object.hasOwnProperty.call(message, "id"))
+                writer.uint32(/* id 1, wireType 2 =*/10).string(message.id);
+            return writer;
+        };
+
+        /**
+         * Encodes the specified PwmOutputDevice message, length delimited. Does not implicitly {@link pwm_output.PwmOutputDevice.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof pwm_output.PwmOutputDevice
+         * @static
+         * @param {pwm_output.IPwmOutputDevice} message PwmOutputDevice message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        PwmOutputDevice.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes a PwmOutputDevice message from the specified reader or buffer.
+         * @function decode
+         * @memberof pwm_output.PwmOutputDevice
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {pwm_output.PwmOutputDevice} PwmOutputDevice
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        PwmOutputDevice.decode = function decode(reader, length, error, long) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.pwm_output.PwmOutputDevice();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                if (tag === error)
+                    break;
+                switch (tag >>> 3) {
+                case 1: {
+                        message.id = reader.string();
+                        break;
+                    }
+                default:
+                    reader.skipType(tag & 7, long);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes a PwmOutputDevice message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof pwm_output.PwmOutputDevice
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {pwm_output.PwmOutputDevice} PwmOutputDevice
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        PwmOutputDevice.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies a PwmOutputDevice message.
+         * @function verify
+         * @memberof pwm_output.PwmOutputDevice
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        PwmOutputDevice.verify = function verify(message, long) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
+            if (message.id != null && message.hasOwnProperty("id"))
+                if (!$util.isString(message.id))
+                    return "id: string expected";
+            return null;
+        };
+
+        /**
+         * Creates a PwmOutputDevice message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof pwm_output.PwmOutputDevice
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {pwm_output.PwmOutputDevice} PwmOutputDevice
+         */
+        PwmOutputDevice.fromObject = function fromObject(object, long) {
+            if (object instanceof $root.pwm_output.PwmOutputDevice)
+                return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let message = new $root.pwm_output.PwmOutputDevice();
+            if (object.id != null)
+                message.id = String(object.id);
+            return message;
+        };
+
+        /**
+         * Creates a plain object from a PwmOutputDevice message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof pwm_output.PwmOutputDevice
+         * @static
+         * @param {pwm_output.PwmOutputDevice} message PwmOutputDevice
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        PwmOutputDevice.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.defaults)
+                object.id = "";
+            if (message.id != null && message.hasOwnProperty("id"))
+                object.id = message.id;
+            return object;
+        };
+
+        /**
+         * Converts this PwmOutputDevice to JSON.
+         * @function toJSON
+         * @memberof pwm_output.PwmOutputDevice
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        PwmOutputDevice.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for PwmOutputDevice
+         * @function getTypeUrl
+         * @memberof pwm_output.PwmOutputDevice
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        PwmOutputDevice.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+            if (typeUrlPrefix === undefined) {
+                typeUrlPrefix = "type.googleapis.com";
+            }
+            return typeUrlPrefix + "/pwm_output.PwmOutputDevice";
+        };
+
+        return PwmOutputDevice;
+    })();
+
+    pwm_output.OutputState = (function() {
+
+        /**
+         * Properties of an OutputState.
+         * @memberof pwm_output
+         * @interface IOutputState
+         * @property {string|null} [id] OutputState id
+         * @property {boolean|null} [enabled] OutputState enabled
+         * @property {pwm_output.IWaveCommand|null} [wave] OutputState wave
+         */
+
+        /**
+         * Constructs a new OutputState.
+         * @memberof pwm_output
+         * @classdesc Represents an OutputState.
+         * @implements IOutputState
+         * @constructor
+         * @param {pwm_output.IOutputState=} [properties] Properties to set
+         */
+        function OutputState(properties) {
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * OutputState id.
+         * @member {string} id
+         * @memberof pwm_output.OutputState
+         * @instance
+         */
+        OutputState.prototype.id = "";
+
+        /**
+         * OutputState enabled.
+         * @member {boolean} enabled
+         * @memberof pwm_output.OutputState
+         * @instance
+         */
+        OutputState.prototype.enabled = false;
+
+        /**
+         * OutputState wave.
+         * @member {pwm_output.IWaveCommand|null|undefined} wave
+         * @memberof pwm_output.OutputState
+         * @instance
+         */
+        OutputState.prototype.wave = null;
+
+        /**
+         * Creates a new OutputState instance using the specified properties.
+         * @function create
+         * @memberof pwm_output.OutputState
+         * @static
+         * @param {pwm_output.IOutputState=} [properties] Properties to set
+         * @returns {pwm_output.OutputState} OutputState instance
+         */
+        OutputState.create = function create(properties) {
+            return new OutputState(properties);
+        };
+
+        /**
+         * Encodes the specified OutputState message. Does not implicitly {@link pwm_output.OutputState.verify|verify} messages.
+         * @function encode
+         * @memberof pwm_output.OutputState
+         * @static
+         * @param {pwm_output.IOutputState} message OutputState message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        OutputState.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.id != null && Object.hasOwnProperty.call(message, "id"))
+                writer.uint32(/* id 1, wireType 2 =*/10).string(message.id);
+            if (message.enabled != null && Object.hasOwnProperty.call(message, "enabled"))
+                writer.uint32(/* id 2, wireType 0 =*/16).bool(message.enabled);
+            if (message.wave != null && Object.hasOwnProperty.call(message, "wave"))
+                $root.pwm_output.WaveCommand.encode(message.wave, writer.uint32(/* id 10, wireType 2 =*/82).fork()).ldelim();
+            return writer;
+        };
+
+        /**
+         * Encodes the specified OutputState message, length delimited. Does not implicitly {@link pwm_output.OutputState.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof pwm_output.OutputState
+         * @static
+         * @param {pwm_output.IOutputState} message OutputState message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        OutputState.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes an OutputState message from the specified reader or buffer.
+         * @function decode
+         * @memberof pwm_output.OutputState
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {pwm_output.OutputState} OutputState
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        OutputState.decode = function decode(reader, length, error, long) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.pwm_output.OutputState();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                if (tag === error)
+                    break;
+                switch (tag >>> 3) {
+                case 1: {
+                        message.id = reader.string();
+                        break;
+                    }
+                case 2: {
+                        message.enabled = reader.bool();
+                        break;
+                    }
+                case 10: {
+                        message.wave = $root.pwm_output.WaveCommand.decode(reader, reader.uint32(), undefined, long + 1);
+                        break;
+                    }
+                default:
+                    reader.skipType(tag & 7, long);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes an OutputState message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof pwm_output.OutputState
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {pwm_output.OutputState} OutputState
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        OutputState.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies an OutputState message.
+         * @function verify
+         * @memberof pwm_output.OutputState
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        OutputState.verify = function verify(message, long) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
+            if (message.id != null && message.hasOwnProperty("id"))
+                if (!$util.isString(message.id))
+                    return "id: string expected";
+            if (message.enabled != null && message.hasOwnProperty("enabled"))
+                if (typeof message.enabled !== "boolean")
+                    return "enabled: boolean expected";
+            if (message.wave != null && message.hasOwnProperty("wave")) {
+                let error = $root.pwm_output.WaveCommand.verify(message.wave, long + 1);
+                if (error)
+                    return "wave." + error;
+            }
+            return null;
+        };
+
+        /**
+         * Creates an OutputState message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof pwm_output.OutputState
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {pwm_output.OutputState} OutputState
+         */
+        OutputState.fromObject = function fromObject(object, long) {
+            if (object instanceof $root.pwm_output.OutputState)
+                return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let message = new $root.pwm_output.OutputState();
+            if (object.id != null)
+                message.id = String(object.id);
+            if (object.enabled != null)
+                message.enabled = Boolean(object.enabled);
+            if (object.wave != null) {
+                if (typeof object.wave !== "object")
+                    throw TypeError(".pwm_output.OutputState.wave: object expected");
+                message.wave = $root.pwm_output.WaveCommand.fromObject(object.wave, long + 1);
+            }
+            return message;
+        };
+
+        /**
+         * Creates a plain object from an OutputState message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof pwm_output.OutputState
+         * @static
+         * @param {pwm_output.OutputState} message OutputState
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        OutputState.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.defaults) {
+                object.id = "";
+                object.enabled = false;
+                object.wave = null;
+            }
+            if (message.id != null && message.hasOwnProperty("id"))
+                object.id = message.id;
+            if (message.enabled != null && message.hasOwnProperty("enabled"))
+                object.enabled = message.enabled;
+            if (message.wave != null && message.hasOwnProperty("wave"))
+                object.wave = $root.pwm_output.WaveCommand.toObject(message.wave, options);
+            return object;
+        };
+
+        /**
+         * Converts this OutputState to JSON.
+         * @function toJSON
+         * @memberof pwm_output.OutputState
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        OutputState.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for OutputState
+         * @function getTypeUrl
+         * @memberof pwm_output.OutputState
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        OutputState.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+            if (typeUrlPrefix === undefined) {
+                typeUrlPrefix = "type.googleapis.com";
+            }
+            return typeUrlPrefix + "/pwm_output.OutputState";
+        };
+
+        return OutputState;
+    })();
+
+    /**
+     * WaveLevel enum.
+     * @name pwm_output.WaveLevel
+     * @enum {number}
+     * @property {number} WAVE_LEVEL_UNSPECIFIED=0 WAVE_LEVEL_UNSPECIFIED value
+     * @property {number} WAVE_LEVEL_LOW=1 WAVE_LEVEL_LOW value
+     * @property {number} WAVE_LEVEL_HIGH=2 WAVE_LEVEL_HIGH value
+     */
+    pwm_output.WaveLevel = (function() {
+        const valuesById = {}, values = Object.create(valuesById);
+        values[valuesById[0] = "WAVE_LEVEL_UNSPECIFIED"] = 0;
+        values[valuesById[1] = "WAVE_LEVEL_LOW"] = 1;
+        values[valuesById[2] = "WAVE_LEVEL_HIGH"] = 2;
+        return values;
+    })();
+
+    pwm_output.WaveSegment = (function() {
+
+        /**
+         * Properties of a WaveSegment.
+         * @memberof pwm_output
+         * @interface IWaveSegment
+         * @property {pwm_output.WaveLevel|null} [level] WaveSegment level
+         * @property {number|null} [durationUs] WaveSegment durationUs
+         */
+
+        /**
+         * Constructs a new WaveSegment.
+         * @memberof pwm_output
+         * @classdesc Represents a WaveSegment.
+         * @implements IWaveSegment
+         * @constructor
+         * @param {pwm_output.IWaveSegment=} [properties] Properties to set
+         */
+        function WaveSegment(properties) {
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * WaveSegment level.
+         * @member {pwm_output.WaveLevel} level
+         * @memberof pwm_output.WaveSegment
+         * @instance
+         */
+        WaveSegment.prototype.level = 0;
+
+        /**
+         * WaveSegment durationUs.
+         * @member {number} durationUs
+         * @memberof pwm_output.WaveSegment
+         * @instance
+         */
+        WaveSegment.prototype.durationUs = 0;
+
+        /**
+         * Creates a new WaveSegment instance using the specified properties.
+         * @function create
+         * @memberof pwm_output.WaveSegment
+         * @static
+         * @param {pwm_output.IWaveSegment=} [properties] Properties to set
+         * @returns {pwm_output.WaveSegment} WaveSegment instance
+         */
+        WaveSegment.create = function create(properties) {
+            return new WaveSegment(properties);
+        };
+
+        /**
+         * Encodes the specified WaveSegment message. Does not implicitly {@link pwm_output.WaveSegment.verify|verify} messages.
+         * @function encode
+         * @memberof pwm_output.WaveSegment
+         * @static
+         * @param {pwm_output.IWaveSegment} message WaveSegment message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        WaveSegment.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.level != null && Object.hasOwnProperty.call(message, "level"))
+                writer.uint32(/* id 1, wireType 0 =*/8).int32(message.level);
+            if (message.durationUs != null && Object.hasOwnProperty.call(message, "durationUs"))
+                writer.uint32(/* id 2, wireType 0 =*/16).uint32(message.durationUs);
+            return writer;
+        };
+
+        /**
+         * Encodes the specified WaveSegment message, length delimited. Does not implicitly {@link pwm_output.WaveSegment.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof pwm_output.WaveSegment
+         * @static
+         * @param {pwm_output.IWaveSegment} message WaveSegment message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        WaveSegment.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes a WaveSegment message from the specified reader or buffer.
+         * @function decode
+         * @memberof pwm_output.WaveSegment
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {pwm_output.WaveSegment} WaveSegment
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        WaveSegment.decode = function decode(reader, length, error, long) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.pwm_output.WaveSegment();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                if (tag === error)
+                    break;
+                switch (tag >>> 3) {
+                case 1: {
+                        message.level = reader.int32();
+                        break;
+                    }
+                case 2: {
+                        message.durationUs = reader.uint32();
+                        break;
+                    }
+                default:
+                    reader.skipType(tag & 7, long);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes a WaveSegment message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof pwm_output.WaveSegment
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {pwm_output.WaveSegment} WaveSegment
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        WaveSegment.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies a WaveSegment message.
+         * @function verify
+         * @memberof pwm_output.WaveSegment
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        WaveSegment.verify = function verify(message, long) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
+            if (message.level != null && message.hasOwnProperty("level"))
+                switch (message.level) {
+                default:
+                    return "level: enum value expected";
+                case 0:
+                case 1:
+                case 2:
+                    break;
+                }
+            if (message.durationUs != null && message.hasOwnProperty("durationUs"))
+                if (!$util.isInteger(message.durationUs))
+                    return "durationUs: integer expected";
+            return null;
+        };
+
+        /**
+         * Creates a WaveSegment message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof pwm_output.WaveSegment
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {pwm_output.WaveSegment} WaveSegment
+         */
+        WaveSegment.fromObject = function fromObject(object, long) {
+            if (object instanceof $root.pwm_output.WaveSegment)
+                return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let message = new $root.pwm_output.WaveSegment();
+            switch (object.level) {
+            default:
+                if (typeof object.level === "number") {
+                    message.level = object.level;
+                    break;
+                }
+                break;
+            case "WAVE_LEVEL_UNSPECIFIED":
+            case 0:
+                message.level = 0;
+                break;
+            case "WAVE_LEVEL_LOW":
+            case 1:
+                message.level = 1;
+                break;
+            case "WAVE_LEVEL_HIGH":
+            case 2:
+                message.level = 2;
+                break;
+            }
+            if (object.durationUs != null)
+                message.durationUs = object.durationUs >>> 0;
+            return message;
+        };
+
+        /**
+         * Creates a plain object from a WaveSegment message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof pwm_output.WaveSegment
+         * @static
+         * @param {pwm_output.WaveSegment} message WaveSegment
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        WaveSegment.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.defaults) {
+                object.level = options.enums === String ? "WAVE_LEVEL_UNSPECIFIED" : 0;
+                object.durationUs = 0;
+            }
+            if (message.level != null && message.hasOwnProperty("level"))
+                object.level = options.enums === String ? $root.pwm_output.WaveLevel[message.level] === undefined ? message.level : $root.pwm_output.WaveLevel[message.level] : message.level;
+            if (message.durationUs != null && message.hasOwnProperty("durationUs"))
+                object.durationUs = message.durationUs;
+            return object;
+        };
+
+        /**
+         * Converts this WaveSegment to JSON.
+         * @function toJSON
+         * @memberof pwm_output.WaveSegment
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        WaveSegment.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for WaveSegment
+         * @function getTypeUrl
+         * @memberof pwm_output.WaveSegment
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        WaveSegment.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+            if (typeUrlPrefix === undefined) {
+                typeUrlPrefix = "type.googleapis.com";
+            }
+            return typeUrlPrefix + "/pwm_output.WaveSegment";
+        };
+
+        return WaveSegment;
+    })();
+
+    pwm_output.WaveCommand = (function() {
+
+        /**
+         * Properties of a WaveCommand.
+         * @memberof pwm_output
+         * @interface IWaveCommand
+         * @property {number|null} [channel] WaveCommand channel
+         * @property {Array.<pwm_output.IWaveSegment>|null} [segments] WaveCommand segments
+         * @property {number|null} [repeat] WaveCommand repeat
+         */
+
+        /**
+         * Constructs a new WaveCommand.
+         * @memberof pwm_output
+         * @classdesc Represents a WaveCommand.
+         * @implements IWaveCommand
+         * @constructor
+         * @param {pwm_output.IWaveCommand=} [properties] Properties to set
+         */
+        function WaveCommand(properties) {
+            this.segments = [];
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * WaveCommand channel.
+         * @member {number} channel
+         * @memberof pwm_output.WaveCommand
+         * @instance
+         */
+        WaveCommand.prototype.channel = 0;
+
+        /**
+         * WaveCommand segments.
+         * @member {Array.<pwm_output.IWaveSegment>} segments
+         * @memberof pwm_output.WaveCommand
+         * @instance
+         */
+        WaveCommand.prototype.segments = $util.emptyArray;
+
+        /**
+         * WaveCommand repeat.
+         * @member {number} repeat
+         * @memberof pwm_output.WaveCommand
+         * @instance
+         */
+        WaveCommand.prototype.repeat = 0;
+
+        /**
+         * Creates a new WaveCommand instance using the specified properties.
+         * @function create
+         * @memberof pwm_output.WaveCommand
+         * @static
+         * @param {pwm_output.IWaveCommand=} [properties] Properties to set
+         * @returns {pwm_output.WaveCommand} WaveCommand instance
+         */
+        WaveCommand.create = function create(properties) {
+            return new WaveCommand(properties);
+        };
+
+        /**
+         * Encodes the specified WaveCommand message. Does not implicitly {@link pwm_output.WaveCommand.verify|verify} messages.
+         * @function encode
+         * @memberof pwm_output.WaveCommand
+         * @static
+         * @param {pwm_output.IWaveCommand} message WaveCommand message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        WaveCommand.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.channel != null && Object.hasOwnProperty.call(message, "channel"))
+                writer.uint32(/* id 1, wireType 0 =*/8).uint32(message.channel);
+            if (message.segments != null && message.segments.length)
+                for (let i = 0; i < message.segments.length; ++i)
+                    $root.pwm_output.WaveSegment.encode(message.segments[i], writer.uint32(/* id 2, wireType 2 =*/18).fork()).ldelim();
+            if (message.repeat != null && Object.hasOwnProperty.call(message, "repeat"))
+                writer.uint32(/* id 3, wireType 0 =*/24).uint32(message.repeat);
+            return writer;
+        };
+
+        /**
+         * Encodes the specified WaveCommand message, length delimited. Does not implicitly {@link pwm_output.WaveCommand.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof pwm_output.WaveCommand
+         * @static
+         * @param {pwm_output.IWaveCommand} message WaveCommand message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        WaveCommand.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes a WaveCommand message from the specified reader or buffer.
+         * @function decode
+         * @memberof pwm_output.WaveCommand
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {pwm_output.WaveCommand} WaveCommand
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        WaveCommand.decode = function decode(reader, length, error, long) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.pwm_output.WaveCommand();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                if (tag === error)
+                    break;
+                switch (tag >>> 3) {
+                case 1: {
+                        message.channel = reader.uint32();
+                        break;
+                    }
+                case 2: {
+                        if (!(message.segments && message.segments.length))
+                            message.segments = [];
+                        message.segments.push($root.pwm_output.WaveSegment.decode(reader, reader.uint32(), undefined, long + 1));
+                        break;
+                    }
+                case 3: {
+                        message.repeat = reader.uint32();
+                        break;
+                    }
+                default:
+                    reader.skipType(tag & 7, long);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes a WaveCommand message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof pwm_output.WaveCommand
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {pwm_output.WaveCommand} WaveCommand
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        WaveCommand.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies a WaveCommand message.
+         * @function verify
+         * @memberof pwm_output.WaveCommand
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        WaveCommand.verify = function verify(message, long) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
+            if (message.channel != null && message.hasOwnProperty("channel"))
+                if (!$util.isInteger(message.channel))
+                    return "channel: integer expected";
+            if (message.segments != null && message.hasOwnProperty("segments")) {
+                if (!Array.isArray(message.segments))
+                    return "segments: array expected";
+                for (let i = 0; i < message.segments.length; ++i) {
+                    let error = $root.pwm_output.WaveSegment.verify(message.segments[i], long + 1);
+                    if (error)
+                        return "segments." + error;
+                }
+            }
+            if (message.repeat != null && message.hasOwnProperty("repeat"))
+                if (!$util.isInteger(message.repeat))
+                    return "repeat: integer expected";
+            return null;
+        };
+
+        /**
+         * Creates a WaveCommand message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof pwm_output.WaveCommand
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {pwm_output.WaveCommand} WaveCommand
+         */
+        WaveCommand.fromObject = function fromObject(object, long) {
+            if (object instanceof $root.pwm_output.WaveCommand)
+                return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let message = new $root.pwm_output.WaveCommand();
+            if (object.channel != null)
+                message.channel = object.channel >>> 0;
+            if (object.segments) {
+                if (!Array.isArray(object.segments))
+                    throw TypeError(".pwm_output.WaveCommand.segments: array expected");
+                message.segments = [];
+                for (let i = 0; i < object.segments.length; ++i) {
+                    if (typeof object.segments[i] !== "object")
+                        throw TypeError(".pwm_output.WaveCommand.segments: object expected");
+                    message.segments[i] = $root.pwm_output.WaveSegment.fromObject(object.segments[i], long + 1);
+                }
+            }
+            if (object.repeat != null)
+                message.repeat = object.repeat >>> 0;
+            return message;
+        };
+
+        /**
+         * Creates a plain object from a WaveCommand message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof pwm_output.WaveCommand
+         * @static
+         * @param {pwm_output.WaveCommand} message WaveCommand
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        WaveCommand.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.arrays || options.defaults)
+                object.segments = [];
+            if (options.defaults) {
+                object.channel = 0;
+                object.repeat = 0;
+            }
+            if (message.channel != null && message.hasOwnProperty("channel"))
+                object.channel = message.channel;
+            if (message.segments && message.segments.length) {
+                object.segments = [];
+                for (let j = 0; j < message.segments.length; ++j)
+                    object.segments[j] = $root.pwm_output.WaveSegment.toObject(message.segments[j], options);
+            }
+            if (message.repeat != null && message.hasOwnProperty("repeat"))
+                object.repeat = message.repeat;
+            return object;
+        };
+
+        /**
+         * Converts this WaveCommand to JSON.
+         * @function toJSON
+         * @memberof pwm_output.WaveCommand
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        WaveCommand.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for WaveCommand
+         * @function getTypeUrl
+         * @memberof pwm_output.WaveCommand
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        WaveCommand.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+            if (typeUrlPrefix === undefined) {
+                typeUrlPrefix = "type.googleapis.com";
+            }
+            return typeUrlPrefix + "/pwm_output.WaveCommand";
+        };
+
+        return WaveCommand;
+    })();
+
+    pwm_output.DisableCommand = (function() {
+
+        /**
+         * Properties of a DisableCommand.
+         * @memberof pwm_output
+         * @interface IDisableCommand
+         * @property {number|null} [channel] DisableCommand channel
+         */
+
+        /**
+         * Constructs a new DisableCommand.
+         * @memberof pwm_output
+         * @classdesc Represents a DisableCommand.
+         * @implements IDisableCommand
+         * @constructor
+         * @param {pwm_output.IDisableCommand=} [properties] Properties to set
+         */
+        function DisableCommand(properties) {
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * DisableCommand channel.
+         * @member {number} channel
+         * @memberof pwm_output.DisableCommand
+         * @instance
+         */
+        DisableCommand.prototype.channel = 0;
+
+        /**
+         * Creates a new DisableCommand instance using the specified properties.
+         * @function create
+         * @memberof pwm_output.DisableCommand
+         * @static
+         * @param {pwm_output.IDisableCommand=} [properties] Properties to set
+         * @returns {pwm_output.DisableCommand} DisableCommand instance
+         */
+        DisableCommand.create = function create(properties) {
+            return new DisableCommand(properties);
+        };
+
+        /**
+         * Encodes the specified DisableCommand message. Does not implicitly {@link pwm_output.DisableCommand.verify|verify} messages.
+         * @function encode
+         * @memberof pwm_output.DisableCommand
+         * @static
+         * @param {pwm_output.IDisableCommand} message DisableCommand message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        DisableCommand.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.channel != null && Object.hasOwnProperty.call(message, "channel"))
+                writer.uint32(/* id 1, wireType 0 =*/8).uint32(message.channel);
+            return writer;
+        };
+
+        /**
+         * Encodes the specified DisableCommand message, length delimited. Does not implicitly {@link pwm_output.DisableCommand.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof pwm_output.DisableCommand
+         * @static
+         * @param {pwm_output.IDisableCommand} message DisableCommand message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        DisableCommand.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes a DisableCommand message from the specified reader or buffer.
+         * @function decode
+         * @memberof pwm_output.DisableCommand
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {pwm_output.DisableCommand} DisableCommand
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        DisableCommand.decode = function decode(reader, length, error, long) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.pwm_output.DisableCommand();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                if (tag === error)
+                    break;
+                switch (tag >>> 3) {
+                case 1: {
+                        message.channel = reader.uint32();
+                        break;
+                    }
+                default:
+                    reader.skipType(tag & 7, long);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes a DisableCommand message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof pwm_output.DisableCommand
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {pwm_output.DisableCommand} DisableCommand
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        DisableCommand.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies a DisableCommand message.
+         * @function verify
+         * @memberof pwm_output.DisableCommand
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        DisableCommand.verify = function verify(message, long) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
+            if (message.channel != null && message.hasOwnProperty("channel"))
+                if (!$util.isInteger(message.channel))
+                    return "channel: integer expected";
+            return null;
+        };
+
+        /**
+         * Creates a DisableCommand message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof pwm_output.DisableCommand
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {pwm_output.DisableCommand} DisableCommand
+         */
+        DisableCommand.fromObject = function fromObject(object, long) {
+            if (object instanceof $root.pwm_output.DisableCommand)
+                return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let message = new $root.pwm_output.DisableCommand();
+            if (object.channel != null)
+                message.channel = object.channel >>> 0;
+            return message;
+        };
+
+        /**
+         * Creates a plain object from a DisableCommand message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof pwm_output.DisableCommand
+         * @static
+         * @param {pwm_output.DisableCommand} message DisableCommand
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        DisableCommand.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.defaults)
+                object.channel = 0;
+            if (message.channel != null && message.hasOwnProperty("channel"))
+                object.channel = message.channel;
+            return object;
+        };
+
+        /**
+         * Converts this DisableCommand to JSON.
+         * @function toJSON
+         * @memberof pwm_output.DisableCommand
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        DisableCommand.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for DisableCommand
+         * @function getTypeUrl
+         * @memberof pwm_output.DisableCommand
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        DisableCommand.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+            if (typeUrlPrefix === undefined) {
+                typeUrlPrefix = "type.googleapis.com";
+            }
+            return typeUrlPrefix + "/pwm_output.DisableCommand";
+        };
+
+        return DisableCommand;
+    })();
+
+    pwm_output.Command = (function() {
+
+        /**
+         * Properties of a Command.
+         * @memberof pwm_output
+         * @interface ICommand
+         * @property {string|null} [targetOutputId] Command targetOutputId
+         * @property {pwm_output.IWaveCommand|null} [wave] Command wave
+         * @property {pwm_output.IDisableCommand|null} [disable] Command disable
+         */
+
+        /**
+         * Constructs a new Command.
+         * @memberof pwm_output
+         * @classdesc Represents a Command.
+         * @implements ICommand
+         * @constructor
+         * @param {pwm_output.ICommand=} [properties] Properties to set
+         */
+        function Command(properties) {
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * Command targetOutputId.
+         * @member {string} targetOutputId
+         * @memberof pwm_output.Command
+         * @instance
+         */
+        Command.prototype.targetOutputId = "";
+
+        /**
+         * Command wave.
+         * @member {pwm_output.IWaveCommand|null|undefined} wave
+         * @memberof pwm_output.Command
+         * @instance
+         */
+        Command.prototype.wave = null;
+
+        /**
+         * Command disable.
+         * @member {pwm_output.IDisableCommand|null|undefined} disable
+         * @memberof pwm_output.Command
+         * @instance
+         */
+        Command.prototype.disable = null;
+
+        /**
+         * Creates a new Command instance using the specified properties.
+         * @function create
+         * @memberof pwm_output.Command
+         * @static
+         * @param {pwm_output.ICommand=} [properties] Properties to set
+         * @returns {pwm_output.Command} Command instance
+         */
+        Command.create = function create(properties) {
+            return new Command(properties);
+        };
+
+        /**
+         * Encodes the specified Command message. Does not implicitly {@link pwm_output.Command.verify|verify} messages.
+         * @function encode
+         * @memberof pwm_output.Command
+         * @static
+         * @param {pwm_output.ICommand} message Command message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        Command.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.targetOutputId != null && Object.hasOwnProperty.call(message, "targetOutputId"))
+                writer.uint32(/* id 1, wireType 2 =*/10).string(message.targetOutputId);
+            if (message.wave != null && Object.hasOwnProperty.call(message, "wave"))
+                $root.pwm_output.WaveCommand.encode(message.wave, writer.uint32(/* id 10, wireType 2 =*/82).fork()).ldelim();
+            if (message.disable != null && Object.hasOwnProperty.call(message, "disable"))
+                $root.pwm_output.DisableCommand.encode(message.disable, writer.uint32(/* id 11, wireType 2 =*/90).fork()).ldelim();
+            return writer;
+        };
+
+        /**
+         * Encodes the specified Command message, length delimited. Does not implicitly {@link pwm_output.Command.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof pwm_output.Command
+         * @static
+         * @param {pwm_output.ICommand} message Command message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        Command.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes a Command message from the specified reader or buffer.
+         * @function decode
+         * @memberof pwm_output.Command
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {pwm_output.Command} Command
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        Command.decode = function decode(reader, length, error, long) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.pwm_output.Command();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                if (tag === error)
+                    break;
+                switch (tag >>> 3) {
+                case 1: {
+                        message.targetOutputId = reader.string();
+                        break;
+                    }
+                case 10: {
+                        message.wave = $root.pwm_output.WaveCommand.decode(reader, reader.uint32(), undefined, long + 1);
+                        break;
+                    }
+                case 11: {
+                        message.disable = $root.pwm_output.DisableCommand.decode(reader, reader.uint32(), undefined, long + 1);
+                        break;
+                    }
+                default:
+                    reader.skipType(tag & 7, long);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes a Command message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof pwm_output.Command
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {pwm_output.Command} Command
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        Command.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies a Command message.
+         * @function verify
+         * @memberof pwm_output.Command
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        Command.verify = function verify(message, long) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
+            if (message.targetOutputId != null && message.hasOwnProperty("targetOutputId"))
+                if (!$util.isString(message.targetOutputId))
+                    return "targetOutputId: string expected";
+            if (message.wave != null && message.hasOwnProperty("wave")) {
+                let error = $root.pwm_output.WaveCommand.verify(message.wave, long + 1);
+                if (error)
+                    return "wave." + error;
+            }
+            if (message.disable != null && message.hasOwnProperty("disable")) {
+                let error = $root.pwm_output.DisableCommand.verify(message.disable, long + 1);
+                if (error)
+                    return "disable." + error;
+            }
+            return null;
+        };
+
+        /**
+         * Creates a Command message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof pwm_output.Command
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {pwm_output.Command} Command
+         */
+        Command.fromObject = function fromObject(object, long) {
+            if (object instanceof $root.pwm_output.Command)
+                return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let message = new $root.pwm_output.Command();
+            if (object.targetOutputId != null)
+                message.targetOutputId = String(object.targetOutputId);
+            if (object.wave != null) {
+                if (typeof object.wave !== "object")
+                    throw TypeError(".pwm_output.Command.wave: object expected");
+                message.wave = $root.pwm_output.WaveCommand.fromObject(object.wave, long + 1);
+            }
+            if (object.disable != null) {
+                if (typeof object.disable !== "object")
+                    throw TypeError(".pwm_output.Command.disable: object expected");
+                message.disable = $root.pwm_output.DisableCommand.fromObject(object.disable, long + 1);
+            }
+            return message;
+        };
+
+        /**
+         * Creates a plain object from a Command message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof pwm_output.Command
+         * @static
+         * @param {pwm_output.Command} message Command
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        Command.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.defaults) {
+                object.targetOutputId = "";
+                object.wave = null;
+                object.disable = null;
+            }
+            if (message.targetOutputId != null && message.hasOwnProperty("targetOutputId"))
+                object.targetOutputId = message.targetOutputId;
+            if (message.wave != null && message.hasOwnProperty("wave"))
+                object.wave = $root.pwm_output.WaveCommand.toObject(message.wave, options);
+            if (message.disable != null && message.hasOwnProperty("disable"))
+                object.disable = $root.pwm_output.DisableCommand.toObject(message.disable, options);
+            return object;
+        };
+
+        /**
+         * Converts this Command to JSON.
+         * @function toJSON
+         * @memberof pwm_output.Command
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        Command.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for Command
+         * @function getTypeUrl
+         * @memberof pwm_output.Command
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        Command.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+            if (typeUrlPrefix === undefined) {
+                typeUrlPrefix = "type.googleapis.com";
+            }
+            return typeUrlPrefix + "/pwm_output.Command";
+        };
+
+        return Command;
+    })();
+
+    pwm_output.TxEnvelope = (function() {
+
+        /**
+         * Properties of a TxEnvelope.
+         * @memberof pwm_output
+         * @interface ITxEnvelope
+         * @property {Long|null} [monotonicStampNs] TxEnvelope monotonicStampNs
+         * @property {Long|null} [localStampNs] TxEnvelope localStampNs
+         * @property {Long|null} [appStartId] TxEnvelope appStartId
+         * @property {Uint8Array|null} [commandId] TxEnvelope commandId
+         * @property {string|null} [targetOutputId] TxEnvelope targetOutputId
+         * @property {pwm_output.ICommand|null} [command] TxEnvelope command
+         */
+
+        /**
+         * Constructs a new TxEnvelope.
+         * @memberof pwm_output
+         * @classdesc Represents a TxEnvelope.
+         * @implements ITxEnvelope
+         * @constructor
+         * @param {pwm_output.ITxEnvelope=} [properties] Properties to set
+         */
+        function TxEnvelope(properties) {
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * TxEnvelope monotonicStampNs.
+         * @member {Long} monotonicStampNs
+         * @memberof pwm_output.TxEnvelope
+         * @instance
+         */
+        TxEnvelope.prototype.monotonicStampNs = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+
+        /**
+         * TxEnvelope localStampNs.
+         * @member {Long} localStampNs
+         * @memberof pwm_output.TxEnvelope
+         * @instance
+         */
+        TxEnvelope.prototype.localStampNs = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+
+        /**
+         * TxEnvelope appStartId.
+         * @member {Long} appStartId
+         * @memberof pwm_output.TxEnvelope
+         * @instance
+         */
+        TxEnvelope.prototype.appStartId = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+
+        /**
+         * TxEnvelope commandId.
+         * @member {Uint8Array} commandId
+         * @memberof pwm_output.TxEnvelope
+         * @instance
+         */
+        TxEnvelope.prototype.commandId = $util.newBuffer([]);
+
+        /**
+         * TxEnvelope targetOutputId.
+         * @member {string} targetOutputId
+         * @memberof pwm_output.TxEnvelope
+         * @instance
+         */
+        TxEnvelope.prototype.targetOutputId = "";
+
+        /**
+         * TxEnvelope command.
+         * @member {pwm_output.ICommand|null|undefined} command
+         * @memberof pwm_output.TxEnvelope
+         * @instance
+         */
+        TxEnvelope.prototype.command = null;
+
+        /**
+         * Creates a new TxEnvelope instance using the specified properties.
+         * @function create
+         * @memberof pwm_output.TxEnvelope
+         * @static
+         * @param {pwm_output.ITxEnvelope=} [properties] Properties to set
+         * @returns {pwm_output.TxEnvelope} TxEnvelope instance
+         */
+        TxEnvelope.create = function create(properties) {
+            return new TxEnvelope(properties);
+        };
+
+        /**
+         * Encodes the specified TxEnvelope message. Does not implicitly {@link pwm_output.TxEnvelope.verify|verify} messages.
+         * @function encode
+         * @memberof pwm_output.TxEnvelope
+         * @static
+         * @param {pwm_output.ITxEnvelope} message TxEnvelope message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        TxEnvelope.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.monotonicStampNs != null && Object.hasOwnProperty.call(message, "monotonicStampNs"))
+                writer.uint32(/* id 1, wireType 0 =*/8).uint64(message.monotonicStampNs);
+            if (message.localStampNs != null && Object.hasOwnProperty.call(message, "localStampNs"))
+                writer.uint32(/* id 2, wireType 0 =*/16).uint64(message.localStampNs);
+            if (message.appStartId != null && Object.hasOwnProperty.call(message, "appStartId"))
+                writer.uint32(/* id 3, wireType 0 =*/24).uint64(message.appStartId);
+            if (message.commandId != null && Object.hasOwnProperty.call(message, "commandId"))
+                writer.uint32(/* id 4, wireType 2 =*/34).bytes(message.commandId);
+            if (message.targetOutputId != null && Object.hasOwnProperty.call(message, "targetOutputId"))
+                writer.uint32(/* id 5, wireType 2 =*/42).string(message.targetOutputId);
+            if (message.command != null && Object.hasOwnProperty.call(message, "command"))
+                $root.pwm_output.Command.encode(message.command, writer.uint32(/* id 10, wireType 2 =*/82).fork()).ldelim();
+            return writer;
+        };
+
+        /**
+         * Encodes the specified TxEnvelope message, length delimited. Does not implicitly {@link pwm_output.TxEnvelope.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof pwm_output.TxEnvelope
+         * @static
+         * @param {pwm_output.ITxEnvelope} message TxEnvelope message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        TxEnvelope.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes a TxEnvelope message from the specified reader or buffer.
+         * @function decode
+         * @memberof pwm_output.TxEnvelope
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {pwm_output.TxEnvelope} TxEnvelope
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        TxEnvelope.decode = function decode(reader, length, error, long) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.pwm_output.TxEnvelope();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                if (tag === error)
+                    break;
+                switch (tag >>> 3) {
+                case 1: {
+                        message.monotonicStampNs = reader.uint64();
+                        break;
+                    }
+                case 2: {
+                        message.localStampNs = reader.uint64();
+                        break;
+                    }
+                case 3: {
+                        message.appStartId = reader.uint64();
+                        break;
+                    }
+                case 4: {
+                        message.commandId = reader.bytes();
+                        break;
+                    }
+                case 5: {
+                        message.targetOutputId = reader.string();
+                        break;
+                    }
+                case 10: {
+                        message.command = $root.pwm_output.Command.decode(reader, reader.uint32(), undefined, long + 1);
+                        break;
+                    }
+                default:
+                    reader.skipType(tag & 7, long);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes a TxEnvelope message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof pwm_output.TxEnvelope
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {pwm_output.TxEnvelope} TxEnvelope
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        TxEnvelope.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies a TxEnvelope message.
+         * @function verify
+         * @memberof pwm_output.TxEnvelope
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        TxEnvelope.verify = function verify(message, long) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
+            if (message.monotonicStampNs != null && message.hasOwnProperty("monotonicStampNs"))
+                if (!$util.isInteger(message.monotonicStampNs) && !(message.monotonicStampNs && $util.isInteger(message.monotonicStampNs.low) && $util.isInteger(message.monotonicStampNs.high)))
+                    return "monotonicStampNs: integer|Long expected";
+            if (message.localStampNs != null && message.hasOwnProperty("localStampNs"))
+                if (!$util.isInteger(message.localStampNs) && !(message.localStampNs && $util.isInteger(message.localStampNs.low) && $util.isInteger(message.localStampNs.high)))
+                    return "localStampNs: integer|Long expected";
+            if (message.appStartId != null && message.hasOwnProperty("appStartId"))
+                if (!$util.isInteger(message.appStartId) && !(message.appStartId && $util.isInteger(message.appStartId.low) && $util.isInteger(message.appStartId.high)))
+                    return "appStartId: integer|Long expected";
+            if (message.commandId != null && message.hasOwnProperty("commandId"))
+                if (!(message.commandId && typeof message.commandId.length === "number" || $util.isString(message.commandId)))
+                    return "commandId: buffer expected";
+            if (message.targetOutputId != null && message.hasOwnProperty("targetOutputId"))
+                if (!$util.isString(message.targetOutputId))
+                    return "targetOutputId: string expected";
+            if (message.command != null && message.hasOwnProperty("command")) {
+                let error = $root.pwm_output.Command.verify(message.command, long + 1);
+                if (error)
+                    return "command." + error;
+            }
+            return null;
+        };
+
+        /**
+         * Creates a TxEnvelope message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof pwm_output.TxEnvelope
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {pwm_output.TxEnvelope} TxEnvelope
+         */
+        TxEnvelope.fromObject = function fromObject(object, long) {
+            if (object instanceof $root.pwm_output.TxEnvelope)
+                return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let message = new $root.pwm_output.TxEnvelope();
+            if (object.monotonicStampNs != null)
+                if ($util.Long)
+                    (message.monotonicStampNs = $util.Long.fromValue(object.monotonicStampNs)).unsigned = true;
+                else if (typeof object.monotonicStampNs === "string")
+                    message.monotonicStampNs = parseInt(object.monotonicStampNs, 10);
+                else if (typeof object.monotonicStampNs === "number")
+                    message.monotonicStampNs = object.monotonicStampNs;
+                else if (typeof object.monotonicStampNs === "object")
+                    message.monotonicStampNs = new $util.LongBits(object.monotonicStampNs.low >>> 0, object.monotonicStampNs.high >>> 0).toNumber(true);
+            if (object.localStampNs != null)
+                if ($util.Long)
+                    (message.localStampNs = $util.Long.fromValue(object.localStampNs)).unsigned = true;
+                else if (typeof object.localStampNs === "string")
+                    message.localStampNs = parseInt(object.localStampNs, 10);
+                else if (typeof object.localStampNs === "number")
+                    message.localStampNs = object.localStampNs;
+                else if (typeof object.localStampNs === "object")
+                    message.localStampNs = new $util.LongBits(object.localStampNs.low >>> 0, object.localStampNs.high >>> 0).toNumber(true);
+            if (object.appStartId != null)
+                if ($util.Long)
+                    (message.appStartId = $util.Long.fromValue(object.appStartId)).unsigned = true;
+                else if (typeof object.appStartId === "string")
+                    message.appStartId = parseInt(object.appStartId, 10);
+                else if (typeof object.appStartId === "number")
+                    message.appStartId = object.appStartId;
+                else if (typeof object.appStartId === "object")
+                    message.appStartId = new $util.LongBits(object.appStartId.low >>> 0, object.appStartId.high >>> 0).toNumber(true);
+            if (object.commandId != null)
+                if (typeof object.commandId === "string")
+                    $util.base64.decode(object.commandId, message.commandId = $util.newBuffer($util.base64.length(object.commandId)), 0);
+                else if (object.commandId.length >= 0)
+                    message.commandId = object.commandId;
+            if (object.targetOutputId != null)
+                message.targetOutputId = String(object.targetOutputId);
+            if (object.command != null) {
+                if (typeof object.command !== "object")
+                    throw TypeError(".pwm_output.TxEnvelope.command: object expected");
+                message.command = $root.pwm_output.Command.fromObject(object.command, long + 1);
+            }
+            return message;
+        };
+
+        /**
+         * Creates a plain object from a TxEnvelope message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof pwm_output.TxEnvelope
+         * @static
+         * @param {pwm_output.TxEnvelope} message TxEnvelope
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        TxEnvelope.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.defaults) {
+                if ($util.Long) {
+                    let long = new $util.Long(0, 0, true);
+                    object.monotonicStampNs = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+                } else
+                    object.monotonicStampNs = options.longs === String ? "0" : 0;
+                if ($util.Long) {
+                    let long = new $util.Long(0, 0, true);
+                    object.localStampNs = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+                } else
+                    object.localStampNs = options.longs === String ? "0" : 0;
+                if ($util.Long) {
+                    let long = new $util.Long(0, 0, true);
+                    object.appStartId = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+                } else
+                    object.appStartId = options.longs === String ? "0" : 0;
+                if (options.bytes === String)
+                    object.commandId = "";
+                else {
+                    object.commandId = [];
+                    if (options.bytes !== Array)
+                        object.commandId = $util.newBuffer(object.commandId);
+                }
+                object.targetOutputId = "";
+                object.command = null;
+            }
+            if (message.monotonicStampNs != null && message.hasOwnProperty("monotonicStampNs"))
+                if (typeof message.monotonicStampNs === "number")
+                    object.monotonicStampNs = options.longs === String ? String(message.monotonicStampNs) : message.monotonicStampNs;
+                else
+                    object.monotonicStampNs = options.longs === String ? $util.Long.prototype.toString.call(message.monotonicStampNs) : options.longs === Number ? new $util.LongBits(message.monotonicStampNs.low >>> 0, message.monotonicStampNs.high >>> 0).toNumber(true) : message.monotonicStampNs;
+            if (message.localStampNs != null && message.hasOwnProperty("localStampNs"))
+                if (typeof message.localStampNs === "number")
+                    object.localStampNs = options.longs === String ? String(message.localStampNs) : message.localStampNs;
+                else
+                    object.localStampNs = options.longs === String ? $util.Long.prototype.toString.call(message.localStampNs) : options.longs === Number ? new $util.LongBits(message.localStampNs.low >>> 0, message.localStampNs.high >>> 0).toNumber(true) : message.localStampNs;
+            if (message.appStartId != null && message.hasOwnProperty("appStartId"))
+                if (typeof message.appStartId === "number")
+                    object.appStartId = options.longs === String ? String(message.appStartId) : message.appStartId;
+                else
+                    object.appStartId = options.longs === String ? $util.Long.prototype.toString.call(message.appStartId) : options.longs === Number ? new $util.LongBits(message.appStartId.low >>> 0, message.appStartId.high >>> 0).toNumber(true) : message.appStartId;
+            if (message.commandId != null && message.hasOwnProperty("commandId"))
+                object.commandId = options.bytes === String ? $util.base64.encode(message.commandId, 0, message.commandId.length) : options.bytes === Array ? Array.prototype.slice.call(message.commandId) : message.commandId;
+            if (message.targetOutputId != null && message.hasOwnProperty("targetOutputId"))
+                object.targetOutputId = message.targetOutputId;
+            if (message.command != null && message.hasOwnProperty("command"))
+                object.command = $root.pwm_output.Command.toObject(message.command, options);
+            return object;
+        };
+
+        /**
+         * Converts this TxEnvelope to JSON.
+         * @function toJSON
+         * @memberof pwm_output.TxEnvelope
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        TxEnvelope.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for TxEnvelope
+         * @function getTypeUrl
+         * @memberof pwm_output.TxEnvelope
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        TxEnvelope.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+            if (typeUrlPrefix === undefined) {
+                typeUrlPrefix = "type.googleapis.com";
+            }
+            return typeUrlPrefix + "/pwm_output.TxEnvelope";
+        };
+
+        return TxEnvelope;
+    })();
+
+    pwm_output.RxEnvelope = (function() {
+
+        /**
+         * Properties of a RxEnvelope.
+         * @memberof pwm_output
+         * @interface IRxEnvelope
+         * @property {Long|null} [monotonicStampNs] RxEnvelope monotonicStampNs
+         * @property {Long|null} [localStampNs] RxEnvelope localStampNs
+         * @property {Long|null} [appStartId] RxEnvelope appStartId
+         * @property {pwm_output.PwmOutputSignalType|null} [signalType] RxEnvelope signalType
+         * @property {pwm_output.IPwmOutputDevice|null} [device] RxEnvelope device
+         * @property {pwm_output.IOutputState|null} [state] RxEnvelope state
+         * @property {pwm_output.ITxEnvelope|null} [command] RxEnvelope command
+         * @property {string|null} [error] RxEnvelope error
+         */
+
+        /**
+         * Constructs a new RxEnvelope.
+         * @memberof pwm_output
+         * @classdesc Represents a RxEnvelope.
+         * @implements IRxEnvelope
+         * @constructor
+         * @param {pwm_output.IRxEnvelope=} [properties] Properties to set
+         */
+        function RxEnvelope(properties) {
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * RxEnvelope monotonicStampNs.
+         * @member {Long} monotonicStampNs
+         * @memberof pwm_output.RxEnvelope
+         * @instance
+         */
+        RxEnvelope.prototype.monotonicStampNs = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+
+        /**
+         * RxEnvelope localStampNs.
+         * @member {Long} localStampNs
+         * @memberof pwm_output.RxEnvelope
+         * @instance
+         */
+        RxEnvelope.prototype.localStampNs = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+
+        /**
+         * RxEnvelope appStartId.
+         * @member {Long} appStartId
+         * @memberof pwm_output.RxEnvelope
+         * @instance
+         */
+        RxEnvelope.prototype.appStartId = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+
+        /**
+         * RxEnvelope signalType.
+         * @member {pwm_output.PwmOutputSignalType} signalType
+         * @memberof pwm_output.RxEnvelope
+         * @instance
+         */
+        RxEnvelope.prototype.signalType = 0;
+
+        /**
+         * RxEnvelope device.
+         * @member {pwm_output.IPwmOutputDevice|null|undefined} device
+         * @memberof pwm_output.RxEnvelope
+         * @instance
+         */
+        RxEnvelope.prototype.device = null;
+
+        /**
+         * RxEnvelope state.
+         * @member {pwm_output.IOutputState|null|undefined} state
+         * @memberof pwm_output.RxEnvelope
+         * @instance
+         */
+        RxEnvelope.prototype.state = null;
+
+        /**
+         * RxEnvelope command.
+         * @member {pwm_output.ITxEnvelope|null|undefined} command
+         * @memberof pwm_output.RxEnvelope
+         * @instance
+         */
+        RxEnvelope.prototype.command = null;
+
+        /**
+         * RxEnvelope error.
+         * @member {string} error
+         * @memberof pwm_output.RxEnvelope
+         * @instance
+         */
+        RxEnvelope.prototype.error = "";
+
+        /**
+         * Creates a new RxEnvelope instance using the specified properties.
+         * @function create
+         * @memberof pwm_output.RxEnvelope
+         * @static
+         * @param {pwm_output.IRxEnvelope=} [properties] Properties to set
+         * @returns {pwm_output.RxEnvelope} RxEnvelope instance
+         */
+        RxEnvelope.create = function create(properties) {
+            return new RxEnvelope(properties);
+        };
+
+        /**
+         * Encodes the specified RxEnvelope message. Does not implicitly {@link pwm_output.RxEnvelope.verify|verify} messages.
+         * @function encode
+         * @memberof pwm_output.RxEnvelope
+         * @static
+         * @param {pwm_output.IRxEnvelope} message RxEnvelope message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        RxEnvelope.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.monotonicStampNs != null && Object.hasOwnProperty.call(message, "monotonicStampNs"))
+                writer.uint32(/* id 1, wireType 0 =*/8).uint64(message.monotonicStampNs);
+            if (message.localStampNs != null && Object.hasOwnProperty.call(message, "localStampNs"))
+                writer.uint32(/* id 2, wireType 0 =*/16).uint64(message.localStampNs);
+            if (message.appStartId != null && Object.hasOwnProperty.call(message, "appStartId"))
+                writer.uint32(/* id 3, wireType 0 =*/24).uint64(message.appStartId);
+            if (message.signalType != null && Object.hasOwnProperty.call(message, "signalType"))
+                writer.uint32(/* id 10, wireType 0 =*/80).int32(message.signalType);
+            if (message.device != null && Object.hasOwnProperty.call(message, "device"))
+                $root.pwm_output.PwmOutputDevice.encode(message.device, writer.uint32(/* id 11, wireType 2 =*/90).fork()).ldelim();
+            if (message.state != null && Object.hasOwnProperty.call(message, "state"))
+                $root.pwm_output.OutputState.encode(message.state, writer.uint32(/* id 12, wireType 2 =*/98).fork()).ldelim();
+            if (message.command != null && Object.hasOwnProperty.call(message, "command"))
+                $root.pwm_output.TxEnvelope.encode(message.command, writer.uint32(/* id 20, wireType 2 =*/162).fork()).ldelim();
+            if (message.error != null && Object.hasOwnProperty.call(message, "error"))
+                writer.uint32(/* id 50, wireType 2 =*/402).string(message.error);
+            return writer;
+        };
+
+        /**
+         * Encodes the specified RxEnvelope message, length delimited. Does not implicitly {@link pwm_output.RxEnvelope.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof pwm_output.RxEnvelope
+         * @static
+         * @param {pwm_output.IRxEnvelope} message RxEnvelope message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        RxEnvelope.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes a RxEnvelope message from the specified reader or buffer.
+         * @function decode
+         * @memberof pwm_output.RxEnvelope
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {pwm_output.RxEnvelope} RxEnvelope
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        RxEnvelope.decode = function decode(reader, length, error, long) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.pwm_output.RxEnvelope();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                if (tag === error)
+                    break;
+                switch (tag >>> 3) {
+                case 1: {
+                        message.monotonicStampNs = reader.uint64();
+                        break;
+                    }
+                case 2: {
+                        message.localStampNs = reader.uint64();
+                        break;
+                    }
+                case 3: {
+                        message.appStartId = reader.uint64();
+                        break;
+                    }
+                case 10: {
+                        message.signalType = reader.int32();
+                        break;
+                    }
+                case 11: {
+                        message.device = $root.pwm_output.PwmOutputDevice.decode(reader, reader.uint32(), undefined, long + 1);
+                        break;
+                    }
+                case 12: {
+                        message.state = $root.pwm_output.OutputState.decode(reader, reader.uint32(), undefined, long + 1);
+                        break;
+                    }
+                case 20: {
+                        message.command = $root.pwm_output.TxEnvelope.decode(reader, reader.uint32(), undefined, long + 1);
+                        break;
+                    }
+                case 50: {
+                        message.error = reader.string();
+                        break;
+                    }
+                default:
+                    reader.skipType(tag & 7, long);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes a RxEnvelope message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof pwm_output.RxEnvelope
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {pwm_output.RxEnvelope} RxEnvelope
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        RxEnvelope.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies a RxEnvelope message.
+         * @function verify
+         * @memberof pwm_output.RxEnvelope
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        RxEnvelope.verify = function verify(message, long) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
+            if (message.monotonicStampNs != null && message.hasOwnProperty("monotonicStampNs"))
+                if (!$util.isInteger(message.monotonicStampNs) && !(message.monotonicStampNs && $util.isInteger(message.monotonicStampNs.low) && $util.isInteger(message.monotonicStampNs.high)))
+                    return "monotonicStampNs: integer|Long expected";
+            if (message.localStampNs != null && message.hasOwnProperty("localStampNs"))
+                if (!$util.isInteger(message.localStampNs) && !(message.localStampNs && $util.isInteger(message.localStampNs.low) && $util.isInteger(message.localStampNs.high)))
+                    return "localStampNs: integer|Long expected";
+            if (message.appStartId != null && message.hasOwnProperty("appStartId"))
+                if (!$util.isInteger(message.appStartId) && !(message.appStartId && $util.isInteger(message.appStartId.low) && $util.isInteger(message.appStartId.high)))
+                    return "appStartId: integer|Long expected";
+            if (message.signalType != null && message.hasOwnProperty("signalType"))
+                switch (message.signalType) {
+                default:
+                    return "signalType: enum value expected";
+                case 0:
+                case 1:
+                case 2:
+                case 3:
+                case 4:
+                case 5:
+                case 6:
+                    break;
+                }
+            if (message.device != null && message.hasOwnProperty("device")) {
+                let error = $root.pwm_output.PwmOutputDevice.verify(message.device, long + 1);
+                if (error)
+                    return "device." + error;
+            }
+            if (message.state != null && message.hasOwnProperty("state")) {
+                let error = $root.pwm_output.OutputState.verify(message.state, long + 1);
+                if (error)
+                    return "state." + error;
+            }
+            if (message.command != null && message.hasOwnProperty("command")) {
+                let error = $root.pwm_output.TxEnvelope.verify(message.command, long + 1);
+                if (error)
+                    return "command." + error;
+            }
+            if (message.error != null && message.hasOwnProperty("error"))
+                if (!$util.isString(message.error))
+                    return "error: string expected";
+            return null;
+        };
+
+        /**
+         * Creates a RxEnvelope message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof pwm_output.RxEnvelope
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {pwm_output.RxEnvelope} RxEnvelope
+         */
+        RxEnvelope.fromObject = function fromObject(object, long) {
+            if (object instanceof $root.pwm_output.RxEnvelope)
+                return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let message = new $root.pwm_output.RxEnvelope();
+            if (object.monotonicStampNs != null)
+                if ($util.Long)
+                    (message.monotonicStampNs = $util.Long.fromValue(object.monotonicStampNs)).unsigned = true;
+                else if (typeof object.monotonicStampNs === "string")
+                    message.monotonicStampNs = parseInt(object.monotonicStampNs, 10);
+                else if (typeof object.monotonicStampNs === "number")
+                    message.monotonicStampNs = object.monotonicStampNs;
+                else if (typeof object.monotonicStampNs === "object")
+                    message.monotonicStampNs = new $util.LongBits(object.monotonicStampNs.low >>> 0, object.monotonicStampNs.high >>> 0).toNumber(true);
+            if (object.localStampNs != null)
+                if ($util.Long)
+                    (message.localStampNs = $util.Long.fromValue(object.localStampNs)).unsigned = true;
+                else if (typeof object.localStampNs === "string")
+                    message.localStampNs = parseInt(object.localStampNs, 10);
+                else if (typeof object.localStampNs === "number")
+                    message.localStampNs = object.localStampNs;
+                else if (typeof object.localStampNs === "object")
+                    message.localStampNs = new $util.LongBits(object.localStampNs.low >>> 0, object.localStampNs.high >>> 0).toNumber(true);
+            if (object.appStartId != null)
+                if ($util.Long)
+                    (message.appStartId = $util.Long.fromValue(object.appStartId)).unsigned = true;
+                else if (typeof object.appStartId === "string")
+                    message.appStartId = parseInt(object.appStartId, 10);
+                else if (typeof object.appStartId === "number")
+                    message.appStartId = object.appStartId;
+                else if (typeof object.appStartId === "object")
+                    message.appStartId = new $util.LongBits(object.appStartId.low >>> 0, object.appStartId.high >>> 0).toNumber(true);
+            switch (object.signalType) {
+            default:
+                if (typeof object.signalType === "number") {
+                    message.signalType = object.signalType;
+                    break;
+                }
+                break;
+            case "PWM_OUTPUT_SIGNAL_TYPE_UNSPECIFIED":
+            case 0:
+                message.signalType = 0;
+                break;
+            case "PWM_OUTPUT_CONFIGURED":
+            case 1:
+                message.signalType = 1;
+                break;
+            case "PWM_OUTPUT_COMMAND":
+            case 2:
+                message.signalType = 2;
+                break;
+            case "PWM_OUTPUT_COMMAND_SUCCESS":
+            case 3:
+                message.signalType = 3;
+                break;
+            case "PWM_OUTPUT_COMMAND_REJECTED":
+            case 4:
+                message.signalType = 4;
+                break;
+            case "PWM_OUTPUT_COMMAND_FAILED":
+            case 5:
+                message.signalType = 5;
+                break;
+            case "PWM_OUTPUT_ERROR":
+            case 6:
+                message.signalType = 6;
+                break;
+            }
+            if (object.device != null) {
+                if (typeof object.device !== "object")
+                    throw TypeError(".pwm_output.RxEnvelope.device: object expected");
+                message.device = $root.pwm_output.PwmOutputDevice.fromObject(object.device, long + 1);
+            }
+            if (object.state != null) {
+                if (typeof object.state !== "object")
+                    throw TypeError(".pwm_output.RxEnvelope.state: object expected");
+                message.state = $root.pwm_output.OutputState.fromObject(object.state, long + 1);
+            }
+            if (object.command != null) {
+                if (typeof object.command !== "object")
+                    throw TypeError(".pwm_output.RxEnvelope.command: object expected");
+                message.command = $root.pwm_output.TxEnvelope.fromObject(object.command, long + 1);
+            }
+            if (object.error != null)
+                message.error = String(object.error);
+            return message;
+        };
+
+        /**
+         * Creates a plain object from a RxEnvelope message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof pwm_output.RxEnvelope
+         * @static
+         * @param {pwm_output.RxEnvelope} message RxEnvelope
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        RxEnvelope.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.defaults) {
+                if ($util.Long) {
+                    let long = new $util.Long(0, 0, true);
+                    object.monotonicStampNs = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+                } else
+                    object.monotonicStampNs = options.longs === String ? "0" : 0;
+                if ($util.Long) {
+                    let long = new $util.Long(0, 0, true);
+                    object.localStampNs = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+                } else
+                    object.localStampNs = options.longs === String ? "0" : 0;
+                if ($util.Long) {
+                    let long = new $util.Long(0, 0, true);
+                    object.appStartId = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+                } else
+                    object.appStartId = options.longs === String ? "0" : 0;
+                object.signalType = options.enums === String ? "PWM_OUTPUT_SIGNAL_TYPE_UNSPECIFIED" : 0;
+                object.device = null;
+                object.state = null;
+                object.command = null;
+                object.error = "";
+            }
+            if (message.monotonicStampNs != null && message.hasOwnProperty("monotonicStampNs"))
+                if (typeof message.monotonicStampNs === "number")
+                    object.monotonicStampNs = options.longs === String ? String(message.monotonicStampNs) : message.monotonicStampNs;
+                else
+                    object.monotonicStampNs = options.longs === String ? $util.Long.prototype.toString.call(message.monotonicStampNs) : options.longs === Number ? new $util.LongBits(message.monotonicStampNs.low >>> 0, message.monotonicStampNs.high >>> 0).toNumber(true) : message.monotonicStampNs;
+            if (message.localStampNs != null && message.hasOwnProperty("localStampNs"))
+                if (typeof message.localStampNs === "number")
+                    object.localStampNs = options.longs === String ? String(message.localStampNs) : message.localStampNs;
+                else
+                    object.localStampNs = options.longs === String ? $util.Long.prototype.toString.call(message.localStampNs) : options.longs === Number ? new $util.LongBits(message.localStampNs.low >>> 0, message.localStampNs.high >>> 0).toNumber(true) : message.localStampNs;
+            if (message.appStartId != null && message.hasOwnProperty("appStartId"))
+                if (typeof message.appStartId === "number")
+                    object.appStartId = options.longs === String ? String(message.appStartId) : message.appStartId;
+                else
+                    object.appStartId = options.longs === String ? $util.Long.prototype.toString.call(message.appStartId) : options.longs === Number ? new $util.LongBits(message.appStartId.low >>> 0, message.appStartId.high >>> 0).toNumber(true) : message.appStartId;
+            if (message.signalType != null && message.hasOwnProperty("signalType"))
+                object.signalType = options.enums === String ? $root.pwm_output.PwmOutputSignalType[message.signalType] === undefined ? message.signalType : $root.pwm_output.PwmOutputSignalType[message.signalType] : message.signalType;
+            if (message.device != null && message.hasOwnProperty("device"))
+                object.device = $root.pwm_output.PwmOutputDevice.toObject(message.device, options);
+            if (message.state != null && message.hasOwnProperty("state"))
+                object.state = $root.pwm_output.OutputState.toObject(message.state, options);
+            if (message.command != null && message.hasOwnProperty("command"))
+                object.command = $root.pwm_output.TxEnvelope.toObject(message.command, options);
+            if (message.error != null && message.hasOwnProperty("error"))
+                object.error = message.error;
+            return object;
+        };
+
+        /**
+         * Converts this RxEnvelope to JSON.
+         * @function toJSON
+         * @memberof pwm_output.RxEnvelope
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        RxEnvelope.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for RxEnvelope
+         * @function getTypeUrl
+         * @memberof pwm_output.RxEnvelope
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        RxEnvelope.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+            if (typeUrlPrefix === undefined) {
+                typeUrlPrefix = "type.googleapis.com";
+            }
+            return typeUrlPrefix + "/pwm_output.RxEnvelope";
+        };
+
+        return RxEnvelope;
+    })();
+
+    return pwm_output;
 })();
 
 export const normvla = $root.normvla = (() => {
