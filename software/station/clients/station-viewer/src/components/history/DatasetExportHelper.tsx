@@ -8,12 +8,14 @@ import {
 } from 'react';
 import { Check, Clipboard, SquareTerminal, X } from 'lucide-react';
 import { copyToClipboard } from '@/api/clipboard-utils';
+import webSocketManager from '@/api/websocket';
 import type { TagMarker } from '@/utils/inference-tags';
 import {
   buildDatasetGeneratorCommand,
   validateDatasetGeneratorParams,
   type DatasetGeneratorParams,
 } from './dataset-export';
+import { hasDatasetData } from './dataset-export-preflight';
 
 interface DatasetExportHelperProps {
   tags: TagMarker[];
@@ -53,6 +55,7 @@ function DatasetExportHelper({ tags }: DatasetExportHelperProps) {
   const [episodeDuration, setEpisodeDuration] = useState('45');
   const [episodeMinCommands, setEpisodeMinCommands] = useState('100');
   const [copyState, setCopyState] = useState<CopyState>('idle');
+  const [availabilityWarning, setAvailabilityWarning] = useState<string | null>(null);
   const [isOpen, setIsOpen] = useState(false);
   const dialogRef = useRef<HTMLDialogElement>(null);
   const copyResetRef = useRef<number | null>(null);
@@ -112,6 +115,48 @@ function DatasetExportHelper({ tags }: DatasetExportHelperProps) {
   const command = params && errors.length === 0
     ? buildDatasetGeneratorCommand(params)
     : '';
+  const availabilityFrom = fromTag?.frame ?? null;
+  const availabilityTo = toTag?.frame ?? null;
+
+  useEffect(() => {
+    setAvailabilityWarning(null);
+
+    if (
+      !isOpen
+      || availabilityFrom === null
+      || availabilityTo === null
+      || availabilityFrom >= availabilityTo
+      || queue.trim().length === 0
+    ) {
+      return;
+    }
+
+    let isCurrent = true;
+
+    void hasDatasetData(
+      webSocketManager.normFs,
+      queue,
+      availabilityFrom,
+      availabilityTo,
+    ).then((hasData) => {
+      if (isCurrent && !hasData) {
+        setAvailabilityWarning(`Queue ${queue.trim()} has no data in the selected range.`);
+      }
+    }).catch(() => {
+      if (isCurrent) {
+        setAvailabilityWarning('Could not validate queue data. The command can still be copied.');
+      }
+    });
+
+    return () => {
+      isCurrent = false;
+    };
+  }, [
+    availabilityFrom,
+    availabilityTo,
+    isOpen,
+    queue,
+  ]);
 
   const handleCopy = async () => {
     if (!command) return;
@@ -315,6 +360,12 @@ function DatasetExportHelper({ tags }: DatasetExportHelperProps) {
               {errors.length > 0 && (
                 <p role="alert" className="mt-4 text-xs font-semibold text-accent-warning">
                   {errors[0]}
+                </p>
+              )}
+
+              {availabilityWarning && (
+                <p role="alert" className="mt-4 text-xs font-semibold text-accent-warning">
+                  {availabilityWarning}
                 </p>
               )}
 

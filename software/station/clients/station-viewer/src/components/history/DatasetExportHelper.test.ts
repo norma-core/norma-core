@@ -3,6 +3,18 @@
 import { act, createElement } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { inference } from '@/api/proto.js';
+
+const websocketMocks = vi.hoisted(() => ({
+  readSingleEntry: vi.fn(),
+}));
+
+vi.mock('@/api/websocket', () => ({
+  default: {
+    normFs: { readSingleEntry: websocketMocks.readSingleEntry },
+  },
+}));
+
 import DatasetExportHelper from './DatasetExportHelper';
 
 describe('DatasetExportHelper', () => {
@@ -11,6 +23,7 @@ describe('DatasetExportHelper', () => {
 
   beforeEach(() => {
     vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true);
+    websocketMocks.readSingleEntry.mockReset();
     container = document.createElement('div');
     document.body.append(container);
     root = createRoot(container);
@@ -47,5 +60,29 @@ describe('DatasetExportHelper', () => {
     const selects = dialog?.querySelectorAll('select');
     expect(selects?.[0]?.selectedOptions[0]?.textContent).toContain('recording-start');
     expect(selects?.[1]?.selectedOptions[0]?.textContent).toContain('recording-end');
+  });
+
+  it('warns when the queue has no data in the selected range', async () => {
+    websocketMocks.readSingleEntry.mockResolvedValue({
+      id: new Uint8Array([2]),
+      data: inference.InferenceRx.encode({ entries: [] }).finish(),
+    });
+
+    await act(async () => {
+      root.render(createElement(DatasetExportHelper, {
+        tags: [
+          { frame: 100, tag: 'recording-start' },
+          { frame: 200, tag: 'recording-end' },
+        ],
+      }));
+    });
+
+    await act(async () => {
+      container.querySelector<HTMLButtonElement>('button[aria-haspopup="dialog"]')?.click();
+    });
+
+    await vi.waitFor(() => {
+      expect(container.textContent).toContain('has no data in the selected range');
+    });
   });
 });
