@@ -1,0 +1,77 @@
+syntax = "proto3";
+
+package pwm_output;
+
+enum PwmOutputSignalType {
+    PWM_OUTPUT_SIGNAL_TYPE_UNSPECIFIED = 0;
+    PWM_OUTPUT_CONFIGURED              = 1;
+    PWM_OUTPUT_COMMAND                 = 2;
+    PWM_OUTPUT_COMMAND_SUCCESS         = 3;
+    PWM_OUTPUT_COMMAND_REJECTED        = 4;
+    PWM_OUTPUT_COMMAND_FAILED          = 5;
+    PWM_OUTPUT_ERROR                   = 6;
+}
+
+message PwmOutputDevice {
+    string id = 1;
+}
+
+message OutputState {
+    string id      = 1;
+    bool   enabled = 2;
+
+    WaveCommand wave = 10;
+}
+
+enum WaveLevel {
+    WAVE_LEVEL_UNSPECIFIED = 0;
+    WAVE_LEVEL_LOW         = 1;
+    WAVE_LEVEL_HIGH        = 2;
+}
+
+message WaveSegment {
+    WaveLevel level       = 1;
+    uint32    duration_us = 2;
+}
+
+message WaveCommand {
+    uint32 channel = 1;
+    repeated WaveSegment segments = 2;
+    uint32 repeat = 3;
+}
+
+message DisableCommand {
+    uint32 channel = 1;
+}
+
+message Command {
+    string target_output_id = 1;
+
+    WaveCommand    wave    = 10;
+    DisableCommand disable = 11;
+}
+
+message TxEnvelope {
+    uint64 monotonic_stamp_ns = 1;
+    uint64 local_stamp_ns     = 2;
+    uint64 app_start_id       = 3;
+
+    bytes  command_id      = 4;
+    string target_output_id = 5;
+
+    Command command = 10;
+}
+
+message RxEnvelope {
+    uint64 monotonic_stamp_ns = 1;
+    uint64 local_stamp_ns     = 2;
+    uint64 app_start_id       = 3;
+
+    PwmOutputSignalType signal_type = 10;
+    PwmOutputDevice     device      = 11;
+    OutputState       state       = 12;
+
+    TxEnvelope command = 20;
+
+    string error = 50;
+}

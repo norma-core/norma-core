@@ -1,8 +1,8 @@
 import { commandManager } from '@/api/commands';
 import { vesc_trampa } from '@/api/proto.js';
 
-export const VESC_TRAMPA_CURRENT_MIN_A = -10;
-export const VESC_TRAMPA_CURRENT_MAX_A = 10;
+export const VESC_TRAMPA_CURRENT_MIN_A = -15;
+export const VESC_TRAMPA_CURRENT_MAX_A = 15;
 export const VESC_TRAMPA_CURRENT_STEP_A = 0.1;
 
 const COMMAND_SET_CURRENT = 6;

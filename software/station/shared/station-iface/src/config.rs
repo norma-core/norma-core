@@ -64,6 +64,14 @@ pub struct Drivers {
     #[serde(rename = "vesc-trampa", skip_serializing_if = "Option::is_none")]
     pub vesc_trampa: Option<VescTrampaConfig>,
 
+    /// Generic Linux PWM output configuration
+    #[serde(
+        rename = "pwm-output",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub pwm_output: Option<PwmOutputConfig>,
+
     /// Enable or disable system info monitoring
     #[serde(rename = "system-info")]
     pub system_info: bool,
@@ -193,6 +201,38 @@ impl Default for VescTrampaConfig {
             port_baud_rate: default_vesc_trampa_port_baud_rate(),
         }
     }
+}
+
+/// Generic Linux PWM output configuration.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct PwmOutputConfig {
+    #[serde(default)]
+    pub enabled: bool,
+
+    #[serde(rename = "device-path", default = "default_pwm_output_device_path")]
+    pub device_path: PathBuf,
+
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub outputs: Vec<PwmOutputDeviceConfig>,
+}
+
+impl Default for PwmOutputConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            device_path: default_pwm_output_device_path(),
+            outputs: Vec::new(),
+        }
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct PwmOutputDeviceConfig {
+    pub id: String,
+}
+
+fn default_pwm_output_device_path() -> PathBuf {
+    PathBuf::from("/dev/x8h7_ui")
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -530,6 +570,7 @@ impl Default for Drivers {
         Self {
             st3215: Some(St3215Config::default()),
             vesc_trampa: Some(VescTrampaConfig::default()),
+            pwm_output: None,
             system_info: true,
             usb_video: Some(UsbVideoConfig::default()),
             hikmicro_thermal: None,
@@ -574,6 +615,7 @@ impl Config {
 #[cfg(test)]
 mod config_tests {
     use super::Config;
+    use std::path::PathBuf;
 
     const MINIMAL_CONFIG: &str = "drivers:\n  system-info: true\n";
 
@@ -624,6 +666,21 @@ mod config_tests {
         let victron = cfg.drivers.victron_smartsolar_mppt.unwrap();
         assert!(victron.enabled);
         assert_eq!(victron.read_timeout, std::time::Duration::from_secs(30));
+        assert_eq!(cfg.inference.as_ref().map(Vec::len), Some(0));
+    }
+
+    #[test]
+    fn parses_pwm_output_config() {
+        let cfg: Config = serde_yaml::from_str(
+            "drivers:\n  system-info: true\n  pwm-output:\n    enabled: true\n    device-path: /dev/x8h7_ui\n    outputs:\n      - id: steering\ninference:\n",
+        )
+        .unwrap();
+        let pwm_output = cfg.drivers.pwm_output.unwrap();
+        assert!(pwm_output.enabled);
+        assert_eq!(pwm_output.device_path, PathBuf::from("/dev/x8h7_ui"));
+        assert_eq!(pwm_output.outputs.len(), 1);
+        let steering = &pwm_output.outputs[0];
+        assert_eq!(steering.id, "steering");
         assert_eq!(cfg.inference.as_ref().map(Vec::len), Some(0));
     }
 }

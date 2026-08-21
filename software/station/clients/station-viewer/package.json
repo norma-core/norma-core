@@ -1,6 +1,6 @@
 {
   "name": "@normacore/station-viewer",
-  "version": "0.1.0-beta.10",
+  "version": "0.1.0-beta.11",
   "description": "Web interface for NormaCore.Dev station - physical operations platform",
   "license": "MIT",
   "repository": {
