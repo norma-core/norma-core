@@ -23,6 +23,8 @@ Tests are regression guards, not a coverage target. Before adding a test, name t
 
 Exercise behavior through public interfaces and assert caller-visible outcomes. Tests must survive an internal refactor that preserves behavior. Mock only true system boundaries when necessary, such as WebSocket, browser APIs, or time; use real Station Viewer modules together whenever practical. Avoid tests that mirror implementation steps, test private helpers, merely restate types, or assert mock call counts unless the count itself is part of the public contract.
 
+Do not add tests whose only purpose is to detect a change to an exported constant, lookup-table entry, CSS class, static markup fragment, or snapshot. In particular, do not pass an exported constant into a function and assert the same literal value, and do not render a component only to search its HTML for implementation classes. These tests are change detectors, not regression guards. When configuration data drives non-trivial behavior, test the public properties and boundaries that matter to a caller—such as clamping, monotonicity, safety limits, state transitions, or derived outputs—rather than copying every configured value into the test.
+
 For a bug fix, first demonstrate that the test fails for the broken behavior, then make it pass. If a test cannot be connected to a realistic regression, do not add it.
 
 ## Tech Stack
