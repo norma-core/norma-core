@@ -33,6 +33,8 @@ class QueueDataType(enum.IntEnum):
     QDT_INA226_RX = 52
     QDT_AIRGRADIENT_OPEN_AIR_O_1_PST_RX = 53
     QDT_VICTRON_SMARTSOLAR_MPPT_RX = 54
+    QDT_PWM_OUTPUT_TX = 55
+    QDT_PWM_OUTPUT_RX = 56
 
 class StationCommandType(enum.IntEnum):
     STC_ST3215_COMMAND = 0
@@ -41,4 +43,5 @@ class StationCommandType(enum.IntEnum):
     STC_YAHBOOM_DOGZILLA_LITE_COMMAND = 3
     STC_VESC_TRAMPA_COMMAND = 4
     STC_ARDUINO_NICLA_SENSE_ENV_COMMAND = 5
+    STC_PWM_OUTPUT_COMMAND = 6
 
