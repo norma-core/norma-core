@@ -1,13 +1,11 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import Long from 'long';
 import { Tag as TagIcon } from 'lucide-react';
-import { useOutletContext } from 'react-router-dom';
 import { copyToClipboard } from '@/api/clipboard-utils';
 import { commandManager } from '@/api/commands';
 import { inference_tags } from '@/api/proto.js';
 import AsciiRobot from '@/components/AsciiRobot';
 import ConnectionUptime from '@/components/ConnectionUptime';
-import type { MainLayoutOutletContext } from '@/components/MainLayout';
 import TagDialog from '@/components/TagDialog';
 import { useConnectionStats, useLiveSnapshot, useWakeLock, invalidateTagsCache } from '@/hooks';
 import LiveDeviceSurface from '@/devices/LiveDeviceSurface';
@@ -31,7 +29,6 @@ function formatBytes(bytes: number): string {
 
 function HomePage() {
   useWakeLock();
-  const { setImmersive } = useOutletContext<MainLayoutOutletContext>();
   const { frame: inferenceState, latestEntryId } = useLiveSnapshot();
   const connectionStats = useConnectionStats();
   const [copied, setCopied] = useState(false);
@@ -52,11 +49,6 @@ function HomePage() {
   const shouldUseCameraSensorLayout = shouldShowStandaloneCameras
     && hasOnlySummaryDeviceViews;
   const isDesktopApp = window.stationDesktop?.isDesktop === true;
-
-  useEffect(() => {
-    setImmersive(liveDevicePlan.isImmersive);
-    return () => setImmersive(false);
-  }, [liveDevicePlan.isImmersive, setImmersive]);
 
   useEffect(() => {
     if (copied) {
@@ -115,8 +107,8 @@ function HomePage() {
   }, [isTagSubmitting, tagDialog]);
 
   return (
-    <div className={`flex flex-1 flex-col ${liveDevicePlan.isImmersive ? '[@media(max-width:1023px)_and_(orientation:landscape)]:h-[100svh] [@media(max-width:1023px)_and_(orientation:landscape)]:min-h-0 [@media(max-width:1023px)_and_(orientation:landscape)]:overflow-hidden' : ''}`}>
-      <div className={`relative z-20 border-b-2 border-border-default bg-surface-primary ${liveDevicePlan.isImmersive ? '[@media(max-width:1023px)_and_(orientation:landscape)]:hidden' : ''}`}>
+    <div className="flex flex-1 flex-col">
+      <div className="relative z-20 border-b-2 border-border-default bg-surface-primary">
         <div className="px-4 py-2 flex flex-wrap gap-x-4 gap-y-2 items-center">
           {connectionStats && (
             <>
@@ -196,7 +188,7 @@ function HomePage() {
           onSubmit={handleSubmitTag}
         />
       )}
-      <div className={`min-h-0 flex-1 ${liveDevicePlan.isImmersive ? 'overflow-auto p-0 lg:p-4 [@media(max-width:1023px)_and_(orientation:landscape)]:overflow-hidden' : 'overflow-auto p-4'}`}>
+      <div className={`min-h-0 flex-1 ${liveDevicePlan.isImmersive ? 'overflow-auto p-0 lg:p-4' : 'overflow-auto p-4'}`}>
         <div className={`flex min-h-full w-full flex-col ${liveDevicePlan.isImmersive ? 'gap-0 lg:gap-4' : 'gap-4'}`}>
           {shouldUseCameraSensorLayout ? (
             <div className="grid w-full gap-4 xl:grid-cols-[minmax(0,2fr)_minmax(20rem,1fr)] xl:items-start">

@@ -199,7 +199,7 @@ const VescPwmOutputControlPanel = memo(function VescPwmOutputControlPanel({
 }: VescPwmOutputControlPanelProps) {
   const rootRef = useRef<HTMLElement>(null);
   const padRef = useRef<HTMLDivElement>(null);
-  const { isFullscreen, toggleFullscreen, exitFullscreen } = useElementFullscreen(rootRef);
+  const { isFullscreen, toggleFullscreen } = useElementFullscreen(rootRef);
   const boards = useMemo(() => boardOptionsFromState(vesc), [vesc]);
   const outputIds = useMemo(() => outputIdsFromFrame(pwmOutputRx, pwmOutputTx), [pwmOutputRx, pwmOutputTx]);
   const cameraOptions = useMemo<CameraOption[]>(() => videoSources.map((entry) => ({
@@ -213,7 +213,6 @@ const VescPwmOutputControlPanel = memo(function VescPwmOutputControlPanel({
   const [primaryCameraId, setPrimaryCameraId] = useState('');
   const [secondaryCameraId, setSecondaryCameraId] = useState('');
   const [cameraLayout, setCameraLayout] = useState<CameraLayoutMode>('pip');
-  const [isRemoteFullscreen, setIsRemoteFullscreen] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [isHolding, setIsHolding] = useState(false);
   const [commandError, setCommandError] = useState<string | null>(null);
@@ -378,26 +377,6 @@ const VescPwmOutputControlPanel = memo(function VescPwmOutputControlPanel({
     };
   }, [stopAll]);
 
-  useEffect(() => {
-    if (!isRemoteFullscreen) return undefined;
-    const previousBodyOverflow = document.body.style.overflow;
-    const previousRootOverflow = document.documentElement.style.overflow;
-    document.body.style.overflow = 'hidden';
-    document.documentElement.style.overflow = 'hidden';
-    return () => {
-      document.body.style.overflow = previousBodyOverflow;
-      document.documentElement.style.overflow = previousRootOverflow;
-    };
-  }, [isRemoteFullscreen]);
-
-  useEffect(() => {
-    const handleFullscreenChange = () => {
-      if (!document.fullscreenElement && isRemoteFullscreen) setIsRemoteFullscreen(false);
-    };
-    document.addEventListener('fullscreenchange', handleFullscreenChange);
-    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
-  }, [isRemoteFullscreen]);
-
   const applyKeyboardState = useCallback(() => {
     const keyboard = keyboardRef.current;
     const x = (keyboard.right ? 1 : 0) - (keyboard.left ? 1 : 0);
@@ -525,15 +504,9 @@ const VescPwmOutputControlPanel = memo(function VescPwmOutputControlPanel({
     setDetailsOpen(true);
   }, [stopAll]);
 
-  const handleRemoteFullscreenToggle = useCallback(() => {
-    if (isRemoteFullscreen) {
-      setIsRemoteFullscreen(false);
-      if (isFullscreen) void exitFullscreen();
-      return;
-    }
-    setIsRemoteFullscreen(true);
-    if (window.matchMedia('(min-width: 1024px)').matches) void toggleFullscreen();
-  }, [exitFullscreen, isFullscreen, isRemoteFullscreen, toggleFullscreen]);
+  const handleFullscreenToggle = useCallback(() => {
+    void toggleFullscreen();
+  }, [toggleFullscreen]);
 
   const knobLeft = 50 + joystick.x * JOYSTICK_TRAVEL_PERCENT;
   const knobTop = 50 + joystick.y * JOYSTICK_TRAVEL_PERCENT;
@@ -562,9 +535,8 @@ const VescPwmOutputControlPanel = memo(function VescPwmOutputControlPanel({
   return (
     <section
       ref={rootRef}
-      data-remote-fullscreen={isRemoteFullscreen ? 'true' : undefined}
       aria-label="Rover control"
-      className="group/dashboard relative isolate h-[calc(100svh-8.6rem)] min-h-[34rem] w-full overflow-hidden bg-surface-base text-text-primary data-[remote-fullscreen=true]:!fixed data-[remote-fullscreen=true]:!inset-0 data-[remote-fullscreen=true]:!z-[60] data-[remote-fullscreen=true]:!m-0 data-[remote-fullscreen=true]:!h-[100svh] data-[remote-fullscreen=true]:!min-h-0 data-[remote-fullscreen=true]:!w-screen data-[remote-fullscreen=true]:!rounded-none data-[remote-fullscreen=true]:!border-0 lg:h-[min(84vh,58rem)] lg:min-h-[42rem] lg:rounded-lg lg:border lg:border-border-default [@media(max-width:1023px)_and_(orientation:landscape)]:h-[100svh] [@media(max-width:1023px)_and_(orientation:landscape)]:min-h-[15rem] [@media(max-width:1023px)_and_(orientation:landscape)]:rounded-none [&:fullscreen]:!fixed [&:fullscreen]:!inset-0 [&:fullscreen]:!z-[60] [&:fullscreen]:!m-0 [&:fullscreen]:!h-[100svh] [&:fullscreen]:!min-h-0 [&:fullscreen]:!w-screen [&:fullscreen]:!rounded-none [&:fullscreen]:!border-0"
+      className="group/dashboard relative isolate h-[calc(100svh-8.6rem)] min-h-[34rem] w-full overflow-hidden bg-surface-base text-text-primary lg:h-[min(84vh,58rem)] lg:min-h-[42rem] lg:rounded-lg lg:border lg:border-border-default [@media(max-width:1023px)_and_(orientation:landscape)]:min-h-[15rem] [@media(max-width:1023px)_and_(orientation:landscape)]:rounded-none [&:fullscreen]:!fixed [&:fullscreen]:!inset-0 [&:fullscreen]:!z-[60] [&:fullscreen]:!m-0 [&:fullscreen]:!h-[100svh] [&:fullscreen]:!min-h-0 [&:fullscreen]:!w-screen [&:fullscreen]:!rounded-none [&:fullscreen]:!border-0"
     >
       <div className="grid h-full grid-rows-[minmax(15rem,54%)_minmax(0,46%)] lg:grid-cols-[minmax(0,1fr)_25rem] lg:grid-rows-1 [@media(max-width:1023px)_and_(orientation:landscape)]:block">
         <div className="relative min-h-0 overflow-hidden bg-black [@media(max-width:1023px)_and_(orientation:landscape)]:absolute [@media(max-width:1023px)_and_(orientation:landscape)]:inset-0">
@@ -603,8 +575,8 @@ const VescPwmOutputControlPanel = memo(function VescPwmOutputControlPanel({
                   onSwapCameras={swapCameras}
                 />
               )}
-              <button type="button" onClick={handleRemoteFullscreenToggle} className="flex h-8 w-8 items-center justify-center rounded text-text-secondary hover:bg-accent-data/12 hover:text-accent-data [@media(max-width:1023px)_and_(orientation:landscape)]:hidden" aria-label={isRemoteFullscreen ? 'Exit fullscreen rover control' : 'Fullscreen rover control'} aria-pressed={isRemoteFullscreen}>
-                {isRemoteFullscreen ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
+              <button type="button" onClick={handleFullscreenToggle} className="flex h-8 w-8 items-center justify-center rounded text-text-secondary hover:bg-accent-data/12 hover:text-accent-data" aria-label={isFullscreen ? 'Exit fullscreen rover control' : 'Fullscreen rover control'} aria-pressed={isFullscreen}>
+                {isFullscreen ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
               </button>
             </div>
           </div>
