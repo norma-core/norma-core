@@ -3,7 +3,7 @@ import { airgradient_open_air_o_1pst, arduino_nicla_sense_env, dmesg, hikmicro, 
 import ArduinoNiclaSenseEnvExpanded from '@/components/history/ArduinoNiclaSenseEnvExpanded';
 import Ina226Expanded from '@/components/history/Ina226Expanded';
 import VictronSmartSolarExpanded from '@/components/history/VictronSmartSolarExpanded';
-import { airGradientDeviceLabel, airGradientLineText, readAirGradientValues } from '@/devices/airgradient-open-air-o-1pst/values';
+import { airGradientDeviceLabel, airGradientLineText, readAirGradientValues } from '@/modules/airgradient-open-air-o-1pst/values';
 import { createCroppedHikmicroJson, createCroppedJson } from '@/components/history/history-utils';
 import RawBytesExpanded from '@/components/history/RawBytesExpanded';
 import MirroringExpanded from '@/components/history/MirroringExpanded';
@@ -12,9 +12,9 @@ import St3215JsonView from '@/components/history/St3215JsonView';
 import SysinfoGrid from '@/components/history/SysinfoGrid';
 import UsbVideoExpanded from '@/components/history/UsbVideoExpanded';
 import YahboomDogzillaLiteExpanded from '@/components/history/YahboomDogzillaLiteExpanded';
-import NormvlaRobotRenderer from '@/st3215/NormvlaRobotRenderer';
+import NormvlaRobotRenderer from '@/modules/st3215/NormvlaRobotRenderer';
 import FullscreenImageViewer from '@/components/FullscreenImageViewer';
-import HikmicroThermalLiveView from '@/devices/hikmicro-thermal/ui/HikmicroThermalLiveView';
+import HikmicroThermalLiveView from '@/modules/hikmicro-thermal/ui/HikmicroThermalLiveView';
 
 type DataTab = 'visual' | 'json' | 'raw';
 

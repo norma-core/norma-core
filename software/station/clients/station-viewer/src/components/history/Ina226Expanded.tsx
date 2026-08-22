@@ -12,7 +12,7 @@ import {
   readIna226CurrentAmps,
   readIna226Word,
   toSigned16,
-} from '@/devices/ina226/values';
+} from '@/modules/ina226/values';
 
 interface Ina226ExpandedProps {
   data: ina226.IRxEnvelope;

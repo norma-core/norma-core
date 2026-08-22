@@ -27,7 +27,7 @@ import {
   scaled,
   victronDeviceLabel,
   type VictronState,
-} from '@/devices/victron-smartsolar-mppt/values';
+} from '@/modules/victron-smartsolar-mppt/values';
 
 // The charger publishes ~8 envelopes/s (one TEXT block, the polled registers and
 // the async frames). Replaying this many preceding entries reconstructs the same

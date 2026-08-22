@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { st3215, motors_mirroring } from '../api/proto';
-import BusWebGLRenderer from '../st3215/BusWebGLRenderer';
-import MotorDataTable from '../st3215/MotorDataTable';
-import webSocketManager from '../api/websocket';
-import { useInferenceState, useWakeLock } from '../hooks';
 import { useLocation, Link, useNavigate } from 'react-router-dom';
-import { getMotorVoltage } from '../st3215/motor-parser';
-import { supportsSt3215Bus } from '@/devices/st3215-models';
+import { st3215, motors_mirroring } from '@/api/proto.js';
+import webSocketManager from '@/api/websocket';
+import { useInferenceState, useWakeLock } from '@/hooks';
+import BusWebGLRenderer from '@/modules/st3215/BusWebGLRenderer';
+import MotorDataTable from '@/modules/st3215/MotorDataTable';
+import { getMotorVoltage } from '@/modules/st3215/motor-parser';
+import { supportsSt3215Bus } from '@/modules/st3215/model-registry';
 
 const MIN_CALIBRATED_RANGE = 100;
 const actionButtonClasses = 'inline-flex w-full shrink-0 items-center justify-center whitespace-nowrap rounded-lg px-4 py-2 text-sm font-bold transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto md:px-6 md:py-3 md:text-base';

@@ -5,7 +5,7 @@ import { getGlobalTimeAdjustmentNs, isTimeSyncActive } from '@/api/time-sync.js'
 import {
   createLiveCameraMetadataEnvelope,
   publishLiveCameraFrame,
-} from '@/usbvideo/live-camera-store';
+} from '@/modules/usb-video/live-camera-store';
 
 export interface FrameEntry<T> {
   queueId: string;

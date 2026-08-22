@@ -13,9 +13,9 @@ A physical model may reuse the shared ST3215 live UI, while the live module must
 
 ## Decision
 
-Live device resolution and ST3215 physical-model resolution use separate catalogs and interfaces.
+Live-module resolution and ST3215 physical-model resolution use separate catalogs and interfaces.
 
-The live catalog follows ADR 0005. The model catalog independently discovers `src/devices/*/st3215-model.ts` through `import.meta.glob`. A model is authored through `st3215Model()` and owns its concrete URDF path, base transform, joint names, optional joint-value mapping, and lazy renderer.
+The live catalog follows ADR 0005. `src/modules/st3215/model-registry.ts` independently discovers `src/modules/*/st3215-model.ts` through `import.meta.glob`. A model is authored through `st3215Model()` and owns its concrete URDF path, base transform, joint names, optional joint-value mapping, and lazy renderer.
 
 The normalized-joint renderer currently identifies a model by positive integer `motorCount`. Model IDs and motor counts are globally unique. An optional `matchesBus` predicate may further restrict a model but cannot bypass the motor-count match.
 
@@ -33,7 +33,7 @@ Shared ST3215 modules may query the model catalog, but they do not import concre
 
 ## Rejected alternatives
 
-### Add model fields to the live device manifest
+### Add model fields to the live module adapter
 
 This couples two independently varying concerns and turns the live interface into a collection of optional capabilities.
 

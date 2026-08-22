@@ -1,7 +1,7 @@
 import { memo, useMemo } from 'react';
 import { st3215 } from '@/api/proto.js';
-import { getMotorCurrent, getMotorPosition, getMotorTemperature, getMotorVelocity, isTorqueEnabled } from '@/st3215/motor-parser';
-import BusWebGLRenderer from '@/st3215/BusWebGLRenderer';
+import { getMotorCurrent, getMotorPosition, getMotorTemperature, getMotorVelocity, isTorqueEnabled } from '@/modules/st3215/motor-parser';
+import BusWebGLRenderer from '@/modules/st3215/BusWebGLRenderer';
 
 interface St3215ExpandedProps {
   data: st3215.InferenceState;

@@ -22,25 +22,25 @@ The parser:
 - applies the camera payload routing decision from ADR 0007;
 - returns partial frame data when individual referenced entries fail, while reporting those failures.
 
-Live and history callers select parsing options appropriate to their mode. Device manifests select from the resulting `Frame` and remain pure. A new device queue type is added to protobuf/backend definitions and the shared parser before its live presentation module is registered.
+Live and history callers select parsing options appropriate to their mode. Live adapters select from the resulting `Frame` and remain pure. A new device queue type is added to protobuf/backend definitions and the shared parser before its live presentation module is registered.
 
-History rendering remains separate from live manifests. A future decoder or history extension seam requires a deliberate migration with multiple concrete adapters; it is not added as speculative optional fields to `LiveDeviceAdapter`.
+History rendering remains separate from live adapters. A future decoder or history extension seam requires a deliberate migration with multiple concrete adapters; it is not added as speculative optional fields to `LiveModule`.
 
 ## Consequences
 
 - Live and history use one interpretation of queue data.
-- React device modules do not depend on NormFS request ordering or protobuf decoding mechanics.
+- Frontend modules do not depend on NormFS request ordering or protobuf decoding mechanics.
 - Previous-frame reuse and parallel fetching are implemented once.
 - Adding a new queue type currently requires editing the central normalized `Frame` and parser.
 - The parser is a substantial module and should be deepened internally as its implementation grows without widening the presentation interface.
 
 ## Rejected alternatives
 
-### Decode inside each live device module
+### Decode inside each live module
 
 This would mix I/O and presentation, make selectors asynchronous or effectful, and duplicate behavior in history.
 
-### Add decoder callbacks to `LiveDeviceAdapter`
+### Add decoder callbacks to `LiveModule`
 
 The live interface would gain transport responsibilities and optional methods unrelated to many adapters.
 
