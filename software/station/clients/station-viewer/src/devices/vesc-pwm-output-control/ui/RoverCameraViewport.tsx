@@ -168,7 +168,7 @@ function RoverCameraViewport({
                 )}
               </div>
               {cameraMenuOpen && (
-                <div className="absolute right-[calc(100%+0.5rem)] top-[calc(100%+1rem)] z-50 w-56 rounded-md border border-accent-data/35 bg-surface-primary/96 p-2 shadow-xl backdrop-blur-xl lg:hidden">
+                <div className="absolute right-0 top-[calc(100%+0.5rem)] z-50 w-[min(14rem,calc(100vw-1rem))] rounded-md border border-accent-data/35 bg-surface-primary/96 p-2 shadow-xl backdrop-blur-xl lg:hidden [@media(max-width:1023px)_and_(orientation:landscape)]:right-[calc(100%+0.5rem)] [@media(max-width:1023px)_and_(orientation:landscape)]:top-[calc(100%+1rem)]">
                   <select
                     aria-label="Main camera"
                     value={primaryCamera?.id ?? ''}

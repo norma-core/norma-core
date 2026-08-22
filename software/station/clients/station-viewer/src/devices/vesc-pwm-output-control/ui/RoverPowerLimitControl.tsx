@@ -11,7 +11,8 @@ import {
 } from '../control-input';
 
 const rangeClass = 'appearance-none bg-transparent focus-visible:outline-none [&::-webkit-slider-runnable-track]:h-2 [&::-webkit-slider-runnable-track]:rounded-full [&::-webkit-slider-runnable-track]:bg-transparent [&::-webkit-slider-thumb]:-mt-3.5 [&::-webkit-slider-thumb]:h-9 [&::-webkit-slider-thumb]:w-9 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-accent-data [&::-webkit-slider-thumb]:bg-surface-primary [&::-webkit-slider-thumb]:shadow-[0_0_0_4px_rgba(34,211,238,0.14),0_0.35rem_0.8rem_rgba(0,0,0,0.28)] [&::-moz-range-track]:h-2 [&::-moz-range-track]:rounded-full [&::-moz-range-track]:bg-transparent [&::-moz-range-thumb]:h-9 [&::-moz-range-thumb]:w-9 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-accent-data [&::-moz-range-thumb]:bg-surface-primary';
-const POWER_LIMIT_STEP_A = 5;
+const POWER_LIMIT_STEP_A = 1;
+const POWER_LIMIT_PAGE_STEP_A = 5;
 
 interface RoverPowerLimitControlProps {
   value: number;
@@ -67,10 +68,10 @@ function RoverPowerLimitControl({ value, onChange }: RoverPowerLimitControlProps
         nextValue -= POWER_LIMIT_STEP_A;
         break;
       case 'PageUp':
-        nextValue += POWER_LIMIT_STEP_A * 2;
+        nextValue += POWER_LIMIT_PAGE_STEP_A;
         break;
       case 'PageDown':
-        nextValue -= POWER_LIMIT_STEP_A * 2;
+        nextValue -= POWER_LIMIT_PAGE_STEP_A;
         break;
       case 'Home':
         nextValue = ROVER_MIN_DRIVE_CURRENT_LIMIT_A;
@@ -100,7 +101,7 @@ function RoverPowerLimitControl({ value, onChange }: RoverPowerLimitControlProps
   };
 
   return (
-    <div className="pointer-events-auto w-[min(5.75rem,24vw)] select-none rounded-md border border-border-default bg-surface-secondary/50 p-1.5 [-webkit-touch-callout:none] lg:w-full lg:p-2 [@media(max-width:1023px)_and_(orientation:landscape)]:w-[var(--rover-landscape-power-zone)] [@media(max-width:1023px)_and_(orientation:landscape)]:border-accent-data/30 [@media(max-width:1023px)_and_(orientation:landscape)]:bg-surface-primary/55 [@media(max-width:1023px)_and_(orientation:landscape)]:shadow-[0_0.6rem_1.5rem_rgba(0,0,0,0.18)] [@media(max-width:1023px)_and_(orientation:landscape)]:backdrop-blur-md">
+    <div className="pointer-events-auto w-[min(5.75rem,24vw)] select-none rounded-md border border-border-default bg-surface-secondary/50 p-1.5 [-webkit-touch-callout:none] lg:w-full lg:p-2 [@media(min-width:1024px)_and_(max-height:899px)]:p-1.5 [@media(max-width:1023px)_and_(orientation:landscape)]:w-[var(--rover-landscape-power-zone)] [@media(max-width:1023px)_and_(orientation:landscape)]:border-accent-data/30 [@media(max-width:1023px)_and_(orientation:landscape)]:bg-surface-primary/55 [@media(max-width:1023px)_and_(orientation:landscape)]:shadow-[0_0.6rem_1.5rem_rgba(0,0,0,0.18)] [@media(max-width:1023px)_and_(orientation:landscape)]:backdrop-blur-md">
       <div className="mb-1 flex items-center justify-between px-0.5 font-mono text-[8px] font-black uppercase tracking-[0.12em] lg:mb-1.5 lg:text-[9px]">
         <span className="text-text-label"><span className="[@media(max-width:1023px)_and_(orientation:landscape)]:hidden">Power </span>max</span>
         <output className="text-accent-data">{value}A</output>

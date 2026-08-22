@@ -6,7 +6,8 @@ import {
 export const KEYBOARD_MAX_DRIVE_CURRENT_A = 10;
 export const ROVER_MIN_DRIVE_CURRENT_LIMIT_A = 5;
 export const ROVER_DEFAULT_DRIVE_CURRENT_LIMIT_A = 10;
-export const ROVER_MAX_DRIVE_CURRENT_A = 40;
+// Stay below the battery protection cutoff observed at 20A.
+export const ROVER_MAX_DRIVE_CURRENT_A = 19;
 
 export interface RoverControlTarget {
   currentA: number;
@@ -39,8 +40,12 @@ export function mapRoverControlInput(
 ): RoverControlTarget {
   const normalizedX = Math.max(-1, Math.min(1, x));
   const normalizedY = Math.max(-1, Math.min(1, y));
+  const safeMaxDriveCurrentA = Math.max(
+    0,
+    Math.min(ROVER_MAX_DRIVE_CURRENT_A, maxDriveCurrentA),
+  );
   return {
-    currentA: normalizedY * maxDriveCurrentA,
+    currentA: normalizedY * safeMaxDriveCurrentA,
     steeringDeg: PWM_OUTPUT_STEERING_CENTER_DEG
       + normalizedX * PWM_OUTPUT_STEERING_RANGE_DEG,
   };

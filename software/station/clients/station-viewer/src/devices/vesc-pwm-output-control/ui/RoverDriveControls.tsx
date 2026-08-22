@@ -20,7 +20,7 @@ function RoverDriveControls({ session, onOpenDetails }: RoverDriveControlsProps)
   const { state, actions } = session;
 
   return (
-    <div className="flex min-h-0 flex-1 flex-row items-end justify-between gap-2 px-4 py-3 lg:flex-col lg:items-center lg:justify-center lg:gap-4 lg:px-6 lg:py-5 [@media(max-width:1023px)_and_(orientation:landscape)]:pointer-events-none [@media(max-width:1023px)_and_(orientation:landscape)]:absolute [@media(max-width:1023px)_and_(orientation:landscape)]:bottom-[calc(0.5rem+env(safe-area-inset-bottom))] [@media(max-width:1023px)_and_(orientation:landscape)]:left-[calc(0.5rem+env(safe-area-inset-left))] [@media(max-width:1023px)_and_(orientation:landscape)]:right-[calc(0.5rem+env(safe-area-inset-right))] [@media(max-width:1023px)_and_(orientation:landscape)]:p-0">
+    <div className="flex min-h-0 flex-1 flex-row items-end justify-between gap-2 px-4 py-3 lg:flex-col lg:items-center lg:justify-center lg:gap-4 lg:px-6 lg:py-5 [@media(min-width:1024px)_and_(max-height:899px)]:gap-2 [@media(min-width:1024px)_and_(max-height:899px)]:px-4 [@media(min-width:1024px)_and_(max-height:899px)]:py-2 [@media(max-width:1023px)_and_(orientation:landscape)]:pointer-events-none [@media(max-width:1023px)_and_(orientation:landscape)]:absolute [@media(max-width:1023px)_and_(orientation:landscape)]:bottom-[calc(0.5rem+env(safe-area-inset-bottom))] [@media(max-width:1023px)_and_(orientation:landscape)]:left-[calc(0.5rem+env(safe-area-inset-left))] [@media(max-width:1023px)_and_(orientation:landscape)]:right-[calc(0.5rem+env(safe-area-inset-right))] [@media(max-width:1023px)_and_(orientation:landscape)]:p-0">
       <RoverJoystick
         axes={state.axes}
         currentA={state.currentA}
@@ -42,7 +42,7 @@ function RoverDriveControls({ session, onOpenDetails }: RoverDriveControlsProps)
           type="button"
           onClick={actions.stop}
           disabled={!state.canSendDrive && !state.canSendSteering}
-          className="flex min-h-14 items-center justify-center gap-2 rounded-md border border-accent-critical-deep bg-accent-critical/12 px-3 text-xs font-black uppercase tracking-[0.12em] text-accent-critical transition hover:border-accent-critical hover:bg-accent-critical/20 active:scale-[0.98] active:bg-accent-critical/25 disabled:opacity-35"
+          className="flex min-h-14 items-center justify-center gap-2 rounded-md border border-accent-critical-deep bg-accent-critical/12 px-3 text-xs font-black uppercase tracking-[0.12em] text-accent-critical transition hover:border-accent-critical hover:bg-accent-critical/20 active:scale-[0.98] active:bg-accent-critical/25 disabled:opacity-35 [@media(min-width:1024px)_and_(max-height:899px)]:min-h-11"
         >
           <Octagon className="h-4 w-4" />Stop
         </button>

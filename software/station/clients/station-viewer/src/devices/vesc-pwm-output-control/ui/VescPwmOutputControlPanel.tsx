@@ -237,7 +237,7 @@ const VescPwmOutputControlPanel = memo(function VescPwmOutputControlPanel({
                 <div className="flex items-center gap-2 text-sm font-black uppercase tracking-[0.14em]"><Activity className="h-4 w-4 text-accent-data" />Rover status</div>
                 <div className="mt-1 font-mono text-[10px] text-text-muted">Live drivetrain, steering and power diagnostics</div>
               </div>
-              <button type="button" onClick={() => setDetailsOpen(false)} className="flex h-10 w-10 items-center justify-center rounded-md border border-border-default bg-surface-secondary/60 text-text-secondary transition hover:border-accent-data hover:text-accent-data" aria-label="Close rover status">
+              <button type="button" onClick={() => setDetailsOpen(false)} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md border border-border-default bg-surface-secondary/60 text-text-secondary transition hover:border-accent-data hover:text-accent-data" aria-label="Close rover status">
                 <X className="h-4 w-4" />
               </button>
             </div>

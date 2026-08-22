@@ -1,3 +1,4 @@
+import { useId } from 'react';
 import { ArrowLeftRight } from 'lucide-react';
 
 export type CameraLayoutMode = 'pip' | 'side-by-side' | 'stacked';
@@ -15,10 +16,12 @@ export default function CameraLayoutControls({
   onCameraLayoutChange,
   onSwapCameras,
 }: CameraLayoutControlsProps) {
+  const splitDescriptionId = useId();
   const splitActive = cameraLayout !== 'pip';
   const nextSplitLayout: CameraLayoutMode = cameraLayout === 'side-by-side'
     ? 'stacked'
     : 'side-by-side';
+  const splitDirection = cameraLayout === 'stacked' ? 'top and bottom' : 'side by side';
 
   return (
     <>
@@ -52,7 +55,8 @@ export default function CameraLayoutControls({
               : 'text-text-muted hover:text-text-primary'
           }`}
           title={cameraLayout === 'stacked' ? 'Top-bottom layout' : 'Side-by-side layout'}
-          aria-label={cameraLayout === 'stacked' ? 'Top-bottom layout' : 'Side-by-side layout'}
+          aria-label="Split layout"
+          aria-describedby={splitDescriptionId}
           aria-pressed={splitActive}
         >
           <span className={`grid h-4 w-4 grid-cols-2 gap-[2px] ${cameraLayout === 'stacked' ? 'rotate-90' : ''}`}>
@@ -60,6 +64,11 @@ export default function CameraLayoutControls({
             <span className="rounded-[1px] border border-current" />
           </span>
         </button>
+        <span id={splitDescriptionId} className="sr-only">
+          {splitActive
+            ? `Split layout active, ${splitDirection}`
+            : `Split layout inactive, next split is ${splitDirection}`}
+        </span>
       </div>
       <button
         type="button"
