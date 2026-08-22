@@ -34,8 +34,13 @@ export const STREAM_STALE_AFTER_MS = 5000;
 
 export interface GnssLiveSnapshot {
   values: GnssState | null;
-  /** Browser-clock ms when the newest NMEA epoch was merged. */
+  /** When the newest NMEA epoch was recorded — the envelope's own device
+   * timestamp, not browser receive time: a page that backfills after a
+   * reboot must not present minutes-old epochs as seconds fresh. */
   lastEpochAtMs: number | null;
+  /** Browser-clock ms when new entries last arrived; staleness detection
+   * uses this so a skewed device clock cannot fake or mask an outage. */
+  lastMergeAtMs: number | null;
   /** Latest driver connection signal; null until one is observed. */
   connected: boolean | null;
   connectionError: string | null;
@@ -55,6 +60,16 @@ function numberToId(value: number): Uint8Array {
 interface QueueEntry {
   id: number;
   data: Uint8Array;
+}
+
+/** The envelope's device wall-clock stamp in ms; browser receive time is
+ * only a fallback for envelopes without one. */
+function envelopeStampMs(envelope: arduino_pro_4g_gnss.RxEnvelope): number {
+  const stampNs = envelope.localStampNs;
+  if (stampNs && Long.fromValue(stampNs).greaterThan(0)) {
+    return Long.fromValue(stampNs).divide(1_000_000).toNumber();
+  }
+  return Date.now();
 }
 
 function readRange(queueId: string, startId: number, count: number): Promise<QueueEntry[]> {
@@ -105,6 +120,7 @@ function emptySnapshot(): GnssLiveSnapshot {
   return {
     values: null,
     lastEpochAtMs: null,
+    lastMergeAtMs: null,
     connected: null,
     connectionError: null,
     xtraValidityMinutes: null,
@@ -186,7 +202,8 @@ async function catchUp(queueId: string): Promise<void> {
       switch (envelope.signalType) {
         case SIGNAL.ARDUINO_PRO_4G_GNSS_NMEA_BATCH:
           next.values = mergeNmeaBatch(next.values, decodeBatchText(envelope.data));
-          next.lastEpochAtMs = Date.now();
+          next.lastEpochAtMs = envelopeStampMs(envelope);
+          next.lastMergeAtMs = Date.now();
           changed = true;
           break;
         case SIGNAL.ARDUINO_PRO_4G_GNSS_CONNECTED:
@@ -205,7 +222,7 @@ async function catchUp(queueId: string): Promise<void> {
           break;
         case SIGNAL.ARDUINO_PRO_4G_GNSS_XTRA_INJECTED:
           next.xtraValidityMinutes = envelope.xtraValidityMinutes || null;
-          next.xtraInjectedAtMs = Date.now();
+          next.xtraInjectedAtMs = envelopeStampMs(envelope);
           changed = true;
           break;
       }
@@ -223,11 +240,11 @@ async function catchUp(queueId: string): Promise<void> {
 /** While the stream is down the snapshot's age keeps growing; rebuild it
  * each tick so subscribers re-render the age readout. */
 function markStaleTick(slot: GnssLiveSlot): void {
-  const { lastEpochAtMs } = slot.snapshot;
-  if (lastEpochAtMs === null) {
+  const { lastMergeAtMs } = slot.snapshot;
+  if (lastMergeAtMs === null) {
     return;
   }
-  if (Date.now() - lastEpochAtMs > STREAM_STALE_AFTER_MS) {
+  if (Date.now() - lastMergeAtMs > STREAM_STALE_AFTER_MS) {
     slot.snapshot = { ...slot.snapshot };
     notify(slot);
   }

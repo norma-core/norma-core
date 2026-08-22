@@ -70,6 +70,17 @@ function formatUtcDate(value: string | null): string {
   return `${value.slice(0, 2)}.${value.slice(2, 4)}.20${value.slice(4, 6)}`;
 }
 
+function formatAge(ms: number): string {
+  const totalS = Math.round(ms / 1000);
+  if (totalS < 60) {
+    return `${totalS}s`;
+  }
+  if (totalS < 3600) {
+    return `${Math.floor(totalS / 60)}m ${totalS % 60}s`;
+  }
+  return `${Math.floor(totalS / 3600)}h ${Math.floor((totalS % 3600) / 60)}m`;
+}
+
 function satelliteTitle(sat: GnssSatellite): string {
   const parts = [`${sat.system} ${sat.prn ?? '?'}`];
   if (sat.elevationDeg !== null) {
@@ -138,10 +149,16 @@ function ArduinoPro4gGnssLiveView({ data, queueId }: ArduinoPro4gGnssLiveViewPro
   const values = snapshot.values;
 
   // Stream health: values freeze silently when NMEA stops, so age is the
-  // only honest liveness signal.
+  // only honest liveness signal. Staleness comes from browser-observed
+  // silence (immune to device clock skew); the displayed age prefers the
+  // device stamp so backfilled pre-reboot data shows its true age.
+  const nowMs = Date.now();
+  const silenceMs = snapshot.lastMergeAtMs === null ? null : nowMs - snapshot.lastMergeAtMs;
   const epochAgeMs =
-    snapshot.lastEpochAtMs === null ? null : Date.now() - snapshot.lastEpochAtMs;
-  const isStale = epochAgeMs !== null && epochAgeMs > STREAM_STALE_AFTER_MS;
+    snapshot.lastEpochAtMs === null
+      ? silenceMs
+      : Math.max(nowMs - snapshot.lastEpochAtMs, silenceMs ?? 0, 0);
+  const isStale = silenceMs !== null && silenceMs > STREAM_STALE_AFTER_MS;
   const streamDown = isStale || snapshot.connected === false;
 
   const satellites = values?.satellites ?? [];
@@ -179,7 +196,7 @@ function ArduinoPro4gGnssLiveView({ data, queueId }: ArduinoPro4gGnssLiveViewPro
       {streamDown && (
         <div className="mb-2 rounded border border-accent-critical bg-accent-critical/10 px-2 py-1 text-xs font-bold uppercase text-accent-critical">
           {snapshot.connected === false ? 'Receiver disconnected' : 'No data'}
-          {epochAgeMs !== null && ` — last update ${Math.round(epochAgeMs / 1000)}s ago`}
+          {epochAgeMs !== null && ` — last update ${formatAge(epochAgeMs)} ago`}
           {snapshot.connectionError && (
             <span className="block font-normal normal-case">{snapshot.connectionError}</span>
           )}
@@ -199,9 +216,17 @@ function ArduinoPro4gGnssLiveView({ data, queueId }: ArduinoPro4gGnssLiveViewPro
           </div>
         </div>
         <div className="ml-auto min-w-0 text-right">
-          <div className="text-[10px] uppercase text-text-label">Fix</div>
+          <div className="text-[10px] uppercase text-text-label">
+            Fix{streamDown ? ' (last known)' : ''}
+          </div>
           <div
-            className={`font-mono text-lg font-semibold leading-none ${hasFix ? 'text-accent-success' : 'text-accent-info'}`}
+            className={`font-mono text-lg font-semibold leading-none ${
+              hasFix
+                ? 'text-accent-success'
+                : streamDown
+                  ? 'text-text-muted'
+                  : 'text-accent-info'
+            }`}
           >
             {fixLabel}
           </div>
@@ -225,7 +250,11 @@ function ArduinoPro4gGnssLiveView({ data, queueId }: ArduinoPro4gGnssLiveViewPro
         <DeviceMetricPill label="Date" value={formatUtcDate(values?.utcDate ?? null)} tone={streamDown ? 'text-text-muted' : 'text-accent-data'} />
       </div>
       {satellites.length > 0 ? (
-        <SatelliteBars satellites={satellites} />
+        // The strip is last-known data once the stream dies; fade it so it
+        // cannot be mistaken for live reception under the NO DATA banner.
+        <div className={streamDown ? 'opacity-40 grayscale' : ''}>
+          <SatelliteBars satellites={satellites} />
+        </div>
       ) : (
         <div className="mt-2 text-[10px] uppercase text-text-muted">No satellites in view</div>
       )}
