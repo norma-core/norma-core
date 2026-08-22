@@ -10,7 +10,7 @@ This directory records accepted architecture decisions for Station Viewer.
 | [0002](0002-react-external-store-hooks.md) | Adapt WebSocket state to React with `useSyncExternalStore` |
 | [0003](0003-isolate-uptime-rendering.md) | Isolate uptime ticking from connection statistics |
 | [0004](0004-history-frame-ownership-and-request-ordering.md) | Give the timeline ownership of frame selection and make latest history requests win |
-| [0005](0005-live-device-modules-as-vertical-slices.md) | Organize live device presentation as vertical modules |
+| [0005](0005-live-device-modules-as-vertical-slices.md) | Organize live presentation as composable vertical modules |
 | [0006](0006-keep-live-and-physical-model-registries-separate.md) | Keep live presentation and physical-model registries separate |
 | [0007](0007-route-live-camera-payloads-outside-react-frame-state.md) | Route live camera payloads outside React frame state |
 | [0008](0008-make-live-and-history-acquisition-modes-explicit.md) | Make live and history acquisition modes explicit |
