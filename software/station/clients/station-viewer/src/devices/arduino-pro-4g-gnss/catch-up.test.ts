@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { planCatchUp } from './catch-up';
+import { detectQueueReset, planCatchUp } from './catch-up';
 
 describe('planCatchUp', () => {
   it('reads the contiguous gap since the last processed entry', () => {
@@ -21,5 +21,17 @@ describe('planCatchUp', () => {
 
   it('clamps the window start for young queues', () => {
     expect(planCatchUp(null, 10, 64)).toEqual({ startId: 0, count: 11 });
+  });
+});
+
+describe('detectQueueReset', () => {
+  it('flags a queue whose ids went backwards (data wiped / queue recreated)', () => {
+    expect(detectQueueReset(500, 3)).toBe(true);
+  });
+
+  it('does not flag normal progress or a fresh start', () => {
+    expect(detectQueueReset(null, 3)).toBe(false);
+    expect(detectQueueReset(500, 500)).toBe(false);
+    expect(detectQueueReset(500, 501)).toBe(false);
   });
 });

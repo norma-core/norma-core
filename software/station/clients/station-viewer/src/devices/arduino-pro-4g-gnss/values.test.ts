@@ -33,7 +33,8 @@ describe('parseNmeaBatch', () => {
     expect(values.utcDate).toBe('160826');
     expect(values.fixQuality).toBe(1);
     expect(values.fixType).toBe(3);
-    expect(values.satellitesUsed).toBe(8);
+    // From GSA (GPS 10,32,21 + GLONASS 65,71), not GGA's GPS-only count.
+    expect(values.satellitesUsed).toBe(5);
     expect(values.hdop).toBeCloseTo(0.94);
     expect(values.pdop).toBeCloseTo(1.61);
     expect(values.vdop).toBeCloseTo(1.3);
@@ -122,7 +123,8 @@ describe('parseNmeaBatch', () => {
     expect(values.speedMps).toBeNull();
     expect(values.fixQuality).toBe(0);
     expect(values.fixType).toBe(1);
-    expect(values.satellitesUsed).toBeNull();
+    // Fix quality 0 means 0 satellites in the solution, not "unknown".
+    expect(values.satellitesUsed).toBe(0);
     expect(values.satellites).toHaveLength(0);
   });
 
@@ -157,7 +159,7 @@ describe('mergeNmeaBatch', () => {
     expect(next.satellitesInView).toBe(7);
     // While per-epoch fields track the new batch.
     expect(next.altitudeM).toBeCloseTo(546.0);
-    expect(next.satellitesUsed).toBe(6);
+    expect(next.satellitesUsed).toBe(2); // GSA lists 10,32
     expect(next.hdop).toBeCloseTo(1.0);
   });
 
@@ -229,5 +231,40 @@ describe('multi-signal GSV deduplication', () => {
     const gps32 = values.satellites.filter(s => s.system === 'GPS' && s.prn === 32);
     expect(gps32).toHaveLength(1);
     expect(gps32[0]?.snrDb).toBe(30);
+  });
+});
+
+// A widget used for status judgement must not present stale numbers as
+// current: when the receiver reports no fix, the used count and DOPs are
+// meaningless and must not linger from the last fix.
+describe('no-fix honesty', () => {
+  it('zeroes the used count and clears DOPs when the fix is lost', () => {
+    const first = mergeNmeaBatch(null, FIX_BATCH);
+    const next = mergeNmeaBatch(first, NO_FIX_BATCH);
+
+    expect(next.fixQuality).toBe(0);
+    expect(next.satellitesUsed).toBe(0);
+    expect(next.pdop).toBeNull();
+    expect(next.hdop).toBeNull();
+    expect(next.vdop).toBeNull();
+  });
+
+  it('restores live values when the fix returns', () => {
+    let state = mergeNmeaBatch(null, FIX_BATCH);
+    state = mergeNmeaBatch(state, NO_FIX_BATCH);
+    state = mergeNmeaBatch(state, FIX_BATCH);
+
+    expect(state.satellitesUsed).toBe(5);
+    expect(state.pdop).toBeCloseTo(1.61);
+  });
+});
+
+describe('seen count consistency', () => {
+  it('reports seen as the number of satellites actually listed, not GSV totals', () => {
+    // The GSV total claims 8 in view but only two entries are listed —
+    // display counts must reconcile with the bars we render.
+    const values = parseNmeaBatch('$GPGSV,1,1,08,10,63,137,17,32,41,175,30*00');
+    expect(values.satellitesInView).toBe(2);
+    expect(values.satellites).toHaveLength(2);
   });
 });

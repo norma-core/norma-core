@@ -1,7 +1,7 @@
 import type { arduino_pro_4g_gnss } from '@/api/proto.js';
 import DeviceMetricPill from '@/components/DeviceMetricPill';
 import DeviceWidgetShell from '@/components/DeviceWidgetShell';
-import { useGnssLive } from '../live-store';
+import { STREAM_STALE_AFTER_MS, useGnssLive } from '../live-store';
 import type { GnssSatellite } from '../values';
 import { gnssDeviceLabel } from '../values';
 
@@ -134,7 +134,15 @@ function ArduinoPro4gGnssLiveView({ data, queueId }: ArduinoPro4gGnssLiveViewPro
   // Cumulative state from the rx queue itself: the live-store catches up on
   // every epoch (frames only sample the stream and would miss the 1 Hz GSV
   // bursts), and mergeNmeaBatch updates only what each epoch carries.
-  const values = useGnssLive(queueId);
+  const snapshot = useGnssLive(queueId);
+  const values = snapshot.values;
+
+  // Stream health: values freeze silently when NMEA stops, so age is the
+  // only honest liveness signal.
+  const epochAgeMs =
+    snapshot.lastEpochAtMs === null ? null : Date.now() - snapshot.lastEpochAtMs;
+  const isStale = epochAgeMs !== null && epochAgeMs > STREAM_STALE_AFTER_MS;
+  const streamDown = isStale || snapshot.connected === false;
 
   const satellites = values?.satellites ?? [];
   const fixQuality = values?.fixQuality ?? null;
@@ -142,10 +150,25 @@ function ArduinoPro4gGnssLiveView({ data, queueId }: ArduinoPro4gGnssLiveViewPro
     fixQuality === null ? 'N/A' : (FIX_QUALITY_LABELS[fixQuality] ?? `Quality ${fixQuality}`);
   const typeLabel = values?.fixType == null ? null : FIX_TYPE_LABELS[values.fixType];
   const fixLabel = typeLabel && fixQuality ? `${qualityLabel} ${typeLabel}` : qualityLabel;
-  const hasFix = (fixQuality ?? 0) > 0;
+  const hasFix = !streamDown && (fixQuality ?? 0) > 0;
   // Merged state holds the last-known position through no-fix epochs; show
   // it dimmed until the fix returns.
   const hasPosition = values?.latitudeDeg != null && values?.longitudeDeg != null;
+  // Pills that only mean something with a current solution dim without one.
+  const liveTone = (tone: string) => (hasFix ? tone : 'text-text-muted');
+
+  const xtraLabel = (() => {
+    if (snapshot.xtraValidityMinutes === null || snapshot.xtraInjectedAtMs === null) {
+      return null;
+    }
+    const remainingMin =
+      snapshot.xtraValidityMinutes - (Date.now() - snapshot.xtraInjectedAtMs) / 60_000;
+    if (remainingMin <= 0) {
+      return 'A-GPS expired';
+    }
+    const days = remainingMin / (60 * 24);
+    return days >= 1 ? `A-GPS valid ~${Math.floor(days)}d` : `A-GPS valid ~${Math.ceil(remainingMin / 60)}h`;
+  })();
 
   return (
     <DeviceWidgetShell
@@ -153,6 +176,15 @@ function ArduinoPro4gGnssLiveView({ data, queueId }: ArduinoPro4gGnssLiveViewPro
       subtitle="Arduino Pro 4G GNSS (EG25-G)"
       error={data.error}
     >
+      {streamDown && (
+        <div className="mb-2 rounded border border-accent-critical bg-accent-critical/10 px-2 py-1 text-xs font-bold uppercase text-accent-critical">
+          {snapshot.connected === false ? 'Receiver disconnected' : 'No data'}
+          {epochAgeMs !== null && ` — last update ${Math.round(epochAgeMs / 1000)}s ago`}
+          {snapshot.connectionError && (
+            <span className="block font-normal normal-case">{snapshot.connectionError}</span>
+          )}
+        </div>
+      )}
       <div className="flex items-end gap-2">
         <div className="min-w-0">
           <div className="text-[10px] uppercase text-text-label">
@@ -176,26 +208,31 @@ function ArduinoPro4gGnssLiveView({ data, queueId }: ArduinoPro4gGnssLiveViewPro
         </div>
       </div>
       <div className="mt-2 flex min-w-0 flex-wrap gap-1.5">
-        <DeviceMetricPill label="Alt" value={formatMeasured(values?.altitudeM ?? null, 'm')} tone={hasFix ? 'text-accent-data' : 'text-text-muted'} />
-        <DeviceMetricPill label="Speed" value={formatMeasured(values?.speedMps ?? null, 'm/s', 2)} tone={hasFix ? 'text-accent-warning' : 'text-text-muted'} />
-        <DeviceMetricPill label="Course" value={formatMeasured(values?.courseDeg ?? null, 'deg')} tone={hasFix ? 'text-accent-secondary' : 'text-text-muted'} />
+        <DeviceMetricPill label="Alt" value={formatMeasured(values?.altitudeM ?? null, 'm')} tone={liveTone('text-accent-data')} />
+        <DeviceMetricPill label="Speed" value={formatMeasured(values?.speedMps ?? null, 'm/s', 2)} tone={liveTone('text-accent-warning')} />
+        <DeviceMetricPill label="Course" value={formatMeasured(values?.courseDeg ?? null, 'deg')} tone={liveTone('text-accent-secondary')} />
         <DeviceMetricPill
           label="Sats"
           value={`${values?.satellitesUsed ?? 0} used / ${values?.satellitesInView ?? '?'} seen`}
-          tone="text-accent-info"
+          tone={streamDown ? 'text-text-muted' : 'text-accent-info'}
         />
       </div>
       <div className="mt-1.5 flex min-w-0 flex-wrap gap-1.5">
-        <DeviceMetricPill label="PDOP" value={formatDop(values?.pdop ?? null)} tone="text-accent-secondary" />
-        <DeviceMetricPill label="HDOP" value={formatDop(values?.hdop ?? null)} tone="text-accent-secondary" />
-        <DeviceMetricPill label="VDOP" value={formatDop(values?.vdop ?? null)} tone="text-accent-secondary" />
-        <DeviceMetricPill label="UTC" value={formatUtcTime(values?.utcTime ?? null)} tone="text-accent-data" />
-        <DeviceMetricPill label="Date" value={formatUtcDate(values?.utcDate ?? null)} tone="text-accent-data" />
+        <DeviceMetricPill label="PDOP" value={formatDop(values?.pdop ?? null)} tone={liveTone('text-accent-secondary')} />
+        <DeviceMetricPill label="HDOP" value={formatDop(values?.hdop ?? null)} tone={liveTone('text-accent-secondary')} />
+        <DeviceMetricPill label="VDOP" value={formatDop(values?.vdop ?? null)} tone={liveTone('text-accent-secondary')} />
+        <DeviceMetricPill label="UTC" value={formatUtcTime(values?.utcTime ?? null)} tone={streamDown ? 'text-text-muted' : 'text-accent-data'} />
+        <DeviceMetricPill label="Date" value={formatUtcDate(values?.utcDate ?? null)} tone={streamDown ? 'text-text-muted' : 'text-accent-data'} />
       </div>
       {satellites.length > 0 ? (
         <SatelliteBars satellites={satellites} />
       ) : (
         <div className="mt-2 text-[10px] uppercase text-text-muted">No satellites in view</div>
+      )}
+      {xtraLabel && (
+        <div className={`mt-1 text-[10px] uppercase ${xtraLabel === 'A-GPS expired' ? 'text-accent-warning' : 'text-text-muted'}`}>
+          {xtraLabel}
+        </div>
       )}
     </DeviceWidgetShell>
   );

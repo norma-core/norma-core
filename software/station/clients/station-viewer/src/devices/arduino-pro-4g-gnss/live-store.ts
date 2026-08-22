@@ -7,6 +7,11 @@
  * on every entry since the last one processed and folds each epoch into
  * cumulative state via mergeNmeaBatch, so nothing the receiver reports is
  * lost between frames.
+ *
+ * Beyond NMEA it also captures the driver's Connected/Disconnected/Error
+ * signals and XTRA assistance injections, and stamps when the last epoch
+ * arrived — so the widget can tell "live", "no fix", and "stream dead"
+ * apart instead of freezing on the last good numbers.
  */
 
 import Long from 'long';
@@ -14,15 +19,30 @@ import { useCallback, useSyncExternalStore } from 'react';
 
 import { arduino_pro_4g_gnss, normfs } from '@/api/proto.js';
 import webSocketManager from '@/api/websocket';
-import { planCatchUp } from './catch-up';
+import { detectQueueReset, planCatchUp } from './catch-up';
 import { decodeBatchText, mergeNmeaBatch, type GnssState } from './values';
 
-const NMEA_BATCH =
-  arduino_pro_4g_gnss.ArduinoPro4gGnssSignalType.ARDUINO_PRO_4G_GNSS_NMEA_BATCH;
+const SIGNAL = arduino_pro_4g_gnss.ArduinoPro4gGnssSignalType;
 
 /** GSV bursts arrive once a second; catching up at the same cadence
  * processes every epoch while adding only one small read per second. */
 const CATCH_UP_INTERVAL_MS = 1000;
+
+/** The stream runs at 10 Hz and catch-up at 1 Hz, so anything beyond a
+ * few seconds without an epoch means the stream is down. */
+export const STREAM_STALE_AFTER_MS = 5000;
+
+export interface GnssLiveSnapshot {
+  values: GnssState | null;
+  /** Browser-clock ms when the newest NMEA epoch was merged. */
+  lastEpochAtMs: number | null;
+  /** Latest driver connection signal; null until one is observed. */
+  connected: boolean | null;
+  connectionError: string | null;
+  /** Last observed gpsOneXTRA assistance injection, if any was seen. */
+  xtraValidityMinutes: number | null;
+  xtraInjectedAtMs: number | null;
+}
 
 function idToNumber(raw: Uint8Array): number {
   return Long.fromBytesLE(Array.from(raw)).toNumber();
@@ -74,11 +94,22 @@ function readRange(queueId: string, startId: number, count: number): Promise<Que
 }
 
 interface GnssLiveSlot {
-  state: GnssState | null;
+  snapshot: GnssLiveSnapshot;
   lastProcessedId: number | null;
   listeners: Set<() => void>;
   timer: number | null;
   busy: boolean;
+}
+
+function emptySnapshot(): GnssLiveSnapshot {
+  return {
+    values: null,
+    lastEpochAtMs: null,
+    connected: null,
+    connectionError: null,
+    xtraValidityMinutes: null,
+    xtraInjectedAtMs: null,
+  };
 }
 
 const slots = new Map<string, GnssLiveSlot>();
@@ -86,10 +117,22 @@ const slots = new Map<string, GnssLiveSlot>();
 function getSlot(queueId: string): GnssLiveSlot {
   let slot = slots.get(queueId);
   if (!slot) {
-    slot = { state: null, lastProcessedId: null, listeners: new Set(), timer: null, busy: false };
+    slot = {
+      snapshot: emptySnapshot(),
+      lastProcessedId: null,
+      listeners: new Set(),
+      timer: null,
+      busy: false,
+    };
     slots.set(queueId, slot);
   }
   return slot;
+}
+
+function notify(slot: GnssLiveSlot): void {
+  for (const listener of slot.listeners) {
+    listener();
+  }
 }
 
 async function catchUp(queueId: string): Promise<void> {
@@ -104,11 +147,20 @@ async function catchUp(queueId: string): Promise<void> {
       const last = await webSocketManager.normFs.readLastEntry(queueId);
       lastId = idToNumber(last.id);
     } catch {
+      markStaleTick(slot);
       return; // Queue empty or connection down; try again next tick.
+    }
+
+    if (detectQueueReset(slot.lastProcessedId, lastId)) {
+      // Station data was wiped or the queue recreated: start over.
+      slot.lastProcessedId = null;
+      slot.snapshot = emptySnapshot();
+      notify(slot);
     }
 
     const range = planCatchUp(slot.lastProcessedId, lastId);
     if (!range) {
+      markStaleTick(slot);
       return;
     }
 
@@ -122,7 +174,8 @@ async function catchUp(queueId: string): Promise<void> {
       return;
     }
 
-    let state = slot.state;
+    const next: GnssLiveSnapshot = { ...slot.snapshot };
+    let changed = false;
     for (const entry of entries.sort((a, b) => a.id - b.id)) {
       let envelope: arduino_pro_4g_gnss.RxEnvelope;
       try {
@@ -130,19 +183,53 @@ async function catchUp(queueId: string): Promise<void> {
       } catch {
         continue;
       }
-      if (envelope.signalType === NMEA_BATCH) {
-        state = mergeNmeaBatch(state, decodeBatchText(envelope.data));
+      switch (envelope.signalType) {
+        case SIGNAL.ARDUINO_PRO_4G_GNSS_NMEA_BATCH:
+          next.values = mergeNmeaBatch(next.values, decodeBatchText(envelope.data));
+          next.lastEpochAtMs = Date.now();
+          changed = true;
+          break;
+        case SIGNAL.ARDUINO_PRO_4G_GNSS_CONNECTED:
+          next.connected = true;
+          next.connectionError = null;
+          changed = true;
+          break;
+        case SIGNAL.ARDUINO_PRO_4G_GNSS_DISCONNECTED:
+          next.connected = false;
+          next.connectionError = envelope.error || null;
+          changed = true;
+          break;
+        case SIGNAL.ARDUINO_PRO_4G_GNSS_ERROR:
+          next.connectionError = envelope.error || null;
+          changed = true;
+          break;
+        case SIGNAL.ARDUINO_PRO_4G_GNSS_XTRA_INJECTED:
+          next.xtraValidityMinutes = envelope.xtraValidityMinutes || null;
+          next.xtraInjectedAtMs = Date.now();
+          changed = true;
+          break;
       }
     }
     slot.lastProcessedId = lastId;
-    if (state !== slot.state) {
-      slot.state = state;
-      for (const listener of slot.listeners) {
-        listener();
-      }
+    if (changed) {
+      slot.snapshot = next;
+      notify(slot);
     }
   } finally {
     slot.busy = false;
+  }
+}
+
+/** While the stream is down the snapshot's age keeps growing; rebuild it
+ * each tick so subscribers re-render the age readout. */
+function markStaleTick(slot: GnssLiveSlot): void {
+  const { lastEpochAtMs } = slot.snapshot;
+  if (lastEpochAtMs === null) {
+    return;
+  }
+  if (Date.now() - lastEpochAtMs > STREAM_STALE_AFTER_MS) {
+    slot.snapshot = { ...slot.snapshot };
+    notify(slot);
   }
 }
 
@@ -162,15 +249,15 @@ export function subscribeGnssLive(queueId: string, listener: () => void): () => 
   };
 }
 
-export function getGnssLiveState(queueId: string): GnssState | null {
-  return slots.get(queueId)?.state ?? null;
+export function getGnssLiveSnapshot(queueId: string): GnssLiveSnapshot {
+  return getSlot(queueId).snapshot;
 }
 
-export function useGnssLive(queueId: string): GnssState | null {
+export function useGnssLive(queueId: string): GnssLiveSnapshot {
   const subscribe = useCallback(
     (listener: () => void) => subscribeGnssLive(queueId, listener),
     [queueId],
   );
-  const getSnapshot = useCallback(() => getGnssLiveState(queueId), [queueId]);
+  const getSnapshot = useCallback(() => getGnssLiveSnapshot(queueId), [queueId]);
   return useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
 }

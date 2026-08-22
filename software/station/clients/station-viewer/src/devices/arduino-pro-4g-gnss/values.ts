@@ -73,8 +73,6 @@ export interface GnssValues {
 export interface GnssState extends GnssValues {
   /** Talker system → satellites from its latest GSV burst. */
   satellitesBySystem: Record<string, GnssSatellite[]>;
-  /** Talker system → total-in-view count from its latest GSV burst. */
-  inViewBySystem: Record<string, number>;
   /** Fix-satellite ids from the latest epoch that carried GSA. */
   usedBySystem: Record<string, number[]>;
   usedUnscoped: number[];
@@ -98,7 +96,6 @@ function emptyState(): GnssState {
     vdop: null,
     satellites: [],
     satellitesBySystem: {},
-    inViewBySystem: {},
     usedBySystem: {},
     usedUnscoped: [],
   };
@@ -149,7 +146,6 @@ export function mergeNmeaBatch(prev: GnssState | null, text: string): GnssState 
   // persistent per-system records after the loop.
   let batchFixType: number | null = null;
   let batchHasGsa = false;
-  const inViewBySystem = new Map<string, number>();
   const batchSatellites = new Map<string, GnssSatellite[]>();
   // Satellite ids listed by GSA sentences: scoped per system when the
   // sentence says which one, plus a global pool for unscoped GN lines.
@@ -179,8 +175,14 @@ export function mergeNmeaBatch(prev: GnssState | null, text: string): GnssState 
         values.utcTime = fields[1] || values.utcTime;
         values.latitudeDeg = parseCoordinate(fields[2], fields[3]) ?? values.latitudeDeg;
         values.longitudeDeg = parseCoordinate(fields[4], fields[5]) ?? values.longitudeDeg;
-        values.fixQuality = parseNumber(fields[6]) ?? values.fixQuality;
-        values.satellitesUsed = parseNumber(fields[7]) ?? values.satellitesUsed;
+        const quality = parseNumber(fields[6]);
+        values.fixQuality = quality ?? values.fixQuality;
+        // The used count comes from GSA, not GGA field 7: on the EG25-G
+        // that field counts only GPS satellites, which contradicts the
+        // multi-constellation GSA list shown in the bars.
+        if (quality === 0) {
+          values.satellitesUsed = 0;
+        }
         values.hdop = parseNumber(fields[8]) ?? values.hdop;
         values.altitudeM = parseNumber(fields[9]) ?? values.altitudeM;
         break;
@@ -225,10 +227,6 @@ export function mergeNmeaBatch(prev: GnssState | null, text: string): GnssState 
       }
       case 'GSV': {
         const system = TALKER_SYSTEMS[talker] ?? talker;
-        const inView = parseNumber(fields[3]);
-        if (inView !== null) {
-          inViewBySystem.set(system, inView);
-        }
         let sats = batchSatellites.get(system);
         if (!sats) {
           sats = [];
@@ -256,14 +254,16 @@ export function mergeNmeaBatch(prev: GnssState | null, text: string): GnssState 
   // A GSV burst is complete per talker system, so it replaces that
   // system's satellites; systems absent from this batch keep theirs.
   values.fixType = batchFixType ?? values.fixType;
-  if (batchSatellites.size > 0 || inViewBySystem.size > 0) {
+  // DOPs describe the current solution; without one they are meaningless.
+  if (batchFixType === 1) {
+    values.pdop = null;
+    values.hdop = null;
+    values.vdop = null;
+  }
+  if (batchSatellites.size > 0) {
     values.satellitesBySystem = { ...values.satellitesBySystem };
-    values.inViewBySystem = { ...values.inViewBySystem };
     for (const [system, sats] of batchSatellites) {
       values.satellitesBySystem[system] = dedupeSatellites(sats);
-    }
-    for (const [system, count] of inViewBySystem) {
-      values.inViewBySystem[system] = count;
     }
   }
   // GSA lists the fix satellites afresh each epoch it appears in.
@@ -272,11 +272,11 @@ export function mergeNmeaBatch(prev: GnssState | null, text: string): GnssState 
       [...usedBySystem].map(([system, ids]) => [system, [...ids]]),
     );
     values.usedUnscoped = [...usedUnscoped];
+    values.satellitesUsed =
+      [...usedBySystem.values()].reduce((total, ids) => total + ids.size, 0) +
+      usedUnscoped.size;
   }
 
-  const inViewCounts = Object.values(values.inViewBySystem);
-  values.satellitesInView =
-    inViewCounts.length > 0 ? inViewCounts.reduce((a, b) => a + b, 0) : null;
   const usedSets = new Map(
     Object.entries(values.usedBySystem).map(([system, ids]) => [system, new Set(ids)]),
   );
@@ -289,6 +289,11 @@ export function mergeNmeaBatch(prev: GnssState | null, text: string): GnssState 
         sat.prn !== null &&
         (usedSets.get(sat.system)?.has(sat.prn) ?? unscopedSet.has(sat.prn)),
     }));
+  // Seen = the satellites we actually list (deduped), so the headline
+  // number always reconciles with the bars and per-system labels; GSV
+  // totals count per talker and disagree once SBAS/QZSS are split out.
+  values.satellitesInView =
+    Object.keys(values.satellitesBySystem).length > 0 ? values.satellites.length : null;
   return values;
 }
 

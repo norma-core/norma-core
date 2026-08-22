@@ -8,6 +8,13 @@ export interface CatchUpRange {
   count: number;
 }
 
+/** True when the queue's ids went backwards — the station's data was
+ * wiped or the queue recreated. The reader must start over or it would
+ * wait forever for ids that will never be reached again. */
+export function detectQueueReset(lastProcessedId: number | null, lastId: number): boolean {
+  return lastProcessedId !== null && lastId < lastProcessedId;
+}
+
 /** The window of queue entries to read so every epoch between the last
  * processed entry and the queue tail gets merged exactly once. */
 export function planCatchUp(
