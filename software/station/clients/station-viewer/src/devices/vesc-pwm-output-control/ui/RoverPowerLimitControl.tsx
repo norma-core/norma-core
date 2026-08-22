@@ -11,6 +11,7 @@ import {
 } from '../control-input';
 
 const rangeClass = 'appearance-none bg-transparent focus-visible:outline-none [&::-webkit-slider-runnable-track]:h-2 [&::-webkit-slider-runnable-track]:rounded-full [&::-webkit-slider-runnable-track]:bg-transparent [&::-webkit-slider-thumb]:-mt-3.5 [&::-webkit-slider-thumb]:h-9 [&::-webkit-slider-thumb]:w-9 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-accent-data [&::-webkit-slider-thumb]:bg-surface-primary [&::-webkit-slider-thumb]:shadow-[0_0_0_4px_rgba(34,211,238,0.14),0_0.35rem_0.8rem_rgba(0,0,0,0.28)] [&::-moz-range-track]:h-2 [&::-moz-range-track]:rounded-full [&::-moz-range-track]:bg-transparent [&::-moz-range-thumb]:h-9 [&::-moz-range-thumb]:w-9 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-accent-data [&::-moz-range-thumb]:bg-surface-primary';
+const POWER_LIMIT_STEP_A = 5;
 
 interface RoverPowerLimitControlProps {
   value: number;
@@ -33,7 +34,8 @@ function RoverPowerLimitControl({ value, onChange }: RoverPowerLimitControlProps
     const rect = track.getBoundingClientRect();
     const ratio = 1 - Math.max(0, Math.min(1, (event.clientY - rect.top) / rect.height));
     const range = ROVER_MAX_DRIVE_CURRENT_A - ROVER_MIN_DRIVE_CURRENT_LIMIT_A;
-    onChange(Math.round(ROVER_MIN_DRIVE_CURRENT_LIMIT_A + ratio * range));
+    const steps = Math.round((ratio * range) / POWER_LIMIT_STEP_A);
+    onChange(ROVER_MIN_DRIVE_CURRENT_LIMIT_A + steps * POWER_LIMIT_STEP_A);
   }, [onChange]);
 
   const handlePointerDown = useCallback((event: ReactPointerEvent<HTMLDivElement>) => {
@@ -58,17 +60,17 @@ function RoverPowerLimitControl({ value, onChange }: RoverPowerLimitControlProps
     switch (event.key) {
       case 'ArrowUp':
       case 'ArrowRight':
-        nextValue += 1;
+        nextValue += POWER_LIMIT_STEP_A;
         break;
       case 'ArrowDown':
       case 'ArrowLeft':
-        nextValue -= 1;
+        nextValue -= POWER_LIMIT_STEP_A;
         break;
       case 'PageUp':
-        nextValue += 5;
+        nextValue += POWER_LIMIT_STEP_A * 2;
         break;
       case 'PageDown':
-        nextValue -= 5;
+        nextValue -= POWER_LIMIT_STEP_A * 2;
         break;
       case 'Home':
         nextValue = ROVER_MIN_DRIVE_CURRENT_LIMIT_A;
@@ -90,7 +92,7 @@ function RoverPowerLimitControl({ value, onChange }: RoverPowerLimitControlProps
   const rangeProps = {
     min: ROVER_MIN_DRIVE_CURRENT_LIMIT_A,
     max: ROVER_MAX_DRIVE_CURRENT_A,
-    step: 1,
+    step: POWER_LIMIT_STEP_A,
     value,
     'aria-label': 'Maximum touch drive current',
     'aria-valuetext': `${value} amps`,
@@ -98,9 +100,9 @@ function RoverPowerLimitControl({ value, onChange }: RoverPowerLimitControlProps
   };
 
   return (
-    <div className="pointer-events-auto w-[min(5.75rem,24vw)] select-none rounded-md border border-border-default bg-surface-secondary/50 p-1.5 [-webkit-touch-callout:none] lg:w-full lg:p-2 [@media(max-width:1023px)_and_(orientation:landscape)]:w-[min(5.75rem,12vw)] [@media(max-width:1023px)_and_(orientation:landscape)]:border-accent-data/30 [@media(max-width:1023px)_and_(orientation:landscape)]:bg-surface-primary/55 [@media(max-width:1023px)_and_(orientation:landscape)]:shadow-[0_0.6rem_1.5rem_rgba(0,0,0,0.18)] [@media(max-width:1023px)_and_(orientation:landscape)]:backdrop-blur-md">
+    <div className="pointer-events-auto w-[min(5.75rem,24vw)] select-none rounded-md border border-border-default bg-surface-secondary/50 p-1.5 [-webkit-touch-callout:none] lg:w-full lg:p-2 [@media(max-width:1023px)_and_(orientation:landscape)]:w-[var(--rover-landscape-power-zone)] [@media(max-width:1023px)_and_(orientation:landscape)]:border-accent-data/30 [@media(max-width:1023px)_and_(orientation:landscape)]:bg-surface-primary/55 [@media(max-width:1023px)_and_(orientation:landscape)]:shadow-[0_0.6rem_1.5rem_rgba(0,0,0,0.18)] [@media(max-width:1023px)_and_(orientation:landscape)]:backdrop-blur-md">
       <div className="mb-1 flex items-center justify-between px-0.5 font-mono text-[8px] font-black uppercase tracking-[0.12em] lg:mb-1.5 lg:text-[9px]">
-        <span className="text-text-label">Power max</span>
+        <span className="text-text-label"><span className="[@media(max-width:1023px)_and_(orientation:landscape)]:hidden">Power </span>max</span>
         <output className="text-accent-data">{value}A</output>
       </div>
 
@@ -120,9 +122,9 @@ function RoverPowerLimitControl({ value, onChange }: RoverPowerLimitControlProps
         onPointerCancel={handlePointerEnd}
         onLostPointerCapture={handlePointerEnd}
         onKeyDown={handleKeyDown}
-        className="relative mx-auto flex h-[9.75rem] w-full touch-none items-center justify-center rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-accent-data lg:hidden"
+        className="relative mx-auto flex h-[8.25rem] w-full touch-none items-center justify-center rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-accent-data lg:hidden"
       >
-        <div className="pointer-events-none absolute left-1/2 top-1/2 h-[8.5rem] w-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-border-default" aria-hidden>
+        <div className="pointer-events-none absolute left-1/2 top-1/2 h-28 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-border-default" aria-hidden>
           <span
             className="absolute inset-x-0 bottom-0 overflow-hidden rounded-full bg-accent-data"
             style={{ height: `${progress}%` }}

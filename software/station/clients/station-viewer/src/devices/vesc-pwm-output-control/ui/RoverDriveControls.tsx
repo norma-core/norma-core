@@ -20,7 +20,7 @@ function RoverDriveControls({ session, onOpenDetails }: RoverDriveControlsProps)
   const { state, actions } = session;
 
   return (
-    <div className="flex min-h-0 flex-1 flex-row items-end justify-center gap-2 px-3 py-3 lg:flex-col lg:items-center lg:gap-4 lg:px-6 lg:py-5 [@media(max-width:1023px)_and_(orientation:landscape)]:pointer-events-none [@media(max-width:1023px)_and_(orientation:landscape)]:absolute [@media(max-width:1023px)_and_(orientation:landscape)]:bottom-[calc(0.5rem+env(safe-area-inset-bottom))] [@media(max-width:1023px)_and_(orientation:landscape)]:left-[calc(0.5rem+env(safe-area-inset-left))] [@media(max-width:1023px)_and_(orientation:landscape)]:right-[calc(0.5rem+env(safe-area-inset-right))] [@media(max-width:1023px)_and_(orientation:landscape)]:justify-between [@media(max-width:1023px)_and_(orientation:landscape)]:p-0">
+    <div className="flex min-h-0 flex-1 flex-row items-end justify-between gap-2 px-4 py-3 lg:flex-col lg:items-center lg:justify-center lg:gap-4 lg:px-6 lg:py-5 [@media(max-width:1023px)_and_(orientation:landscape)]:pointer-events-none [@media(max-width:1023px)_and_(orientation:landscape)]:absolute [@media(max-width:1023px)_and_(orientation:landscape)]:bottom-[calc(0.5rem+env(safe-area-inset-bottom))] [@media(max-width:1023px)_and_(orientation:landscape)]:left-[calc(0.5rem+env(safe-area-inset-left))] [@media(max-width:1023px)_and_(orientation:landscape)]:right-[calc(0.5rem+env(safe-area-inset-right))] [@media(max-width:1023px)_and_(orientation:landscape)]:p-0">
       <RoverJoystick
         axes={state.axes}
         currentA={state.currentA}

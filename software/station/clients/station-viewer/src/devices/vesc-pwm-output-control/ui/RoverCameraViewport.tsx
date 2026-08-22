@@ -46,7 +46,7 @@ function CameraPane({ camera }: { camera: CameraOption }) {
         fit="cover"
         overlay="none"
       />
-      <figcaption className="absolute bottom-2 left-2 max-w-[70%] truncate rounded-md border border-border-default bg-surface-primary/62 px-2 py-1 font-mono text-[9px] font-semibold uppercase tracking-wide text-text-secondary shadow-sm backdrop-blur-md [@media(max-width:1023px)_and_(orientation:landscape)]:bottom-[calc(0.5rem+env(safe-area-inset-bottom))] [@media(max-width:1023px)_and_(orientation:landscape)]:left-1/2 [@media(max-width:1023px)_and_(orientation:landscape)]:max-w-[42%] [@media(max-width:1023px)_and_(orientation:landscape)]:-translate-x-1/2 [@media(max-width:1023px)_and_(orientation:landscape)]:border-accent-data/30">
+      <figcaption className="absolute bottom-2 left-2 max-w-[70%] truncate rounded-md border border-border-default bg-surface-primary/62 px-2 py-1 font-mono text-[9px] font-semibold uppercase tracking-wide text-text-secondary shadow-sm backdrop-blur-md [@media(max-width:1023px)_and_(orientation:landscape)]:hidden">
         {camera.label}
       </figcaption>
     </figure>
@@ -68,6 +68,7 @@ function RoverCameraViewport({
   const [primaryCameraId, setPrimaryCameraId] = useState('');
   const [secondaryCameraId, setSecondaryCameraId] = useState('');
   const [cameraLayout, setCameraLayout] = useState<CameraLayoutMode>('pip');
+  const [cameraMenuOpen, setCameraMenuOpen] = useState(false);
 
   const primaryCamera = cameraOptions.find((camera) => camera.id === primaryCameraId)
     ?? cameraOptions[0]
@@ -88,6 +89,7 @@ function RoverCameraViewport({
   const handlePrimaryCameraChange = useCallback((nextId: string) => {
     if (nextId === secondaryCamera?.id) setSecondaryCameraId(primaryCamera?.id ?? '');
     setPrimaryCameraId(nextId);
+    setCameraMenuOpen(false);
   }, [primaryCamera?.id, secondaryCamera?.id]);
 
   const swapCameras = useCallback(() => {
@@ -108,8 +110,8 @@ function RoverCameraViewport({
   ) : (
     <div className="relative h-full">
       <CameraPane camera={primaryCamera} />
-      {secondaryCamera && (
-        <div className="absolute bottom-3 right-3 z-20 h-[32%] min-h-20 w-[36%] min-w-28 overflow-hidden rounded-lg border border-accent-data/35 bg-surface-base shadow-[0_1rem_2.5rem_rgba(0,0,0,0.28)]">
+      {secondaryCamera && !cameraMenuOpen && (
+        <div className="absolute bottom-3 right-3 z-20 h-[32%] min-h-20 w-[36%] min-w-28 overflow-hidden rounded-lg border border-accent-data/35 bg-surface-base shadow-[0_1rem_2.5rem_rgba(0,0,0,0.28)] [@media(max-width:1023px)_and_(orientation:landscape)]:bottom-[calc(0.5rem+env(safe-area-inset-bottom))] [@media(max-width:1023px)_and_(orientation:landscape)]:left-1/2 [@media(max-width:1023px)_and_(orientation:landscape)]:right-auto [@media(max-width:1023px)_and_(orientation:landscape)]:w-[min(28%,14rem)] [@media(max-width:1023px)_and_(orientation:landscape)]:-translate-x-1/2">
           <CameraPane camera={secondaryCamera} />
         </div>
       )}
@@ -125,7 +127,7 @@ function RoverCameraViewport({
       <span className="pointer-events-none absolute bottom-[0.55rem] left-[0.55rem] z-20 hidden h-[0.95rem] w-[0.95rem] border-b-2 border-l-2 border-accent-data/70 [@media(max-width:1023px)_and_(orientation:landscape)]:block" aria-hidden />
       <span className="pointer-events-none absolute bottom-[0.55rem] right-[0.55rem] z-20 hidden h-[0.95rem] w-[0.95rem] border-b-2 border-r-2 border-accent-data/70 [@media(max-width:1023px)_and_(orientation:landscape)]:block" aria-hidden />
       <div className="absolute left-2 right-2 top-2 z-40 flex items-start justify-between gap-2 [@media(max-width:1023px)_and_(orientation:landscape)]:left-[calc(0.5rem+env(safe-area-inset-left))] [@media(max-width:1023px)_and_(orientation:landscape)]:right-[calc(0.5rem+env(safe-area-inset-right))] [@media(max-width:1023px)_and_(orientation:landscape)]:top-[calc(0.5rem+env(safe-area-inset-top))]">
-        <button type="button" onClick={onOpenDetails} aria-label="Open rover status" className="flex min-w-0 items-center gap-2 rounded-md border border-accent-data/35 bg-surface-primary/55 px-2.5 py-2 text-left shadow-[0_0.6rem_1.5rem_rgba(0,0,0,0.18)] backdrop-blur-md transition hover:border-accent-data/60 hover:bg-surface-primary/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-data">
+        <button type="button" onClick={onOpenDetails} aria-label="Open rover status" className="flex min-w-0 items-center gap-2 rounded-md border border-accent-data/35 bg-surface-primary/55 px-2.5 py-2 text-left shadow-[0_0.6rem_1.5rem_rgba(0,0,0,0.18)] backdrop-blur-md transition hover:border-accent-data/60 hover:bg-surface-primary/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-data [@media(max-width:1023px)_and_(orientation:landscape)]:hidden">
           <span className={`h-2 w-2 shrink-0 rounded-full ${status.ready ? 'bg-accent-success' : status.hasFault ? 'bg-accent-critical' : 'bg-accent-warning'}`} />
           <div className="min-w-0">
             <div className="font-mono text-[10px] font-black uppercase tracking-[0.18em] text-text-primary">Rover</div>
@@ -134,26 +136,62 @@ function RoverCameraViewport({
             </div>
           </div>
         </button>
-        <div className="flex shrink-0 items-center gap-1 rounded-md border border-accent-data/35 bg-surface-primary/55 p-1 shadow-[0_0.6rem_1.5rem_rgba(0,0,0,0.18)] backdrop-blur-md">
+        <div className="relative ml-auto flex shrink-0 items-center gap-1 rounded-md border border-accent-data/35 bg-surface-primary/55 p-1 shadow-[0_0.6rem_1.5rem_rgba(0,0,0,0.18)] backdrop-blur-md">
           {cameraOptions.length > 1 ? (
-            <select
-              aria-label="Main camera"
-              value={primaryCamera?.id ?? ''}
-              onChange={(event) => handlePrimaryCameraChange(event.target.value)}
-              className="h-8 max-w-24 rounded border-0 bg-surface-secondary px-2 font-mono text-[9px] font-bold text-text-primary outline-none"
-            >
-              {cameraOptions.map((camera, index) => <option key={camera.id} value={camera.id}>CAM {index + 1}</option>)}
-            </select>
+            <>
+              <button
+                type="button"
+                onClick={() => setCameraMenuOpen((open) => !open)}
+                aria-label="Camera controls"
+                aria-expanded={cameraMenuOpen}
+                className="flex h-11 min-w-11 items-center justify-center gap-1.5 rounded px-2 font-mono text-[9px] font-bold text-text-secondary hover:bg-accent-data/12 hover:text-accent-data lg:hidden"
+              >
+                <Camera className="h-3.5 w-3.5" aria-hidden="true" />
+                {cameraOptions.findIndex((camera) => camera.id === primaryCamera?.id) + 1}
+              </button>
+              <div className="hidden items-center gap-1 lg:flex">
+                <select
+                  aria-label="Main camera"
+                  value={primaryCamera?.id ?? ''}
+                  onChange={(event) => handlePrimaryCameraChange(event.target.value)}
+                  className="h-8 max-w-24 rounded border-0 bg-surface-secondary px-2 font-mono text-[9px] font-bold text-text-primary outline-none"
+                >
+                  {cameraOptions.map((camera, index) => <option key={camera.id} value={camera.id}>CAM {index + 1}</option>)}
+                </select>
+                {secondaryCamera && (
+                  <CameraLayoutControls
+                    cameraLayout={cameraLayout}
+                    canSwapCameras
+                    onCameraLayoutChange={setCameraLayout}
+                    onSwapCameras={swapCameras}
+                  />
+                )}
+              </div>
+              {cameraMenuOpen && (
+                <div className="absolute right-[calc(100%+0.5rem)] top-[calc(100%+1rem)] z-50 w-56 rounded-md border border-accent-data/35 bg-surface-primary/96 p-2 shadow-xl backdrop-blur-xl lg:hidden">
+                  <select
+                    aria-label="Main camera"
+                    value={primaryCamera?.id ?? ''}
+                    onChange={(event) => handlePrimaryCameraChange(event.target.value)}
+                    className="mb-2 h-11 w-full rounded border border-border-default bg-surface-secondary px-2 font-mono text-[10px] font-bold text-text-primary outline-none"
+                  >
+                    {cameraOptions.map((camera, index) => <option key={camera.id} value={camera.id}>CAM {index + 1}</option>)}
+                  </select>
+                  {secondaryCamera && (
+                    <div className="flex items-center justify-end gap-1 [&_button]:h-11 [&_button]:w-11">
+                      <CameraLayoutControls
+                        cameraLayout={cameraLayout}
+                        canSwapCameras
+                        onCameraLayoutChange={setCameraLayout}
+                        onSwapCameras={swapCameras}
+                      />
+                    </div>
+                  )}
+                </div>
+              )}
+            </>
           ) : <span className="px-2 font-mono text-[9px] font-bold text-text-secondary">CAM {cameraOptions.length || '--'}</span>}
-          {secondaryCamera && (
-            <CameraLayoutControls
-              cameraLayout={cameraLayout}
-              canSwapCameras
-              onCameraLayoutChange={setCameraLayout}
-              onSwapCameras={swapCameras}
-            />
-          )}
-          <button type="button" onClick={onToggleFullscreen} className="flex h-8 w-8 items-center justify-center rounded text-text-secondary hover:bg-accent-data/12 hover:text-accent-data" aria-label={isFullscreen ? 'Exit fullscreen rover control' : 'Fullscreen rover control'} aria-pressed={isFullscreen}>
+          <button type="button" onClick={onToggleFullscreen} className="flex h-11 w-11 items-center justify-center rounded text-text-secondary hover:bg-accent-data/12 hover:text-accent-data lg:h-8 lg:w-8" aria-label={isFullscreen ? 'Exit fullscreen rover control' : 'Fullscreen rover control'} aria-pressed={isFullscreen}>
             {isFullscreen ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
           </button>
         </div>

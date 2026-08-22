@@ -5,6 +5,7 @@ import {
   useMemo,
   useRef,
   useState,
+  type CSSProperties,
 } from 'react';
 import Long from 'long';
 import { Activity, X } from 'lucide-react';
@@ -184,7 +185,12 @@ const VescPwmOutputControlPanel = memo(function VescPwmOutputControlPanel({
     <section
       ref={rootRef}
       aria-label="Rover control"
-      className="group/dashboard relative isolate h-[calc(100svh-8.6rem)] min-h-[34rem] w-full overflow-hidden bg-surface-base text-text-primary lg:h-[min(84vh,58rem)] lg:min-h-[42rem] lg:rounded-lg lg:border lg:border-border-default [@media(max-width:1023px)_and_(orientation:landscape)]:min-h-[15rem] [@media(max-width:1023px)_and_(orientation:landscape)]:rounded-none [&:fullscreen]:!fixed [&:fullscreen]:!inset-0 [&:fullscreen]:!z-[60] [&:fullscreen]:!m-0 [&:fullscreen]:!h-[100svh] [&:fullscreen]:!min-h-0 [&:fullscreen]:!w-screen [&:fullscreen]:!rounded-none [&:fullscreen]:!border-0"
+      style={{
+        '--rover-landscape-left-zone': 'min(15.25rem, 29vw, calc(100svh - 8.5rem))',
+        '--rover-landscape-power-zone': 'min(5.75rem, 12vw)',
+        '--rover-landscape-right-safe-zone': 'min(6.75rem, 16vw)',
+      } as CSSProperties}
+      className="group/dashboard relative isolate h-[calc(100svh-8.6rem)] min-h-[35rem] w-full overflow-hidden bg-surface-base text-text-primary lg:h-[min(84vh,58rem)] lg:min-h-[42rem] lg:rounded-lg lg:border lg:border-border-default [@media(max-width:1023px)_and_(orientation:landscape)]:min-h-[15rem] [@media(max-width:1023px)_and_(orientation:landscape)]:rounded-none [&:fullscreen]:!fixed [&:fullscreen]:!inset-0 [&:fullscreen]:!z-[60] [&:fullscreen]:!m-0 [&:fullscreen]:!h-[100svh] [&:fullscreen]:!min-h-0 [&:fullscreen]:!w-screen [&:fullscreen]:!rounded-none [&:fullscreen]:!border-0"
     >
       <div className="grid h-full grid-rows-[minmax(15rem,1fr)_minmax(20rem,48%)] lg:grid-cols-[minmax(0,1fr)_25rem] lg:grid-rows-1 [@media(max-width:1023px)_and_(orientation:landscape)]:block">
         <RoverCameraViewport
@@ -201,13 +207,15 @@ const VescPwmOutputControlPanel = memo(function VescPwmOutputControlPanel({
         />
 
         <aside className="relative flex min-h-0 flex-col border-t border-border-default bg-surface-primary/95 lg:border-l lg:border-t-0 [@media(max-width:1023px)_and_(orientation:landscape)]:pointer-events-none [@media(max-width:1023px)_and_(orientation:landscape)]:absolute [@media(max-width:1023px)_and_(orientation:landscape)]:inset-0 [@media(max-width:1023px)_and_(orientation:landscape)]:z-30 [@media(max-width:1023px)_and_(orientation:landscape)]:border-0 [@media(max-width:1023px)_and_(orientation:landscape)]:bg-transparent">
-          <div className="shrink-0 border-b border-border-default bg-surface-secondary/45 px-3 py-2.5 [@media(max-width:1023px)_and_(orientation:landscape)]:pointer-events-auto [@media(max-width:1023px)_and_(orientation:landscape)]:absolute [@media(max-width:1023px)_and_(orientation:landscape)]:left-1/2 [@media(max-width:1023px)_and_(orientation:landscape)]:top-[calc(0.5rem+env(safe-area-inset-top))] [@media(max-width:1023px)_and_(orientation:landscape)]:w-[min(24rem,calc(100%-20rem))] [@media(max-width:1023px)_and_(orientation:landscape)]:-translate-x-1/2 [@media(max-width:1023px)_and_(orientation:landscape)]:rounded-md [@media(max-width:1023px)_and_(orientation:landscape)]:border [@media(max-width:1023px)_and_(orientation:landscape)]:border-accent-data/30 [@media(max-width:1023px)_and_(orientation:landscape)]:bg-black/72 [@media(max-width:1023px)_and_(orientation:landscape)]:py-1.5 [@media(max-width:1023px)_and_(orientation:landscape)]:shadow-[0_0.6rem_1.5rem_rgba(0,0,0,0.28)] [@media(max-width:1023px)_and_(orientation:landscape)]:backdrop-blur-md">
-            <RoverEnergyFlow
-              values={powerState.textValues}
-              fallbackBatteryVoltageV={values?.inputVoltageV}
-              linkLabel={valuesAge.label}
-              linkStale={valuesAge.stale}
-            />
+          <div className="shrink-0 border-b border-border-default bg-surface-secondary/45 px-3 py-2.5 [@media(max-width:1023px)_and_(orientation:landscape)]:pointer-events-auto [@media(max-width:1023px)_and_(orientation:landscape)]:absolute [@media(max-width:1023px)_and_(orientation:landscape)]:left-[calc(1rem+env(safe-area-inset-left)+var(--rover-landscape-left-zone))] [@media(max-width:1023px)_and_(orientation:landscape)]:right-[calc(1.5rem+env(safe-area-inset-right)+var(--rover-landscape-right-safe-zone))] [@media(max-width:1023px)_and_(orientation:landscape)]:top-[calc(0.5rem+env(safe-area-inset-top))] [@media(max-width:1023px)_and_(orientation:landscape)]:border-0 [@media(max-width:1023px)_and_(orientation:landscape)]:bg-transparent [@media(max-width:1023px)_and_(orientation:landscape)]:p-0">
+            <div className="[@media(max-width:1023px)_and_(orientation:landscape)]:mx-auto [@media(max-width:1023px)_and_(orientation:landscape)]:max-w-96 [@media(max-width:1023px)_and_(orientation:landscape)]:rounded-md [@media(max-width:1023px)_and_(orientation:landscape)]:border [@media(max-width:1023px)_and_(orientation:landscape)]:border-accent-data/30 [@media(max-width:1023px)_and_(orientation:landscape)]:bg-black/72 [@media(max-width:1023px)_and_(orientation:landscape)]:px-3 [@media(max-width:1023px)_and_(orientation:landscape)]:py-1.5 [@media(max-width:1023px)_and_(orientation:landscape)]:shadow-[0_0.6rem_1.5rem_rgba(0,0,0,0.28)] [@media(max-width:1023px)_and_(orientation:landscape)]:backdrop-blur-md">
+              <RoverEnergyFlow
+                values={powerState.textValues}
+                fallbackBatteryVoltageV={values?.inputVoltageV}
+                linkLabel={valuesAge.label}
+                linkStale={valuesAge.stale}
+              />
+            </div>
           </div>
 
           <RoverDriveSummary
