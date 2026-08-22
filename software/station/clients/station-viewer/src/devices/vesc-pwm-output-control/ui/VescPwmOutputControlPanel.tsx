@@ -50,16 +50,19 @@ import CameraViewer from '@/usbvideo/CameraViewer';
 import CameraLayoutControls, { type CameraLayoutMode } from '@/usbvideo/CameraLayoutControls';
 import { getVideoSourceId, getVideoSourceLabel } from '@/usbvideo/camera-source';
 import {
-  JOYSTICK_MAX_DRIVE_CURRENT_A,
   KEYBOARD_MAX_DRIVE_CURRENT_A,
+  ROVER_DEFAULT_DRIVE_CURRENT_LIMIT_A,
+  ROVER_DRIVE_CURRENT_LIMITS_A,
+  ROVER_MAX_DRIVE_CURRENT_A,
   mapRoverControlInput,
+  normalizeSquareJoystickInput,
 } from '../control-input';
 import RoverDriveSummary from './RoverDriveSummary';
 import RoverEnergyFlow from './RoverEnergyFlow';
 import RoverTelemetryDetails from './RoverTelemetryDetails';
 
 const CONTROL_SEND_INTERVAL_MS = 50;
-const JOYSTICK_TRAVEL_PERCENT = 34;
+const JOYSTICK_TRAVEL_PERCENT = 38;
 const JOYSTICK_DEAD_ZONE = 0.12;
 
 interface BoardOption {
@@ -86,6 +89,45 @@ interface CameraOption {
   id: string;
   label: string;
   sourceId: string;
+}
+
+interface DriveLimitSelectorProps {
+  value: number;
+  onChange: (value: number) => void;
+}
+
+function DriveLimitSelector({ value, onChange }: DriveLimitSelectorProps) {
+  return (
+    <div className="pointer-events-auto w-[min(7.5rem,31vw)] select-none rounded-md border border-border-default bg-surface-secondary/50 p-1.5 [-webkit-touch-callout:none] lg:w-full lg:p-2 [@media(max-width:1023px)_and_(orientation:landscape)]:w-[min(7.5rem,16vw)] [@media(max-width:1023px)_and_(orientation:landscape)]:border-accent-data/30 [@media(max-width:1023px)_and_(orientation:landscape)]:bg-surface-primary/55 [@media(max-width:1023px)_and_(orientation:landscape)]:shadow-[0_0.6rem_1.5rem_rgba(0,0,0,0.18)] [@media(max-width:1023px)_and_(orientation:landscape)]:backdrop-blur-md">
+      <div className="mb-1 flex items-center justify-between px-0.5 font-mono text-[8px] font-black uppercase tracking-[0.12em] lg:mb-1.5 lg:text-[9px]">
+        <span className="text-text-label">Power max</span>
+        <span className="text-accent-data">{value}A</span>
+      </div>
+      <div
+        role="group"
+        aria-label="Maximum touch drive current"
+        className="grid grid-cols-1 gap-1 lg:grid-cols-3 lg:gap-1.5"
+      >
+        {ROVER_DRIVE_CURRENT_LIMITS_A.map((limitA) => {
+          const selected = value === limitA;
+          return (
+            <button
+              key={limitA}
+              type="button"
+              aria-pressed={selected}
+              onClick={() => onChange(limitA)}
+              className={`min-h-11 rounded border px-1 font-mono text-[9px] font-black uppercase tracking-[0.06em] transition active:scale-[0.97] lg:px-2 lg:text-[10px] [@media(max-width:1023px)_and_(orientation:landscape)]:text-[10px] ${selected
+                ? 'border-accent-data bg-accent-data/18 text-accent-data shadow-[inset_0_0_0_1px_rgba(34,211,238,0.16)]'
+                : 'border-border-default bg-surface-base/55 text-text-secondary hover:border-accent-data/50 hover:text-text-primary'
+              }`}
+            >
+              {limitA}A
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
 }
 
 export interface VescPwmOutputControlPanelProps {
@@ -153,16 +195,6 @@ function buildControlState(currentA: number, steeringDeg: number): ControlState 
   };
 }
 
-function applyJoystickDeadZone(x: number, y: number): { x: number; y: number } {
-  const magnitude = Math.hypot(x, y);
-  if (magnitude <= JOYSTICK_DEAD_ZONE) return { x: 0, y: 0 };
-  const scaledMagnitude = Math.min(1, (magnitude - JOYSTICK_DEAD_ZONE) / (1 - JOYSTICK_DEAD_ZONE));
-  return {
-    x: (x / magnitude) * scaledMagnitude,
-    y: (y / magnitude) * scaledMagnitude,
-  };
-}
-
 function formatAge(stampNs: Long | number | null | undefined): { label: string; stale: boolean } {
   if (!stampNs) return { label: '--', stale: true };
   const localStamp = serverToLocal(Long.fromValue(stampNs));
@@ -218,6 +250,7 @@ const VescPwmOutputControlPanel = memo(function VescPwmOutputControlPanel({
   const [commandError, setCommandError] = useState<string | null>(null);
   const [joystick, setJoystick] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
+  const [driveCurrentLimitA, setDriveCurrentLimitA] = useState(ROVER_DEFAULT_DRIVE_CURRENT_LIMIT_A);
   const [controlState, setControlState] = useState<ControlState>(() => buildControlState(0, PWM_OUTPUT_STEERING_CENTER_DEG));
   const [powerState, setPowerState] = useState<VictronState>(EMPTY_STATE);
 
@@ -298,7 +331,8 @@ const VescPwmOutputControlPanel = memo(function VescPwmOutputControlPanel({
     if (updateUi) setControlState(next);
     const boardUuid = boardUuidRef.current;
     if (boardUuid.length > 0 && (force || next.currentA !== lastSentRef.current.currentA)) {
-      void setVescTrampaCurrent(boardUuid, next.currentA).catch((error) => reportCommandError('Drive command failed', error));
+      void setVescTrampaCurrent(boardUuid, next.currentA, ROVER_MAX_DRIVE_CURRENT_A)
+        .catch((error) => reportCommandError('Drive command failed', error));
     }
     const outputId = outputIdRef.current;
     if (outputId && (force || next.steeringDeg !== lastSentRef.current.steeringDeg)) {
@@ -343,16 +377,13 @@ const VescPwmOutputControlPanel = memo(function VescPwmOutputControlPanel({
   }, [ensureControlLoop, sendControl, stopControlLoop]);
 
   const applyNormalizedControls = useCallback((x: number, y: number) => {
-    const normalized = applyJoystickDeadZone(
-      Math.max(-1, Math.min(1, x)),
-      Math.max(-1, Math.min(1, y)),
-    );
+    const normalized = normalizeSquareJoystickInput(x, y, JOYSTICK_DEAD_ZONE);
     applyControlTarget(
       normalized.x,
       normalized.y,
-      JOYSTICK_MAX_DRIVE_CURRENT_A,
+      driveCurrentLimitA,
     );
-  }, [applyControlTarget]);
+  }, [applyControlTarget, driveCurrentLimitA]);
 
   const stopAll = useCallback(() => {
     keyboardRef.current = createKeyboardState();
@@ -381,13 +412,10 @@ const VescPwmOutputControlPanel = memo(function VescPwmOutputControlPanel({
     const keyboard = keyboardRef.current;
     const x = (keyboard.right ? 1 : 0) - (keyboard.left ? 1 : 0);
     const y = (keyboard.backward ? 1 : 0) - (keyboard.forward ? 1 : 0);
-    const magnitude = Math.hypot(x, y);
     applyControlTarget(
       x,
       y,
       KEYBOARD_MAX_DRIVE_CURRENT_A,
-      magnitude > 1 ? x / magnitude : x,
-      magnitude > 1 ? y / magnitude : y,
     );
   }, [applyControlTarget]);
 
@@ -432,11 +460,8 @@ const VescPwmOutputControlPanel = memo(function VescPwmOutputControlPanel({
     const pad = padRef.current;
     if (!pad) return;
     const rect = pad.getBoundingClientRect();
-    const radius = Math.min(rect.width, rect.height) / 2;
-    let x = (event.clientX - (rect.left + rect.width / 2)) / radius;
-    let y = (event.clientY - (rect.top + rect.height / 2)) / radius;
-    const magnitude = Math.hypot(x, y);
-    if (magnitude > 1) { x /= magnitude; y /= magnitude; }
+    const x = (event.clientX - (rect.left + rect.width / 2)) / (rect.width / 2);
+    const y = (event.clientY - (rect.top + rect.height / 2)) / (rect.height / 2);
     applyNormalizedControls(x, y);
   }, [applyNormalizedControls]);
 
@@ -507,6 +532,11 @@ const VescPwmOutputControlPanel = memo(function VescPwmOutputControlPanel({
   const handleFullscreenToggle = useCallback(() => {
     void toggleFullscreen();
   }, [toggleFullscreen]);
+
+  const handleDriveCurrentLimitChange = useCallback((nextLimitA: number) => {
+    stopAll();
+    setDriveCurrentLimitA(nextLimitA);
+  }, [stopAll]);
 
   const knobLeft = 50 + joystick.x * JOYSTICK_TRAVEL_PERCENT;
   const knobTop = 50 + joystick.y * JOYSTICK_TRAVEL_PERCENT;
@@ -599,11 +629,11 @@ const VescPwmOutputControlPanel = memo(function VescPwmOutputControlPanel({
             ageLabel={valuesAge.label}
           />
 
-          <div className="flex min-h-0 flex-1 items-center justify-center px-3 py-3 lg:flex-col lg:gap-4 lg:px-6 lg:py-5 [@media(max-width:1023px)_and_(orientation:landscape)]:pointer-events-none [@media(max-width:1023px)_and_(orientation:landscape)]:absolute [@media(max-width:1023px)_and_(orientation:landscape)]:bottom-[calc(0.5rem+env(safe-area-inset-bottom))] [@media(max-width:1023px)_and_(orientation:landscape)]:left-[calc(0.5rem+env(safe-area-inset-left))] [@media(max-width:1023px)_and_(orientation:landscape)]:right-[calc(0.5rem+env(safe-area-inset-right))] [@media(max-width:1023px)_and_(orientation:landscape)]:items-end [@media(max-width:1023px)_and_(orientation:landscape)]:justify-start [@media(max-width:1023px)_and_(orientation:landscape)]:p-0">
-            <div className="pointer-events-auto min-w-0 select-none [-webkit-touch-callout:none] [@media(max-width:1023px)_and_(orientation:landscape)]:w-[min(13.5rem,29vw)] [@media(max-width:1023px)_and_(orientation:landscape)]:rounded-lg [@media(max-width:1023px)_and_(orientation:landscape)]:border [@media(max-width:1023px)_and_(orientation:landscape)]:border-accent-data/30 [@media(max-width:1023px)_and_(orientation:landscape)]:bg-surface-primary/45 [@media(max-width:1023px)_and_(orientation:landscape)]:p-2.5 [@media(max-width:1023px)_and_(orientation:landscape)]:shadow-[0_0.6rem_1.5rem_rgba(0,0,0,0.16)] [@media(max-width:1023px)_and_(orientation:landscape)]:backdrop-blur-md">
+          <div className="flex min-h-0 flex-1 flex-row items-end justify-center gap-2 px-3 py-3 lg:flex-col lg:items-center lg:gap-4 lg:px-6 lg:py-5 [@media(max-width:1023px)_and_(orientation:landscape)]:pointer-events-none [@media(max-width:1023px)_and_(orientation:landscape)]:absolute [@media(max-width:1023px)_and_(orientation:landscape)]:bottom-[calc(0.5rem+env(safe-area-inset-bottom))] [@media(max-width:1023px)_and_(orientation:landscape)]:left-[calc(0.5rem+env(safe-area-inset-left))] [@media(max-width:1023px)_and_(orientation:landscape)]:right-[calc(0.5rem+env(safe-area-inset-right))] [@media(max-width:1023px)_and_(orientation:landscape)]:justify-between [@media(max-width:1023px)_and_(orientation:landscape)]:p-0">
+            <div className="pointer-events-auto w-[min(13.5rem,56vw)] min-w-0 select-none [-webkit-touch-callout:none] lg:w-auto [@media(max-width:1023px)_and_(orientation:landscape)]:w-[min(15.25rem,31vw)] [@media(max-width:1023px)_and_(orientation:landscape)]:rounded-lg [@media(max-width:1023px)_and_(orientation:landscape)]:border [@media(max-width:1023px)_and_(orientation:landscape)]:border-accent-data/30 [@media(max-width:1023px)_and_(orientation:landscape)]:bg-surface-primary/45 [@media(max-width:1023px)_and_(orientation:landscape)]:p-2.5 [@media(max-width:1023px)_and_(orientation:landscape)]:shadow-[0_0.6rem_1.5rem_rgba(0,0,0,0.16)] [@media(max-width:1023px)_and_(orientation:landscape)]:backdrop-blur-md">
               <div className="mb-1.5 flex items-center justify-between gap-2 px-1 [@media(max-width:1023px)_and_(orientation:landscape)]:mb-1 [@media(max-width:1023px)_and_(orientation:landscape)]:text-[0.58rem]">
                 <span className="whitespace-nowrap text-[9px] font-bold uppercase tracking-[0.16em] text-text-label [@media(max-width:1023px)_and_(orientation:landscape)]:hidden">Drive + steer</span>
-                <span className="hidden whitespace-nowrap font-bold uppercase tracking-[0.12em] text-text-label [@media(max-width:1023px)_and_(orientation:landscape)]:inline">Drive</span>
+                <span className="hidden whitespace-nowrap font-bold uppercase tracking-[0.12em] text-text-label [@media(max-width:1023px)_and_(orientation:landscape)]:inline">Drive + steer</span>
                 <span className={`font-mono text-[9px] font-bold uppercase [@media(max-width:1023px)_and_(orientation:landscape)]:text-[0.58rem] ${isControlActive ? 'text-accent-data' : 'text-text-muted'}`}>{isControlActive ? '[ live ]' : '[ idle ]'}</span>
               </div>
               <div className="mb-1 hidden text-center font-mono text-[8px] font-bold uppercase tracking-[0.12em] text-text-muted lg:block">WASD · ±10A limit</div>
@@ -618,24 +648,31 @@ const VescPwmOutputControlPanel = memo(function VescPwmOutputControlPanel({
                 onPointerUp={handlePointerEnd}
                 onPointerCancel={handlePointerEnd}
                 onLostPointerCapture={(event) => { if (draggingRef.current) handlePointerEnd(event); }}
-                className="relative mx-auto aspect-square h-[clamp(11rem,52vw,14rem)] touch-none rounded-full border border-border-default bg-surface-base shadow-[inset_0_0_0_1px_rgba(34,211,238,0.25),inset_0_0_3rem_rgba(34,211,238,0.06)] outline-none focus-visible:ring-2 focus-visible:ring-accent-data lg:h-48 [@media(max-width:1023px)_and_(orientation:landscape)]:h-[min(42vmin,calc(29vw-1.5rem),12rem)] [@media(max-width:1023px)_and_(orientation:landscape)]:border-accent-data/30 [@media(max-width:1023px)_and_(orientation:landscape)]:bg-surface-base/30 [@media(max-width:1023px)_and_(orientation:landscape)]:shadow-[inset_0_0_0_1px_rgba(34,211,238,0.45),inset_0_0_4rem_rgba(34,211,238,0.08),0_0.6rem_1.5rem_rgba(0,0,0,0.16)] [@media(max-width:1023px)_and_(orientation:landscape)]:backdrop-blur-md"
+                className="relative mx-auto aspect-square w-full touch-none rounded-2xl border border-border-default bg-surface-base shadow-[inset_0_0_0_1px_rgba(34,211,238,0.25),inset_0_0_3rem_rgba(34,211,238,0.06)] outline-none focus-visible:ring-2 focus-visible:ring-accent-data lg:h-48 lg:w-48 [@media(max-width:1023px)_and_(orientation:landscape)]:border-accent-data/30 [@media(max-width:1023px)_and_(orientation:landscape)]:bg-surface-base/30 [@media(max-width:1023px)_and_(orientation:landscape)]:shadow-[inset_0_0_0_1px_rgba(34,211,238,0.45),inset_0_0_4rem_rgba(34,211,238,0.08),0_0.6rem_1.5rem_rgba(0,0,0,0.16)] [@media(max-width:1023px)_and_(orientation:landscape)]:backdrop-blur-md"
               >
                 <span className="pointer-events-none absolute -left-1 -top-1 z-[1] hidden h-2.5 w-2.5 border-l-2 border-t-2 border-accent-data/75 [@media(max-width:1023px)_and_(orientation:landscape)]:block" aria-hidden />
                 <span className="pointer-events-none absolute -right-1 -top-1 z-[1] hidden h-2.5 w-2.5 border-r-2 border-t-2 border-accent-data/75 [@media(max-width:1023px)_and_(orientation:landscape)]:block" aria-hidden />
                 <span className="pointer-events-none absolute -bottom-1 -left-1 z-[1] hidden h-2.5 w-2.5 border-b-2 border-l-2 border-accent-data/75 [@media(max-width:1023px)_and_(orientation:landscape)]:block" aria-hidden />
                 <span className="pointer-events-none absolute -bottom-1 -right-1 z-[1] hidden h-2.5 w-2.5 border-b-2 border-r-2 border-accent-data/75 [@media(max-width:1023px)_and_(orientation:landscape)]:block" aria-hidden />
-                <span className="pointer-events-none absolute inset-[18%] rounded-full border border-border-subtle" />
-                <span className="pointer-events-none absolute inset-[34%] rounded-full border border-border-subtle" />
+                <span className="pointer-events-none absolute inset-[18%] rounded-xl border border-border-subtle" />
+                <span className="pointer-events-none absolute inset-[34%] rounded-lg border border-border-subtle" />
                 <span className="pointer-events-none absolute bottom-3 left-1/2 top-3 w-px -translate-x-1/2 bg-border-default" />
                 <span className="pointer-events-none absolute left-3 right-3 top-1/2 h-px -translate-y-1/2 bg-border-default" />
                 <span className="pointer-events-none absolute left-1/2 top-3 -translate-x-1/2 text-[8px] font-black uppercase tracking-[0.18em] text-accent-data/75">Fwd</span>
                 <span className="pointer-events-none absolute bottom-3 left-1/2 -translate-x-1/2 text-[8px] font-black uppercase tracking-[0.18em] text-text-muted">Rev</span>
+                <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[7px] font-black uppercase tracking-[0.12em] text-text-muted">Left</span>
+                <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[7px] font-black uppercase tracking-[0.12em] text-text-muted">Right</span>
                 <span
-                  className={`pointer-events-none absolute h-[31%] w-[31%] -translate-x-1/2 -translate-y-1/2 rounded-full border shadow-[0_0.6rem_1.4rem_rgba(0,0,0,0.24)] transition-[transform,background-color,border-color] duration-75 ${isDragging ? 'scale-105 border-accent-data bg-accent-data shadow-[0_0_0.8rem_rgba(34,211,238,0.45)]' : 'border-accent-data/70 bg-accent-data/10'}`}
+                  className={`pointer-events-none absolute h-[24%] w-[24%] -translate-x-1/2 -translate-y-1/2 rounded-full border shadow-[0_0.6rem_1.4rem_rgba(0,0,0,0.24)] transition-[transform,background-color,border-color] duration-75 ${isDragging ? 'scale-105 border-accent-data bg-accent-data shadow-[0_0_0.8rem_rgba(34,211,238,0.45)]' : 'border-accent-data/70 bg-accent-data/10'}`}
                   style={{ left: `${knobLeft}%`, top: `${knobTop}%` }}
                 />
               </div>
             </div>
+
+            <DriveLimitSelector
+              value={driveCurrentLimitA}
+              onChange={handleDriveCurrentLimitChange}
+            />
 
             <div className="pointer-events-auto hidden min-w-0 flex-col gap-2 lg:flex lg:w-full">
               <button type="button" onClick={stopAll} disabled={!canSendVesc && !canSendSteering} className="flex min-h-14 items-center justify-center gap-2 rounded-md border border-accent-critical-deep bg-accent-critical/12 px-3 text-xs font-black uppercase tracking-[0.12em] text-accent-critical transition hover:border-accent-critical hover:bg-accent-critical/20 active:scale-[0.98] active:bg-accent-critical/25 disabled:opacity-35 [@media(max-width:1023px)_and_(orientation:landscape)]:min-h-11">

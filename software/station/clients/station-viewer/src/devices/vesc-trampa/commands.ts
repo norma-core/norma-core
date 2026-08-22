@@ -3,6 +3,7 @@ import { vesc_trampa } from '@/api/proto.js';
 
 export const VESC_TRAMPA_CURRENT_MIN_A = -15;
 export const VESC_TRAMPA_CURRENT_MAX_A = 15;
+export const VESC_TRAMPA_CURRENT_HARD_LIMIT_A = 30;
 export const VESC_TRAMPA_CURRENT_STEP_A = 0.1;
 
 const COMMAND_SET_CURRENT = 6;
@@ -14,15 +15,26 @@ function int32Payload(commandId: number, value: number): Uint8Array {
   return payload;
 }
 
-export function clampVescTrampaCurrent(currentA: number): number {
+export function clampVescTrampaCurrent(
+  currentA: number,
+  maxAbsCurrentA = VESC_TRAMPA_CURRENT_MAX_A,
+): number {
   if (!Number.isFinite(currentA)) {
     return 0;
   }
-  return Math.max(VESC_TRAMPA_CURRENT_MIN_A, Math.min(VESC_TRAMPA_CURRENT_MAX_A, currentA));
+  const requestedLimitA = Number.isFinite(maxAbsCurrentA)
+    ? Math.abs(maxAbsCurrentA)
+    : VESC_TRAMPA_CURRENT_MAX_A;
+  const limitA = Math.min(VESC_TRAMPA_CURRENT_HARD_LIMIT_A, requestedLimitA);
+  return Math.max(-limitA, Math.min(limitA, currentA));
 }
 
-export async function setVescTrampaCurrent(boardUuid: Uint8Array, currentA: number): Promise<void> {
-  const clampedCurrentA = clampVescTrampaCurrent(currentA);
+export async function setVescTrampaCurrent(
+  boardUuid: Uint8Array,
+  currentA: number,
+  maxAbsCurrentA = VESC_TRAMPA_CURRENT_MAX_A,
+): Promise<void> {
+  const clampedCurrentA = clampVescTrampaCurrent(currentA, maxAbsCurrentA);
   await commandManager.sendVescTrampaCommand({
     targetBoardUuid: boardUuid,
     boardCommand: {
