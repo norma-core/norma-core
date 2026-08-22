@@ -10,7 +10,6 @@ import {
 import Long from 'long';
 import {
   Activity,
-  ArrowLeftRight,
   Camera,
   Crosshair,
   Gauge,
@@ -48,6 +47,7 @@ import {
   type VictronState,
 } from '@/devices/victron-smartsolar-mppt/values';
 import CameraViewer from '@/usbvideo/CameraViewer';
+import CameraLayoutControls, { type CameraLayoutMode } from '@/usbvideo/CameraLayoutControls';
 import { getVideoSourceId, getVideoSourceLabel } from '@/usbvideo/camera-source';
 import {
   JOYSTICK_MAX_DRIVE_CURRENT_A,
@@ -87,8 +87,6 @@ interface CameraOption {
   label: string;
   sourceId: string;
 }
-
-type CameraLayout = 'pip' | 'split';
 
 export interface VescPwmOutputControlPanelProps {
   vesc: vesc_trampa.IInferenceState;
@@ -175,7 +173,7 @@ function formatAge(stampNs: Long | number | null | undefined): { label: string; 
   };
 }
 
-function CameraPane({ camera, overlay = 'fps' }: { camera: CameraOption; overlay?: 'none' | 'fps' }) {
+function CameraPane({ camera }: { camera: CameraOption }) {
   return (
     <figure className="relative h-full min-h-0 min-w-0 overflow-hidden bg-black">
       <CameraViewer
@@ -183,9 +181,9 @@ function CameraPane({ camera, overlay = 'fps' }: { camera: CameraOption; overlay
         className="h-full w-full"
         imageClassName="select-none"
         fit="cover"
-        overlay={overlay}
+        overlay="none"
       />
-      <figcaption className="absolute bottom-2 left-2 max-w-[70%] truncate rounded-md border border-border-default bg-surface-primary/62 px-2 py-1 font-mono text-[9px] font-semibold uppercase tracking-wide text-text-secondary shadow-sm backdrop-blur-md [@media(max-width:1023px)_and_(orientation:landscape)]:left-1/2 [@media(max-width:1023px)_and_(orientation:landscape)]:max-w-[42%] [@media(max-width:1023px)_and_(orientation:landscape)]:-translate-x-1/2 [@media(max-width:1023px)_and_(orientation:landscape)]:border-accent-data/30">
+      <figcaption className="absolute bottom-2 left-2 max-w-[70%] truncate rounded-md border border-border-default bg-surface-primary/62 px-2 py-1 font-mono text-[9px] font-semibold uppercase tracking-wide text-text-secondary shadow-sm backdrop-blur-md [@media(max-width:1023px)_and_(orientation:landscape)]:bottom-[calc(0.5rem+env(safe-area-inset-bottom))] [@media(max-width:1023px)_and_(orientation:landscape)]:left-1/2 [@media(max-width:1023px)_and_(orientation:landscape)]:max-w-[42%] [@media(max-width:1023px)_and_(orientation:landscape)]:-translate-x-1/2 [@media(max-width:1023px)_and_(orientation:landscape)]:border-accent-data/30">
         {camera.label}
       </figcaption>
     </figure>
@@ -214,8 +212,7 @@ const VescPwmOutputControlPanel = memo(function VescPwmOutputControlPanel({
   const [selectedOutputId, setSelectedOutputId] = useState('');
   const [primaryCameraId, setPrimaryCameraId] = useState('');
   const [secondaryCameraId, setSecondaryCameraId] = useState('');
-  const [cameraLayout, setCameraLayout] = useState<CameraLayout>('pip');
-  const [showSecondaryCamera, setShowSecondaryCamera] = useState(true);
+  const [cameraLayout, setCameraLayout] = useState<CameraLayoutMode>('pip');
   const [isRemoteFullscreen, setIsRemoteFullscreen] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [isHolding, setIsHolding] = useState(false);
@@ -540,24 +537,23 @@ const VescPwmOutputControlPanel = memo(function VescPwmOutputControlPanel({
 
   const knobLeft = 50 + joystick.x * JOYSTICK_TRAVEL_PERCENT;
   const knobTop = 50 + joystick.y * JOYSTICK_TRAVEL_PERCENT;
-  const activeSecondaryCamera = showSecondaryCamera ? secondaryCamera : null;
   const actionButtonClass = 'flex min-h-11 items-center justify-center gap-1.5 rounded-md border border-border-default bg-surface-secondary/60 px-2 text-[10px] font-bold uppercase tracking-[0.08em] text-text-primary transition hover:border-accent-data/50 hover:bg-accent-data/8 active:scale-[0.98] active:bg-accent-data/14 disabled:cursor-not-allowed disabled:opacity-35';
 
   const cameraStage = !primaryCamera ? (
     <div className="flex h-full items-center justify-center bg-surface-base text-center text-sm text-text-muted">
       <div><Camera className="mx-auto mb-3 h-7 w-7" />Waiting for rover camera</div>
     </div>
-  ) : activeSecondaryCamera && cameraLayout === 'split' ? (
-    <div className="grid h-full grid-rows-2 gap-px bg-border-default sm:grid-cols-2 sm:grid-rows-1">
+  ) : secondaryCamera && cameraLayout !== 'pip' ? (
+    <div className={`grid h-full gap-px bg-border-default ${cameraLayout === 'stacked' ? 'grid-rows-2' : 'grid-cols-2'}`}>
       <CameraPane camera={primaryCamera} />
-      <CameraPane camera={activeSecondaryCamera} />
+      <CameraPane camera={secondaryCamera} />
     </div>
   ) : (
     <div className="relative h-full">
       <CameraPane camera={primaryCamera} />
-      {activeSecondaryCamera && (
+      {secondaryCamera && (
         <div className="absolute bottom-3 right-3 z-20 h-[32%] min-h-20 w-[36%] min-w-28 overflow-hidden rounded-lg border border-accent-data/35 bg-surface-base shadow-[0_1rem_2.5rem_rgba(0,0,0,0.28)]">
-          <CameraPane camera={activeSecondaryCamera} overlay="none" />
+          <CameraPane camera={secondaryCamera} />
         </div>
       )}
     </div>
@@ -568,7 +564,7 @@ const VescPwmOutputControlPanel = memo(function VescPwmOutputControlPanel({
       ref={rootRef}
       data-remote-fullscreen={isRemoteFullscreen ? 'true' : undefined}
       aria-label="Rover control"
-      className="group/dashboard relative isolate h-[calc(100svh-8.6rem)] min-h-[34rem] w-full overflow-hidden bg-surface-base text-text-primary data-[remote-fullscreen=true]:!fixed data-[remote-fullscreen=true]:!inset-0 data-[remote-fullscreen=true]:!z-[60] data-[remote-fullscreen=true]:!m-0 data-[remote-fullscreen=true]:!h-[100svh] data-[remote-fullscreen=true]:!min-h-0 data-[remote-fullscreen=true]:!w-screen data-[remote-fullscreen=true]:!rounded-none data-[remote-fullscreen=true]:!border-0 lg:h-[min(84vh,58rem)] lg:min-h-[42rem] lg:rounded-lg lg:border lg:border-border-default [@media(max-width:1023px)_and_(orientation:landscape)]:h-[calc(100svh-7.6rem)] [@media(max-width:1023px)_and_(orientation:landscape)]:min-h-[15rem] [@media(max-width:1023px)_and_(orientation:landscape)]:rounded-xl [&:fullscreen]:!fixed [&:fullscreen]:!inset-0 [&:fullscreen]:!z-[60] [&:fullscreen]:!m-0 [&:fullscreen]:!h-[100svh] [&:fullscreen]:!min-h-0 [&:fullscreen]:!w-screen [&:fullscreen]:!rounded-none [&:fullscreen]:!border-0"
+      className="group/dashboard relative isolate h-[calc(100svh-8.6rem)] min-h-[34rem] w-full overflow-hidden bg-surface-base text-text-primary data-[remote-fullscreen=true]:!fixed data-[remote-fullscreen=true]:!inset-0 data-[remote-fullscreen=true]:!z-[60] data-[remote-fullscreen=true]:!m-0 data-[remote-fullscreen=true]:!h-[100svh] data-[remote-fullscreen=true]:!min-h-0 data-[remote-fullscreen=true]:!w-screen data-[remote-fullscreen=true]:!rounded-none data-[remote-fullscreen=true]:!border-0 lg:h-[min(84vh,58rem)] lg:min-h-[42rem] lg:rounded-lg lg:border lg:border-border-default [@media(max-width:1023px)_and_(orientation:landscape)]:h-[100svh] [@media(max-width:1023px)_and_(orientation:landscape)]:min-h-[15rem] [@media(max-width:1023px)_and_(orientation:landscape)]:rounded-none [&:fullscreen]:!fixed [&:fullscreen]:!inset-0 [&:fullscreen]:!z-[60] [&:fullscreen]:!m-0 [&:fullscreen]:!h-[100svh] [&:fullscreen]:!min-h-0 [&:fullscreen]:!w-screen [&:fullscreen]:!rounded-none [&:fullscreen]:!border-0"
     >
       <div className="grid h-full grid-rows-[minmax(15rem,54%)_minmax(0,46%)] lg:grid-cols-[minmax(0,1fr)_25rem] lg:grid-rows-1 [@media(max-width:1023px)_and_(orientation:landscape)]:block">
         <div className="relative min-h-0 overflow-hidden bg-black [@media(max-width:1023px)_and_(orientation:landscape)]:absolute [@media(max-width:1023px)_and_(orientation:landscape)]:inset-0">
@@ -578,7 +574,7 @@ const VescPwmOutputControlPanel = memo(function VescPwmOutputControlPanel({
           <span className="pointer-events-none absolute right-[0.55rem] top-[0.55rem] z-20 hidden h-[0.95rem] w-[0.95rem] border-r-2 border-t-2 border-accent-data/70 [@media(max-width:1023px)_and_(orientation:landscape)]:block" aria-hidden />
           <span className="pointer-events-none absolute bottom-[0.55rem] left-[0.55rem] z-20 hidden h-[0.95rem] w-[0.95rem] border-b-2 border-l-2 border-accent-data/70 [@media(max-width:1023px)_and_(orientation:landscape)]:block" aria-hidden />
           <span className="pointer-events-none absolute bottom-[0.55rem] right-[0.55rem] z-20 hidden h-[0.95rem] w-[0.95rem] border-b-2 border-r-2 border-accent-data/70 [@media(max-width:1023px)_and_(orientation:landscape)]:block" aria-hidden />
-          <div className="absolute left-2 right-2 top-2 z-40 flex items-start justify-between gap-2">
+          <div className="absolute left-2 right-2 top-2 z-40 flex items-start justify-between gap-2 [@media(max-width:1023px)_and_(orientation:landscape)]:left-[calc(0.5rem+env(safe-area-inset-left))] [@media(max-width:1023px)_and_(orientation:landscape)]:right-[calc(0.5rem+env(safe-area-inset-right))] [@media(max-width:1023px)_and_(orientation:landscape)]:top-[calc(0.5rem+env(safe-area-inset-top))]">
             <button type="button" onClick={openDetails} aria-label="Open rover status" className="flex min-w-0 items-center gap-2 rounded-md border border-accent-data/35 bg-surface-primary/55 px-2.5 py-2 text-left shadow-[0_0.6rem_1.5rem_rgba(0,0,0,0.18)] backdrop-blur-md transition hover:border-accent-data/60 hover:bg-surface-primary/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-data">
               <span className={`h-2 w-2 shrink-0 rounded-full ${ready ? 'bg-accent-success' : hasFault ? 'bg-accent-critical' : 'bg-accent-warning'}`} />
               <div className="min-w-0">
@@ -600,29 +596,14 @@ const VescPwmOutputControlPanel = memo(function VescPwmOutputControlPanel({
                 </select>
               ) : <span className="px-2 font-mono text-[9px] font-bold text-text-secondary">CAM {cameraOptions.length || '--'}</span>}
               {secondaryCamera && (
-                <>
-                  <button
-                    type="button"
-                    onClick={() => setShowSecondaryCamera((current) => !current)}
-                    className={`flex h-8 w-8 items-center justify-center rounded transition ${showSecondaryCamera ? 'bg-accent-data text-surface-base' : 'text-text-secondary hover:bg-surface-tertiary/75'}`}
-                    aria-label={showSecondaryCamera ? 'Hide auxiliary camera' : 'Show auxiliary camera'}
-                  >
-                    <span className="relative h-4 w-4 rounded-sm border border-current"><span className="absolute -bottom-px -right-px h-2 w-2 rounded-[1px] border border-current bg-current/20" /></span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setCameraLayout((current) => current === 'pip' ? 'split' : 'pip')}
-                    className="flex h-8 w-8 items-center justify-center rounded text-text-secondary hover:bg-surface-tertiary/75"
-                    aria-label={cameraLayout === 'pip' ? 'Use split camera layout' : 'Use picture-in-picture layout'}
-                  >
-                    <span className={`grid h-4 w-4 gap-px ${cameraLayout === 'split' ? 'grid-cols-2' : 'grid-cols-[1fr_0.45fr]'}`}><span className="rounded-[1px] border border-current" /><span className="rounded-[1px] border border-current" /></span>
-                  </button>
-                  <button type="button" onClick={swapCameras} className="flex h-8 w-8 items-center justify-center rounded text-text-secondary hover:bg-surface-tertiary/75" aria-label="Swap cameras">
-                    <ArrowLeftRight className="h-3.5 w-3.5" />
-                  </button>
-                </>
+                <CameraLayoutControls
+                  cameraLayout={cameraLayout}
+                  canSwapCameras
+                  onCameraLayoutChange={setCameraLayout}
+                  onSwapCameras={swapCameras}
+                />
               )}
-              <button type="button" onClick={handleRemoteFullscreenToggle} className="flex h-8 w-8 items-center justify-center rounded text-text-secondary hover:bg-accent-data/12 hover:text-accent-data" aria-label={isRemoteFullscreen ? 'Exit fullscreen rover control' : 'Fullscreen rover control'} aria-pressed={isRemoteFullscreen}>
+              <button type="button" onClick={handleRemoteFullscreenToggle} className="flex h-8 w-8 items-center justify-center rounded text-text-secondary hover:bg-accent-data/12 hover:text-accent-data [@media(max-width:1023px)_and_(orientation:landscape)]:hidden" aria-label={isRemoteFullscreen ? 'Exit fullscreen rover control' : 'Fullscreen rover control'} aria-pressed={isRemoteFullscreen}>
                 {isRemoteFullscreen ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
               </button>
             </div>
@@ -630,7 +611,7 @@ const VescPwmOutputControlPanel = memo(function VescPwmOutputControlPanel({
         </div>
 
         <aside className="relative flex min-h-0 flex-col border-t border-border-default bg-surface-primary/95 lg:border-l lg:border-t-0 [@media(max-width:1023px)_and_(orientation:landscape)]:pointer-events-none [@media(max-width:1023px)_and_(orientation:landscape)]:absolute [@media(max-width:1023px)_and_(orientation:landscape)]:inset-0 [@media(max-width:1023px)_and_(orientation:landscape)]:z-30 [@media(max-width:1023px)_and_(orientation:landscape)]:border-0 [@media(max-width:1023px)_and_(orientation:landscape)]:bg-transparent">
-          <div className="shrink-0 border-b border-border-default bg-surface-secondary/45 px-3 py-2.5 [@media(max-width:1023px)_and_(orientation:landscape)]:pointer-events-auto [@media(max-width:1023px)_and_(orientation:landscape)]:absolute [@media(max-width:1023px)_and_(orientation:landscape)]:left-1/2 [@media(max-width:1023px)_and_(orientation:landscape)]:top-2 [@media(max-width:1023px)_and_(orientation:landscape)]:w-[min(24rem,calc(100%-20rem))] [@media(max-width:1023px)_and_(orientation:landscape)]:-translate-x-1/2 [@media(max-width:1023px)_and_(orientation:landscape)]:rounded-md [@media(max-width:1023px)_and_(orientation:landscape)]:border [@media(max-width:1023px)_and_(orientation:landscape)]:border-accent-data/30 [@media(max-width:1023px)_and_(orientation:landscape)]:bg-black/72 [@media(max-width:1023px)_and_(orientation:landscape)]:py-2 [@media(max-width:1023px)_and_(orientation:landscape)]:shadow-[0_0.6rem_1.5rem_rgba(0,0,0,0.28)] [@media(max-width:1023px)_and_(orientation:landscape)]:backdrop-blur-md">
+          <div className="shrink-0 border-b border-border-default bg-surface-secondary/45 px-3 py-2.5 [@media(max-width:1023px)_and_(orientation:landscape)]:pointer-events-auto [@media(max-width:1023px)_and_(orientation:landscape)]:absolute [@media(max-width:1023px)_and_(orientation:landscape)]:left-1/2 [@media(max-width:1023px)_and_(orientation:landscape)]:top-[calc(0.5rem+env(safe-area-inset-top))] [@media(max-width:1023px)_and_(orientation:landscape)]:w-[min(24rem,calc(100%-20rem))] [@media(max-width:1023px)_and_(orientation:landscape)]:-translate-x-1/2 [@media(max-width:1023px)_and_(orientation:landscape)]:rounded-md [@media(max-width:1023px)_and_(orientation:landscape)]:border [@media(max-width:1023px)_and_(orientation:landscape)]:border-accent-data/30 [@media(max-width:1023px)_and_(orientation:landscape)]:bg-black/72 [@media(max-width:1023px)_and_(orientation:landscape)]:py-1.5 [@media(max-width:1023px)_and_(orientation:landscape)]:shadow-[0_0.6rem_1.5rem_rgba(0,0,0,0.28)] [@media(max-width:1023px)_and_(orientation:landscape)]:backdrop-blur-md">
             <RoverEnergyFlow
               values={powerState.textValues}
               fallbackBatteryVoltageV={values?.inputVoltageV}
@@ -646,8 +627,8 @@ const VescPwmOutputControlPanel = memo(function VescPwmOutputControlPanel({
             ageLabel={valuesAge.label}
           />
 
-          <div className="flex min-h-0 flex-1 items-center justify-center px-3 py-3 lg:flex-col lg:gap-4 lg:px-6 lg:py-5 [@media(max-width:1023px)_and_(orientation:landscape)]:pointer-events-none [@media(max-width:1023px)_and_(orientation:landscape)]:absolute [@media(max-width:1023px)_and_(orientation:landscape)]:inset-x-2 [@media(max-width:1023px)_and_(orientation:landscape)]:bottom-2 [@media(max-width:1023px)_and_(orientation:landscape)]:items-end [@media(max-width:1023px)_and_(orientation:landscape)]:justify-start [@media(max-width:1023px)_and_(orientation:landscape)]:p-0">
-            <div className="pointer-events-auto min-w-0 select-none [@media(max-width:1023px)_and_(orientation:landscape)]:w-[min(11rem,22vw)] [@media(max-width:1023px)_and_(orientation:landscape)]:rounded-lg [@media(max-width:1023px)_and_(orientation:landscape)]:border [@media(max-width:1023px)_and_(orientation:landscape)]:border-accent-data/30 [@media(max-width:1023px)_and_(orientation:landscape)]:bg-surface-primary/45 [@media(max-width:1023px)_and_(orientation:landscape)]:p-2.5 [@media(max-width:1023px)_and_(orientation:landscape)]:shadow-[0_0.6rem_1.5rem_rgba(0,0,0,0.16)] [@media(max-width:1023px)_and_(orientation:landscape)]:backdrop-blur-md">
+          <div className="flex min-h-0 flex-1 items-center justify-center px-3 py-3 lg:flex-col lg:gap-4 lg:px-6 lg:py-5 [@media(max-width:1023px)_and_(orientation:landscape)]:pointer-events-none [@media(max-width:1023px)_and_(orientation:landscape)]:absolute [@media(max-width:1023px)_and_(orientation:landscape)]:bottom-[calc(0.5rem+env(safe-area-inset-bottom))] [@media(max-width:1023px)_and_(orientation:landscape)]:left-[calc(0.5rem+env(safe-area-inset-left))] [@media(max-width:1023px)_and_(orientation:landscape)]:right-[calc(0.5rem+env(safe-area-inset-right))] [@media(max-width:1023px)_and_(orientation:landscape)]:items-end [@media(max-width:1023px)_and_(orientation:landscape)]:justify-start [@media(max-width:1023px)_and_(orientation:landscape)]:p-0">
+            <div className="pointer-events-auto min-w-0 select-none [-webkit-touch-callout:none] [@media(max-width:1023px)_and_(orientation:landscape)]:w-[min(11rem,22vw)] [@media(max-width:1023px)_and_(orientation:landscape)]:rounded-lg [@media(max-width:1023px)_and_(orientation:landscape)]:border [@media(max-width:1023px)_and_(orientation:landscape)]:border-accent-data/30 [@media(max-width:1023px)_and_(orientation:landscape)]:bg-surface-primary/45 [@media(max-width:1023px)_and_(orientation:landscape)]:p-2.5 [@media(max-width:1023px)_and_(orientation:landscape)]:shadow-[0_0.6rem_1.5rem_rgba(0,0,0,0.16)] [@media(max-width:1023px)_and_(orientation:landscape)]:backdrop-blur-md">
               <div className="mb-1.5 flex items-center justify-between gap-2 px-1 [@media(max-width:1023px)_and_(orientation:landscape)]:mb-1 [@media(max-width:1023px)_and_(orientation:landscape)]:text-[0.58rem]">
                 <span className="whitespace-nowrap text-[9px] font-bold uppercase tracking-[0.16em] text-text-label [@media(max-width:1023px)_and_(orientation:landscape)]:hidden">Drive + steer</span>
                 <span className="hidden whitespace-nowrap font-bold uppercase tracking-[0.12em] text-text-label [@media(max-width:1023px)_and_(orientation:landscape)]:inline">Drive</span>
@@ -665,7 +646,7 @@ const VescPwmOutputControlPanel = memo(function VescPwmOutputControlPanel({
                 onPointerUp={handlePointerEnd}
                 onPointerCancel={handlePointerEnd}
                 onLostPointerCapture={(event) => { if (draggingRef.current) handlePointerEnd(event); }}
-                className="relative mx-auto aspect-square h-[clamp(8.5rem,38vw,10.5rem)] touch-none rounded-full border border-border-default bg-surface-base shadow-[inset_0_0_0_1px_rgba(34,211,238,0.25),inset_0_0_3rem_rgba(34,211,238,0.06)] outline-none focus-visible:ring-2 focus-visible:ring-accent-data lg:h-48 [@media(max-width:1023px)_and_(orientation:landscape)]:h-[min(27vmin,10.5rem)] [@media(max-width:1023px)_and_(orientation:landscape)]:border-accent-data/30 [@media(max-width:1023px)_and_(orientation:landscape)]:bg-surface-base/30 [@media(max-width:1023px)_and_(orientation:landscape)]:shadow-[inset_0_0_0_1px_rgba(34,211,238,0.45),inset_0_0_4rem_rgba(34,211,238,0.08),0_0.6rem_1.5rem_rgba(0,0,0,0.16)] [@media(max-width:1023px)_and_(orientation:landscape)]:backdrop-blur-md [@media(max-width:1023px)_and_(orientation:landscape)_and_(max-height:520px)]:h-[min(24vmin,9rem)]"
+                className="relative mx-auto aspect-square h-[clamp(8.5rem,38vw,10.5rem)] touch-none rounded-full border border-border-default bg-surface-base shadow-[inset_0_0_0_1px_rgba(34,211,238,0.25),inset_0_0_3rem_rgba(34,211,238,0.06)] outline-none focus-visible:ring-2 focus-visible:ring-accent-data lg:h-48 [@media(max-width:1023px)_and_(orientation:landscape)]:h-[min(27vmin,calc(22vw-1.375rem),9.625rem)] [@media(max-width:1023px)_and_(orientation:landscape)]:border-accent-data/30 [@media(max-width:1023px)_and_(orientation:landscape)]:bg-surface-base/30 [@media(max-width:1023px)_and_(orientation:landscape)]:shadow-[inset_0_0_0_1px_rgba(34,211,238,0.45),inset_0_0_4rem_rgba(34,211,238,0.08),0_0.6rem_1.5rem_rgba(0,0,0,0.16)] [@media(max-width:1023px)_and_(orientation:landscape)]:backdrop-blur-md [@media(max-width:1023px)_and_(orientation:landscape)_and_(max-height:520px)]:h-[min(24vmin,calc(22vw-1.375rem),9rem)]"
               >
                 <span className="pointer-events-none absolute -left-1 -top-1 z-[1] hidden h-2.5 w-2.5 border-l-2 border-t-2 border-accent-data/75 [@media(max-width:1023px)_and_(orientation:landscape)]:block" aria-hidden />
                 <span className="pointer-events-none absolute -right-1 -top-1 z-[1] hidden h-2.5 w-2.5 border-r-2 border-t-2 border-accent-data/75 [@media(max-width:1023px)_and_(orientation:landscape)]:block" aria-hidden />

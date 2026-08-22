@@ -18,7 +18,7 @@ function batteryModeLabel(mode: BatteryFlowMode): string {
     case 'charging': return 'Charging';
     case 'discharging': return 'Discharging';
     case 'idle': return 'Idle';
-    default: return 'No current data';
+    default: return 'Current N/A';
   }
 }
 
@@ -47,6 +47,10 @@ export default function RoverEnergyFlow({
         ? 'bg-accent-warning'
         : 'bg-accent-success';
   const loadLabel = energy.loadOn === false ? 'Off' : valueOrDash(energy.loadPowerW, 1, 'W');
+  const batteryFlowLabel = batteryModeLabel(energy.batteryMode);
+  const batteryFlowDescription = energy.batteryMode === 'unavailable'
+    ? 'Battery current data unavailable'
+    : batteryFlowLabel;
 
   return (
     <section
@@ -60,9 +64,11 @@ export default function RoverEnergyFlow({
 
       <div className="grid grid-cols-[minmax(3.3rem,0.72fr)_minmax(1rem,0.35fr)_minmax(6.4rem,1.25fr)_minmax(1rem,0.35fr)_minmax(3.3rem,0.72fr)] items-center [@media(max-width:1023px)_and_(orientation:landscape)]:grid-cols-[minmax(2.5rem,0.7fr)_minmax(0.5rem,0.25fr)_minmax(5.6rem,1.25fr)_minmax(0.5rem,0.25fr)_minmax(2.5rem,0.7fr)]">
         <div className="min-w-0 text-center">
-          <SunMedium className={`mx-auto h-4 w-4 ${energy.solarActive ? 'text-accent-data' : 'text-text-muted [@media(max-width:1023px)_and_(orientation:landscape)]:text-white/50'}`} />
-          <div className={`mt-0.5 truncate font-mono text-xs font-black tabular-nums ${energy.solarActive ? 'text-accent-data' : 'text-text-secondary [@media(max-width:1023px)_and_(orientation:landscape)]:text-white/75'}`}>
-            {valueOrDash(energy.solarPowerW, 0, 'W')}
+          <div className="[@media(max-width:1023px)_and_(orientation:landscape)]:flex [@media(max-width:1023px)_and_(orientation:landscape)]:items-center [@media(max-width:1023px)_and_(orientation:landscape)]:justify-center [@media(max-width:1023px)_and_(orientation:landscape)]:gap-1.5">
+            <SunMedium className={`mx-auto h-4 w-4 [@media(max-width:1023px)_and_(orientation:landscape)]:mx-0 [@media(max-width:1023px)_and_(orientation:landscape)]:shrink-0 ${energy.solarActive ? 'text-accent-data' : 'text-text-muted [@media(max-width:1023px)_and_(orientation:landscape)]:text-white/50'}`} />
+            <div className={`mt-0.5 truncate font-mono text-xs font-black tabular-nums [@media(max-width:1023px)_and_(orientation:landscape)]:mt-0 ${energy.solarActive ? 'text-accent-data' : 'text-text-secondary [@media(max-width:1023px)_and_(orientation:landscape)]:text-white/75'}`}>
+              {valueOrDash(energy.solarPowerW, 0, 'W')}
+            </div>
           </div>
           <div className="truncate font-mono text-[9px] text-text-muted [@media(max-width:1023px)_and_(orientation:landscape)]:text-[8px] [@media(max-width:1023px)_and_(orientation:landscape)]:text-white/60">Solar · {valueOrDash(energy.panelVoltageV, 1, 'V')}</div>
         </div>
@@ -97,8 +103,12 @@ export default function RoverEnergyFlow({
                 {valueOrDash(energy.batteryVoltageV, 1, 'V')} · {valueOrDash(energy.batteryCurrentA, 1, 'A')}
               </span>
             </div>
-            <div className="truncate text-[9px] font-semibold uppercase tracking-wide text-text-muted [@media(max-width:1023px)_and_(orientation:landscape)]:text-[8px] [@media(max-width:1023px)_and_(orientation:landscape)]:text-white/60">
-              {batteryModeLabel(energy.batteryMode)}
+            <div
+              aria-label={batteryFlowDescription}
+              title={energy.batteryMode === 'unavailable' ? batteryFlowDescription : undefined}
+              className="truncate text-[9px] font-semibold uppercase tracking-wide text-text-muted [@media(max-width:1023px)_and_(orientation:landscape)]:text-[8px] [@media(max-width:1023px)_and_(orientation:landscape)]:text-white/60"
+            >
+              {batteryFlowLabel}
             </div>
           </div>
         </div>
@@ -106,9 +116,11 @@ export default function RoverEnergyFlow({
         <FlowLine active={energy.loadActive} />
 
         <div className="min-w-0 text-center">
-          <PlugZap className={`mx-auto h-4 w-4 ${energy.loadActive ? 'text-accent-data' : 'text-text-muted [@media(max-width:1023px)_and_(orientation:landscape)]:text-white/50'}`} />
-          <div className={`mt-0.5 truncate font-mono text-xs font-black tabular-nums ${energy.loadActive ? 'text-text-primary [@media(max-width:1023px)_and_(orientation:landscape)]:text-white' : 'text-text-secondary [@media(max-width:1023px)_and_(orientation:landscape)]:text-white/75'}`}>
-            {loadLabel}
+          <div className="[@media(max-width:1023px)_and_(orientation:landscape)]:flex [@media(max-width:1023px)_and_(orientation:landscape)]:items-center [@media(max-width:1023px)_and_(orientation:landscape)]:justify-center [@media(max-width:1023px)_and_(orientation:landscape)]:gap-1.5">
+            <PlugZap className={`mx-auto h-4 w-4 [@media(max-width:1023px)_and_(orientation:landscape)]:mx-0 [@media(max-width:1023px)_and_(orientation:landscape)]:shrink-0 ${energy.loadActive ? 'text-accent-data' : 'text-text-muted [@media(max-width:1023px)_and_(orientation:landscape)]:text-white/50'}`} />
+            <div className={`mt-0.5 truncate font-mono text-xs font-black tabular-nums [@media(max-width:1023px)_and_(orientation:landscape)]:mt-0 ${energy.loadActive ? 'text-text-primary [@media(max-width:1023px)_and_(orientation:landscape)]:text-white' : 'text-text-secondary [@media(max-width:1023px)_and_(orientation:landscape)]:text-white/75'}`}>
+              {loadLabel}
+            </div>
           </div>
           <div className="truncate font-mono text-[9px] text-text-muted [@media(max-width:1023px)_and_(orientation:landscape)]:text-[8px] [@media(max-width:1023px)_and_(orientation:landscape)]:text-white/60">Load · {valueOrDash(energy.loadCurrentA, 2, 'A')}</div>
         </div>
