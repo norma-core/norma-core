@@ -186,7 +186,7 @@ const VescPwmOutputControlPanel = memo(function VescPwmOutputControlPanel({
       aria-label="Rover control"
       className="group/dashboard relative isolate h-[calc(100svh-8.6rem)] min-h-[34rem] w-full overflow-hidden bg-surface-base text-text-primary lg:h-[min(84vh,58rem)] lg:min-h-[42rem] lg:rounded-lg lg:border lg:border-border-default [@media(max-width:1023px)_and_(orientation:landscape)]:min-h-[15rem] [@media(max-width:1023px)_and_(orientation:landscape)]:rounded-none [&:fullscreen]:!fixed [&:fullscreen]:!inset-0 [&:fullscreen]:!z-[60] [&:fullscreen]:!m-0 [&:fullscreen]:!h-[100svh] [&:fullscreen]:!min-h-0 [&:fullscreen]:!w-screen [&:fullscreen]:!rounded-none [&:fullscreen]:!border-0"
     >
-      <div className="grid h-full grid-rows-[minmax(15rem,54%)_minmax(0,46%)] lg:grid-cols-[minmax(0,1fr)_25rem] lg:grid-rows-1 [@media(max-width:1023px)_and_(orientation:landscape)]:block">
+      <div className="grid h-full grid-rows-[minmax(15rem,1fr)_minmax(20rem,48%)] lg:grid-cols-[minmax(0,1fr)_25rem] lg:grid-rows-1 [@media(max-width:1023px)_and_(orientation:landscape)]:block">
         <RoverCameraViewport
           videoSources={videoSources}
           status={{

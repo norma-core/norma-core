@@ -1,4 +1,10 @@
-import type { ChangeEvent } from 'react';
+import {
+  useCallback,
+  useRef,
+  type ChangeEvent,
+  type KeyboardEvent,
+  type PointerEvent as ReactPointerEvent,
+} from 'react';
 import {
   ROVER_MAX_DRIVE_CURRENT_A,
   ROVER_MIN_DRIVE_CURRENT_LIMIT_A,
@@ -12,11 +18,74 @@ interface RoverPowerLimitControlProps {
 }
 
 function RoverPowerLimitControl({ value, onChange }: RoverPowerLimitControlProps) {
+  const mobileTrackRef = useRef<HTMLDivElement>(null);
+  const draggingRef = useRef(false);
   const progress = ((value - ROVER_MIN_DRIVE_CURRENT_LIMIT_A)
     / (ROVER_MAX_DRIVE_CURRENT_A - ROVER_MIN_DRIVE_CURRENT_LIMIT_A)) * 100;
   const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
     onChange(event.currentTarget.valueAsNumber);
   };
+
+  const updateFromPointer = useCallback((event: ReactPointerEvent<HTMLDivElement>) => {
+    const track = mobileTrackRef.current;
+    if (!track) return;
+
+    const rect = track.getBoundingClientRect();
+    const ratio = 1 - Math.max(0, Math.min(1, (event.clientY - rect.top) / rect.height));
+    const range = ROVER_MAX_DRIVE_CURRENT_A - ROVER_MIN_DRIVE_CURRENT_LIMIT_A;
+    onChange(Math.round(ROVER_MIN_DRIVE_CURRENT_LIMIT_A + ratio * range));
+  }, [onChange]);
+
+  const handlePointerDown = useCallback((event: ReactPointerEvent<HTMLDivElement>) => {
+    draggingRef.current = true;
+    event.currentTarget.setPointerCapture(event.pointerId);
+    updateFromPointer(event);
+  }, [updateFromPointer]);
+
+  const handlePointerMove = useCallback((event: ReactPointerEvent<HTMLDivElement>) => {
+    if (draggingRef.current) updateFromPointer(event);
+  }, [updateFromPointer]);
+
+  const handlePointerEnd = useCallback((event: ReactPointerEvent<HTMLDivElement>) => {
+    draggingRef.current = false;
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+  }, []);
+
+  const handleKeyDown = useCallback((event: KeyboardEvent<HTMLDivElement>) => {
+    let nextValue = value;
+    switch (event.key) {
+      case 'ArrowUp':
+      case 'ArrowRight':
+        nextValue += 1;
+        break;
+      case 'ArrowDown':
+      case 'ArrowLeft':
+        nextValue -= 1;
+        break;
+      case 'PageUp':
+        nextValue += 5;
+        break;
+      case 'PageDown':
+        nextValue -= 5;
+        break;
+      case 'Home':
+        nextValue = ROVER_MIN_DRIVE_CURRENT_LIMIT_A;
+        break;
+      case 'End':
+        nextValue = ROVER_MAX_DRIVE_CURRENT_A;
+        break;
+      default:
+        return;
+    }
+
+    event.preventDefault();
+    onChange(Math.max(
+      ROVER_MIN_DRIVE_CURRENT_LIMIT_A,
+      Math.min(ROVER_MAX_DRIVE_CURRENT_A, nextValue),
+    ));
+  }, [onChange, value]);
 
   const rangeProps = {
     min: ROVER_MIN_DRIVE_CURRENT_LIMIT_A,
@@ -35,20 +104,36 @@ function RoverPowerLimitControl({ value, onChange }: RoverPowerLimitControlProps
         <output className="text-accent-data">{value}A</output>
       </div>
 
-      <div className="relative mx-auto flex h-[9.75rem] w-full items-center justify-center lg:hidden">
-        <div className="pointer-events-none absolute left-1/2 top-1/2 h-[8.5rem] w-2 -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-full bg-border-default" aria-hidden>
+      <div
+        ref={mobileTrackRef}
+        role="slider"
+        tabIndex={0}
+        aria-label="Maximum touch drive current"
+        aria-valuemin={ROVER_MIN_DRIVE_CURRENT_LIMIT_A}
+        aria-valuemax={ROVER_MAX_DRIVE_CURRENT_A}
+        aria-valuenow={value}
+        aria-valuetext={`${value} amps`}
+        aria-orientation="vertical"
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerEnd}
+        onPointerCancel={handlePointerEnd}
+        onLostPointerCapture={handlePointerEnd}
+        onKeyDown={handleKeyDown}
+        className="relative mx-auto flex h-[9.75rem] w-full touch-none items-center justify-center rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-accent-data lg:hidden"
+      >
+        <div className="pointer-events-none absolute left-1/2 top-1/2 h-[8.5rem] w-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-border-default" aria-hidden>
           <span
-            className="absolute inset-x-0 bottom-0 rounded-full bg-accent-data transition-[height] duration-75"
+            className="absolute inset-x-0 bottom-0 overflow-hidden rounded-full bg-accent-data"
             style={{ height: `${progress}%` }}
+          />
+          <span
+            className="absolute left-1/2 h-9 w-9 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-accent-data bg-surface-primary shadow-[0_0_0_4px_rgba(34,211,238,0.14),0_0.35rem_0.8rem_rgba(0,0,0,0.28)]"
+            style={{ top: `${100 - progress}%` }}
           />
         </div>
         <span className="pointer-events-none absolute right-0.5 top-1 font-mono text-[7px] font-bold text-text-muted">{ROVER_MAX_DRIVE_CURRENT_A}</span>
         <span className="pointer-events-none absolute bottom-1 right-0.5 font-mono text-[7px] font-bold text-text-muted">{ROVER_MIN_DRIVE_CURRENT_LIMIT_A}</span>
-        <input
-          {...rangeProps}
-          type="range"
-          className={`absolute left-1/2 top-1/2 h-11 w-[9.5rem] -translate-x-1/2 -translate-y-1/2 -rotate-90 touch-none ${rangeClass}`}
-        />
       </div>
 
       <div className="hidden lg:block">

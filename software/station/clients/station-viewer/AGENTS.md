@@ -27,6 +27,8 @@ Do not add tests whose only purpose is to detect a change to an exported constan
 
 For a bug fix, first demonstrate that the test fails for the broken behavior, then make it pass. If a test cannot be connected to a realistic regression, do not add it.
 
+For responsive UI changes, do not commit after checking only one viewport. Verify the affected flow in mobile portrait, mobile landscape, and desktop layouts. Mobile landscape must also be checked in a normal browser tab, not only in element fullscreen, because browser chrome reduces the available height. Exercise the changed controls at each relevant size; a screenshot alone is not sufficient for interactive behavior such as dragging, tapping, or pointer capture.
+
 ## Tech Stack
 
 - **React 19** with function components only
