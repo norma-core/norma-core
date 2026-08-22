@@ -34,6 +34,21 @@ function BatteryJunction({ mode, busActive }: { mode: BatteryFlowMode; busActive
   );
 }
 
+interface TelemetryItemProps {
+  label: string;
+  value: string;
+  uppercaseValue?: boolean;
+}
+
+function TelemetryItem({ label, value, uppercaseValue = false }: TelemetryItemProps) {
+  return (
+    <div className="flex min-w-0 flex-col items-center gap-0.5 text-center lg:flex-row lg:justify-between lg:gap-3 lg:text-left">
+      <dt className="max-w-full truncate text-[8px] uppercase tracking-wide text-text-muted lg:text-[9px] lg:normal-case lg:tracking-normal">{label}</dt>
+      <dd className={`max-w-full truncate font-bold text-text-primary ${uppercaseValue ? 'uppercase' : ''}`}>{value}</dd>
+    </div>
+  );
+}
+
 export default function RoverBatteryIndicator({ energy }: RoverBatteryIndicatorProps) {
   const [detailsOpen, setDetailsOpen] = useState(false);
   const controlRef = useRef<HTMLDivElement>(null);
@@ -102,7 +117,7 @@ export default function RoverBatteryIndicator({ energy }: RoverBatteryIndicatorP
             setDetailsOpen(false);
           }
         }}
-        className="mx-auto flex h-11 w-full min-w-0 flex-col items-center justify-start rounded-md outline-none focus-visible:ring-2 focus-visible:ring-accent-data"
+        className="mx-auto flex h-11 w-14 min-w-0 flex-col items-center justify-start rounded-md outline-none focus-visible:ring-2 focus-visible:ring-accent-data lg:w-full"
       >
         <BatteryJunction mode={energy.batteryMode} busActive={busActive} />
         <span className="flex min-w-0 items-center justify-center gap-1.5">
@@ -137,14 +152,14 @@ export default function RoverBatteryIndicator({ energy }: RoverBatteryIndicatorP
       <div
         id={detailsId}
         role="tooltip"
-        className={`pointer-events-none absolute left-1/2 top-full z-50 mt-2 w-40 -translate-x-1/2 rounded-md border border-border-default bg-surface-primary/96 px-3 py-2 text-left shadow-xl backdrop-blur-md transition-[opacity,transform,visibility] duration-150 ${detailsOpen ? 'visible translate-y-0 opacity-100' : 'invisible translate-y-1 opacity-0'}`}
+        className={`pointer-events-none absolute left-1/2 top-full z-50 mt-2 w-[min(20rem,calc(100vw-1rem))] -translate-x-1/2 rounded-md border border-border-default bg-surface-primary/96 px-2.5 py-2 text-left shadow-xl backdrop-blur-md transition-[opacity,transform,visibility] duration-150 lg:w-40 lg:px-3 ${detailsOpen ? 'visible translate-y-0 opacity-100' : 'invisible translate-y-1 opacity-0'}`}
       >
-        <div className="mb-1.5 font-mono text-[8px] font-bold uppercase tracking-[0.12em] text-text-muted">Battery telemetry</div>
-        <dl className="space-y-1 font-mono text-[9px] tabular-nums">
-          <div className="flex items-center justify-between gap-3"><dt className="text-text-muted">State</dt><dd className="font-bold uppercase text-text-primary">{batteryFlowLabel}</dd></div>
-          <div className="flex items-center justify-between gap-3"><dt className="text-text-muted">Voltage</dt><dd className="font-bold text-text-primary">{valueOrDash(energy.batteryVoltageV, 2, 'V')}</dd></div>
-          <div className="flex items-center justify-between gap-3"><dt className="text-text-muted">Current</dt><dd className="font-bold text-text-primary">{signedValueOrDash(energy.batteryCurrentA, 2, 'A')}</dd></div>
-          <div className="flex items-center justify-between gap-3"><dt className="text-text-muted">SOC estimate</dt><dd className="font-bold text-text-primary">{batteryPercent === null ? '--' : `≈${batteryPercent}%`}</dd></div>
+        <div className="mb-1.5 hidden font-mono text-[8px] font-bold uppercase tracking-[0.12em] text-text-muted lg:block">Battery telemetry</div>
+        <dl className="grid grid-cols-4 gap-1 font-mono text-[9px] tabular-nums lg:block lg:space-y-1">
+          <TelemetryItem label="State" value={batteryFlowLabel} uppercaseValue />
+          <TelemetryItem label="Voltage" value={valueOrDash(energy.batteryVoltageV, 2, 'V')} />
+          <TelemetryItem label="Current" value={signedValueOrDash(energy.batteryCurrentA, 2, 'A')} />
+          <TelemetryItem label="SOC" value={batteryPercent === null ? '--' : `≈${batteryPercent}%`} />
         </dl>
       </div>
     </div>

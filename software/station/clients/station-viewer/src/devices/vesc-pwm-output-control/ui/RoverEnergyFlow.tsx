@@ -87,14 +87,14 @@ export default function RoverEnergyFlow({
   return (
     <section
       aria-label={`Energy flow. Solar ${valueOrDash(energy.solarPowerW, 0, ' watts')}. Battery ${batteryPercent === null ? 'state unavailable' : `approximately ${batteryPercent} percent`}. Load ${loadLabel}.`}
-      className="w-full"
+      className="w-full [@media(max-width:1023px)_and_(orientation:landscape)]:grid [@media(max-width:1023px)_and_(orientation:landscape)]:grid-cols-[minmax(5.5rem,auto)_minmax(9.3rem,1fr)_auto] [@media(max-width:1023px)_and_(orientation:landscape)]:items-center [@media(max-width:1023px)_and_(orientation:landscape)]:gap-x-2"
     >
-      <div className="mb-1.5 flex items-center justify-between gap-3 font-mono text-[9px] font-bold uppercase tracking-[0.14em] [@media(max-width:1023px)_and_(orientation:landscape)]:mb-0.5 [@media(max-width:1023px)_and_(orientation:landscape)]:text-[8px]">
-        <span className={`min-w-0 truncate ${powerSummaryColor}`}>{powerSummary.label}</span>
-        <span className={linkStale ? 'text-accent-critical' : 'text-accent-success'}>Link {linkLabel}</span>
+      <div className="mb-1.5 flex items-center justify-between gap-3 font-mono text-[9px] font-bold uppercase tracking-[0.14em] [@media(max-width:1023px)_and_(orientation:landscape)]:contents [@media(max-width:1023px)_and_(orientation:landscape)]:text-[7px]">
+        <span className={`min-w-0 truncate [@media(max-width:1023px)_and_(orientation:landscape)]:col-start-1 [@media(max-width:1023px)_and_(orientation:landscape)]:row-start-1 ${powerSummaryColor}`}>{powerSummary.label}</span>
+        <span className={`whitespace-nowrap [@media(max-width:1023px)_and_(orientation:landscape)]:col-start-3 [@media(max-width:1023px)_and_(orientation:landscape)]:row-start-1 ${linkStale ? 'text-accent-critical' : 'text-accent-success'}`}>Link {linkLabel}</span>
       </div>
 
-      <div className="grid grid-cols-[minmax(3.3rem,0.8fr)_minmax(0.75rem,0.3fr)_minmax(3.5rem,0.8fr)_minmax(0.75rem,0.3fr)_minmax(3.3rem,0.8fr)] items-start lg:grid-cols-[minmax(3.3rem,0.72fr)_minmax(0.75rem,0.3fr)_minmax(6.4rem,1.35fr)_minmax(0.75rem,0.3fr)_minmax(3.3rem,0.72fr)] [@media(max-width:1023px)_and_(orientation:landscape)]:grid-cols-[minmax(2.5rem,0.7fr)_minmax(0.4rem,0.3fr)_minmax(3.5rem,0.8fr)_minmax(0.4rem,0.3fr)_minmax(2.5rem,0.7fr)]">
+      <div className="grid grid-cols-[minmax(3.3rem,0.8fr)_minmax(0.75rem,0.3fr)_minmax(3.5rem,0.8fr)_minmax(0.75rem,0.3fr)_minmax(3.3rem,0.8fr)] items-start lg:grid-cols-[minmax(3.3rem,0.72fr)_minmax(0.75rem,0.3fr)_minmax(6.4rem,1.35fr)_minmax(0.75rem,0.3fr)_minmax(3.3rem,0.72fr)] [@media(max-width:1023px)_and_(orientation:landscape)]:col-start-2 [@media(max-width:1023px)_and_(orientation:landscape)]:row-start-1 [@media(max-width:1023px)_and_(orientation:landscape)]:grid-cols-[minmax(2.5rem,0.7fr)_minmax(0.4rem,0.3fr)_minmax(3.5rem,0.8fr)_minmax(0.4rem,0.3fr)_minmax(2.5rem,0.7fr)]">
         <div className="min-w-0 text-center">
           <div className="flex items-center justify-center gap-1.5">
             <SunMedium className={`h-4 w-4 shrink-0 ${energy.solarActive ? 'text-accent-data' : 'text-text-muted [@media(max-width:1023px)_and_(orientation:landscape)]:text-white/50'}`} />
