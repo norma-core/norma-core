@@ -1,10 +1,4 @@
 import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-} from 'react';
-import {
   Camera,
   Maximize2,
   Minimize2,
@@ -12,14 +6,7 @@ import {
 import type { FrameEntry } from '@/api/frame-parser';
 import { usbvideo } from '@/api/proto.js';
 import CameraViewer from '@/usbvideo/CameraViewer';
-import CameraLayoutControls, { type CameraLayoutMode } from '@/usbvideo/CameraLayoutControls';
-import { getVideoSourceId, getVideoSourceLabel } from '@/usbvideo/camera-source';
-
-interface CameraOption {
-  id: string;
-  label: string;
-  sourceId: string;
-}
+import { getVideoSourceId } from '@/usbvideo/camera-source';
 
 interface RoverCameraStatus {
   ready: boolean;
@@ -36,20 +23,17 @@ interface RoverCameraViewportProps {
   onToggleFullscreen: () => void;
 }
 
-function CameraPane({ camera }: { camera: CameraOption }) {
+function CameraPane({ sourceId }: { sourceId: string }) {
   return (
-    <figure className="relative h-full min-h-0 min-w-0 overflow-hidden bg-black">
+    <div className="relative h-full min-h-0 min-w-0 overflow-hidden bg-black">
       <CameraViewer
-        sourceId={camera.sourceId}
+        sourceId={sourceId}
         className="h-full w-full"
         imageClassName="select-none"
         fit="cover"
         overlay="none"
       />
-      <figcaption className="absolute bottom-2 left-2 max-w-[70%] truncate rounded-md border border-border-default bg-surface-primary/62 px-2 py-1 font-mono text-[9px] font-semibold uppercase tracking-wide text-text-secondary shadow-sm backdrop-blur-md [@media(max-width:1023px)_and_(orientation:landscape)]:hidden">
-        {camera.label}
-      </figcaption>
-    </figure>
+    </div>
   );
 }
 
@@ -60,62 +44,16 @@ function RoverCameraViewport({
   onOpenDetails,
   onToggleFullscreen,
 }: RoverCameraViewportProps) {
-  const cameraOptions = useMemo<CameraOption[]>(() => videoSources.map((entry) => ({
-    id: getVideoSourceId(entry),
-    sourceId: getVideoSourceId(entry),
-    label: getVideoSourceLabel(entry),
-  })), [videoSources]);
-  const [primaryCameraId, setPrimaryCameraId] = useState('');
-  const [secondaryCameraId, setSecondaryCameraId] = useState('');
-  const [cameraLayout, setCameraLayout] = useState<CameraLayoutMode>('pip');
-  const [cameraMenuOpen, setCameraMenuOpen] = useState(false);
+  const primaryCameraSourceId = videoSources[0]
+    ? getVideoSourceId(videoSources[0])
+    : null;
 
-  const primaryCamera = cameraOptions.find((camera) => camera.id === primaryCameraId)
-    ?? cameraOptions[0]
-    ?? null;
-  const secondaryCamera = cameraOptions.find((camera) => camera.id === secondaryCameraId)
-    ?? cameraOptions.find((camera) => camera.id !== primaryCamera?.id)
-    ?? null;
-
-  useEffect(() => {
-    const ids = cameraOptions.map((camera) => camera.id);
-    const primary = ids.includes(primaryCameraId) ? primaryCameraId : ids[0] ?? '';
-    if (primary !== primaryCameraId) setPrimaryCameraId(primary);
-    if (!ids.includes(secondaryCameraId) || secondaryCameraId === primary) {
-      setSecondaryCameraId(ids.find((id) => id !== primary) ?? '');
-    }
-  }, [cameraOptions, primaryCameraId, secondaryCameraId]);
-
-  const handlePrimaryCameraChange = useCallback((nextId: string) => {
-    if (nextId === secondaryCamera?.id) setSecondaryCameraId(primaryCamera?.id ?? '');
-    setPrimaryCameraId(nextId);
-    setCameraMenuOpen(false);
-  }, [primaryCamera?.id, secondaryCamera?.id]);
-
-  const swapCameras = useCallback(() => {
-    if (!primaryCamera || !secondaryCamera) return;
-    setPrimaryCameraId(secondaryCamera.id);
-    setSecondaryCameraId(primaryCamera.id);
-  }, [primaryCamera, secondaryCamera]);
-
-  const cameraStage = !primaryCamera ? (
+  const cameraStage = !primaryCameraSourceId ? (
     <div className="flex h-full items-center justify-center bg-surface-base text-center text-sm text-text-muted">
       <div><Camera className="mx-auto mb-3 h-7 w-7" />Waiting for rover camera</div>
     </div>
-  ) : secondaryCamera && cameraLayout !== 'pip' ? (
-    <div className={`grid h-full gap-px bg-border-default ${cameraLayout === 'stacked' ? 'grid-rows-2' : 'grid-cols-2'}`}>
-      <CameraPane camera={primaryCamera} />
-      <CameraPane camera={secondaryCamera} />
-    </div>
   ) : (
-    <div className="relative h-full">
-      <CameraPane camera={primaryCamera} />
-      {secondaryCamera && !cameraMenuOpen && (
-        <div className="absolute bottom-3 right-3 z-20 h-[32%] min-h-20 w-[36%] min-w-28 overflow-hidden rounded-lg border border-accent-data/35 bg-surface-base shadow-[0_1rem_2.5rem_rgba(0,0,0,0.28)] [@media(max-width:1023px)_and_(orientation:landscape)]:bottom-[calc(0.5rem+env(safe-area-inset-bottom))] [@media(max-width:1023px)_and_(orientation:landscape)]:left-1/2 [@media(max-width:1023px)_and_(orientation:landscape)]:right-auto [@media(max-width:1023px)_and_(orientation:landscape)]:w-[min(28%,14rem)] [@media(max-width:1023px)_and_(orientation:landscape)]:-translate-x-1/2">
-          <CameraPane camera={secondaryCamera} />
-        </div>
-      )}
-    </div>
+    <CameraPane sourceId={primaryCameraSourceId} />
   );
 
   return (
@@ -136,61 +74,7 @@ function RoverCameraViewport({
             </div>
           </div>
         </button>
-        <div className="relative ml-auto flex shrink-0 items-center gap-1 rounded-md border border-accent-data/35 bg-surface-primary/55 p-1 shadow-[0_0.6rem_1.5rem_rgba(0,0,0,0.18)] backdrop-blur-md">
-          {cameraOptions.length > 1 ? (
-            <>
-              <button
-                type="button"
-                onClick={() => setCameraMenuOpen((open) => !open)}
-                aria-label="Camera controls"
-                aria-expanded={cameraMenuOpen}
-                className="flex h-11 min-w-11 items-center justify-center gap-1.5 rounded px-2 font-mono text-[9px] font-bold text-text-secondary hover:bg-accent-data/12 hover:text-accent-data lg:hidden"
-              >
-                <Camera className="h-3.5 w-3.5" aria-hidden="true" />
-                {cameraOptions.findIndex((camera) => camera.id === primaryCamera?.id) + 1}
-              </button>
-              <div className="hidden items-center gap-1 lg:flex">
-                <select
-                  aria-label="Main camera"
-                  value={primaryCamera?.id ?? ''}
-                  onChange={(event) => handlePrimaryCameraChange(event.target.value)}
-                  className="h-8 max-w-24 rounded border-0 bg-surface-secondary px-2 font-mono text-[9px] font-bold text-text-primary outline-none"
-                >
-                  {cameraOptions.map((camera, index) => <option key={camera.id} value={camera.id}>CAM {index + 1}</option>)}
-                </select>
-                {secondaryCamera && (
-                  <CameraLayoutControls
-                    cameraLayout={cameraLayout}
-                    canSwapCameras
-                    onCameraLayoutChange={setCameraLayout}
-                    onSwapCameras={swapCameras}
-                  />
-                )}
-              </div>
-              {cameraMenuOpen && (
-                <div className="absolute right-0 top-[calc(100%+0.5rem)] z-50 w-[min(14rem,calc(100vw-1rem))] rounded-md border border-accent-data/35 bg-surface-primary/96 p-2 shadow-xl backdrop-blur-xl lg:hidden [@media(max-width:1023px)_and_(orientation:landscape)]:right-[calc(100%+0.5rem)] [@media(max-width:1023px)_and_(orientation:landscape)]:top-[calc(100%+1rem)]">
-                  <select
-                    aria-label="Main camera"
-                    value={primaryCamera?.id ?? ''}
-                    onChange={(event) => handlePrimaryCameraChange(event.target.value)}
-                    className="mb-2 h-11 w-full rounded border border-border-default bg-surface-secondary px-2 font-mono text-[10px] font-bold text-text-primary outline-none"
-                  >
-                    {cameraOptions.map((camera, index) => <option key={camera.id} value={camera.id}>CAM {index + 1}</option>)}
-                  </select>
-                  {secondaryCamera && (
-                    <div className="flex items-center justify-end gap-1 [&_button]:h-11 [&_button]:w-11">
-                      <CameraLayoutControls
-                        cameraLayout={cameraLayout}
-                        canSwapCameras
-                        onCameraLayoutChange={setCameraLayout}
-                        onSwapCameras={swapCameras}
-                      />
-                    </div>
-                  )}
-                </div>
-              )}
-            </>
-          ) : <span className="px-2 font-mono text-[9px] font-bold text-text-secondary">CAM {cameraOptions.length || '--'}</span>}
+        <div className="relative ml-auto flex shrink-0 items-center rounded-md border border-accent-data/35 bg-surface-primary/55 p-1 shadow-[0_0.6rem_1.5rem_rgba(0,0,0,0.18)] backdrop-blur-md">
           <button type="button" onClick={onToggleFullscreen} className="flex h-11 w-11 items-center justify-center rounded text-text-secondary hover:bg-accent-data/12 hover:text-accent-data lg:h-8 lg:w-8" aria-label={isFullscreen ? 'Exit fullscreen rover control' : 'Fullscreen rover control'} aria-pressed={isFullscreen}>
             {isFullscreen ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
           </button>

@@ -56,6 +56,10 @@ type DecodedEntry = st3215.IInferenceState | st3215.ITxEnvelope | usbvideo.IRxEn
 interface ParseFrameOptions {
   retainRawData?: boolean;
   shouldPublishVideoFrames?: () => boolean;
+  shouldLoadVideoFrame?: (
+    queueId: string,
+    previousEnvelope?: usbvideo.IRxEnvelope,
+  ) => boolean;
 }
 
 function findPreviousEntry(
@@ -288,6 +292,28 @@ export async function parseFrame(
           id: null,
           reused: true,
           isNormvla: entry.queue?.endsWith('/inference/normvla') ?? false
+        });
+      }
+
+      const previousVideoEntry = entry.type === drivers.QueueDataType.QDT_USB_VIDEO_FRAMES
+        ? previousFrame?.videoQueues?.find((videoEntry) => videoEntry.queueId === entry.queue)
+        : undefined;
+      if (
+        previousVideoEntry
+        && options.shouldLoadVideoFrame
+        && !options.shouldLoadVideoFrame(entry.queue, previousVideoEntry.data)
+      ) {
+        // Keep the camera in the known source list while avoiding the
+        // StreamFS read and video-envelope decode for an unobserved camera.
+        return Promise.resolve({
+          queue: entry.queue,
+          type: entry.type,
+          ptr: entry.ptr,
+          decoded: previousVideoEntry.data,
+          rawData: null,
+          id: null,
+          reused: true,
+          isNormvla: false,
         });
       }
 

@@ -5,6 +5,7 @@ import { NormFsClient } from "@/api/normfs.js";
 import { normfs, inference } from "@/api/proto.js";
 import { timeSyncManager } from "@/api/time-sync.js";
 import { WS_EVENTS } from "@/api/websocket-events.js";
+import { shouldLoadLiveCameraFrame } from "@/usbvideo/live-camera-store.js";
 
 export const ErrConnectionNotOpen = new Error("WebSocket: Connection not open.");
 
@@ -122,6 +123,7 @@ class WebSocketManager extends EventTarget {
         }
         const frame = await parseFrame(inferenceRx, entry.id, this.normFs, previousFrame, {
           retainRawData: false,
+          shouldLoadVideoFrame: shouldLoadLiveCameraFrame,
           shouldPublishVideoFrames: () =>
             this.isLiveMode() && acquisitionGeneration === this.acquisitionGeneration,
         });
