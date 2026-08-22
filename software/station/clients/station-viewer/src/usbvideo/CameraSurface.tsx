@@ -93,10 +93,7 @@ const CameraSurface: React.FC<CameraSurfaceProps> = ({
         showMotorData={false}
         isFullscreen={isFullscreen}
         canSwapCameras={hasCameraPair}
-        onSetPipLayout={() => setCameraLayout('pip')}
-        onToggleSplitLayout={() => setCameraLayout((layout) => (
-          layout === 'side-by-side' ? 'stacked' : 'side-by-side'
-        ))}
+        onCameraLayoutChange={setCameraLayout}
         onSwapCameras={() => setAreCamerasSwapped((swapped) => !swapped)}
         onToggleMotorData={() => undefined}
         onToggleFullscreen={() => void toggleFullscreen()}

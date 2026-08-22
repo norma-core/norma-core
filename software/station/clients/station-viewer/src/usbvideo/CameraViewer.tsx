@@ -148,7 +148,7 @@ const CameraViewer = memo(function CameraViewer({
   }, [clearImage, sourceId, updateImage]);
 
   if (!sourceId) {
-    return <div className="text-text-primary p-4">Waiting for USB Video data...</div>;
+    return <div className="p-4 text-white/70">Waiting for USB Video data...</div>;
   }
 
   const fitClassName = fit === 'cover' ? 'object-cover' : 'object-contain';
@@ -162,7 +162,7 @@ const CameraViewer = memo(function CameraViewer({
           className={`h-full w-full ${fitClassName} ${imageClassName} ${hasImage ? '' : 'hidden'}`}
         />
         {!hasImage && (
-          <div className="text-text-primary p-4">Waiting for USB Video data...</div>
+          <div className="p-4 text-white/70">Waiting for USB Video data...</div>
         )}
         {overlay === 'fps' && (
           <div className="absolute top-0 right-0 p-2 text-right bg-surface-secondary/70 rounded-bl-lg backdrop-blur-sm">

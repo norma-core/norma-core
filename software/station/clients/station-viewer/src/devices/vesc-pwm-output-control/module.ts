@@ -5,6 +5,9 @@ export default customLive({
   label: 'Joystick',
   order: 29,
   isRealtime: true,
+  ownsCameras: true,
+  isImmersive: true,
+  replaces: ['vesc-trampa', 'pwm-output', 'victron-smartsolar-mppt'],
   loadView: () => import('./ui/VescPwmOutputControlPanel'),
   select: (frame) => {
     const hasVesc = Boolean(frame.vescTrampa?.data.boards?.length);
@@ -25,6 +28,8 @@ export default customLive({
         vesc: frame.vescTrampa.data,
         pwmOutputRx: frame.pwmOutputRx?.data,
         pwmOutputTx: frame.pwmOutputTx?.data,
+        videoSources: frame.videoQueues,
+        powerSources: frame.victronSmartSolar,
       },
     }];
   },
