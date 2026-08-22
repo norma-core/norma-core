@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parseNmeaBatch } from './values';
+import { mergeNmeaBatch, parseNmeaBatch } from './values';
 
 // Sentences in EG25-G firmware order (VTG, GSA, GGA, RMC + GSV at 1 Hz).
 const FIX_BATCH = [
@@ -130,5 +130,104 @@ describe('parseNmeaBatch', () => {
     expect(parseNmeaBatch('').latitudeDeg).toBeNull();
     const values = parseNmeaBatch('garbage\n$GPGGA,110317.00,4807.0380,N,01131.0000,E,1,08,0.94,545.4,M,46.9,M,,*5B');
     expect(values.altitudeM).toBeCloseTo(545.4);
+  });
+});
+
+// The EG25-G interleaves epoch kinds: at 10 Hz most epochs carry only
+// VTG/GSA/GGA/RMC; the GSV satellite burst rides in one epoch per second.
+// mergeNmeaBatch folds each epoch into the previous state so per-epoch
+// fields update while satellite data persists between bursts.
+describe('mergeNmeaBatch', () => {
+  const FIX_ONLY_BATCH = [
+    '$GPVTG,80.00,T,,M,1.00,N,1.85,K,A*3F',
+    '$GPGSA,A,3,10,32,,,,,,,,,,,1.70,1.00,1.40*0F',
+    '$GPGGA,110318.00,4807.0390,N,01131.0010,E,1,06,1.00,546.0,M,46.9,M,,*52',
+    '$GPRMC,110318.00,A,4807.0390,N,01131.0010,E,1.00,80.00,160826,,,A*63',
+  ].join('\n');
+
+  it('matches parseNmeaBatch when starting from no previous state', () => {
+    expect(mergeNmeaBatch(null, FIX_BATCH)).toEqual(parseNmeaBatch(FIX_BATCH));
+  });
+
+  it('keeps satellites and in-view count across a GSV-less epoch', () => {
+    const first = mergeNmeaBatch(null, FIX_BATCH);
+    const next = mergeNmeaBatch(first, FIX_ONLY_BATCH);
+
+    expect(next.satellites).toHaveLength(7);
+    expect(next.satellitesInView).toBe(7);
+    // While per-epoch fields track the new batch.
+    expect(next.altitudeM).toBeCloseTo(546.0);
+    expect(next.satellitesUsed).toBe(6);
+    expect(next.hdop).toBeCloseTo(1.0);
+  });
+
+  it('replaces only the constellations present in a new GSV burst', () => {
+    const first = mergeNmeaBatch(null, FIX_BATCH); // 5 GPS + 2 GLONASS
+    const next = mergeNmeaBatch(first, [
+      '$GPGSV,1,1,02,10,64,138,18,32,42,176,31*7F',
+    ].join('\n'));
+
+    const gps = next.satellites.filter(s => s.system === 'GPS');
+    const glonass = next.satellites.filter(s => s.system === 'GLONASS');
+    expect(gps).toHaveLength(2); // replaced by the new burst
+    expect(glonass).toHaveLength(2); // kept from the previous burst
+    expect(next.satellitesInView).toBe(4); // 2 GPS + 2 GLONASS
+    const gps10 = gps.find(s => s.prn === 10);
+    expect(gps10?.snrDb).toBe(18);
+  });
+
+  it('rebuilds used flags from the newest epoch that carries GSA', () => {
+    const first = mergeNmeaBatch(null, FIX_BATCH); // GSA uses GPS 10, 32, 21
+    // Satellite 32 drops out of the fix in the next epoch.
+    const next = mergeNmeaBatch(first, [
+      '$GPGSA,A,3,10,,,,,,,,,,,,1.70,1.00,1.40*0D',
+    ].join('\n'));
+
+    const gps10 = next.satellites.find(s => s.system === 'GPS' && s.prn === 10);
+    const gps32 = next.satellites.find(s => s.system === 'GPS' && s.prn === 32);
+    expect(gps10?.used).toBe(true);
+    expect(gps32?.used).toBe(false);
+  });
+
+  it('keeps previous used flags across an epoch without GSA', () => {
+    const first = mergeNmeaBatch(null, FIX_BATCH);
+    const next = mergeNmeaBatch(first, [
+      '$GPGGA,110318.00,4807.0390,N,01131.0010,E,1,06,1.00,546.0,M,46.9,M,,*52',
+    ].join('\n'));
+
+    const gps10 = next.satellites.find(s => s.system === 'GPS' && s.prn === 10);
+    expect(gps10?.used).toBe(true);
+  });
+
+  it('lets the fix degrade: a later no-fix epoch overrides fix type and quality', () => {
+    const first = mergeNmeaBatch(null, FIX_BATCH);
+    const next = mergeNmeaBatch(first, NO_FIX_BATCH);
+
+    expect(next.fixQuality).toBe(0);
+    expect(next.fixType).toBe(1);
+    // Last-known position survives for display purposes.
+    expect(next.latitudeDeg).toBeCloseTo(48 + 7.038 / 60, 6);
+    expect(next.utcTime).toBe('110317.00');
+  });
+});
+
+describe('multi-signal GSV deduplication', () => {
+  it('keeps one entry per satellite, preferring the strongest signal', () => {
+    // NMEA 4.11 receivers emit one GSV group per signal id; the same PRN
+    // appears in each group (here L1 C/A at 24 dB and L5 at 31 dB).
+    const values = parseNmeaBatch(
+      [
+        '$GPGSV,1,1,02,10,63,137,24,32,41,175,30,1*66',
+        '$GPGSV,1,1,02,10,63,137,31,32,41,175,,6*63',
+      ].join('\n'),
+    );
+
+    const gps10 = values.satellites.filter(s => s.system === 'GPS' && s.prn === 10);
+    expect(gps10).toHaveLength(1);
+    expect(gps10[0]?.snrDb).toBe(31);
+    // A null-SNR duplicate must not shadow a tracked one.
+    const gps32 = values.satellites.filter(s => s.system === 'GPS' && s.prn === 32);
+    expect(gps32).toHaveLength(1);
+    expect(gps32[0]?.snrDb).toBe(30);
   });
 });

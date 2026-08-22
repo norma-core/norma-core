@@ -66,7 +66,21 @@ export interface GnssValues {
   satellites: GnssSatellite[];
 }
 
-function emptyValues(): GnssValues {
+/** GnssValues plus the per-constellation memory that lets epochs merge:
+ * GSV bursts arrive once a second (one burst per talker system) while fix
+ * epochs arrive at up to 10 Hz, so satellite data must persist between
+ * bursts and be replaced per system, not wholesale. */
+export interface GnssState extends GnssValues {
+  /** Talker system → satellites from its latest GSV burst. */
+  satellitesBySystem: Record<string, GnssSatellite[]>;
+  /** Talker system → total-in-view count from its latest GSV burst. */
+  inViewBySystem: Record<string, number>;
+  /** Fix-satellite ids from the latest epoch that carried GSA. */
+  usedBySystem: Record<string, number[]>;
+  usedUnscoped: number[];
+}
+
+function emptyState(): GnssState {
   return {
     utcTime: null,
     utcDate: null,
@@ -83,6 +97,10 @@ function emptyValues(): GnssValues {
     pdop: null,
     vdop: null,
     satellites: [],
+    satellitesBySystem: {},
+    inViewBySystem: {},
+    usedBySystem: {},
+    usedUnscoped: [],
   };
 }
 
@@ -123,9 +141,16 @@ function sentenceFields(sentence: string): string[] | null {
   return body.slice(1).split(',');
 }
 
-export function parseNmeaBatch(text: string): GnssValues {
-  const values = emptyValues();
+/** Folds one NMEA epoch into the previous state: fields present in the
+ * batch update, everything else persists. Pass `null` to start fresh. */
+export function mergeNmeaBatch(prev: GnssState | null, text: string): GnssState {
+  const values: GnssState = prev ? { ...prev } : emptyState();
+  // GSA/GSV data collected from this batch only; merged into the
+  // persistent per-system records after the loop.
+  let batchFixType: number | null = null;
+  let batchHasGsa = false;
   const inViewBySystem = new Map<string, number>();
+  const batchSatellites = new Map<string, GnssSatellite[]>();
   // Satellite ids listed by GSA sentences: scoped per system when the
   // sentence says which one, plus a global pool for unscoped GN lines.
   const usedBySystem = new Map<string, Set<number>>();
@@ -161,9 +186,10 @@ export function parseNmeaBatch(text: string): GnssValues {
         break;
       }
       case 'GSA': {
+        batchHasGsa = true;
         const fixType = parseNumber(fields[2]);
         if (fixType !== null) {
-          values.fixType = Math.max(values.fixType ?? 0, fixType);
+          batchFixType = Math.max(batchFixType ?? 0, fixType);
         }
         values.pdop = parseNumber(fields[15]) ?? values.pdop;
         values.hdop = parseNumber(fields[16]) ?? values.hdop;
@@ -203,12 +229,17 @@ export function parseNmeaBatch(text: string): GnssValues {
         if (inView !== null) {
           inViewBySystem.set(system, inView);
         }
+        let sats = batchSatellites.get(system);
+        if (!sats) {
+          sats = [];
+          batchSatellites.set(system, sats);
+        }
         for (let i = 4; i < fields.length; i += 4) {
           const prn = parseNumber(fields[i]);
           if (prn === null) {
             continue;
           }
-          values.satellites.push({
+          sats.push({
             system: classifySystem(system, prn),
             prn,
             elevationDeg: parseNumber(fields[i + 1]),
@@ -222,16 +253,61 @@ export function parseNmeaBatch(text: string): GnssValues {
     }
   }
 
-  if (inViewBySystem.size > 0) {
-    values.satellitesInView = [...inViewBySystem.values()].reduce((a, b) => a + b, 0);
-  }
-  for (const sat of values.satellites) {
-    if (sat.prn === null) {
-      continue;
+  // A GSV burst is complete per talker system, so it replaces that
+  // system's satellites; systems absent from this batch keep theirs.
+  values.fixType = batchFixType ?? values.fixType;
+  if (batchSatellites.size > 0 || inViewBySystem.size > 0) {
+    values.satellitesBySystem = { ...values.satellitesBySystem };
+    values.inViewBySystem = { ...values.inViewBySystem };
+    for (const [system, sats] of batchSatellites) {
+      values.satellitesBySystem[system] = dedupeSatellites(sats);
     }
-    sat.used = usedBySystem.get(sat.system)?.has(sat.prn) ?? usedUnscoped.has(sat.prn);
+    for (const [system, count] of inViewBySystem) {
+      values.inViewBySystem[system] = count;
+    }
   }
+  // GSA lists the fix satellites afresh each epoch it appears in.
+  if (batchHasGsa) {
+    values.usedBySystem = Object.fromEntries(
+      [...usedBySystem].map(([system, ids]) => [system, [...ids]]),
+    );
+    values.usedUnscoped = [...usedUnscoped];
+  }
+
+  const inViewCounts = Object.values(values.inViewBySystem);
+  values.satellitesInView =
+    inViewCounts.length > 0 ? inViewCounts.reduce((a, b) => a + b, 0) : null;
+  const usedSets = new Map(
+    Object.entries(values.usedBySystem).map(([system, ids]) => [system, new Set(ids)]),
+  );
+  const unscopedSet = new Set(values.usedUnscoped);
+  values.satellites = Object.values(values.satellitesBySystem)
+    .flat()
+    .map(sat => ({
+      ...sat,
+      used:
+        sat.prn !== null &&
+        (usedSets.get(sat.system)?.has(sat.prn) ?? unscopedSet.has(sat.prn)),
+    }));
   return values;
+}
+
+/** NMEA 4.11 receivers emit one GSV group per signal id, so one burst can
+ * list a PRN several times (L1, L5, ...); keep the strongest sighting. */
+function dedupeSatellites(sats: GnssSatellite[]): GnssSatellite[] {
+  const best = new Map<string, GnssSatellite>();
+  for (const sat of sats) {
+    const key = `${sat.system}-${sat.prn}`;
+    const seen = best.get(key);
+    if (!seen || (sat.snrDb ?? -1) > (seen.snrDb ?? -1)) {
+      best.set(key, sat);
+    }
+  }
+  return [...best.values()];
+}
+
+export function parseNmeaBatch(text: string): GnssValues {
+  return mergeNmeaBatch(null, text);
 }
 
 export function decodeBatchText(data: Uint8Array | null | undefined): string {

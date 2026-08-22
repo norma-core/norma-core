@@ -1,10 +1,9 @@
-import { useRef } from 'react';
-
-import { arduino_pro_4g_gnss } from '@/api/proto.js';
+import type { arduino_pro_4g_gnss } from '@/api/proto.js';
 import DeviceMetricPill from '@/components/DeviceMetricPill';
 import DeviceWidgetShell from '@/components/DeviceWidgetShell';
+import { useGnssLive } from '../live-store';
 import type { GnssSatellite } from '../values';
-import { decodeBatchText, gnssDeviceLabel, parseNmeaBatch } from '../values';
+import { gnssDeviceLabel } from '../values';
 
 const FIX_QUALITY_LABELS: Record<number, string> = {
   0: 'No fix',
@@ -128,89 +127,25 @@ function SatelliteBars({ satellites }: { satellites: GnssSatellite[] }) {
 
 export interface ArduinoPro4gGnssLiveViewProps {
   data: arduino_pro_4g_gnss.IRxEnvelope;
+  queueId: string;
 }
 
-/** GSV arrives at 1 Hz while fix epochs arrive at up to 10 Hz, and in weak
- * signal individual satellites drop out of single reports; remember each
- * satellite briefly so the strip stays steady instead of flickering. */
-const SATELLITE_SNAPSHOT_TTL_MS = 5000;
+function ArduinoPro4gGnssLiveView({ data, queueId }: ArduinoPro4gGnssLiveViewProps) {
+  // Cumulative state from the rx queue itself: the live-store catches up on
+  // every epoch (frames only sample the stream and would miss the 1 Hz GSV
+  // bursts), and mergeNmeaBatch updates only what each epoch carries.
+  const values = useGnssLive(queueId);
 
-interface SatelliteSighting {
-  sat: GnssSatellite;
-  atMs: number;
-}
-
-/** During marginal reception the receiver flaps between fix and no-fix at
- * the epoch rate, and no-fix epochs carry empty position fields; hold the
- * last-known navigation values (dimmed) instead of flashing N/A. */
-const NAV_SNAPSHOT_TTL_MS = 30000;
-
-interface NavSnapshot {
-  latitudeDeg: number;
-  longitudeDeg: number;
-  altitudeM: number | null;
-  speedMps: number | null;
-  courseDeg: number | null;
-  atMs: number;
-}
-
-const NMEA_BATCH =
-  arduino_pro_4g_gnss.ArduinoPro4gGnssSignalType.ARDUINO_PRO_4G_GNSS_NMEA_BATCH;
-
-function ArduinoPro4gGnssLiveView({ data }: ArduinoPro4gGnssLiveViewProps) {
-  // Only NMEA_BATCH envelopes carry sentences; connect/error/XTRA envelopes
-  // would otherwise blank the display for a frame, so keep the last batch.
-  const valuesCache = useRef<ReturnType<typeof parseNmeaBatch> | null>(null);
-  if (data.signalType == null || data.signalType === NMEA_BATCH) {
-    valuesCache.current = parseNmeaBatch(decodeBatchText(data.data));
-  }
-  const values = valuesCache.current ?? parseNmeaBatch('');
-
-  const sightings = useRef(new Map<string, SatelliteSighting>());
-  const inViewCache = useRef<{ inView: number; atMs: number } | null>(null);
-  const navCache = useRef<NavSnapshot | null>(null);
-  const nowMs = Date.now();
-
-  if (values.latitudeDeg !== null && values.longitudeDeg !== null) {
-    navCache.current = {
-      latitudeDeg: values.latitudeDeg,
-      longitudeDeg: values.longitudeDeg,
-      altitudeM: values.altitudeM,
-      speedMps: values.speedMps,
-      courseDeg: values.courseDeg,
-      atMs: nowMs,
-    };
-  }
-  const navLive = values.latitudeDeg !== null;
-  const nav =
-    navCache.current !== null && nowMs - navCache.current.atMs <= NAV_SNAPSHOT_TTL_MS
-      ? navCache.current
-      : null;
-  if (values.satellitesInView !== null) {
-    // This envelope's epoch contained GSV — merge it into the per-satellite
-    // memory rather than replacing the whole list.
-    for (const sat of values.satellites) {
-      sightings.current.set(`${sat.system}-${sat.prn ?? 'x'}`, { sat, atMs: nowMs });
-    }
-    inViewCache.current = { inView: values.satellitesInView, atMs: nowMs };
-  }
-  for (const [key, sighting] of sightings.current) {
-    if (nowMs - sighting.atMs > SATELLITE_SNAPSHOT_TTL_MS) {
-      sightings.current.delete(key);
-    }
-  }
-  const satellites = [...sightings.current.values()].map(sighting => sighting.sat);
-  const satellitesInView =
-    inViewCache.current !== null && nowMs - inViewCache.current.atMs <= SATELLITE_SNAPSHOT_TTL_MS
-      ? inViewCache.current.inView
-      : null;
+  const satellites = values?.satellites ?? [];
+  const fixQuality = values?.fixQuality ?? null;
   const qualityLabel =
-    values.fixQuality === null
-      ? 'N/A'
-      : (FIX_QUALITY_LABELS[values.fixQuality] ?? `Quality ${values.fixQuality}`);
-  const typeLabel = values.fixType === null ? null : FIX_TYPE_LABELS[values.fixType];
-  const fixLabel = typeLabel && values.fixQuality ? `${qualityLabel} ${typeLabel}` : qualityLabel;
-  const hasFix = (values.fixQuality ?? 0) > 0;
+    fixQuality === null ? 'N/A' : (FIX_QUALITY_LABELS[fixQuality] ?? `Quality ${fixQuality}`);
+  const typeLabel = values?.fixType == null ? null : FIX_TYPE_LABELS[values.fixType];
+  const fixLabel = typeLabel && fixQuality ? `${qualityLabel} ${typeLabel}` : qualityLabel;
+  const hasFix = (fixQuality ?? 0) > 0;
+  // Merged state holds the last-known position through no-fix epochs; show
+  // it dimmed until the fix returns.
+  const hasPosition = values?.latitudeDeg != null && values?.longitudeDeg != null;
 
   return (
     <DeviceWidgetShell
@@ -221,12 +156,14 @@ function ArduinoPro4gGnssLiveView({ data }: ArduinoPro4gGnssLiveViewProps) {
       <div className="flex items-end gap-2">
         <div className="min-w-0">
           <div className="text-[10px] uppercase text-text-label">
-            Position{nav && !navLive ? ' (last known)' : ''}
+            Position{hasPosition && !hasFix ? ' (last known)' : ''}
           </div>
           <div
-            className={`font-mono text-lg font-semibold leading-none ${navLive ? 'text-accent-success' : 'text-text-muted'}`}
+            className={`font-mono text-lg font-semibold leading-none ${hasFix ? 'text-accent-success' : 'text-text-muted'}`}
           >
-            {nav ? `${formatDegrees(nav.latitudeDeg)}, ${formatDegrees(nav.longitudeDeg)}` : 'N/A, N/A'}
+            {hasPosition
+              ? `${formatDegrees(values.latitudeDeg)}, ${formatDegrees(values.longitudeDeg)}`
+              : 'N/A, N/A'}
           </div>
         </div>
         <div className="ml-auto min-w-0 text-right">
@@ -239,21 +176,21 @@ function ArduinoPro4gGnssLiveView({ data }: ArduinoPro4gGnssLiveViewProps) {
         </div>
       </div>
       <div className="mt-2 flex min-w-0 flex-wrap gap-1.5">
-        <DeviceMetricPill label="Alt" value={formatMeasured(nav?.altitudeM ?? null, 'm')} tone={navLive ? 'text-accent-data' : 'text-text-muted'} />
-        <DeviceMetricPill label="Speed" value={formatMeasured(nav?.speedMps ?? null, 'm/s', 2)} tone={navLive ? 'text-accent-warning' : 'text-text-muted'} />
-        <DeviceMetricPill label="Course" value={formatMeasured(nav?.courseDeg ?? null, 'deg')} tone={navLive ? 'text-accent-secondary' : 'text-text-muted'} />
+        <DeviceMetricPill label="Alt" value={formatMeasured(values?.altitudeM ?? null, 'm')} tone={hasFix ? 'text-accent-data' : 'text-text-muted'} />
+        <DeviceMetricPill label="Speed" value={formatMeasured(values?.speedMps ?? null, 'm/s', 2)} tone={hasFix ? 'text-accent-warning' : 'text-text-muted'} />
+        <DeviceMetricPill label="Course" value={formatMeasured(values?.courseDeg ?? null, 'deg')} tone={hasFix ? 'text-accent-secondary' : 'text-text-muted'} />
         <DeviceMetricPill
           label="Sats"
-          value={`${values.satellitesUsed ?? 0} used / ${satellitesInView ?? '?'} seen`}
+          value={`${values?.satellitesUsed ?? 0} used / ${values?.satellitesInView ?? '?'} seen`}
           tone="text-accent-info"
         />
       </div>
       <div className="mt-1.5 flex min-w-0 flex-wrap gap-1.5">
-        <DeviceMetricPill label="PDOP" value={formatDop(values.pdop)} tone="text-accent-secondary" />
-        <DeviceMetricPill label="HDOP" value={formatDop(values.hdop)} tone="text-accent-secondary" />
-        <DeviceMetricPill label="VDOP" value={formatDop(values.vdop)} tone="text-accent-secondary" />
-        <DeviceMetricPill label="UTC" value={formatUtcTime(values.utcTime)} tone="text-accent-data" />
-        <DeviceMetricPill label="Date" value={formatUtcDate(values.utcDate)} tone="text-accent-data" />
+        <DeviceMetricPill label="PDOP" value={formatDop(values?.pdop ?? null)} tone="text-accent-secondary" />
+        <DeviceMetricPill label="HDOP" value={formatDop(values?.hdop ?? null)} tone="text-accent-secondary" />
+        <DeviceMetricPill label="VDOP" value={formatDop(values?.vdop ?? null)} tone="text-accent-secondary" />
+        <DeviceMetricPill label="UTC" value={formatUtcTime(values?.utcTime ?? null)} tone="text-accent-data" />
+        <DeviceMetricPill label="Date" value={formatUtcDate(values?.utcDate ?? null)} tone="text-accent-data" />
       </div>
       {satellites.length > 0 ? (
         <SatelliteBars satellites={satellites} />
