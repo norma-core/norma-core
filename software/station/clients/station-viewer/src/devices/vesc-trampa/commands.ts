@@ -3,7 +3,7 @@ import { vesc_trampa } from '@/api/proto.js';
 
 export const VESC_TRAMPA_CURRENT_MIN_A = -15;
 export const VESC_TRAMPA_CURRENT_MAX_A = 15;
-export const VESC_TRAMPA_CURRENT_HARD_LIMIT_A = 30;
+export const VESC_TRAMPA_CURRENT_HARD_LIMIT_A = 40;
 export const VESC_TRAMPA_CURRENT_STEP_A = 0.1;
 
 const COMMAND_SET_CURRENT = 6;

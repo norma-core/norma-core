@@ -4,9 +4,9 @@ import {
 } from '@/devices/pwm-output/commands';
 
 export const KEYBOARD_MAX_DRIVE_CURRENT_A = 10;
+export const ROVER_MIN_DRIVE_CURRENT_LIMIT_A = 5;
 export const ROVER_DEFAULT_DRIVE_CURRENT_LIMIT_A = 10;
-export const ROVER_MAX_DRIVE_CURRENT_A = 30;
-export const ROVER_DRIVE_CURRENT_LIMITS_A = [10, 20, 30] as const;
+export const ROVER_MAX_DRIVE_CURRENT_A = 40;
 
 export interface RoverControlTarget {
   currentA: number;

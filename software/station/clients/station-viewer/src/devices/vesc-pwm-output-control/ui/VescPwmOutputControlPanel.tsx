@@ -5,6 +5,7 @@ import {
   useMemo,
   useRef,
   useState,
+  type ChangeEvent,
   type PointerEvent as ReactPointerEvent,
 } from 'react';
 import Long from 'long';
@@ -52,8 +53,8 @@ import { getVideoSourceId, getVideoSourceLabel } from '@/usbvideo/camera-source'
 import {
   KEYBOARD_MAX_DRIVE_CURRENT_A,
   ROVER_DEFAULT_DRIVE_CURRENT_LIMIT_A,
-  ROVER_DRIVE_CURRENT_LIMITS_A,
   ROVER_MAX_DRIVE_CURRENT_A,
+  ROVER_MIN_DRIVE_CURRENT_LIMIT_A,
   mapRoverControlInput,
   normalizeSquareJoystickInput,
 } from '../control-input';
@@ -91,40 +92,68 @@ interface CameraOption {
   sourceId: string;
 }
 
-interface DriveLimitSelectorProps {
+interface DriveLimitControlProps {
   value: number;
   onChange: (value: number) => void;
 }
 
-function DriveLimitSelector({ value, onChange }: DriveLimitSelectorProps) {
+const driveLimitRangeClass = 'appearance-none bg-transparent focus-visible:outline-none [&::-webkit-slider-runnable-track]:h-2 [&::-webkit-slider-runnable-track]:rounded-full [&::-webkit-slider-runnable-track]:bg-transparent [&::-webkit-slider-thumb]:-mt-3.5 [&::-webkit-slider-thumb]:h-9 [&::-webkit-slider-thumb]:w-9 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-accent-data [&::-webkit-slider-thumb]:bg-surface-primary [&::-webkit-slider-thumb]:shadow-[0_0_0_4px_rgba(34,211,238,0.14),0_0.35rem_0.8rem_rgba(0,0,0,0.28)] [&::-moz-range-track]:h-2 [&::-moz-range-track]:rounded-full [&::-moz-range-track]:bg-transparent [&::-moz-range-thumb]:h-9 [&::-moz-range-thumb]:w-9 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-accent-data [&::-moz-range-thumb]:bg-surface-primary';
+
+function DriveLimitControl({ value, onChange }: DriveLimitControlProps) {
+  const progress = ((value - ROVER_MIN_DRIVE_CURRENT_LIMIT_A)
+    / (ROVER_MAX_DRIVE_CURRENT_A - ROVER_MIN_DRIVE_CURRENT_LIMIT_A)) * 100;
+
+  const rangeProps = {
+    min: ROVER_MIN_DRIVE_CURRENT_LIMIT_A,
+    max: ROVER_MAX_DRIVE_CURRENT_A,
+    step: 1,
+    value,
+    'aria-label': 'Maximum touch drive current',
+    'aria-valuetext': `${value} amps`,
+    onChange: (event: ChangeEvent<HTMLInputElement>) => onChange(event.currentTarget.valueAsNumber),
+  };
+
   return (
-    <div className="pointer-events-auto w-[min(7.5rem,31vw)] select-none rounded-md border border-border-default bg-surface-secondary/50 p-1.5 [-webkit-touch-callout:none] lg:w-full lg:p-2 [@media(max-width:1023px)_and_(orientation:landscape)]:w-[min(7.5rem,16vw)] [@media(max-width:1023px)_and_(orientation:landscape)]:border-accent-data/30 [@media(max-width:1023px)_and_(orientation:landscape)]:bg-surface-primary/55 [@media(max-width:1023px)_and_(orientation:landscape)]:shadow-[0_0.6rem_1.5rem_rgba(0,0,0,0.18)] [@media(max-width:1023px)_and_(orientation:landscape)]:backdrop-blur-md">
+    <div className="pointer-events-auto w-[min(5.75rem,24vw)] select-none rounded-md border border-border-default bg-surface-secondary/50 p-1.5 [-webkit-touch-callout:none] lg:w-full lg:p-2 [@media(max-width:1023px)_and_(orientation:landscape)]:w-[min(5.75rem,12vw)] [@media(max-width:1023px)_and_(orientation:landscape)]:border-accent-data/30 [@media(max-width:1023px)_and_(orientation:landscape)]:bg-surface-primary/55 [@media(max-width:1023px)_and_(orientation:landscape)]:shadow-[0_0.6rem_1.5rem_rgba(0,0,0,0.18)] [@media(max-width:1023px)_and_(orientation:landscape)]:backdrop-blur-md">
       <div className="mb-1 flex items-center justify-between px-0.5 font-mono text-[8px] font-black uppercase tracking-[0.12em] lg:mb-1.5 lg:text-[9px]">
         <span className="text-text-label">Power max</span>
-        <span className="text-accent-data">{value}A</span>
+        <output className="text-accent-data">{value}A</output>
       </div>
-      <div
-        role="group"
-        aria-label="Maximum touch drive current"
-        className="grid grid-cols-1 gap-1 lg:grid-cols-3 lg:gap-1.5"
-      >
-        {ROVER_DRIVE_CURRENT_LIMITS_A.map((limitA) => {
-          const selected = value === limitA;
-          return (
-            <button
-              key={limitA}
-              type="button"
-              aria-pressed={selected}
-              onClick={() => onChange(limitA)}
-              className={`min-h-11 rounded border px-1 font-mono text-[9px] font-black uppercase tracking-[0.06em] transition active:scale-[0.97] lg:px-2 lg:text-[10px] [@media(max-width:1023px)_and_(orientation:landscape)]:text-[10px] ${selected
-                ? 'border-accent-data bg-accent-data/18 text-accent-data shadow-[inset_0_0_0_1px_rgba(34,211,238,0.16)]'
-                : 'border-border-default bg-surface-base/55 text-text-secondary hover:border-accent-data/50 hover:text-text-primary'
-              }`}
-            >
-              {limitA}A
-            </button>
-          );
-        })}
+
+      <div className="relative mx-auto flex h-[9.75rem] w-full items-center justify-center lg:hidden">
+        <div className="pointer-events-none absolute left-1/2 top-1/2 h-[8.5rem] w-2 -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-full bg-border-default" aria-hidden>
+          <span
+            className="absolute inset-x-0 bottom-0 rounded-full bg-accent-data transition-[height] duration-75"
+            style={{ height: `${progress}%` }}
+          />
+        </div>
+        <span className="pointer-events-none absolute right-0.5 top-1 font-mono text-[7px] font-bold text-text-muted">40</span>
+        <span className="pointer-events-none absolute bottom-1 right-0.5 font-mono text-[7px] font-bold text-text-muted">5</span>
+        <input
+          {...rangeProps}
+          type="range"
+          className={`absolute left-1/2 top-1/2 h-11 w-[9.5rem] -translate-x-1/2 -translate-y-1/2 -rotate-90 touch-none ${driveLimitRangeClass}`}
+        />
+      </div>
+
+      <div className="hidden lg:block">
+        <div className="relative flex h-11 items-center">
+          <div className="pointer-events-none absolute inset-x-0 top-1/2 h-2 -translate-y-1/2 overflow-hidden rounded-full bg-border-default" aria-hidden>
+            <span
+              className="absolute inset-y-0 left-0 rounded-full bg-accent-data transition-[width] duration-75"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+          <input
+            {...rangeProps}
+            type="range"
+            className={`relative h-11 w-full ${driveLimitRangeClass}`}
+          />
+        </div>
+        <div className="flex justify-between px-0.5 font-mono text-[8px] font-bold text-text-muted">
+          <span>{ROVER_MIN_DRIVE_CURRENT_LIMIT_A}A</span>
+          <span>{ROVER_MAX_DRIVE_CURRENT_A}A</span>
+        </div>
       </div>
     </div>
   );
@@ -669,7 +698,7 @@ const VescPwmOutputControlPanel = memo(function VescPwmOutputControlPanel({
               </div>
             </div>
 
-            <DriveLimitSelector
+            <DriveLimitControl
               value={driveCurrentLimitA}
               onChange={handleDriveCurrentLimitChange}
             />
