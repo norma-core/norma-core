@@ -4,6 +4,7 @@ import { parseFrame, type Frame } from "@/api/frame-parser.js";
 import { NormFsClient } from "@/api/normfs.js";
 import { normfs, inference } from "@/api/proto.js";
 import { timeSyncManager } from "@/api/time-sync.js";
+import { isVideoPaused } from "@/api/video-stream-settings.js";
 import { WS_EVENTS } from "@/api/websocket-events.js";
 import { shouldLoadLiveCameraFrame } from "@/usbvideo/live-camera-store.js";
 
@@ -50,6 +51,7 @@ class WebSocketManager extends EventTarget {
 
   private pollingInterval: number | null = null;
   private isPolling: boolean = false;
+  private lastPollStartMs = 0;
   private frameTimestamps: number[] = [];
 
   private stats: ConnectionStats = {
@@ -106,6 +108,7 @@ class WebSocketManager extends EventTarget {
     }
 
     this.isPolling = true;
+    this.lastPollStartMs = Date.now();
     const acquisitionGeneration = this.acquisitionGeneration;
 
     try {
@@ -126,6 +129,7 @@ class WebSocketManager extends EventTarget {
           shouldLoadVideoFrame: shouldLoadLiveCameraFrame,
           shouldPublishVideoFrames: () =>
             this.isLiveMode() && acquisitionGeneration === this.acquisitionGeneration,
+          shouldFetchVideoFrames: () => !isVideoPaused(),
         });
 
         if (!this.isLiveMode() || acquisitionGeneration !== this.acquisitionGeneration) {
@@ -157,9 +161,15 @@ class WebSocketManager extends EventTarget {
     // Poll immediately
     this.pollLatestFrame();
 
-    // Then poll every 20ms (50Hz)
+    // Then poll every 20ms (50Hz). With video paused there are no frame
+    // payloads to race for, but every poll still transfers the latest
+    // inference-state entry — cap at 10Hz (the sensor epoch rate) so a
+    // paused page stays cheap on metered links.
     this.pollingInterval = window.setInterval(() => {
       if (this.isLiveMode() && this.isConnected()) {
+        if (isVideoPaused() && Date.now() - this.lastPollStartMs < 100) {
+          return;
+        }
         this.pollLatestFrame();
       }
     }, 20);
