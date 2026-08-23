@@ -66,6 +66,20 @@ export function getLiveCameraFrame(sourceId: string): LiveCameraFrame | null {
   return framesBySourceId.get(sourceId) ?? null;
 }
 
+export function shouldLoadLiveCameraFrame(
+  queueId: string,
+  previousEnvelope?: usbvideo.IRxEnvelope,
+): boolean {
+  // The first frame supplies the metadata needed to identify and select the
+  // camera. After discovery, only fetch fresh image data for mounted viewers.
+  if (!previousEnvelope) {
+    return true;
+  }
+
+  const sourceId = getLiveCameraSourceId(queueId, previousEnvelope);
+  return (listenersBySourceId.get(sourceId)?.size ?? 0) > 0;
+}
+
 export function subscribeLiveCameraFrame(
   sourceId: string,
   listener: LiveCameraListener,

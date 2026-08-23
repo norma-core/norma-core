@@ -5,6 +5,7 @@ import { serverToLocal } from '@/api/timestamp-utils';
 import { yahboom_dogzilla_lite, usbvideo } from '@/api/proto.js';
 import YahboomDogzillaLiteDesktopDashboard from '@/devices/yahboom-dogzilla-lite/ui/YahboomDogzillaLiteDesktopDashboard';
 import YahboomDogzillaLiteViewModeSwitch, { type YahboomDogzillaLiteViewMode } from '@/devices/yahboom-dogzilla-lite/ui/YahboomDogzillaLiteViewModeSwitch';
+import type { CameraLayoutMode } from '@/usbvideo/CameraLayoutControls';
 import { getVideoSourceId, getVideoSourceLabel } from '@/usbvideo/camera-source';
 import { getLatencyBgColor, getLatencyTextColor } from '@/utils/color-utils';
 
@@ -21,7 +22,6 @@ interface LatencyStats {
 
 const STALE_CAMERA_MAX_AGE_MS = 60_000;
 
-type CameraLayoutMode = 'pip' | 'side-by-side' | 'stacked';
 type CameraFitMode = 'contain' | 'cover';
 
 type ActiveVideoSource = {
@@ -390,8 +390,7 @@ const YahboomDogzillaLiteDesktopCard = memo(function YahboomDogzillaLiteDesktopC
           secondaryCameraFit={secondaryCameraFit}
           onPrimaryCameraFitToggle={() => setPrimaryCameraFit((fit) => (fit === 'contain' ? 'cover' : 'contain'))}
           onSecondaryCameraFitToggle={() => setSecondaryCameraFit((fit) => (fit === 'contain' ? 'cover' : 'contain'))}
-          onSetPipLayout={() => setCameraLayout('pip')}
-          onToggleSplitLayout={() => setCameraLayout((layout) => (layout === 'side-by-side' ? 'stacked' : 'side-by-side'))}
+          onCameraLayoutChange={setCameraLayout}
           onSwapCameras={handleSwapVideoSources}
           onToggleFullscreen={handleToggleFullscreenMode}
         />
