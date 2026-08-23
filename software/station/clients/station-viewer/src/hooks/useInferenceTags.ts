@@ -8,8 +8,6 @@ import {
   type TagMarker,
 } from '@/utils/inference-tags';
 
-export type { TagMarker } from '@/utils/inference-tags';
-
 const TAGS_QUEUE = 'inference-tags/rx';
 const MAX_TAGS = 1000;
 
@@ -36,9 +34,11 @@ function fetchTags(): Promise<TagMarker[]> {
           : new Uint8Array(readResponse.data);
         const envelope = inference_tags.RxEnvelope.decode(data);
         if (!envelope.inferenceQueuePtr || envelope.inferenceQueuePtr.length === 0) return;
-        const frame = Long.fromBytesLE(Array.from(envelope.inferenceQueuePtr)).toNumber();
+        const pointer = new Uint8Array(envelope.inferenceQueuePtr);
+        const frame = Long.fromBytesLE(Array.from(pointer), true).toNumber();
         events.push({
           frame,
+          pointer,
           tag: envelope.tag || '',
           removed: envelope.type === inference_tags.CommandType.CT_REMOVE_TAG,
         });

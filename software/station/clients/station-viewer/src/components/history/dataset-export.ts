@@ -1,8 +1,8 @@
 export interface DatasetGeneratorParams {
   robot: string;
   queue: string;
-  from: number;
-  to: number;
+  from: bigint;
+  to: bigint;
   output: string;
   task: string;
   episodeDuration: number;
@@ -30,13 +30,13 @@ export function validateDatasetGeneratorParams(params: DatasetGeneratorParams): 
   if (params.output.trim().length === 0) errors.push('Output path is required.');
   if (params.task.trim().length === 0) errors.push('Task description is required.');
 
-  if (!Number.isSafeInteger(params.from) || params.from < 0) {
+  if (params.from < 0n) {
     errors.push('Start tag pointer is invalid.');
   }
-  if (!Number.isSafeInteger(params.to) || params.to < 0) {
+  if (params.to < 0n) {
     errors.push('End tag pointer is invalid.');
   }
-  if (Number.isSafeInteger(params.from) && Number.isSafeInteger(params.to) && params.from >= params.to) {
+  if (params.from >= params.to) {
     errors.push('End tag must be after the start tag.');
   }
   if (!Number.isSafeInteger(params.episodeDuration) || params.episodeDuration <= 0) {

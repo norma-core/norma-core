@@ -9,7 +9,7 @@ import {
 import { Check, Clipboard, SquareTerminal, X } from 'lucide-react';
 import { copyToClipboard } from '@/api/clipboard-utils';
 import webSocketManager from '@/api/websocket';
-import type { TagMarker } from '@/utils/inference-tags';
+import { pointerToBigInt, type TagMarker } from '@/utils/inference-tags';
 import {
   buildDatasetGeneratorCommand,
   validateDatasetGeneratorParams,
@@ -18,18 +18,12 @@ import {
 import { hasDatasetData } from './dataset-export-preflight';
 
 type CopyState = 'idle' | 'copied' | 'error';
-type AvailabilityStatus = 'checking' | 'available' | 'unavailable' | 'error';
-
-interface AvailabilityResult {
-  key: string;
-  status: AvailabilityStatus;
-}
 
 const INPUT_CLASSES = 'min-h-11 w-full rounded border border-border-subtle bg-surface-primary px-3 py-2 text-sm text-text-primary outline-none transition-colors placeholder:text-text-muted focus:border-accent-data disabled:cursor-not-allowed disabled:text-text-muted';
 const LABEL_CLASSES = 'mb-1.5 block text-xs font-semibold uppercase tracking-wide text-text-label';
 
 function tagIdentity(tag: TagMarker): string {
-  return JSON.stringify([tag.frame, tag.tag]);
+  return JSON.stringify([pointerToBigInt(tag.pointer).toString(), tag.tag]);
 }
 
 function parseWholeNumber(value: string): number {
@@ -45,12 +39,9 @@ interface DatasetExportHelperProps {
 }
 
 function DatasetExportHelper({ tags }: DatasetExportHelperProps) {
-  const selectableTags = useMemo(() => (
-    [...tags].sort((left, right) => left.frame - right.frame || left.tag.localeCompare(right.tag))
-  ), [tags]);
   const tagsById = useMemo(() => new Map(
-    selectableTags.map((tag) => [tagIdentity(tag), tag]),
-  ), [selectableTags]);
+    tags.map((tag) => [tagIdentity(tag), tag]),
+  ), [tags]);
 
   const [fromTagId, setFromTagId] = useState('');
   const [toTagId, setToTagId] = useState('');
@@ -61,34 +52,22 @@ function DatasetExportHelper({ tags }: DatasetExportHelperProps) {
   const [episodeDuration, setEpisodeDuration] = useState('45');
   const [episodeMinCommands, setEpisodeMinCommands] = useState('100');
   const [copyState, setCopyState] = useState<CopyState>('idle');
-  const [availability, setAvailability] = useState<AvailabilityResult | null>(null);
+  const [availabilityWarning, setAvailabilityWarning] = useState<string | null>(null);
   const [isOpen, setIsOpen] = useState(false);
   const dialogRef = useRef<HTMLDialogElement>(null);
-  const copyResetRef = useRef<number | null>(null);
-  const isMountedRef = useRef(false);
 
   useEffect(() => {
     setFromTagId((current) => {
       if (tagsById.has(current)) return current;
-      return selectableTags[0] ? tagIdentity(selectableTags[0]) : '';
+      return tags[0] ? tagIdentity(tags[0]) : '';
     });
     setToTagId((current) => {
       if (tagsById.has(current)) return current;
-      return selectableTags.length > 1
-        ? tagIdentity(selectableTags[selectableTags.length - 1])
+      return tags.length > 1
+        ? tagIdentity(tags[tags.length - 1])
         : '';
     });
-  }, [selectableTags, tagsById]);
-
-  useEffect(() => {
-    isMountedRef.current = true;
-    return () => {
-      isMountedRef.current = false;
-      if (copyResetRef.current !== null) {
-        window.clearTimeout(copyResetRef.current);
-      }
-    };
-  }, []);
+  }, [tags, tagsById]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -110,8 +89,8 @@ function DatasetExportHelper({ tags }: DatasetExportHelperProps) {
   const params: DatasetGeneratorParams | null = fromTag && toTag ? {
     robot,
     queue,
-    from: fromTag.frame,
-    to: toTag.frame,
+    from: pointerToBigInt(fromTag.pointer),
+    to: pointerToBigInt(toTag.pointer),
     output,
     task,
     episodeDuration: parseWholeNumber(episodeDuration),
@@ -120,68 +99,41 @@ function DatasetExportHelper({ tags }: DatasetExportHelperProps) {
 
   const errors = params
     ? validateDatasetGeneratorParams(params)
-    : [selectableTags.length < 2
+    : [tags.length < 2
       ? 'Add at least two tags to define an export range.'
       : 'Choose both a start tag and an end tag.'];
   const command = params && errors.length === 0
     ? buildDatasetGeneratorCommand(params)
     : '';
-  const availabilityFrom = fromTag?.frame ?? null;
-  const availabilityTo = toTag?.frame ?? null;
   const requestedQueue = queue.trim();
-  const availabilityKey = availabilityFrom !== null
-    && availabilityTo !== null
-    && availabilityFrom < availabilityTo
-    && requestedQueue.length > 0
-    ? JSON.stringify([requestedQueue, availabilityFrom, availabilityTo])
-    : null;
-  const availabilityStatus = availabilityKey !== null && availability?.key === availabilityKey
-    ? availability.status
-    : 'checking';
-  const isAvailabilityPending = isOpen
-    && availabilityKey !== null
-    && availabilityStatus === 'checking';
-  const commandReadyForDisplay = command.length > 0 && !isAvailabilityPending;
-  const availabilityWarning = availabilityStatus === 'unavailable'
-    ? `Queue ${requestedQueue} has no data in the selected range.`
-    : availabilityStatus === 'error'
-    ? 'Could not validate queue data. The command can still be copied.'
-    : null;
-  const commandPreview = command.length === 0
-    ? 'Complete the required fields to generate a command.'
-    : isAvailabilityPending
-    ? 'Waiting for queue validation...'
-    : command;
 
   useEffect(() => {
+    setAvailabilityWarning(null);
+
     if (
       !isOpen
-      || availabilityKey === null
-      || availabilityFrom === null
-      || availabilityTo === null
+      || !fromTag
+      || !toTag
+      || pointerToBigInt(fromTag.pointer) >= pointerToBigInt(toTag.pointer)
+      || requestedQueue.length === 0
     ) {
-      setAvailability(null);
       return;
     }
 
     let isCurrent = true;
-    setAvailability({ key: availabilityKey, status: 'checking' });
 
     void hasDatasetData(
       webSocketManager.normFs,
       requestedQueue,
-      availabilityFrom,
-      availabilityTo,
+      fromTag.pointer,
+      toTag.pointer,
     ).then((hasData) => {
-      if (isCurrent) {
-        setAvailability({
-          key: availabilityKey,
-          status: hasData ? 'available' : 'unavailable',
-        });
+      if (isCurrent && !hasData) {
+        setAvailabilityWarning(`Queue ${requestedQueue} has no data in the selected range.`);
       }
     }).catch(() => {
       if (isCurrent) {
-        setAvailability({ key: availabilityKey, status: 'error' });
+        setAvailabilityWarning('Could not validate queue data. The command can still be copied.');
       }
     });
 
@@ -189,41 +141,40 @@ function DatasetExportHelper({ tags }: DatasetExportHelperProps) {
       isCurrent = false;
     };
   }, [
-    availabilityKey,
-    availabilityFrom,
-    availabilityTo,
+    fromTag,
     isOpen,
     requestedQueue,
+    toTag,
   ]);
 
   const handleCopy = async () => {
-    if (!commandReadyForDisplay) return;
+    if (!command) return;
 
     try {
       await copyToClipboard(command);
-      if (!isMountedRef.current) return;
       setCopyState('copied');
     } catch (error) {
-      if (!isMountedRef.current) return;
       console.error('Failed to copy dataset-generator command:', error);
       setCopyState('error');
     }
-
-    if (copyResetRef.current !== null) {
-      window.clearTimeout(copyResetRef.current);
-    }
-    copyResetRef.current = window.setTimeout(() => setCopyState('idle'), 2000);
   };
+
+  const openDialog = () => {
+    setCopyState('idle');
+    setIsOpen(true);
+  };
+
+  const closeDialog = () => setIsOpen(false);
 
   const handleDialogClick = (event: MouseEvent<HTMLDialogElement>) => {
     if (event.target === event.currentTarget) {
-      setIsOpen(false);
+      closeDialog();
     }
   };
 
   const handleCancel = (event: SyntheticEvent<HTMLDialogElement, Event>) => {
     event.preventDefault();
-    setIsOpen(false);
+    closeDialog();
   };
 
   return (
@@ -231,13 +182,13 @@ function DatasetExportHelper({ tags }: DatasetExportHelperProps) {
       <button
         type="button"
         aria-haspopup="dialog"
-        onClick={() => setIsOpen(true)}
+        onClick={openDialog}
         className="inline-flex h-[26px] w-auto self-end cursor-pointer items-center justify-center gap-1.5 rounded border border-accent-data/50 bg-accent-data/10 px-2 py-1 text-xs font-semibold text-accent-data transition-colors hover:bg-accent-data/20 active:bg-accent-data/30 sm:self-auto sm:border-0 sm:ring-1 sm:ring-inset sm:ring-accent-data/50"
       >
         <SquareTerminal className="h-3.5 w-3.5" aria-hidden="true" />
         Export dataset
         <span className="rounded bg-surface-primary px-1 text-[10px] leading-4 font-mono text-text-label">
-          {selectableTags.length} {selectableTags.length === 1 ? 'tag' : 'tags'}
+          {tags.length} {tags.length === 1 ? 'tag' : 'tags'}
         </span>
       </button>
 
@@ -248,7 +199,7 @@ function DatasetExportHelper({ tags }: DatasetExportHelperProps) {
           aria-describedby="dataset-export-description"
           onCancel={handleCancel}
           onClick={handleDialogClick}
-          className="dataset-export-dialog m-0 mt-auto max-h-[92svh] w-full max-w-none overflow-hidden border-0 bg-transparent p-0 text-text-primary backdrop:bg-surface-overlay-light sm:m-auto sm:max-h-[calc(100svh-3rem)] sm:w-[calc(100vw-3rem)] sm:max-w-4xl"
+          className="m-0 mt-auto max-h-[92svh] w-full max-w-none overflow-hidden border-0 bg-transparent p-0 text-text-primary backdrop:bg-surface-overlay-light sm:m-auto sm:max-h-[calc(100svh-3rem)] sm:w-[calc(100vw-3rem)] sm:max-w-4xl"
         >
           <form
             onSubmit={(event) => event.preventDefault()}
@@ -260,14 +211,9 @@ function DatasetExportHelper({ tags }: DatasetExportHelperProps) {
                   <SquareTerminal className="h-4 w-4" aria-hidden="true" />
                 </span>
                 <div className="min-w-0">
-                  <div className="flex items-center gap-2">
-                    <h2 id="dataset-export-title" className="truncate text-sm font-semibold text-text-primary sm:text-base">
-                      Dataset Export
-                    </h2>
-                    <span className="shrink-0 rounded border border-border-subtle bg-surface-primary px-1.5 py-0.5 text-[11px] font-mono text-text-label">
-                      {selectableTags.length} {selectableTags.length === 1 ? 'tag' : 'tags'}
-                    </span>
-                  </div>
+                  <h2 id="dataset-export-title" className="truncate text-sm font-semibold text-text-primary sm:text-base">
+                    Dataset Export
+                  </h2>
                   <p id="dataset-export-description" className="mt-0.5 truncate text-xs text-text-label">
                     Generate a dataset-generator command from two tag markers
                   </p>
@@ -276,7 +222,7 @@ function DatasetExportHelper({ tags }: DatasetExportHelperProps) {
               <button
                 type="button"
                 aria-label="Close dataset export"
-                onClick={() => setIsOpen(false)}
+                onClick={closeDialog}
                 className="inline-flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded border border-border-subtle bg-surface-primary text-text-label transition-colors hover:bg-surface-elevated hover:text-text-primary"
               >
                 <X className="h-4 w-4" aria-hidden="true" />
@@ -290,15 +236,15 @@ function DatasetExportHelper({ tags }: DatasetExportHelperProps) {
                   <select
                     value={fromTagId}
                     onChange={(event) => setFromTagId(event.currentTarget.value)}
-                    disabled={selectableTags.length === 0}
+                    disabled={tags.length === 0}
                     className={`${INPUT_CLASSES} font-mono`}
                   >
                     <option value="">Select start tag</option>
-                    {selectableTags.map((tag) => {
+                    {tags.map((tag) => {
                       const identity = tagIdentity(tag);
                       return (
                         <option key={`from-${identity}`} value={identity}>
-                          {tag.tag || '(untitled)'} — {tag.frame.toLocaleString()}
+                          {tag.tag || '(untitled)'} — {pointerToBigInt(tag.pointer).toLocaleString()}
                         </option>
                       );
                     })}
@@ -310,15 +256,15 @@ function DatasetExportHelper({ tags }: DatasetExportHelperProps) {
                   <select
                     value={toTagId}
                     onChange={(event) => setToTagId(event.currentTarget.value)}
-                    disabled={selectableTags.length < 2}
+                    disabled={tags.length < 2}
                     className={`${INPUT_CLASSES} font-mono`}
                   >
                     <option value="">Select end tag</option>
-                    {selectableTags.map((tag) => {
+                    {tags.map((tag) => {
                       const identity = tagIdentity(tag);
                       return (
                         <option key={`to-${identity}`} value={identity}>
-                          {tag.tag || '(untitled)'} — {tag.frame.toLocaleString()}
+                          {tag.tag || '(untitled)'} — {pointerToBigInt(tag.pointer).toLocaleString()}
                         </option>
                       );
                     })}
@@ -409,18 +355,12 @@ function DatasetExportHelper({ tags }: DatasetExportHelperProps) {
                 </p>
               )}
 
-              {isAvailabilityPending && (
-                <p role="status" className="mt-4 text-xs font-semibold text-accent-info">
-                  Checking queue data...
-                </p>
-              )}
-
               <div className="mt-4">
                 <div className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-text-label">
                   Command preview
                 </div>
                 <pre className="min-h-28 max-h-56 overflow-auto whitespace-pre rounded border border-border-subtle bg-surface-primary p-3 text-xs leading-5 text-text-secondary">
-                  <code>{commandPreview}</code>
+                  <code>{command || 'Complete the required fields to generate a command.'}</code>
                 </pre>
               </div>
             </div>
@@ -428,7 +368,7 @@ function DatasetExportHelper({ tags }: DatasetExportHelperProps) {
             <footer className="flex shrink-0 flex-col gap-2 border-t border-border-default px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] sm:flex-row sm:justify-end sm:px-5 sm:pb-4">
               <button
                 type="button"
-                onClick={() => setIsOpen(false)}
+                onClick={closeDialog}
                 className="inline-flex min-h-11 cursor-pointer items-center justify-center rounded border border-border-subtle bg-surface-primary px-4 py-2 text-sm font-medium text-text-primary transition-colors hover:bg-surface-elevated"
               >
                 Close
@@ -436,7 +376,7 @@ function DatasetExportHelper({ tags }: DatasetExportHelperProps) {
               <button
                 type="button"
                 onClick={() => void handleCopy()}
-                disabled={!commandReadyForDisplay}
+                disabled={!command}
                 className="inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded border border-accent-data/50 bg-accent-data/10 px-4 py-2 text-sm font-semibold text-accent-data transition-colors hover:bg-accent-data/20 disabled:cursor-not-allowed disabled:border-border-subtle disabled:bg-surface-elevated disabled:text-text-muted"
               >
                 {copyState === 'copied' ? (

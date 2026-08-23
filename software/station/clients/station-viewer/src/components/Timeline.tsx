@@ -10,7 +10,7 @@ import HistoryTimelineTrack, { Tick } from './HistoryTimelineTrack';
 import TickLabel from './TickLabel';
 import { TimelineState, TimelineActions } from '../hooks/useTimelineState';
 import { StartupMarker } from '../hooks/useStartupMarkers';
-import { TagMarker } from '../hooks/useInferenceTags';
+import { pointerToBigInt, type TagMarker } from '@/utils/inference-tags';
 
 interface TimelineProps {
   state: TimelineState;
@@ -117,12 +117,12 @@ const TimelineTrackWithOverlay = memo(function TimelineTrackWithOverlay({
         );
       })}
 
-      {tags.map((t, idx) => {
+      {tags.map((t) => {
         if (t.frame < minFrame || t.frame > maxFrame) return null;
         const percent = frameToPercent(t.frame);
         return (
           <div
-            key={`tag-${idx}-${t.frame}-${t.tag}`}
+            key={`tag-${pointerToBigInt(t.pointer)}-${t.tag}`}
             className="absolute top-0 bottom-0 w-0.5 bg-accent-data z-20 cursor-pointer"
             style={{ left: `${percent}%` }}
             title={`@ ${t.frame}: ${t.tag}`}

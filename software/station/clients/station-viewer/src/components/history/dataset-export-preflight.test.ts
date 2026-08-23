@@ -1,8 +1,10 @@
-import Long from 'long';
 import { describe, expect, it } from 'vitest';
 import type { NormFsClient } from '@/api/normfs';
 import { inference } from '@/api/proto.js';
 import { hasDatasetData } from './dataset-export-preflight';
+
+const START_LABEL = Uint8Array.of(100);
+const END_LABEL = Uint8Array.of(200);
 
 function pointer(value: bigint, byteLength = 8): Uint8Array {
   const bytes = new Uint8Array(byteLength);
@@ -25,9 +27,8 @@ function reader(
   return {
     async readSingleEntry(queue, entryId) {
       expect(queue).toBe('inference-states');
-      const frame = Long.fromBytesLE(Array.from(entryId), true).toNumber();
-      const data = responses.get(frame);
-      if (!data) throw new Error(`Unexpected inference-states pointer: ${frame}`);
+      const data = responses.get(entryId[0]);
+      if (!data) throw new Error(`Unexpected inference-states pointer: ${entryId[0]}`);
       return { id: entryId, data };
     },
   };
@@ -45,38 +46,18 @@ function snapshot(queuePointer: Uint8Array | null): Uint8Array {
 }
 
 describe('hasDatasetData', () => {
-  it('confirms data when the queue pointer advanced between the start and end labels', async () => {
+  it.each([
+    ['different pointers', pointer(7n), pointer(12n), true],
+    ['equal pointers', pointer(7n), pointer(7n), false],
+    ['missing start pointer', null, pointer(12n), false],
+    ['missing end pointer', pointer(7n), null, false],
+  ])('handles %s', async (_case, start, end, expected) => {
     await expect(hasDatasetData(
-      reader(pointer(7n), pointer(12n)),
+      reader(start, end),
       'inference/normvla',
-      100,
-      200,
-    )).resolves.toBe(true);
-  });
-
-  it('reports no data when the queue pointer did not move', async () => {
-    await expect(hasDatasetData(
-      reader(pointer(7n), pointer(7n)),
-      'inference/normvla',
-      100,
-      200,
-    )).resolves.toBe(false);
-  });
-
-  it('reports no data when the queue is missing from either inference-states label', async () => {
-    await expect(hasDatasetData(
-      reader(null, pointer(12n)),
-      'inference/normvla',
-      100,
-      200,
-    )).resolves.toBe(false);
-
-    await expect(hasDatasetData(
-      reader(pointer(7n), null),
-      'inference/normvla',
-      100,
-      200,
-    )).resolves.toBe(false);
+      START_LABEL,
+      END_LABEL,
+    )).resolves.toBe(expected);
   });
 
   it('compares 128-bit queue pointers without losing precision', async () => {
@@ -84,8 +65,8 @@ describe('hasDatasetData', () => {
     await expect(hasDatasetData(
       reader(pointer(start, 16), pointer(start + 1n, 16)),
       'inference/normvla',
-      100,
-      200,
+      START_LABEL,
+      END_LABEL,
     )).resolves.toBe(true);
   });
 });

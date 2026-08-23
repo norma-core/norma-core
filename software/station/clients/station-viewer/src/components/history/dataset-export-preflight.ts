@@ -1,12 +1,7 @@
-import Long from 'long';
 import type { NormFsClient } from '@/api/normfs';
 import { inference } from '@/api/proto.js';
 
 const INFERENCE_STATES_QUEUE = 'inference-states';
-
-function pointerBytes(value: number): Uint8Array {
-  return new Uint8Array(Long.fromNumber(value, true).toBytesLE());
-}
 
 function findQueuePointer(data: Uint8Array, queue: string): Uint8Array | null {
   const snapshot = inference.InferenceRx.decode(data);
@@ -21,9 +16,9 @@ function findQueuePointer(data: Uint8Array, queue: string): Uint8Array | null {
 async function readQueuePointer(
   reader: Pick<NormFsClient, 'readSingleEntry'>,
   queue: string,
-  inferencePtr: number,
+  inferencePtr: Uint8Array,
 ): Promise<Uint8Array | null> {
-  const entry = await reader.readSingleEntry(INFERENCE_STATES_QUEUE, pointerBytes(inferencePtr));
+  const entry = await reader.readSingleEntry(INFERENCE_STATES_QUEUE, inferencePtr);
   return findQueuePointer(entry.data, queue);
 }
 
@@ -34,8 +29,8 @@ function pointersDiffer(left: Uint8Array, right: Uint8Array): boolean {
 export async function hasDatasetData(
   reader: Pick<NormFsClient, 'readSingleEntry'>,
   queue: string,
-  from: number,
-  to: number,
+  from: Uint8Array,
+  to: Uint8Array,
 ): Promise<boolean> {
   const [start, end] = await Promise.all([
     readQueuePointer(reader, queue, from),
