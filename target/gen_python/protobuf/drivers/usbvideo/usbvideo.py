@@ -18,6 +18,15 @@ class RxEnvelopeType(enum.IntEnum):
     ET_DEVICE_RECORDING_END = 4
     ET_DEVICE_DISCONNECTED = 5
     ET_ERROR = 6
+    ET_COMMAND = 7
+    ET_COMMAND_SUCCESS = 8
+    ET_COMMAND_REJECTED = 9
+    ET_COMMAND_FAILED = 10
+
+class SetFormatMode(enum.IntEnum):
+    SET_FORMAT_MODE_AUTO = 0
+    SET_FORMAT_MODE_MANUAL = 1
+    SET_FORMAT_MODE_NONE = 2
 
 
 # messages
@@ -31,6 +40,7 @@ class RxEnvelope:
     error: typing.Optional[bytes] = None
     last_inference_queue_ptr: typing.Optional[bytes] = None
     frames: typing.Optional[frame.FramesPack] = None
+    command: typing.Optional[TxEnvelope] = None
 
     def calc_protobuf_size(self) -> int:
         res = 0
@@ -65,6 +75,10 @@ class RxEnvelope:
             size = self.frames.calc_protobuf_size()
             if size > 0:
                 res += 1 + (((size | 1).bit_length() + 6) // 7) + size
+        if self.command is not None:
+            size = self.command.calc_protobuf_size()
+            if size > 0:
+                res += 2 + (((size | 1).bit_length() + 6) // 7) + size
         return res
 
     def encode(self) -> bytes:
@@ -107,6 +121,11 @@ class RxEnvelope:
             if size > 0:
                 target.append_bytes_size_with_tag(b'R', size)
                 self.frames.encode_to(target)
+        if self.command is not None:
+            size = self.command.calc_protobuf_size()
+            if size > 0:
+                target.append_bytes_size_with_tag(b'\xa2\x01', size)
+                self.command.encode_to(target)
 
 
 class RxEnvelopeReader:
@@ -118,6 +137,7 @@ class RxEnvelopeReader:
         self._error: typing.Optional[str] = None
         self._last_inference_queue_ptr: typing.Optional[memoryview] = None
         self._frames_buf: typing.Optional[memoryview] = None
+        self._command_buf: typing.Optional[memoryview] = None
 
         if not src:
             return
@@ -158,6 +178,10 @@ class RxEnvelopeReader:
                     result = self._buf.read_bytes_view(offset)
                     offset += result.size
                     self._frames_buf = result.value
+                case 20:
+                    result = self._buf.read_bytes_view(offset)
+                    offset += result.size
+                    self._command_buf = result.value
                 case _:
                     offset = self._buf.skip_data(offset, tag.wire)
 
@@ -193,6 +217,273 @@ class RxEnvelopeReader:
         if self._frames_buf is not None:
             return frame.FramesPackReader(self._frames_buf)
         return frame.FramesPackReader(b'')
+
+    def get_command(self) -> TxEnvelopeReader:
+        if self._command_buf is not None:
+            return TxEnvelopeReader(self._command_buf)
+        return TxEnvelopeReader(b'')
+
+
+@dataclasses.dataclass
+class SetFormatCommand:
+    # fields
+    mode: SetFormatMode = SetFormatMode(0)
+    format: typing.Optional[CameraFormat] = None
+
+    def calc_protobuf_size(self) -> int:
+        res = 0
+        if self.mode != SetFormatMode(0):
+            res += 1 + (((self.mode.value | 1).bit_length() + 6) // 7)
+        if self.format is not None:
+            size = self.format.calc_protobuf_size()
+            if size > 0:
+                res += 1 + (((size | 1).bit_length() + 6) // 7) + size
+        return res
+
+    def encode(self) -> bytes:
+        size = self.calc_protobuf_size()
+        if size == 0:
+            return b''
+        buf = bytearray(size)
+        writer = gremlin.Writer(buf)
+        self.encode_to(writer)
+        return bytes(buf)
+
+    def encode_to(self, target: typing.Union[gremlin.Writer, gremlin.StreamingWriter]):
+        if self.mode != SetFormatMode(0):
+            target.append_int32(b'\x08', self.mode.value)
+        if self.format is not None:
+            size = self.format.calc_protobuf_size()
+            if size > 0:
+                target.append_bytes_size_with_tag(b'\x12', size)
+                self.format.encode_to(target)
+
+
+class SetFormatCommandReader:
+    def __init__(self, src: memoryview):
+        self._mode: SetFormatMode = SetFormatMode(0)
+        self._format_buf: typing.Optional[memoryview] = None
+
+        if not src:
+            return
+        self._buf = gremlin.Reader(src)
+        offset = 0
+        while offset < len(src):
+            tag = self._buf.read_tag_at(offset)
+            offset += tag.size
+            match tag.number:
+                case 1:
+                    result = self._buf.read_int32(offset)
+                    offset += result.size
+                    self._mode = SetFormatMode(result.value)
+                case 2:
+                    result = self._buf.read_bytes_view(offset)
+                    offset += result.size
+                    self._format_buf = result.value
+                case _:
+                    offset = self._buf.skip_data(offset, tag.wire)
+
+    def get_mode(self) -> SetFormatMode:
+        return self._mode
+
+    def get_format(self) -> CameraFormatReader:
+        if self._format_buf is not None:
+            return CameraFormatReader(self._format_buf)
+        return CameraFormatReader(b'')
+
+
+@dataclasses.dataclass
+class Command:
+    # fields
+    target_camera_unique_id: typing.Optional[bytes] = None
+    set_format: typing.Optional[SetFormatCommand] = None
+
+    def calc_protobuf_size(self) -> int:
+        res = 0
+        if self.target_camera_unique_id is not None and len(self.target_camera_unique_id) > 0:
+            bytes_len = len(self.target_camera_unique_id)
+            bytes_len_size = ((bytes_len | 1).bit_length() + 6) // 7
+            res += 1 + bytes_len_size + bytes_len
+        if self.set_format is not None:
+            size = self.set_format.calc_protobuf_size()
+            if size > 0:
+                res += 1 + (((size | 1).bit_length() + 6) // 7) + size
+        return res
+
+    def encode(self) -> bytes:
+        size = self.calc_protobuf_size()
+        if size == 0:
+            return b''
+        buf = bytearray(size)
+        writer = gremlin.Writer(buf)
+        self.encode_to(writer)
+        return bytes(buf)
+
+    def encode_to(self, target: typing.Union[gremlin.Writer, gremlin.StreamingWriter]):
+        if self.target_camera_unique_id is not None and len(self.target_camera_unique_id) > 0:
+            target.append_bytes(b'\n', self.target_camera_unique_id.encode('utf-8'))
+        if self.set_format is not None:
+            size = self.set_format.calc_protobuf_size()
+            if size > 0:
+                target.append_bytes_size_with_tag(b'R', size)
+                self.set_format.encode_to(target)
+
+
+class CommandReader:
+    def __init__(self, src: memoryview):
+        self._target_camera_unique_id: typing.Optional[str] = None
+        self._set_format_buf: typing.Optional[memoryview] = None
+
+        if not src:
+            return
+        self._buf = gremlin.Reader(src)
+        offset = 0
+        while offset < len(src):
+            tag = self._buf.read_tag_at(offset)
+            offset += tag.size
+            match tag.number:
+                case 1:
+                    result = self._buf.read_bytes_view(offset)
+                    offset += result.size
+                    self._target_camera_unique_id = result.value.tobytes().decode('utf-8')
+                case 10:
+                    result = self._buf.read_bytes_view(offset)
+                    offset += result.size
+                    self._set_format_buf = result.value
+                case _:
+                    offset = self._buf.skip_data(offset, tag.wire)
+
+    def get_target_camera_unique_id(self) -> str:
+        return self._target_camera_unique_id if self._target_camera_unique_id is not None else ''
+
+    def get_set_format(self) -> SetFormatCommandReader:
+        if self._set_format_buf is not None:
+            return SetFormatCommandReader(self._set_format_buf)
+        return SetFormatCommandReader(b'')
+
+
+@dataclasses.dataclass
+class TxEnvelope:
+    # fields
+    monotonic_stamp_ns: int = 0
+    local_stamp_ns: int = 0
+    app_start_id: int = 0
+    command_id: typing.Optional[bytes] = None
+    target_camera_unique_id: typing.Optional[bytes] = None
+    command: typing.Optional[Command] = None
+
+    def calc_protobuf_size(self) -> int:
+        res = 0
+        if self.monotonic_stamp_ns != 0:
+            res += 1 + gremlin.sizes.size_varint(self.monotonic_stamp_ns)
+        if self.local_stamp_ns != 0:
+            res += 1 + gremlin.sizes.size_varint(self.local_stamp_ns)
+        if self.app_start_id != 0:
+            res += 1 + gremlin.sizes.size_varint(self.app_start_id)
+        if self.command_id is not None and len(self.command_id) > 0:
+            bytes_len = len(self.command_id)
+            bytes_len_size = ((bytes_len | 1).bit_length() + 6) // 7
+            res += 1 + bytes_len_size + bytes_len
+        if self.target_camera_unique_id is not None and len(self.target_camera_unique_id) > 0:
+            bytes_len = len(self.target_camera_unique_id)
+            bytes_len_size = ((bytes_len | 1).bit_length() + 6) // 7
+            res += 1 + bytes_len_size + bytes_len
+        if self.command is not None:
+            size = self.command.calc_protobuf_size()
+            if size > 0:
+                res += 1 + (((size | 1).bit_length() + 6) // 7) + size
+        return res
+
+    def encode(self) -> bytes:
+        size = self.calc_protobuf_size()
+        if size == 0:
+            return b''
+        buf = bytearray(size)
+        writer = gremlin.Writer(buf)
+        self.encode_to(writer)
+        return bytes(buf)
+
+    def encode_to(self, target: typing.Union[gremlin.Writer, gremlin.StreamingWriter]):
+        if self.monotonic_stamp_ns != 0:
+            target.append_uint64(b'\x08', self.monotonic_stamp_ns)
+        if self.local_stamp_ns != 0:
+            target.append_uint64(b'\x10', self.local_stamp_ns)
+        if self.app_start_id != 0:
+            target.append_uint64(b'\x18', self.app_start_id)
+        if self.command_id is not None and len(self.command_id) > 0:
+            target.append_bytes(b'"', self.command_id)
+        if self.target_camera_unique_id is not None and len(self.target_camera_unique_id) > 0:
+            target.append_bytes(b'*', self.target_camera_unique_id.encode('utf-8'))
+        if self.command is not None:
+            size = self.command.calc_protobuf_size()
+            if size > 0:
+                target.append_bytes_size_with_tag(b'R', size)
+                self.command.encode_to(target)
+
+
+class TxEnvelopeReader:
+    def __init__(self, src: memoryview):
+        self._monotonic_stamp_ns: int = 0
+        self._local_stamp_ns: int = 0
+        self._app_start_id: int = 0
+        self._command_id: typing.Optional[memoryview] = None
+        self._target_camera_unique_id: typing.Optional[str] = None
+        self._command_buf: typing.Optional[memoryview] = None
+
+        if not src:
+            return
+        self._buf = gremlin.Reader(src)
+        offset = 0
+        while offset < len(src):
+            tag = self._buf.read_tag_at(offset)
+            offset += tag.size
+            match tag.number:
+                case 1:
+                    result = self._buf.read_uint64(offset)
+                    offset += result.size
+                    self._monotonic_stamp_ns = result.value
+                case 2:
+                    result = self._buf.read_uint64(offset)
+                    offset += result.size
+                    self._local_stamp_ns = result.value
+                case 3:
+                    result = self._buf.read_uint64(offset)
+                    offset += result.size
+                    self._app_start_id = result.value
+                case 4:
+                    result = self._buf.read_bytes_view(offset)
+                    offset += result.size
+                    self._command_id = result.value
+                case 5:
+                    result = self._buf.read_bytes_view(offset)
+                    offset += result.size
+                    self._target_camera_unique_id = result.value.tobytes().decode('utf-8')
+                case 10:
+                    result = self._buf.read_bytes_view(offset)
+                    offset += result.size
+                    self._command_buf = result.value
+                case _:
+                    offset = self._buf.skip_data(offset, tag.wire)
+
+    def get_monotonic_stamp_ns(self) -> int:
+        return self._monotonic_stamp_ns
+
+    def get_local_stamp_ns(self) -> int:
+        return self._local_stamp_ns
+
+    def get_app_start_id(self) -> int:
+        return self._app_start_id
+
+    def get_command_id(self) -> memoryview:
+        return self._command_id if self._command_id is not None else memoryview(b'')
+
+    def get_target_camera_unique_id(self) -> str:
+        return self._target_camera_unique_id if self._target_camera_unique_id is not None else ''
+
+    def get_command(self) -> CommandReader:
+        if self._command_buf is not None:
+            return CommandReader(self._command_buf)
+        return CommandReader(b'')
 
 
 @dataclasses.dataclass
