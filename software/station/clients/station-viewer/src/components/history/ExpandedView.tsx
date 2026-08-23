@@ -19,7 +19,7 @@ import HikmicroThermalLiveView from '@/devices/hikmicro-thermal/ui/HikmicroTherm
 type DataTab = 'visual' | 'json' | 'raw';
 
 interface ExpandedViewProps {
-  data: usbvideo.IRxEnvelope | hikmicro.IRxEnvelope | st3215.IInferenceState | st3215.ITxEnvelope | motors_mirroring.IRxEnvelope | sysinfo.IEnvelope | arduino_nicla_sense_env.IRxEnvelope | ina226.IRxEnvelope | airgradient_open_air_o_1pst.IRxEnvelope | victron_smartsolar_mppt.IRxEnvelope | yahboom_dogzilla_lite.IInferenceState | vesc_trampa.IInferenceState | vesc_trampa.IRxEnvelope | vesc_trampa.ITxEnvelope | normvla.IFrame | Uint8Array;
+  data: usbvideo.IRxEnvelope | usbvideo.ITxEnvelope | hikmicro.IRxEnvelope | st3215.IInferenceState | st3215.ITxEnvelope | motors_mirroring.IRxEnvelope | sysinfo.IEnvelope | arduino_nicla_sense_env.IRxEnvelope | ina226.IRxEnvelope | airgradient_open_air_o_1pst.IRxEnvelope | victron_smartsolar_mppt.IRxEnvelope | yahboom_dogzilla_lite.IInferenceState | vesc_trampa.IInferenceState | vesc_trampa.IRxEnvelope | vesc_trampa.ITxEnvelope | normvla.IFrame | Uint8Array;
   type: string | undefined;
   rawData?: Uint8Array | null;
   queueId?: string;
@@ -39,6 +39,7 @@ function tryDecodeProtobuf(rawData: Uint8Array): { decoded: unknown; typeName: s
     { name: 'st3215.RxEnvelope', decode: () => st3215.RxEnvelope.decode(rawData) },
     { name: 'st3215.TxEnvelope', decode: () => st3215.TxEnvelope.decode(rawData) },
     { name: 'usbvideo.RxEnvelope', decode: () => usbvideo.RxEnvelope.decode(rawData) },
+    { name: 'usbvideo.TxEnvelope', decode: () => usbvideo.TxEnvelope.decode(rawData) },
     { name: 'hikmicro.RxEnvelope', decode: () => hikmicro.RxEnvelope.decode(rawData) },
     { name: 'victron_smartsolar_mppt.RxEnvelope', decode: () => victron_smartsolar_mppt.RxEnvelope.decode(rawData) },
     { name: 'motors_mirroring.RxEnvelope', decode: () => motors_mirroring.RxEnvelope.decode(rawData) },
@@ -77,6 +78,7 @@ function getAvailableTabs(
   }
 
   const isUsbVideo = type === 'usbvideo' && data instanceof usbvideo.RxEnvelope;
+  const isUsbVideoTx = type === 'usbvideo-tx' && data instanceof usbvideo.TxEnvelope;
   const isHikmicroThermal = type === 'hikmicro-thermal' && data instanceof hikmicro.RxEnvelope;
   const isSt3215 = type === 'st3215' && data instanceof st3215.InferenceState;
   const isSt3215Tx = type === 'st3215tx' && data instanceof st3215.TxEnvelope;
@@ -91,7 +93,7 @@ function getAvailableTabs(
   const isNormvla = type === 'normvla' && data instanceof normvla.Frame;
   const isVescTrampa = type === 'vesc-trampa-rx' && data instanceof vesc_trampa.RxEnvelope;
 
-  if (isUsbVideo || isHikmicroThermal || isSt3215 || isSt3215Tx || isMirroring || isVescTrampaTx || isSysinfo || isArduinoNiclaSenseEnv || isIna226 || isAirGradient || isVictronSmartSolar || isYahboomDogzillaLite || isNormvla) {
+  if (isUsbVideo || isUsbVideoTx || isHikmicroThermal || isSt3215 || isSt3215Tx || isMirroring || isVescTrampaTx || isSysinfo || isArduinoNiclaSenseEnv || isIna226 || isAirGradient || isVictronSmartSolar || isYahboomDogzillaLite || isNormvla) {
     return ['visual', 'json', 'raw'];
   }
 
@@ -151,6 +153,30 @@ export default function ExpandedView({ data, type, rawData, queueId, entryId }: 
   const renderVisual = () => {
     if (type === 'usbvideo' && data instanceof usbvideo.RxEnvelope) {
       return <UsbVideoExpanded data={data} onImageClick={(src, alt) => setFullscreenImage({ src, alt })} />;
+    }
+    if (type === 'usbvideo-tx' && data instanceof usbvideo.TxEnvelope) {
+      const setFormat = data.command?.setFormat;
+      const mode = setFormat?.mode === usbvideo.SetFormatMode.SET_FORMAT_MODE_MANUAL
+        ? 'manual'
+        : setFormat?.mode === usbvideo.SetFormatMode.SET_FORMAT_MODE_NONE
+          ? 'none'
+          : 'auto';
+      const format = setFormat?.format;
+      return (
+        <div className="space-y-2">
+          <div className="text-xs text-text-label">
+            Camera: {data.targetCameraUniqueId || 'N/A'}
+          </div>
+          <div className="bg-surface-primary p-2 rounded text-xs">
+            <div className="text-accent-data mb-1">Set Format: {mode}</div>
+            {format && (
+              <div className="text-text-secondary">
+                {format.width}x{format.height} @ {format.framesPerSecond?.toFixed(2) ?? '0.00'} FPS
+              </div>
+            )}
+          </div>
+        </div>
+      );
     }
     if (type === 'hikmicro-thermal' && data instanceof hikmicro.RxEnvelope) {
       return <HikmicroThermalLiveView data={data} />;
@@ -301,6 +327,23 @@ export default function ExpandedView({ data, type, rawData, queueId, entryId }: 
           <div className="text-xs text-text-label mb-1">USB Video RxEnvelope JSON (cropped data):</div>
           <div className="bg-surface-primary p-2 rounded text-xs font-mono text-accent-warning overflow-x-auto max-h-64 overflow-y-auto">
             <pre>{createCroppedJson(data)}</pre>
+          </div>
+        </div>
+      );
+    }
+    if (type === 'usbvideo-tx' && data instanceof usbvideo.TxEnvelope) {
+      const txData = usbvideo.TxEnvelope.toObject(data, {
+        longs: String,
+        enums: String,
+        bytes: String,
+        defaults: true
+      });
+
+      return (
+        <div>
+          <div className="text-xs text-text-label mb-1">USB Video TxEnvelope JSON:</div>
+          <div className="bg-surface-primary p-2 rounded text-xs font-mono text-accent-data overflow-x-auto max-h-64 overflow-y-auto">
+            <pre>{JSON.stringify(txData, null, 2)}</pre>
           </div>
         </div>
       );

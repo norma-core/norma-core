@@ -9,7 +9,7 @@ use std::fs;
 use std::process::Command;
 use std::sync::Arc;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
-use sysinfo::{Components, Disks, Networks, System, Users};
+use sysinfo::{Components, Disks, Networks, System, ThreadKind, Users};
 use tokio::sync::RwLock;
 use tokio::time;
 
@@ -25,10 +25,11 @@ pub mod sysinfo_proto {
 
 mod cellular;
 mod power;
+mod throttling;
 
 use crate::sysinfo_proto::sysinfo::{
     CellularModem, Cpu, Disk, Envelope, EnvelopeData, Memory, Motherboard, Network, NetworkIp,
-    OsInfo, PowerSource, TemperatureSensor, TimeInfo, User,
+    OsInfo, PowerSource, ProcessInfo, TemperatureSensor, ThrottlingState, TimeInfo, User,
 };
 
 pub struct SystemMonitor {
@@ -123,6 +124,7 @@ impl SystemMonitor {
     async fn collect_system_data(&self) -> Result<Envelope, Box<dyn std::error::Error>> {
         let cellular_modems = self.collect_cellular_modems().await;
         let power_sources = self.collect_power_sources().await;
+        let throttling = self.collect_throttling().await;
         let mut system = self.system.write().await;
         let mut disks = self.disks.write().await;
         let mut networks = self.networks.write().await;
@@ -149,8 +151,10 @@ impl SystemMonitor {
             cpu: self.collect_cpu_data(&system),
             disks: self.collect_disk_data(&disks),
             networks: self.collect_network_data(&networks),
+            processes: self.collect_process_data(&system, &users),
             temperatures: self.collect_temperature_data(&components),
             power_sources,
+            throttling,
             cellular_modems,
         };
 
@@ -290,6 +294,72 @@ impl SystemMonitor {
             systime::get_monotonic_stamp_ns().saturating_add(CELLULAR_REFRESH_INTERVAL_NS);
         cache.modems = modems;
         cache.modems.clone()
+    }
+
+    async fn collect_throttling(&self) -> Option<ThrottlingState> {
+        tokio::task::spawn_blocking(throttling::collect_throttling_state)
+            .await
+            .unwrap_or_default()
+    }
+
+    fn collect_process_data(&self, system: &System, users: &Users) -> Vec<ProcessInfo> {
+        let mut processes: Vec<ProcessInfo> = system
+            .processes()
+            .values()
+            .filter(|process| !matches!(process.thread_kind(), Some(ThreadKind::Userland)))
+            .map(|process| {
+                let disk_usage = process.disk_usage();
+
+                ProcessInfo {
+                    pid: process.pid().as_u32(),
+                    parent_pid: process.parent().map(|pid| pid.as_u32() as i64).unwrap_or(-1),
+                    name: process.name().to_string_lossy().into_owned(),
+                    exe: process
+                        .exe()
+                        .map(|path| path.to_string_lossy().into_owned())
+                        .unwrap_or_default(),
+                    cmd: process
+                        .cmd()
+                        .iter()
+                        .map(|arg| arg.to_string_lossy().into_owned())
+                        .collect(),
+                    cwd: process
+                        .cwd()
+                        .map(|path| path.to_string_lossy().into_owned())
+                        .unwrap_or_default(),
+                    kind: match process.thread_kind() {
+                        Some(ThreadKind::Kernel) => "kernel".to_string(),
+                        _ => String::new(),
+                    },
+                    status: format!("{:?}", process.status()),
+                    user_name: process
+                        .user_id()
+                        .and_then(|uid| users.get_user_by_id(uid))
+                        .map(|user| user.name().to_string())
+                        .unwrap_or_default(),
+                    uid: process.user_id().map(|uid| **uid as i64).unwrap_or(-1),
+                    gid: process.group_id().map(|gid| *gid as i64).unwrap_or(-1),
+                    session_id: process
+                        .session_id()
+                        .map(|pid| pid.as_u32() as i64)
+                        .unwrap_or(-1),
+                    start_time_epoch_seconds: process.start_time(),
+                    run_time_seconds: process.run_time(),
+                    thread_count: process.tasks().map(|tasks| tasks.len() as u32).unwrap_or(0),
+                    cpu_usage: process.cpu_usage(),
+                    memory_bytes: process.memory(),
+                    virtual_memory_bytes: process.virtual_memory(),
+                    accumulated_cpu_time_ms: process.accumulated_cpu_time(),
+                    total_read_bytes: disk_usage.total_read_bytes,
+                    total_written_bytes: disk_usage.total_written_bytes,
+                    read_bytes: disk_usage.read_bytes,
+                    written_bytes: disk_usage.written_bytes,
+                }
+            })
+            .collect();
+
+        processes.sort_by_key(|process| process.pid);
+        processes
     }
 
     fn get_timezone_offset_seconds() -> i32 {

@@ -21,6 +21,7 @@ enum QueueDataType {
     QDT_USB_VIDEO_FRAMES       = 21;
     QDT_INFERENCE_FRAMES       = 22; // inference frames (normvla, etc)
     QDT_HIKMICRO_THERMAL       = 23; // hikmicro.RxEnvelope
+    QDT_USB_VIDEO_TX           = 24; // usbvideo.TxEnvelope
 
     QDT_MOTOR_MIRRORING_MODES = 30;
     QDT_MOTOR_MIRRORING_RX    = 32;
@@ -49,4 +50,5 @@ enum StationCommandType {
     STC_VESC_TRAMPA_COMMAND           = 4; // vesc_trampa.Command
     STC_ARDUINO_NICLA_SENSE_ENV_COMMAND = 5; // arduino_nicla_sense_env.Command
     STC_PWM_OUTPUT_COMMAND              = 6; // pwm_output.Command
+    STC_USB_VIDEO_COMMAND               = 7; // usbvideo.Command
 }
