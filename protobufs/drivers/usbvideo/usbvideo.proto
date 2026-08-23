@@ -12,6 +12,10 @@ enum RxEnvelopeType {
     ET_DEVICE_RECORDING_END   = 4;
     ET_DEVICE_DISCONNECTED    = 5;
     ET_ERROR                  = 6;
+    ET_COMMAND                = 7;
+    ET_COMMAND_SUCCESS        = 8;
+    ET_COMMAND_REJECTED       = 9;
+    ET_COMMAND_FAILED         = 10;
 }
 
 message RxEnvelope {
@@ -25,6 +29,39 @@ message RxEnvelope {
     bytes last_inference_queue_ptr = 8;
     
     frame.FramesPack frames = 10;
+
+    TxEnvelope command = 20;
+}
+
+enum SetFormatMode {
+    SET_FORMAT_MODE_AUTO   = 0;
+    SET_FORMAT_MODE_MANUAL = 1;
+    SET_FORMAT_MODE_NONE   = 2;
+}
+
+message SetFormatCommand {
+    SetFormatMode mode = 1;
+
+    // Required for SET_FORMAT_MODE_MANUAL. Ignored for SET_FORMAT_MODE_AUTO
+    // and SET_FORMAT_MODE_NONE.
+    CameraFormat format = 2;
+}
+
+message Command {
+    string target_camera_unique_id = 1;
+
+    SetFormatCommand set_format = 10;
+}
+
+message TxEnvelope {
+    uint64 monotonic_stamp_ns = 1;
+    uint64 local_stamp_ns     = 2;
+    uint64 app_start_id       = 3;
+
+    bytes  command_id              = 4;
+    string target_camera_unique_id = 5;
+
+    Command command = 10;
 }
 
 message Camera {

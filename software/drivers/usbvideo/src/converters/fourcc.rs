@@ -57,7 +57,7 @@ fn fps_matches(actual: f32, expected: f32) -> bool {
     (actual - expected).abs() <= FPS_EPSILON
 }
 
-fn same_camera_format(a: &usbvideo::CameraFormat, b: &usbvideo::CameraFormat) -> bool {
+pub fn same_camera_format(a: &usbvideo::CameraFormat, b: &usbvideo::CameraFormat) -> bool {
     a.fourcc == b.fourcc
         && a.index == b.index
         && a.width == b.width
@@ -65,6 +65,29 @@ fn same_camera_format(a: &usbvideo::CameraFormat, b: &usbvideo::CameraFormat) ->
         && a.frames_per_second.to_bits() == b.frames_per_second.to_bits()
         && a.guid == b.guid
         && a.frame_index == b.frame_index
+}
+
+pub fn select_manual_camera_format(
+    formats: &[usbvideo::CameraFormat],
+    manual_format: &usbvideo::CameraFormat,
+) -> FormatSelection {
+    if FourCCFormat::from_fourcc_u32(manual_format.fourcc).is_none() {
+        return FormatSelection {
+            formats: Vec::new(),
+            requested_formats_unavailable: true,
+        };
+    }
+
+    let selected = formats
+        .iter()
+        .find(|format| same_camera_format(format, manual_format))
+        .cloned();
+
+    let requested_formats_unavailable = selected.is_none();
+    FormatSelection {
+        formats: selected.into_iter().collect(),
+        requested_formats_unavailable,
+    }
 }
 
 fn fps_cmp(a: f32, b: f32) -> std::cmp::Ordering {
@@ -419,5 +442,50 @@ mod tests {
         assert!(sel.requested_formats_unavailable);
         // No fallback to a different complete format: the camera will be ignored.
         assert!(sel.formats.is_empty());
+    }
+
+    #[test]
+    fn test_manual_format_selects_exact_format_without_fallback() {
+        let formats = vec![
+            fmt(b"MJPG", 640, 480, 30.0),
+            fmt(b"MJPG", 1280, 720, 30.0),
+            fmt(b"YUY2", 320, 240, 30.0),
+        ];
+        let sel = select_manual_camera_format(&formats, &formats[1]);
+
+        assert!(!sel.requested_formats_unavailable);
+        assert_eq!(dims(&sel), vec![(1280, 720)]);
+    }
+
+    #[test]
+    fn test_manual_format_unavailable_does_not_fallback() {
+        let formats = vec![fmt(b"MJPG", 640, 480, 30.0)];
+        let manual = fmt(b"MJPG", 1280, 720, 30.0);
+        let sel = select_manual_camera_format(&formats, &manual);
+
+        assert!(sel.requested_formats_unavailable);
+        assert!(sel.formats.is_empty());
+    }
+
+    #[test]
+    fn test_auto_selection_restores_configured_fallbacks() {
+        let formats = vec![
+            fmt(b"MJPG", 1920, 1080, 30.0),
+            fmt(b"MJPG", 1920, 1080, 15.0),
+            fmt(b"MJPG", 1280, 720, 30.0),
+        ];
+        let prefs = [CameraFormatPreference {
+            resolution: ResolutionPreference::Max,
+            fps: FpsPreference::Min,
+            format: FourCCFormat::Mjpeg,
+        }];
+
+        let sel = filter_and_sort_cameras_formats(&formats, &prefs);
+
+        assert!(!sel.requested_formats_unavailable);
+        assert_eq!(
+            modes(&sel),
+            vec![(1920, 1080, 15.0), (1920, 1080, 30.0), (1280, 720, 30.0)]
+        );
     }
 }

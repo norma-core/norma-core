@@ -9,10 +9,11 @@ export interface LiveCameraFrame {
   index: string | null;
 }
 
-type LiveCameraListener = (frame: LiveCameraFrame) => void;
+type LiveCameraListener = (frame: LiveCameraFrame | null) => void;
 
 const framesBySourceId = new Map<string, LiveCameraFrame>();
 const listenersBySourceId = new Map<string, Set<LiveCameraListener>>();
+const suppressedSourceIds = new Set<string>();
 
 export function getLiveCameraSourceId(queueId: string, envelope: usbvideo.IRxEnvelope): string {
   return envelope.camera?.uniqueId || queueId;
@@ -41,12 +42,16 @@ export function publishLiveCameraFrame(
   queueId: string,
   envelope: usbvideo.IRxEnvelope,
 ): void {
+  const sourceId = getLiveCameraSourceId(queueId, envelope);
+  if (suppressedSourceIds.has(sourceId)) {
+    return;
+  }
+
   const data = envelope.frames?.framesData?.[0] ?? envelope.frames?.linearData;
   if (!data || data.length === 0) {
     return;
   }
 
-  const sourceId = getLiveCameraSourceId(queueId, envelope);
   const index = envelope.stamp?.index != null
     ? Long.fromValue(envelope.stamp.index).toString()
     : null;
@@ -66,6 +71,20 @@ export function getLiveCameraFrame(sourceId: string): LiveCameraFrame | null {
   return framesBySourceId.get(sourceId) ?? null;
 }
 
+export function clearLiveCameraFrame(sourceId: string): void {
+  framesBySourceId.delete(sourceId);
+  listenersBySourceId.get(sourceId)?.forEach((listener) => listener(null));
+}
+
+export function suppressLiveCameraFrame(sourceId: string): void {
+  suppressedSourceIds.add(sourceId);
+  clearLiveCameraFrame(sourceId);
+}
+
+export function resumeLiveCameraFrame(sourceId: string): void {
+  suppressedSourceIds.delete(sourceId);
+}
+
 export function shouldLoadLiveCameraFrame(
   queueId: string,
   previousEnvelope?: usbvideo.IRxEnvelope,
@@ -77,6 +96,10 @@ export function shouldLoadLiveCameraFrame(
   }
 
   const sourceId = getLiveCameraSourceId(queueId, previousEnvelope);
+  if (suppressedSourceIds.has(sourceId)) {
+    return false;
+  }
+
   return (listenersBySourceId.get(sourceId)?.size ?? 0) > 0;
 }
 

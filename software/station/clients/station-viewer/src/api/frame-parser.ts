@@ -24,6 +24,7 @@ export interface Frame {
   vescTrampaTx?: FrameEntry<vesc_trampa.ITxEnvelope>;
   pwmOutputRx?: FrameEntry<pwm_output.IRxEnvelope>;
   pwmOutputTx?: FrameEntry<pwm_output.ITxEnvelope>;
+  usbVideoTx?: FrameEntry<usbvideo.ITxEnvelope>;
   videoQueues?: FrameEntry<usbvideo.IRxEnvelope>[];
   hikmicroThermal?: FrameEntry<hikmicro.IRxEnvelope>[];
   mirroring?: FrameEntry<motors_mirroring.IRxEnvelope>;
@@ -51,7 +52,7 @@ export interface Frame {
 }
 
 // Find entry in previous frame with matching queue and pointer
-type DecodedEntry = st3215.IInferenceState | st3215.ITxEnvelope | usbvideo.IRxEnvelope | hikmicro.IRxEnvelope | motors_mirroring.IRxEnvelope | sysinfo.IEnvelope | arduino_nicla_sense_env.IRxEnvelope | ina226.IRxEnvelope | airgradient_open_air_o_1pst.IRxEnvelope | victron_smartsolar_mppt.IRxEnvelope | yahboom_dogzilla_lite.IInferenceState | normvla.IFrame | vesc_trampa.IInferenceState | vesc_trampa.IRxEnvelope | vesc_trampa.ITxEnvelope | pwm_output.IRxEnvelope | pwm_output.ITxEnvelope | null;
+type DecodedEntry = st3215.IInferenceState | st3215.ITxEnvelope | usbvideo.IRxEnvelope | usbvideo.ITxEnvelope | hikmicro.IRxEnvelope | motors_mirroring.IRxEnvelope | sysinfo.IEnvelope | arduino_nicla_sense_env.IRxEnvelope | ina226.IRxEnvelope | airgradient_open_air_o_1pst.IRxEnvelope | victron_smartsolar_mppt.IRxEnvelope | yahboom_dogzilla_lite.IInferenceState | normvla.IFrame | vesc_trampa.IInferenceState | vesc_trampa.IRxEnvelope | vesc_trampa.ITxEnvelope | pwm_output.IRxEnvelope | pwm_output.ITxEnvelope | null;
 
 interface ParseFrameOptions {
   retainRawData?: boolean;
@@ -136,6 +137,14 @@ function findPreviousEntry(
     const prevPtr = previousFrame.pwmOutputTx.ptr;
     if (prevPtr.length === ptr.length && prevPtr.every((b, i) => b === ptr[i])) {
       return { decoded: previousFrame.pwmOutputTx.data, rawData: previousFrame.pwmOutputTx.rawData ?? null };
+    }
+  }
+
+  // Check usbVideoTx
+  if (previousFrame.usbVideoTx?.queueId === queue) {
+    const prevPtr = previousFrame.usbVideoTx.ptr;
+    if (prevPtr.length === ptr.length && prevPtr.every((b, i) => b === ptr[i])) {
+      return { decoded: previousFrame.usbVideoTx.data, rawData: previousFrame.usbVideoTx.rawData ?? null };
     }
   }
 
@@ -338,6 +347,13 @@ export async function parseFrame(
                 decoded = usbvideo.RxEnvelope.decode(streamEntry.data);
               } catch (error) {
                 console.error("Failed to decode usbvideo.RxEnvelope:", error);
+              }
+              break;
+            case drivers.QueueDataType.QDT_USB_VIDEO_TX:
+              try {
+                decoded = usbvideo.TxEnvelope.decode(streamEntry.data);
+              } catch (error) {
+                console.error("Failed to decode usbvideo.TxEnvelope:", error);
               }
               break;
             case drivers.QueueDataType.QDT_HIKMICRO_THERMAL:
@@ -621,6 +637,15 @@ export async function parseFrame(
               queueId: result.queue,
               ptr: result.ptr,
               data: result.decoded as pwm_output.ITxEnvelope,
+              rawData: retainRawData ? result.rawData ?? null : null,
+              queueType: result.type
+            };
+            break;
+          case drivers.QueueDataType.QDT_USB_VIDEO_TX:
+            frame.usbVideoTx = {
+              queueId: result.queue,
+              ptr: result.ptr,
+              data: result.decoded as usbvideo.ITxEnvelope,
               rawData: retainRawData ? result.rawData ?? null : null,
               queueType: result.type
             };

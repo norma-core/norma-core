@@ -201,6 +201,7 @@ export const commands = $root.commands = (() => {
                 case 4:
                 case 5:
                 case 6:
+                case 7:
                     break;
                 }
             if (message.body != null && message.hasOwnProperty("body"))
@@ -264,6 +265,10 @@ export const commands = $root.commands = (() => {
             case "STC_PWM_OUTPUT_COMMAND":
             case 6:
                 message.type = 6;
+                break;
+            case "STC_USB_VIDEO_COMMAND":
+            case 7:
+                message.type = 7;
                 break;
             }
             if (object.body != null)
@@ -717,6 +722,7 @@ export const drivers = $root.drivers = (() => {
      * @property {number} QDT_USB_VIDEO_FRAMES=21 QDT_USB_VIDEO_FRAMES value
      * @property {number} QDT_INFERENCE_FRAMES=22 QDT_INFERENCE_FRAMES value
      * @property {number} QDT_HIKMICRO_THERMAL=23 QDT_HIKMICRO_THERMAL value
+     * @property {number} QDT_USB_VIDEO_TX=24 QDT_USB_VIDEO_TX value
      * @property {number} QDT_MOTOR_MIRRORING_MODES=30 QDT_MOTOR_MIRRORING_MODES value
      * @property {number} QDT_MOTOR_MIRRORING_RX=32 QDT_MOTOR_MIRRORING_RX value
      * @property {number} QDT_YAHBOOM_DOGZILLA_LITE_SERIAL_TX=40 QDT_YAHBOOM_DOGZILLA_LITE_SERIAL_TX value
@@ -747,6 +753,7 @@ export const drivers = $root.drivers = (() => {
         values[valuesById[21] = "QDT_USB_VIDEO_FRAMES"] = 21;
         values[valuesById[22] = "QDT_INFERENCE_FRAMES"] = 22;
         values[valuesById[23] = "QDT_HIKMICRO_THERMAL"] = 23;
+        values[valuesById[24] = "QDT_USB_VIDEO_TX"] = 24;
         values[valuesById[30] = "QDT_MOTOR_MIRRORING_MODES"] = 30;
         values[valuesById[32] = "QDT_MOTOR_MIRRORING_RX"] = 32;
         values[valuesById[40] = "QDT_YAHBOOM_DOGZILLA_LITE_SERIAL_TX"] = 40;
@@ -773,6 +780,7 @@ export const drivers = $root.drivers = (() => {
      * @property {number} STC_VESC_TRAMPA_COMMAND=4 STC_VESC_TRAMPA_COMMAND value
      * @property {number} STC_ARDUINO_NICLA_SENSE_ENV_COMMAND=5 STC_ARDUINO_NICLA_SENSE_ENV_COMMAND value
      * @property {number} STC_PWM_OUTPUT_COMMAND=6 STC_PWM_OUTPUT_COMMAND value
+     * @property {number} STC_USB_VIDEO_COMMAND=7 STC_USB_VIDEO_COMMAND value
      */
     drivers.StationCommandType = (function() {
         const valuesById = {}, values = Object.create(valuesById);
@@ -783,6 +791,7 @@ export const drivers = $root.drivers = (() => {
         values[valuesById[4] = "STC_VESC_TRAMPA_COMMAND"] = 4;
         values[valuesById[5] = "STC_ARDUINO_NICLA_SENSE_ENV_COMMAND"] = 5;
         values[valuesById[6] = "STC_PWM_OUTPUT_COMMAND"] = 6;
+        values[valuesById[7] = "STC_USB_VIDEO_COMMAND"] = 7;
         return values;
     })();
 
@@ -1342,6 +1351,7 @@ export const inference = $root.inference = (() => {
                     case 21:
                     case 22:
                     case 23:
+                    case 24:
                     case 30:
                     case 32:
                     case 40:
@@ -1448,6 +1458,10 @@ export const inference = $root.inference = (() => {
                 case "QDT_HIKMICRO_THERMAL":
                 case 23:
                     message.type = 23;
+                    break;
+                case "QDT_USB_VIDEO_TX":
+                case 24:
+                    message.type = 24;
                     break;
                 case "QDT_MOTOR_MIRRORING_MODES":
                 case 30:
@@ -14644,6 +14658,10 @@ export const usbvideo = $root.usbvideo = (() => {
      * @property {number} ET_DEVICE_RECORDING_END=4 ET_DEVICE_RECORDING_END value
      * @property {number} ET_DEVICE_DISCONNECTED=5 ET_DEVICE_DISCONNECTED value
      * @property {number} ET_ERROR=6 ET_ERROR value
+     * @property {number} ET_COMMAND=7 ET_COMMAND value
+     * @property {number} ET_COMMAND_SUCCESS=8 ET_COMMAND_SUCCESS value
+     * @property {number} ET_COMMAND_REJECTED=9 ET_COMMAND_REJECTED value
+     * @property {number} ET_COMMAND_FAILED=10 ET_COMMAND_FAILED value
      */
     usbvideo.RxEnvelopeType = (function() {
         const valuesById = {}, values = Object.create(valuesById);
@@ -14653,6 +14671,10 @@ export const usbvideo = $root.usbvideo = (() => {
         values[valuesById[4] = "ET_DEVICE_RECORDING_END"] = 4;
         values[valuesById[5] = "ET_DEVICE_DISCONNECTED"] = 5;
         values[valuesById[6] = "ET_ERROR"] = 6;
+        values[valuesById[7] = "ET_COMMAND"] = 7;
+        values[valuesById[8] = "ET_COMMAND_SUCCESS"] = 8;
+        values[valuesById[9] = "ET_COMMAND_REJECTED"] = 9;
+        values[valuesById[10] = "ET_COMMAND_FAILED"] = 10;
         return values;
     })();
 
@@ -14669,6 +14691,7 @@ export const usbvideo = $root.usbvideo = (() => {
          * @property {string|null} [error] RxEnvelope error
          * @property {Uint8Array|null} [lastInferenceQueuePtr] RxEnvelope lastInferenceQueuePtr
          * @property {frame.IFramesPack|null} [frames] RxEnvelope frames
+         * @property {usbvideo.ITxEnvelope|null} [command] RxEnvelope command
          */
 
         /**
@@ -14744,6 +14767,14 @@ export const usbvideo = $root.usbvideo = (() => {
         RxEnvelope.prototype.frames = null;
 
         /**
+         * RxEnvelope command.
+         * @member {usbvideo.ITxEnvelope|null|undefined} command
+         * @memberof usbvideo.RxEnvelope
+         * @instance
+         */
+        RxEnvelope.prototype.command = null;
+
+        /**
          * Creates a new RxEnvelope instance using the specified properties.
          * @function create
          * @memberof usbvideo.RxEnvelope
@@ -14782,6 +14813,8 @@ export const usbvideo = $root.usbvideo = (() => {
                 writer.uint32(/* id 8, wireType 2 =*/66).bytes(message.lastInferenceQueuePtr);
             if (message.frames != null && Object.hasOwnProperty.call(message, "frames"))
                 $root.frame.FramesPack.encode(message.frames, writer.uint32(/* id 10, wireType 2 =*/82).fork()).ldelim();
+            if (message.command != null && Object.hasOwnProperty.call(message, "command"))
+                $root.usbvideo.TxEnvelope.encode(message.command, writer.uint32(/* id 20, wireType 2 =*/162).fork()).ldelim();
             return writer;
         };
 
@@ -14852,6 +14885,10 @@ export const usbvideo = $root.usbvideo = (() => {
                         message.frames = $root.frame.FramesPack.decode(reader, reader.uint32(), undefined, long + 1);
                         break;
                     }
+                case 20: {
+                        message.command = $root.usbvideo.TxEnvelope.decode(reader, reader.uint32(), undefined, long + 1);
+                        break;
+                    }
                 default:
                     reader.skipType(tag & 7, long);
                     break;
@@ -14901,6 +14938,10 @@ export const usbvideo = $root.usbvideo = (() => {
                 case 4:
                 case 5:
                 case 6:
+                case 7:
+                case 8:
+                case 9:
+                case 10:
                     break;
                 }
             if (message.stamp != null && message.hasOwnProperty("stamp")) {
@@ -14932,6 +14973,11 @@ export const usbvideo = $root.usbvideo = (() => {
                 let error = $root.frame.FramesPack.verify(message.frames, long + 1);
                 if (error)
                     return "frames." + error;
+            }
+            if (message.command != null && message.hasOwnProperty("command")) {
+                let error = $root.usbvideo.TxEnvelope.verify(message.command, long + 1);
+                if (error)
+                    return "command." + error;
             }
             return null;
         };
@@ -14983,6 +15029,22 @@ export const usbvideo = $root.usbvideo = (() => {
             case 6:
                 message.type = 6;
                 break;
+            case "ET_COMMAND":
+            case 7:
+                message.type = 7;
+                break;
+            case "ET_COMMAND_SUCCESS":
+            case 8:
+                message.type = 8;
+                break;
+            case "ET_COMMAND_REJECTED":
+            case 9:
+                message.type = 9;
+                break;
+            case "ET_COMMAND_FAILED":
+            case 10:
+                message.type = 10;
+                break;
             }
             if (object.stamp != null) {
                 if (typeof object.stamp !== "object")
@@ -15016,6 +15078,11 @@ export const usbvideo = $root.usbvideo = (() => {
                     throw TypeError(".usbvideo.RxEnvelope.frames: object expected");
                 message.frames = $root.frame.FramesPack.fromObject(object.frames, long + 1);
             }
+            if (object.command != null) {
+                if (typeof object.command !== "object")
+                    throw TypeError(".usbvideo.RxEnvelope.command: object expected");
+                message.command = $root.usbvideo.TxEnvelope.fromObject(object.command, long + 1);
+            }
             return message;
         };
 
@@ -15047,6 +15114,7 @@ export const usbvideo = $root.usbvideo = (() => {
                         object.lastInferenceQueuePtr = $util.newBuffer(object.lastInferenceQueuePtr);
                 }
                 object.frames = null;
+                object.command = null;
             }
             if (message.type != null && message.hasOwnProperty("type"))
                 object.type = options.enums === String ? $root.usbvideo.RxEnvelopeType[message.type] === undefined ? message.type : $root.usbvideo.RxEnvelopeType[message.type] : message.type;
@@ -15065,6 +15133,8 @@ export const usbvideo = $root.usbvideo = (() => {
                 object.lastInferenceQueuePtr = options.bytes === String ? $util.base64.encode(message.lastInferenceQueuePtr, 0, message.lastInferenceQueuePtr.length) : options.bytes === Array ? Array.prototype.slice.call(message.lastInferenceQueuePtr) : message.lastInferenceQueuePtr;
             if (message.frames != null && message.hasOwnProperty("frames"))
                 object.frames = $root.frame.FramesPack.toObject(message.frames, options);
+            if (message.command != null && message.hasOwnProperty("command"))
+                object.command = $root.usbvideo.TxEnvelope.toObject(message.command, options);
             return object;
         };
 
@@ -15095,6 +15165,927 @@ export const usbvideo = $root.usbvideo = (() => {
         };
 
         return RxEnvelope;
+    })();
+
+    /**
+     * SetFormatMode enum.
+     * @name usbvideo.SetFormatMode
+     * @enum {number}
+     * @property {number} SET_FORMAT_MODE_AUTO=0 SET_FORMAT_MODE_AUTO value
+     * @property {number} SET_FORMAT_MODE_MANUAL=1 SET_FORMAT_MODE_MANUAL value
+     * @property {number} SET_FORMAT_MODE_NONE=2 SET_FORMAT_MODE_NONE value
+     */
+    usbvideo.SetFormatMode = (function() {
+        const valuesById = {}, values = Object.create(valuesById);
+        values[valuesById[0] = "SET_FORMAT_MODE_AUTO"] = 0;
+        values[valuesById[1] = "SET_FORMAT_MODE_MANUAL"] = 1;
+        values[valuesById[2] = "SET_FORMAT_MODE_NONE"] = 2;
+        return values;
+    })();
+
+    usbvideo.SetFormatCommand = (function() {
+
+        /**
+         * Properties of a SetFormatCommand.
+         * @memberof usbvideo
+         * @interface ISetFormatCommand
+         * @property {usbvideo.SetFormatMode|null} [mode] SetFormatCommand mode
+         * @property {usbvideo.ICameraFormat|null} [format] SetFormatCommand format
+         */
+
+        /**
+         * Constructs a new SetFormatCommand.
+         * @memberof usbvideo
+         * @classdesc Represents a SetFormatCommand.
+         * @implements ISetFormatCommand
+         * @constructor
+         * @param {usbvideo.ISetFormatCommand=} [properties] Properties to set
+         */
+        function SetFormatCommand(properties) {
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * SetFormatCommand mode.
+         * @member {usbvideo.SetFormatMode} mode
+         * @memberof usbvideo.SetFormatCommand
+         * @instance
+         */
+        SetFormatCommand.prototype.mode = 0;
+
+        /**
+         * SetFormatCommand format.
+         * @member {usbvideo.ICameraFormat|null|undefined} format
+         * @memberof usbvideo.SetFormatCommand
+         * @instance
+         */
+        SetFormatCommand.prototype.format = null;
+
+        /**
+         * Creates a new SetFormatCommand instance using the specified properties.
+         * @function create
+         * @memberof usbvideo.SetFormatCommand
+         * @static
+         * @param {usbvideo.ISetFormatCommand=} [properties] Properties to set
+         * @returns {usbvideo.SetFormatCommand} SetFormatCommand instance
+         */
+        SetFormatCommand.create = function create(properties) {
+            return new SetFormatCommand(properties);
+        };
+
+        /**
+         * Encodes the specified SetFormatCommand message. Does not implicitly {@link usbvideo.SetFormatCommand.verify|verify} messages.
+         * @function encode
+         * @memberof usbvideo.SetFormatCommand
+         * @static
+         * @param {usbvideo.ISetFormatCommand} message SetFormatCommand message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        SetFormatCommand.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.mode != null && Object.hasOwnProperty.call(message, "mode"))
+                writer.uint32(/* id 1, wireType 0 =*/8).int32(message.mode);
+            if (message.format != null && Object.hasOwnProperty.call(message, "format"))
+                $root.usbvideo.CameraFormat.encode(message.format, writer.uint32(/* id 2, wireType 2 =*/18).fork()).ldelim();
+            return writer;
+        };
+
+        /**
+         * Encodes the specified SetFormatCommand message, length delimited. Does not implicitly {@link usbvideo.SetFormatCommand.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof usbvideo.SetFormatCommand
+         * @static
+         * @param {usbvideo.ISetFormatCommand} message SetFormatCommand message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        SetFormatCommand.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes a SetFormatCommand message from the specified reader or buffer.
+         * @function decode
+         * @memberof usbvideo.SetFormatCommand
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {usbvideo.SetFormatCommand} SetFormatCommand
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        SetFormatCommand.decode = function decode(reader, length, error, long) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.usbvideo.SetFormatCommand();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                if (tag === error)
+                    break;
+                switch (tag >>> 3) {
+                case 1: {
+                        message.mode = reader.int32();
+                        break;
+                    }
+                case 2: {
+                        message.format = $root.usbvideo.CameraFormat.decode(reader, reader.uint32(), undefined, long + 1);
+                        break;
+                    }
+                default:
+                    reader.skipType(tag & 7, long);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes a SetFormatCommand message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof usbvideo.SetFormatCommand
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {usbvideo.SetFormatCommand} SetFormatCommand
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        SetFormatCommand.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies a SetFormatCommand message.
+         * @function verify
+         * @memberof usbvideo.SetFormatCommand
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        SetFormatCommand.verify = function verify(message, long) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
+            if (message.mode != null && message.hasOwnProperty("mode"))
+                switch (message.mode) {
+                default:
+                    return "mode: enum value expected";
+                case 0:
+                case 1:
+                case 2:
+                    break;
+                }
+            if (message.format != null && message.hasOwnProperty("format")) {
+                let error = $root.usbvideo.CameraFormat.verify(message.format, long + 1);
+                if (error)
+                    return "format." + error;
+            }
+            return null;
+        };
+
+        /**
+         * Creates a SetFormatCommand message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof usbvideo.SetFormatCommand
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {usbvideo.SetFormatCommand} SetFormatCommand
+         */
+        SetFormatCommand.fromObject = function fromObject(object, long) {
+            if (object instanceof $root.usbvideo.SetFormatCommand)
+                return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let message = new $root.usbvideo.SetFormatCommand();
+            switch (object.mode) {
+            default:
+                if (typeof object.mode === "number") {
+                    message.mode = object.mode;
+                    break;
+                }
+                break;
+            case "SET_FORMAT_MODE_AUTO":
+            case 0:
+                message.mode = 0;
+                break;
+            case "SET_FORMAT_MODE_MANUAL":
+            case 1:
+                message.mode = 1;
+                break;
+            case "SET_FORMAT_MODE_NONE":
+            case 2:
+                message.mode = 2;
+                break;
+            }
+            if (object.format != null) {
+                if (typeof object.format !== "object")
+                    throw TypeError(".usbvideo.SetFormatCommand.format: object expected");
+                message.format = $root.usbvideo.CameraFormat.fromObject(object.format, long + 1);
+            }
+            return message;
+        };
+
+        /**
+         * Creates a plain object from a SetFormatCommand message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof usbvideo.SetFormatCommand
+         * @static
+         * @param {usbvideo.SetFormatCommand} message SetFormatCommand
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        SetFormatCommand.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.defaults) {
+                object.mode = options.enums === String ? "SET_FORMAT_MODE_AUTO" : 0;
+                object.format = null;
+            }
+            if (message.mode != null && message.hasOwnProperty("mode"))
+                object.mode = options.enums === String ? $root.usbvideo.SetFormatMode[message.mode] === undefined ? message.mode : $root.usbvideo.SetFormatMode[message.mode] : message.mode;
+            if (message.format != null && message.hasOwnProperty("format"))
+                object.format = $root.usbvideo.CameraFormat.toObject(message.format, options);
+            return object;
+        };
+
+        /**
+         * Converts this SetFormatCommand to JSON.
+         * @function toJSON
+         * @memberof usbvideo.SetFormatCommand
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        SetFormatCommand.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for SetFormatCommand
+         * @function getTypeUrl
+         * @memberof usbvideo.SetFormatCommand
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        SetFormatCommand.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+            if (typeUrlPrefix === undefined) {
+                typeUrlPrefix = "type.googleapis.com";
+            }
+            return typeUrlPrefix + "/usbvideo.SetFormatCommand";
+        };
+
+        return SetFormatCommand;
+    })();
+
+    usbvideo.Command = (function() {
+
+        /**
+         * Properties of a Command.
+         * @memberof usbvideo
+         * @interface ICommand
+         * @property {string|null} [targetCameraUniqueId] Command targetCameraUniqueId
+         * @property {usbvideo.ISetFormatCommand|null} [setFormat] Command setFormat
+         */
+
+        /**
+         * Constructs a new Command.
+         * @memberof usbvideo
+         * @classdesc Represents a Command.
+         * @implements ICommand
+         * @constructor
+         * @param {usbvideo.ICommand=} [properties] Properties to set
+         */
+        function Command(properties) {
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * Command targetCameraUniqueId.
+         * @member {string} targetCameraUniqueId
+         * @memberof usbvideo.Command
+         * @instance
+         */
+        Command.prototype.targetCameraUniqueId = "";
+
+        /**
+         * Command setFormat.
+         * @member {usbvideo.ISetFormatCommand|null|undefined} setFormat
+         * @memberof usbvideo.Command
+         * @instance
+         */
+        Command.prototype.setFormat = null;
+
+        /**
+         * Creates a new Command instance using the specified properties.
+         * @function create
+         * @memberof usbvideo.Command
+         * @static
+         * @param {usbvideo.ICommand=} [properties] Properties to set
+         * @returns {usbvideo.Command} Command instance
+         */
+        Command.create = function create(properties) {
+            return new Command(properties);
+        };
+
+        /**
+         * Encodes the specified Command message. Does not implicitly {@link usbvideo.Command.verify|verify} messages.
+         * @function encode
+         * @memberof usbvideo.Command
+         * @static
+         * @param {usbvideo.ICommand} message Command message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        Command.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.targetCameraUniqueId != null && Object.hasOwnProperty.call(message, "targetCameraUniqueId"))
+                writer.uint32(/* id 1, wireType 2 =*/10).string(message.targetCameraUniqueId);
+            if (message.setFormat != null && Object.hasOwnProperty.call(message, "setFormat"))
+                $root.usbvideo.SetFormatCommand.encode(message.setFormat, writer.uint32(/* id 10, wireType 2 =*/82).fork()).ldelim();
+            return writer;
+        };
+
+        /**
+         * Encodes the specified Command message, length delimited. Does not implicitly {@link usbvideo.Command.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof usbvideo.Command
+         * @static
+         * @param {usbvideo.ICommand} message Command message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        Command.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes a Command message from the specified reader or buffer.
+         * @function decode
+         * @memberof usbvideo.Command
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {usbvideo.Command} Command
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        Command.decode = function decode(reader, length, error, long) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.usbvideo.Command();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                if (tag === error)
+                    break;
+                switch (tag >>> 3) {
+                case 1: {
+                        message.targetCameraUniqueId = reader.string();
+                        break;
+                    }
+                case 10: {
+                        message.setFormat = $root.usbvideo.SetFormatCommand.decode(reader, reader.uint32(), undefined, long + 1);
+                        break;
+                    }
+                default:
+                    reader.skipType(tag & 7, long);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes a Command message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof usbvideo.Command
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {usbvideo.Command} Command
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        Command.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies a Command message.
+         * @function verify
+         * @memberof usbvideo.Command
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        Command.verify = function verify(message, long) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
+            if (message.targetCameraUniqueId != null && message.hasOwnProperty("targetCameraUniqueId"))
+                if (!$util.isString(message.targetCameraUniqueId))
+                    return "targetCameraUniqueId: string expected";
+            if (message.setFormat != null && message.hasOwnProperty("setFormat")) {
+                let error = $root.usbvideo.SetFormatCommand.verify(message.setFormat, long + 1);
+                if (error)
+                    return "setFormat." + error;
+            }
+            return null;
+        };
+
+        /**
+         * Creates a Command message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof usbvideo.Command
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {usbvideo.Command} Command
+         */
+        Command.fromObject = function fromObject(object, long) {
+            if (object instanceof $root.usbvideo.Command)
+                return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let message = new $root.usbvideo.Command();
+            if (object.targetCameraUniqueId != null)
+                message.targetCameraUniqueId = String(object.targetCameraUniqueId);
+            if (object.setFormat != null) {
+                if (typeof object.setFormat !== "object")
+                    throw TypeError(".usbvideo.Command.setFormat: object expected");
+                message.setFormat = $root.usbvideo.SetFormatCommand.fromObject(object.setFormat, long + 1);
+            }
+            return message;
+        };
+
+        /**
+         * Creates a plain object from a Command message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof usbvideo.Command
+         * @static
+         * @param {usbvideo.Command} message Command
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        Command.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.defaults) {
+                object.targetCameraUniqueId = "";
+                object.setFormat = null;
+            }
+            if (message.targetCameraUniqueId != null && message.hasOwnProperty("targetCameraUniqueId"))
+                object.targetCameraUniqueId = message.targetCameraUniqueId;
+            if (message.setFormat != null && message.hasOwnProperty("setFormat"))
+                object.setFormat = $root.usbvideo.SetFormatCommand.toObject(message.setFormat, options);
+            return object;
+        };
+
+        /**
+         * Converts this Command to JSON.
+         * @function toJSON
+         * @memberof usbvideo.Command
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        Command.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for Command
+         * @function getTypeUrl
+         * @memberof usbvideo.Command
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        Command.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+            if (typeUrlPrefix === undefined) {
+                typeUrlPrefix = "type.googleapis.com";
+            }
+            return typeUrlPrefix + "/usbvideo.Command";
+        };
+
+        return Command;
+    })();
+
+    usbvideo.TxEnvelope = (function() {
+
+        /**
+         * Properties of a TxEnvelope.
+         * @memberof usbvideo
+         * @interface ITxEnvelope
+         * @property {Long|null} [monotonicStampNs] TxEnvelope monotonicStampNs
+         * @property {Long|null} [localStampNs] TxEnvelope localStampNs
+         * @property {Long|null} [appStartId] TxEnvelope appStartId
+         * @property {Uint8Array|null} [commandId] TxEnvelope commandId
+         * @property {string|null} [targetCameraUniqueId] TxEnvelope targetCameraUniqueId
+         * @property {usbvideo.ICommand|null} [command] TxEnvelope command
+         */
+
+        /**
+         * Constructs a new TxEnvelope.
+         * @memberof usbvideo
+         * @classdesc Represents a TxEnvelope.
+         * @implements ITxEnvelope
+         * @constructor
+         * @param {usbvideo.ITxEnvelope=} [properties] Properties to set
+         */
+        function TxEnvelope(properties) {
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * TxEnvelope monotonicStampNs.
+         * @member {Long} monotonicStampNs
+         * @memberof usbvideo.TxEnvelope
+         * @instance
+         */
+        TxEnvelope.prototype.monotonicStampNs = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+
+        /**
+         * TxEnvelope localStampNs.
+         * @member {Long} localStampNs
+         * @memberof usbvideo.TxEnvelope
+         * @instance
+         */
+        TxEnvelope.prototype.localStampNs = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+
+        /**
+         * TxEnvelope appStartId.
+         * @member {Long} appStartId
+         * @memberof usbvideo.TxEnvelope
+         * @instance
+         */
+        TxEnvelope.prototype.appStartId = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+
+        /**
+         * TxEnvelope commandId.
+         * @member {Uint8Array} commandId
+         * @memberof usbvideo.TxEnvelope
+         * @instance
+         */
+        TxEnvelope.prototype.commandId = $util.newBuffer([]);
+
+        /**
+         * TxEnvelope targetCameraUniqueId.
+         * @member {string} targetCameraUniqueId
+         * @memberof usbvideo.TxEnvelope
+         * @instance
+         */
+        TxEnvelope.prototype.targetCameraUniqueId = "";
+
+        /**
+         * TxEnvelope command.
+         * @member {usbvideo.ICommand|null|undefined} command
+         * @memberof usbvideo.TxEnvelope
+         * @instance
+         */
+        TxEnvelope.prototype.command = null;
+
+        /**
+         * Creates a new TxEnvelope instance using the specified properties.
+         * @function create
+         * @memberof usbvideo.TxEnvelope
+         * @static
+         * @param {usbvideo.ITxEnvelope=} [properties] Properties to set
+         * @returns {usbvideo.TxEnvelope} TxEnvelope instance
+         */
+        TxEnvelope.create = function create(properties) {
+            return new TxEnvelope(properties);
+        };
+
+        /**
+         * Encodes the specified TxEnvelope message. Does not implicitly {@link usbvideo.TxEnvelope.verify|verify} messages.
+         * @function encode
+         * @memberof usbvideo.TxEnvelope
+         * @static
+         * @param {usbvideo.ITxEnvelope} message TxEnvelope message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        TxEnvelope.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.monotonicStampNs != null && Object.hasOwnProperty.call(message, "monotonicStampNs"))
+                writer.uint32(/* id 1, wireType 0 =*/8).uint64(message.monotonicStampNs);
+            if (message.localStampNs != null && Object.hasOwnProperty.call(message, "localStampNs"))
+                writer.uint32(/* id 2, wireType 0 =*/16).uint64(message.localStampNs);
+            if (message.appStartId != null && Object.hasOwnProperty.call(message, "appStartId"))
+                writer.uint32(/* id 3, wireType 0 =*/24).uint64(message.appStartId);
+            if (message.commandId != null && Object.hasOwnProperty.call(message, "commandId"))
+                writer.uint32(/* id 4, wireType 2 =*/34).bytes(message.commandId);
+            if (message.targetCameraUniqueId != null && Object.hasOwnProperty.call(message, "targetCameraUniqueId"))
+                writer.uint32(/* id 5, wireType 2 =*/42).string(message.targetCameraUniqueId);
+            if (message.command != null && Object.hasOwnProperty.call(message, "command"))
+                $root.usbvideo.Command.encode(message.command, writer.uint32(/* id 10, wireType 2 =*/82).fork()).ldelim();
+            return writer;
+        };
+
+        /**
+         * Encodes the specified TxEnvelope message, length delimited. Does not implicitly {@link usbvideo.TxEnvelope.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof usbvideo.TxEnvelope
+         * @static
+         * @param {usbvideo.ITxEnvelope} message TxEnvelope message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        TxEnvelope.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes a TxEnvelope message from the specified reader or buffer.
+         * @function decode
+         * @memberof usbvideo.TxEnvelope
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {usbvideo.TxEnvelope} TxEnvelope
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        TxEnvelope.decode = function decode(reader, length, error, long) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.usbvideo.TxEnvelope();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                if (tag === error)
+                    break;
+                switch (tag >>> 3) {
+                case 1: {
+                        message.monotonicStampNs = reader.uint64();
+                        break;
+                    }
+                case 2: {
+                        message.localStampNs = reader.uint64();
+                        break;
+                    }
+                case 3: {
+                        message.appStartId = reader.uint64();
+                        break;
+                    }
+                case 4: {
+                        message.commandId = reader.bytes();
+                        break;
+                    }
+                case 5: {
+                        message.targetCameraUniqueId = reader.string();
+                        break;
+                    }
+                case 10: {
+                        message.command = $root.usbvideo.Command.decode(reader, reader.uint32(), undefined, long + 1);
+                        break;
+                    }
+                default:
+                    reader.skipType(tag & 7, long);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes a TxEnvelope message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof usbvideo.TxEnvelope
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {usbvideo.TxEnvelope} TxEnvelope
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        TxEnvelope.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies a TxEnvelope message.
+         * @function verify
+         * @memberof usbvideo.TxEnvelope
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        TxEnvelope.verify = function verify(message, long) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
+            if (message.monotonicStampNs != null && message.hasOwnProperty("monotonicStampNs"))
+                if (!$util.isInteger(message.monotonicStampNs) && !(message.monotonicStampNs && $util.isInteger(message.monotonicStampNs.low) && $util.isInteger(message.monotonicStampNs.high)))
+                    return "monotonicStampNs: integer|Long expected";
+            if (message.localStampNs != null && message.hasOwnProperty("localStampNs"))
+                if (!$util.isInteger(message.localStampNs) && !(message.localStampNs && $util.isInteger(message.localStampNs.low) && $util.isInteger(message.localStampNs.high)))
+                    return "localStampNs: integer|Long expected";
+            if (message.appStartId != null && message.hasOwnProperty("appStartId"))
+                if (!$util.isInteger(message.appStartId) && !(message.appStartId && $util.isInteger(message.appStartId.low) && $util.isInteger(message.appStartId.high)))
+                    return "appStartId: integer|Long expected";
+            if (message.commandId != null && message.hasOwnProperty("commandId"))
+                if (!(message.commandId && typeof message.commandId.length === "number" || $util.isString(message.commandId)))
+                    return "commandId: buffer expected";
+            if (message.targetCameraUniqueId != null && message.hasOwnProperty("targetCameraUniqueId"))
+                if (!$util.isString(message.targetCameraUniqueId))
+                    return "targetCameraUniqueId: string expected";
+            if (message.command != null && message.hasOwnProperty("command")) {
+                let error = $root.usbvideo.Command.verify(message.command, long + 1);
+                if (error)
+                    return "command." + error;
+            }
+            return null;
+        };
+
+        /**
+         * Creates a TxEnvelope message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof usbvideo.TxEnvelope
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {usbvideo.TxEnvelope} TxEnvelope
+         */
+        TxEnvelope.fromObject = function fromObject(object, long) {
+            if (object instanceof $root.usbvideo.TxEnvelope)
+                return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let message = new $root.usbvideo.TxEnvelope();
+            if (object.monotonicStampNs != null)
+                if ($util.Long)
+                    (message.monotonicStampNs = $util.Long.fromValue(object.monotonicStampNs)).unsigned = true;
+                else if (typeof object.monotonicStampNs === "string")
+                    message.monotonicStampNs = parseInt(object.monotonicStampNs, 10);
+                else if (typeof object.monotonicStampNs === "number")
+                    message.monotonicStampNs = object.monotonicStampNs;
+                else if (typeof object.monotonicStampNs === "object")
+                    message.monotonicStampNs = new $util.LongBits(object.monotonicStampNs.low >>> 0, object.monotonicStampNs.high >>> 0).toNumber(true);
+            if (object.localStampNs != null)
+                if ($util.Long)
+                    (message.localStampNs = $util.Long.fromValue(object.localStampNs)).unsigned = true;
+                else if (typeof object.localStampNs === "string")
+                    message.localStampNs = parseInt(object.localStampNs, 10);
+                else if (typeof object.localStampNs === "number")
+                    message.localStampNs = object.localStampNs;
+                else if (typeof object.localStampNs === "object")
+                    message.localStampNs = new $util.LongBits(object.localStampNs.low >>> 0, object.localStampNs.high >>> 0).toNumber(true);
+            if (object.appStartId != null)
+                if ($util.Long)
+                    (message.appStartId = $util.Long.fromValue(object.appStartId)).unsigned = true;
+                else if (typeof object.appStartId === "string")
+                    message.appStartId = parseInt(object.appStartId, 10);
+                else if (typeof object.appStartId === "number")
+                    message.appStartId = object.appStartId;
+                else if (typeof object.appStartId === "object")
+                    message.appStartId = new $util.LongBits(object.appStartId.low >>> 0, object.appStartId.high >>> 0).toNumber(true);
+            if (object.commandId != null)
+                if (typeof object.commandId === "string")
+                    $util.base64.decode(object.commandId, message.commandId = $util.newBuffer($util.base64.length(object.commandId)), 0);
+                else if (object.commandId.length >= 0)
+                    message.commandId = object.commandId;
+            if (object.targetCameraUniqueId != null)
+                message.targetCameraUniqueId = String(object.targetCameraUniqueId);
+            if (object.command != null) {
+                if (typeof object.command !== "object")
+                    throw TypeError(".usbvideo.TxEnvelope.command: object expected");
+                message.command = $root.usbvideo.Command.fromObject(object.command, long + 1);
+            }
+            return message;
+        };
+
+        /**
+         * Creates a plain object from a TxEnvelope message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof usbvideo.TxEnvelope
+         * @static
+         * @param {usbvideo.TxEnvelope} message TxEnvelope
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        TxEnvelope.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.defaults) {
+                if ($util.Long) {
+                    let long = new $util.Long(0, 0, true);
+                    object.monotonicStampNs = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+                } else
+                    object.monotonicStampNs = options.longs === String ? "0" : 0;
+                if ($util.Long) {
+                    let long = new $util.Long(0, 0, true);
+                    object.localStampNs = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+                } else
+                    object.localStampNs = options.longs === String ? "0" : 0;
+                if ($util.Long) {
+                    let long = new $util.Long(0, 0, true);
+                    object.appStartId = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+                } else
+                    object.appStartId = options.longs === String ? "0" : 0;
+                if (options.bytes === String)
+                    object.commandId = "";
+                else {
+                    object.commandId = [];
+                    if (options.bytes !== Array)
+                        object.commandId = $util.newBuffer(object.commandId);
+                }
+                object.targetCameraUniqueId = "";
+                object.command = null;
+            }
+            if (message.monotonicStampNs != null && message.hasOwnProperty("monotonicStampNs"))
+                if (typeof message.monotonicStampNs === "number")
+                    object.monotonicStampNs = options.longs === String ? String(message.monotonicStampNs) : message.monotonicStampNs;
+                else
+                    object.monotonicStampNs = options.longs === String ? $util.Long.prototype.toString.call(message.monotonicStampNs) : options.longs === Number ? new $util.LongBits(message.monotonicStampNs.low >>> 0, message.monotonicStampNs.high >>> 0).toNumber(true) : message.monotonicStampNs;
+            if (message.localStampNs != null && message.hasOwnProperty("localStampNs"))
+                if (typeof message.localStampNs === "number")
+                    object.localStampNs = options.longs === String ? String(message.localStampNs) : message.localStampNs;
+                else
+                    object.localStampNs = options.longs === String ? $util.Long.prototype.toString.call(message.localStampNs) : options.longs === Number ? new $util.LongBits(message.localStampNs.low >>> 0, message.localStampNs.high >>> 0).toNumber(true) : message.localStampNs;
+            if (message.appStartId != null && message.hasOwnProperty("appStartId"))
+                if (typeof message.appStartId === "number")
+                    object.appStartId = options.longs === String ? String(message.appStartId) : message.appStartId;
+                else
+                    object.appStartId = options.longs === String ? $util.Long.prototype.toString.call(message.appStartId) : options.longs === Number ? new $util.LongBits(message.appStartId.low >>> 0, message.appStartId.high >>> 0).toNumber(true) : message.appStartId;
+            if (message.commandId != null && message.hasOwnProperty("commandId"))
+                object.commandId = options.bytes === String ? $util.base64.encode(message.commandId, 0, message.commandId.length) : options.bytes === Array ? Array.prototype.slice.call(message.commandId) : message.commandId;
+            if (message.targetCameraUniqueId != null && message.hasOwnProperty("targetCameraUniqueId"))
+                object.targetCameraUniqueId = message.targetCameraUniqueId;
+            if (message.command != null && message.hasOwnProperty("command"))
+                object.command = $root.usbvideo.Command.toObject(message.command, options);
+            return object;
+        };
+
+        /**
+         * Converts this TxEnvelope to JSON.
+         * @function toJSON
+         * @memberof usbvideo.TxEnvelope
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        TxEnvelope.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for TxEnvelope
+         * @function getTypeUrl
+         * @memberof usbvideo.TxEnvelope
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        TxEnvelope.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+            if (typeUrlPrefix === undefined) {
+                typeUrlPrefix = "type.googleapis.com";
+            }
+            return typeUrlPrefix + "/usbvideo.TxEnvelope";
+        };
+
+        return TxEnvelope;
     })();
 
     usbvideo.Camera = (function() {

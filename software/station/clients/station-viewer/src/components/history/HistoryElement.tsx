@@ -18,7 +18,7 @@ import {
 export interface HistoryElementData {
   queueId: string;
   entryId: Uint8Array;
-  data: Uint8Array | usbvideo.IRxEnvelope | hikmicro.IRxEnvelope | st3215.IInferenceState | st3215.ITxEnvelope | motors_mirroring.IRxEnvelope | sysinfo.IEnvelope | arduino_nicla_sense_env.IRxEnvelope | ina226.IRxEnvelope | airgradient_open_air_o_1pst.IRxEnvelope | victron_smartsolar_mppt.IRxEnvelope | yahboom_dogzilla_lite.IInferenceState | vesc_trampa.IInferenceState | vesc_trampa.IRxEnvelope | vesc_trampa.ITxEnvelope | normvla.IFrame | null;
+  data: Uint8Array | usbvideo.IRxEnvelope | usbvideo.ITxEnvelope | hikmicro.IRxEnvelope | st3215.IInferenceState | st3215.ITxEnvelope | motors_mirroring.IRxEnvelope | sysinfo.IEnvelope | arduino_nicla_sense_env.IRxEnvelope | ina226.IRxEnvelope | airgradient_open_air_o_1pst.IRxEnvelope | victron_smartsolar_mppt.IRxEnvelope | yahboom_dogzilla_lite.IInferenceState | vesc_trampa.IInferenceState | vesc_trampa.IRxEnvelope | vesc_trampa.ITxEnvelope | normvla.IFrame | null;
   rawData?: Uint8Array | null;
   error?: string;
   type?: string;
@@ -58,7 +58,7 @@ function formatSensorValue(value: number | null, unit = '', decimals = 2): strin
 }
 
 function HistoryElement({ element, index, dataQueueType, dataQueueId }: HistoryElementProps) {
-  const [isExpanded, setIsExpanded] = useState(element.type === 'usbvideo' || element.type === 'hikmicro-thermal' || element.type === 'st3215' || element.type === 'yahboom_dogzilla_lite' || element.type === 'arduino-nicla-sense-env' || element.type === 'ina226' || element.type === 'airgradient-open-air-o-1pst' || element.type === 'victron-smartsolar-mppt' || element.type === 'normvla' || element.type === 'st3215tx' || element.type === 'vesc-trampa' || element.type === 'vesc-trampa-rx' || element.type === 'vesc-trampa-tx');
+  const [isExpanded, setIsExpanded] = useState(element.type === 'usbvideo' || element.type === 'usbvideo-tx' || element.type === 'hikmicro-thermal' || element.type === 'st3215' || element.type === 'yahboom_dogzilla_lite' || element.type === 'arduino-nicla-sense-env' || element.type === 'ina226' || element.type === 'airgradient-open-air-o-1pst' || element.type === 'victron-smartsolar-mppt' || element.type === 'normvla' || element.type === 'st3215tx' || element.type === 'vesc-trampa' || element.type === 'vesc-trampa-rx' || element.type === 'vesc-trampa-tx');
   const displayQueueId = formatQueueIdForDisplay(element.queueId);
 
   const usbVideoData = element.type === 'usbvideo' && element.data ? parseUsbVideoData(element.data) : null;

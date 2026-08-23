@@ -1,17 +1,20 @@
-use station_iface::StationEngine;
-use tokio::time::Duration;
-use tokio::sync::{broadcast, Notify};
-use std::sync::{Arc, atomic::{AtomicUsize, Ordering}};
-use std::future::Future;
-use std::time::Instant;
 use norm_uvc_sys;
+use station_iface::StationEngine;
+use std::future::Future;
+use std::sync::{
+    Arc,
+    atomic::{AtomicUsize, Ordering},
+};
+use std::time::Instant;
+use tokio::sync::{Notify, broadcast};
+use tokio::time::Duration;
 mod ffi;
 
 use crate::{
-    pipeline::{CaptureResult, USBCameraDriver},
-    usbvideo_proto::{usbvideo, frame::FrameStamp},
     converters::FourCCFormat,
-    state::StateTracker
+    pipeline::{CaptureResult, USBCameraDriver},
+    state::StateTracker,
+    usbvideo_proto::{frame::FrameStamp, usbvideo},
 };
 
 pub struct CameraLinuxDriver {
@@ -44,7 +47,6 @@ impl CameraLinuxDriver {
 }
 
 impl USBCameraDriver for CameraLinuxDriver {
-
     fn stop(&self) -> impl Future<Output = ()> + Send {
         let stop_tx = self.stop_tx.clone();
         let active_streams = self.active_streams.clone();
@@ -74,27 +76,29 @@ impl USBCameraDriver for CameraLinuxDriver {
         tracker: Arc<StateTracker<K>>,
         camera: &usbvideo::Camera,
         format: &usbvideo::CameraFormat,
+        format_revision: u64,
         queue_id: &normfs::QueueId,
     ) -> CaptureResult {
         self.active_streams.fetch_add(1, Ordering::Acquire);
-        
+
         let mut stop_rx = self.stop_tx.subscribe();
         let active_streams = self.active_streams.clone();
         let all_stopped_notify = self.all_stopped_notify.clone();
-        
+
         let camera_clone = camera.clone();
         let format_clone = format.clone();
+        let format_revision_clone = format_revision;
         let tracker_clone = tracker.clone();
         let queue_id_clone = queue_id.clone();
-        
+
         let stop_flag = Arc::new(std::sync::atomic::AtomicBool::new(false));
         let stop_flag_clone = stop_flag.clone();
-        
+
         let stop_monitor = tokio::spawn(async move {
             let _ = stop_rx.recv().await;
             stop_flag_clone.store(true, Ordering::Release);
         });
-        
+
         let result = tokio::task::spawn_blocking(move || {
             log::info!("Starting capture for camera {} with format {}x{}@{:.1}fps",
                       camera_clone.unique_id, format_clone.width, format_clone.height, format_clone.frames_per_second);
@@ -167,14 +171,14 @@ impl USBCameraDriver for CameraLinuxDriver {
                         last_frame_time = Instant::now();
                         has_frames = true;
                         frame_count += 1;
-                        
+
                         // Check if we have a valid fourcc (0 means unsupported format)
                         if frame_info.fourcc == 0 {
                             log::error!("Unsupported UVC frame format {} for camera {}, stopping capture",
                                        frame_info.format, camera_clone.unique_id);
                             break;
                         }
-                        
+
                         if let Some(format) = FourCCFormat::from_fourcc_u32(frame_info.fourcc) {
                             let frame_stamp = FrameStamp {
                                 monotonic_stamp_ns: frame_info.boottime_timestamp_ns,
@@ -188,6 +192,7 @@ impl USBCameraDriver for CameraLinuxDriver {
                                 format,
                                 &camera_clone,
                                 frame_stamp,
+                                format_revision_clone,
                                 frame_info.width,
                                 frame_info.height,
                                 frame_info.data,
@@ -213,7 +218,7 @@ impl USBCameraDriver for CameraLinuxDriver {
             ffi::stop_streaming(&mut stream_handle);
             drop(stream_handle);
             ffi::drop_uvc_context(ctx);
-            
+
             log::info!("Stopped streaming for camera {} after {} frames", camera_clone.unique_id, frame_count);
 
             CaptureResult {

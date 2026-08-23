@@ -1,12 +1,24 @@
 import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
+import {
   Camera,
   Maximize2,
   Minimize2,
 } from 'lucide-react';
+import { commandManager } from '@/api/commands.js';
 import type { FrameEntry } from '@/api/frame-parser';
 import { usbvideo } from '@/api/proto.js';
 import CameraViewer from '@/usbvideo/CameraViewer';
 import { getVideoSourceId } from '@/usbvideo/camera-source';
+import {
+  clearLiveCameraFrame,
+  resumeLiveCameraFrame,
+  suppressLiveCameraFrame,
+} from '@/usbvideo/live-camera-store';
 
 interface RoverCameraStatus {
   ready: boolean;
@@ -17,6 +29,7 @@ interface RoverCameraStatus {
 
 interface RoverCameraViewportProps {
   videoSources: FrameEntry<usbvideo.IRxEnvelope>[];
+  controlVideoSources?: FrameEntry<usbvideo.IRxEnvelope>[];
   status: RoverCameraStatus;
   isFullscreen: boolean;
   onOpenDetails: () => void;
@@ -37,16 +50,137 @@ function CameraPane({ sourceId }: { sourceId: string }) {
   );
 }
 
+function bytesToHex(bytes?: Uint8Array | null): string {
+  if (!bytes || bytes.length === 0) return '';
+  return Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('');
+}
+
+function fourccToString(fourcc?: number | null): string {
+  if (!fourcc) return '????';
+  return [24, 16, 8, 0]
+    .map((shift) => String.fromCharCode((fourcc >>> shift) & 0xff))
+    .join('')
+    .trim();
+}
+
+function fpsLabel(fps?: number | null): string {
+  if (!Number.isFinite(fps)) return '? fps';
+  return `${Number(fps).toFixed(2)} fps`;
+}
+
+function formatKey(format: usbvideo.ICameraFormat): string {
+  return [
+    format.fourcc ?? 0,
+    format.index ?? 0,
+    format.width ?? 0,
+    format.height ?? 0,
+    Number(format.framesPerSecond ?? 0).toPrecision(8),
+    bytesToHex(format.guid),
+    format.frameIndex ?? 0,
+  ].join(':');
+}
+
+function formatLabel(format: usbvideo.ICameraFormat): string {
+  return [
+    fourccToString(format.fourcc),
+    `${format.width ?? 0}x${format.height ?? 0}`,
+    fpsLabel(format.framesPerSecond),
+  ].join(' ');
+}
+
+function uniqueFormats(formats: usbvideo.ICameraFormat[] | null | undefined) {
+  const seen = new Set<string>();
+  return (formats ?? []).flatMap((format) => {
+    const key = formatKey(format);
+    if (seen.has(key)) return [];
+    seen.add(key);
+    return [{ key, format }];
+  });
+}
+
 function RoverCameraViewport({
   videoSources,
+  controlVideoSources = videoSources,
   status,
   isFullscreen,
   onOpenDetails,
   onToggleFullscreen,
 }: RoverCameraViewportProps) {
-  const primaryCameraSourceId = videoSources[0]
-    ? getVideoSourceId(videoSources[0])
+  const primaryVideoSource = videoSources[0] ?? null;
+  const primaryControlVideoSource = primaryVideoSource ?? controlVideoSources[0] ?? null;
+  const primaryCameraSourceId = primaryVideoSource
+    ? getVideoSourceId(primaryVideoSource)
     : null;
+  const primaryControlCameraSourceId = primaryControlVideoSource
+    ? getVideoSourceId(primaryControlVideoSource)
+    : null;
+  const currentCameraFrameSourceId = primaryCameraSourceId ?? primaryControlCameraSourceId;
+  const primaryCameraUniqueId = primaryControlVideoSource?.data.camera?.uniqueId ?? '';
+  const cameraFormats = useMemo(
+    () => uniqueFormats(primaryControlVideoSource?.data.formats),
+    [primaryControlVideoSource?.data.formats],
+  );
+  const [selectedFormatKey, setSelectedFormatKey] = useState('auto');
+
+  useEffect(() => {
+    if (selectedFormatKey === 'auto' || selectedFormatKey === 'none') return;
+    if (cameraFormats.some((format) => format.key === selectedFormatKey)) return;
+    setSelectedFormatKey('auto');
+  }, [cameraFormats, selectedFormatKey]);
+
+  useEffect(() => {
+    setSelectedFormatKey('auto');
+  }, [primaryCameraUniqueId]);
+
+  const handleFormatChange = useCallback((nextFormatKey: string) => {
+    setSelectedFormatKey(nextFormatKey);
+    if (currentCameraFrameSourceId) {
+      if (nextFormatKey === 'none') {
+        suppressLiveCameraFrame(currentCameraFrameSourceId);
+      } else {
+        resumeLiveCameraFrame(currentCameraFrameSourceId);
+        clearLiveCameraFrame(currentCameraFrameSourceId);
+      }
+    }
+    if (!primaryCameraUniqueId) return;
+
+    if (nextFormatKey === 'auto') {
+      void commandManager.sendUsbVideoCommand({
+        targetCameraUniqueId: primaryCameraUniqueId,
+        setFormat: {
+          mode: usbvideo.SetFormatMode.SET_FORMAT_MODE_AUTO,
+        },
+      }).catch((error) => {
+        console.error('Failed to send USB video auto format command', error);
+      });
+      return;
+    }
+
+    if (nextFormatKey === 'none') {
+      void commandManager.sendUsbVideoCommand({
+        targetCameraUniqueId: primaryCameraUniqueId,
+        setFormat: {
+          mode: usbvideo.SetFormatMode.SET_FORMAT_MODE_NONE,
+        },
+      }).catch((error) => {
+        console.error('Failed to send USB video none format command', error);
+      });
+      return;
+    }
+
+    const selectedFormat = cameraFormats.find((format) => format.key === nextFormatKey)?.format;
+    if (!selectedFormat) return;
+
+    void commandManager.sendUsbVideoCommand({
+      targetCameraUniqueId: primaryCameraUniqueId,
+      setFormat: {
+        mode: usbvideo.SetFormatMode.SET_FORMAT_MODE_MANUAL,
+        format: selectedFormat,
+      },
+    }).catch((error) => {
+      console.error('Failed to send USB video manual format command', error);
+    });
+  }, [cameraFormats, currentCameraFrameSourceId, primaryCameraUniqueId]);
 
   const cameraStage = !primaryCameraSourceId ? (
     <div className="flex h-full items-center justify-center bg-surface-base text-center text-sm text-text-muted">
@@ -74,7 +208,26 @@ function RoverCameraViewport({
             </div>
           </div>
         </button>
-        <div className="relative ml-auto flex shrink-0 items-center rounded-md border border-accent-data/35 bg-surface-primary/55 p-1 shadow-[0_0.6rem_1.5rem_rgba(0,0,0,0.18)] backdrop-blur-md">
+        <div className="relative ml-auto flex min-w-0 shrink items-center gap-1 rounded-md border border-accent-data/35 bg-surface-primary/55 p-1 shadow-[0_0.6rem_1.5rem_rgba(0,0,0,0.18)] backdrop-blur-md">
+          {primaryCameraUniqueId && (
+            <label className="min-w-0">
+              <span className="sr-only">Camera format</span>
+              <select
+                value={selectedFormatKey}
+                onChange={(event) => handleFormatChange(event.target.value)}
+                className="h-11 max-w-[min(13rem,54vw)] rounded border border-accent-data/20 bg-surface-secondary/75 px-2 pr-7 font-mono text-[10px] font-semibold text-text-primary outline-none transition focus:border-accent-data focus:ring-1 focus:ring-accent-data lg:h-8 lg:max-w-[16rem] lg:text-[11px]"
+                title="Camera format"
+              >
+                <option value="auto">Auto</option>
+                <option value="none">None</option>
+                {cameraFormats.map(({ key, format }) => (
+                  <option key={key} value={key}>
+                    {formatLabel(format)}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
           <button type="button" onClick={onToggleFullscreen} className="flex h-11 w-11 items-center justify-center rounded text-text-secondary hover:bg-accent-data/12 hover:text-accent-data lg:h-8 lg:w-8" aria-label={isFullscreen ? 'Exit fullscreen rover control' : 'Fullscreen rover control'} aria-pressed={isFullscreen}>
             {isFullscreen ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
           </button>

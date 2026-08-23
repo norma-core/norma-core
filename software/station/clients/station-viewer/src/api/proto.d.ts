@@ -248,6 +248,7 @@ export namespace drivers {
         QDT_USB_VIDEO_FRAMES = 21,
         QDT_INFERENCE_FRAMES = 22,
         QDT_HIKMICRO_THERMAL = 23,
+        QDT_USB_VIDEO_TX = 24,
         QDT_MOTOR_MIRRORING_MODES = 30,
         QDT_MOTOR_MIRRORING_RX = 32,
         QDT_YAHBOOM_DOGZILLA_LITE_SERIAL_TX = 40,
@@ -270,7 +271,8 @@ export namespace drivers {
         STC_YAHBOOM_DOGZILLA_LITE_COMMAND = 3,
         STC_VESC_TRAMPA_COMMAND = 4,
         STC_ARDUINO_NICLA_SENSE_ENV_COMMAND = 5,
-        STC_PWM_OUTPUT_COMMAND = 6
+        STC_PWM_OUTPUT_COMMAND = 6,
+        STC_USB_VIDEO_COMMAND = 7
     }
 }
 
@@ -5035,7 +5037,11 @@ export namespace usbvideo {
         ET_DEVICE_RECORDING_START = 3,
         ET_DEVICE_RECORDING_END = 4,
         ET_DEVICE_DISCONNECTED = 5,
-        ET_ERROR = 6
+        ET_ERROR = 6,
+        ET_COMMAND = 7,
+        ET_COMMAND_SUCCESS = 8,
+        ET_COMMAND_REJECTED = 9,
+        ET_COMMAND_FAILED = 10
     }
 
     /** Properties of a RxEnvelope. */
@@ -5061,6 +5067,9 @@ export namespace usbvideo {
 
         /** RxEnvelope frames */
         frames?: (frame.IFramesPack|null);
+
+        /** RxEnvelope command */
+        command?: (usbvideo.ITxEnvelope|null);
     }
 
     /** Represents a RxEnvelope. */
@@ -5092,6 +5101,9 @@ export namespace usbvideo {
 
         /** RxEnvelope frames. */
         public frames?: (frame.IFramesPack|null);
+
+        /** RxEnvelope command. */
+        public command?: (usbvideo.ITxEnvelope|null);
 
         /**
          * Creates a new RxEnvelope instance using the specified properties.
@@ -5165,6 +5177,346 @@ export namespace usbvideo {
 
         /**
          * Gets the default type url for RxEnvelope
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
+    /** SetFormatMode enum. */
+    enum SetFormatMode {
+        SET_FORMAT_MODE_AUTO = 0,
+        SET_FORMAT_MODE_MANUAL = 1,
+        SET_FORMAT_MODE_NONE = 2
+    }
+
+    /** Properties of a SetFormatCommand. */
+    interface ISetFormatCommand {
+
+        /** SetFormatCommand mode */
+        mode?: (usbvideo.SetFormatMode|null);
+
+        /** SetFormatCommand format */
+        format?: (usbvideo.ICameraFormat|null);
+    }
+
+    /** Represents a SetFormatCommand. */
+    class SetFormatCommand implements ISetFormatCommand {
+
+        /**
+         * Constructs a new SetFormatCommand.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: usbvideo.ISetFormatCommand);
+
+        /** SetFormatCommand mode. */
+        public mode: usbvideo.SetFormatMode;
+
+        /** SetFormatCommand format. */
+        public format?: (usbvideo.ICameraFormat|null);
+
+        /**
+         * Creates a new SetFormatCommand instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns SetFormatCommand instance
+         */
+        public static create(properties?: usbvideo.ISetFormatCommand): usbvideo.SetFormatCommand;
+
+        /**
+         * Encodes the specified SetFormatCommand message. Does not implicitly {@link usbvideo.SetFormatCommand.verify|verify} messages.
+         * @param message SetFormatCommand message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: usbvideo.ISetFormatCommand, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified SetFormatCommand message, length delimited. Does not implicitly {@link usbvideo.SetFormatCommand.verify|verify} messages.
+         * @param message SetFormatCommand message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: usbvideo.ISetFormatCommand, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes a SetFormatCommand message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns SetFormatCommand
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): usbvideo.SetFormatCommand;
+
+        /**
+         * Decodes a SetFormatCommand message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns SetFormatCommand
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): usbvideo.SetFormatCommand;
+
+        /**
+         * Verifies a SetFormatCommand message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates a SetFormatCommand message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns SetFormatCommand
+         */
+        public static fromObject(object: { [k: string]: any }): usbvideo.SetFormatCommand;
+
+        /**
+         * Creates a plain object from a SetFormatCommand message. Also converts values to other types if specified.
+         * @param message SetFormatCommand
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: usbvideo.SetFormatCommand, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this SetFormatCommand to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for SetFormatCommand
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
+    /** Properties of a Command. */
+    interface ICommand {
+
+        /** Command targetCameraUniqueId */
+        targetCameraUniqueId?: (string|null);
+
+        /** Command setFormat */
+        setFormat?: (usbvideo.ISetFormatCommand|null);
+    }
+
+    /** Represents a Command. */
+    class Command implements ICommand {
+
+        /**
+         * Constructs a new Command.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: usbvideo.ICommand);
+
+        /** Command targetCameraUniqueId. */
+        public targetCameraUniqueId: string;
+
+        /** Command setFormat. */
+        public setFormat?: (usbvideo.ISetFormatCommand|null);
+
+        /**
+         * Creates a new Command instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns Command instance
+         */
+        public static create(properties?: usbvideo.ICommand): usbvideo.Command;
+
+        /**
+         * Encodes the specified Command message. Does not implicitly {@link usbvideo.Command.verify|verify} messages.
+         * @param message Command message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: usbvideo.ICommand, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified Command message, length delimited. Does not implicitly {@link usbvideo.Command.verify|verify} messages.
+         * @param message Command message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: usbvideo.ICommand, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes a Command message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns Command
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): usbvideo.Command;
+
+        /**
+         * Decodes a Command message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns Command
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): usbvideo.Command;
+
+        /**
+         * Verifies a Command message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates a Command message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns Command
+         */
+        public static fromObject(object: { [k: string]: any }): usbvideo.Command;
+
+        /**
+         * Creates a plain object from a Command message. Also converts values to other types if specified.
+         * @param message Command
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: usbvideo.Command, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this Command to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for Command
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
+    /** Properties of a TxEnvelope. */
+    interface ITxEnvelope {
+
+        /** TxEnvelope monotonicStampNs */
+        monotonicStampNs?: (Long|null);
+
+        /** TxEnvelope localStampNs */
+        localStampNs?: (Long|null);
+
+        /** TxEnvelope appStartId */
+        appStartId?: (Long|null);
+
+        /** TxEnvelope commandId */
+        commandId?: (Uint8Array|null);
+
+        /** TxEnvelope targetCameraUniqueId */
+        targetCameraUniqueId?: (string|null);
+
+        /** TxEnvelope command */
+        command?: (usbvideo.ICommand|null);
+    }
+
+    /** Represents a TxEnvelope. */
+    class TxEnvelope implements ITxEnvelope {
+
+        /**
+         * Constructs a new TxEnvelope.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: usbvideo.ITxEnvelope);
+
+        /** TxEnvelope monotonicStampNs. */
+        public monotonicStampNs: Long;
+
+        /** TxEnvelope localStampNs. */
+        public localStampNs: Long;
+
+        /** TxEnvelope appStartId. */
+        public appStartId: Long;
+
+        /** TxEnvelope commandId. */
+        public commandId: Uint8Array;
+
+        /** TxEnvelope targetCameraUniqueId. */
+        public targetCameraUniqueId: string;
+
+        /** TxEnvelope command. */
+        public command?: (usbvideo.ICommand|null);
+
+        /**
+         * Creates a new TxEnvelope instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns TxEnvelope instance
+         */
+        public static create(properties?: usbvideo.ITxEnvelope): usbvideo.TxEnvelope;
+
+        /**
+         * Encodes the specified TxEnvelope message. Does not implicitly {@link usbvideo.TxEnvelope.verify|verify} messages.
+         * @param message TxEnvelope message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: usbvideo.ITxEnvelope, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified TxEnvelope message, length delimited. Does not implicitly {@link usbvideo.TxEnvelope.verify|verify} messages.
+         * @param message TxEnvelope message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: usbvideo.ITxEnvelope, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes a TxEnvelope message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns TxEnvelope
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): usbvideo.TxEnvelope;
+
+        /**
+         * Decodes a TxEnvelope message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns TxEnvelope
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): usbvideo.TxEnvelope;
+
+        /**
+         * Verifies a TxEnvelope message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates a TxEnvelope message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns TxEnvelope
+         */
+        public static fromObject(object: { [k: string]: any }): usbvideo.TxEnvelope;
+
+        /**
+         * Creates a plain object from a TxEnvelope message. Also converts values to other types if specified.
+         * @param message TxEnvelope
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: usbvideo.TxEnvelope, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this TxEnvelope to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for TxEnvelope
          * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
          * @returns The default type url
          */
