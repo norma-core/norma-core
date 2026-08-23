@@ -9532,11 +9532,17 @@ export namespace sysinfo {
         /** EnvelopeData networks */
         networks?: (sysinfo.INetwork[]|null);
 
+        /** EnvelopeData processes */
+        processes?: (sysinfo.IProcessInfo[]|null);
+
         /** EnvelopeData temperatures */
         temperatures?: (sysinfo.ITemperatureSensor[]|null);
 
         /** EnvelopeData powerSources */
         powerSources?: (sysinfo.IPowerSource[]|null);
+
+        /** EnvelopeData throttling */
+        throttling?: (sysinfo.IThrottlingState|null);
 
         /** EnvelopeData cellularModems */
         cellularModems?: (sysinfo.ICellularModem[]|null);
@@ -9590,11 +9596,17 @@ export namespace sysinfo {
         /** EnvelopeData networks. */
         public networks: sysinfo.INetwork[];
 
+        /** EnvelopeData processes. */
+        public processes: sysinfo.IProcessInfo[];
+
         /** EnvelopeData temperatures. */
         public temperatures: sysinfo.ITemperatureSensor[];
 
         /** EnvelopeData powerSources. */
         public powerSources: sysinfo.IPowerSource[];
+
+        /** EnvelopeData throttling. */
+        public throttling?: (sysinfo.IThrottlingState|null);
 
         /** EnvelopeData cellularModems. */
         public cellularModems: sysinfo.ICellularModem[];
@@ -10736,6 +10748,235 @@ export namespace sysinfo {
         public static getTypeUrl(typeUrlPrefix?: string): string;
     }
 
+    /** Properties of a ProcessInfo. */
+    interface IProcessInfo {
+
+        /** ProcessInfo pid */
+        pid?: (number|null);
+
+        /** ProcessInfo parentPid */
+        parentPid?: (Long|null);
+
+        /** ProcessInfo name */
+        name?: (string|null);
+
+        /** ProcessInfo exe */
+        exe?: (string|null);
+
+        /** ProcessInfo cmd */
+        cmd?: (string[]|null);
+
+        /** ProcessInfo cwd */
+        cwd?: (string|null);
+
+        /** ProcessInfo kind */
+        kind?: (string|null);
+
+        /** ProcessInfo status */
+        status?: (string|null);
+
+        /** ProcessInfo userName */
+        userName?: (string|null);
+
+        /** ProcessInfo uid */
+        uid?: (Long|null);
+
+        /** ProcessInfo gid */
+        gid?: (Long|null);
+
+        /** ProcessInfo sessionId */
+        sessionId?: (Long|null);
+
+        /** ProcessInfo startTimeEpochSeconds */
+        startTimeEpochSeconds?: (Long|null);
+
+        /** ProcessInfo runTimeSeconds */
+        runTimeSeconds?: (Long|null);
+
+        /** ProcessInfo threadCount */
+        threadCount?: (number|null);
+
+        /** ProcessInfo cpuUsage */
+        cpuUsage?: (number|null);
+
+        /** ProcessInfo memoryBytes */
+        memoryBytes?: (Long|null);
+
+        /** ProcessInfo virtualMemoryBytes */
+        virtualMemoryBytes?: (Long|null);
+
+        /** ProcessInfo accumulatedCpuTimeMs */
+        accumulatedCpuTimeMs?: (Long|null);
+
+        /** ProcessInfo totalReadBytes */
+        totalReadBytes?: (Long|null);
+
+        /** ProcessInfo totalWrittenBytes */
+        totalWrittenBytes?: (Long|null);
+
+        /** ProcessInfo readBytes */
+        readBytes?: (Long|null);
+
+        /** ProcessInfo writtenBytes */
+        writtenBytes?: (Long|null);
+    }
+
+    /** Represents a ProcessInfo. */
+    class ProcessInfo implements IProcessInfo {
+
+        /**
+         * Constructs a new ProcessInfo.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: sysinfo.IProcessInfo);
+
+        /** ProcessInfo pid. */
+        public pid: number;
+
+        /** ProcessInfo parentPid. */
+        public parentPid: Long;
+
+        /** ProcessInfo name. */
+        public name: string;
+
+        /** ProcessInfo exe. */
+        public exe: string;
+
+        /** ProcessInfo cmd. */
+        public cmd: string[];
+
+        /** ProcessInfo cwd. */
+        public cwd: string;
+
+        /** ProcessInfo kind. */
+        public kind: string;
+
+        /** ProcessInfo status. */
+        public status: string;
+
+        /** ProcessInfo userName. */
+        public userName: string;
+
+        /** ProcessInfo uid. */
+        public uid: Long;
+
+        /** ProcessInfo gid. */
+        public gid: Long;
+
+        /** ProcessInfo sessionId. */
+        public sessionId: Long;
+
+        /** ProcessInfo startTimeEpochSeconds. */
+        public startTimeEpochSeconds: Long;
+
+        /** ProcessInfo runTimeSeconds. */
+        public runTimeSeconds: Long;
+
+        /** ProcessInfo threadCount. */
+        public threadCount: number;
+
+        /** ProcessInfo cpuUsage. */
+        public cpuUsage: number;
+
+        /** ProcessInfo memoryBytes. */
+        public memoryBytes: Long;
+
+        /** ProcessInfo virtualMemoryBytes. */
+        public virtualMemoryBytes: Long;
+
+        /** ProcessInfo accumulatedCpuTimeMs. */
+        public accumulatedCpuTimeMs: Long;
+
+        /** ProcessInfo totalReadBytes. */
+        public totalReadBytes: Long;
+
+        /** ProcessInfo totalWrittenBytes. */
+        public totalWrittenBytes: Long;
+
+        /** ProcessInfo readBytes. */
+        public readBytes: Long;
+
+        /** ProcessInfo writtenBytes. */
+        public writtenBytes: Long;
+
+        /**
+         * Creates a new ProcessInfo instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns ProcessInfo instance
+         */
+        public static create(properties?: sysinfo.IProcessInfo): sysinfo.ProcessInfo;
+
+        /**
+         * Encodes the specified ProcessInfo message. Does not implicitly {@link sysinfo.ProcessInfo.verify|verify} messages.
+         * @param message ProcessInfo message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: sysinfo.IProcessInfo, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified ProcessInfo message, length delimited. Does not implicitly {@link sysinfo.ProcessInfo.verify|verify} messages.
+         * @param message ProcessInfo message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: sysinfo.IProcessInfo, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes a ProcessInfo message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns ProcessInfo
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): sysinfo.ProcessInfo;
+
+        /**
+         * Decodes a ProcessInfo message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns ProcessInfo
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): sysinfo.ProcessInfo;
+
+        /**
+         * Verifies a ProcessInfo message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates a ProcessInfo message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns ProcessInfo
+         */
+        public static fromObject(object: { [k: string]: any }): sysinfo.ProcessInfo;
+
+        /**
+         * Creates a plain object from a ProcessInfo message. Also converts values to other types if specified.
+         * @param message ProcessInfo
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: sysinfo.ProcessInfo, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this ProcessInfo to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for ProcessInfo
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
     /** Properties of a TemperatureSensor. */
     interface ITemperatureSensor {
 
@@ -11057,6 +11298,514 @@ export namespace sysinfo {
 
         /**
          * Gets the default type url for PowerSource
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
+    /** Properties of a RpiThrottling. */
+    interface IRpiThrottling {
+
+        /** RpiThrottling raw */
+        raw?: (number|null);
+
+        /** RpiThrottling underVoltage */
+        underVoltage?: (boolean|null);
+
+        /** RpiThrottling armFrequencyCapped */
+        armFrequencyCapped?: (boolean|null);
+
+        /** RpiThrottling throttled */
+        throttled?: (boolean|null);
+
+        /** RpiThrottling softTempLimit */
+        softTempLimit?: (boolean|null);
+
+        /** RpiThrottling underVoltageSinceBoot */
+        underVoltageSinceBoot?: (boolean|null);
+
+        /** RpiThrottling armFrequencyCappedSinceBoot */
+        armFrequencyCappedSinceBoot?: (boolean|null);
+
+        /** RpiThrottling throttledSinceBoot */
+        throttledSinceBoot?: (boolean|null);
+
+        /** RpiThrottling softTempLimitSinceBoot */
+        softTempLimitSinceBoot?: (boolean|null);
+    }
+
+    /** Represents a RpiThrottling. */
+    class RpiThrottling implements IRpiThrottling {
+
+        /**
+         * Constructs a new RpiThrottling.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: sysinfo.IRpiThrottling);
+
+        /** RpiThrottling raw. */
+        public raw: number;
+
+        /** RpiThrottling underVoltage. */
+        public underVoltage: boolean;
+
+        /** RpiThrottling armFrequencyCapped. */
+        public armFrequencyCapped: boolean;
+
+        /** RpiThrottling throttled. */
+        public throttled: boolean;
+
+        /** RpiThrottling softTempLimit. */
+        public softTempLimit: boolean;
+
+        /** RpiThrottling underVoltageSinceBoot. */
+        public underVoltageSinceBoot: boolean;
+
+        /** RpiThrottling armFrequencyCappedSinceBoot. */
+        public armFrequencyCappedSinceBoot: boolean;
+
+        /** RpiThrottling throttledSinceBoot. */
+        public throttledSinceBoot: boolean;
+
+        /** RpiThrottling softTempLimitSinceBoot. */
+        public softTempLimitSinceBoot: boolean;
+
+        /**
+         * Creates a new RpiThrottling instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns RpiThrottling instance
+         */
+        public static create(properties?: sysinfo.IRpiThrottling): sysinfo.RpiThrottling;
+
+        /**
+         * Encodes the specified RpiThrottling message. Does not implicitly {@link sysinfo.RpiThrottling.verify|verify} messages.
+         * @param message RpiThrottling message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: sysinfo.IRpiThrottling, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified RpiThrottling message, length delimited. Does not implicitly {@link sysinfo.RpiThrottling.verify|verify} messages.
+         * @param message RpiThrottling message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: sysinfo.IRpiThrottling, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes a RpiThrottling message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns RpiThrottling
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): sysinfo.RpiThrottling;
+
+        /**
+         * Decodes a RpiThrottling message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns RpiThrottling
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): sysinfo.RpiThrottling;
+
+        /**
+         * Verifies a RpiThrottling message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates a RpiThrottling message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns RpiThrottling
+         */
+        public static fromObject(object: { [k: string]: any }): sysinfo.RpiThrottling;
+
+        /**
+         * Creates a plain object from a RpiThrottling message. Also converts values to other types if specified.
+         * @param message RpiThrottling
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: sysinfo.RpiThrottling, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this RpiThrottling to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for RpiThrottling
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
+    /** Properties of a CoolingDevice. */
+    interface ICoolingDevice {
+
+        /** CoolingDevice name */
+        name?: (string|null);
+
+        /** CoolingDevice type */
+        type?: (string|null);
+
+        /** CoolingDevice curState */
+        curState?: (Long|null);
+
+        /** CoolingDevice maxState */
+        maxState?: (Long|null);
+    }
+
+    /** Represents a CoolingDevice. */
+    class CoolingDevice implements ICoolingDevice {
+
+        /**
+         * Constructs a new CoolingDevice.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: sysinfo.ICoolingDevice);
+
+        /** CoolingDevice name. */
+        public name: string;
+
+        /** CoolingDevice type. */
+        public type: string;
+
+        /** CoolingDevice curState. */
+        public curState: Long;
+
+        /** CoolingDevice maxState. */
+        public maxState: Long;
+
+        /**
+         * Creates a new CoolingDevice instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns CoolingDevice instance
+         */
+        public static create(properties?: sysinfo.ICoolingDevice): sysinfo.CoolingDevice;
+
+        /**
+         * Encodes the specified CoolingDevice message. Does not implicitly {@link sysinfo.CoolingDevice.verify|verify} messages.
+         * @param message CoolingDevice message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: sysinfo.ICoolingDevice, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified CoolingDevice message, length delimited. Does not implicitly {@link sysinfo.CoolingDevice.verify|verify} messages.
+         * @param message CoolingDevice message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: sysinfo.ICoolingDevice, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes a CoolingDevice message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns CoolingDevice
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): sysinfo.CoolingDevice;
+
+        /**
+         * Decodes a CoolingDevice message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns CoolingDevice
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): sysinfo.CoolingDevice;
+
+        /**
+         * Verifies a CoolingDevice message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates a CoolingDevice message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns CoolingDevice
+         */
+        public static fromObject(object: { [k: string]: any }): sysinfo.CoolingDevice;
+
+        /**
+         * Creates a plain object from a CoolingDevice message. Also converts values to other types if specified.
+         * @param message CoolingDevice
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: sysinfo.CoolingDevice, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this CoolingDevice to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for CoolingDevice
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
+    /** Properties of a CpuFreqPolicy. */
+    interface ICpuFreqPolicy {
+
+        /** CpuFreqPolicy name */
+        name?: (string|null);
+
+        /** CpuFreqPolicy scalingGovernor */
+        scalingGovernor?: (string|null);
+
+        /** CpuFreqPolicy scalingCurFreqKhz */
+        scalingCurFreqKhz?: (Long|null);
+
+        /** CpuFreqPolicy scalingMinFreqKhz */
+        scalingMinFreqKhz?: (Long|null);
+
+        /** CpuFreqPolicy scalingMaxFreqKhz */
+        scalingMaxFreqKhz?: (Long|null);
+
+        /** CpuFreqPolicy cpuinfoMinFreqKhz */
+        cpuinfoMinFreqKhz?: (Long|null);
+
+        /** CpuFreqPolicy cpuinfoMaxFreqKhz */
+        cpuinfoMaxFreqKhz?: (Long|null);
+    }
+
+    /** Represents a CpuFreqPolicy. */
+    class CpuFreqPolicy implements ICpuFreqPolicy {
+
+        /**
+         * Constructs a new CpuFreqPolicy.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: sysinfo.ICpuFreqPolicy);
+
+        /** CpuFreqPolicy name. */
+        public name: string;
+
+        /** CpuFreqPolicy scalingGovernor. */
+        public scalingGovernor: string;
+
+        /** CpuFreqPolicy scalingCurFreqKhz. */
+        public scalingCurFreqKhz: Long;
+
+        /** CpuFreqPolicy scalingMinFreqKhz. */
+        public scalingMinFreqKhz: Long;
+
+        /** CpuFreqPolicy scalingMaxFreqKhz. */
+        public scalingMaxFreqKhz: Long;
+
+        /** CpuFreqPolicy cpuinfoMinFreqKhz. */
+        public cpuinfoMinFreqKhz: Long;
+
+        /** CpuFreqPolicy cpuinfoMaxFreqKhz. */
+        public cpuinfoMaxFreqKhz: Long;
+
+        /**
+         * Creates a new CpuFreqPolicy instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns CpuFreqPolicy instance
+         */
+        public static create(properties?: sysinfo.ICpuFreqPolicy): sysinfo.CpuFreqPolicy;
+
+        /**
+         * Encodes the specified CpuFreqPolicy message. Does not implicitly {@link sysinfo.CpuFreqPolicy.verify|verify} messages.
+         * @param message CpuFreqPolicy message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: sysinfo.ICpuFreqPolicy, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified CpuFreqPolicy message, length delimited. Does not implicitly {@link sysinfo.CpuFreqPolicy.verify|verify} messages.
+         * @param message CpuFreqPolicy message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: sysinfo.ICpuFreqPolicy, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes a CpuFreqPolicy message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns CpuFreqPolicy
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): sysinfo.CpuFreqPolicy;
+
+        /**
+         * Decodes a CpuFreqPolicy message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns CpuFreqPolicy
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): sysinfo.CpuFreqPolicy;
+
+        /**
+         * Verifies a CpuFreqPolicy message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates a CpuFreqPolicy message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns CpuFreqPolicy
+         */
+        public static fromObject(object: { [k: string]: any }): sysinfo.CpuFreqPolicy;
+
+        /**
+         * Creates a plain object from a CpuFreqPolicy message. Also converts values to other types if specified.
+         * @param message CpuFreqPolicy
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: sysinfo.CpuFreqPolicy, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this CpuFreqPolicy to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for CpuFreqPolicy
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
+    /** Properties of a ThrottlingState. */
+    interface IThrottlingState {
+
+        /** ThrottlingState rpi */
+        rpi?: (sysinfo.IRpiThrottling|null);
+
+        /** ThrottlingState thermallyThrottled */
+        thermallyThrottled?: (boolean|null);
+
+        /** ThrottlingState coolingDevices */
+        coolingDevices?: (sysinfo.ICoolingDevice[]|null);
+
+        /** ThrottlingState cpufreqPolicies */
+        cpufreqPolicies?: (sysinfo.ICpuFreqPolicy[]|null);
+    }
+
+    /** Represents a ThrottlingState. */
+    class ThrottlingState implements IThrottlingState {
+
+        /**
+         * Constructs a new ThrottlingState.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: sysinfo.IThrottlingState);
+
+        /** ThrottlingState rpi. */
+        public rpi?: (sysinfo.IRpiThrottling|null);
+
+        /** ThrottlingState thermallyThrottled. */
+        public thermallyThrottled: boolean;
+
+        /** ThrottlingState coolingDevices. */
+        public coolingDevices: sysinfo.ICoolingDevice[];
+
+        /** ThrottlingState cpufreqPolicies. */
+        public cpufreqPolicies: sysinfo.ICpuFreqPolicy[];
+
+        /**
+         * Creates a new ThrottlingState instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns ThrottlingState instance
+         */
+        public static create(properties?: sysinfo.IThrottlingState): sysinfo.ThrottlingState;
+
+        /**
+         * Encodes the specified ThrottlingState message. Does not implicitly {@link sysinfo.ThrottlingState.verify|verify} messages.
+         * @param message ThrottlingState message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: sysinfo.IThrottlingState, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified ThrottlingState message, length delimited. Does not implicitly {@link sysinfo.ThrottlingState.verify|verify} messages.
+         * @param message ThrottlingState message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: sysinfo.IThrottlingState, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes a ThrottlingState message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns ThrottlingState
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): sysinfo.ThrottlingState;
+
+        /**
+         * Decodes a ThrottlingState message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns ThrottlingState
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): sysinfo.ThrottlingState;
+
+        /**
+         * Verifies a ThrottlingState message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates a ThrottlingState message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns ThrottlingState
+         */
+        public static fromObject(object: { [k: string]: any }): sysinfo.ThrottlingState;
+
+        /**
+         * Creates a plain object from a ThrottlingState message. Also converts values to other types if specified.
+         * @param message ThrottlingState
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: sysinfo.ThrottlingState, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this ThrottlingState to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for ThrottlingState
          * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
          * @returns The default type url
          */
