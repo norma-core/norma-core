@@ -29,9 +29,11 @@ message EnvelopeData {
     repeated CPU     cpu      = 11;
     repeated Disk    disks    = 12;
     repeated Network networks = 13;
-    
+    repeated ProcessInfo processes = 15;
+
     repeated TemperatureSensor temperatures = 20;
     repeated PowerSource       power_sources = 21;
+    ThrottlingState            throttling    = 22;
     repeated CellularModem     cellular_modems = 30;
 }
 
@@ -109,6 +111,35 @@ message Network {
     uint64 errors_transmitted  = 25;
 }
 
+message ProcessInfo {
+    uint32 pid        = 1;
+    int64  parent_pid = 2;
+    string name       = 3;
+    string exe        = 4;
+    repeated string cmd = 5;
+    string cwd        = 6;
+    string kind       = 7;
+    string status     = 8;
+    string user_name  = 9;
+
+    int64  uid        = 10;
+    int64  gid        = 11;
+    int64  session_id = 12;
+    uint64 start_time_epoch_seconds = 13;
+    uint64 run_time_seconds         = 14;
+    uint32 thread_count             = 15;
+
+    float  cpu_usage             = 20;
+    uint64 memory_bytes          = 21;
+    uint64 virtual_memory_bytes  = 22;
+    uint64 accumulated_cpu_time_ms = 23;
+
+    uint64 total_read_bytes    = 30;
+    uint64 total_written_bytes = 31;
+    uint64 read_bytes          = 32;
+    uint64 written_bytes       = 33;
+}
+
 message TemperatureSensor {
     string id    = 1;
     string name  = 2;
@@ -127,6 +158,47 @@ message PowerSource {
     string name = 1;
 
     repeated PowerSourceAttribute attributes = 10;
+}
+
+message RpiThrottling {
+    uint32 raw = 1;
+
+    bool under_voltage        = 10;
+    bool arm_frequency_capped = 11;
+    bool throttled            = 12;
+    bool soft_temp_limit      = 13;
+
+    bool under_voltage_since_boot        = 20;
+    bool arm_frequency_capped_since_boot = 21;
+    bool throttled_since_boot            = 22;
+    bool soft_temp_limit_since_boot      = 23;
+}
+
+message CoolingDevice {
+    string name = 1;
+    string type = 2;
+
+    uint64 cur_state = 10;
+    uint64 max_state = 11;
+}
+
+message CpuFreqPolicy {
+    string name             = 1;
+    string scaling_governor = 2;
+
+    uint64 scaling_cur_freq_khz = 10;
+    uint64 scaling_min_freq_khz = 11;
+    uint64 scaling_max_freq_khz = 12;
+    uint64 cpuinfo_min_freq_khz = 13;
+    uint64 cpuinfo_max_freq_khz = 14;
+}
+
+message ThrottlingState {
+    RpiThrottling rpi                 = 1;
+    bool          thermally_throttled = 2;
+
+    repeated CoolingDevice cooling_devices  = 10;
+    repeated CpuFreqPolicy cpufreq_policies = 11;
 }
 
 message CellularAttribute {
