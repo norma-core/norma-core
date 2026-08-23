@@ -75,6 +75,7 @@ Layout controls placement only. It does not determine ownership or conflict prio
 ### Rules
 
 - Module directories use kebab-case. `order` is optional and defaults to zero; ordering is `order`, module ID, then view key.
+- Every `live.ts` must default-export `live(...)` or `customLive(...)`; the contract test discovers and verifies all current and future adapters.
 - Do not edit a registration list or teach `HomePage` about concrete modules, frame fields, layouts, or claims.
 - `live()` derives its frame claim. A custom adapter declares every presented field; it must not name competing module IDs. On overlap, the adapter with more claims wins, then lower `order`, then module ID.
 - View keys are non-empty and unique within a module. Use `queueId` for repeated driver entries.

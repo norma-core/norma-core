@@ -1,4 +1,5 @@
 import type { Frame } from '@/api/frame-parser';
+import { assertLiveModule } from './define-live-module';
 import type {
   LiveContent,
   LiveLayout,
@@ -156,7 +157,7 @@ function createCatalog(modules: readonly RegisteredLiveModule[]): LiveCatalog {
   };
 }
 
-const liveModuleEntries = import.meta.glob<{ default: LiveModule }>(
+const liveModuleEntries = import.meta.glob<{ default: unknown }>(
   '../modules/*/live.ts',
   { eager: true },
 );
@@ -170,10 +171,14 @@ function moduleIdFromPath(path: string): string {
 }
 
 const liveCatalog = createCatalog(
-  Object.entries(liveModuleEntries).map(([path, entry]) => ({
-    ...entry.default,
-    id: moduleIdFromPath(path),
-  })),
+  Object.entries(liveModuleEntries).map(([path, entry]) => {
+    assertLiveModule(entry.default, path);
+
+    return {
+      ...entry.default,
+      id: moduleIdFromPath(path),
+    };
+  }),
 );
 
 export function resolveLiveModules(frame: Frame | null): LivePlan {

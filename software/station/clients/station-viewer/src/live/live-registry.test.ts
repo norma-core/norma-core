@@ -13,6 +13,14 @@ function entry<Data>(queueId: string, data: Data): FrameEntry<Data> {
 }
 
 describe('live presentation composition', () => {
+  it('lets every discovered module tolerate a partial frame', () => {
+    const plan = resolveLiveModules({} as Frame);
+
+    expect(plan.errors).toEqual([]);
+    expect(plan.views).toEqual([]);
+    expect(plan.isEmpty).toBe(true);
+  });
+
   it('discovers cameras as a feature alongside unrelated cards', () => {
     const frame = {
       videoQueues: [entry('camera/front', {})],

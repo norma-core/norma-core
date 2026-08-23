@@ -4,6 +4,8 @@ import type { Frame, FrameEntry } from '@/api/frame-parser';
 
 type LazyViewLoader<Props extends object> = () => Promise<{ default: ComponentType<Props> }>;
 
+const LIVE_MODULE_BRAND: unique symbol = Symbol('live-module');
+
 export type LiveLayout = 'card' | 'section' | 'feature' | 'screen';
 
 export const LIVE_TRAIT_REALTIME = 'realtime';
@@ -20,6 +22,7 @@ export interface LiveContent {
 }
 
 export interface LiveModule {
+  readonly [LIVE_MODULE_BRAND]: true;
   label: string;
   order: number;
   layout: LiveLayout;
@@ -70,6 +73,7 @@ function defineLiveModule<Props extends object>(
   const TypedView = View as ComponentType<Props>;
 
   return {
+    [LIVE_MODULE_BRAND]: true,
     label: definition.label,
     order: definition.order ?? 0,
     layout: definition.layout ?? 'section',
@@ -80,6 +84,21 @@ function defineLiveModule<Props extends object>(
       content: createElement<Props>(TypedView, props),
     })),
   };
+}
+
+export function assertLiveModule(
+  value: unknown,
+  source: string,
+): asserts value is LiveModule {
+  if (
+    typeof value !== 'object'
+    || value === null
+    || (value as Record<PropertyKey, unknown>)[LIVE_MODULE_BRAND] !== true
+  ) {
+    throw new Error(
+      `${source} must default-export a live module created by live() or customLive().`,
+    );
+  }
 }
 
 export function customLive<Props extends object>(
