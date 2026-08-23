@@ -71,7 +71,12 @@ const CameraViewer = memo(function CameraViewer({
     }
   }, []);
 
-  const updateImage = useCallback((frame: LiveCameraFrame) => {
+  const updateImage = useCallback((frame: LiveCameraFrame | null) => {
+    if (!frame) {
+      clearImage();
+      return;
+    }
+
     if (!frame.data || frame.data.length === 0) {
       return;
     }
@@ -132,7 +137,7 @@ const CameraViewer = memo(function CameraViewer({
     };
 
     img.src = url;
-  }, []);
+  }, [clearImage]);
 
   useEffect(() => {
     clearImage();

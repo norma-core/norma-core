@@ -105,6 +105,7 @@ const VescPwmOutputControlPanel = memo(function VescPwmOutputControlPanel({
   const [selectedOutputId, setSelectedOutputId] = useState('');
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [powerState, setPowerState] = useState<VictronState>(EMPTY_STATE);
+  const [cameraControlSources, setCameraControlSources] = useState<FrameEntry<usbvideo.IRxEnvelope>[]>([]);
 
   const selectedBoard = boards.find((board) => board.key === selectedBoardKey)
     ?? boards[0]
@@ -162,6 +163,11 @@ const VescPwmOutputControlPanel = memo(function VescPwmOutputControlPanel({
     setPowerState((current) => applyEnvelope(reset ? EMPTY_STATE : current, envelope));
   }, [powerSources]);
 
+  useEffect(() => {
+    if (videoSources.length === 0) return;
+    setCameraControlSources(videoSources);
+  }, [videoSources]);
+
   const openDetails = useCallback(() => {
     controlSession.actions.stop();
     setDetailsOpen(true);
@@ -195,6 +201,7 @@ const VescPwmOutputControlPanel = memo(function VescPwmOutputControlPanel({
       <div className="grid h-full grid-rows-[minmax(15rem,1fr)_minmax(20rem,48%)] lg:grid-cols-[minmax(0,1fr)_25rem] lg:grid-rows-1 [@media(max-width:1023px)_and_(orientation:landscape)]:block">
         <RoverCameraViewport
           videoSources={videoSources}
+          controlVideoSources={cameraControlSources}
           status={{
             ready,
             hasFault,

@@ -50,6 +50,7 @@ function HistoryPage() {
   const vescTrampaCount = parsedFrame?.vescTrampa ? 1 : 0;
   const vescTrampaRxCount = parsedFrame?.vescTrampaRx ? 1 : 0;
   const vescTrampaTxCount = parsedFrame?.vescTrampaTx ? 1 : 0;
+  const usbVideoTxCount = parsedFrame?.usbVideoTx ? 1 : 0;
   const mirroringCount = parsedFrame?.mirroring ? 1 : 0;
   const sysinfoCount = parsedFrame?.sysinfo ? 1 : 0;
   const arduinoNiclaSenseEnvCount = parsedFrame?.arduinoNiclaSenseEnv ? 1 : 0;
@@ -62,7 +63,8 @@ function HistoryPage() {
   const vescTrampaIndex = st3215Count;
   const vescTrampaRxIndex = vescTrampaIndex + vescTrampaCount;
   const vescTrampaTxIndex = vescTrampaRxIndex + vescTrampaRxCount;
-  const videoQueuesIndex = vescTrampaTxIndex + vescTrampaTxCount;
+  const usbVideoTxIndex = vescTrampaTxIndex + vescTrampaTxCount;
+  const videoQueuesIndex = usbVideoTxIndex + usbVideoTxCount;
   const hikmicroThermalIndex = videoQueuesIndex + videoQueueCount;
   const mirroringIndex = hikmicroThermalIndex + hikmicroThermalCount;
   const sysinfoIndex = mirroringIndex + mirroringCount;
@@ -406,6 +408,21 @@ function HistoryPage() {
                       index={vescTrampaTxIndex}
                       dataQueueType="vesc-trampa-tx"
                       dataQueueId={parsedFrame.vescTrampaTx.queueId}
+                    />
+                  )}
+                  {parsedFrame.usbVideoTx && (
+                    <HistoryElement
+                      element={{
+                        queueId: parsedFrame.usbVideoTx.queueId,
+                        entryId: parsedFrame.usbVideoTx.ptr,
+                        data: parsedFrame.usbVideoTx.data,
+                        rawData: parsedFrame.usbVideoTx.rawData ?? null,
+                        type: getQueueType(parsedFrame.usbVideoTx.queueType),
+                        queueType: parsedFrame.usbVideoTx.queueType,
+                      }}
+                      index={usbVideoTxIndex}
+                      dataQueueType="usbvideo-tx"
+                      dataQueueId={parsedFrame.usbVideoTx.queueId}
                     />
                   )}
                   {parsedFrame.videoQueues?.map((video, idx) => (
