@@ -2,12 +2,19 @@ import { useEffect, useRef } from 'react';
 import Long from 'long';
 import webSocketManager from '@/api/websocket';
 import { getQueueType } from '@/api/queue-utils';
-import { formatPtrBytes } from '@/utils/format-bytes';
 import DatasetExportHelper from '@/components/history/DatasetExportHelper';
 import HistoryElement from '@/components/history/HistoryElement';
 import Timeline from '@/components/Timeline';
 import TimelineControls from '@/components/TimelineControls';
-import { useFrameData, useTimelineState, useKeyboardNavigation, useStartupMarkers, useInferenceTags, TimelineControlsRef } from '@/hooks';
+import {
+  useFrameData,
+  useInferenceTags,
+  useKeyboardNavigation,
+  useStartupMarkers,
+  useTimelineState,
+  type TimelineControlsRef,
+} from '@/hooks';
+import { formatPtrBytes } from '@/utils/format-bytes';
 
 export const MAX_INITIAL_ENTRIES = 500000;
 

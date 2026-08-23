@@ -17,11 +17,13 @@ import {
 } from './dataset-export';
 import { hasDatasetData } from './dataset-export-preflight';
 
-interface DatasetExportHelperProps {
-  tags: TagMarker[];
-}
-
 type CopyState = 'idle' | 'copied' | 'error';
+type AvailabilityStatus = 'checking' | 'available' | 'unavailable' | 'error';
+
+interface AvailabilityResult {
+  key: string;
+  status: AvailabilityStatus;
+}
 
 const INPUT_CLASSES = 'min-h-11 w-full rounded border border-border-subtle bg-surface-primary px-3 py-2 text-sm text-text-primary outline-none transition-colors placeholder:text-text-muted focus:border-accent-data disabled:cursor-not-allowed disabled:text-text-muted';
 const LABEL_CLASSES = 'mb-1.5 block text-xs font-semibold uppercase tracking-wide text-text-label';
@@ -36,6 +38,10 @@ function parseWholeNumber(value: string): number {
 
 function defaultRobotAddress(): string {
   return window.location.hostname;
+}
+
+interface DatasetExportHelperProps {
+  tags: TagMarker[];
 }
 
 function DatasetExportHelper({ tags }: DatasetExportHelperProps) {
@@ -55,10 +61,11 @@ function DatasetExportHelper({ tags }: DatasetExportHelperProps) {
   const [episodeDuration, setEpisodeDuration] = useState('45');
   const [episodeMinCommands, setEpisodeMinCommands] = useState('100');
   const [copyState, setCopyState] = useState<CopyState>('idle');
-  const [availabilityWarning, setAvailabilityWarning] = useState<string | null>(null);
+  const [availability, setAvailability] = useState<AvailabilityResult | null>(null);
   const [isOpen, setIsOpen] = useState(false);
   const dialogRef = useRef<HTMLDialogElement>(null);
   const copyResetRef = useRef<number | null>(null);
+  const isMountedRef = useRef(false);
 
   useEffect(() => {
     setFromTagId((current) => {
@@ -73,10 +80,14 @@ function DatasetExportHelper({ tags }: DatasetExportHelperProps) {
     });
   }, [selectableTags, tagsById]);
 
-  useEffect(() => () => {
-    if (copyResetRef.current !== null) {
-      window.clearTimeout(copyResetRef.current);
-    }
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+      if (copyResetRef.current !== null) {
+        window.clearTimeout(copyResetRef.current);
+      }
+    };
   }, []);
 
   useEffect(() => {
@@ -117,34 +128,60 @@ function DatasetExportHelper({ tags }: DatasetExportHelperProps) {
     : '';
   const availabilityFrom = fromTag?.frame ?? null;
   const availabilityTo = toTag?.frame ?? null;
+  const requestedQueue = queue.trim();
+  const availabilityKey = availabilityFrom !== null
+    && availabilityTo !== null
+    && availabilityFrom < availabilityTo
+    && requestedQueue.length > 0
+    ? JSON.stringify([requestedQueue, availabilityFrom, availabilityTo])
+    : null;
+  const availabilityStatus = availabilityKey !== null && availability?.key === availabilityKey
+    ? availability.status
+    : 'checking';
+  const isAvailabilityPending = isOpen
+    && availabilityKey !== null
+    && availabilityStatus === 'checking';
+  const commandReadyForDisplay = command.length > 0 && !isAvailabilityPending;
+  const availabilityWarning = availabilityStatus === 'unavailable'
+    ? `Queue ${requestedQueue} has no data in the selected range.`
+    : availabilityStatus === 'error'
+    ? 'Could not validate queue data. The command can still be copied.'
+    : null;
+  const commandPreview = command.length === 0
+    ? 'Complete the required fields to generate a command.'
+    : isAvailabilityPending
+    ? 'Waiting for queue validation...'
+    : command;
 
   useEffect(() => {
-    setAvailabilityWarning(null);
-
     if (
       !isOpen
+      || availabilityKey === null
       || availabilityFrom === null
       || availabilityTo === null
-      || availabilityFrom >= availabilityTo
-      || queue.trim().length === 0
     ) {
+      setAvailability(null);
       return;
     }
 
     let isCurrent = true;
+    setAvailability({ key: availabilityKey, status: 'checking' });
 
     void hasDatasetData(
       webSocketManager.normFs,
-      queue,
+      requestedQueue,
       availabilityFrom,
       availabilityTo,
     ).then((hasData) => {
-      if (isCurrent && !hasData) {
-        setAvailabilityWarning(`Queue ${queue.trim()} has no data in the selected range.`);
+      if (isCurrent) {
+        setAvailability({
+          key: availabilityKey,
+          status: hasData ? 'available' : 'unavailable',
+        });
       }
     }).catch(() => {
       if (isCurrent) {
-        setAvailabilityWarning('Could not validate queue data. The command can still be copied.');
+        setAvailability({ key: availabilityKey, status: 'error' });
       }
     });
 
@@ -152,19 +189,22 @@ function DatasetExportHelper({ tags }: DatasetExportHelperProps) {
       isCurrent = false;
     };
   }, [
+    availabilityKey,
     availabilityFrom,
     availabilityTo,
     isOpen,
-    queue,
+    requestedQueue,
   ]);
 
   const handleCopy = async () => {
-    if (!command) return;
+    if (!commandReadyForDisplay) return;
 
     try {
       await copyToClipboard(command);
+      if (!isMountedRef.current) return;
       setCopyState('copied');
     } catch (error) {
+      if (!isMountedRef.current) return;
       console.error('Failed to copy dataset-generator command:', error);
       setCopyState('error');
     }
@@ -369,12 +409,18 @@ function DatasetExportHelper({ tags }: DatasetExportHelperProps) {
                 </p>
               )}
 
+              {isAvailabilityPending && (
+                <p role="status" className="mt-4 text-xs font-semibold text-accent-info">
+                  Checking queue data...
+                </p>
+              )}
+
               <div className="mt-4">
                 <div className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-text-label">
                   Command preview
                 </div>
                 <pre className="min-h-28 max-h-56 overflow-auto whitespace-pre rounded border border-border-subtle bg-surface-primary p-3 text-xs leading-5 text-text-secondary">
-                  <code>{command || 'Complete the required fields to generate a command.'}</code>
+                  <code>{commandPreview}</code>
                 </pre>
               </div>
             </div>
@@ -390,7 +436,7 @@ function DatasetExportHelper({ tags }: DatasetExportHelperProps) {
               <button
                 type="button"
                 onClick={() => void handleCopy()}
-                disabled={!command}
+                disabled={!commandReadyForDisplay}
                 className="inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded border border-accent-data/50 bg-accent-data/10 px-4 py-2 text-sm font-semibold text-accent-data transition-colors hover:bg-accent-data/20 disabled:cursor-not-allowed disabled:border-border-subtle disabled:bg-surface-elevated disabled:text-text-muted"
               >
                 {copyState === 'copied' ? (
