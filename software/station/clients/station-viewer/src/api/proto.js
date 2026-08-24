@@ -41776,6 +41776,7 @@ export const victron_smartsolar_mppt = $root.victron_smartsolar_mppt = (() => {
          * @property {victron_smartsolar_mppt.IVictronDevice|null} [device] RxEnvelope device
          * @property {Uint8Array|null} [data] RxEnvelope data
          * @property {Uint8Array|null} [hexFrame] RxEnvelope hexFrame
+         * @property {Array.<Uint8Array>|null} [hexFrames] RxEnvelope hexFrames
          * @property {string|null} [error] RxEnvelope error
          */
 
@@ -41788,6 +41789,7 @@ export const victron_smartsolar_mppt = $root.victron_smartsolar_mppt = (() => {
          * @param {victron_smartsolar_mppt.IRxEnvelope=} [properties] Properties to set
          */
         function RxEnvelope(properties) {
+            this.hexFrames = [];
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
                     if (properties[keys[i]] != null && keys[i] !== "__proto__")
@@ -41851,6 +41853,14 @@ export const victron_smartsolar_mppt = $root.victron_smartsolar_mppt = (() => {
         RxEnvelope.prototype.hexFrame = $util.newBuffer([]);
 
         /**
+         * RxEnvelope hexFrames.
+         * @member {Array.<Uint8Array>} hexFrames
+         * @memberof victron_smartsolar_mppt.RxEnvelope
+         * @instance
+         */
+        RxEnvelope.prototype.hexFrames = $util.emptyArray;
+
+        /**
          * RxEnvelope error.
          * @member {string} error
          * @memberof victron_smartsolar_mppt.RxEnvelope
@@ -41896,6 +41906,9 @@ export const victron_smartsolar_mppt = $root.victron_smartsolar_mppt = (() => {
                 writer.uint32(/* id 20, wireType 2 =*/162).bytes(message.data);
             if (message.hexFrame != null && Object.hasOwnProperty.call(message, "hexFrame"))
                 writer.uint32(/* id 21, wireType 2 =*/170).bytes(message.hexFrame);
+            if (message.hexFrames != null && message.hexFrames.length)
+                for (let i = 0; i < message.hexFrames.length; ++i)
+                    writer.uint32(/* id 22, wireType 2 =*/178).bytes(message.hexFrames[i]);
             if (message.error != null && Object.hasOwnProperty.call(message, "error"))
                 writer.uint32(/* id 50, wireType 2 =*/402).string(message.error);
             return writer;
@@ -41964,6 +41977,12 @@ export const victron_smartsolar_mppt = $root.victron_smartsolar_mppt = (() => {
                     }
                 case 21: {
                         message.hexFrame = reader.bytes();
+                        break;
+                    }
+                case 22: {
+                        if (!(message.hexFrames && message.hexFrames.length))
+                            message.hexFrames = [];
+                        message.hexFrames.push(reader.bytes());
                         break;
                     }
                 case 50: {
@@ -42041,6 +42060,13 @@ export const victron_smartsolar_mppt = $root.victron_smartsolar_mppt = (() => {
             if (message.hexFrame != null && message.hasOwnProperty("hexFrame"))
                 if (!(message.hexFrame && typeof message.hexFrame.length === "number" || $util.isString(message.hexFrame)))
                     return "hexFrame: buffer expected";
+            if (message.hexFrames != null && message.hasOwnProperty("hexFrames")) {
+                if (!Array.isArray(message.hexFrames))
+                    return "hexFrames: array expected";
+                for (let i = 0; i < message.hexFrames.length; ++i)
+                    if (!(message.hexFrames[i] && typeof message.hexFrames[i].length === "number" || $util.isString(message.hexFrames[i])))
+                        return "hexFrames: buffer[] expected";
+            }
             if (message.error != null && message.hasOwnProperty("error"))
                 if (!$util.isString(message.error))
                     return "error: string expected";
@@ -42137,6 +42163,16 @@ export const victron_smartsolar_mppt = $root.victron_smartsolar_mppt = (() => {
                     $util.base64.decode(object.hexFrame, message.hexFrame = $util.newBuffer($util.base64.length(object.hexFrame)), 0);
                 else if (object.hexFrame.length >= 0)
                     message.hexFrame = object.hexFrame;
+            if (object.hexFrames) {
+                if (!Array.isArray(object.hexFrames))
+                    throw TypeError(".victron_smartsolar_mppt.RxEnvelope.hexFrames: array expected");
+                message.hexFrames = [];
+                for (let i = 0; i < object.hexFrames.length; ++i)
+                    if (typeof object.hexFrames[i] === "string")
+                        $util.base64.decode(object.hexFrames[i], message.hexFrames[i] = $util.newBuffer($util.base64.length(object.hexFrames[i])), 0);
+                    else if (object.hexFrames[i].length >= 0)
+                        message.hexFrames[i] = object.hexFrames[i];
+            }
             if (object.error != null)
                 message.error = String(object.error);
             return message;
@@ -42155,6 +42191,8 @@ export const victron_smartsolar_mppt = $root.victron_smartsolar_mppt = (() => {
             if (!options)
                 options = {};
             let object = {};
+            if (options.arrays || options.defaults)
+                object.hexFrames = [];
             if (options.defaults) {
                 if ($util.Long) {
                     let long = new $util.Long(0, 0, true);
@@ -42212,6 +42250,11 @@ export const victron_smartsolar_mppt = $root.victron_smartsolar_mppt = (() => {
                 object.data = options.bytes === String ? $util.base64.encode(message.data, 0, message.data.length) : options.bytes === Array ? Array.prototype.slice.call(message.data) : message.data;
             if (message.hexFrame != null && message.hasOwnProperty("hexFrame"))
                 object.hexFrame = options.bytes === String ? $util.base64.encode(message.hexFrame, 0, message.hexFrame.length) : options.bytes === Array ? Array.prototype.slice.call(message.hexFrame) : message.hexFrame;
+            if (message.hexFrames && message.hexFrames.length) {
+                object.hexFrames = [];
+                for (let j = 0; j < message.hexFrames.length; ++j)
+                    object.hexFrames[j] = options.bytes === String ? $util.base64.encode(message.hexFrames[j], 0, message.hexFrames[j].length) : options.bytes === Array ? Array.prototype.slice.call(message.hexFrames[j]) : message.hexFrames[j];
+            }
             if (message.error != null && message.hasOwnProperty("error"))
                 object.error = message.error;
             return object;

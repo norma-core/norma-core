@@ -40,5 +40,7 @@ message RxEnvelope {
     // Raw VE.Direct HEX response frame on HEX_FRAME; empty otherwise.
     bytes hex_frame = 21;
 
+    repeated bytes hex_frames = 22;
+
     string error = 50;
 }
