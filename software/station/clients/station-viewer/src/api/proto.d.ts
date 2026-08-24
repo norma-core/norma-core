@@ -14371,6 +14371,9 @@ export namespace victron_smartsolar_mppt {
         /** RxEnvelope hexFrame */
         hexFrame?: (Uint8Array|null);
 
+        /** RxEnvelope hexFrames */
+        hexFrames?: (Uint8Array[]|null);
+
         /** RxEnvelope error */
         error?: (string|null);
     }
@@ -14404,6 +14407,9 @@ export namespace victron_smartsolar_mppt {
 
         /** RxEnvelope hexFrame. */
         public hexFrame: Uint8Array;
+
+        /** RxEnvelope hexFrames. */
+        public hexFrames: Uint8Array[];
 
         /** RxEnvelope error. */
         public error: string;

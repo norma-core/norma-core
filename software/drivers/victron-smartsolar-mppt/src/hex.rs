@@ -1,4 +1,6 @@
 pub const CMD_GET: u8 = 7;
+pub const RSP_GET: u8 = 7;
+pub const RSP_ASYNC: u8 = 0xA;
 
 const HEX: &[u8; 16] = b"0123456789ABCDEF";
 
@@ -39,6 +41,21 @@ fn hex_val(c: u8) -> Option<u8> {
         b'a'..=b'f' => Some(c - b'a' + 10),
         _ => None,
     }
+}
+
+pub fn frame_header(frame: &[u8]) -> Option<(u8, u16, u8)> {
+    let body = frame.strip_prefix(b":")?;
+    if body.len() < 9 {
+        return None;
+    }
+    let response = hex_val(body[0])?;
+    let mut bytes = [0u8; 3];
+    for (i, slot) in bytes.iter_mut().enumerate() {
+        let hi = hex_val(body[1 + i * 2])?;
+        let lo = hex_val(body[2 + i * 2])?;
+        *slot = (hi << 4) | lo;
+    }
+    Some((response, u16::from_le_bytes([bytes[0], bytes[1]]), bytes[2]))
 }
 
 pub fn validate_frame(frame: &[u8]) -> bool {
