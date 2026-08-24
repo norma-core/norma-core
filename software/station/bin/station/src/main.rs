@@ -1,6 +1,6 @@
 use crate::queues::MainQueue;
-use clap::Parser;
-use normfs::{CloudSettings, NormFS, NormFsSettings, QueueConfig, QueueSettings};
+use clap::{Parser, ValueEnum};
+use normfs::{CloudSettings, NormFS, NormFsSettings, PersistenceMode, QueueConfig, QueueSettings};
 use normfs_types::{CompressionType, EncryptionType};
 use parking_lot::Mutex;
 use station_iface::StationEngine;
@@ -39,6 +39,22 @@ mod web;
 
 const VERSION: &str = concat!(env!("CARGO_PKG_VERSION"), " (", env!("GIT_HASH"), ")");
 
+#[derive(Clone, Copy, Debug, ValueEnum)]
+#[clap(rename_all = "kebab-case")]
+enum NormFsPersistenceMode {
+    Durable,
+    MemoryOnly,
+}
+
+impl From<NormFsPersistenceMode> for PersistenceMode {
+    fn from(mode: NormFsPersistenceMode) -> Self {
+        match mode {
+            NormFsPersistenceMode::Durable => Self::Durable,
+            NormFsPersistenceMode::MemoryOnly => Self::MemoryOnly,
+        }
+    }
+}
+
 /// NormaCore.Dev station: physical operations platform
 #[derive(Parser, Debug)]
 #[command(name = "NormaCore.Dev station", author, version = VERSION, about, long_about = None)]
@@ -58,6 +74,10 @@ struct Args {
     /// Base folder for normfs storage
     #[arg(long, default_value = "./station_data")]
     normfs_base_folder: PathBuf,
+
+    /// NormFS persistence mode: durable writes WAL/store files; memory-only keeps queue data in RAM and periodically checkpoints queue pointers
+    #[arg(long, value_enum, default_value = "durable")]
+    normfs_persistence_mode: NormFsPersistenceMode,
 
     /// Path to configuration file
     #[arg(short, long, default_value = "station.yaml")]
@@ -170,7 +190,7 @@ impl Station {
 
         let normfs = Self::initialize_normfs(args, &config).await?;
 
-        log::info!("Instance ID: {}", normfs.get_instance_id());
+        log::info!("Station ID: {}", normfs.get_instance_id());
 
         Ok(Station {
             normfs,
@@ -192,11 +212,17 @@ impl Station {
         args: &Args,
         config: &station_iface::config::Config,
     ) -> Result<Arc<NormFS>, Box<dyn std::error::Error>> {
-        validate_normfs_file_size(args)?;
+        if matches!(args.normfs_persistence_mode, NormFsPersistenceMode::Durable) {
+            validate_normfs_file_size(args)?;
+        }
 
         let mut settings = NormFsSettings {
-            max_disk_usage_per_queue: Some(args.max_queue_disk_size),
+            max_disk_usage_per_queue: match args.normfs_persistence_mode {
+                NormFsPersistenceMode::Durable => Some(args.max_queue_disk_size),
+                NormFsPersistenceMode::MemoryOnly => None,
+            },
             max_memory_usage: args.max_memory_usage,
+            persistence_mode: args.normfs_persistence_mode.into(),
             ..Default::default()
         };
         settings.wal_settings.max_file_size = args.normfs_file_size;
@@ -237,7 +263,15 @@ impl Station {
         )?;
 
         // Configure Cloud settings if provided
-        if let Some(cloud_config) = &config.cloud_offload {
+        if matches!(
+            args.normfs_persistence_mode,
+            NormFsPersistenceMode::MemoryOnly
+        ) && config.cloud_offload.is_some()
+        {
+            log::warn!(
+                "Cloud offload config ignored because NormFS persistence mode is memory-only"
+            );
+        } else if let Some(cloud_config) = &config.cloud_offload {
             let get_or_env = |config_val: &str, env_var: &str| -> String {
                 if config_val.is_empty() {
                     std::env::var(env_var).unwrap_or_default()
@@ -746,7 +780,7 @@ impl Station {
             log::info!("OV5647 driver stopped");
         }
 
-        log::info!("Closing NormFS (writing WAL)...");
+        log::info!("Closing NormFS...");
 
         self.normfs.close().await?;
         log::info!("NormFS closed successfully");
@@ -774,6 +808,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     log::info!("Max queue disk size: {} bytes", args.max_queue_disk_size);
     log::info!("NormFS file size: {} bytes", args.normfs_file_size);
     log::info!("NormFS base folder: {:?}", args.normfs_base_folder);
+    log::info!(
+        "NormFS persistence mode: {:?}",
+        args.normfs_persistence_mode
+    );
     log::info!("Configuration file: {:?}", args.config);
 
     let mut station = Station::new(&args).await?;
