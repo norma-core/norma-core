@@ -41,7 +41,7 @@ enum QueueDataType {
     QDT_PWM_OUTPUT_TX = 55; // pwm_output.TxEnvelope
     QDT_PWM_OUTPUT_RX = 56; // pwm_output.RxEnvelope
 
-    QDT_KERNEL_LOG_RX = 57; // kernel_log.RxEnvelope
+    QDT_DMESG_RX = 57; // dmesg.RxEnvelope
 }
 
 enum StationCommandType {

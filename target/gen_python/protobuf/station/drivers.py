@@ -36,7 +36,7 @@ class QueueDataType(enum.IntEnum):
     QDT_VICTRON_SMARTSOLAR_MPPT_RX = 54
     QDT_PWM_OUTPUT_TX = 55
     QDT_PWM_OUTPUT_RX = 56
-    QDT_KERNEL_LOG_RX = 57
+    QDT_DMESG_RX = 57
 
 class StationCommandType(enum.IntEnum):
     STC_ST3215_COMMAND = 0

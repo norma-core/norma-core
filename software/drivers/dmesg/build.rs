@@ -8,11 +8,11 @@ fn main() -> Result<()> {
         .out_dir(&out_dir)
         .bytes(["."])
         .compile_protos(
-            &["../../../protobufs/drivers/kernel-log/kernel_log.proto"],
+            &["../../../protobufs/drivers/dmesg/dmesg.proto"],
             &["../../../protobufs/drivers"],
         )?;
 
-    println!("cargo:rerun-if-changed=../../../protobufs/drivers/kernel-log/kernel_log.proto");
+    println!("cargo:rerun-if-changed=../../../protobufs/drivers/dmesg/dmesg.proto");
 
     Ok(())
 }

@@ -259,7 +259,7 @@ impl Station {
                     },
                 ),
                 (
-                    "kernel/*".to_string(),
+                    "dmesg/*".to_string(),
                     QueueConfig {
                         compression_type: CompressionType::Zstd,
                         enable_fsync: false,
@@ -540,16 +540,15 @@ impl Station {
             }
         }
 
-        if let Some(kernel_log_config) = &self.config.drivers.kernel_log {
-            if kernel_log_config.enabled {
+        if let Some(dmesg_config) = &self.config.drivers.dmesg {
+            if dmesg_config.enabled {
                 if let Err(e) =
-                    kernel_log::start_kernel_log_driver(self.normfs.clone(), self.engine.clone())
-                        .await
+                    dmesg::start_dmesg_driver(self.normfs.clone(), self.engine.clone()).await
                 {
-                    log::error!("Failed to start kernel log driver: {}", e);
+                    log::error!("Failed to start dmesg driver: {}", e);
                 }
             } else {
-                log::info!("Kernel log driver disabled by configuration");
+                log::info!("dmesg driver disabled by configuration");
             }
         }
 

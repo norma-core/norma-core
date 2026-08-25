@@ -1,5 +1,4 @@
-use crate::kernel_log_proto::{KernelLogSignalType, KernelMessage, RxEnvelope};
-use crate::matcher::classify;
+use crate::dmesg_proto::{DmesgMessage, DmesgSignalType, RxEnvelope};
 use crate::parser::parse_record;
 use crate::reader::{KMSG_PATH, KmsgSource, RECORD_BUFFER_SIZE, ReadOutcome, SUPPORTED};
 use bytes::Bytes;
@@ -12,44 +11,44 @@ use std::sync::Arc;
 use std::thread::{self, JoinHandle};
 use std::time::{Duration, Instant};
 
-pub const QUEUE_ID: &str = "kernel/rx";
+pub const QUEUE_ID: &str = "dmesg/rx";
 
 const POLL_INTERVAL: Duration = Duration::from_millis(200);
 const RETRY_INTERVAL: Duration = Duration::from_secs(60);
 const MAX_MESSAGES_PER_ENVELOPE: usize = 512;
 const MAX_MESSAGES_PER_SECOND: u32 = 200;
 
-pub struct KernelLogDriver {
+pub struct DmesgDriver {
     _worker: JoinHandle<()>,
 }
 
-impl KernelLogDriver {
+impl DmesgDriver {
     pub async fn new<T: StationEngine>(
         normfs: Arc<NormFS>,
         station_engine: Arc<T>,
     ) -> Result<Self, Box<dyn std::error::Error>> {
         let queue_id = normfs.resolve(QUEUE_ID);
         normfs.ensure_queue_exists_for_write(&queue_id).await?;
-        station_engine.register_queue(&queue_id, QueueDataType::QdtKernelLogRx, vec![]);
+        station_engine.register_queue(&queue_id, QueueDataType::QdtDmesgRx, vec![]);
 
         if SUPPORTED {
-            info!("kernel-log watching {}", KMSG_PATH);
+            info!("dmesg watching {}", KMSG_PATH);
         }
 
         let publisher = Publisher { normfs, queue_id };
         let worker = thread::Builder::new()
-            .name("kernel-log".to_string())
+            .name("dmesg".to_string())
             .spawn(move || run(publisher))?;
 
         Ok(Self { _worker: worker })
     }
 }
 
-pub async fn start_kernel_log_driver<T: StationEngine>(
+pub async fn start_dmesg_driver<T: StationEngine>(
     normfs: Arc<NormFS>,
     station_engine: Arc<T>,
-) -> Result<Arc<KernelLogDriver>, Box<dyn std::error::Error>> {
-    let driver = KernelLogDriver::new(normfs, station_engine).await?;
+) -> Result<Arc<DmesgDriver>, Box<dyn std::error::Error>> {
+    let driver = DmesgDriver::new(normfs, station_engine).await?;
     Ok(Arc::new(driver))
 }
 
@@ -63,34 +62,34 @@ impl Publisher {
         let mut buffer = Vec::with_capacity(envelope.encoded_len());
 
         if let Err(err) = envelope.encode(&mut buffer) {
-            error!("Failed to encode kernel log envelope: {}", err);
+            error!("Failed to encode dmesg envelope: {}", err);
             return;
         }
 
         if let Err(err) = self.normfs.enqueue(&self.queue_id, Bytes::from(buffer)) {
-            error!("Failed to enqueue kernel log envelope: {}", err);
+            error!("Failed to enqueue dmesg envelope: {}", err);
         }
     }
 
-    fn publish_signal(&self, signal_type: KernelLogSignalType) {
+    fn publish_signal(&self, signal_type: DmesgSignalType) {
         self.publish(new_envelope(signal_type));
     }
 
-    fn publish_error(&self, signal_type: KernelLogSignalType, error: String) {
+    fn publish_error(&self, signal_type: DmesgSignalType, error: String) {
         let mut envelope = new_envelope(signal_type);
         envelope.error = error;
         self.publish(envelope);
     }
 
-    fn publish_messages(&self, messages: Vec<KernelMessage>, dropped: u64) {
-        let mut envelope = new_envelope(KernelLogSignalType::KernelLogMessages);
+    fn publish_messages(&self, messages: Vec<DmesgMessage>, dropped: u64) {
+        let mut envelope = new_envelope(DmesgSignalType::DmesgMessages);
         envelope.messages = messages;
         envelope.dropped_messages = dropped;
         self.publish(envelope);
     }
 
     fn publish_gap(&self, from_seq: u64, to_seq: u64) {
-        let mut envelope = new_envelope(KernelLogSignalType::KernelLogGap);
+        let mut envelope = new_envelope(DmesgSignalType::DmesgGap);
         envelope.gap_from_seq = from_seq;
         envelope.gap_to_seq = to_seq;
         envelope.dropped_messages = to_seq.saturating_sub(from_seq).saturating_add(1);
@@ -98,7 +97,7 @@ impl Publisher {
     }
 }
 
-fn new_envelope(signal_type: KernelLogSignalType) -> RxEnvelope {
+fn new_envelope(signal_type: DmesgSignalType) -> RxEnvelope {
     RxEnvelope {
         monotonic_stamp_ns: systime::get_monotonic_stamp_ns(),
         local_stamp_ns: systime::get_local_stamp_ns(),
@@ -109,14 +108,14 @@ fn new_envelope(signal_type: KernelLogSignalType) -> RxEnvelope {
 }
 
 fn run(publisher: Publisher) {
-    publisher.publish_signal(KernelLogSignalType::KernelLogStarted);
+    publisher.publish_signal(DmesgSignalType::DmesgStarted);
 
     if !SUPPORTED {
-        info!("kernel-log is not available on {}", std::env::consts::OS);
+        info!("dmesg is not available on {}", std::env::consts::OS);
         publisher.publish_error(
-            KernelLogSignalType::KernelLogSourceUnavailable,
+            DmesgSignalType::DmesgSourceUnavailable,
             format!(
-                "kernel log watching is not available on {}",
+                "dmesg watching is not available on {}",
                 std::env::consts::OS
             ),
         );
@@ -135,11 +134,9 @@ fn run(publisher: Publisher) {
             }
             Err(err) => {
                 if !unavailable_reported {
-                    error!("kernel-log cannot read {}: {}", KMSG_PATH, err);
-                    publisher.publish_error(
-                        KernelLogSignalType::KernelLogSourceUnavailable,
-                        err.to_string(),
-                    );
+                    error!("dmesg cannot read {}: {}", KMSG_PATH, err);
+                    publisher
+                        .publish_error(DmesgSignalType::DmesgSourceUnavailable, err.to_string());
                     unavailable_reported = true;
                 }
             }
@@ -151,7 +148,7 @@ fn run(publisher: Publisher) {
 
 fn follow(mut source: KmsgSource, publisher: &Publisher, replay_backlog: bool) {
     let mut buffer = vec![0u8; RECORD_BUFFER_SIZE];
-    let mut batch: Vec<KernelMessage> = Vec::new();
+    let mut batch: Vec<DmesgMessage> = Vec::new();
     let mut dropped: u64 = 0;
     let mut backlog = replay_backlog;
     let mut last_seq: Option<u64> = None;
@@ -177,13 +174,12 @@ fn follow(mut source: KmsgSource, publisher: &Publisher, replay_backlog: bool) {
                     continue;
                 }
 
-                batch.push(KernelMessage {
+                batch.push(DmesgMessage {
                     seq: record.seq,
                     priority: record.priority as u32,
                     facility: record.facility as u32,
                     kernel_monotonic_us: record.monotonic_us,
                     from_backlog: backlog,
-                    category: classify(&record) as i32,
                     message: record.message,
                     subsystem: record.subsystem,
                     device: record.device,
@@ -198,7 +194,7 @@ fn follow(mut source: KmsgSource, publisher: &Publisher, replay_backlog: bool) {
 
                 if backlog {
                     backlog = false;
-                    publisher.publish_signal(KernelLogSignalType::KernelLogBacklogComplete);
+                    publisher.publish_signal(DmesgSignalType::DmesgBacklogComplete);
                 }
 
                 thread::sleep(POLL_INTERVAL);
@@ -211,15 +207,15 @@ fn follow(mut source: KmsgSource, publisher: &Publisher, replay_backlog: bool) {
             }
             ReadOutcome::Failed(err) => {
                 flush(publisher, &mut batch, &mut dropped);
-                error!("kernel-log read failed: {}", err);
-                publisher.publish_error(KernelLogSignalType::KernelLogError, err.to_string());
+                error!("dmesg read failed: {}", err);
+                publisher.publish_error(DmesgSignalType::DmesgError, err.to_string());
                 return;
             }
         }
     }
 }
 
-fn flush(publisher: &Publisher, batch: &mut Vec<KernelMessage>, dropped: &mut u64) {
+fn flush(publisher: &Publisher, batch: &mut Vec<DmesgMessage>, dropped: &mut u64) {
     if batch.is_empty() && *dropped == 0 {
         return;
     }

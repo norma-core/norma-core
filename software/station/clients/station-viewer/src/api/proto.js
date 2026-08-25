@@ -735,7 +735,7 @@ export const drivers = $root.drivers = (() => {
      * @property {number} QDT_VICTRON_SMARTSOLAR_MPPT_RX=54 QDT_VICTRON_SMARTSOLAR_MPPT_RX value
      * @property {number} QDT_PWM_OUTPUT_TX=55 QDT_PWM_OUTPUT_TX value
      * @property {number} QDT_PWM_OUTPUT_RX=56 QDT_PWM_OUTPUT_RX value
-     * @property {number} QDT_KERNEL_LOG_RX=57 QDT_KERNEL_LOG_RX value
+     * @property {number} QDT_DMESG_RX=57 QDT_DMESG_RX value
      */
     drivers.QueueDataType = (function() {
         const valuesById = {}, values = Object.create(valuesById);
@@ -767,7 +767,7 @@ export const drivers = $root.drivers = (() => {
         values[valuesById[54] = "QDT_VICTRON_SMARTSOLAR_MPPT_RX"] = 54;
         values[valuesById[55] = "QDT_PWM_OUTPUT_TX"] = 55;
         values[valuesById[56] = "QDT_PWM_OUTPUT_RX"] = 56;
-        values[valuesById[57] = "QDT_KERNEL_LOG_RX"] = 57;
+        values[valuesById[57] = "QDT_DMESG_RX"] = 57;
         return values;
     })();
 
@@ -1514,7 +1514,7 @@ export const inference = $root.inference = (() => {
                 case 56:
                     message.type = 56;
                     break;
-                case "QDT_KERNEL_LOG_RX":
+                case "QDT_DMESG_RX":
                 case 57:
                     message.type = 57;
                     break;
@@ -44748,93 +44748,64 @@ export const pwm_output = $root.pwm_output = (() => {
     return pwm_output;
 })();
 
-export const kernel_log = $root.kernel_log = (() => {
+export const dmesg = $root.dmesg = (() => {
 
     /**
-     * Namespace kernel_log.
-     * @exports kernel_log
+     * Namespace dmesg.
+     * @exports dmesg
      * @namespace
      */
-    const kernel_log = {};
+    const dmesg = {};
 
     /**
-     * KernelLogSignalType enum.
-     * @name kernel_log.KernelLogSignalType
+     * DmesgSignalType enum.
+     * @name dmesg.DmesgSignalType
      * @enum {number}
-     * @property {number} KERNEL_LOG_SIGNAL_TYPE_UNSPECIFIED=0 KERNEL_LOG_SIGNAL_TYPE_UNSPECIFIED value
-     * @property {number} KERNEL_LOG_STARTED=1 KERNEL_LOG_STARTED value
-     * @property {number} KERNEL_LOG_MESSAGES=2 KERNEL_LOG_MESSAGES value
-     * @property {number} KERNEL_LOG_BACKLOG_COMPLETE=3 KERNEL_LOG_BACKLOG_COMPLETE value
-     * @property {number} KERNEL_LOG_GAP=4 KERNEL_LOG_GAP value
-     * @property {number} KERNEL_LOG_SOURCE_UNAVAILABLE=5 KERNEL_LOG_SOURCE_UNAVAILABLE value
-     * @property {number} KERNEL_LOG_ERROR=6 KERNEL_LOG_ERROR value
+     * @property {number} DMESG_SIGNAL_TYPE_UNSPECIFIED=0 DMESG_SIGNAL_TYPE_UNSPECIFIED value
+     * @property {number} DMESG_STARTED=1 DMESG_STARTED value
+     * @property {number} DMESG_MESSAGES=2 DMESG_MESSAGES value
+     * @property {number} DMESG_BACKLOG_COMPLETE=3 DMESG_BACKLOG_COMPLETE value
+     * @property {number} DMESG_GAP=4 DMESG_GAP value
+     * @property {number} DMESG_SOURCE_UNAVAILABLE=5 DMESG_SOURCE_UNAVAILABLE value
+     * @property {number} DMESG_ERROR=6 DMESG_ERROR value
      */
-    kernel_log.KernelLogSignalType = (function() {
+    dmesg.DmesgSignalType = (function() {
         const valuesById = {}, values = Object.create(valuesById);
-        values[valuesById[0] = "KERNEL_LOG_SIGNAL_TYPE_UNSPECIFIED"] = 0;
-        values[valuesById[1] = "KERNEL_LOG_STARTED"] = 1;
-        values[valuesById[2] = "KERNEL_LOG_MESSAGES"] = 2;
-        values[valuesById[3] = "KERNEL_LOG_BACKLOG_COMPLETE"] = 3;
-        values[valuesById[4] = "KERNEL_LOG_GAP"] = 4;
-        values[valuesById[5] = "KERNEL_LOG_SOURCE_UNAVAILABLE"] = 5;
-        values[valuesById[6] = "KERNEL_LOG_ERROR"] = 6;
+        values[valuesById[0] = "DMESG_SIGNAL_TYPE_UNSPECIFIED"] = 0;
+        values[valuesById[1] = "DMESG_STARTED"] = 1;
+        values[valuesById[2] = "DMESG_MESSAGES"] = 2;
+        values[valuesById[3] = "DMESG_BACKLOG_COMPLETE"] = 3;
+        values[valuesById[4] = "DMESG_GAP"] = 4;
+        values[valuesById[5] = "DMESG_SOURCE_UNAVAILABLE"] = 5;
+        values[valuesById[6] = "DMESG_ERROR"] = 6;
         return values;
     })();
 
-    /**
-     * KernelLogCategory enum.
-     * @name kernel_log.KernelLogCategory
-     * @enum {number}
-     * @property {number} KERNEL_LOG_CATEGORY_UNSPECIFIED=0 KERNEL_LOG_CATEGORY_UNSPECIFIED value
-     * @property {number} KERNEL_LOG_CATEGORY_USB=1 KERNEL_LOG_CATEGORY_USB value
-     * @property {number} KERNEL_LOG_CATEGORY_MODEM=2 KERNEL_LOG_CATEGORY_MODEM value
-     * @property {number} KERNEL_LOG_CATEGORY_H7=3 KERNEL_LOG_CATEGORY_H7 value
-     * @property {number} KERNEL_LOG_CATEGORY_UVC=4 KERNEL_LOG_CATEGORY_UVC value
-     * @property {number} KERNEL_LOG_CATEGORY_NETWORK=5 KERNEL_LOG_CATEGORY_NETWORK value
-     * @property {number} KERNEL_LOG_CATEGORY_OOM=6 KERNEL_LOG_CATEGORY_OOM value
-     * @property {number} KERNEL_LOG_CATEGORY_STORAGE=7 KERNEL_LOG_CATEGORY_STORAGE value
-     * @property {number} KERNEL_LOG_CATEGORY_DEFERRED_PROBE=8 KERNEL_LOG_CATEGORY_DEFERRED_PROBE value
-     */
-    kernel_log.KernelLogCategory = (function() {
-        const valuesById = {}, values = Object.create(valuesById);
-        values[valuesById[0] = "KERNEL_LOG_CATEGORY_UNSPECIFIED"] = 0;
-        values[valuesById[1] = "KERNEL_LOG_CATEGORY_USB"] = 1;
-        values[valuesById[2] = "KERNEL_LOG_CATEGORY_MODEM"] = 2;
-        values[valuesById[3] = "KERNEL_LOG_CATEGORY_H7"] = 3;
-        values[valuesById[4] = "KERNEL_LOG_CATEGORY_UVC"] = 4;
-        values[valuesById[5] = "KERNEL_LOG_CATEGORY_NETWORK"] = 5;
-        values[valuesById[6] = "KERNEL_LOG_CATEGORY_OOM"] = 6;
-        values[valuesById[7] = "KERNEL_LOG_CATEGORY_STORAGE"] = 7;
-        values[valuesById[8] = "KERNEL_LOG_CATEGORY_DEFERRED_PROBE"] = 8;
-        return values;
-    })();
-
-    kernel_log.KernelMessage = (function() {
+    dmesg.DmesgMessage = (function() {
 
         /**
-         * Properties of a KernelMessage.
-         * @memberof kernel_log
-         * @interface IKernelMessage
-         * @property {Long|null} [seq] KernelMessage seq
-         * @property {number|null} [priority] KernelMessage priority
-         * @property {number|null} [facility] KernelMessage facility
-         * @property {Long|null} [kernelMonotonicUs] KernelMessage kernelMonotonicUs
-         * @property {boolean|null} [fromBacklog] KernelMessage fromBacklog
-         * @property {string|null} [message] KernelMessage message
-         * @property {string|null} [subsystem] KernelMessage subsystem
-         * @property {string|null} [device] KernelMessage device
-         * @property {kernel_log.KernelLogCategory|null} [category] KernelMessage category
+         * Properties of a DmesgMessage.
+         * @memberof dmesg
+         * @interface IDmesgMessage
+         * @property {Long|null} [seq] DmesgMessage seq
+         * @property {number|null} [priority] DmesgMessage priority
+         * @property {number|null} [facility] DmesgMessage facility
+         * @property {Long|null} [kernelMonotonicUs] DmesgMessage kernelMonotonicUs
+         * @property {boolean|null} [fromBacklog] DmesgMessage fromBacklog
+         * @property {string|null} [message] DmesgMessage message
+         * @property {string|null} [subsystem] DmesgMessage subsystem
+         * @property {string|null} [device] DmesgMessage device
          */
 
         /**
-         * Constructs a new KernelMessage.
-         * @memberof kernel_log
-         * @classdesc Represents a KernelMessage.
-         * @implements IKernelMessage
+         * Constructs a new DmesgMessage.
+         * @memberof dmesg
+         * @classdesc Represents a DmesgMessage.
+         * @implements IDmesgMessage
          * @constructor
-         * @param {kernel_log.IKernelMessage=} [properties] Properties to set
+         * @param {dmesg.IDmesgMessage=} [properties] Properties to set
          */
-        function KernelMessage(properties) {
+        function DmesgMessage(properties) {
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
                     if (properties[keys[i]] != null && keys[i] !== "__proto__")
@@ -44842,99 +44813,91 @@ export const kernel_log = $root.kernel_log = (() => {
         }
 
         /**
-         * KernelMessage seq.
+         * DmesgMessage seq.
          * @member {Long} seq
-         * @memberof kernel_log.KernelMessage
+         * @memberof dmesg.DmesgMessage
          * @instance
          */
-        KernelMessage.prototype.seq = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+        DmesgMessage.prototype.seq = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
 
         /**
-         * KernelMessage priority.
+         * DmesgMessage priority.
          * @member {number} priority
-         * @memberof kernel_log.KernelMessage
+         * @memberof dmesg.DmesgMessage
          * @instance
          */
-        KernelMessage.prototype.priority = 0;
+        DmesgMessage.prototype.priority = 0;
 
         /**
-         * KernelMessage facility.
+         * DmesgMessage facility.
          * @member {number} facility
-         * @memberof kernel_log.KernelMessage
+         * @memberof dmesg.DmesgMessage
          * @instance
          */
-        KernelMessage.prototype.facility = 0;
+        DmesgMessage.prototype.facility = 0;
 
         /**
-         * KernelMessage kernelMonotonicUs.
+         * DmesgMessage kernelMonotonicUs.
          * @member {Long} kernelMonotonicUs
-         * @memberof kernel_log.KernelMessage
+         * @memberof dmesg.DmesgMessage
          * @instance
          */
-        KernelMessage.prototype.kernelMonotonicUs = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+        DmesgMessage.prototype.kernelMonotonicUs = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
 
         /**
-         * KernelMessage fromBacklog.
+         * DmesgMessage fromBacklog.
          * @member {boolean} fromBacklog
-         * @memberof kernel_log.KernelMessage
+         * @memberof dmesg.DmesgMessage
          * @instance
          */
-        KernelMessage.prototype.fromBacklog = false;
+        DmesgMessage.prototype.fromBacklog = false;
 
         /**
-         * KernelMessage message.
+         * DmesgMessage message.
          * @member {string} message
-         * @memberof kernel_log.KernelMessage
+         * @memberof dmesg.DmesgMessage
          * @instance
          */
-        KernelMessage.prototype.message = "";
+        DmesgMessage.prototype.message = "";
 
         /**
-         * KernelMessage subsystem.
+         * DmesgMessage subsystem.
          * @member {string} subsystem
-         * @memberof kernel_log.KernelMessage
+         * @memberof dmesg.DmesgMessage
          * @instance
          */
-        KernelMessage.prototype.subsystem = "";
+        DmesgMessage.prototype.subsystem = "";
 
         /**
-         * KernelMessage device.
+         * DmesgMessage device.
          * @member {string} device
-         * @memberof kernel_log.KernelMessage
+         * @memberof dmesg.DmesgMessage
          * @instance
          */
-        KernelMessage.prototype.device = "";
+        DmesgMessage.prototype.device = "";
 
         /**
-         * KernelMessage category.
-         * @member {kernel_log.KernelLogCategory} category
-         * @memberof kernel_log.KernelMessage
-         * @instance
-         */
-        KernelMessage.prototype.category = 0;
-
-        /**
-         * Creates a new KernelMessage instance using the specified properties.
+         * Creates a new DmesgMessage instance using the specified properties.
          * @function create
-         * @memberof kernel_log.KernelMessage
+         * @memberof dmesg.DmesgMessage
          * @static
-         * @param {kernel_log.IKernelMessage=} [properties] Properties to set
-         * @returns {kernel_log.KernelMessage} KernelMessage instance
+         * @param {dmesg.IDmesgMessage=} [properties] Properties to set
+         * @returns {dmesg.DmesgMessage} DmesgMessage instance
          */
-        KernelMessage.create = function create(properties) {
-            return new KernelMessage(properties);
+        DmesgMessage.create = function create(properties) {
+            return new DmesgMessage(properties);
         };
 
         /**
-         * Encodes the specified KernelMessage message. Does not implicitly {@link kernel_log.KernelMessage.verify|verify} messages.
+         * Encodes the specified DmesgMessage message. Does not implicitly {@link dmesg.DmesgMessage.verify|verify} messages.
          * @function encode
-         * @memberof kernel_log.KernelMessage
+         * @memberof dmesg.DmesgMessage
          * @static
-         * @param {kernel_log.IKernelMessage} message KernelMessage message or plain object to encode
+         * @param {dmesg.IDmesgMessage} message DmesgMessage message or plain object to encode
          * @param {$protobuf.Writer} [writer] Writer to encode to
          * @returns {$protobuf.Writer} Writer
          */
-        KernelMessage.encode = function encode(message, writer) {
+        DmesgMessage.encode = function encode(message, writer) {
             if (!writer)
                 writer = $Writer.create();
             if (message.seq != null && Object.hasOwnProperty.call(message, "seq"))
@@ -44953,43 +44916,41 @@ export const kernel_log = $root.kernel_log = (() => {
                 writer.uint32(/* id 11, wireType 2 =*/90).string(message.subsystem);
             if (message.device != null && Object.hasOwnProperty.call(message, "device"))
                 writer.uint32(/* id 12, wireType 2 =*/98).string(message.device);
-            if (message.category != null && Object.hasOwnProperty.call(message, "category"))
-                writer.uint32(/* id 13, wireType 0 =*/104).int32(message.category);
             return writer;
         };
 
         /**
-         * Encodes the specified KernelMessage message, length delimited. Does not implicitly {@link kernel_log.KernelMessage.verify|verify} messages.
+         * Encodes the specified DmesgMessage message, length delimited. Does not implicitly {@link dmesg.DmesgMessage.verify|verify} messages.
          * @function encodeDelimited
-         * @memberof kernel_log.KernelMessage
+         * @memberof dmesg.DmesgMessage
          * @static
-         * @param {kernel_log.IKernelMessage} message KernelMessage message or plain object to encode
+         * @param {dmesg.IDmesgMessage} message DmesgMessage message or plain object to encode
          * @param {$protobuf.Writer} [writer] Writer to encode to
          * @returns {$protobuf.Writer} Writer
          */
-        KernelMessage.encodeDelimited = function encodeDelimited(message, writer) {
+        DmesgMessage.encodeDelimited = function encodeDelimited(message, writer) {
             return this.encode(message, writer).ldelim();
         };
 
         /**
-         * Decodes a KernelMessage message from the specified reader or buffer.
+         * Decodes a DmesgMessage message from the specified reader or buffer.
          * @function decode
-         * @memberof kernel_log.KernelMessage
+         * @memberof dmesg.DmesgMessage
          * @static
          * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
          * @param {number} [length] Message length if known beforehand
-         * @returns {kernel_log.KernelMessage} KernelMessage
+         * @returns {dmesg.DmesgMessage} DmesgMessage
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        KernelMessage.decode = function decode(reader, length, error, long) {
+        DmesgMessage.decode = function decode(reader, length, error, long) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
             if (long === undefined)
                 long = 0;
             if (long > $Reader.recursionLimit)
                 throw Error("maximum nesting depth exceeded");
-            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.kernel_log.KernelMessage();
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.dmesg.DmesgMessage();
             while (reader.pos < end) {
                 let tag = reader.uint32();
                 if (tag === error)
@@ -45027,10 +44988,6 @@ export const kernel_log = $root.kernel_log = (() => {
                         message.device = reader.string();
                         break;
                     }
-                case 13: {
-                        message.category = reader.int32();
-                        break;
-                    }
                 default:
                     reader.skipType(tag & 7, long);
                     break;
@@ -45040,30 +44997,30 @@ export const kernel_log = $root.kernel_log = (() => {
         };
 
         /**
-         * Decodes a KernelMessage message from the specified reader or buffer, length delimited.
+         * Decodes a DmesgMessage message from the specified reader or buffer, length delimited.
          * @function decodeDelimited
-         * @memberof kernel_log.KernelMessage
+         * @memberof dmesg.DmesgMessage
          * @static
          * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
-         * @returns {kernel_log.KernelMessage} KernelMessage
+         * @returns {dmesg.DmesgMessage} DmesgMessage
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        KernelMessage.decodeDelimited = function decodeDelimited(reader) {
+        DmesgMessage.decodeDelimited = function decodeDelimited(reader) {
             if (!(reader instanceof $Reader))
                 reader = new $Reader(reader);
             return this.decode(reader, reader.uint32());
         };
 
         /**
-         * Verifies a KernelMessage message.
+         * Verifies a DmesgMessage message.
          * @function verify
-         * @memberof kernel_log.KernelMessage
+         * @memberof dmesg.DmesgMessage
          * @static
          * @param {Object.<string,*>} message Plain object to verify
          * @returns {string|null} `null` if valid, otherwise the reason why it is not
          */
-        KernelMessage.verify = function verify(message, long) {
+        DmesgMessage.verify = function verify(message, long) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
             if (long === undefined)
@@ -45094,40 +45051,25 @@ export const kernel_log = $root.kernel_log = (() => {
             if (message.device != null && message.hasOwnProperty("device"))
                 if (!$util.isString(message.device))
                     return "device: string expected";
-            if (message.category != null && message.hasOwnProperty("category"))
-                switch (message.category) {
-                default:
-                    return "category: enum value expected";
-                case 0:
-                case 1:
-                case 2:
-                case 3:
-                case 4:
-                case 5:
-                case 6:
-                case 7:
-                case 8:
-                    break;
-                }
             return null;
         };
 
         /**
-         * Creates a KernelMessage message from a plain object. Also converts values to their respective internal types.
+         * Creates a DmesgMessage message from a plain object. Also converts values to their respective internal types.
          * @function fromObject
-         * @memberof kernel_log.KernelMessage
+         * @memberof dmesg.DmesgMessage
          * @static
          * @param {Object.<string,*>} object Plain object
-         * @returns {kernel_log.KernelMessage} KernelMessage
+         * @returns {dmesg.DmesgMessage} DmesgMessage
          */
-        KernelMessage.fromObject = function fromObject(object, long) {
-            if (object instanceof $root.kernel_log.KernelMessage)
+        DmesgMessage.fromObject = function fromObject(object, long) {
+            if (object instanceof $root.dmesg.DmesgMessage)
                 return object;
             if (long === undefined)
                 long = 0;
             if (long > $util.recursionLimit)
                 throw Error("maximum nesting depth exceeded");
-            let message = new $root.kernel_log.KernelMessage();
+            let message = new $root.dmesg.DmesgMessage();
             if (object.seq != null)
                 if ($util.Long)
                     (message.seq = $util.Long.fromValue(object.seq)).unsigned = true;
@@ -45158,63 +45100,19 @@ export const kernel_log = $root.kernel_log = (() => {
                 message.subsystem = String(object.subsystem);
             if (object.device != null)
                 message.device = String(object.device);
-            switch (object.category) {
-            default:
-                if (typeof object.category === "number") {
-                    message.category = object.category;
-                    break;
-                }
-                break;
-            case "KERNEL_LOG_CATEGORY_UNSPECIFIED":
-            case 0:
-                message.category = 0;
-                break;
-            case "KERNEL_LOG_CATEGORY_USB":
-            case 1:
-                message.category = 1;
-                break;
-            case "KERNEL_LOG_CATEGORY_MODEM":
-            case 2:
-                message.category = 2;
-                break;
-            case "KERNEL_LOG_CATEGORY_H7":
-            case 3:
-                message.category = 3;
-                break;
-            case "KERNEL_LOG_CATEGORY_UVC":
-            case 4:
-                message.category = 4;
-                break;
-            case "KERNEL_LOG_CATEGORY_NETWORK":
-            case 5:
-                message.category = 5;
-                break;
-            case "KERNEL_LOG_CATEGORY_OOM":
-            case 6:
-                message.category = 6;
-                break;
-            case "KERNEL_LOG_CATEGORY_STORAGE":
-            case 7:
-                message.category = 7;
-                break;
-            case "KERNEL_LOG_CATEGORY_DEFERRED_PROBE":
-            case 8:
-                message.category = 8;
-                break;
-            }
             return message;
         };
 
         /**
-         * Creates a plain object from a KernelMessage message. Also converts values to other types if specified.
+         * Creates a plain object from a DmesgMessage message. Also converts values to other types if specified.
          * @function toObject
-         * @memberof kernel_log.KernelMessage
+         * @memberof dmesg.DmesgMessage
          * @static
-         * @param {kernel_log.KernelMessage} message KernelMessage
+         * @param {dmesg.DmesgMessage} message DmesgMessage
          * @param {$protobuf.IConversionOptions} [options] Conversion options
          * @returns {Object.<string,*>} Plain object
          */
-        KernelMessage.toObject = function toObject(message, options) {
+        DmesgMessage.toObject = function toObject(message, options) {
             if (!options)
                 options = {};
             let object = {};
@@ -45235,7 +45133,6 @@ export const kernel_log = $root.kernel_log = (() => {
                 object.message = "";
                 object.subsystem = "";
                 object.device = "";
-                object.category = options.enums === String ? "KERNEL_LOG_CATEGORY_UNSPECIFIED" : 0;
             }
             if (message.seq != null && message.hasOwnProperty("seq"))
                 if (typeof message.seq === "number")
@@ -45259,51 +45156,49 @@ export const kernel_log = $root.kernel_log = (() => {
                 object.subsystem = message.subsystem;
             if (message.device != null && message.hasOwnProperty("device"))
                 object.device = message.device;
-            if (message.category != null && message.hasOwnProperty("category"))
-                object.category = options.enums === String ? $root.kernel_log.KernelLogCategory[message.category] === undefined ? message.category : $root.kernel_log.KernelLogCategory[message.category] : message.category;
             return object;
         };
 
         /**
-         * Converts this KernelMessage to JSON.
+         * Converts this DmesgMessage to JSON.
          * @function toJSON
-         * @memberof kernel_log.KernelMessage
+         * @memberof dmesg.DmesgMessage
          * @instance
          * @returns {Object.<string,*>} JSON object
          */
-        KernelMessage.prototype.toJSON = function toJSON() {
+        DmesgMessage.prototype.toJSON = function toJSON() {
             return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
         };
 
         /**
-         * Gets the default type url for KernelMessage
+         * Gets the default type url for DmesgMessage
          * @function getTypeUrl
-         * @memberof kernel_log.KernelMessage
+         * @memberof dmesg.DmesgMessage
          * @static
          * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
          * @returns {string} The default type url
          */
-        KernelMessage.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+        DmesgMessage.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
             if (typeUrlPrefix === undefined) {
                 typeUrlPrefix = "type.googleapis.com";
             }
-            return typeUrlPrefix + "/kernel_log.KernelMessage";
+            return typeUrlPrefix + "/dmesg.DmesgMessage";
         };
 
-        return KernelMessage;
+        return DmesgMessage;
     })();
 
-    kernel_log.RxEnvelope = (function() {
+    dmesg.RxEnvelope = (function() {
 
         /**
          * Properties of a RxEnvelope.
-         * @memberof kernel_log
+         * @memberof dmesg
          * @interface IRxEnvelope
          * @property {Long|null} [monotonicStampNs] RxEnvelope monotonicStampNs
          * @property {Long|null} [localStampNs] RxEnvelope localStampNs
          * @property {Long|null} [appStartId] RxEnvelope appStartId
-         * @property {kernel_log.KernelLogSignalType|null} [signalType] RxEnvelope signalType
-         * @property {Array.<kernel_log.IKernelMessage>|null} [messages] RxEnvelope messages
+         * @property {dmesg.DmesgSignalType|null} [signalType] RxEnvelope signalType
+         * @property {Array.<dmesg.IDmesgMessage>|null} [messages] RxEnvelope messages
          * @property {Long|null} [droppedMessages] RxEnvelope droppedMessages
          * @property {Long|null} [gapFromSeq] RxEnvelope gapFromSeq
          * @property {Long|null} [gapToSeq] RxEnvelope gapToSeq
@@ -45312,11 +45207,11 @@ export const kernel_log = $root.kernel_log = (() => {
 
         /**
          * Constructs a new RxEnvelope.
-         * @memberof kernel_log
+         * @memberof dmesg
          * @classdesc Represents a RxEnvelope.
          * @implements IRxEnvelope
          * @constructor
-         * @param {kernel_log.IRxEnvelope=} [properties] Properties to set
+         * @param {dmesg.IRxEnvelope=} [properties] Properties to set
          */
         function RxEnvelope(properties) {
             this.messages = [];
@@ -45329,7 +45224,7 @@ export const kernel_log = $root.kernel_log = (() => {
         /**
          * RxEnvelope monotonicStampNs.
          * @member {Long} monotonicStampNs
-         * @memberof kernel_log.RxEnvelope
+         * @memberof dmesg.RxEnvelope
          * @instance
          */
         RxEnvelope.prototype.monotonicStampNs = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
@@ -45337,7 +45232,7 @@ export const kernel_log = $root.kernel_log = (() => {
         /**
          * RxEnvelope localStampNs.
          * @member {Long} localStampNs
-         * @memberof kernel_log.RxEnvelope
+         * @memberof dmesg.RxEnvelope
          * @instance
          */
         RxEnvelope.prototype.localStampNs = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
@@ -45345,23 +45240,23 @@ export const kernel_log = $root.kernel_log = (() => {
         /**
          * RxEnvelope appStartId.
          * @member {Long} appStartId
-         * @memberof kernel_log.RxEnvelope
+         * @memberof dmesg.RxEnvelope
          * @instance
          */
         RxEnvelope.prototype.appStartId = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
 
         /**
          * RxEnvelope signalType.
-         * @member {kernel_log.KernelLogSignalType} signalType
-         * @memberof kernel_log.RxEnvelope
+         * @member {dmesg.DmesgSignalType} signalType
+         * @memberof dmesg.RxEnvelope
          * @instance
          */
         RxEnvelope.prototype.signalType = 0;
 
         /**
          * RxEnvelope messages.
-         * @member {Array.<kernel_log.IKernelMessage>} messages
-         * @memberof kernel_log.RxEnvelope
+         * @member {Array.<dmesg.IDmesgMessage>} messages
+         * @memberof dmesg.RxEnvelope
          * @instance
          */
         RxEnvelope.prototype.messages = $util.emptyArray;
@@ -45369,7 +45264,7 @@ export const kernel_log = $root.kernel_log = (() => {
         /**
          * RxEnvelope droppedMessages.
          * @member {Long} droppedMessages
-         * @memberof kernel_log.RxEnvelope
+         * @memberof dmesg.RxEnvelope
          * @instance
          */
         RxEnvelope.prototype.droppedMessages = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
@@ -45377,7 +45272,7 @@ export const kernel_log = $root.kernel_log = (() => {
         /**
          * RxEnvelope gapFromSeq.
          * @member {Long} gapFromSeq
-         * @memberof kernel_log.RxEnvelope
+         * @memberof dmesg.RxEnvelope
          * @instance
          */
         RxEnvelope.prototype.gapFromSeq = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
@@ -45385,7 +45280,7 @@ export const kernel_log = $root.kernel_log = (() => {
         /**
          * RxEnvelope gapToSeq.
          * @member {Long} gapToSeq
-         * @memberof kernel_log.RxEnvelope
+         * @memberof dmesg.RxEnvelope
          * @instance
          */
         RxEnvelope.prototype.gapToSeq = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
@@ -45393,7 +45288,7 @@ export const kernel_log = $root.kernel_log = (() => {
         /**
          * RxEnvelope error.
          * @member {string} error
-         * @memberof kernel_log.RxEnvelope
+         * @memberof dmesg.RxEnvelope
          * @instance
          */
         RxEnvelope.prototype.error = "";
@@ -45401,21 +45296,21 @@ export const kernel_log = $root.kernel_log = (() => {
         /**
          * Creates a new RxEnvelope instance using the specified properties.
          * @function create
-         * @memberof kernel_log.RxEnvelope
+         * @memberof dmesg.RxEnvelope
          * @static
-         * @param {kernel_log.IRxEnvelope=} [properties] Properties to set
-         * @returns {kernel_log.RxEnvelope} RxEnvelope instance
+         * @param {dmesg.IRxEnvelope=} [properties] Properties to set
+         * @returns {dmesg.RxEnvelope} RxEnvelope instance
          */
         RxEnvelope.create = function create(properties) {
             return new RxEnvelope(properties);
         };
 
         /**
-         * Encodes the specified RxEnvelope message. Does not implicitly {@link kernel_log.RxEnvelope.verify|verify} messages.
+         * Encodes the specified RxEnvelope message. Does not implicitly {@link dmesg.RxEnvelope.verify|verify} messages.
          * @function encode
-         * @memberof kernel_log.RxEnvelope
+         * @memberof dmesg.RxEnvelope
          * @static
-         * @param {kernel_log.IRxEnvelope} message RxEnvelope message or plain object to encode
+         * @param {dmesg.IRxEnvelope} message RxEnvelope message or plain object to encode
          * @param {$protobuf.Writer} [writer] Writer to encode to
          * @returns {$protobuf.Writer} Writer
          */
@@ -45432,7 +45327,7 @@ export const kernel_log = $root.kernel_log = (() => {
                 writer.uint32(/* id 10, wireType 0 =*/80).int32(message.signalType);
             if (message.messages != null && message.messages.length)
                 for (let i = 0; i < message.messages.length; ++i)
-                    $root.kernel_log.KernelMessage.encode(message.messages[i], writer.uint32(/* id 11, wireType 2 =*/90).fork()).ldelim();
+                    $root.dmesg.DmesgMessage.encode(message.messages[i], writer.uint32(/* id 11, wireType 2 =*/90).fork()).ldelim();
             if (message.droppedMessages != null && Object.hasOwnProperty.call(message, "droppedMessages"))
                 writer.uint32(/* id 12, wireType 0 =*/96).uint64(message.droppedMessages);
             if (message.gapFromSeq != null && Object.hasOwnProperty.call(message, "gapFromSeq"))
@@ -45445,11 +45340,11 @@ export const kernel_log = $root.kernel_log = (() => {
         };
 
         /**
-         * Encodes the specified RxEnvelope message, length delimited. Does not implicitly {@link kernel_log.RxEnvelope.verify|verify} messages.
+         * Encodes the specified RxEnvelope message, length delimited. Does not implicitly {@link dmesg.RxEnvelope.verify|verify} messages.
          * @function encodeDelimited
-         * @memberof kernel_log.RxEnvelope
+         * @memberof dmesg.RxEnvelope
          * @static
-         * @param {kernel_log.IRxEnvelope} message RxEnvelope message or plain object to encode
+         * @param {dmesg.IRxEnvelope} message RxEnvelope message or plain object to encode
          * @param {$protobuf.Writer} [writer] Writer to encode to
          * @returns {$protobuf.Writer} Writer
          */
@@ -45460,11 +45355,11 @@ export const kernel_log = $root.kernel_log = (() => {
         /**
          * Decodes a RxEnvelope message from the specified reader or buffer.
          * @function decode
-         * @memberof kernel_log.RxEnvelope
+         * @memberof dmesg.RxEnvelope
          * @static
          * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
          * @param {number} [length] Message length if known beforehand
-         * @returns {kernel_log.RxEnvelope} RxEnvelope
+         * @returns {dmesg.RxEnvelope} RxEnvelope
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
@@ -45475,7 +45370,7 @@ export const kernel_log = $root.kernel_log = (() => {
                 long = 0;
             if (long > $Reader.recursionLimit)
                 throw Error("maximum nesting depth exceeded");
-            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.kernel_log.RxEnvelope();
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.dmesg.RxEnvelope();
             while (reader.pos < end) {
                 let tag = reader.uint32();
                 if (tag === error)
@@ -45500,7 +45395,7 @@ export const kernel_log = $root.kernel_log = (() => {
                 case 11: {
                         if (!(message.messages && message.messages.length))
                             message.messages = [];
-                        message.messages.push($root.kernel_log.KernelMessage.decode(reader, reader.uint32(), undefined, long + 1));
+                        message.messages.push($root.dmesg.DmesgMessage.decode(reader, reader.uint32(), undefined, long + 1));
                         break;
                     }
                 case 12: {
@@ -45530,10 +45425,10 @@ export const kernel_log = $root.kernel_log = (() => {
         /**
          * Decodes a RxEnvelope message from the specified reader or buffer, length delimited.
          * @function decodeDelimited
-         * @memberof kernel_log.RxEnvelope
+         * @memberof dmesg.RxEnvelope
          * @static
          * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
-         * @returns {kernel_log.RxEnvelope} RxEnvelope
+         * @returns {dmesg.RxEnvelope} RxEnvelope
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
@@ -45546,7 +45441,7 @@ export const kernel_log = $root.kernel_log = (() => {
         /**
          * Verifies a RxEnvelope message.
          * @function verify
-         * @memberof kernel_log.RxEnvelope
+         * @memberof dmesg.RxEnvelope
          * @static
          * @param {Object.<string,*>} message Plain object to verify
          * @returns {string|null} `null` if valid, otherwise the reason why it is not
@@ -45584,7 +45479,7 @@ export const kernel_log = $root.kernel_log = (() => {
                 if (!Array.isArray(message.messages))
                     return "messages: array expected";
                 for (let i = 0; i < message.messages.length; ++i) {
-                    let error = $root.kernel_log.KernelMessage.verify(message.messages[i], long + 1);
+                    let error = $root.dmesg.DmesgMessage.verify(message.messages[i], long + 1);
                     if (error)
                         return "messages." + error;
                 }
@@ -45607,19 +45502,19 @@ export const kernel_log = $root.kernel_log = (() => {
         /**
          * Creates a RxEnvelope message from a plain object. Also converts values to their respective internal types.
          * @function fromObject
-         * @memberof kernel_log.RxEnvelope
+         * @memberof dmesg.RxEnvelope
          * @static
          * @param {Object.<string,*>} object Plain object
-         * @returns {kernel_log.RxEnvelope} RxEnvelope
+         * @returns {dmesg.RxEnvelope} RxEnvelope
          */
         RxEnvelope.fromObject = function fromObject(object, long) {
-            if (object instanceof $root.kernel_log.RxEnvelope)
+            if (object instanceof $root.dmesg.RxEnvelope)
                 return object;
             if (long === undefined)
                 long = 0;
             if (long > $util.recursionLimit)
                 throw Error("maximum nesting depth exceeded");
-            let message = new $root.kernel_log.RxEnvelope();
+            let message = new $root.dmesg.RxEnvelope();
             if (object.monotonicStampNs != null)
                 if ($util.Long)
                     (message.monotonicStampNs = $util.Long.fromValue(object.monotonicStampNs)).unsigned = true;
@@ -45654,43 +45549,43 @@ export const kernel_log = $root.kernel_log = (() => {
                     break;
                 }
                 break;
-            case "KERNEL_LOG_SIGNAL_TYPE_UNSPECIFIED":
+            case "DMESG_SIGNAL_TYPE_UNSPECIFIED":
             case 0:
                 message.signalType = 0;
                 break;
-            case "KERNEL_LOG_STARTED":
+            case "DMESG_STARTED":
             case 1:
                 message.signalType = 1;
                 break;
-            case "KERNEL_LOG_MESSAGES":
+            case "DMESG_MESSAGES":
             case 2:
                 message.signalType = 2;
                 break;
-            case "KERNEL_LOG_BACKLOG_COMPLETE":
+            case "DMESG_BACKLOG_COMPLETE":
             case 3:
                 message.signalType = 3;
                 break;
-            case "KERNEL_LOG_GAP":
+            case "DMESG_GAP":
             case 4:
                 message.signalType = 4;
                 break;
-            case "KERNEL_LOG_SOURCE_UNAVAILABLE":
+            case "DMESG_SOURCE_UNAVAILABLE":
             case 5:
                 message.signalType = 5;
                 break;
-            case "KERNEL_LOG_ERROR":
+            case "DMESG_ERROR":
             case 6:
                 message.signalType = 6;
                 break;
             }
             if (object.messages) {
                 if (!Array.isArray(object.messages))
-                    throw TypeError(".kernel_log.RxEnvelope.messages: array expected");
+                    throw TypeError(".dmesg.RxEnvelope.messages: array expected");
                 message.messages = [];
                 for (let i = 0; i < object.messages.length; ++i) {
                     if (typeof object.messages[i] !== "object")
-                        throw TypeError(".kernel_log.RxEnvelope.messages: object expected");
-                    message.messages[i] = $root.kernel_log.KernelMessage.fromObject(object.messages[i], long + 1);
+                        throw TypeError(".dmesg.RxEnvelope.messages: object expected");
+                    message.messages[i] = $root.dmesg.DmesgMessage.fromObject(object.messages[i], long + 1);
                 }
             }
             if (object.droppedMessages != null)
@@ -45728,9 +45623,9 @@ export const kernel_log = $root.kernel_log = (() => {
         /**
          * Creates a plain object from a RxEnvelope message. Also converts values to other types if specified.
          * @function toObject
-         * @memberof kernel_log.RxEnvelope
+         * @memberof dmesg.RxEnvelope
          * @static
-         * @param {kernel_log.RxEnvelope} message RxEnvelope
+         * @param {dmesg.RxEnvelope} message RxEnvelope
          * @param {$protobuf.IConversionOptions} [options] Conversion options
          * @returns {Object.<string,*>} Plain object
          */
@@ -45756,7 +45651,7 @@ export const kernel_log = $root.kernel_log = (() => {
                     object.appStartId = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
                 } else
                     object.appStartId = options.longs === String ? "0" : 0;
-                object.signalType = options.enums === String ? "KERNEL_LOG_SIGNAL_TYPE_UNSPECIFIED" : 0;
+                object.signalType = options.enums === String ? "DMESG_SIGNAL_TYPE_UNSPECIFIED" : 0;
                 if ($util.Long) {
                     let long = new $util.Long(0, 0, true);
                     object.droppedMessages = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
@@ -45790,11 +45685,11 @@ export const kernel_log = $root.kernel_log = (() => {
                 else
                     object.appStartId = options.longs === String ? $util.Long.prototype.toString.call(message.appStartId) : options.longs === Number ? new $util.LongBits(message.appStartId.low >>> 0, message.appStartId.high >>> 0).toNumber(true) : message.appStartId;
             if (message.signalType != null && message.hasOwnProperty("signalType"))
-                object.signalType = options.enums === String ? $root.kernel_log.KernelLogSignalType[message.signalType] === undefined ? message.signalType : $root.kernel_log.KernelLogSignalType[message.signalType] : message.signalType;
+                object.signalType = options.enums === String ? $root.dmesg.DmesgSignalType[message.signalType] === undefined ? message.signalType : $root.dmesg.DmesgSignalType[message.signalType] : message.signalType;
             if (message.messages && message.messages.length) {
                 object.messages = [];
                 for (let j = 0; j < message.messages.length; ++j)
-                    object.messages[j] = $root.kernel_log.KernelMessage.toObject(message.messages[j], options);
+                    object.messages[j] = $root.dmesg.DmesgMessage.toObject(message.messages[j], options);
             }
             if (message.droppedMessages != null && message.hasOwnProperty("droppedMessages"))
                 if (typeof message.droppedMessages === "number")
@@ -45819,7 +45714,7 @@ export const kernel_log = $root.kernel_log = (() => {
         /**
          * Converts this RxEnvelope to JSON.
          * @function toJSON
-         * @memberof kernel_log.RxEnvelope
+         * @memberof dmesg.RxEnvelope
          * @instance
          * @returns {Object.<string,*>} JSON object
          */
@@ -45830,7 +45725,7 @@ export const kernel_log = $root.kernel_log = (() => {
         /**
          * Gets the default type url for RxEnvelope
          * @function getTypeUrl
-         * @memberof kernel_log.RxEnvelope
+         * @memberof dmesg.RxEnvelope
          * @static
          * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
          * @returns {string} The default type url
@@ -45839,13 +45734,13 @@ export const kernel_log = $root.kernel_log = (() => {
             if (typeUrlPrefix === undefined) {
                 typeUrlPrefix = "type.googleapis.com";
             }
-            return typeUrlPrefix + "/kernel_log.RxEnvelope";
+            return typeUrlPrefix + "/dmesg.RxEnvelope";
         };
 
         return RxEnvelope;
     })();
 
-    return kernel_log;
+    return dmesg;
 })();
 
 export const normvla = $root.normvla = (() => {

@@ -114,12 +114,8 @@ pub struct Drivers {
     )]
     pub victron_smartsolar_mppt: Option<VictronSmartSolarMpptConfig>,
 
-    #[serde(
-        rename = "kernel-log",
-        default,
-        skip_serializing_if = "Option::is_none"
-    )]
-    pub kernel_log: Option<KernelLogConfig>,
+    #[serde(rename = "dmesg", default, skip_serializing_if = "Option::is_none")]
+    pub dmesg: Option<DmesgConfig>,
 }
 
 /// ST3215 servo bus configuration
@@ -552,7 +548,7 @@ impl Default for VictronSmartSolarMpptConfig {
 /// Kernel log watcher reading /dev/kmsg. Requires CAP_SYSLOG when
 /// kernel.dmesg_restrict is enabled.
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
-pub struct KernelLogConfig {
+pub struct DmesgConfig {
     #[serde(default)]
     pub enabled: bool,
 }
@@ -595,7 +591,7 @@ impl Default for Drivers {
             ina226: None,
             airgradient_open_air_o_1pst: None,
             victron_smartsolar_mppt: None,
-            kernel_log: None,
+            dmesg: None,
         }
     }
 }

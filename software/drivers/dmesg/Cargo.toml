@@ -1,5 +1,5 @@
 [package]
-name = "kernel-log"
+name = "dmesg"
 version.workspace = true
 edition = "2024"
 

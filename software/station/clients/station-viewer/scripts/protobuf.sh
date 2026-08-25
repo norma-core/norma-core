@@ -22,7 +22,7 @@ npm exec -- pbjs --wrap es6 --force-long -t static-module --es6 -l eslint-disabl
   ${SRC}/drivers/airgradient-open-air-o-1pst/airgradient_open_air_o_1pst.proto \
   ${SRC}/drivers/victron-smartsolar-mppt/victron_smartsolar_mppt.proto \
   ${SRC}/drivers/pwm-output/pwm_output.proto \
-  ${SRC}/drivers/kernel-log/kernel_log.proto \
+  ${SRC}/drivers/dmesg/dmesg.proto \
   ${SRC}/drivers/inferences/normvla.proto \
   ${SRC}/drivers/hikmicro/hikmicro.proto \
   ${SRC}/normfs/normfs.proto \

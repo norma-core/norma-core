@@ -1,30 +1,18 @@
 syntax = "proto3";
 
-package kernel_log;
+package dmesg;
 
-enum KernelLogSignalType {
-    KERNEL_LOG_SIGNAL_TYPE_UNSPECIFIED = 0;
-    KERNEL_LOG_STARTED                 = 1;
-    KERNEL_LOG_MESSAGES                = 2;
-    KERNEL_LOG_BACKLOG_COMPLETE        = 3;
-    KERNEL_LOG_GAP                     = 4;
-    KERNEL_LOG_SOURCE_UNAVAILABLE      = 5;
-    KERNEL_LOG_ERROR                   = 6;
+enum DmesgSignalType {
+    DMESG_SIGNAL_TYPE_UNSPECIFIED = 0;
+    DMESG_STARTED                 = 1;
+    DMESG_MESSAGES                = 2;
+    DMESG_BACKLOG_COMPLETE        = 3;
+    DMESG_GAP                     = 4;
+    DMESG_SOURCE_UNAVAILABLE      = 5;
+    DMESG_ERROR                   = 6;
 }
 
-enum KernelLogCategory {
-    KERNEL_LOG_CATEGORY_UNSPECIFIED    = 0;
-    KERNEL_LOG_CATEGORY_USB            = 1;
-    KERNEL_LOG_CATEGORY_MODEM          = 2;
-    KERNEL_LOG_CATEGORY_H7             = 3;
-    KERNEL_LOG_CATEGORY_UVC            = 4;
-    KERNEL_LOG_CATEGORY_NETWORK        = 5;
-    KERNEL_LOG_CATEGORY_OOM            = 6;
-    KERNEL_LOG_CATEGORY_STORAGE        = 7;
-    KERNEL_LOG_CATEGORY_DEFERRED_PROBE = 8;
-}
-
-message KernelMessage {
+message DmesgMessage {
     // Kernel record sequence number, monotonically increasing across the boot.
     uint64 seq = 1;
 
@@ -41,8 +29,6 @@ message KernelMessage {
     string message   = 10;
     string subsystem = 11;
     string device    = 12;
-
-    KernelLogCategory category = 13;
 }
 
 message RxEnvelope {
@@ -50,9 +36,9 @@ message RxEnvelope {
     uint64 local_stamp_ns     = 2;
     uint64 app_start_id       = 3;
 
-    KernelLogSignalType signal_type = 10;
+    DmesgSignalType signal_type = 10;
 
-    repeated KernelMessage messages = 11;
+    repeated DmesgMessage messages = 11;
 
     // Records dropped by rate limiting or lost to a ring buffer overrun.
     uint64 dropped_messages = 12;

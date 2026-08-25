@@ -261,7 +261,7 @@ export namespace drivers {
         QDT_VICTRON_SMARTSOLAR_MPPT_RX = 54,
         QDT_PWM_OUTPUT_TX = 55,
         QDT_PWM_OUTPUT_RX = 56,
-        QDT_KERNEL_LOG_RX = 57
+        QDT_DMESG_RX = 57
     }
 
     /** StationCommandType enum. */
@@ -15406,172 +15406,153 @@ export namespace pwm_output {
     }
 }
 
-/** Namespace kernel_log. */
-export namespace kernel_log {
+/** Namespace dmesg. */
+export namespace dmesg {
 
-    /** KernelLogSignalType enum. */
-    enum KernelLogSignalType {
-        KERNEL_LOG_SIGNAL_TYPE_UNSPECIFIED = 0,
-        KERNEL_LOG_STARTED = 1,
-        KERNEL_LOG_MESSAGES = 2,
-        KERNEL_LOG_BACKLOG_COMPLETE = 3,
-        KERNEL_LOG_GAP = 4,
-        KERNEL_LOG_SOURCE_UNAVAILABLE = 5,
-        KERNEL_LOG_ERROR = 6
+    /** DmesgSignalType enum. */
+    enum DmesgSignalType {
+        DMESG_SIGNAL_TYPE_UNSPECIFIED = 0,
+        DMESG_STARTED = 1,
+        DMESG_MESSAGES = 2,
+        DMESG_BACKLOG_COMPLETE = 3,
+        DMESG_GAP = 4,
+        DMESG_SOURCE_UNAVAILABLE = 5,
+        DMESG_ERROR = 6
     }
 
-    /** KernelLogCategory enum. */
-    enum KernelLogCategory {
-        KERNEL_LOG_CATEGORY_UNSPECIFIED = 0,
-        KERNEL_LOG_CATEGORY_USB = 1,
-        KERNEL_LOG_CATEGORY_MODEM = 2,
-        KERNEL_LOG_CATEGORY_H7 = 3,
-        KERNEL_LOG_CATEGORY_UVC = 4,
-        KERNEL_LOG_CATEGORY_NETWORK = 5,
-        KERNEL_LOG_CATEGORY_OOM = 6,
-        KERNEL_LOG_CATEGORY_STORAGE = 7,
-        KERNEL_LOG_CATEGORY_DEFERRED_PROBE = 8
-    }
+    /** Properties of a DmesgMessage. */
+    interface IDmesgMessage {
 
-    /** Properties of a KernelMessage. */
-    interface IKernelMessage {
-
-        /** KernelMessage seq */
+        /** DmesgMessage seq */
         seq?: (Long|null);
 
-        /** KernelMessage priority */
+        /** DmesgMessage priority */
         priority?: (number|null);
 
-        /** KernelMessage facility */
+        /** DmesgMessage facility */
         facility?: (number|null);
 
-        /** KernelMessage kernelMonotonicUs */
+        /** DmesgMessage kernelMonotonicUs */
         kernelMonotonicUs?: (Long|null);
 
-        /** KernelMessage fromBacklog */
+        /** DmesgMessage fromBacklog */
         fromBacklog?: (boolean|null);
 
-        /** KernelMessage message */
+        /** DmesgMessage message */
         message?: (string|null);
 
-        /** KernelMessage subsystem */
+        /** DmesgMessage subsystem */
         subsystem?: (string|null);
 
-        /** KernelMessage device */
+        /** DmesgMessage device */
         device?: (string|null);
-
-        /** KernelMessage category */
-        category?: (kernel_log.KernelLogCategory|null);
     }
 
-    /** Represents a KernelMessage. */
-    class KernelMessage implements IKernelMessage {
+    /** Represents a DmesgMessage. */
+    class DmesgMessage implements IDmesgMessage {
 
         /**
-         * Constructs a new KernelMessage.
+         * Constructs a new DmesgMessage.
          * @param [properties] Properties to set
          */
-        constructor(properties?: kernel_log.IKernelMessage);
+        constructor(properties?: dmesg.IDmesgMessage);
 
-        /** KernelMessage seq. */
+        /** DmesgMessage seq. */
         public seq: Long;
 
-        /** KernelMessage priority. */
+        /** DmesgMessage priority. */
         public priority: number;
 
-        /** KernelMessage facility. */
+        /** DmesgMessage facility. */
         public facility: number;
 
-        /** KernelMessage kernelMonotonicUs. */
+        /** DmesgMessage kernelMonotonicUs. */
         public kernelMonotonicUs: Long;
 
-        /** KernelMessage fromBacklog. */
+        /** DmesgMessage fromBacklog. */
         public fromBacklog: boolean;
 
-        /** KernelMessage message. */
+        /** DmesgMessage message. */
         public message: string;
 
-        /** KernelMessage subsystem. */
+        /** DmesgMessage subsystem. */
         public subsystem: string;
 
-        /** KernelMessage device. */
+        /** DmesgMessage device. */
         public device: string;
 
-        /** KernelMessage category. */
-        public category: kernel_log.KernelLogCategory;
-
         /**
-         * Creates a new KernelMessage instance using the specified properties.
+         * Creates a new DmesgMessage instance using the specified properties.
          * @param [properties] Properties to set
-         * @returns KernelMessage instance
+         * @returns DmesgMessage instance
          */
-        public static create(properties?: kernel_log.IKernelMessage): kernel_log.KernelMessage;
+        public static create(properties?: dmesg.IDmesgMessage): dmesg.DmesgMessage;
 
         /**
-         * Encodes the specified KernelMessage message. Does not implicitly {@link kernel_log.KernelMessage.verify|verify} messages.
-         * @param message KernelMessage message or plain object to encode
+         * Encodes the specified DmesgMessage message. Does not implicitly {@link dmesg.DmesgMessage.verify|verify} messages.
+         * @param message DmesgMessage message or plain object to encode
          * @param [writer] Writer to encode to
          * @returns Writer
          */
-        public static encode(message: kernel_log.IKernelMessage, writer?: $protobuf.Writer): $protobuf.Writer;
+        public static encode(message: dmesg.IDmesgMessage, writer?: $protobuf.Writer): $protobuf.Writer;
 
         /**
-         * Encodes the specified KernelMessage message, length delimited. Does not implicitly {@link kernel_log.KernelMessage.verify|verify} messages.
-         * @param message KernelMessage message or plain object to encode
+         * Encodes the specified DmesgMessage message, length delimited. Does not implicitly {@link dmesg.DmesgMessage.verify|verify} messages.
+         * @param message DmesgMessage message or plain object to encode
          * @param [writer] Writer to encode to
          * @returns Writer
          */
-        public static encodeDelimited(message: kernel_log.IKernelMessage, writer?: $protobuf.Writer): $protobuf.Writer;
+        public static encodeDelimited(message: dmesg.IDmesgMessage, writer?: $protobuf.Writer): $protobuf.Writer;
 
         /**
-         * Decodes a KernelMessage message from the specified reader or buffer.
+         * Decodes a DmesgMessage message from the specified reader or buffer.
          * @param reader Reader or buffer to decode from
          * @param [length] Message length if known beforehand
-         * @returns KernelMessage
+         * @returns DmesgMessage
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): kernel_log.KernelMessage;
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): dmesg.DmesgMessage;
 
         /**
-         * Decodes a KernelMessage message from the specified reader or buffer, length delimited.
+         * Decodes a DmesgMessage message from the specified reader or buffer, length delimited.
          * @param reader Reader or buffer to decode from
-         * @returns KernelMessage
+         * @returns DmesgMessage
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): kernel_log.KernelMessage;
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): dmesg.DmesgMessage;
 
         /**
-         * Verifies a KernelMessage message.
+         * Verifies a DmesgMessage message.
          * @param message Plain object to verify
          * @returns `null` if valid, otherwise the reason why it is not
          */
         public static verify(message: { [k: string]: any }): (string|null);
 
         /**
-         * Creates a KernelMessage message from a plain object. Also converts values to their respective internal types.
+         * Creates a DmesgMessage message from a plain object. Also converts values to their respective internal types.
          * @param object Plain object
-         * @returns KernelMessage
+         * @returns DmesgMessage
          */
-        public static fromObject(object: { [k: string]: any }): kernel_log.KernelMessage;
+        public static fromObject(object: { [k: string]: any }): dmesg.DmesgMessage;
 
         /**
-         * Creates a plain object from a KernelMessage message. Also converts values to other types if specified.
-         * @param message KernelMessage
+         * Creates a plain object from a DmesgMessage message. Also converts values to other types if specified.
+         * @param message DmesgMessage
          * @param [options] Conversion options
          * @returns Plain object
          */
-        public static toObject(message: kernel_log.KernelMessage, options?: $protobuf.IConversionOptions): { [k: string]: any };
+        public static toObject(message: dmesg.DmesgMessage, options?: $protobuf.IConversionOptions): { [k: string]: any };
 
         /**
-         * Converts this KernelMessage to JSON.
+         * Converts this DmesgMessage to JSON.
          * @returns JSON object
          */
         public toJSON(): { [k: string]: any };
 
         /**
-         * Gets the default type url for KernelMessage
+         * Gets the default type url for DmesgMessage
          * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
          * @returns The default type url
          */
@@ -15591,10 +15572,10 @@ export namespace kernel_log {
         appStartId?: (Long|null);
 
         /** RxEnvelope signalType */
-        signalType?: (kernel_log.KernelLogSignalType|null);
+        signalType?: (dmesg.DmesgSignalType|null);
 
         /** RxEnvelope messages */
-        messages?: (kernel_log.IKernelMessage[]|null);
+        messages?: (dmesg.IDmesgMessage[]|null);
 
         /** RxEnvelope droppedMessages */
         droppedMessages?: (Long|null);
@@ -15616,7 +15597,7 @@ export namespace kernel_log {
          * Constructs a new RxEnvelope.
          * @param [properties] Properties to set
          */
-        constructor(properties?: kernel_log.IRxEnvelope);
+        constructor(properties?: dmesg.IRxEnvelope);
 
         /** RxEnvelope monotonicStampNs. */
         public monotonicStampNs: Long;
@@ -15628,10 +15609,10 @@ export namespace kernel_log {
         public appStartId: Long;
 
         /** RxEnvelope signalType. */
-        public signalType: kernel_log.KernelLogSignalType;
+        public signalType: dmesg.DmesgSignalType;
 
         /** RxEnvelope messages. */
-        public messages: kernel_log.IKernelMessage[];
+        public messages: dmesg.IDmesgMessage[];
 
         /** RxEnvelope droppedMessages. */
         public droppedMessages: Long;
@@ -15650,23 +15631,23 @@ export namespace kernel_log {
          * @param [properties] Properties to set
          * @returns RxEnvelope instance
          */
-        public static create(properties?: kernel_log.IRxEnvelope): kernel_log.RxEnvelope;
+        public static create(properties?: dmesg.IRxEnvelope): dmesg.RxEnvelope;
 
         /**
-         * Encodes the specified RxEnvelope message. Does not implicitly {@link kernel_log.RxEnvelope.verify|verify} messages.
+         * Encodes the specified RxEnvelope message. Does not implicitly {@link dmesg.RxEnvelope.verify|verify} messages.
          * @param message RxEnvelope message or plain object to encode
          * @param [writer] Writer to encode to
          * @returns Writer
          */
-        public static encode(message: kernel_log.IRxEnvelope, writer?: $protobuf.Writer): $protobuf.Writer;
+        public static encode(message: dmesg.IRxEnvelope, writer?: $protobuf.Writer): $protobuf.Writer;
 
         /**
-         * Encodes the specified RxEnvelope message, length delimited. Does not implicitly {@link kernel_log.RxEnvelope.verify|verify} messages.
+         * Encodes the specified RxEnvelope message, length delimited. Does not implicitly {@link dmesg.RxEnvelope.verify|verify} messages.
          * @param message RxEnvelope message or plain object to encode
          * @param [writer] Writer to encode to
          * @returns Writer
          */
-        public static encodeDelimited(message: kernel_log.IRxEnvelope, writer?: $protobuf.Writer): $protobuf.Writer;
+        public static encodeDelimited(message: dmesg.IRxEnvelope, writer?: $protobuf.Writer): $protobuf.Writer;
 
         /**
          * Decodes a RxEnvelope message from the specified reader or buffer.
@@ -15676,7 +15657,7 @@ export namespace kernel_log {
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): kernel_log.RxEnvelope;
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): dmesg.RxEnvelope;
 
         /**
          * Decodes a RxEnvelope message from the specified reader or buffer, length delimited.
@@ -15685,7 +15666,7 @@ export namespace kernel_log {
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): kernel_log.RxEnvelope;
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): dmesg.RxEnvelope;
 
         /**
          * Verifies a RxEnvelope message.
@@ -15699,7 +15680,7 @@ export namespace kernel_log {
          * @param object Plain object
          * @returns RxEnvelope
          */
-        public static fromObject(object: { [k: string]: any }): kernel_log.RxEnvelope;
+        public static fromObject(object: { [k: string]: any }): dmesg.RxEnvelope;
 
         /**
          * Creates a plain object from a RxEnvelope message. Also converts values to other types if specified.
@@ -15707,7 +15688,7 @@ export namespace kernel_log {
          * @param [options] Conversion options
          * @returns Plain object
          */
-        public static toObject(message: kernel_log.RxEnvelope, options?: $protobuf.IConversionOptions): { [k: string]: any };
+        public static toObject(message: dmesg.RxEnvelope, options?: $protobuf.IConversionOptions): { [k: string]: any };
 
         /**
          * Converts this RxEnvelope to JSON.

@@ -53,8 +53,8 @@ export function getQueueType(queueType: drivers.QueueDataType): string | undefin
       return 'airgradient-open-air-o-1pst';
     case drivers.QueueDataType.QDT_VICTRON_SMARTSOLAR_MPPT_RX:
       return 'victron-smartsolar-mppt';
-    case drivers.QueueDataType.QDT_KERNEL_LOG_RX:
-      return 'kernel-log';
+    case drivers.QueueDataType.QDT_DMESG_RX:
+      return 'dmesg';
     default:
       return undefined;
   }
