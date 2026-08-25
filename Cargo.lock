@@ -1270,6 +1270,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "kernel-log"
+version = "0.1.0-beta.11"
+dependencies = [
+ "bytes",
+ "libc",
+ "log",
+ "normfs",
+ "prost",
+ "prost-build",
+ "station_iface",
+ "systime",
+ "tokio",
+]
+
+[[package]]
 name = "lazy_static"
 version = "1.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2530,6 +2545,7 @@ dependencies = [
  "hyper-util",
  "ina226",
  "inferences",
+ "kernel-log",
  "log",
  "mime_guess",
  "motors-mirroring",

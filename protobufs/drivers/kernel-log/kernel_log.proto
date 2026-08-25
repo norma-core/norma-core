@@ -1,0 +1,65 @@
+syntax = "proto3";
+
+package kernel_log;
+
+enum KernelLogSignalType {
+    KERNEL_LOG_SIGNAL_TYPE_UNSPECIFIED = 0;
+    KERNEL_LOG_STARTED                 = 1;
+    KERNEL_LOG_MESSAGES                = 2;
+    KERNEL_LOG_BACKLOG_COMPLETE        = 3;
+    KERNEL_LOG_GAP                     = 4;
+    KERNEL_LOG_SOURCE_UNAVAILABLE      = 5;
+    KERNEL_LOG_ERROR                   = 6;
+}
+
+enum KernelLogCategory {
+    KERNEL_LOG_CATEGORY_UNSPECIFIED    = 0;
+    KERNEL_LOG_CATEGORY_USB            = 1;
+    KERNEL_LOG_CATEGORY_MODEM          = 2;
+    KERNEL_LOG_CATEGORY_H7             = 3;
+    KERNEL_LOG_CATEGORY_UVC            = 4;
+    KERNEL_LOG_CATEGORY_NETWORK        = 5;
+    KERNEL_LOG_CATEGORY_OOM            = 6;
+    KERNEL_LOG_CATEGORY_STORAGE        = 7;
+    KERNEL_LOG_CATEGORY_DEFERRED_PROBE = 8;
+}
+
+message KernelMessage {
+    // Kernel record sequence number, monotonically increasing across the boot.
+    uint64 seq = 1;
+
+    // Syslog priority split into severity (0-7) and facility (0 = kernel).
+    uint32 priority = 2;
+    uint32 facility = 3;
+
+    // Timestamp carried by the kernel record itself, microseconds since boot.
+    uint64 kernel_monotonic_us = 4;
+
+    // True for records read from the ring buffer backlog at driver startup.
+    bool from_backlog = 5;
+
+    string message   = 10;
+    string subsystem = 11;
+    string device    = 12;
+
+    KernelLogCategory category = 13;
+}
+
+message RxEnvelope {
+    uint64 monotonic_stamp_ns = 1;
+    uint64 local_stamp_ns     = 2;
+    uint64 app_start_id       = 3;
+
+    KernelLogSignalType signal_type = 10;
+
+    repeated KernelMessage messages = 11;
+
+    // Records dropped by rate limiting or lost to a ring buffer overrun.
+    uint64 dropped_messages = 12;
+
+    // Sequence range missing on GAP, inclusive.
+    uint64 gap_from_seq = 13;
+    uint64 gap_to_seq   = 14;
+
+    string error = 50;
+}

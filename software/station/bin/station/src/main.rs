@@ -258,6 +258,14 @@ impl Station {
                         encryption_type: EncryptionType::Aes,
                     },
                 ),
+                (
+                    "kernel/*".to_string(),
+                    QueueConfig {
+                        compression_type: CompressionType::Zstd,
+                        enable_fsync: false,
+                        encryption_type: EncryptionType::Aes,
+                    },
+                ),
             ],
             QueueConfig::default(), // default config for all other queues
         )?;
@@ -529,6 +537,19 @@ impl Station {
                 }
             } else {
                 log::info!("Victron SmartSolar MPPT driver disabled by configuration");
+            }
+        }
+
+        if let Some(kernel_log_config) = &self.config.drivers.kernel_log {
+            if kernel_log_config.enabled {
+                if let Err(e) =
+                    kernel_log::start_kernel_log_driver(self.normfs.clone(), self.engine.clone())
+                        .await
+                {
+                    log::error!("Failed to start kernel log driver: {}", e);
+                }
+            } else {
+                log::info!("Kernel log driver disabled by configuration");
             }
         }
 

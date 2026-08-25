@@ -1,5 +1,5 @@
 import Long from 'long';
-import { airgradient_open_air_o_1pst, arduino_nicla_sense_env, hikmicro, ina226, yahboom_dogzilla_lite, drivers, inference, motors_mirroring, normvla, pwm_output, st3215, sysinfo, usbvideo, vesc_trampa, victron_smartsolar_mppt } from '@/api/proto.js';
+import { airgradient_open_air_o_1pst, arduino_nicla_sense_env, hikmicro, ina226, kernel_log, yahboom_dogzilla_lite, drivers, inference, motors_mirroring, normvla, pwm_output, st3215, sysinfo, usbvideo, vesc_trampa, victron_smartsolar_mppt } from '@/api/proto.js';
 import { NormFsClient } from "./normfs.js";
 import { getGlobalTimeAdjustmentNs, isTimeSyncActive } from '@/api/time-sync.js';
 import {
@@ -33,6 +33,7 @@ export interface Frame {
   ina226?: FrameEntry<ina226.IRxEnvelope>[];
   airgradientOpenAir?: FrameEntry<airgradient_open_air_o_1pst.IRxEnvelope>[];
   victronSmartSolar?: FrameEntry<victron_smartsolar_mppt.IRxEnvelope>[];
+  kernelLog?: FrameEntry<kernel_log.IRxEnvelope>;
   yahboom_dogzilla_lite?: FrameEntry<yahboom_dogzilla_lite.IInferenceState>;
   normvla?: FrameEntry<normvla.IFrame>;
 
@@ -52,7 +53,7 @@ export interface Frame {
 }
 
 // Find entry in previous frame with matching queue and pointer
-type DecodedEntry = st3215.IInferenceState | st3215.ITxEnvelope | usbvideo.IRxEnvelope | usbvideo.ITxEnvelope | hikmicro.IRxEnvelope | motors_mirroring.IRxEnvelope | sysinfo.IEnvelope | arduino_nicla_sense_env.IRxEnvelope | ina226.IRxEnvelope | airgradient_open_air_o_1pst.IRxEnvelope | victron_smartsolar_mppt.IRxEnvelope | yahboom_dogzilla_lite.IInferenceState | normvla.IFrame | vesc_trampa.IInferenceState | vesc_trampa.IRxEnvelope | vesc_trampa.ITxEnvelope | pwm_output.IRxEnvelope | pwm_output.ITxEnvelope | null;
+type DecodedEntry = st3215.IInferenceState | st3215.ITxEnvelope | usbvideo.IRxEnvelope | usbvideo.ITxEnvelope | hikmicro.IRxEnvelope | motors_mirroring.IRxEnvelope | sysinfo.IEnvelope | arduino_nicla_sense_env.IRxEnvelope | ina226.IRxEnvelope | airgradient_open_air_o_1pst.IRxEnvelope | victron_smartsolar_mppt.IRxEnvelope | kernel_log.IRxEnvelope | yahboom_dogzilla_lite.IInferenceState | normvla.IFrame | vesc_trampa.IInferenceState | vesc_trampa.IRxEnvelope | vesc_trampa.ITxEnvelope | pwm_output.IRxEnvelope | pwm_output.ITxEnvelope | null;
 
 interface ParseFrameOptions {
   retainRawData?: boolean;
@@ -202,6 +203,14 @@ function findPreviousEntry(
       if (prevPtr.length === ptr.length && prevPtr.every((b, i) => b === ptr[i])) {
         return { decoded: match.data, rawData: match.rawData ?? null };
       }
+    }
+  }
+
+  // Check kernel log
+  if (previousFrame.kernelLog?.queueId === queue) {
+    const prevPtr = previousFrame.kernelLog.ptr;
+    if (prevPtr.length === ptr.length && prevPtr.every((b, i) => b === ptr[i])) {
+      return { decoded: previousFrame.kernelLog.data, rawData: previousFrame.kernelLog.rawData ?? null };
     }
   }
 
@@ -405,6 +414,13 @@ export async function parseFrame(
                 console.error("Failed to decode victron_smartsolar_mppt.RxEnvelope:", error);
               }
               break;
+            case drivers.QueueDataType.QDT_KERNEL_LOG_RX:
+              try {
+                decoded = kernel_log.RxEnvelope.decode(streamEntry.data);
+              } catch (error) {
+                console.error("Failed to decode kernel_log.RxEnvelope:", error);
+              }
+              break;
             case drivers.QueueDataType.QDT_YAHBOOM_DOGZILLA_LITE_INFERENCE:
               try {
                 decoded = yahboom_dogzilla_lite.InferenceState.decode(streamEntry.data);
@@ -577,6 +593,15 @@ export async function parseFrame(
               rawData: retainRawData ? result.rawData ?? null : null,
               queueType: result.type
             });
+            break;
+          case drivers.QueueDataType.QDT_KERNEL_LOG_RX:
+            frame.kernelLog = {
+              queueId: result.queue,
+              ptr: result.ptr,
+              data: result.decoded as kernel_log.IRxEnvelope,
+              rawData: retainRawData ? result.rawData ?? null : null,
+              queueType: result.type
+            };
             break;
           case drivers.QueueDataType.QDT_YAHBOOM_DOGZILLA_LITE_INFERENCE:
             frame.yahboom_dogzilla_lite = {

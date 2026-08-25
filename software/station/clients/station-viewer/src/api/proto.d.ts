@@ -260,7 +260,8 @@ export namespace drivers {
         QDT_AIRGRADIENT_OPEN_AIR_O_1PST_RX = 53,
         QDT_VICTRON_SMARTSOLAR_MPPT_RX = 54,
         QDT_PWM_OUTPUT_TX = 55,
-        QDT_PWM_OUTPUT_RX = 56
+        QDT_PWM_OUTPUT_RX = 56,
+        QDT_KERNEL_LOG_RX = 57
     }
 
     /** StationCommandType enum. */
@@ -15389,6 +15390,324 @@ export namespace pwm_output {
          * @returns Plain object
          */
         public static toObject(message: pwm_output.RxEnvelope, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this RxEnvelope to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for RxEnvelope
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+}
+
+/** Namespace kernel_log. */
+export namespace kernel_log {
+
+    /** KernelLogSignalType enum. */
+    enum KernelLogSignalType {
+        KERNEL_LOG_SIGNAL_TYPE_UNSPECIFIED = 0,
+        KERNEL_LOG_STARTED = 1,
+        KERNEL_LOG_MESSAGES = 2,
+        KERNEL_LOG_BACKLOG_COMPLETE = 3,
+        KERNEL_LOG_GAP = 4,
+        KERNEL_LOG_SOURCE_UNAVAILABLE = 5,
+        KERNEL_LOG_ERROR = 6
+    }
+
+    /** KernelLogCategory enum. */
+    enum KernelLogCategory {
+        KERNEL_LOG_CATEGORY_UNSPECIFIED = 0,
+        KERNEL_LOG_CATEGORY_USB = 1,
+        KERNEL_LOG_CATEGORY_MODEM = 2,
+        KERNEL_LOG_CATEGORY_H7 = 3,
+        KERNEL_LOG_CATEGORY_UVC = 4,
+        KERNEL_LOG_CATEGORY_NETWORK = 5,
+        KERNEL_LOG_CATEGORY_OOM = 6,
+        KERNEL_LOG_CATEGORY_STORAGE = 7,
+        KERNEL_LOG_CATEGORY_DEFERRED_PROBE = 8
+    }
+
+    /** Properties of a KernelMessage. */
+    interface IKernelMessage {
+
+        /** KernelMessage seq */
+        seq?: (Long|null);
+
+        /** KernelMessage priority */
+        priority?: (number|null);
+
+        /** KernelMessage facility */
+        facility?: (number|null);
+
+        /** KernelMessage kernelMonotonicUs */
+        kernelMonotonicUs?: (Long|null);
+
+        /** KernelMessage fromBacklog */
+        fromBacklog?: (boolean|null);
+
+        /** KernelMessage message */
+        message?: (string|null);
+
+        /** KernelMessage subsystem */
+        subsystem?: (string|null);
+
+        /** KernelMessage device */
+        device?: (string|null);
+
+        /** KernelMessage category */
+        category?: (kernel_log.KernelLogCategory|null);
+    }
+
+    /** Represents a KernelMessage. */
+    class KernelMessage implements IKernelMessage {
+
+        /**
+         * Constructs a new KernelMessage.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: kernel_log.IKernelMessage);
+
+        /** KernelMessage seq. */
+        public seq: Long;
+
+        /** KernelMessage priority. */
+        public priority: number;
+
+        /** KernelMessage facility. */
+        public facility: number;
+
+        /** KernelMessage kernelMonotonicUs. */
+        public kernelMonotonicUs: Long;
+
+        /** KernelMessage fromBacklog. */
+        public fromBacklog: boolean;
+
+        /** KernelMessage message. */
+        public message: string;
+
+        /** KernelMessage subsystem. */
+        public subsystem: string;
+
+        /** KernelMessage device. */
+        public device: string;
+
+        /** KernelMessage category. */
+        public category: kernel_log.KernelLogCategory;
+
+        /**
+         * Creates a new KernelMessage instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns KernelMessage instance
+         */
+        public static create(properties?: kernel_log.IKernelMessage): kernel_log.KernelMessage;
+
+        /**
+         * Encodes the specified KernelMessage message. Does not implicitly {@link kernel_log.KernelMessage.verify|verify} messages.
+         * @param message KernelMessage message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: kernel_log.IKernelMessage, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified KernelMessage message, length delimited. Does not implicitly {@link kernel_log.KernelMessage.verify|verify} messages.
+         * @param message KernelMessage message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: kernel_log.IKernelMessage, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes a KernelMessage message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns KernelMessage
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): kernel_log.KernelMessage;
+
+        /**
+         * Decodes a KernelMessage message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns KernelMessage
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): kernel_log.KernelMessage;
+
+        /**
+         * Verifies a KernelMessage message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates a KernelMessage message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns KernelMessage
+         */
+        public static fromObject(object: { [k: string]: any }): kernel_log.KernelMessage;
+
+        /**
+         * Creates a plain object from a KernelMessage message. Also converts values to other types if specified.
+         * @param message KernelMessage
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: kernel_log.KernelMessage, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this KernelMessage to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for KernelMessage
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
+    /** Properties of a RxEnvelope. */
+    interface IRxEnvelope {
+
+        /** RxEnvelope monotonicStampNs */
+        monotonicStampNs?: (Long|null);
+
+        /** RxEnvelope localStampNs */
+        localStampNs?: (Long|null);
+
+        /** RxEnvelope appStartId */
+        appStartId?: (Long|null);
+
+        /** RxEnvelope signalType */
+        signalType?: (kernel_log.KernelLogSignalType|null);
+
+        /** RxEnvelope messages */
+        messages?: (kernel_log.IKernelMessage[]|null);
+
+        /** RxEnvelope droppedMessages */
+        droppedMessages?: (Long|null);
+
+        /** RxEnvelope gapFromSeq */
+        gapFromSeq?: (Long|null);
+
+        /** RxEnvelope gapToSeq */
+        gapToSeq?: (Long|null);
+
+        /** RxEnvelope error */
+        error?: (string|null);
+    }
+
+    /** Represents a RxEnvelope. */
+    class RxEnvelope implements IRxEnvelope {
+
+        /**
+         * Constructs a new RxEnvelope.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: kernel_log.IRxEnvelope);
+
+        /** RxEnvelope monotonicStampNs. */
+        public monotonicStampNs: Long;
+
+        /** RxEnvelope localStampNs. */
+        public localStampNs: Long;
+
+        /** RxEnvelope appStartId. */
+        public appStartId: Long;
+
+        /** RxEnvelope signalType. */
+        public signalType: kernel_log.KernelLogSignalType;
+
+        /** RxEnvelope messages. */
+        public messages: kernel_log.IKernelMessage[];
+
+        /** RxEnvelope droppedMessages. */
+        public droppedMessages: Long;
+
+        /** RxEnvelope gapFromSeq. */
+        public gapFromSeq: Long;
+
+        /** RxEnvelope gapToSeq. */
+        public gapToSeq: Long;
+
+        /** RxEnvelope error. */
+        public error: string;
+
+        /**
+         * Creates a new RxEnvelope instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns RxEnvelope instance
+         */
+        public static create(properties?: kernel_log.IRxEnvelope): kernel_log.RxEnvelope;
+
+        /**
+         * Encodes the specified RxEnvelope message. Does not implicitly {@link kernel_log.RxEnvelope.verify|verify} messages.
+         * @param message RxEnvelope message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: kernel_log.IRxEnvelope, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified RxEnvelope message, length delimited. Does not implicitly {@link kernel_log.RxEnvelope.verify|verify} messages.
+         * @param message RxEnvelope message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: kernel_log.IRxEnvelope, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes a RxEnvelope message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns RxEnvelope
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): kernel_log.RxEnvelope;
+
+        /**
+         * Decodes a RxEnvelope message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns RxEnvelope
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): kernel_log.RxEnvelope;
+
+        /**
+         * Verifies a RxEnvelope message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates a RxEnvelope message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns RxEnvelope
+         */
+        public static fromObject(object: { [k: string]: any }): kernel_log.RxEnvelope;
+
+        /**
+         * Creates a plain object from a RxEnvelope message. Also converts values to other types if specified.
+         * @param message RxEnvelope
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: kernel_log.RxEnvelope, options?: $protobuf.IConversionOptions): { [k: string]: any };
 
         /**
          * Converts this RxEnvelope to JSON.
