@@ -78,9 +78,17 @@ async fn try_setup_on_port(
     if assistance {
         // Assistance failures are never fatal — the engine still works
         // standalone, just with slower cold starts.
-        let validity = crate::xtra::query_validity_minutes(&mut port).await;
-        if crate::xtra::validity_is_sufficient(validity) {
-            log::debug!("XTRA assistance still valid for {validity} minutes");
+        let now = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_secs())
+            .unwrap_or(0);
+        let status = crate::xtra::query_status(&mut port).await;
+        if crate::xtra::status_is_fresh(&status, now) {
+            log::debug!(
+                "XTRA assistance fresh (injected {:?}, valid {} minutes)",
+                status.injected_at_unix,
+                status.validity_minutes
+            );
         } else {
             match crate::xtra::download_xtra_file().await {
                 Ok(file) => {
@@ -88,11 +96,13 @@ async fn try_setup_on_port(
                         at_command(&mut port, "AT+QGPSEND").await?;
                         engine_on = false;
                     }
-                    let now = std::time::SystemTime::now()
+                    // Re-read the clock: the download above may have taken
+                    // tens of seconds and QGPSXTRATIME claims ±3.5 s.
+                    let inject_now = std::time::SystemTime::now()
                         .duration_since(std::time::UNIX_EPOCH)
                         .map(|d| d.as_secs())
                         .unwrap_or(0);
-                    match crate::xtra::inject(&mut port, &file, now).await {
+                    match crate::xtra::inject(&mut port, &file, inject_now).await {
                         Ok(validity_minutes) => {
                             injected = Some(XtraInjection { file, validity_minutes });
                         }

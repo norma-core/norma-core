@@ -37,6 +37,10 @@ const NMEA_READ_TIMEOUT: Duration = Duration::from_secs(3);
 /// Consecutive read timeouts before the connection is considered lost and
 /// setup re-runs (the engine switches off whenever the modem reboots).
 const STALLED_READS_BEFORE_RECONNECT: u32 = 3;
+/// A long-lived NMEA stream never re-runs setup on its own, so break out
+/// of the read loop this often to let setup re-check XTRA assistance age
+/// (capped at one day; the check itself is two quick AT queries).
+const XTRA_REVALIDATE_INTERVAL: Duration = Duration::from_secs(6 * 3600);
 
 type DriverResult<T> = Result<T, Box<dyn std::error::Error + Send + Sync>>;
 
@@ -229,10 +233,16 @@ async fn run_worker(
             }
         }
 
-        if let Err(error) = read_nmea_stream(&mut state).await {
-            state.note_disconnect(error);
+        match tokio::time::timeout(XTRA_REVALIDATE_INTERVAL, read_nmea_stream(&mut state)).await {
+            Ok(Err(error)) => {
+                state.note_disconnect(error);
+                tokio::time::sleep(SCAN_INTERVAL).await;
+            }
+            Ok(Ok(())) => tokio::time::sleep(SCAN_INTERVAL).await,
+            // Interval elapsed with a healthy stream: loop straight back
+            // into setup so stale XTRA assistance gets re-injected.
+            Err(_) => {}
         }
-        tokio::time::sleep(SCAN_INTERVAL).await;
     }
 }
 

@@ -7,6 +7,15 @@
 //! `AT+QFUPL="RAM:..."` (CONNECT handshake, raw bytes), then
 //! `AT+QGPSXTRADATA="RAM:..."`. A good injection reports 10080 minutes
 //! (7 days) of validity.
+//!
+//! The modem's remaining-validity counter cannot be trusted for freshness:
+//! it pauses while the modem is powered down (observed: a 3-day-old
+//! injection still reporting the full 10080 minutes), and prediction
+//! quality degrades over the file's 7-day span regardless. We therefore
+//! cap assistance age at one day using the injected-at timestamp the modem
+//! reports alongside the validity, and treat an implausible timestamp
+//! (e.g. `1980/01/05` when the clock was unset at injection time) as
+//! stale.
 
 use std::time::Duration;
 
@@ -23,31 +32,63 @@ const XTRA_HOSTS: [&str; 3] = [
 ];
 const XTRA_FILE: &str = "xtra3grc.bin";
 const DOWNLOAD_TIMEOUT: Duration = Duration::from_secs(20);
-/// Re-inject when less than this much validity remains (the file carries
-/// 7 days; half a day of margin keeps reconnects cheap).
+/// Re-inject when less than this much validity remains, whatever the
+/// injection age (guards against the engine running the data to expiry).
 const MIN_VALIDITY_MINUTES: u32 = 720;
+/// Re-inject when the modem's data was injected more than this long ago —
+/// the file predicts 7 days ahead but the first day is by far the most
+/// accurate, and the modem's validity counter pauses while powered down.
+const MAX_AGE_SECS: u64 = 86_400;
+/// Injected-at stamps further in the future than this are clock skew from
+/// an unset clock at injection time; treat them as stale.
+const MAX_FUTURE_SKEW_SECS: u64 = 3_600;
 
-/// Remaining assistance validity in minutes (0 when XTRA is off or empty).
-pub async fn query_validity_minutes(port: &mut BufReader<SerialStream>) -> u32 {
+/// Assistance state reported by the modem via `AT+QGPSXTRADATA?`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct XtraStatus {
+    /// Remaining validity in minutes (0 when XTRA is off or empty).
+    pub validity_minutes: u32,
+    /// Unix time of the last injection, when the modem reports a
+    /// parseable timestamp.
+    pub injected_at_unix: Option<u64>,
+}
+
+/// Queries the modem's assistance state (zeroed when XTRA is off).
+pub async fn query_status(port: &mut BufReader<SerialStream>) -> XtraStatus {
+    let off = XtraStatus { validity_minutes: 0, injected_at_unix: None };
     let enabled = match at_command(port, "AT+QGPSXTRA?").await {
         Ok(lines) => lines.iter().find_map(|l| parse_xtra_enabled(l)).unwrap_or(false),
         Err(_) => false,
     };
     if !enabled {
-        return 0;
+        return off;
     }
     match at_command(port, "AT+QGPSXTRADATA?").await {
-        Ok(lines) => lines
-            .iter()
-            .find_map(|l| parse_xtradata_validity_minutes(l))
-            .unwrap_or(0),
-        Err(_) => 0,
+        Ok(lines) => XtraStatus {
+            validity_minutes: lines
+                .iter()
+                .find_map(|l| parse_xtradata_validity_minutes(l))
+                .unwrap_or(0),
+            injected_at_unix: lines.iter().find_map(|l| parse_xtradata_injected_at(l)),
+        },
+        Err(_) => off,
     }
 }
 
-/// True when the assistance data is fresh enough to skip injection.
-pub fn validity_is_sufficient(minutes: u32) -> bool {
-    minutes >= MIN_VALIDITY_MINUTES
+/// True when the assistance data is fresh enough to skip injection: the
+/// engine still considers it valid AND it was injected less than a day
+/// ago by a trustworthy clock.
+pub fn status_is_fresh(status: &XtraStatus, now_unix: u64) -> bool {
+    if status.validity_minutes < MIN_VALIDITY_MINUTES {
+        return false;
+    }
+    let Some(injected_at) = status.injected_at_unix else {
+        return false;
+    };
+    if injected_at > now_unix + MAX_FUTURE_SKEW_SECS {
+        return false;
+    }
+    now_unix.saturating_sub(injected_at) < MAX_AGE_SECS
 }
 
 /// Downloads the XTRA3 file over plain HTTP from the first responding host.
@@ -112,7 +153,7 @@ pub async fn inject(
     let mut validity = 0;
     for _ in 0..6 {
         tokio::time::sleep(Duration::from_millis(500)).await;
-        validity = query_validity_minutes(port).await;
+        validity = query_status(port).await.validity_minutes;
         if validity > 0 {
             break;
         }
@@ -148,6 +189,31 @@ pub fn parse_xtradata_validity_minutes(line: &str) -> Option<u32> {
         .ok()
 }
 
+/// Parses the injected-at stamp from
+/// `+QGPSXTRADATA: <minutes>,"YYYY/MM/DD,hh:mm:ss"` into unix time. The
+/// stamp itself contains a comma, so it is everything after the first one.
+pub fn parse_xtradata_injected_at(line: &str) -> Option<u64> {
+    let rest = line.trim().strip_prefix("+QGPSXTRADATA: ")?;
+    let stamp = rest.split_once(',')?.1.trim().trim_matches('"');
+    let (date, time) = stamp.split_once(',')?;
+    let mut date_parts = date.split('/');
+    let year: i64 = date_parts.next()?.parse().ok()?;
+    let month: u32 = date_parts.next()?.parse().ok()?;
+    let day: u32 = date_parts.next()?.parse().ok()?;
+    let mut time_parts = time.split(':');
+    let hour: u64 = time_parts.next()?.parse().ok()?;
+    let minute: u64 = time_parts.next()?.parse().ok()?;
+    let second: u64 = time_parts.next()?.parse().ok()?;
+    if month == 0 || month > 12 || day == 0 || day > 31 || hour > 23 || minute > 59 || second > 60 {
+        return None;
+    }
+    let days = days_from_civil(year, month, day);
+    if days < 0 {
+        return None;
+    }
+    Some(days as u64 * 86_400 + hour * 3_600 + minute * 60 + second)
+}
+
 /// Formats the UTC time-injection command from a unix timestamp.
 pub fn format_xtratime_command(unix_secs: u64) -> String {
     let days = (unix_secs / 86_400) as i64;
@@ -159,6 +225,18 @@ pub fn format_xtratime_command(unix_secs: u64) -> String {
         (secs_of_day / 60) % 60,
         secs_of_day % 60,
     )
+}
+
+/// (year, month, day) to days since 1970-01-01 — Howard Hinnant's
+/// days_from_civil algorithm, the inverse of `civil_from_days`.
+fn days_from_civil(year: i64, month: u32, day: u32) -> i64 {
+    let y = if month <= 2 { year - 1 } else { year };
+    let era = y.div_euclid(400);
+    let yoe = y - era * 400;
+    let mp = i64::from(if month > 2 { month - 3 } else { month + 9 });
+    let doy = (153 * mp + 2) / 5 + i64::from(day) - 1;
+    let doe = yoe * 365 + yoe / 4 - yoe / 100 + doy;
+    era * 146_097 + doe - 719_468
 }
 
 /// Days since 1970-01-01 to (year, month, day) — Howard Hinnant's
@@ -222,6 +300,58 @@ mod tests {
             Some(0)
         );
         assert_eq!(parse_xtradata_validity_minutes("+CME ERROR: 509"), None);
+    }
+
+    #[test]
+    fn parses_xtradata_injected_at_stamp() {
+        // 2026-08-22 11:00:00 UTC — as reported live by an EG25-G.
+        assert_eq!(
+            parse_xtradata_injected_at("+QGPSXTRADATA: 10080,\"2026/08/22,11:00:00\""),
+            Some(1787396400)
+        );
+        // GPS-epoch garbage from an unset clock still parses; freshness
+        // filtering happens in status_is_fresh.
+        assert_eq!(
+            parse_xtradata_injected_at("+QGPSXTRADATA: 10080,\"1980/01/05,19:00:00\""),
+            Some(315946800)
+        );
+        assert_eq!(parse_xtradata_injected_at("+QGPSXTRADATA: 10080"), None);
+        assert_eq!(
+            parse_xtradata_injected_at("+QGPSXTRADATA: 10080,\"garbage\""),
+            None
+        );
+        assert_eq!(parse_xtradata_injected_at("+CME ERROR: 509"), None);
+    }
+
+    #[test]
+    fn civil_conversions_roundtrip() {
+        for days in [0i64, 3_651, 19_782, 20_688, 25_000] {
+            let (y, m, d) = civil_from_days(days);
+            assert_eq!(days_from_civil(y, m, d), days);
+        }
+        assert_eq!(days_from_civil(1970, 1, 1), 0);
+    }
+
+    #[test]
+    fn freshness_caps_age_at_one_day() {
+        let now = 1787396400u64; // 2026-08-22 11:00:00 UTC
+        let fresh = |validity_minutes, injected_at_unix| XtraStatus {
+            validity_minutes,
+            injected_at_unix,
+        };
+        // Injected two hours ago with plenty of validity.
+        assert!(status_is_fresh(&fresh(10080, Some(now - 7_200)), now));
+        // A day and a bit old: stale even though the modem still claims
+        // full validity (the counter pauses while powered down).
+        assert!(!status_is_fresh(&fresh(10080, Some(now - 90_000)), now));
+        // Almost expired: stale regardless of age.
+        assert!(!status_is_fresh(&fresh(600, Some(now - 7_200)), now));
+        // No parseable stamp: stale.
+        assert!(!status_is_fresh(&fresh(10080, None), now));
+        // Stamp implausibly far in the future (clock skew): stale.
+        assert!(!status_is_fresh(&fresh(10080, Some(now + 90_000)), now));
+        // Slightly ahead of our clock is tolerated.
+        assert!(status_is_fresh(&fresh(10080, Some(now + 600)), now));
     }
 
     #[test]
