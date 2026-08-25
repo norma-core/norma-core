@@ -72,6 +72,7 @@ impl<K: StationEngine> StateTracker<K> {
             formats: vec![],
             last_inference_queue_ptr: self.get_last_inference_id_bytes(),
             error: String::new(),
+            command: None,
         };
 
         let mut buf = BytesMut::new();
