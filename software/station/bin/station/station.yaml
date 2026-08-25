@@ -22,12 +22,8 @@ drivers:
   dfrobot-rs485:
     enabled: true
     ports: ["/dev/cu.usbserial-*", "/dev/cu.wchusbserial*", "/dev/ttyUSB*"]
-    # baud: 9600          # optional fixed baud — disables baud detection
-    # bauds: [4800, 9600] # optional candidate list; this is the default
-    poll-interval: 1s
     # scan-ids: "1-10"   # default; auto-detect scans these IDs ("A-B" string or list like [1, 2]; quote single IDs: "5"). Models are auto-detected.
-    # sensors:           # optional explicit override, skips detection:
-    #   - { model: uv, modbus-id: 3 }
+    # poll interval (1s) and baud candidates ([4800, 9600]) are fixed by the driver
 inference:
 - queue-id: inference/normvla
   shm: /tmp/normvla
