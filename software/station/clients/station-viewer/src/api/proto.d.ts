@@ -13557,6 +13557,9 @@ export namespace arduino_pro_4g_gnss {
 
         /** ArduinoPro4gGnssDevice fixFrequencyHz */
         fixFrequencyHz?: (number|null);
+
+        /** ArduinoPro4gGnssDevice xtraInjectedAtUnix */
+        xtraInjectedAtUnix?: (Long|null);
     }
 
     /** Represents an ArduinoPro4gGnssDevice. */
@@ -13585,6 +13588,9 @@ export namespace arduino_pro_4g_gnss {
 
         /** ArduinoPro4gGnssDevice fixFrequencyHz. */
         public fixFrequencyHz: number;
+
+        /** ArduinoPro4gGnssDevice xtraInjectedAtUnix. */
+        public xtraInjectedAtUnix: Long;
 
         /**
          * Creates a new ArduinoPro4gGnssDevice instance using the specified properties.

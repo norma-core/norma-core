@@ -44,8 +44,13 @@ export interface GnssLiveSnapshot {
   /** Latest driver connection signal; null until one is observed. */
   connected: boolean | null;
   connectionError: string | null;
-  /** Last observed gpsOneXTRA assistance injection, if any was seen. */
+  /** Validity the modem reported for the last observed XTRA_INJECTED
+   * event; null when no such event was in the catch-up window. */
   xtraValidityMinutes: number | null;
+  /** When gpsOneXTRA assistance was last injected. Every envelope's
+   * device state carries the driver's injection record, so this is known
+   * as soon as any entry is read — not only when the rare XTRA_INJECTED
+   * event itself lands in the window. */
   xtraInjectedAtMs: number | null;
 }
 
@@ -198,6 +203,14 @@ async function catchUp(queueId: string): Promise<void> {
         envelope = arduino_pro_4g_gnss.RxEnvelope.decode(entry.data);
       } catch {
         continue;
+      }
+      // The device state in every envelope carries the driver's injection
+      // record (0 = none yet in that driver process).
+      const injectedAtUnix = envelope.device?.xtraInjectedAtUnix;
+      const injectedAtMs = injectedAtUnix ? Long.fromValue(injectedAtUnix).toNumber() * 1000 : 0;
+      if (injectedAtMs > 0 && injectedAtMs !== next.xtraInjectedAtMs) {
+        next.xtraInjectedAtMs = injectedAtMs;
+        changed = true;
       }
       switch (envelope.signalType) {
         case SIGNAL.ARDUINO_PRO_4G_GNSS_NMEA_BATCH:

@@ -39484,6 +39484,7 @@ export const arduino_pro_4g_gnss = $root.arduino_pro_4g_gnss = (() => {
          * @property {number|null} [usbVid] ArduinoPro4gGnssDevice usbVid
          * @property {number|null} [usbPid] ArduinoPro4gGnssDevice usbPid
          * @property {number|null} [fixFrequencyHz] ArduinoPro4gGnssDevice fixFrequencyHz
+         * @property {Long|null} [xtraInjectedAtUnix] ArduinoPro4gGnssDevice xtraInjectedAtUnix
          */
 
         /**
@@ -39550,6 +39551,14 @@ export const arduino_pro_4g_gnss = $root.arduino_pro_4g_gnss = (() => {
         ArduinoPro4gGnssDevice.prototype.fixFrequencyHz = 0;
 
         /**
+         * ArduinoPro4gGnssDevice xtraInjectedAtUnix.
+         * @member {Long} xtraInjectedAtUnix
+         * @memberof arduino_pro_4g_gnss.ArduinoPro4gGnssDevice
+         * @instance
+         */
+        ArduinoPro4gGnssDevice.prototype.xtraInjectedAtUnix = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+
+        /**
          * Creates a new ArduinoPro4gGnssDevice instance using the specified properties.
          * @function create
          * @memberof arduino_pro_4g_gnss.ArduinoPro4gGnssDevice
@@ -39585,6 +39594,8 @@ export const arduino_pro_4g_gnss = $root.arduino_pro_4g_gnss = (() => {
                 writer.uint32(/* id 5, wireType 0 =*/40).uint32(message.usbPid);
             if (message.fixFrequencyHz != null && Object.hasOwnProperty.call(message, "fixFrequencyHz"))
                 writer.uint32(/* id 6, wireType 0 =*/48).uint32(message.fixFrequencyHz);
+            if (message.xtraInjectedAtUnix != null && Object.hasOwnProperty.call(message, "xtraInjectedAtUnix"))
+                writer.uint32(/* id 7, wireType 0 =*/56).uint64(message.xtraInjectedAtUnix);
             return writer;
         };
 
@@ -39649,6 +39660,10 @@ export const arduino_pro_4g_gnss = $root.arduino_pro_4g_gnss = (() => {
                         message.fixFrequencyHz = reader.uint32();
                         break;
                     }
+                case 7: {
+                        message.xtraInjectedAtUnix = reader.uint64();
+                        break;
+                    }
                 default:
                     reader.skipType(tag & 7, long);
                     break;
@@ -39706,6 +39721,9 @@ export const arduino_pro_4g_gnss = $root.arduino_pro_4g_gnss = (() => {
             if (message.fixFrequencyHz != null && message.hasOwnProperty("fixFrequencyHz"))
                 if (!$util.isInteger(message.fixFrequencyHz))
                     return "fixFrequencyHz: integer expected";
+            if (message.xtraInjectedAtUnix != null && message.hasOwnProperty("xtraInjectedAtUnix"))
+                if (!$util.isInteger(message.xtraInjectedAtUnix) && !(message.xtraInjectedAtUnix && $util.isInteger(message.xtraInjectedAtUnix.low) && $util.isInteger(message.xtraInjectedAtUnix.high)))
+                    return "xtraInjectedAtUnix: integer|Long expected";
             return null;
         };
 
@@ -39737,6 +39755,15 @@ export const arduino_pro_4g_gnss = $root.arduino_pro_4g_gnss = (() => {
                 message.usbPid = object.usbPid >>> 0;
             if (object.fixFrequencyHz != null)
                 message.fixFrequencyHz = object.fixFrequencyHz >>> 0;
+            if (object.xtraInjectedAtUnix != null)
+                if ($util.Long)
+                    (message.xtraInjectedAtUnix = $util.Long.fromValue(object.xtraInjectedAtUnix)).unsigned = true;
+                else if (typeof object.xtraInjectedAtUnix === "string")
+                    message.xtraInjectedAtUnix = parseInt(object.xtraInjectedAtUnix, 10);
+                else if (typeof object.xtraInjectedAtUnix === "number")
+                    message.xtraInjectedAtUnix = object.xtraInjectedAtUnix;
+                else if (typeof object.xtraInjectedAtUnix === "object")
+                    message.xtraInjectedAtUnix = new $util.LongBits(object.xtraInjectedAtUnix.low >>> 0, object.xtraInjectedAtUnix.high >>> 0).toNumber(true);
             return message;
         };
 
@@ -39760,6 +39787,11 @@ export const arduino_pro_4g_gnss = $root.arduino_pro_4g_gnss = (() => {
                 object.usbVid = 0;
                 object.usbPid = 0;
                 object.fixFrequencyHz = 0;
+                if ($util.Long) {
+                    let long = new $util.Long(0, 0, true);
+                    object.xtraInjectedAtUnix = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+                } else
+                    object.xtraInjectedAtUnix = options.longs === String ? "0" : 0;
             }
             if (message.id != null && message.hasOwnProperty("id"))
                 object.id = message.id;
@@ -39773,6 +39805,11 @@ export const arduino_pro_4g_gnss = $root.arduino_pro_4g_gnss = (() => {
                 object.usbPid = message.usbPid;
             if (message.fixFrequencyHz != null && message.hasOwnProperty("fixFrequencyHz"))
                 object.fixFrequencyHz = message.fixFrequencyHz;
+            if (message.xtraInjectedAtUnix != null && message.hasOwnProperty("xtraInjectedAtUnix"))
+                if (typeof message.xtraInjectedAtUnix === "number")
+                    object.xtraInjectedAtUnix = options.longs === String ? String(message.xtraInjectedAtUnix) : message.xtraInjectedAtUnix;
+                else
+                    object.xtraInjectedAtUnix = options.longs === String ? $util.Long.prototype.toString.call(message.xtraInjectedAtUnix) : options.longs === Number ? new $util.LongBits(message.xtraInjectedAtUnix.low >>> 0, message.xtraInjectedAtUnix.high >>> 0).toNumber(true) : message.xtraInjectedAtUnix;
             return object;
         };
 

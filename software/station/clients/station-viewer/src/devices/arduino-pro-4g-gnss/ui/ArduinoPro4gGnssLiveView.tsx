@@ -78,8 +78,15 @@ function formatAge(ms: number): string {
   if (totalS < 3600) {
     return `${Math.floor(totalS / 60)}m ${totalS % 60}s`;
   }
-  return `${Math.floor(totalS / 3600)}h ${Math.floor((totalS % 3600) / 60)}m`;
+  if (totalS < 86_400) {
+    return `${Math.floor(totalS / 3600)}h ${Math.floor((totalS % 3600) / 60)}m`;
+  }
+  return `${Math.floor(totalS / 86_400)}d ${Math.floor((totalS % 86_400) / 3600)}h`;
 }
+
+/** The driver re-injects gpsOneXTRA assistance once it is a day old, so
+ * older data means the refresh is failing (no network, AT port trouble). */
+const XTRA_FRESH_FOR_MS = 24 * 3600 * 1000;
 
 function satelliteTitle(sat: GnssSatellite): string {
   const parts = [`${sat.system} ${sat.prn ?? '?'}`];
@@ -174,18 +181,25 @@ function ArduinoPro4gGnssLiveView({ data, queueId }: ArduinoPro4gGnssLiveViewPro
   // Pills that only mean something with a current solution dim without one.
   const liveTone = (tone: string) => (hasFix ? tone : 'text-text-muted');
 
-  const xtraLabel = (() => {
-    if (snapshot.xtraValidityMinutes === null || snapshot.xtraInjectedAtMs === null) {
-      return null;
-    }
-    const remainingMin =
-      snapshot.xtraValidityMinutes - (Date.now() - snapshot.xtraInjectedAtMs) / 60_000;
-    if (remainingMin <= 0) {
-      return 'A-GPS expired';
-    }
-    const days = remainingMin / (60 * 24);
-    return days >= 1 ? `A-GPS valid ~${Math.floor(days)}d` : `A-GPS valid ~${Math.ceil(remainingMin / 60)}h`;
-  })();
+  // A-GPS (gpsOneXTRA) assistance freshness. Age drives the readout:
+  // green while inside the driver's one-day refresh policy, amber once
+  // the refresh is overdue, red when the modem's validity has run out.
+  const xtraAgeMs =
+    snapshot.xtraInjectedAtMs === null ? null : Math.max(nowMs - snapshot.xtraInjectedAtMs, 0);
+  const xtraExpired =
+    xtraAgeMs !== null
+    && snapshot.xtraValidityMinutes !== null
+    && xtraAgeMs / 60_000 >= snapshot.xtraValidityMinutes;
+  const xtraValue =
+    xtraAgeMs === null ? 'N/A' : xtraExpired ? 'expired' : `${formatAge(xtraAgeMs)} old`;
+  const xtraTone =
+    xtraAgeMs === null
+      ? 'text-text-muted'
+      : xtraExpired
+        ? 'text-accent-critical'
+        : xtraAgeMs > XTRA_FRESH_FOR_MS
+          ? 'text-accent-warning'
+          : 'text-accent-success';
 
   return (
     <DeviceWidgetShell
@@ -248,6 +262,7 @@ function ArduinoPro4gGnssLiveView({ data, queueId }: ArduinoPro4gGnssLiveViewPro
         <DeviceMetricPill label="VDOP" value={formatDop(values?.vdop ?? null)} tone={liveTone('text-accent-secondary')} />
         <DeviceMetricPill label="UTC" value={formatUtcTime(values?.utcTime ?? null)} tone={streamDown ? 'text-text-muted' : 'text-accent-data'} />
         <DeviceMetricPill label="Date" value={formatUtcDate(values?.utcDate ?? null)} tone={streamDown ? 'text-text-muted' : 'text-accent-data'} />
+        <DeviceMetricPill label="A-GPS" value={xtraValue} tone={xtraTone} />
       </div>
       {satellites.length > 0 ? (
         // The strip is last-known data once the stream dies; fade it so it
@@ -257,11 +272,6 @@ function ArduinoPro4gGnssLiveView({ data, queueId }: ArduinoPro4gGnssLiveViewPro
         </div>
       ) : (
         <div className="mt-2 text-[10px] uppercase text-text-muted">No satellites in view</div>
-      )}
-      {xtraLabel && (
-        <div className={`mt-1 text-[10px] uppercase ${xtraLabel === 'A-GPS expired' ? 'text-accent-warning' : 'text-text-muted'}`}>
-          {xtraLabel}
-        </div>
       )}
     </DeviceWidgetShell>
   );

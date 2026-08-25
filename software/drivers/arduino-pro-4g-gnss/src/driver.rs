@@ -122,6 +122,7 @@ impl WorkerState {
             usb_vid: USB_VID as u32,
             usb_pid: USB_PID as u32,
             fix_frequency_hz: self.fix_frequency_hz,
+            xtra_injected_at_unix: self.last_xtra_injection_unix.unwrap_or(0),
         }
     }
 

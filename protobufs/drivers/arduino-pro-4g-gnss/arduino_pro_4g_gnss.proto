@@ -39,6 +39,12 @@ message ArduinoPro4gGnssDevice {
     // NMEA fix rate in Hz the driver configured via AT+QGPSCFG="fixfreq"
     // (GSV sentences always stay at 1 Hz regardless).
     uint32 fix_frequency_hz = 6;
+
+    // Unix time (seconds) of the last gpsOneXTRA assistance injection this
+    // driver process performed, 0 while none has happened yet. Carried in
+    // every envelope so the viewer can show assistance freshness without
+    // hunting for the rare XTRA_INJECTED event in the queue.
+    uint64 xtra_injected_at_unix = 7;
 }
 
 message RxEnvelope {
