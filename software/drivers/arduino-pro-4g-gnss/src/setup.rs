@@ -39,11 +39,12 @@ pub async fn ensure_gnss_enabled(
     ports: &ModemPorts,
     target_fixfreq_hz: u32,
     assistance: bool,
+    last_xtra_injection_unix: Option<u64>,
 ) -> Result<SetupOutcome, String> {
     let mut errors = Vec::new();
     for candidate in &ports.at_candidates {
         let path = candidate.display().to_string();
-        match try_setup_on_port(&path, target_fixfreq_hz, assistance).await {
+        match try_setup_on_port(&path, target_fixfreq_hz, assistance, last_xtra_injection_unix).await {
             Ok(xtra) => return Ok(SetupOutcome { at_port: path, xtra }),
             Err(error) => errors.push(format!("{path}: {error}")),
         }
@@ -58,6 +59,7 @@ async fn try_setup_on_port(
     path: &str,
     target_fixfreq_hz: u32,
     assistance: bool,
+    last_xtra_injection_unix: Option<u64>,
 ) -> Result<Option<XtraInjection>, String> {
     let port = tokio_serial::new(path, AT_BAUD)
         .open_native_async()
@@ -83,7 +85,7 @@ async fn try_setup_on_port(
             .map(|d| d.as_secs())
             .unwrap_or(0);
         let status = crate::xtra::query_status(&mut port).await;
-        if crate::xtra::status_is_fresh(&status, now) {
+        if crate::xtra::status_is_fresh(&status, now, last_xtra_injection_unix) {
             log::debug!(
                 "XTRA assistance fresh (injected {:?}, valid {} minutes)",
                 status.injected_at_unix,

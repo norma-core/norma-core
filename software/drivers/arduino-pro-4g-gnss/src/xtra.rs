@@ -77,17 +77,25 @@ pub async fn query_status(port: &mut BufReader<SerialStream>) -> XtraStatus {
 
 /// True when the assistance data is fresh enough to skip injection: the
 /// engine still considers it valid AND it was injected less than a day
-/// ago by a trustworthy clock.
-pub fn status_is_fresh(status: &XtraStatus, now_unix: u64) -> bool {
+/// ago. The injection time this process recorded is authoritative; the
+/// modem's own stamp only fills in across restarts, because right after
+/// an injection it reads a GPS-epoch placeholder (`1980/01/05,19:00:00`)
+/// until the receiver resolves it. No record and no plausible stamp
+/// means the age is unknown — count that as stale.
+pub fn status_is_fresh(
+    status: &XtraStatus,
+    now_unix: u64,
+    host_injected_at_unix: Option<u64>,
+) -> bool {
     if status.validity_minutes < MIN_VALIDITY_MINUTES {
         return false;
     }
-    let Some(injected_at) = status.injected_at_unix else {
+    let plausible_stamp = status
+        .injected_at_unix
+        .filter(|&t| t <= now_unix + MAX_FUTURE_SKEW_SECS);
+    let Some(injected_at) = host_injected_at_unix.or(plausible_stamp) else {
         return false;
     };
-    if injected_at > now_unix + MAX_FUTURE_SKEW_SECS {
-        return false;
-    }
     now_unix.saturating_sub(injected_at) < MAX_AGE_SECS
 }
 
@@ -138,6 +146,10 @@ pub async fn inject(
     // accepts an injection; without this the data lands but registers zero
     // validity.
     tokio::time::sleep(Duration::from_secs(1)).await;
+    // The modem silently keeps its current data when it still considers it
+    // valid (observed on EG25-G R07: every command answers OK yet the old
+    // data survives), so wipe the aiding data to make the injection take.
+    at_command(port, "AT+QGPSDEL=0").await?;
     at_command(port, &format_xtratime_command(unix_now_secs)).await?;
     // Stale uploads from interrupted runs would make QFUPL fail with
     // "file already existed"; deletion errors are expected on a clean start.
@@ -335,23 +347,34 @@ mod tests {
     #[test]
     fn freshness_caps_age_at_one_day() {
         let now = 1787396400u64; // 2026-08-22 11:00:00 UTC
-        let fresh = |validity_minutes, injected_at_unix| XtraStatus {
+        let status = |validity_minutes, injected_at_unix| XtraStatus {
             validity_minutes,
             injected_at_unix,
         };
-        // Injected two hours ago with plenty of validity.
-        assert!(status_is_fresh(&fresh(10080, Some(now - 7_200)), now));
+        // Modem stamp two hours old with plenty of validity.
+        assert!(status_is_fresh(&status(10080, Some(now - 7_200)), now, None));
         // A day and a bit old: stale even though the modem still claims
         // full validity (the counter pauses while powered down).
-        assert!(!status_is_fresh(&fresh(10080, Some(now - 90_000)), now));
+        assert!(!status_is_fresh(&status(10080, Some(now - 90_000)), now, None));
         // Almost expired: stale regardless of age.
-        assert!(!status_is_fresh(&fresh(600, Some(now - 7_200)), now));
-        // No parseable stamp: stale.
-        assert!(!status_is_fresh(&fresh(10080, None), now));
+        assert!(!status_is_fresh(&status(600, Some(now - 7_200)), now, None));
+        // No stamp and no host record: age unknown, stale.
+        assert!(!status_is_fresh(&status(10080, None), now, None));
         // Stamp implausibly far in the future (clock skew): stale.
-        assert!(!status_is_fresh(&fresh(10080, Some(now + 90_000)), now));
+        assert!(!status_is_fresh(&status(10080, Some(now + 90_000)), now, None));
         // Slightly ahead of our clock is tolerated.
-        assert!(status_is_fresh(&fresh(10080, Some(now + 600)), now));
+        assert!(status_is_fresh(&status(10080, Some(now + 600)), now, None));
+
+        // Host record beats the stamp: right after our injection the modem
+        // reports the unresolved GPS-epoch placeholder, but we know when we
+        // injected.
+        let placeholder = Some(315946800); // 1980/01/05,19:00:00
+        assert!(status_is_fresh(&status(10080, placeholder), now, Some(now - 7_200)));
+        assert!(!status_is_fresh(&status(10080, placeholder), now, None));
+        // A day after our own injection it goes stale again.
+        assert!(!status_is_fresh(&status(10080, placeholder), now, Some(now - 90_000)));
+        // Host record also overrides a fresher-looking stamp.
+        assert!(!status_is_fresh(&status(10080, Some(now - 60)), now, Some(now - 90_000)));
     }
 
     #[test]

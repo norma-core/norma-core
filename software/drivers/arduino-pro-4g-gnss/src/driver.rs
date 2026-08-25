@@ -108,6 +108,9 @@ struct WorkerState {
     last_error: Option<String>,
     nmea_port: String,
     at_port: String,
+    /// When this process last injected XTRA assistance; authoritative for
+    /// the freshness check because the modem stamp resolves lazily.
+    last_xtra_injection_unix: Option<u64>,
 }
 
 impl WorkerState {
@@ -207,6 +210,7 @@ async fn run_worker(
         last_error: None,
         nmea_port: String::new(),
         at_port: String::new(),
+        last_xtra_injection_unix: None,
     };
 
     loop {
@@ -218,10 +222,21 @@ async fn run_worker(
         };
         state.nmea_port = nmea_port.display().to_string();
 
-        match setup::ensure_gnss_enabled(&ports, fix_frequency_hz, assistance).await {
+        match setup::ensure_gnss_enabled(
+            &ports,
+            fix_frequency_hz,
+            assistance,
+            state.last_xtra_injection_unix,
+        )
+        .await
+        {
             Ok(outcome) => {
                 state.at_port = outcome.at_port;
                 if let Some(injection) = outcome.xtra {
+                    state.last_xtra_injection_unix = std::time::SystemTime::now()
+                        .duration_since(std::time::UNIX_EPOCH)
+                        .map(|d| d.as_secs())
+                        .ok();
                     state.publish_xtra_injection(injection);
                 }
             }
