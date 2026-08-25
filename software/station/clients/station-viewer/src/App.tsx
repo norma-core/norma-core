@@ -1,13 +1,15 @@
 import { lazy, Suspense } from 'react';
-import { BrowserRouter, HashRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, HashRouter, Navigate, Routes, Route } from 'react-router-dom';
 import MainLayout from './components/MainLayout';
 import { isElectron } from '@/utils/platform';
+import { FEATURE_FLAGS } from '@/utils/feature-flags';
 
 // Use HashRouter for Electron (file:// protocol) — BrowserRouter for web
 const Router = isElectron() ? HashRouter : BrowserRouter;
 
 const HomePage = lazy(() => import('./pages/HomePage'));
 const HistoryPage = lazy(() => import('./pages/HistoryPage'));
+const ChatPage = lazy(() => import('./pages/ChatPage'));
 const St3215MotorConfigPage = lazy(() => import('./pages/St3215MotorConfigPage'));
 const St3215BusCalibrationPage = lazy(() => import('./pages/St3215BusCalibrationPage'));
 
@@ -19,6 +21,11 @@ function App() {
           <Route element={<MainLayout />}>
             <Route path="/" element={<HomePage />} />
             <Route path="/history" element={<HistoryPage />} />
+            {FEATURE_FLAGS.chat ? (
+              <Route path="/chat" element={<ChatPage />} />
+            ) : (
+              <Route path="/chat" element={<Navigate to="/" replace />} />
+            )}
           </Route>
           <Route path="/st3215-bus-calibration" element={<St3215BusCalibrationPage />} />
           <Route path="/st3215-bind-motors" element={<St3215MotorConfigPage />} />
