@@ -299,12 +299,14 @@ export default function ExpandedView({ data, type, rawData, queueId, entryId }: 
           <div className="text-xs text-text-label">
             UUID: {data.targetBoardUuid ? Array.from(data.targetBoardUuid).map((byte) => byte.toString(16).padStart(2, '0')).join('') : 'N/A'}
           </div>
-          {data.boardCommand && (
+          {(data.boardCommands?.length ?? 0) > 0 && (
             <div className="bg-surface-primary p-2 rounded text-xs">
-              <div className="text-accent-data mb-1">Board Command:</div>
-              <div className="text-text-secondary">
-                Payload: {data.boardCommand.payload?.length ?? 0} bytes, Response: {data.boardCommand.responseExpected ? 'yes' : 'no'}
-              </div>
+              <div className="text-accent-data mb-1">Board Commands:</div>
+              {data.boardCommands?.map((command, index) => (
+                <div key={`${index}-${command.durationMs ?? 0}`} className="text-text-secondary">
+                  #{index + 1}: Payload {command.payload?.length ?? 0} bytes, Duration {command.durationMs ?? 0}ms, Response {command.responseExpected ? 'yes' : 'no'}
+                </div>
+              ))}
             </div>
           )}
         </div>

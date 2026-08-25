@@ -81,9 +81,7 @@ impl VescTrampaCommunicator {
             Ok(vesc_trampa_proto::VescTrampaSignalType::VescTrampaBoardPacket) => {
                 self.update_values(board, envelope, ptr);
             }
-            Ok(vesc_trampa_proto::VescTrampaSignalType::VescTrampaCommand) => {
-                self.update_mode_for_command_received(board, envelope);
-            }
+            Ok(vesc_trampa_proto::VescTrampaSignalType::VescTrampaCommand) => {}
             Ok(vesc_trampa_proto::VescTrampaSignalType::VescTrampaCommandSuccess) => {
                 self.update_mode_for_command_success(board, envelope);
             }
@@ -172,19 +170,6 @@ impl VescTrampaCommunicator {
         }
     }
 
-    fn update_mode_for_command_received(
-        &self,
-        board: &vesc_trampa_proto::VescTrampaBoard,
-        envelope: &vesc_trampa_proto::RxEnvelope,
-    ) {
-        let Some(command) = envelope.command.as_ref() else {
-            return;
-        };
-        if !Self::is_motor_mode_hold_command(command) {
-            self.set_motor_mode(board, vesc_trampa_proto::VescTrampaMotorMode::Unspecified);
-        }
-    }
-
     fn update_mode_for_command_success(
         &self,
         board: &vesc_trampa_proto::VescTrampaBoard,
@@ -193,7 +178,7 @@ impl VescTrampaCommunicator {
         let Some(command) = envelope.command.as_ref() else {
             return;
         };
-        if command.board_command.is_some() {
+        if !command.board_commands.is_empty() {
             self.set_motor_mode(board, vesc_trampa_proto::VescTrampaMotorMode::Unspecified);
             return;
         }
@@ -222,17 +207,6 @@ impl VescTrampaCommunicator {
         {
             board_state.motor_mode = mode as i32;
         }
-    }
-
-    fn is_motor_mode_hold_command(command: &vesc_trampa_proto::TxEnvelope) -> bool {
-        if command.board_command.is_some() {
-            return false;
-        }
-        let Some(motor_mode) = command.motor_mode.as_ref() else {
-            return false;
-        };
-        vesc_trampa_proto::VescTrampaMotorMode::try_from(motor_mode.mode)
-            == Ok(vesc_trampa_proto::VescTrampaMotorMode::Hold)
     }
 
     fn same_board(

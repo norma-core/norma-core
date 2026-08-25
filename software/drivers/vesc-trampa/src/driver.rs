@@ -99,7 +99,7 @@ impl VescTrampaDriver {
                                 app_start_id: systime::get_app_start_id(),
                                 target_board_uuid: command.target_board_uuid,
                                 command_id: cmd.command_id.clone(),
-                                board_command: command.board_command,
+                                board_commands: command.board_commands,
                                 motor_mode: command.motor_mode,
                             };
 
