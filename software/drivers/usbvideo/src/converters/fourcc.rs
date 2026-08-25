@@ -62,7 +62,7 @@ pub fn same_camera_format(a: &usbvideo::CameraFormat, b: &usbvideo::CameraFormat
         && a.index == b.index
         && a.width == b.width
         && a.height == b.height
-        && a.frames_per_second.to_bits() == b.frames_per_second.to_bits()
+        && fps_matches(a.frames_per_second, b.frames_per_second)
         && a.guid == b.guid
         && a.frame_index == b.frame_index
 }
@@ -465,6 +465,16 @@ mod tests {
 
         assert!(sel.requested_formats_unavailable);
         assert!(sel.formats.is_empty());
+    }
+
+    #[test]
+    fn test_manual_format_matches_nominal_fps_with_tolerance() {
+        let formats = vec![fmt(b"MJPG", 320, 240, 30.00003)];
+        let manual = fmt(b"MJPG", 320, 240, 30.0);
+        let sel = select_manual_camera_format(&formats, &manual);
+
+        assert!(!sel.requested_formats_unavailable);
+        assert_eq!(dims(&sel), vec![(320, 240)]);
     }
 
     #[test]
