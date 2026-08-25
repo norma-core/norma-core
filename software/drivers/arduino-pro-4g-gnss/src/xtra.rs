@@ -206,7 +206,26 @@ pub fn parse_xtradata_validity_minutes(line: &str) -> Option<u32> {
 /// stamp itself contains a comma, so it is everything after the first one.
 pub fn parse_xtradata_injected_at(line: &str) -> Option<u64> {
     let rest = line.trim().strip_prefix("+QGPSXTRADATA: ")?;
-    let stamp = rest.split_once(',')?.1.trim().trim_matches('"');
+    parse_stamp_unix(rest.split_once(',')?.1.trim().trim_matches('"'))
+}
+
+/// Parses `+QLTS: "yyyy/MM/dd,hh:mm:ss±zz,d"` (AT+QLTS=2: network-synced
+/// local time with the zone offset in quarter-hours and a DST flag) into
+/// unix UTC seconds. None when the modem is not registered (empty reply)
+/// or the line is malformed.
+pub fn parse_qlts_unix(line: &str) -> Option<u64> {
+    let inner = line.trim().strip_prefix("+QLTS: ")?.trim().trim_matches('"');
+    // The date uses '/' and the time ':', so the first sign character is
+    // the zone offset separator.
+    let sign_idx = inner.find(['+', '-'])?;
+    let local = parse_stamp_unix(&inner[..sign_idx])? as i64;
+    let quarters: i64 = inner[sign_idx + 1..].split(',').next()?.parse().ok()?;
+    let offset_secs = quarters * 900 * if inner.as_bytes()[sign_idx] == b'-' { -1 } else { 1 };
+    u64::try_from(local - offset_secs).ok()
+}
+
+/// `yyyy/MM/dd,hh:mm:ss` to unix seconds.
+fn parse_stamp_unix(stamp: &str) -> Option<u64> {
     let (date, time) = stamp.split_once(',')?;
     let mut date_parts = date.split('/');
     let year: i64 = date_parts.next()?.parse().ok()?;
@@ -333,6 +352,24 @@ mod tests {
             None
         );
         assert_eq!(parse_xtradata_injected_at("+CME ERROR: 509"), None);
+    }
+
+    #[test]
+    fn parses_qlts_network_time() {
+        // 2026-08-26 00:07:26 local at UTC+4 (+16 quarter-hours) =
+        // 2026-08-25 20:07:26 UTC — captured live from an EG25-G.
+        assert_eq!(
+            parse_qlts_unix("+QLTS: \"2026/08/26,00:07:26+16,0\""),
+            Some(1787688446)
+        );
+        // Negative zone: 15:07:26 at UTC-5 is the same instant.
+        assert_eq!(
+            parse_qlts_unix("+QLTS: \"2026/08/25,15:07:26-20,1\""),
+            Some(1787688446)
+        );
+        // Unregistered modems answer with an empty string.
+        assert_eq!(parse_qlts_unix("+QLTS: \"\""), None);
+        assert_eq!(parse_qlts_unix("OK"), None);
     }
 
     #[test]

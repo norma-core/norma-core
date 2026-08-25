@@ -55,6 +55,29 @@ pub async fn ensure_gnss_enabled(
     Err(errors.join("; "))
 }
 
+/// Max disagreement between the host clock and the modem's network clock
+/// before injecting the host time as a GNSS reference is unsafe.
+const MAX_CLOCK_SKEW_SECS: u64 = 60;
+
+/// True when the host clock is safe to inject via AT+QGPSXTRATIME. The
+/// modem's network clock (AT+QLTS) is the truth source where available;
+/// without registration (no reply/empty) the host clock is trusted as-is —
+/// a host that just downloaded the XTRA file over Wi-Fi almost certainly
+/// runs NTP too.
+async fn host_clock_trustworthy(
+    port: &mut BufReader<SerialStream>,
+    host_now_unix: u64,
+) -> bool {
+    let lines = match at_command(port, "AT+QLTS=2").await {
+        Ok(lines) => lines,
+        Err(_) => return true,
+    };
+    match lines.iter().find_map(|l| crate::xtra::parse_qlts_unix(l)) {
+        Some(network_unix) => host_now_unix.abs_diff(network_unix) <= MAX_CLOCK_SKEW_SECS,
+        None => true,
+    }
+}
+
 async fn try_setup_on_port(
     path: &str,
     target_fixfreq_hz: u32,
@@ -90,6 +113,15 @@ async fn try_setup_on_port(
                 "XTRA assistance fresh (injected {:?}, valid {} minutes)",
                 status.injected_at_unix,
                 status.validity_minutes
+            );
+        } else if !host_clock_trustworthy(&mut port, now).await {
+            // Injecting QGPSXTRATIME (claimed +/-3.5 s) from a pre-NTP boot
+            // clock poisons the engine's time estimate: satellites stay
+            // visible but no fix ever forms (observed hours-long on
+            // rover-alpha). Skip this pass; a reconnect or the periodic
+            // revalidation retries once the clock is sane.
+            log::warn!(
+                "skipping XTRA injection: host clock disagrees with the modem's network time"
             );
         } else {
             match crate::xtra::download_xtra_file().await {
