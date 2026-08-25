@@ -12,6 +12,11 @@ const (
 	commandSetCurrent uint8 = 6
 )
 
+type CurrentStep struct {
+	CurrentMA  int32
+	DurationMS uint32
+}
+
 func setCurrentPayload(currentMA int32) []byte {
 	return int32Payload(commandSetCurrent, currentMA)
 }
@@ -21,20 +26,6 @@ func int32Payload(commandID uint8, value int32) []byte {
 	payload[0] = commandID
 	binary.BigEndian.PutUint32(payload[1:], uint32(value))
 	return payload
-}
-
-func boardPayloadCommand(targetBoardUUID []byte, payload []byte) *vescpb.Command {
-	return &vescpb.Command{
-		TargetBoardUuid: targetBoardUUID,
-		BoardCommand: &vescpb.VescTrampaBoardCommand{
-			Payload:          payload,
-			ResponseExpected: false,
-		},
-	}
-}
-
-func setCurrentCommand(targetBoardUUID []byte, currentMA int32) *vescpb.Command {
-	return boardPayloadCommand(targetBoardUUID, setCurrentPayload(currentMA))
 }
 
 func motorModeCommand(targetBoardUUID []byte, mode vescpb.VescTrampaMotorMode) *vescpb.Command {
@@ -47,10 +38,47 @@ func motorModeCommand(targetBoardUUID []byte, mode vescpb.VescTrampaMotorMode) *
 }
 
 func SetCurrentStationCommand(commandID []byte, targetBoardUUID []byte, currentMA int32) *commandspb.DriverCommand {
+	return SetCurrentSequenceStationCommand(commandID, targetBoardUUID, []CurrentStep{
+		{CurrentMA: currentMA},
+	})
+}
+
+func SetCurrentForDurationStationCommand(
+	commandID []byte,
+	targetBoardUUID []byte,
+	currentMA int32,
+	durationMS uint32,
+	finalCurrentMA int32,
+) *commandspb.DriverCommand {
+	return SetCurrentSequenceStationCommand(commandID, targetBoardUUID, []CurrentStep{
+		{CurrentMA: currentMA, DurationMS: durationMS},
+		{CurrentMA: finalCurrentMA},
+	})
+}
+
+func SetCurrentSequenceStationCommand(
+	commandID []byte,
+	targetBoardUUID []byte,
+	steps []CurrentStep,
+) *commandspb.DriverCommand {
+	commands := make([]*vescpb.VescTrampaBoardCommand, 0, len(steps))
+	for _, step := range steps {
+		commands = append(commands, &vescpb.VescTrampaBoardCommand{
+			Payload:          setCurrentPayload(step.CurrentMA),
+			ResponseExpected: false,
+			DurationMs:       step.DurationMS,
+		})
+	}
+
+	command := &vescpb.Command{
+		TargetBoardUuid: targetBoardUUID,
+		BoardCommands:   commands,
+	}
+
 	return &commandspb.DriverCommand{
 		CommandId: commandID,
 		Type:      driverspb.StationCommandType_STC_VESC_TRAMPA_COMMAND,
-		Body:      setCurrentCommand(targetBoardUUID, currentMA).Marshal(),
+		Body:      command.Marshal(),
 	}
 }
 

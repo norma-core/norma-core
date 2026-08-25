@@ -37,20 +37,21 @@ message TxEnvelope {
 
     bytes command_id = 4;
 
-    VescTrampaBoardCommand     board_command = 10;
-    VescTrampaMotorModeCommand motor_mode    = 11;
+    VescTrampaMotorModeCommand      motor_mode     = 11;
+    repeated VescTrampaBoardCommand board_commands = 12;
 }
 
 message Command {
     bytes target_board_uuid = 1;
 
-    VescTrampaBoardCommand     board_command = 10;
-    VescTrampaMotorModeCommand motor_mode    = 11;
+    VescTrampaMotorModeCommand      motor_mode     = 11;
+    repeated VescTrampaBoardCommand board_commands = 12;
 }
 
 message VescTrampaBoardCommand {
-    bytes payload = 1;
-    bool  response_expected = 2;
+    bytes  payload           = 1;
+    bool   response_expected = 2;
+    uint32 duration_ms       = 3;
 }
 
 enum VescTrampaMotorMode {

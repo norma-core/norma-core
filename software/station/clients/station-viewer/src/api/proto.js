@@ -11523,8 +11523,8 @@ export const vesc_trampa = $root.vesc_trampa = (() => {
          * @property {Long|null} [appStartId] TxEnvelope appStartId
          * @property {Uint8Array|null} [targetBoardUuid] TxEnvelope targetBoardUuid
          * @property {Uint8Array|null} [commandId] TxEnvelope commandId
-         * @property {vesc_trampa.IVescTrampaBoardCommand|null} [boardCommand] TxEnvelope boardCommand
          * @property {vesc_trampa.IVescTrampaMotorModeCommand|null} [motorMode] TxEnvelope motorMode
+         * @property {Array.<vesc_trampa.IVescTrampaBoardCommand>|null} [boardCommands] TxEnvelope boardCommands
          */
 
         /**
@@ -11536,6 +11536,7 @@ export const vesc_trampa = $root.vesc_trampa = (() => {
          * @param {vesc_trampa.ITxEnvelope=} [properties] Properties to set
          */
         function TxEnvelope(properties) {
+            this.boardCommands = [];
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
                     if (properties[keys[i]] != null && keys[i] !== "__proto__")
@@ -11583,20 +11584,20 @@ export const vesc_trampa = $root.vesc_trampa = (() => {
         TxEnvelope.prototype.commandId = $util.newBuffer([]);
 
         /**
-         * TxEnvelope boardCommand.
-         * @member {vesc_trampa.IVescTrampaBoardCommand|null|undefined} boardCommand
-         * @memberof vesc_trampa.TxEnvelope
-         * @instance
-         */
-        TxEnvelope.prototype.boardCommand = null;
-
-        /**
          * TxEnvelope motorMode.
          * @member {vesc_trampa.IVescTrampaMotorModeCommand|null|undefined} motorMode
          * @memberof vesc_trampa.TxEnvelope
          * @instance
          */
         TxEnvelope.prototype.motorMode = null;
+
+        /**
+         * TxEnvelope boardCommands.
+         * @member {Array.<vesc_trampa.IVescTrampaBoardCommand>} boardCommands
+         * @memberof vesc_trampa.TxEnvelope
+         * @instance
+         */
+        TxEnvelope.prototype.boardCommands = $util.emptyArray;
 
         /**
          * Creates a new TxEnvelope instance using the specified properties.
@@ -11632,10 +11633,11 @@ export const vesc_trampa = $root.vesc_trampa = (() => {
                 writer.uint32(/* id 4, wireType 2 =*/34).bytes(message.commandId);
             if (message.appStartId != null && Object.hasOwnProperty.call(message, "appStartId"))
                 writer.uint32(/* id 5, wireType 0 =*/40).uint64(message.appStartId);
-            if (message.boardCommand != null && Object.hasOwnProperty.call(message, "boardCommand"))
-                $root.vesc_trampa.VescTrampaBoardCommand.encode(message.boardCommand, writer.uint32(/* id 10, wireType 2 =*/82).fork()).ldelim();
             if (message.motorMode != null && Object.hasOwnProperty.call(message, "motorMode"))
                 $root.vesc_trampa.VescTrampaMotorModeCommand.encode(message.motorMode, writer.uint32(/* id 11, wireType 2 =*/90).fork()).ldelim();
+            if (message.boardCommands != null && message.boardCommands.length)
+                for (let i = 0; i < message.boardCommands.length; ++i)
+                    $root.vesc_trampa.VescTrampaBoardCommand.encode(message.boardCommands[i], writer.uint32(/* id 12, wireType 2 =*/98).fork()).ldelim();
             return writer;
         };
 
@@ -11696,12 +11698,14 @@ export const vesc_trampa = $root.vesc_trampa = (() => {
                         message.commandId = reader.bytes();
                         break;
                     }
-                case 10: {
-                        message.boardCommand = $root.vesc_trampa.VescTrampaBoardCommand.decode(reader, reader.uint32(), undefined, long + 1);
-                        break;
-                    }
                 case 11: {
                         message.motorMode = $root.vesc_trampa.VescTrampaMotorModeCommand.decode(reader, reader.uint32(), undefined, long + 1);
+                        break;
+                    }
+                case 12: {
+                        if (!(message.boardCommands && message.boardCommands.length))
+                            message.boardCommands = [];
+                        message.boardCommands.push($root.vesc_trampa.VescTrampaBoardCommand.decode(reader, reader.uint32(), undefined, long + 1));
                         break;
                     }
                 default:
@@ -11758,15 +11762,19 @@ export const vesc_trampa = $root.vesc_trampa = (() => {
             if (message.commandId != null && message.hasOwnProperty("commandId"))
                 if (!(message.commandId && typeof message.commandId.length === "number" || $util.isString(message.commandId)))
                     return "commandId: buffer expected";
-            if (message.boardCommand != null && message.hasOwnProperty("boardCommand")) {
-                let error = $root.vesc_trampa.VescTrampaBoardCommand.verify(message.boardCommand, long + 1);
-                if (error)
-                    return "boardCommand." + error;
-            }
             if (message.motorMode != null && message.hasOwnProperty("motorMode")) {
                 let error = $root.vesc_trampa.VescTrampaMotorModeCommand.verify(message.motorMode, long + 1);
                 if (error)
                     return "motorMode." + error;
+            }
+            if (message.boardCommands != null && message.hasOwnProperty("boardCommands")) {
+                if (!Array.isArray(message.boardCommands))
+                    return "boardCommands: array expected";
+                for (let i = 0; i < message.boardCommands.length; ++i) {
+                    let error = $root.vesc_trampa.VescTrampaBoardCommand.verify(message.boardCommands[i], long + 1);
+                    if (error)
+                        return "boardCommands." + error;
+                }
             }
             return null;
         };
@@ -11824,15 +11832,20 @@ export const vesc_trampa = $root.vesc_trampa = (() => {
                     $util.base64.decode(object.commandId, message.commandId = $util.newBuffer($util.base64.length(object.commandId)), 0);
                 else if (object.commandId.length >= 0)
                     message.commandId = object.commandId;
-            if (object.boardCommand != null) {
-                if (typeof object.boardCommand !== "object")
-                    throw TypeError(".vesc_trampa.TxEnvelope.boardCommand: object expected");
-                message.boardCommand = $root.vesc_trampa.VescTrampaBoardCommand.fromObject(object.boardCommand, long + 1);
-            }
             if (object.motorMode != null) {
                 if (typeof object.motorMode !== "object")
                     throw TypeError(".vesc_trampa.TxEnvelope.motorMode: object expected");
                 message.motorMode = $root.vesc_trampa.VescTrampaMotorModeCommand.fromObject(object.motorMode, long + 1);
+            }
+            if (object.boardCommands) {
+                if (!Array.isArray(object.boardCommands))
+                    throw TypeError(".vesc_trampa.TxEnvelope.boardCommands: array expected");
+                message.boardCommands = [];
+                for (let i = 0; i < object.boardCommands.length; ++i) {
+                    if (typeof object.boardCommands[i] !== "object")
+                        throw TypeError(".vesc_trampa.TxEnvelope.boardCommands: object expected");
+                    message.boardCommands[i] = $root.vesc_trampa.VescTrampaBoardCommand.fromObject(object.boardCommands[i], long + 1);
+                }
             }
             return message;
         };
@@ -11850,6 +11863,8 @@ export const vesc_trampa = $root.vesc_trampa = (() => {
             if (!options)
                 options = {};
             let object = {};
+            if (options.arrays || options.defaults)
+                object.boardCommands = [];
             if (options.defaults) {
                 if ($util.Long) {
                     let long = new $util.Long(0, 0, true);
@@ -11880,7 +11895,6 @@ export const vesc_trampa = $root.vesc_trampa = (() => {
                     object.appStartId = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
                 } else
                     object.appStartId = options.longs === String ? "0" : 0;
-                object.boardCommand = null;
                 object.motorMode = null;
             }
             if (message.monotonicStampNs != null && message.hasOwnProperty("monotonicStampNs"))
@@ -11902,10 +11916,13 @@ export const vesc_trampa = $root.vesc_trampa = (() => {
                     object.appStartId = options.longs === String ? String(message.appStartId) : message.appStartId;
                 else
                     object.appStartId = options.longs === String ? $util.Long.prototype.toString.call(message.appStartId) : options.longs === Number ? new $util.LongBits(message.appStartId.low >>> 0, message.appStartId.high >>> 0).toNumber(true) : message.appStartId;
-            if (message.boardCommand != null && message.hasOwnProperty("boardCommand"))
-                object.boardCommand = $root.vesc_trampa.VescTrampaBoardCommand.toObject(message.boardCommand, options);
             if (message.motorMode != null && message.hasOwnProperty("motorMode"))
                 object.motorMode = $root.vesc_trampa.VescTrampaMotorModeCommand.toObject(message.motorMode, options);
+            if (message.boardCommands && message.boardCommands.length) {
+                object.boardCommands = [];
+                for (let j = 0; j < message.boardCommands.length; ++j)
+                    object.boardCommands[j] = $root.vesc_trampa.VescTrampaBoardCommand.toObject(message.boardCommands[j], options);
+            }
             return object;
         };
 
@@ -11945,8 +11962,8 @@ export const vesc_trampa = $root.vesc_trampa = (() => {
          * @memberof vesc_trampa
          * @interface ICommand
          * @property {Uint8Array|null} [targetBoardUuid] Command targetBoardUuid
-         * @property {vesc_trampa.IVescTrampaBoardCommand|null} [boardCommand] Command boardCommand
          * @property {vesc_trampa.IVescTrampaMotorModeCommand|null} [motorMode] Command motorMode
+         * @property {Array.<vesc_trampa.IVescTrampaBoardCommand>|null} [boardCommands] Command boardCommands
          */
 
         /**
@@ -11958,6 +11975,7 @@ export const vesc_trampa = $root.vesc_trampa = (() => {
          * @param {vesc_trampa.ICommand=} [properties] Properties to set
          */
         function Command(properties) {
+            this.boardCommands = [];
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
                     if (properties[keys[i]] != null && keys[i] !== "__proto__")
@@ -11973,20 +11991,20 @@ export const vesc_trampa = $root.vesc_trampa = (() => {
         Command.prototype.targetBoardUuid = $util.newBuffer([]);
 
         /**
-         * Command boardCommand.
-         * @member {vesc_trampa.IVescTrampaBoardCommand|null|undefined} boardCommand
-         * @memberof vesc_trampa.Command
-         * @instance
-         */
-        Command.prototype.boardCommand = null;
-
-        /**
          * Command motorMode.
          * @member {vesc_trampa.IVescTrampaMotorModeCommand|null|undefined} motorMode
          * @memberof vesc_trampa.Command
          * @instance
          */
         Command.prototype.motorMode = null;
+
+        /**
+         * Command boardCommands.
+         * @member {Array.<vesc_trampa.IVescTrampaBoardCommand>} boardCommands
+         * @memberof vesc_trampa.Command
+         * @instance
+         */
+        Command.prototype.boardCommands = $util.emptyArray;
 
         /**
          * Creates a new Command instance using the specified properties.
@@ -12014,10 +12032,11 @@ export const vesc_trampa = $root.vesc_trampa = (() => {
                 writer = $Writer.create();
             if (message.targetBoardUuid != null && Object.hasOwnProperty.call(message, "targetBoardUuid"))
                 writer.uint32(/* id 1, wireType 2 =*/10).bytes(message.targetBoardUuid);
-            if (message.boardCommand != null && Object.hasOwnProperty.call(message, "boardCommand"))
-                $root.vesc_trampa.VescTrampaBoardCommand.encode(message.boardCommand, writer.uint32(/* id 10, wireType 2 =*/82).fork()).ldelim();
             if (message.motorMode != null && Object.hasOwnProperty.call(message, "motorMode"))
                 $root.vesc_trampa.VescTrampaMotorModeCommand.encode(message.motorMode, writer.uint32(/* id 11, wireType 2 =*/90).fork()).ldelim();
+            if (message.boardCommands != null && message.boardCommands.length)
+                for (let i = 0; i < message.boardCommands.length; ++i)
+                    $root.vesc_trampa.VescTrampaBoardCommand.encode(message.boardCommands[i], writer.uint32(/* id 12, wireType 2 =*/98).fork()).ldelim();
             return writer;
         };
 
@@ -12062,12 +12081,14 @@ export const vesc_trampa = $root.vesc_trampa = (() => {
                         message.targetBoardUuid = reader.bytes();
                         break;
                     }
-                case 10: {
-                        message.boardCommand = $root.vesc_trampa.VescTrampaBoardCommand.decode(reader, reader.uint32(), undefined, long + 1);
-                        break;
-                    }
                 case 11: {
                         message.motorMode = $root.vesc_trampa.VescTrampaMotorModeCommand.decode(reader, reader.uint32(), undefined, long + 1);
+                        break;
+                    }
+                case 12: {
+                        if (!(message.boardCommands && message.boardCommands.length))
+                            message.boardCommands = [];
+                        message.boardCommands.push($root.vesc_trampa.VescTrampaBoardCommand.decode(reader, reader.uint32(), undefined, long + 1));
                         break;
                     }
                 default:
@@ -12112,15 +12133,19 @@ export const vesc_trampa = $root.vesc_trampa = (() => {
             if (message.targetBoardUuid != null && message.hasOwnProperty("targetBoardUuid"))
                 if (!(message.targetBoardUuid && typeof message.targetBoardUuid.length === "number" || $util.isString(message.targetBoardUuid)))
                     return "targetBoardUuid: buffer expected";
-            if (message.boardCommand != null && message.hasOwnProperty("boardCommand")) {
-                let error = $root.vesc_trampa.VescTrampaBoardCommand.verify(message.boardCommand, long + 1);
-                if (error)
-                    return "boardCommand." + error;
-            }
             if (message.motorMode != null && message.hasOwnProperty("motorMode")) {
                 let error = $root.vesc_trampa.VescTrampaMotorModeCommand.verify(message.motorMode, long + 1);
                 if (error)
                     return "motorMode." + error;
+            }
+            if (message.boardCommands != null && message.hasOwnProperty("boardCommands")) {
+                if (!Array.isArray(message.boardCommands))
+                    return "boardCommands: array expected";
+                for (let i = 0; i < message.boardCommands.length; ++i) {
+                    let error = $root.vesc_trampa.VescTrampaBoardCommand.verify(message.boardCommands[i], long + 1);
+                    if (error)
+                        return "boardCommands." + error;
+                }
             }
             return null;
         };
@@ -12146,15 +12171,20 @@ export const vesc_trampa = $root.vesc_trampa = (() => {
                     $util.base64.decode(object.targetBoardUuid, message.targetBoardUuid = $util.newBuffer($util.base64.length(object.targetBoardUuid)), 0);
                 else if (object.targetBoardUuid.length >= 0)
                     message.targetBoardUuid = object.targetBoardUuid;
-            if (object.boardCommand != null) {
-                if (typeof object.boardCommand !== "object")
-                    throw TypeError(".vesc_trampa.Command.boardCommand: object expected");
-                message.boardCommand = $root.vesc_trampa.VescTrampaBoardCommand.fromObject(object.boardCommand, long + 1);
-            }
             if (object.motorMode != null) {
                 if (typeof object.motorMode !== "object")
                     throw TypeError(".vesc_trampa.Command.motorMode: object expected");
                 message.motorMode = $root.vesc_trampa.VescTrampaMotorModeCommand.fromObject(object.motorMode, long + 1);
+            }
+            if (object.boardCommands) {
+                if (!Array.isArray(object.boardCommands))
+                    throw TypeError(".vesc_trampa.Command.boardCommands: array expected");
+                message.boardCommands = [];
+                for (let i = 0; i < object.boardCommands.length; ++i) {
+                    if (typeof object.boardCommands[i] !== "object")
+                        throw TypeError(".vesc_trampa.Command.boardCommands: object expected");
+                    message.boardCommands[i] = $root.vesc_trampa.VescTrampaBoardCommand.fromObject(object.boardCommands[i], long + 1);
+                }
             }
             return message;
         };
@@ -12172,6 +12202,8 @@ export const vesc_trampa = $root.vesc_trampa = (() => {
             if (!options)
                 options = {};
             let object = {};
+            if (options.arrays || options.defaults)
+                object.boardCommands = [];
             if (options.defaults) {
                 if (options.bytes === String)
                     object.targetBoardUuid = "";
@@ -12180,15 +12212,17 @@ export const vesc_trampa = $root.vesc_trampa = (() => {
                     if (options.bytes !== Array)
                         object.targetBoardUuid = $util.newBuffer(object.targetBoardUuid);
                 }
-                object.boardCommand = null;
                 object.motorMode = null;
             }
             if (message.targetBoardUuid != null && message.hasOwnProperty("targetBoardUuid"))
                 object.targetBoardUuid = options.bytes === String ? $util.base64.encode(message.targetBoardUuid, 0, message.targetBoardUuid.length) : options.bytes === Array ? Array.prototype.slice.call(message.targetBoardUuid) : message.targetBoardUuid;
-            if (message.boardCommand != null && message.hasOwnProperty("boardCommand"))
-                object.boardCommand = $root.vesc_trampa.VescTrampaBoardCommand.toObject(message.boardCommand, options);
             if (message.motorMode != null && message.hasOwnProperty("motorMode"))
                 object.motorMode = $root.vesc_trampa.VescTrampaMotorModeCommand.toObject(message.motorMode, options);
+            if (message.boardCommands && message.boardCommands.length) {
+                object.boardCommands = [];
+                for (let j = 0; j < message.boardCommands.length; ++j)
+                    object.boardCommands[j] = $root.vesc_trampa.VescTrampaBoardCommand.toObject(message.boardCommands[j], options);
+            }
             return object;
         };
 
@@ -12229,6 +12263,7 @@ export const vesc_trampa = $root.vesc_trampa = (() => {
          * @interface IVescTrampaBoardCommand
          * @property {Uint8Array|null} [payload] VescTrampaBoardCommand payload
          * @property {boolean|null} [responseExpected] VescTrampaBoardCommand responseExpected
+         * @property {number|null} [durationMs] VescTrampaBoardCommand durationMs
          */
 
         /**
@@ -12263,6 +12298,14 @@ export const vesc_trampa = $root.vesc_trampa = (() => {
         VescTrampaBoardCommand.prototype.responseExpected = false;
 
         /**
+         * VescTrampaBoardCommand durationMs.
+         * @member {number} durationMs
+         * @memberof vesc_trampa.VescTrampaBoardCommand
+         * @instance
+         */
+        VescTrampaBoardCommand.prototype.durationMs = 0;
+
+        /**
          * Creates a new VescTrampaBoardCommand instance using the specified properties.
          * @function create
          * @memberof vesc_trampa.VescTrampaBoardCommand
@@ -12290,6 +12333,8 @@ export const vesc_trampa = $root.vesc_trampa = (() => {
                 writer.uint32(/* id 1, wireType 2 =*/10).bytes(message.payload);
             if (message.responseExpected != null && Object.hasOwnProperty.call(message, "responseExpected"))
                 writer.uint32(/* id 2, wireType 0 =*/16).bool(message.responseExpected);
+            if (message.durationMs != null && Object.hasOwnProperty.call(message, "durationMs"))
+                writer.uint32(/* id 3, wireType 0 =*/24).uint32(message.durationMs);
             return writer;
         };
 
@@ -12338,6 +12383,10 @@ export const vesc_trampa = $root.vesc_trampa = (() => {
                         message.responseExpected = reader.bool();
                         break;
                     }
+                case 3: {
+                        message.durationMs = reader.uint32();
+                        break;
+                    }
                 default:
                     reader.skipType(tag & 7, long);
                     break;
@@ -12383,6 +12432,9 @@ export const vesc_trampa = $root.vesc_trampa = (() => {
             if (message.responseExpected != null && message.hasOwnProperty("responseExpected"))
                 if (typeof message.responseExpected !== "boolean")
                     return "responseExpected: boolean expected";
+            if (message.durationMs != null && message.hasOwnProperty("durationMs"))
+                if (!$util.isInteger(message.durationMs))
+                    return "durationMs: integer expected";
             return null;
         };
 
@@ -12409,6 +12461,8 @@ export const vesc_trampa = $root.vesc_trampa = (() => {
                     message.payload = object.payload;
             if (object.responseExpected != null)
                 message.responseExpected = Boolean(object.responseExpected);
+            if (object.durationMs != null)
+                message.durationMs = object.durationMs >>> 0;
             return message;
         };
 
@@ -12434,11 +12488,14 @@ export const vesc_trampa = $root.vesc_trampa = (() => {
                         object.payload = $util.newBuffer(object.payload);
                 }
                 object.responseExpected = false;
+                object.durationMs = 0;
             }
             if (message.payload != null && message.hasOwnProperty("payload"))
                 object.payload = options.bytes === String ? $util.base64.encode(message.payload, 0, message.payload.length) : options.bytes === Array ? Array.prototype.slice.call(message.payload) : message.payload;
             if (message.responseExpected != null && message.hasOwnProperty("responseExpected"))
                 object.responseExpected = message.responseExpected;
+            if (message.durationMs != null && message.hasOwnProperty("durationMs"))
+                object.durationMs = message.durationMs;
             return object;
         };
 

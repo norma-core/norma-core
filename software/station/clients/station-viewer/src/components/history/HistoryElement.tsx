@@ -399,12 +399,12 @@ function HistoryElement({ element, index, dataQueueType, dataQueueId }: HistoryE
                   UUID: {formatBytes(vescTrampaTxData.targetBoardUuid, 12)}
                 </span>
               )}
-              {vescTrampaTxData.boardCommand && (
+              {(vescTrampaTxData.boardCommands?.length ?? 0) > 0 && (
                 <span className="text-accent-data">
-                  Payload: {vescTrampaTxData.boardCommand.payload?.length ?? 0}b
+                  Commands: {vescTrampaTxData.boardCommands?.length ?? 0}
                 </span>
               )}
-              {vescTrampaTxData.boardCommand?.responseExpected && (
+              {vescTrampaTxData.boardCommands?.some((command) => command.responseExpected) && (
                 <span className="text-accent-success">
                   Response
                 </span>

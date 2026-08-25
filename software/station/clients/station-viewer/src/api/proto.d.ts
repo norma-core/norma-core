@@ -3983,11 +3983,11 @@ export namespace vesc_trampa {
         /** TxEnvelope commandId */
         commandId?: (Uint8Array|null);
 
-        /** TxEnvelope boardCommand */
-        boardCommand?: (vesc_trampa.IVescTrampaBoardCommand|null);
-
         /** TxEnvelope motorMode */
         motorMode?: (vesc_trampa.IVescTrampaMotorModeCommand|null);
+
+        /** TxEnvelope boardCommands */
+        boardCommands?: (vesc_trampa.IVescTrampaBoardCommand[]|null);
     }
 
     /** Represents a TxEnvelope. */
@@ -4014,11 +4014,11 @@ export namespace vesc_trampa {
         /** TxEnvelope commandId. */
         public commandId: Uint8Array;
 
-        /** TxEnvelope boardCommand. */
-        public boardCommand?: (vesc_trampa.IVescTrampaBoardCommand|null);
-
         /** TxEnvelope motorMode. */
         public motorMode?: (vesc_trampa.IVescTrampaMotorModeCommand|null);
+
+        /** TxEnvelope boardCommands. */
+        public boardCommands: vesc_trampa.IVescTrampaBoardCommand[];
 
         /**
          * Creates a new TxEnvelope instance using the specified properties.
@@ -4104,11 +4104,11 @@ export namespace vesc_trampa {
         /** Command targetBoardUuid */
         targetBoardUuid?: (Uint8Array|null);
 
-        /** Command boardCommand */
-        boardCommand?: (vesc_trampa.IVescTrampaBoardCommand|null);
-
         /** Command motorMode */
         motorMode?: (vesc_trampa.IVescTrampaMotorModeCommand|null);
+
+        /** Command boardCommands */
+        boardCommands?: (vesc_trampa.IVescTrampaBoardCommand[]|null);
     }
 
     /** Represents a Command. */
@@ -4123,11 +4123,11 @@ export namespace vesc_trampa {
         /** Command targetBoardUuid. */
         public targetBoardUuid: Uint8Array;
 
-        /** Command boardCommand. */
-        public boardCommand?: (vesc_trampa.IVescTrampaBoardCommand|null);
-
         /** Command motorMode. */
         public motorMode?: (vesc_trampa.IVescTrampaMotorModeCommand|null);
+
+        /** Command boardCommands. */
+        public boardCommands: vesc_trampa.IVescTrampaBoardCommand[];
 
         /**
          * Creates a new Command instance using the specified properties.
@@ -4215,6 +4215,9 @@ export namespace vesc_trampa {
 
         /** VescTrampaBoardCommand responseExpected */
         responseExpected?: (boolean|null);
+
+        /** VescTrampaBoardCommand durationMs */
+        durationMs?: (number|null);
     }
 
     /** Represents a VescTrampaBoardCommand. */
@@ -4231,6 +4234,9 @@ export namespace vesc_trampa {
 
         /** VescTrampaBoardCommand responseExpected. */
         public responseExpected: boolean;
+
+        /** VescTrampaBoardCommand durationMs. */
+        public durationMs: number;
 
         /**
          * Creates a new VescTrampaBoardCommand instance using the specified properties.
