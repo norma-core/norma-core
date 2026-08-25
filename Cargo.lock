@@ -1520,9 +1520,9 @@ dependencies = [
 
 [[package]]
 name = "normfs"
-version = "0.2.0-beta.2"
+version = "0.2.0-beta.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "720042903623fe43b27143c828d97a567ff22039595aa672cf0a45261e3631fe"
+checksum = "b230f003cbf7e95b126ac2fb08bd4fe66894605257e5edc1a187aaf8c29819e9"
 dependencies = [
  "bytes",
  "fastwebsockets",
@@ -1546,9 +1546,9 @@ dependencies = [
 
 [[package]]
 name = "normfs-cloud"
-version = "0.2.0-beta.2"
+version = "0.2.0-beta.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f52b5d6d66444037cb3cfc80232ab51f4feefb95ee4dd40128d464132ce035aa"
+checksum = "3c2672175949f167a1183bf0a8356de7dc1a73f749d054dccea1964304f8c433"
 dependencies = [
  "bytes",
  "log",
@@ -1567,9 +1567,9 @@ dependencies = [
 
 [[package]]
 name = "normfs-crypto"
-version = "0.2.0-beta.2"
+version = "0.2.0-beta.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5f3df9b2cf3d42679645e3766c5d02925f8440710fe284875cec435115915c1c"
+checksum = "c396c5d20fce3f9417b3f74ac0c578d5bfddb154ba8c4bc12bc98b8e2a1b35eb"
 dependencies = [
  "aes-gcm",
  "bytes",
@@ -1586,9 +1586,9 @@ dependencies = [
 
 [[package]]
 name = "normfs-store"
-version = "0.2.0-beta.2"
+version = "0.2.0-beta.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1f933c31d0ed3ff8ca8945229f0f264187f9e0c39c062c4cff79c481e8f4a4c1"
+checksum = "8794b7398503f89849b8c79fc52260c2003c5c7a6b33ffc8da85cf749d031fad"
 dependencies = [
  "bytes",
  "cc",
@@ -1605,9 +1605,9 @@ dependencies = [
 
 [[package]]
 name = "normfs-types"
-version = "0.2.0-beta.2"
+version = "0.2.0-beta.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c81520fc0e8329648ba94482a569e8ed44c69d8867bea281f75797e745953212"
+checksum = "a45e8c6c0d6c78f7559d8cc608062f0f5cd3f2f596ba64c0b00b59e83753afef"
 dependencies = [
  "bytes",
  "uintn",
@@ -1615,9 +1615,9 @@ dependencies = [
 
 [[package]]
 name = "normfs-wal"
-version = "0.2.0-beta.2"
+version = "0.2.0-beta.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "171d65f2c14fe71c6b9eeb6cb6ddb6463ea81b329c2875a8b7c0f78bcb203675"
+checksum = "fbd9ad88de0b71afaa70352b3e30425384e956cf5e4955c61743f8e566391f75"
 dependencies = [
  "bytes",
  "cc",
@@ -2964,9 +2964,9 @@ checksum = "1dccffe3ce07af9386bfd29e80c0ab1a8205a2fc34e4bcd40364df902cfa8f3f"
 
 [[package]]
 name = "uintn"
-version = "0.2.0-beta.2"
+version = "0.2.0-beta.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fe4d73c1427194ca703cca28c45d849950500d42ee59031c79464723d61e95b0"
+checksum = "e75e133409ee931e9d8761b646968a694abf1e0a682bb374265ba86cc792d9ac"
 dependencies = [
  "bytes",
  "cc",

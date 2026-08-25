@@ -2,11 +2,19 @@ import { useEffect, useRef } from 'react';
 import Long from 'long';
 import webSocketManager from '@/api/websocket';
 import { getQueueType } from '@/api/queue-utils';
-import { formatPtrBytes } from '@/utils/format-bytes';
+import DatasetExportHelper from '@/components/history/DatasetExportHelper';
 import HistoryElement from '@/components/history/HistoryElement';
 import Timeline from '@/components/Timeline';
 import TimelineControls from '@/components/TimelineControls';
-import { useFrameData, useTimelineState, useKeyboardNavigation, useStartupMarkers, useInferenceTags, TimelineControlsRef } from '@/hooks';
+import {
+  useFrameData,
+  useInferenceTags,
+  useKeyboardNavigation,
+  useStartupMarkers,
+  useTimelineState,
+  type TimelineControlsRef,
+} from '@/hooks';
+import { formatPtrBytes } from '@/utils/format-bytes';
 
 export const MAX_INITIAL_ENTRIES = 500000;
 
@@ -109,8 +117,11 @@ function HistoryPage() {
         {!timelineState.isLoading && !timelineState.error && (
           <>
             <Timeline state={timelineState} actions={timelineActions} startups={startups} tags={tags} />
-            <div className="mt-3">
-              <TimelineControls ref={timelineControlsRef} state={timelineState} actions={timelineActions} />
+            <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="max-w-full overflow-x-auto pb-1">
+                <TimelineControls ref={timelineControlsRef} state={timelineState} actions={timelineActions} />
+              </div>
+              <DatasetExportHelper tags={tags} />
             </div>
           </>
         )}
