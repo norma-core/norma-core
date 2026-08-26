@@ -10,6 +10,7 @@ then adds the Arduino, Tailscale, and NormaCore layers on top.
 
 - [Image Profile](#image-profile-)
 - [Max Carrier Setup](#max-carrier-setup-)
+- [M4 PWM Firmware](#m4-pwm-firmware-)
 - [Cellular Modem Support](#cellular-modem-support-)
 - [Hardware Network Watchdog](#hardware-network-watchdog-)
 - [SD Card Automount](#sd-card-automount-)
@@ -44,6 +45,8 @@ The target image includes:
 - Default hostname `rover-alpha`; override with `X8_HOSTNAME` in
   `conf/local.conf`.
 - Max Carrier boot overlay selection and Portenta X8/H7 support packages.
+- NormaCore PWM output firmware for the STM32H7 M4 core, installed from a
+  required prebuilt ELF artifact at `/opt/x8-firmware/m4-user-sketch.elf`.
 - Wi-Fi, Bluetooth, ALSA audio, V4L2, CAN, I2C, GPIO, USB, PCI, PPP, QMI,
   MBIM, and serial-console tools.
 - Removable SD-card automounting at `/media/sdcard`.
@@ -99,6 +102,39 @@ Arduino documents this as Ethernet enabled for Portenta X8. See the
 [Portenta Max Carrier user manual](https://docs.arduino.cc/tutorials/portenta-max-carrier/user-manual/)
 for the carrier DIP switch table.
 
+## M4 PWM Firmware 🧩
+
+Build the NormaCore PWM output sketch for the STM32H7 M4 core outside Yocto:
+
+```sh
+mkdir -p target/arduino-portenta-x8/pwm-output-m4
+arduino-cli compile \
+  --fqbn arduino:mbed_portenta:portenta_x8 \
+  --output-dir target/arduino-portenta-x8/pwm-output-m4 \
+  software/drivers/pwm-output/firmware/pwm_output_m4
+```
+
+The Yocto recipe defaults to this artifact path:
+
+```bitbake
+X8_M4_USER_SKETCH_ELF ??= "${NORMACORE_REPO_ROOT}/target/arduino-portenta-x8/pwm-output-m4/pwm_output_m4.ino.elf"
+```
+
+The image build fails if that ELF is missing. Override `X8_M4_USER_SKETCH_ELF`
+only when using a different artifact path. The ELF is installed into the target
+image as:
+
+```text
+/opt/x8-firmware/m4-user-sketch.elf
+```
+
+`x8h7-init` flashes this file once on first boot, before loading the post-H7 IO
+kernel modules, and writes:
+
+```text
+/var/lib/x8h7-init/m4-user-sketch.done
+```
+
 ## Cellular Modem Support 📡
 
 The image includes basic cellular support for both the Max Carrier onboard
@@ -131,6 +167,37 @@ Leaving both APNs empty keeps the service installed but inactive at boot.
 The image includes ModemManager plus QMI/MBIM tools, but it does not include
 NetworkManager. Modem detection and inspection are available through
 ModemManager, while connection policy is handled by `x8-cellulard`.
+
+## Station Service 🛰️
+
+The image installs the prebuilt ARM64 Station binary from:
+
+```text
+target/aarch64-unknown-linux-gnu/release/station
+```
+
+If that binary is missing, the image build fails and asks to build it from the
+Station source folder:
+
+```sh
+cd software/station/bin/station
+make build-arm64
+```
+
+Station is installed at `/opt/station/station` and managed by a SysV supervisor
+that starts it with TCP/Web enabled, `--max-memory-usage=128M`, and
+`--normfs-persistence-mode=memory-only`. The default config and data paths are:
+
+```text
+/opt/station/station.yaml
+/opt/station/station_data
+```
+
+Private Station identity data can be provided by placing the seed at
+`bld-x8/conf/station.crypto_seed`. If that file exists, it is copied into the
+image as `/opt/station/station_data/.crypto_seed`. If it does not exist, the
+image does not install a seed and Station creates a new NormFS identity on first
+boot.
 
 ## Hardware Network Watchdog ⏱️
 
@@ -182,15 +249,22 @@ whole card device is mounted.
 
 ## eMMC Root Filesystem Size 💽
 
-Portenta X8 has a 16 GB onboard eMMC. The image uses a fixed 14336 MiB rootfs
-partition in the generated `.wic` so the flashed system has a large rootfs
-available immediately, without first-boot partition resizing.
+Portenta X8 has a 16 GB onboard eMMC. The generated `.wic` keeps the flashed
+rootfs partition compact by default:
 
-Arduino's stock `lmp-factory-image-portenta-x8.wic.gz` reference image uses a
-smaller root partition of about 2.9 GiB. NormaCore intentionally uses the larger
-fixed partition because this image is flashed directly to the X8 eMMC, while
-keeping enough margin for the capacity exposed by Arduino's mfgtool fastboot
-target.
+```bitbake
+X8_ROOTFS_FLASH_SIZE_MB ??= "3072"
+```
+
+This avoids decompressing and flashing a 14 GiB image mostly filled with zeroed
+ext4 free space. On first boot, `x8-grow-rootfs` expands the root partition and
+online ext4 filesystem to the rest of the eMMC, writes
+`/var/lib/x8-grow-rootfs.done`, and removes itself from SysV autostart.
+
+If the kernel cannot reread the mounted root partition table immediately after
+the partition is expanded, `resize2fs` may fail on that boot. In that case the
+service stays enabled and retries on the next boot, when the kernel sees the new
+partition size from startup.
 
 ## Start Here 📍
 

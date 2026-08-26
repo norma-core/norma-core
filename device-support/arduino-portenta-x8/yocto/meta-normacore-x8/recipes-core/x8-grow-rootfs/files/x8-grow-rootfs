@@ -1,0 +1,153 @@
+#!/bin/sh
+
+### BEGIN INIT INFO
+# Provides:          x8-grow-rootfs
+# Required-Start:    $local_fs
+# Required-Stop:
+# Default-Start:     2 3 4 5
+# Default-Stop:
+# Short-Description: First-boot Portenta X8 rootfs expansion
+### END INIT INFO
+
+DONE=/var/lib/x8-grow-rootfs.done
+LOG=/var/log/x8-grow-rootfs.log
+PIDFILE=/run/x8-grow-rootfs.pid
+PATH=/sbin:/usr/sbin:/bin:/usr/bin
+
+log() {
+    mkdir -p /var/log
+    echo "$(date '+%Y-%m-%d %H:%M:%S') x8-grow-rootfs: $*" >> "$LOG"
+}
+
+disable_service() {
+    update-rc.d -f x8-grow-rootfs remove >/dev/null 2>&1 || true
+}
+
+root_devnum() {
+    awk '$5 == "/" { print $3; exit }' /proc/self/mountinfo
+}
+
+resolve_root_device() {
+    devnum="$(root_devnum)"
+    [ -n "$devnum" ] || return 1
+
+    sys_path="/sys/dev/block/$devnum"
+    [ -e "$sys_path" ] || return 1
+
+    part_sys="$(readlink -f "$sys_path")"
+    [ -n "$part_sys" ] && [ -f "$part_sys/partition" ] || return 1
+
+    part_name="$(basename "$part_sys")"
+    disk_sys="$(dirname "$part_sys")"
+    disk_name="$(basename "$disk_sys")"
+    part_no="$(cat "$part_sys/partition")"
+
+    [ -n "$part_name" ] && [ -n "$disk_name" ] && [ -n "$part_no" ] || return 1
+    [ -b "/dev/$part_name" ] && [ -b "/dev/$disk_name" ] || return 1
+
+    printf '%s %s %s %s %s\n' "/dev/$disk_name" "/dev/$part_name" "$part_no" "$disk_sys" "$part_sys"
+}
+
+grow_rootfs() {
+    if [ -f "$DONE" ]; then
+        disable_service
+        return 0
+    fi
+
+    root_device="$(resolve_root_device)" || {
+        log "cannot resolve root block device"
+        return 1
+    }
+    set -- $root_device
+
+    disk_dev="$1"
+    part_dev="$2"
+    part_no="$3"
+    disk_sys="$4"
+    part_sys="$5"
+
+    disk_size="$(cat "$disk_sys/size")"
+    part_start="$(cat "$part_sys/start")"
+    part_size="$(cat "$part_sys/size")"
+    target_size=$((disk_size - part_start))
+
+    if [ "$target_size" -le 0 ]; then
+        log "invalid target size: disk_size=$disk_size part_start=$part_start"
+        return 1
+    fi
+
+    if [ "$target_size" -gt "$part_size" ]; then
+        log "growing $part_dev on $disk_dev: start=$part_start size=$part_size target=$target_size"
+
+        if ! printf '%s,%s\n' "$part_start" "$target_size" |
+            sfdisk --no-reread --force -N "$part_no" "$disk_dev" >> "$LOG" 2>&1; then
+            log "sfdisk failed"
+            return 1
+        fi
+
+        blockdev --rereadpt "$disk_dev" >> "$LOG" 2>&1 || true
+        partx --update "$part_dev" >> "$LOG" 2>&1 || partx --update "$disk_dev" >> "$LOG" 2>&1 || true
+    else
+        log "$part_dev already uses available partition space"
+    fi
+
+    if ! resize2fs "$part_dev" >> "$LOG" 2>&1; then
+        log "resize2fs failed; will retry on next boot"
+        return 1
+    fi
+
+    mkdir -p "$(dirname "$DONE")"
+    echo "expanded: $(date '+%Y-%m-%dT%H:%M:%S%z')" > "$DONE"
+    disable_service
+    log "rootfs expansion complete"
+    return 0
+}
+
+case "$1" in
+    start)
+        mkdir -p /run
+        if [ -f "$DONE" ]; then
+            disable_service
+            exit 0
+        fi
+
+        if [ -f "$PIDFILE" ] && kill -0 "$(cat "$PIDFILE")" 2>/dev/null; then
+            log "worker already running"
+            exit 0
+        fi
+
+        start-stop-daemon -S -b -m -p "$PIDFILE" -x "$0" -- run
+        ;;
+
+    run)
+        grow_rootfs
+        exit $?
+        ;;
+
+    stop)
+        if [ -f "$PIDFILE" ]; then
+            start-stop-daemon -K -p "$PIDFILE" 2>/dev/null || true
+            rm -f "$PIDFILE"
+        fi
+        ;;
+
+    restart)
+        "$0" start
+        ;;
+
+    status)
+        if [ -f "$DONE" ]; then
+            echo "x8-grow-rootfs complete"
+            exit 0
+        fi
+        echo "x8-grow-rootfs pending"
+        exit 3
+        ;;
+
+    *)
+        echo "Usage: $0 {start|stop|restart|status}"
+        exit 1
+        ;;
+esac
+
+exit 0
