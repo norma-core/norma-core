@@ -1,0 +1,97 @@
+#!/bin/sh
+
+CONFIG=/etc/default/station
+
+STATION_BINARY="/opt/station/station"
+STATION_WORKDIR="/opt/station"
+STATION_CONFIG="/opt/station/station.yaml"
+STATION_DATA_DIR="/opt/station/station_data"
+STATION_TCP_ADDR="0.0.0.0:8888"
+STATION_WEB_ADDR="0.0.0.0:8889"
+STATION_MAX_MEMORY_USAGE="128M"
+STATION_NORMFS_PERSISTENCE_MODE="memory-only"
+STATION_EXTRA_ARGS=""
+STATION_RESTART_DELAY_SEC="5"
+STATION_LOG="/var/log/station.log"
+
+STOPFILE=/run/station.stop
+CHILD_PIDFILE=/run/station.pid
+
+[ -f "$CONFIG" ] && . "$CONFIG"
+
+log() {
+    mkdir -p /var/log
+    echo "$(date '+%Y-%m-%d %H:%M:%S') station-supervisor: $*" >> "$STATION_LOG"
+}
+
+stop_child() {
+    if [ -f "$CHILD_PIDFILE" ]; then
+        child_pid="$(cat "$CHILD_PIDFILE" 2>/dev/null || true)"
+        if [ -n "$child_pid" ]; then
+            kill "$child_pid" 2>/dev/null || true
+        fi
+    fi
+}
+
+handle_stop() {
+    touch "$STOPFILE"
+    stop_child
+}
+
+trap handle_stop TERM INT
+
+mkdir -p /run "$STATION_WORKDIR" "$STATION_DATA_DIR" /var/log
+rm -f "$STOPFILE"
+
+if ! cd "$STATION_WORKDIR"; then
+    log "failed to enter station workdir: $STATION_WORKDIR"
+    exit 1
+fi
+
+while [ ! -f "$STOPFILE" ]; do
+    if [ ! -x "$STATION_BINARY" ]; then
+        log "station binary is not executable: $STATION_BINARY"
+        sleep "${STATION_RESTART_DELAY_SEC:-5}"
+        continue
+    fi
+
+    set -- \
+        --config "$STATION_CONFIG" \
+        --normfs-base-folder "$STATION_DATA_DIR" \
+        --max-memory-usage "$STATION_MAX_MEMORY_USAGE" \
+        --normfs-persistence-mode "$STATION_NORMFS_PERSISTENCE_MODE"
+
+    if [ -n "$STATION_TCP_ADDR" ]; then
+        set -- "$@" --tcp "$STATION_TCP_ADDR"
+    fi
+
+    if [ -n "$STATION_WEB_ADDR" ]; then
+        set -- "$@" --web "$STATION_WEB_ADDR"
+    fi
+
+    if [ -n "$STATION_EXTRA_ARGS" ]; then
+        # shellcheck disable=SC2086
+        set -- "$@" $STATION_EXTRA_ARGS
+    fi
+
+    log "starting station: $STATION_BINARY $*"
+    (
+        exec "$STATION_BINARY" "$@"
+    ) >> "$STATION_LOG" 2>&1 &
+
+    child_pid="$!"
+    echo "$child_pid" > "$CHILD_PIDFILE"
+    wait "$child_pid"
+    status="$?"
+    rm -f "$CHILD_PIDFILE"
+
+    if [ -f "$STOPFILE" ]; then
+        break
+    fi
+
+    log "station exited with status $status; restarting in ${STATION_RESTART_DELAY_SEC:-5}s"
+    sleep "${STATION_RESTART_DELAY_SEC:-5}"
+done
+
+rm -f "$CHILD_PIDFILE" "$STOPFILE"
+log "station supervisor stopped"

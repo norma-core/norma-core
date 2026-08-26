@@ -1,0 +1,78 @@
+#!/bin/sh
+
+### BEGIN INIT INFO
+# Provides:          station
+# Required-Start:    $remote_fs $network x8h7-init
+# Required-Stop:     $remote_fs $network
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: NormaCore Station supervisor
+### END INIT INFO
+
+CONFIG=/etc/default/station
+SUPERVISOR=/opt/station/station-supervisor
+PIDFILE=/run/station-supervisor.pid
+STOPFILE=/run/station.stop
+
+STATION_ENABLED="1"
+STATION_BINARY="/opt/station/station"
+
+[ -f "$CONFIG" ] && . "$CONFIG"
+
+case "$1" in
+    start)
+        if [ "$STATION_ENABLED" = "0" ] || [ "$STATION_ENABLED" = "false" ]; then
+            echo "station disabled in $CONFIG"
+            exit 0
+        fi
+
+        [ -x "$SUPERVISOR" ] || {
+            echo "station supervisor not found"
+            exit 1
+        }
+        [ -x "$STATION_BINARY" ] || {
+            echo "station binary not found: $STATION_BINARY"
+            exit 1
+        }
+
+        if [ -f "$PIDFILE" ] && kill -0 "$(cat "$PIDFILE")" 2>/dev/null; then
+            echo "station already running"
+            exit 0
+        fi
+
+        mkdir -p /run
+        rm -f "$STOPFILE"
+        echo "Starting station"
+        start-stop-daemon -S -b -m -p "$PIDFILE" -x "$SUPERVISOR"
+        ;;
+
+    stop)
+        echo "Stopping station"
+        mkdir -p /run
+        touch "$STOPFILE"
+        start-stop-daemon -K -p "$PIDFILE" 2>/dev/null || true
+        rm -f "$PIDFILE"
+        ;;
+
+    restart)
+        "$0" stop
+        sleep 1
+        "$0" start
+        ;;
+
+    status)
+        if [ -f "$PIDFILE" ] && kill -0 "$(cat "$PIDFILE")" 2>/dev/null; then
+            echo "station running"
+            exit 0
+        fi
+        echo "station not running"
+        exit 3
+        ;;
+
+    *)
+        echo "Usage: $0 {start|stop|restart|status}"
+        exit 1
+        ;;
+esac
+
+exit 0
