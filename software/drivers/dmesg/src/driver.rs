@@ -1,5 +1,4 @@
-use crate::dmesg_proto::{DmesgMessage, DmesgSignalType, RxEnvelope};
-use crate::parser::parse_record;
+use crate::dmesg_proto::{DmesgSignalType, RxEnvelope};
 use crate::reader::{KMSG_PATH, KmsgSource, RECORD_BUFFER_SIZE, ReadOutcome, SUPPORTED};
 use bytes::Bytes;
 use log::{error, info};
@@ -15,8 +14,8 @@ pub const QUEUE_ID: &str = "dmesg/rx";
 
 const POLL_INTERVAL: Duration = Duration::from_millis(200);
 const RETRY_INTERVAL: Duration = Duration::from_secs(60);
-const MAX_MESSAGES_PER_ENVELOPE: usize = 512;
-const MAX_MESSAGES_PER_SECOND: u32 = 200;
+const MAX_RECORDS_PER_ENVELOPE: usize = 512;
+const MAX_RECORDS_PER_SECOND: u32 = 200;
 
 pub struct DmesgDriver {
     _worker: JoinHandle<()>,
@@ -81,19 +80,16 @@ impl Publisher {
         self.publish(envelope);
     }
 
-    fn publish_messages(&self, messages: Vec<DmesgMessage>, dropped: u64) {
+    fn publish_records(&self, records: Vec<String>, from_backlog: bool, dropped: u64) {
         let mut envelope = new_envelope(DmesgSignalType::DmesgMessages);
-        envelope.messages = messages;
-        envelope.dropped_messages = dropped;
+        envelope.records = records;
+        envelope.from_backlog = from_backlog;
+        envelope.dropped_records = dropped;
         self.publish(envelope);
     }
 
-    fn publish_gap(&self, from_seq: u64, to_seq: u64) {
-        let mut envelope = new_envelope(DmesgSignalType::DmesgGap);
-        envelope.gap_from_seq = from_seq;
-        envelope.gap_to_seq = to_seq;
-        envelope.dropped_messages = to_seq.saturating_sub(from_seq).saturating_add(1);
-        self.publish(envelope);
+    fn publish_gap(&self) {
+        self.publish(new_envelope(DmesgSignalType::DmesgGap));
     }
 }
 
@@ -148,49 +144,27 @@ fn run(publisher: Publisher) {
 
 fn follow(mut source: KmsgSource, publisher: &Publisher, replay_backlog: bool) {
     let mut buffer = vec![0u8; RECORD_BUFFER_SIZE];
-    let mut batch: Vec<DmesgMessage> = Vec::new();
+    let mut batch: Vec<String> = Vec::new();
     let mut dropped: u64 = 0;
     let mut backlog = replay_backlog;
-    let mut last_seq: Option<u64> = None;
-    let mut limiter = RateLimiter::new(MAX_MESSAGES_PER_SECOND);
+    let mut limiter = RateLimiter::new(MAX_RECORDS_PER_SECOND);
 
     loop {
         match source.read_record(&mut buffer) {
             ReadOutcome::Record(size) => {
-                let Some(record) = parse_record(&buffer[..size]) else {
-                    continue;
-                };
-
-                if let Some(previous) = last_seq
-                    && record.seq > previous + 1
-                {
-                    flush(publisher, &mut batch, &mut dropped);
-                    publisher.publish_gap(previous + 1, record.seq - 1);
-                }
-                last_seq = Some(record.seq);
-
                 if !backlog && !limiter.allow() {
                     dropped += 1;
                     continue;
                 }
 
-                batch.push(DmesgMessage {
-                    seq: record.seq,
-                    priority: record.priority as u32,
-                    facility: record.facility as u32,
-                    kernel_monotonic_us: record.monotonic_us,
-                    from_backlog: backlog,
-                    message: record.message,
-                    subsystem: record.subsystem,
-                    device: record.device,
-                });
+                batch.push(String::from_utf8_lossy(&buffer[..size]).into_owned());
 
-                if batch.len() >= MAX_MESSAGES_PER_ENVELOPE {
-                    flush(publisher, &mut batch, &mut dropped);
+                if batch.len() >= MAX_RECORDS_PER_ENVELOPE {
+                    flush(publisher, &mut batch, backlog, &mut dropped);
                 }
             }
             ReadOutcome::Drained => {
-                flush(publisher, &mut batch, &mut dropped);
+                flush(publisher, &mut batch, backlog, &mut dropped);
 
                 if backlog {
                     backlog = false;
@@ -200,13 +174,14 @@ fn follow(mut source: KmsgSource, publisher: &Publisher, replay_backlog: bool) {
                 thread::sleep(POLL_INTERVAL);
             }
             ReadOutcome::Overrun => {
-                flush(publisher, &mut batch, &mut dropped);
+                flush(publisher, &mut batch, backlog, &mut dropped);
+                publisher.publish_gap();
             }
             ReadOutcome::Oversized => {
                 dropped += 1;
             }
             ReadOutcome::Failed(err) => {
-                flush(publisher, &mut batch, &mut dropped);
+                flush(publisher, &mut batch, backlog, &mut dropped);
                 error!("dmesg read failed: {}", err);
                 publisher.publish_error(DmesgSignalType::DmesgError, err.to_string());
                 return;
@@ -215,12 +190,12 @@ fn follow(mut source: KmsgSource, publisher: &Publisher, replay_backlog: bool) {
     }
 }
 
-fn flush(publisher: &Publisher, batch: &mut Vec<DmesgMessage>, dropped: &mut u64) {
+fn flush(publisher: &Publisher, batch: &mut Vec<String>, from_backlog: bool, dropped: &mut u64) {
     if batch.is_empty() && *dropped == 0 {
         return;
     }
 
-    publisher.publish_messages(std::mem::take(batch), std::mem::take(dropped));
+    publisher.publish_records(std::mem::take(batch), from_backlog, std::mem::take(dropped));
 }
 
 struct RateLimiter {

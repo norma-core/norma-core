@@ -44838,413 +44838,6 @@ export const dmesg = $root.dmesg = (() => {
         return values;
     })();
 
-    dmesg.DmesgMessage = (function() {
-
-        /**
-         * Properties of a DmesgMessage.
-         * @memberof dmesg
-         * @interface IDmesgMessage
-         * @property {Long|null} [seq] DmesgMessage seq
-         * @property {number|null} [priority] DmesgMessage priority
-         * @property {number|null} [facility] DmesgMessage facility
-         * @property {Long|null} [kernelMonotonicUs] DmesgMessage kernelMonotonicUs
-         * @property {boolean|null} [fromBacklog] DmesgMessage fromBacklog
-         * @property {string|null} [message] DmesgMessage message
-         * @property {string|null} [subsystem] DmesgMessage subsystem
-         * @property {string|null} [device] DmesgMessage device
-         */
-
-        /**
-         * Constructs a new DmesgMessage.
-         * @memberof dmesg
-         * @classdesc Represents a DmesgMessage.
-         * @implements IDmesgMessage
-         * @constructor
-         * @param {dmesg.IDmesgMessage=} [properties] Properties to set
-         */
-        function DmesgMessage(properties) {
-            if (properties)
-                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
-                        this[keys[i]] = properties[keys[i]];
-        }
-
-        /**
-         * DmesgMessage seq.
-         * @member {Long} seq
-         * @memberof dmesg.DmesgMessage
-         * @instance
-         */
-        DmesgMessage.prototype.seq = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
-
-        /**
-         * DmesgMessage priority.
-         * @member {number} priority
-         * @memberof dmesg.DmesgMessage
-         * @instance
-         */
-        DmesgMessage.prototype.priority = 0;
-
-        /**
-         * DmesgMessage facility.
-         * @member {number} facility
-         * @memberof dmesg.DmesgMessage
-         * @instance
-         */
-        DmesgMessage.prototype.facility = 0;
-
-        /**
-         * DmesgMessage kernelMonotonicUs.
-         * @member {Long} kernelMonotonicUs
-         * @memberof dmesg.DmesgMessage
-         * @instance
-         */
-        DmesgMessage.prototype.kernelMonotonicUs = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
-
-        /**
-         * DmesgMessage fromBacklog.
-         * @member {boolean} fromBacklog
-         * @memberof dmesg.DmesgMessage
-         * @instance
-         */
-        DmesgMessage.prototype.fromBacklog = false;
-
-        /**
-         * DmesgMessage message.
-         * @member {string} message
-         * @memberof dmesg.DmesgMessage
-         * @instance
-         */
-        DmesgMessage.prototype.message = "";
-
-        /**
-         * DmesgMessage subsystem.
-         * @member {string} subsystem
-         * @memberof dmesg.DmesgMessage
-         * @instance
-         */
-        DmesgMessage.prototype.subsystem = "";
-
-        /**
-         * DmesgMessage device.
-         * @member {string} device
-         * @memberof dmesg.DmesgMessage
-         * @instance
-         */
-        DmesgMessage.prototype.device = "";
-
-        /**
-         * Creates a new DmesgMessage instance using the specified properties.
-         * @function create
-         * @memberof dmesg.DmesgMessage
-         * @static
-         * @param {dmesg.IDmesgMessage=} [properties] Properties to set
-         * @returns {dmesg.DmesgMessage} DmesgMessage instance
-         */
-        DmesgMessage.create = function create(properties) {
-            return new DmesgMessage(properties);
-        };
-
-        /**
-         * Encodes the specified DmesgMessage message. Does not implicitly {@link dmesg.DmesgMessage.verify|verify} messages.
-         * @function encode
-         * @memberof dmesg.DmesgMessage
-         * @static
-         * @param {dmesg.IDmesgMessage} message DmesgMessage message or plain object to encode
-         * @param {$protobuf.Writer} [writer] Writer to encode to
-         * @returns {$protobuf.Writer} Writer
-         */
-        DmesgMessage.encode = function encode(message, writer) {
-            if (!writer)
-                writer = $Writer.create();
-            if (message.seq != null && Object.hasOwnProperty.call(message, "seq"))
-                writer.uint32(/* id 1, wireType 0 =*/8).uint64(message.seq);
-            if (message.priority != null && Object.hasOwnProperty.call(message, "priority"))
-                writer.uint32(/* id 2, wireType 0 =*/16).uint32(message.priority);
-            if (message.facility != null && Object.hasOwnProperty.call(message, "facility"))
-                writer.uint32(/* id 3, wireType 0 =*/24).uint32(message.facility);
-            if (message.kernelMonotonicUs != null && Object.hasOwnProperty.call(message, "kernelMonotonicUs"))
-                writer.uint32(/* id 4, wireType 0 =*/32).uint64(message.kernelMonotonicUs);
-            if (message.fromBacklog != null && Object.hasOwnProperty.call(message, "fromBacklog"))
-                writer.uint32(/* id 5, wireType 0 =*/40).bool(message.fromBacklog);
-            if (message.message != null && Object.hasOwnProperty.call(message, "message"))
-                writer.uint32(/* id 10, wireType 2 =*/82).string(message.message);
-            if (message.subsystem != null && Object.hasOwnProperty.call(message, "subsystem"))
-                writer.uint32(/* id 11, wireType 2 =*/90).string(message.subsystem);
-            if (message.device != null && Object.hasOwnProperty.call(message, "device"))
-                writer.uint32(/* id 12, wireType 2 =*/98).string(message.device);
-            return writer;
-        };
-
-        /**
-         * Encodes the specified DmesgMessage message, length delimited. Does not implicitly {@link dmesg.DmesgMessage.verify|verify} messages.
-         * @function encodeDelimited
-         * @memberof dmesg.DmesgMessage
-         * @static
-         * @param {dmesg.IDmesgMessage} message DmesgMessage message or plain object to encode
-         * @param {$protobuf.Writer} [writer] Writer to encode to
-         * @returns {$protobuf.Writer} Writer
-         */
-        DmesgMessage.encodeDelimited = function encodeDelimited(message, writer) {
-            return this.encode(message, writer).ldelim();
-        };
-
-        /**
-         * Decodes a DmesgMessage message from the specified reader or buffer.
-         * @function decode
-         * @memberof dmesg.DmesgMessage
-         * @static
-         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
-         * @param {number} [length] Message length if known beforehand
-         * @returns {dmesg.DmesgMessage} DmesgMessage
-         * @throws {Error} If the payload is not a reader or valid buffer
-         * @throws {$protobuf.util.ProtocolError} If required fields are missing
-         */
-        DmesgMessage.decode = function decode(reader, length, error, long) {
-            if (!(reader instanceof $Reader))
-                reader = $Reader.create(reader);
-            if (long === undefined)
-                long = 0;
-            if (long > $Reader.recursionLimit)
-                throw Error("maximum nesting depth exceeded");
-            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.dmesg.DmesgMessage();
-            while (reader.pos < end) {
-                let tag = reader.uint32();
-                if (tag === error)
-                    break;
-                switch (tag >>> 3) {
-                case 1: {
-                        message.seq = reader.uint64();
-                        break;
-                    }
-                case 2: {
-                        message.priority = reader.uint32();
-                        break;
-                    }
-                case 3: {
-                        message.facility = reader.uint32();
-                        break;
-                    }
-                case 4: {
-                        message.kernelMonotonicUs = reader.uint64();
-                        break;
-                    }
-                case 5: {
-                        message.fromBacklog = reader.bool();
-                        break;
-                    }
-                case 10: {
-                        message.message = reader.string();
-                        break;
-                    }
-                case 11: {
-                        message.subsystem = reader.string();
-                        break;
-                    }
-                case 12: {
-                        message.device = reader.string();
-                        break;
-                    }
-                default:
-                    reader.skipType(tag & 7, long);
-                    break;
-                }
-            }
-            return message;
-        };
-
-        /**
-         * Decodes a DmesgMessage message from the specified reader or buffer, length delimited.
-         * @function decodeDelimited
-         * @memberof dmesg.DmesgMessage
-         * @static
-         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
-         * @returns {dmesg.DmesgMessage} DmesgMessage
-         * @throws {Error} If the payload is not a reader or valid buffer
-         * @throws {$protobuf.util.ProtocolError} If required fields are missing
-         */
-        DmesgMessage.decodeDelimited = function decodeDelimited(reader) {
-            if (!(reader instanceof $Reader))
-                reader = new $Reader(reader);
-            return this.decode(reader, reader.uint32());
-        };
-
-        /**
-         * Verifies a DmesgMessage message.
-         * @function verify
-         * @memberof dmesg.DmesgMessage
-         * @static
-         * @param {Object.<string,*>} message Plain object to verify
-         * @returns {string|null} `null` if valid, otherwise the reason why it is not
-         */
-        DmesgMessage.verify = function verify(message, long) {
-            if (typeof message !== "object" || message === null)
-                return "object expected";
-            if (long === undefined)
-                long = 0;
-            if (long > $util.recursionLimit)
-                return "maximum nesting depth exceeded";
-            if (message.seq != null && message.hasOwnProperty("seq"))
-                if (!$util.isInteger(message.seq) && !(message.seq && $util.isInteger(message.seq.low) && $util.isInteger(message.seq.high)))
-                    return "seq: integer|Long expected";
-            if (message.priority != null && message.hasOwnProperty("priority"))
-                if (!$util.isInteger(message.priority))
-                    return "priority: integer expected";
-            if (message.facility != null && message.hasOwnProperty("facility"))
-                if (!$util.isInteger(message.facility))
-                    return "facility: integer expected";
-            if (message.kernelMonotonicUs != null && message.hasOwnProperty("kernelMonotonicUs"))
-                if (!$util.isInteger(message.kernelMonotonicUs) && !(message.kernelMonotonicUs && $util.isInteger(message.kernelMonotonicUs.low) && $util.isInteger(message.kernelMonotonicUs.high)))
-                    return "kernelMonotonicUs: integer|Long expected";
-            if (message.fromBacklog != null && message.hasOwnProperty("fromBacklog"))
-                if (typeof message.fromBacklog !== "boolean")
-                    return "fromBacklog: boolean expected";
-            if (message.message != null && message.hasOwnProperty("message"))
-                if (!$util.isString(message.message))
-                    return "message: string expected";
-            if (message.subsystem != null && message.hasOwnProperty("subsystem"))
-                if (!$util.isString(message.subsystem))
-                    return "subsystem: string expected";
-            if (message.device != null && message.hasOwnProperty("device"))
-                if (!$util.isString(message.device))
-                    return "device: string expected";
-            return null;
-        };
-
-        /**
-         * Creates a DmesgMessage message from a plain object. Also converts values to their respective internal types.
-         * @function fromObject
-         * @memberof dmesg.DmesgMessage
-         * @static
-         * @param {Object.<string,*>} object Plain object
-         * @returns {dmesg.DmesgMessage} DmesgMessage
-         */
-        DmesgMessage.fromObject = function fromObject(object, long) {
-            if (object instanceof $root.dmesg.DmesgMessage)
-                return object;
-            if (long === undefined)
-                long = 0;
-            if (long > $util.recursionLimit)
-                throw Error("maximum nesting depth exceeded");
-            let message = new $root.dmesg.DmesgMessage();
-            if (object.seq != null)
-                if ($util.Long)
-                    (message.seq = $util.Long.fromValue(object.seq)).unsigned = true;
-                else if (typeof object.seq === "string")
-                    message.seq = parseInt(object.seq, 10);
-                else if (typeof object.seq === "number")
-                    message.seq = object.seq;
-                else if (typeof object.seq === "object")
-                    message.seq = new $util.LongBits(object.seq.low >>> 0, object.seq.high >>> 0).toNumber(true);
-            if (object.priority != null)
-                message.priority = object.priority >>> 0;
-            if (object.facility != null)
-                message.facility = object.facility >>> 0;
-            if (object.kernelMonotonicUs != null)
-                if ($util.Long)
-                    (message.kernelMonotonicUs = $util.Long.fromValue(object.kernelMonotonicUs)).unsigned = true;
-                else if (typeof object.kernelMonotonicUs === "string")
-                    message.kernelMonotonicUs = parseInt(object.kernelMonotonicUs, 10);
-                else if (typeof object.kernelMonotonicUs === "number")
-                    message.kernelMonotonicUs = object.kernelMonotonicUs;
-                else if (typeof object.kernelMonotonicUs === "object")
-                    message.kernelMonotonicUs = new $util.LongBits(object.kernelMonotonicUs.low >>> 0, object.kernelMonotonicUs.high >>> 0).toNumber(true);
-            if (object.fromBacklog != null)
-                message.fromBacklog = Boolean(object.fromBacklog);
-            if (object.message != null)
-                message.message = String(object.message);
-            if (object.subsystem != null)
-                message.subsystem = String(object.subsystem);
-            if (object.device != null)
-                message.device = String(object.device);
-            return message;
-        };
-
-        /**
-         * Creates a plain object from a DmesgMessage message. Also converts values to other types if specified.
-         * @function toObject
-         * @memberof dmesg.DmesgMessage
-         * @static
-         * @param {dmesg.DmesgMessage} message DmesgMessage
-         * @param {$protobuf.IConversionOptions} [options] Conversion options
-         * @returns {Object.<string,*>} Plain object
-         */
-        DmesgMessage.toObject = function toObject(message, options) {
-            if (!options)
-                options = {};
-            let object = {};
-            if (options.defaults) {
-                if ($util.Long) {
-                    let long = new $util.Long(0, 0, true);
-                    object.seq = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
-                } else
-                    object.seq = options.longs === String ? "0" : 0;
-                object.priority = 0;
-                object.facility = 0;
-                if ($util.Long) {
-                    let long = new $util.Long(0, 0, true);
-                    object.kernelMonotonicUs = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
-                } else
-                    object.kernelMonotonicUs = options.longs === String ? "0" : 0;
-                object.fromBacklog = false;
-                object.message = "";
-                object.subsystem = "";
-                object.device = "";
-            }
-            if (message.seq != null && message.hasOwnProperty("seq"))
-                if (typeof message.seq === "number")
-                    object.seq = options.longs === String ? String(message.seq) : message.seq;
-                else
-                    object.seq = options.longs === String ? $util.Long.prototype.toString.call(message.seq) : options.longs === Number ? new $util.LongBits(message.seq.low >>> 0, message.seq.high >>> 0).toNumber(true) : message.seq;
-            if (message.priority != null && message.hasOwnProperty("priority"))
-                object.priority = message.priority;
-            if (message.facility != null && message.hasOwnProperty("facility"))
-                object.facility = message.facility;
-            if (message.kernelMonotonicUs != null && message.hasOwnProperty("kernelMonotonicUs"))
-                if (typeof message.kernelMonotonicUs === "number")
-                    object.kernelMonotonicUs = options.longs === String ? String(message.kernelMonotonicUs) : message.kernelMonotonicUs;
-                else
-                    object.kernelMonotonicUs = options.longs === String ? $util.Long.prototype.toString.call(message.kernelMonotonicUs) : options.longs === Number ? new $util.LongBits(message.kernelMonotonicUs.low >>> 0, message.kernelMonotonicUs.high >>> 0).toNumber(true) : message.kernelMonotonicUs;
-            if (message.fromBacklog != null && message.hasOwnProperty("fromBacklog"))
-                object.fromBacklog = message.fromBacklog;
-            if (message.message != null && message.hasOwnProperty("message"))
-                object.message = message.message;
-            if (message.subsystem != null && message.hasOwnProperty("subsystem"))
-                object.subsystem = message.subsystem;
-            if (message.device != null && message.hasOwnProperty("device"))
-                object.device = message.device;
-            return object;
-        };
-
-        /**
-         * Converts this DmesgMessage to JSON.
-         * @function toJSON
-         * @memberof dmesg.DmesgMessage
-         * @instance
-         * @returns {Object.<string,*>} JSON object
-         */
-        DmesgMessage.prototype.toJSON = function toJSON() {
-            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
-        };
-
-        /**
-         * Gets the default type url for DmesgMessage
-         * @function getTypeUrl
-         * @memberof dmesg.DmesgMessage
-         * @static
-         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
-         * @returns {string} The default type url
-         */
-        DmesgMessage.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
-            if (typeUrlPrefix === undefined) {
-                typeUrlPrefix = "type.googleapis.com";
-            }
-            return typeUrlPrefix + "/dmesg.DmesgMessage";
-        };
-
-        return DmesgMessage;
-    })();
-
     dmesg.RxEnvelope = (function() {
 
         /**
@@ -45255,10 +44848,9 @@ export const dmesg = $root.dmesg = (() => {
          * @property {Long|null} [localStampNs] RxEnvelope localStampNs
          * @property {Long|null} [appStartId] RxEnvelope appStartId
          * @property {dmesg.DmesgSignalType|null} [signalType] RxEnvelope signalType
-         * @property {Array.<dmesg.IDmesgMessage>|null} [messages] RxEnvelope messages
-         * @property {Long|null} [droppedMessages] RxEnvelope droppedMessages
-         * @property {Long|null} [gapFromSeq] RxEnvelope gapFromSeq
-         * @property {Long|null} [gapToSeq] RxEnvelope gapToSeq
+         * @property {Array.<string>|null} [records] RxEnvelope records
+         * @property {boolean|null} [fromBacklog] RxEnvelope fromBacklog
+         * @property {Long|null} [droppedRecords] RxEnvelope droppedRecords
          * @property {string|null} [error] RxEnvelope error
          */
 
@@ -45271,7 +44863,7 @@ export const dmesg = $root.dmesg = (() => {
          * @param {dmesg.IRxEnvelope=} [properties] Properties to set
          */
         function RxEnvelope(properties) {
-            this.messages = [];
+            this.records = [];
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
                     if (properties[keys[i]] != null && keys[i] !== "__proto__")
@@ -45311,36 +44903,28 @@ export const dmesg = $root.dmesg = (() => {
         RxEnvelope.prototype.signalType = 0;
 
         /**
-         * RxEnvelope messages.
-         * @member {Array.<dmesg.IDmesgMessage>} messages
+         * RxEnvelope records.
+         * @member {Array.<string>} records
          * @memberof dmesg.RxEnvelope
          * @instance
          */
-        RxEnvelope.prototype.messages = $util.emptyArray;
+        RxEnvelope.prototype.records = $util.emptyArray;
 
         /**
-         * RxEnvelope droppedMessages.
-         * @member {Long} droppedMessages
+         * RxEnvelope fromBacklog.
+         * @member {boolean} fromBacklog
          * @memberof dmesg.RxEnvelope
          * @instance
          */
-        RxEnvelope.prototype.droppedMessages = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+        RxEnvelope.prototype.fromBacklog = false;
 
         /**
-         * RxEnvelope gapFromSeq.
-         * @member {Long} gapFromSeq
+         * RxEnvelope droppedRecords.
+         * @member {Long} droppedRecords
          * @memberof dmesg.RxEnvelope
          * @instance
          */
-        RxEnvelope.prototype.gapFromSeq = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
-
-        /**
-         * RxEnvelope gapToSeq.
-         * @member {Long} gapToSeq
-         * @memberof dmesg.RxEnvelope
-         * @instance
-         */
-        RxEnvelope.prototype.gapToSeq = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+        RxEnvelope.prototype.droppedRecords = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
 
         /**
          * RxEnvelope error.
@@ -45382,15 +44966,13 @@ export const dmesg = $root.dmesg = (() => {
                 writer.uint32(/* id 3, wireType 0 =*/24).uint64(message.appStartId);
             if (message.signalType != null && Object.hasOwnProperty.call(message, "signalType"))
                 writer.uint32(/* id 10, wireType 0 =*/80).int32(message.signalType);
-            if (message.messages != null && message.messages.length)
-                for (let i = 0; i < message.messages.length; ++i)
-                    $root.dmesg.DmesgMessage.encode(message.messages[i], writer.uint32(/* id 11, wireType 2 =*/90).fork()).ldelim();
-            if (message.droppedMessages != null && Object.hasOwnProperty.call(message, "droppedMessages"))
-                writer.uint32(/* id 12, wireType 0 =*/96).uint64(message.droppedMessages);
-            if (message.gapFromSeq != null && Object.hasOwnProperty.call(message, "gapFromSeq"))
-                writer.uint32(/* id 13, wireType 0 =*/104).uint64(message.gapFromSeq);
-            if (message.gapToSeq != null && Object.hasOwnProperty.call(message, "gapToSeq"))
-                writer.uint32(/* id 14, wireType 0 =*/112).uint64(message.gapToSeq);
+            if (message.records != null && message.records.length)
+                for (let i = 0; i < message.records.length; ++i)
+                    writer.uint32(/* id 11, wireType 2 =*/90).string(message.records[i]);
+            if (message.fromBacklog != null && Object.hasOwnProperty.call(message, "fromBacklog"))
+                writer.uint32(/* id 12, wireType 0 =*/96).bool(message.fromBacklog);
+            if (message.droppedRecords != null && Object.hasOwnProperty.call(message, "droppedRecords"))
+                writer.uint32(/* id 13, wireType 0 =*/104).uint64(message.droppedRecords);
             if (message.error != null && Object.hasOwnProperty.call(message, "error"))
                 writer.uint32(/* id 50, wireType 2 =*/402).string(message.error);
             return writer;
@@ -45450,21 +45032,17 @@ export const dmesg = $root.dmesg = (() => {
                         break;
                     }
                 case 11: {
-                        if (!(message.messages && message.messages.length))
-                            message.messages = [];
-                        message.messages.push($root.dmesg.DmesgMessage.decode(reader, reader.uint32(), undefined, long + 1));
+                        if (!(message.records && message.records.length))
+                            message.records = [];
+                        message.records.push(reader.string());
                         break;
                     }
                 case 12: {
-                        message.droppedMessages = reader.uint64();
+                        message.fromBacklog = reader.bool();
                         break;
                     }
                 case 13: {
-                        message.gapFromSeq = reader.uint64();
-                        break;
-                    }
-                case 14: {
-                        message.gapToSeq = reader.uint64();
+                        message.droppedRecords = reader.uint64();
                         break;
                     }
                 case 50: {
@@ -45532,24 +45110,19 @@ export const dmesg = $root.dmesg = (() => {
                 case 6:
                     break;
                 }
-            if (message.messages != null && message.hasOwnProperty("messages")) {
-                if (!Array.isArray(message.messages))
-                    return "messages: array expected";
-                for (let i = 0; i < message.messages.length; ++i) {
-                    let error = $root.dmesg.DmesgMessage.verify(message.messages[i], long + 1);
-                    if (error)
-                        return "messages." + error;
-                }
+            if (message.records != null && message.hasOwnProperty("records")) {
+                if (!Array.isArray(message.records))
+                    return "records: array expected";
+                for (let i = 0; i < message.records.length; ++i)
+                    if (!$util.isString(message.records[i]))
+                        return "records: string[] expected";
             }
-            if (message.droppedMessages != null && message.hasOwnProperty("droppedMessages"))
-                if (!$util.isInteger(message.droppedMessages) && !(message.droppedMessages && $util.isInteger(message.droppedMessages.low) && $util.isInteger(message.droppedMessages.high)))
-                    return "droppedMessages: integer|Long expected";
-            if (message.gapFromSeq != null && message.hasOwnProperty("gapFromSeq"))
-                if (!$util.isInteger(message.gapFromSeq) && !(message.gapFromSeq && $util.isInteger(message.gapFromSeq.low) && $util.isInteger(message.gapFromSeq.high)))
-                    return "gapFromSeq: integer|Long expected";
-            if (message.gapToSeq != null && message.hasOwnProperty("gapToSeq"))
-                if (!$util.isInteger(message.gapToSeq) && !(message.gapToSeq && $util.isInteger(message.gapToSeq.low) && $util.isInteger(message.gapToSeq.high)))
-                    return "gapToSeq: integer|Long expected";
+            if (message.fromBacklog != null && message.hasOwnProperty("fromBacklog"))
+                if (typeof message.fromBacklog !== "boolean")
+                    return "fromBacklog: boolean expected";
+            if (message.droppedRecords != null && message.hasOwnProperty("droppedRecords"))
+                if (!$util.isInteger(message.droppedRecords) && !(message.droppedRecords && $util.isInteger(message.droppedRecords.low) && $util.isInteger(message.droppedRecords.high)))
+                    return "droppedRecords: integer|Long expected";
             if (message.error != null && message.hasOwnProperty("error"))
                 if (!$util.isString(message.error))
                     return "error: string expected";
@@ -45635,43 +45208,24 @@ export const dmesg = $root.dmesg = (() => {
                 message.signalType = 6;
                 break;
             }
-            if (object.messages) {
-                if (!Array.isArray(object.messages))
-                    throw TypeError(".dmesg.RxEnvelope.messages: array expected");
-                message.messages = [];
-                for (let i = 0; i < object.messages.length; ++i) {
-                    if (typeof object.messages[i] !== "object")
-                        throw TypeError(".dmesg.RxEnvelope.messages: object expected");
-                    message.messages[i] = $root.dmesg.DmesgMessage.fromObject(object.messages[i], long + 1);
-                }
+            if (object.records) {
+                if (!Array.isArray(object.records))
+                    throw TypeError(".dmesg.RxEnvelope.records: array expected");
+                message.records = [];
+                for (let i = 0; i < object.records.length; ++i)
+                    message.records[i] = String(object.records[i]);
             }
-            if (object.droppedMessages != null)
+            if (object.fromBacklog != null)
+                message.fromBacklog = Boolean(object.fromBacklog);
+            if (object.droppedRecords != null)
                 if ($util.Long)
-                    (message.droppedMessages = $util.Long.fromValue(object.droppedMessages)).unsigned = true;
-                else if (typeof object.droppedMessages === "string")
-                    message.droppedMessages = parseInt(object.droppedMessages, 10);
-                else if (typeof object.droppedMessages === "number")
-                    message.droppedMessages = object.droppedMessages;
-                else if (typeof object.droppedMessages === "object")
-                    message.droppedMessages = new $util.LongBits(object.droppedMessages.low >>> 0, object.droppedMessages.high >>> 0).toNumber(true);
-            if (object.gapFromSeq != null)
-                if ($util.Long)
-                    (message.gapFromSeq = $util.Long.fromValue(object.gapFromSeq)).unsigned = true;
-                else if (typeof object.gapFromSeq === "string")
-                    message.gapFromSeq = parseInt(object.gapFromSeq, 10);
-                else if (typeof object.gapFromSeq === "number")
-                    message.gapFromSeq = object.gapFromSeq;
-                else if (typeof object.gapFromSeq === "object")
-                    message.gapFromSeq = new $util.LongBits(object.gapFromSeq.low >>> 0, object.gapFromSeq.high >>> 0).toNumber(true);
-            if (object.gapToSeq != null)
-                if ($util.Long)
-                    (message.gapToSeq = $util.Long.fromValue(object.gapToSeq)).unsigned = true;
-                else if (typeof object.gapToSeq === "string")
-                    message.gapToSeq = parseInt(object.gapToSeq, 10);
-                else if (typeof object.gapToSeq === "number")
-                    message.gapToSeq = object.gapToSeq;
-                else if (typeof object.gapToSeq === "object")
-                    message.gapToSeq = new $util.LongBits(object.gapToSeq.low >>> 0, object.gapToSeq.high >>> 0).toNumber(true);
+                    (message.droppedRecords = $util.Long.fromValue(object.droppedRecords)).unsigned = true;
+                else if (typeof object.droppedRecords === "string")
+                    message.droppedRecords = parseInt(object.droppedRecords, 10);
+                else if (typeof object.droppedRecords === "number")
+                    message.droppedRecords = object.droppedRecords;
+                else if (typeof object.droppedRecords === "object")
+                    message.droppedRecords = new $util.LongBits(object.droppedRecords.low >>> 0, object.droppedRecords.high >>> 0).toNumber(true);
             if (object.error != null)
                 message.error = String(object.error);
             return message;
@@ -45691,7 +45245,7 @@ export const dmesg = $root.dmesg = (() => {
                 options = {};
             let object = {};
             if (options.arrays || options.defaults)
-                object.messages = [];
+                object.records = [];
             if (options.defaults) {
                 if ($util.Long) {
                     let long = new $util.Long(0, 0, true);
@@ -45709,21 +45263,12 @@ export const dmesg = $root.dmesg = (() => {
                 } else
                     object.appStartId = options.longs === String ? "0" : 0;
                 object.signalType = options.enums === String ? "DMESG_SIGNAL_TYPE_UNSPECIFIED" : 0;
+                object.fromBacklog = false;
                 if ($util.Long) {
                     let long = new $util.Long(0, 0, true);
-                    object.droppedMessages = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+                    object.droppedRecords = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
                 } else
-                    object.droppedMessages = options.longs === String ? "0" : 0;
-                if ($util.Long) {
-                    let long = new $util.Long(0, 0, true);
-                    object.gapFromSeq = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
-                } else
-                    object.gapFromSeq = options.longs === String ? "0" : 0;
-                if ($util.Long) {
-                    let long = new $util.Long(0, 0, true);
-                    object.gapToSeq = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
-                } else
-                    object.gapToSeq = options.longs === String ? "0" : 0;
+                    object.droppedRecords = options.longs === String ? "0" : 0;
                 object.error = "";
             }
             if (message.monotonicStampNs != null && message.hasOwnProperty("monotonicStampNs"))
@@ -45743,26 +45288,18 @@ export const dmesg = $root.dmesg = (() => {
                     object.appStartId = options.longs === String ? $util.Long.prototype.toString.call(message.appStartId) : options.longs === Number ? new $util.LongBits(message.appStartId.low >>> 0, message.appStartId.high >>> 0).toNumber(true) : message.appStartId;
             if (message.signalType != null && message.hasOwnProperty("signalType"))
                 object.signalType = options.enums === String ? $root.dmesg.DmesgSignalType[message.signalType] === undefined ? message.signalType : $root.dmesg.DmesgSignalType[message.signalType] : message.signalType;
-            if (message.messages && message.messages.length) {
-                object.messages = [];
-                for (let j = 0; j < message.messages.length; ++j)
-                    object.messages[j] = $root.dmesg.DmesgMessage.toObject(message.messages[j], options);
+            if (message.records && message.records.length) {
+                object.records = [];
+                for (let j = 0; j < message.records.length; ++j)
+                    object.records[j] = message.records[j];
             }
-            if (message.droppedMessages != null && message.hasOwnProperty("droppedMessages"))
-                if (typeof message.droppedMessages === "number")
-                    object.droppedMessages = options.longs === String ? String(message.droppedMessages) : message.droppedMessages;
+            if (message.fromBacklog != null && message.hasOwnProperty("fromBacklog"))
+                object.fromBacklog = message.fromBacklog;
+            if (message.droppedRecords != null && message.hasOwnProperty("droppedRecords"))
+                if (typeof message.droppedRecords === "number")
+                    object.droppedRecords = options.longs === String ? String(message.droppedRecords) : message.droppedRecords;
                 else
-                    object.droppedMessages = options.longs === String ? $util.Long.prototype.toString.call(message.droppedMessages) : options.longs === Number ? new $util.LongBits(message.droppedMessages.low >>> 0, message.droppedMessages.high >>> 0).toNumber(true) : message.droppedMessages;
-            if (message.gapFromSeq != null && message.hasOwnProperty("gapFromSeq"))
-                if (typeof message.gapFromSeq === "number")
-                    object.gapFromSeq = options.longs === String ? String(message.gapFromSeq) : message.gapFromSeq;
-                else
-                    object.gapFromSeq = options.longs === String ? $util.Long.prototype.toString.call(message.gapFromSeq) : options.longs === Number ? new $util.LongBits(message.gapFromSeq.low >>> 0, message.gapFromSeq.high >>> 0).toNumber(true) : message.gapFromSeq;
-            if (message.gapToSeq != null && message.hasOwnProperty("gapToSeq"))
-                if (typeof message.gapToSeq === "number")
-                    object.gapToSeq = options.longs === String ? String(message.gapToSeq) : message.gapToSeq;
-                else
-                    object.gapToSeq = options.longs === String ? $util.Long.prototype.toString.call(message.gapToSeq) : options.longs === Number ? new $util.LongBits(message.gapToSeq.low >>> 0, message.gapToSeq.high >>> 0).toNumber(true) : message.gapToSeq;
+                    object.droppedRecords = options.longs === String ? $util.Long.prototype.toString.call(message.droppedRecords) : options.longs === Number ? new $util.LongBits(message.droppedRecords.low >>> 0, message.droppedRecords.high >>> 0).toNumber(true) : message.droppedRecords;
             if (message.error != null && message.hasOwnProperty("error"))
                 object.error = message.error;
             return object;
