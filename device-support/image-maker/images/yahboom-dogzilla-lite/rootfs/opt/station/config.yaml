@@ -11,4 +11,6 @@ drivers:
   system-info: true
   usb-video:
     enabled: true
+  dmesg:
+    enabled: true
 inference: []

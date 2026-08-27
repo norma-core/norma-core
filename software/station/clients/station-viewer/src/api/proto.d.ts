@@ -260,7 +260,8 @@ export namespace drivers {
         QDT_AIRGRADIENT_OPEN_AIR_O_1PST_RX = 53,
         QDT_VICTRON_SMARTSOLAR_MPPT_RX = 54,
         QDT_PWM_OUTPUT_TX = 55,
-        QDT_PWM_OUTPUT_RX = 56
+        QDT_PWM_OUTPUT_RX = 56,
+        QDT_DMESG_RX = 57
     }
 
     /** StationCommandType enum. */
@@ -15395,6 +15396,305 @@ export namespace pwm_output {
          * @returns Plain object
          */
         public static toObject(message: pwm_output.RxEnvelope, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this RxEnvelope to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for RxEnvelope
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+}
+
+/** Namespace dmesg. */
+export namespace dmesg {
+
+    /** DmesgSignalType enum. */
+    enum DmesgSignalType {
+        DMESG_SIGNAL_TYPE_UNSPECIFIED = 0,
+        DMESG_STARTED = 1,
+        DMESG_MESSAGES = 2,
+        DMESG_BACKLOG_COMPLETE = 3,
+        DMESG_GAP = 4,
+        DMESG_SOURCE_UNAVAILABLE = 5,
+        DMESG_ERROR = 6
+    }
+
+    /** Properties of a DmesgMessage. */
+    interface IDmesgMessage {
+
+        /** DmesgMessage seq */
+        seq?: (Long|null);
+
+        /** DmesgMessage priority */
+        priority?: (number|null);
+
+        /** DmesgMessage facility */
+        facility?: (number|null);
+
+        /** DmesgMessage kernelMonotonicUs */
+        kernelMonotonicUs?: (Long|null);
+
+        /** DmesgMessage fromBacklog */
+        fromBacklog?: (boolean|null);
+
+        /** DmesgMessage message */
+        message?: (string|null);
+
+        /** DmesgMessage subsystem */
+        subsystem?: (string|null);
+
+        /** DmesgMessage device */
+        device?: (string|null);
+    }
+
+    /** Represents a DmesgMessage. */
+    class DmesgMessage implements IDmesgMessage {
+
+        /**
+         * Constructs a new DmesgMessage.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: dmesg.IDmesgMessage);
+
+        /** DmesgMessage seq. */
+        public seq: Long;
+
+        /** DmesgMessage priority. */
+        public priority: number;
+
+        /** DmesgMessage facility. */
+        public facility: number;
+
+        /** DmesgMessage kernelMonotonicUs. */
+        public kernelMonotonicUs: Long;
+
+        /** DmesgMessage fromBacklog. */
+        public fromBacklog: boolean;
+
+        /** DmesgMessage message. */
+        public message: string;
+
+        /** DmesgMessage subsystem. */
+        public subsystem: string;
+
+        /** DmesgMessage device. */
+        public device: string;
+
+        /**
+         * Creates a new DmesgMessage instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns DmesgMessage instance
+         */
+        public static create(properties?: dmesg.IDmesgMessage): dmesg.DmesgMessage;
+
+        /**
+         * Encodes the specified DmesgMessage message. Does not implicitly {@link dmesg.DmesgMessage.verify|verify} messages.
+         * @param message DmesgMessage message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: dmesg.IDmesgMessage, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified DmesgMessage message, length delimited. Does not implicitly {@link dmesg.DmesgMessage.verify|verify} messages.
+         * @param message DmesgMessage message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: dmesg.IDmesgMessage, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes a DmesgMessage message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns DmesgMessage
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): dmesg.DmesgMessage;
+
+        /**
+         * Decodes a DmesgMessage message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns DmesgMessage
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): dmesg.DmesgMessage;
+
+        /**
+         * Verifies a DmesgMessage message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates a DmesgMessage message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns DmesgMessage
+         */
+        public static fromObject(object: { [k: string]: any }): dmesg.DmesgMessage;
+
+        /**
+         * Creates a plain object from a DmesgMessage message. Also converts values to other types if specified.
+         * @param message DmesgMessage
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: dmesg.DmesgMessage, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this DmesgMessage to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for DmesgMessage
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
+    /** Properties of a RxEnvelope. */
+    interface IRxEnvelope {
+
+        /** RxEnvelope monotonicStampNs */
+        monotonicStampNs?: (Long|null);
+
+        /** RxEnvelope localStampNs */
+        localStampNs?: (Long|null);
+
+        /** RxEnvelope appStartId */
+        appStartId?: (Long|null);
+
+        /** RxEnvelope signalType */
+        signalType?: (dmesg.DmesgSignalType|null);
+
+        /** RxEnvelope messages */
+        messages?: (dmesg.IDmesgMessage[]|null);
+
+        /** RxEnvelope droppedMessages */
+        droppedMessages?: (Long|null);
+
+        /** RxEnvelope gapFromSeq */
+        gapFromSeq?: (Long|null);
+
+        /** RxEnvelope gapToSeq */
+        gapToSeq?: (Long|null);
+
+        /** RxEnvelope error */
+        error?: (string|null);
+    }
+
+    /** Represents a RxEnvelope. */
+    class RxEnvelope implements IRxEnvelope {
+
+        /**
+         * Constructs a new RxEnvelope.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: dmesg.IRxEnvelope);
+
+        /** RxEnvelope monotonicStampNs. */
+        public monotonicStampNs: Long;
+
+        /** RxEnvelope localStampNs. */
+        public localStampNs: Long;
+
+        /** RxEnvelope appStartId. */
+        public appStartId: Long;
+
+        /** RxEnvelope signalType. */
+        public signalType: dmesg.DmesgSignalType;
+
+        /** RxEnvelope messages. */
+        public messages: dmesg.IDmesgMessage[];
+
+        /** RxEnvelope droppedMessages. */
+        public droppedMessages: Long;
+
+        /** RxEnvelope gapFromSeq. */
+        public gapFromSeq: Long;
+
+        /** RxEnvelope gapToSeq. */
+        public gapToSeq: Long;
+
+        /** RxEnvelope error. */
+        public error: string;
+
+        /**
+         * Creates a new RxEnvelope instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns RxEnvelope instance
+         */
+        public static create(properties?: dmesg.IRxEnvelope): dmesg.RxEnvelope;
+
+        /**
+         * Encodes the specified RxEnvelope message. Does not implicitly {@link dmesg.RxEnvelope.verify|verify} messages.
+         * @param message RxEnvelope message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: dmesg.IRxEnvelope, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified RxEnvelope message, length delimited. Does not implicitly {@link dmesg.RxEnvelope.verify|verify} messages.
+         * @param message RxEnvelope message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: dmesg.IRxEnvelope, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes a RxEnvelope message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns RxEnvelope
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): dmesg.RxEnvelope;
+
+        /**
+         * Decodes a RxEnvelope message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns RxEnvelope
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): dmesg.RxEnvelope;
+
+        /**
+         * Verifies a RxEnvelope message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates a RxEnvelope message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns RxEnvelope
+         */
+        public static fromObject(object: { [k: string]: any }): dmesg.RxEnvelope;
+
+        /**
+         * Creates a plain object from a RxEnvelope message. Also converts values to other types if specified.
+         * @param message RxEnvelope
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: dmesg.RxEnvelope, options?: $protobuf.IConversionOptions): { [k: string]: any };
 
         /**
          * Converts this RxEnvelope to JSON.

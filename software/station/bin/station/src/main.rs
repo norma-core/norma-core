@@ -258,6 +258,14 @@ impl Station {
                         encryption_type: EncryptionType::Aes,
                     },
                 ),
+                (
+                    "dmesg/*".to_string(),
+                    QueueConfig {
+                        compression_type: CompressionType::Zstd,
+                        enable_fsync: false,
+                        encryption_type: EncryptionType::Aes,
+                    },
+                ),
             ],
             QueueConfig::default(), // default config for all other queues
         )?;
@@ -529,6 +537,18 @@ impl Station {
                 }
             } else {
                 log::info!("Victron SmartSolar MPPT driver disabled by configuration");
+            }
+        }
+
+        if let Some(dmesg_config) = &self.config.drivers.dmesg {
+            if dmesg_config.enabled {
+                if let Err(e) =
+                    dmesg::start_dmesg_driver(self.normfs.clone(), self.engine.clone()).await
+                {
+                    log::error!("Failed to start dmesg driver: {}", e);
+                }
+            } else {
+                log::info!("dmesg driver disabled by configuration");
             }
         }
 

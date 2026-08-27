@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { airgradient_open_air_o_1pst, arduino_nicla_sense_env, hikmicro, ina226, usbvideo, st3215, motors_mirroring, sysinfo, yahboom_dogzilla_lite, normvla, vesc_trampa, victron_smartsolar_mppt } from '@/api/proto.js';
+import { airgradient_open_air_o_1pst, arduino_nicla_sense_env, dmesg, hikmicro, ina226, usbvideo, st3215, motors_mirroring, sysinfo, yahboom_dogzilla_lite, normvla, vesc_trampa, victron_smartsolar_mppt } from '@/api/proto.js';
 import ArduinoNiclaSenseEnvExpanded from '@/components/history/ArduinoNiclaSenseEnvExpanded';
 import Ina226Expanded from '@/components/history/Ina226Expanded';
 import VictronSmartSolarExpanded from '@/components/history/VictronSmartSolarExpanded';
@@ -323,6 +323,23 @@ export default function ExpandedView({ data, type, rawData, queueId, entryId }: 
   };
 
   const renderJson = () => {
+    if (type === 'dmesg' && data instanceof dmesg.RxEnvelope) {
+      const dmesgData = dmesg.RxEnvelope.toObject(data, {
+        longs: String,
+        enums: String,
+        bytes: String,
+        defaults: true
+      });
+
+      return (
+        <div>
+          <div className="text-xs text-text-label mb-1">dmesg RxEnvelope JSON:</div>
+          <div className="bg-surface-primary p-2 rounded text-xs font-mono text-accent-data overflow-x-auto max-h-64 overflow-y-auto">
+            <pre>{JSON.stringify(dmesgData, null, 2)}</pre>
+          </div>
+        </div>
+      );
+    }
     if (type === 'usbvideo' && data instanceof usbvideo.RxEnvelope) {
       return (
         <div>
