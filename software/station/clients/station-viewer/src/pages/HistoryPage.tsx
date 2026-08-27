@@ -65,6 +65,7 @@ function HistoryPage() {
   const ina226Count = parsedFrame?.ina226?.length ?? 0;
   const airgradientOpenAirCount = parsedFrame?.airgradientOpenAir?.length ?? 0;
   const victronSmartSolarCount = parsedFrame?.victronSmartSolar?.length ?? 0;
+  const dmesgCount = parsedFrame?.dmesg ? 1 : 0;
   const yahboomDogzillaLiteCount = parsedFrame?.yahboom_dogzilla_lite ? 1 : 0;
   const normvlaCount = parsedFrame?.normvla ? 1 : 0;
   const st3215TxCount = parsedFrame?.st3215Tx ? 1 : 0;
@@ -80,7 +81,8 @@ function HistoryPage() {
   const ina226Index = arduinoNiclaSenseEnvIndex + arduinoNiclaSenseEnvCount;
   const airgradientOpenAirIndex = ina226Index + ina226Count;
   const victronSmartSolarIndex = airgradientOpenAirIndex + airgradientOpenAirCount;
-  const yahboomDogzillaLiteIndex = victronSmartSolarIndex + victronSmartSolarCount;
+  const dmesgIndex = victronSmartSolarIndex + victronSmartSolarCount;
+  const yahboomDogzillaLiteIndex = dmesgIndex + dmesgCount;
   const normvlaIndex = yahboomDogzillaLiteIndex + yahboomDogzillaLiteCount;
   const st3215TxIndex = normvlaIndex + normvlaCount;
   const otherEntriesIndex = st3215TxIndex + st3215TxCount;
@@ -561,6 +563,21 @@ function HistoryPage() {
                       dataQueueId={entry.queueId}
                     />
                   ))}
+                  {parsedFrame.dmesg && (
+                    <HistoryElement
+                      element={{
+                        queueId: parsedFrame.dmesg.queueId,
+                        entryId: parsedFrame.dmesg.ptr,
+                        data: parsedFrame.dmesg.data,
+                        rawData: parsedFrame.dmesg.rawData ?? null,
+                        type: getQueueType(parsedFrame.dmesg.queueType),
+                        queueType: parsedFrame.dmesg.queueType,
+                      }}
+                      index={dmesgIndex}
+                      dataQueueType="dmesg"
+                      dataQueueId={parsedFrame.dmesg.queueId}
+                    />
+                  )}
                   {parsedFrame.yahboom_dogzilla_lite && (
                     <HistoryElement
                       element={{

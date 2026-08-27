@@ -518,6 +518,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "dmesg"
+version = "0.1.0-beta.11"
+dependencies = [
+ "bytes",
+ "libc",
+ "log",
+ "normfs",
+ "prost",
+ "prost-build",
+ "station_iface",
+ "systime",
+ "tokio",
+]
+
+[[package]]
 name = "ed25519"
 version = "2.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2522,6 +2537,7 @@ dependencies = [
  "bytes",
  "clap",
  "dashmap",
+ "dmesg",
  "env_logger",
  "fastwebsockets",
  "hikmicro-thermal",
