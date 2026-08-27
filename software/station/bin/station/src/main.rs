@@ -259,7 +259,7 @@ impl Station {
                     },
                 ),
                 (
-                    "dmesg/*".to_string(),
+                    "*dmesg/*".to_string(),
                     QueueConfig {
                         compression_type: CompressionType::Zstd,
                         enable_fsync: false,
