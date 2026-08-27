@@ -545,8 +545,6 @@ impl Default for VictronSmartSolarMpptConfig {
     }
 }
 
-/// Kernel log watcher reading /dev/kmsg. Requires CAP_SYSLOG when
-/// kernel.dmesg_restrict is enabled.
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
 pub struct DmesgConfig {
     #[serde(default)]
