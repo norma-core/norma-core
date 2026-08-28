@@ -142,6 +142,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "arduino-nicla-sense-me"
+version = "0.1.0-beta.11"
+dependencies = [
+ "bytes",
+ "i2c-async",
+ "log",
+ "normfs",
+ "prost",
+ "prost-build",
+ "station_iface",
+ "systime",
+ "tokio",
+ "tokio-serial",
+]
+
+[[package]]
 name = "arduino-pro-4g-gnss"
 version = "0.1.0-beta.11"
 dependencies = [
@@ -508,6 +524,21 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ececcb659e7ba858fb4f10388c250a7252eb0a27373f1a72b8748afdd248e587"
 dependencies = [
  "powerfmt",
+]
+
+[[package]]
+name = "dfrobot-rs485"
+version = "0.1.0-beta.11"
+dependencies = [
+ "bytes",
+ "log",
+ "normfs",
+ "prost",
+ "prost-build",
+ "station_iface",
+ "systime",
+ "tokio",
+ "tokio-serial",
 ]
 
 [[package]]
@@ -2549,10 +2580,12 @@ dependencies = [
  "airgradient-open-air-o-1pst",
  "anyhow",
  "arduino-nicla-sense-env",
+ "arduino-nicla-sense-me",
  "arduino-pro-4g-gnss",
  "bytes",
  "clap",
  "dashmap",
+ "dfrobot-rs485",
  "dmesg",
  "env_logger",
  "fastwebsockets",

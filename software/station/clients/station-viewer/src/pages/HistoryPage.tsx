@@ -62,8 +62,10 @@ function HistoryPage() {
   const mirroringCount = parsedFrame?.mirroring ? 1 : 0;
   const sysinfoCount = parsedFrame?.sysinfo ? 1 : 0;
   const arduinoNiclaSenseEnvCount = parsedFrame?.arduinoNiclaSenseEnv ? 1 : 0;
+  const arduinoNiclaSenseMeCount = parsedFrame?.arduinoNiclaSenseMe ? 1 : 0;
   const arduinoPro4gGnssCount = parsedFrame?.arduinoPro4gGnss ? 1 : 0;
   const ina226Count = parsedFrame?.ina226?.length ?? 0;
+  const dfrobotRs485Count = parsedFrame?.dfrobotRs485?.length ?? 0;
   const airgradientOpenAirCount = parsedFrame?.airgradientOpenAir?.length ?? 0;
   const victronSmartSolarCount = parsedFrame?.victronSmartSolar?.length ?? 0;
   const dmesgCount = parsedFrame?.dmesg ? 1 : 0;
@@ -79,9 +81,11 @@ function HistoryPage() {
   const mirroringIndex = hikmicroThermalIndex + hikmicroThermalCount;
   const sysinfoIndex = mirroringIndex + mirroringCount;
   const arduinoNiclaSenseEnvIndex = sysinfoIndex + sysinfoCount;
-  const arduinoPro4gGnssIndex = arduinoNiclaSenseEnvIndex + arduinoNiclaSenseEnvCount;
+  const arduinoNiclaSenseMeIndex = arduinoNiclaSenseEnvIndex + arduinoNiclaSenseEnvCount;
+  const arduinoPro4gGnssIndex = arduinoNiclaSenseMeIndex + arduinoNiclaSenseMeCount;
   const ina226Index = arduinoPro4gGnssIndex + arduinoPro4gGnssCount;
-  const airgradientOpenAirIndex = ina226Index + ina226Count;
+  const dfrobotRs485Index = ina226Index + ina226Count;
+  const airgradientOpenAirIndex = dfrobotRs485Index + dfrobotRs485Count;
   const victronSmartSolarIndex = airgradientOpenAirIndex + airgradientOpenAirCount;
   const dmesgIndex = victronSmartSolarIndex + victronSmartSolarCount;
   const yahboomDogzillaLiteIndex = dmesgIndex + dmesgCount;
@@ -304,6 +308,17 @@ function HistoryPage() {
                             </div>
                           </div>
                         )}
+                        {parsedFrame.arduinoNiclaSenseMe && (
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <span className="text-accent-warning font-mono">{parsedFrame.arduinoNiclaSenseMe.queueId}</span>
+                              <span className="text-accent-info text-xs px-1 py-0.5 bg-accent-info/10 rounded">NICLA ME</span>
+                            </div>
+                            <div className="text-text-label font-mono">
+                              {formatPtrBytes(parsedFrame.arduinoNiclaSenseMe.ptr)}
+                            </div>
+                          </div>
+                        )}
                         {parsedFrame.arduinoPro4gGnss && (
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3">
@@ -320,6 +335,17 @@ function HistoryPage() {
                             <div className="flex items-center gap-3">
                               <span className="text-accent-warning font-mono">{entry.queueId}</span>
                               <span className="text-accent-warning text-xs px-1 py-0.5 bg-accent-warning/10 rounded">INA226</span>
+                            </div>
+                            <div className="text-text-label font-mono">
+                              {formatPtrBytes(entry.ptr)}
+                            </div>
+                          </div>
+                        ))}
+                        {parsedFrame.dfrobotRs485?.map((entry) => (
+                          <div key={entry.queueId} className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <span className="text-accent-warning font-mono">{entry.queueId}</span>
+                              <span className="text-accent-data text-xs px-1 py-0.5 bg-accent-data/10 rounded">DFROBOT RS485</span>
                             </div>
                             <div className="text-text-label font-mono">
                               {formatPtrBytes(entry.ptr)}
@@ -528,6 +554,21 @@ function HistoryPage() {
                       dataQueueId={parsedFrame.arduinoNiclaSenseEnv.queueId}
                     />
                   )}
+                  {parsedFrame.arduinoNiclaSenseMe && (
+                    <HistoryElement
+                      element={{
+                        queueId: parsedFrame.arduinoNiclaSenseMe.queueId,
+                        entryId: parsedFrame.arduinoNiclaSenseMe.ptr,
+                        data: parsedFrame.arduinoNiclaSenseMe.data,
+                        rawData: parsedFrame.arduinoNiclaSenseMe.rawData ?? null,
+                        type: getQueueType(parsedFrame.arduinoNiclaSenseMe.queueType),
+                        queueType: parsedFrame.arduinoNiclaSenseMe.queueType,
+                      }}
+                      index={arduinoNiclaSenseMeIndex}
+                      dataQueueType="arduino-nicla-sense-me"
+                      dataQueueId={parsedFrame.arduinoNiclaSenseMe.queueId}
+                    />
+                  )}
                   {parsedFrame.arduinoPro4gGnss && (
                     <HistoryElement
                       element={{
@@ -556,6 +597,22 @@ function HistoryPage() {
                       }}
                       index={ina226Index + idx}
                       dataQueueType="ina226"
+                      dataQueueId={entry.queueId}
+                    />
+                  ))}
+                  {parsedFrame.dfrobotRs485?.map((entry, idx) => (
+                    <HistoryElement
+                      key={entry.queueId}
+                      element={{
+                        queueId: entry.queueId,
+                        entryId: entry.ptr,
+                        data: entry.data,
+                        rawData: entry.rawData ?? null,
+                        type: getQueueType(entry.queueType),
+                        queueType: entry.queueType,
+                      }}
+                      index={dfrobotRs485Index + idx}
+                      dataQueueType="dfrobot-rs485"
                       dataQueueId={entry.queueId}
                     />
                   ))}

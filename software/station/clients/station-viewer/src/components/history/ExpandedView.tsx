@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { airgradient_open_air_o_1pst, arduino_nicla_sense_env, arduino_pro_4g_gnss, dmesg, hikmicro, ina226, usbvideo, st3215, motors_mirroring, sysinfo, yahboom_dogzilla_lite, normvla, vesc_trampa, victron_smartsolar_mppt } from '@/api/proto.js';
+import { airgradient_open_air_o_1pst, arduino_nicla_sense_env, dmesg, hikmicro, ina226, usbvideo, st3215, motors_mirroring, sysinfo, yahboom_dogzilla_lite, normvla, vesc_trampa, victron_smartsolar_mppt, arduino_nicla_sense_me, arduino_pro_4g_gnss, dfrobot_rs485 } from '@/api/proto.js';
 import ArduinoNiclaSenseEnvExpanded from '@/components/history/ArduinoNiclaSenseEnvExpanded';
+import ArduinoNiclaSenseMeExpanded from '@/components/history/ArduinoNiclaSenseMeExpanded';
+import DfrobotRs485Expanded from '@/components/history/DfrobotRs485Expanded';
 import Ina226Expanded from '@/components/history/Ina226Expanded';
 import VictronSmartSolarExpanded from '@/components/history/VictronSmartSolarExpanded';
 import { airGradientDeviceLabel, airGradientLineText, readAirGradientValues } from '@/devices/airgradient-open-air-o-1pst/values';
@@ -20,7 +22,7 @@ import HikmicroThermalLiveView from '@/devices/hikmicro-thermal/ui/HikmicroTherm
 type DataTab = 'visual' | 'json' | 'raw';
 
 interface ExpandedViewProps {
-  data: usbvideo.IRxEnvelope | usbvideo.ITxEnvelope | hikmicro.IRxEnvelope | st3215.IInferenceState | st3215.ITxEnvelope | motors_mirroring.IRxEnvelope | sysinfo.IEnvelope | arduino_nicla_sense_env.IRxEnvelope | ina226.IRxEnvelope | airgradient_open_air_o_1pst.IRxEnvelope | victron_smartsolar_mppt.IRxEnvelope | yahboom_dogzilla_lite.IInferenceState | vesc_trampa.IInferenceState | vesc_trampa.IRxEnvelope | vesc_trampa.ITxEnvelope | normvla.IFrame | Uint8Array;
+  data: usbvideo.IRxEnvelope | usbvideo.ITxEnvelope | hikmicro.IRxEnvelope | st3215.IInferenceState | st3215.ITxEnvelope | motors_mirroring.IRxEnvelope | sysinfo.IEnvelope | arduino_nicla_sense_env.IRxEnvelope | arduino_nicla_sense_me.IRxEnvelope | ina226.IRxEnvelope | airgradient_open_air_o_1pst.IRxEnvelope | victron_smartsolar_mppt.IRxEnvelope | yahboom_dogzilla_lite.IInferenceState | vesc_trampa.IInferenceState | vesc_trampa.IRxEnvelope | vesc_trampa.ITxEnvelope | normvla.IFrame | dfrobot_rs485.IRxEnvelope | Uint8Array;
   type: string | undefined;
   rawData?: Uint8Array | null;
   queueId?: string;
@@ -46,7 +48,9 @@ function tryDecodeProtobuf(rawData: Uint8Array): { decoded: unknown; typeName: s
     { name: 'motors_mirroring.RxEnvelope', decode: () => motors_mirroring.RxEnvelope.decode(rawData) },
     { name: 'sysinfo.Envelope', decode: () => sysinfo.Envelope.decode(rawData) },
     { name: 'arduino_nicla_sense_env.RxEnvelope', decode: () => arduino_nicla_sense_env.RxEnvelope.decode(rawData) },
+    { name: 'arduino_nicla_sense_me.RxEnvelope', decode: () => arduino_nicla_sense_me.RxEnvelope.decode(rawData) },
     { name: 'ina226.RxEnvelope', decode: () => ina226.RxEnvelope.decode(rawData) },
+    { name: 'dfrobot_rs485.RxEnvelope', decode: () => dfrobot_rs485.RxEnvelope.decode(rawData) },
     { name: 'airgradient_open_air_o_1pst.RxEnvelope', decode: () => airgradient_open_air_o_1pst.RxEnvelope.decode(rawData) },
     { name: 'yahboom_dogzilla_lite.InferenceState', decode: () => yahboom_dogzilla_lite.InferenceState.decode(rawData) },
     { name: 'st3215.InferenceState', decode: () => st3215.InferenceState.decode(rawData) },
@@ -87,15 +91,17 @@ function getAvailableTabs(
   const isMirroring = type === 'mirroring' && data instanceof motors_mirroring.RxEnvelope;
   const isSysinfo = type === 'sysinfo' && data instanceof sysinfo.Envelope;
   const isArduinoNiclaSenseEnv = type === 'arduino-nicla-sense-env' && data instanceof arduino_nicla_sense_env.RxEnvelope;
+  const isArduinoNiclaSenseMe = type === 'arduino-nicla-sense-me' && data instanceof arduino_nicla_sense_me.RxEnvelope;
   const isArduinoPro4gGnss = type === 'arduino-pro-4g-gnss' && data instanceof arduino_pro_4g_gnss.RxEnvelope;
   const isIna226 = type === 'ina226' && data instanceof ina226.RxEnvelope;
+  const isDfrobotRs485 = type === 'dfrobot-rs485' && data instanceof dfrobot_rs485.RxEnvelope;
   const isAirGradient = type === 'airgradient-open-air-o-1pst' && data instanceof airgradient_open_air_o_1pst.RxEnvelope;
   const isVictronSmartSolar = type === 'victron-smartsolar-mppt' && data instanceof victron_smartsolar_mppt.RxEnvelope;
   const isYahboomDogzillaLite = type === 'yahboom_dogzilla_lite' && data instanceof yahboom_dogzilla_lite.InferenceState;
   const isNormvla = type === 'normvla' && data instanceof normvla.Frame;
   const isVescTrampa = type === 'vesc-trampa-rx' && data instanceof vesc_trampa.RxEnvelope;
 
-  if (isUsbVideo || isUsbVideoTx || isHikmicroThermal || isSt3215 || isSt3215Tx || isMirroring || isVescTrampaTx || isSysinfo || isArduinoNiclaSenseEnv || isArduinoPro4gGnss || isIna226 || isAirGradient || isVictronSmartSolar || isYahboomDogzillaLite || isNormvla) {
+  if (isUsbVideo || isUsbVideoTx || isHikmicroThermal || isSt3215 || isSt3215Tx || isMirroring || isVescTrampaTx || isSysinfo || isArduinoNiclaSenseEnv || isArduinoNiclaSenseMe || isArduinoPro4gGnss || isIna226 || isDfrobotRs485 || isAirGradient || isVictronSmartSolar || isYahboomDogzillaLite || isNormvla) {
     return ['visual', 'json', 'raw'];
   }
 
@@ -198,8 +204,14 @@ export default function ExpandedView({ data, type, rawData, queueId, entryId }: 
     if (type === 'arduino-nicla-sense-env' && data instanceof arduino_nicla_sense_env.RxEnvelope) {
       return <ArduinoNiclaSenseEnvExpanded data={data} />;
     }
+    if (type === 'arduino-nicla-sense-me' && data instanceof arduino_nicla_sense_me.RxEnvelope) {
+      return <ArduinoNiclaSenseMeExpanded data={data} />;
+    }
     if (type === 'ina226' && data instanceof ina226.RxEnvelope) {
       return <Ina226Expanded data={data} />;
+    }
+    if (type === 'dfrobot-rs485' && data instanceof dfrobot_rs485.RxEnvelope) {
+      return <DfrobotRs485Expanded data={data} />;
     }
     if (type === 'victron-smartsolar-mppt' && data instanceof victron_smartsolar_mppt.RxEnvelope) {
       return <VictronSmartSolarExpanded data={data} queueId={queueId} entryId={entryId} />;
@@ -479,6 +491,23 @@ export default function ExpandedView({ data, type, rawData, queueId, entryId }: 
         </div>
       );
     }
+    if (type === 'arduino-nicla-sense-me' && data instanceof arduino_nicla_sense_me.RxEnvelope) {
+      const niclaMeData = arduino_nicla_sense_me.RxEnvelope.toObject(data, {
+        longs: String,
+        enums: String,
+        bytes: String,
+        defaults: true
+      });
+
+      return (
+        <div>
+          <div className="text-xs text-text-label mb-1">Arduino Nicla Sense ME RxEnvelope JSON:</div>
+          <div className="bg-surface-primary p-2 rounded text-xs font-mono text-accent-data overflow-x-auto max-h-64 overflow-y-auto">
+            <pre>{JSON.stringify(niclaMeData, null, 2)}</pre>
+          </div>
+        </div>
+      );
+    }
     if (type === 'arduino-pro-4g-gnss' && data instanceof arduino_pro_4g_gnss.RxEnvelope) {
       const gnssObject = arduino_pro_4g_gnss.RxEnvelope.toObject(data, {
         longs: String,
@@ -509,6 +538,23 @@ export default function ExpandedView({ data, type, rawData, queueId, entryId }: 
           <div className="text-xs text-text-label mb-1">INA226 RxEnvelope JSON:</div>
           <div className="bg-surface-primary p-2 rounded text-xs font-mono text-accent-data overflow-x-auto max-h-64 overflow-y-auto">
             <pre>{JSON.stringify(ina226Data, null, 2)}</pre>
+          </div>
+        </div>
+      );
+    }
+    if (type === 'dfrobot-rs485' && data instanceof dfrobot_rs485.RxEnvelope) {
+      const dfrobotData = dfrobot_rs485.RxEnvelope.toObject(data, {
+        longs: String,
+        enums: String,
+        bytes: String,
+        defaults: true
+      });
+
+      return (
+        <div>
+          <div className="text-xs text-text-label mb-1">DFRobot RS-485 RxEnvelope JSON:</div>
+          <div className="bg-surface-primary p-2 rounded text-xs font-mono text-accent-data overflow-x-auto max-h-64 overflow-y-auto">
+            <pre>{JSON.stringify(dfrobotData, null, 2)}</pre>
           </div>
         </div>
       );

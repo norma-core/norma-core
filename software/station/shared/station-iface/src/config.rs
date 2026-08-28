@@ -97,6 +97,13 @@ pub struct Drivers {
     )]
     pub arduino_nicla_sense_env: Option<ArduinoNiclaSenseEnvConfig>,
 
+    #[serde(
+        rename = "arduino-nicla-sense-me",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub arduino_nicla_sense_me: Option<ArduinoNiclaSenseMeConfig>,
+
     #[serde(rename = "ina226", skip_serializing_if = "Option::is_none")]
     pub ina226: Option<Ina226Config>,
 
@@ -116,6 +123,13 @@ pub struct Drivers {
 
     #[serde(rename = "dmesg", default, skip_serializing_if = "Option::is_none")]
     pub dmesg: Option<DmesgConfig>,
+
+    #[serde(
+        rename = "dfrobot-rs485",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub dfrobot_rs485: Option<DfrobotRs485Config>,
     #[serde(
         rename = "arduino-pro-4g-gnss",
         default,
@@ -457,6 +471,66 @@ impl Default for ArduinoNiclaSenseEnvConfig {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct ArduinoNiclaSenseMeConfig {
+    #[serde(default)]
+    pub enabled: bool,
+
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub boards: Vec<ArduinoNiclaSenseMeBoardConfig>,
+
+    #[serde(
+        default = "default_arduino_nicla_sense_me_poll_interval",
+        rename = "poll-interval",
+        with = "humantime_serde"
+    )]
+    pub poll_interval: std::time::Duration,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone, Copy, PartialEq, Eq, Default)]
+#[serde(rename_all = "lowercase")]
+pub enum ArduinoNiclaSenseMeBusType {
+    #[default]
+    I2c,
+    Usb,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct ArduinoNiclaSenseMeBoardConfig {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+
+    #[serde(rename = "bus-type", default)]
+    pub bus_type: ArduinoNiclaSenseMeBusType,
+
+    #[serde(rename = "i2c-bus", default, skip_serializing_if = "Option::is_none")]
+    pub i2c_bus: Option<u32>,
+
+    /// Per-board override of the driver-wide poll interval (e.g. "10ms"
+    /// for ~100 Hz polling of a USB board).
+    #[serde(
+        rename = "poll-interval",
+        default,
+        with = "humantime_serde::option",
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub poll_interval: Option<std::time::Duration>,
+}
+
+fn default_arduino_nicla_sense_me_poll_interval() -> std::time::Duration {
+    std::time::Duration::from_secs(1)
+}
+
+impl Default for ArduinoNiclaSenseMeConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            boards: Vec::new(),
+            poll_interval: default_arduino_nicla_sense_me_poll_interval(),
+        }
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Ina226Config {
     #[serde(default)]
     pub enabled: bool,
@@ -557,6 +631,50 @@ pub struct DmesgConfig {
     pub enabled: bool,
 }
 
+/// DFRobot RS-485 Modbus-RTU sensors (SEN0640/0641/0642/0644) behind a
+/// USB-to-RS485 adapter. One queue per sensor; the driver is read-only.
+/// Poll interval and baud candidates are fixed (1s; [4800, 9600]) and all
+/// sensors are auto-detected — neither is configurable.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct DfrobotRs485Config {
+    #[serde(default)]
+    pub enabled: bool,
+
+    /// Candidate port paths, tried in order. '*' globs are supported.
+    #[serde(default = "default_dfrobot_rs485_ports")]
+    pub ports: Vec<String>,
+
+    /// Modbus IDs to scan for auto-detection, e.g. "1-10" (default) or [1, 2, 3].
+    #[serde(rename = "scan-ids", default, skip_serializing_if = "Option::is_none")]
+    pub scan_ids: Option<DfrobotScanIds>,
+}
+
+/// Modbus ID scan range for auto-detection: either a "A-B" string or an
+/// explicit list of IDs.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(untagged)]
+pub enum DfrobotScanIds {
+    List(Vec<u8>),
+    Range(String),
+}
+
+fn default_dfrobot_rs485_ports() -> Vec<String> {
+    vec![
+        "/dev/ttyUSB*".to_string(),
+        "/dev/cu.usbserial-*".to_string(),
+    ]
+}
+
+impl Default for DfrobotRs485Config {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            ports: default_dfrobot_rs485_ports(),
+            scan_ids: None,
+        }
+    }
+}
+
 /// Arduino Pro 4G GNSS Module (Quectel EG25-G on the Portenta Max Carrier
 /// mini PCIe slot). Ports are found by USB VID/PID + interface number.
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -627,10 +745,12 @@ impl Default for Drivers {
             yahboom_dogzilla_lite: None,
             ov5647: None,
             arduino_nicla_sense_env: None,
+            arduino_nicla_sense_me: None,
             ina226: None,
             airgradient_open_air_o_1pst: None,
             victron_smartsolar_mppt: None,
             dmesg: None,
+            dfrobot_rs485: None,
             arduino_pro_4g_gnss: None,
         }
     }
@@ -666,7 +786,7 @@ impl Config {
 
 #[cfg(test)]
 mod config_tests {
-    use super::Config;
+    use super::{Config, DfrobotScanIds};
     use std::path::PathBuf;
 
     const MINIMAL_CONFIG: &str = "drivers:\n  system-info: true\n";
@@ -734,6 +854,58 @@ mod config_tests {
         let steering = &pwm_output.outputs[0];
         assert_eq!(steering.id, "steering");
         assert_eq!(cfg.inference.as_ref().map(Vec::len), Some(0));
+    }
+
+    #[test]
+    fn parses_dfrobot_rs485_config() {
+        let cfg: Config = serde_yaml::from_str(
+            "drivers:\n  system-info: true\n  dfrobot-rs485:\n    enabled: true\n    ports: [\"/dev/ttyUSB*\", \"/dev/cu.usbserial-*\"]\n    scan-ids: \"1-10\"\ninference:\n",
+        )
+        .unwrap();
+        let dfrobot = cfg.drivers.dfrobot_rs485.unwrap();
+        assert!(dfrobot.enabled);
+        assert_eq!(dfrobot.ports, vec!["/dev/ttyUSB*", "/dev/cu.usbserial-*"]);
+        match dfrobot.scan_ids {
+            Some(DfrobotScanIds::Range(ref spec)) => assert_eq!(spec, "1-10"),
+            other => panic!("expected Range, got {:?}", other),
+        }
+    }
+
+    #[test]
+    fn dfrobot_rs485_config_defaults() {
+        let cfg: Config = serde_yaml::from_str(
+            "drivers:\n  system-info: true\n  dfrobot-rs485:\n    enabled: true\ninference:\n",
+        )
+        .unwrap();
+        let dfrobot = cfg.drivers.dfrobot_rs485.unwrap();
+        assert!(!dfrobot.ports.is_empty());
+        assert!(dfrobot.scan_ids.is_none());
+    }
+
+    #[test]
+    fn parses_dfrobot_rs485_scan_ids_string() {
+        let cfg: Config = serde_yaml::from_str(
+            "drivers:\n  system-info: true\n  dfrobot-rs485:\n    enabled: true\n    scan-ids: \"1-10\"\ninference:\n",
+        )
+        .unwrap();
+        let dfrobot = cfg.drivers.dfrobot_rs485.unwrap();
+        match dfrobot.scan_ids {
+            Some(DfrobotScanIds::Range(ref spec)) => assert_eq!(spec, "1-10"),
+            other => panic!("expected Range, got {:?}", other),
+        }
+    }
+
+    #[test]
+    fn parses_dfrobot_rs485_scan_ids_list() {
+        let cfg: Config = serde_yaml::from_str(
+            "drivers:\n  system-info: true\n  dfrobot-rs485:\n    enabled: true\n    scan-ids: [1, 2, 3, 4]\ninference:\n",
+        )
+        .unwrap();
+        let dfrobot = cfg.drivers.dfrobot_rs485.unwrap();
+        match dfrobot.scan_ids {
+            Some(DfrobotScanIds::List(ref ids)) => assert_eq!(ids, &vec![1, 2, 3, 4]),
+            other => panic!("expected List, got {:?}", other),
+        }
     }
 
     #[test]
@@ -843,5 +1015,70 @@ mod hikmicro_thermal_config_tests {
         let cfg: HikmicroThermalConfig = serde_yaml::from_str(yaml).unwrap();
         assert_eq!(cfg.frame_timeout, std::time::Duration::from_secs(2));
         assert_eq!(cfg.frame_skip, 3);
+    }
+}
+
+#[cfg(test)]
+mod arduino_nicla_sense_me_tests {
+    use super::*;
+
+    #[test]
+    fn parses_arduino_nicla_sense_me_drivers_block() {
+        // Deserialize the Drivers struct directly so the test doesn't depend on
+        // unrelated required fields of the top-level Config.
+        let yaml = r#"
+system-info: false
+arduino-nicla-sense-me:
+  enabled: true
+  poll-interval: 500ms
+  boards:
+    - id: imu-front
+      i2c-bus: 2
+"#;
+        let drivers: Drivers = serde_yaml::from_str(yaml).expect("drivers block parses");
+        let me = drivers
+            .arduino_nicla_sense_me
+            .expect("nicla sense me block present");
+        assert!(me.enabled);
+        assert_eq!(me.poll_interval, std::time::Duration::from_millis(500));
+        assert_eq!(me.boards.len(), 1);
+        assert_eq!(me.boards[0].id.as_deref(), Some("imu-front"));
+        assert_eq!(me.boards[0].bus_type, ArduinoNiclaSenseMeBusType::I2c);
+        assert_eq!(me.boards[0].i2c_bus, Some(2));
+    }
+
+    #[test]
+    fn parses_arduino_nicla_sense_me_usb_board() {
+        let yaml = r#"
+system-info: false
+arduino-nicla-sense-me:
+  enabled: true
+  boards:
+    - id: nicla-usb
+      bus-type: usb
+      poll-interval: 10ms
+    - bus-type: i2c
+      i2c-bus: 3
+"#;
+        let drivers: Drivers = serde_yaml::from_str(yaml).expect("drivers block parses");
+        let me = drivers.arduino_nicla_sense_me.expect("block present");
+        assert_eq!(me.boards.len(), 2);
+        assert_eq!(me.boards[0].bus_type, ArduinoNiclaSenseMeBusType::Usb);
+        assert_eq!(me.boards[0].i2c_bus, None);
+        assert_eq!(
+            me.boards[0].poll_interval,
+            Some(std::time::Duration::from_millis(10))
+        );
+        assert_eq!(me.boards[1].poll_interval, None);
+        assert_eq!(me.boards[1].bus_type, ArduinoNiclaSenseMeBusType::I2c);
+        assert_eq!(me.boards[1].i2c_bus, Some(3));
+    }
+
+    #[test]
+    fn arduino_nicla_sense_me_defaults() {
+        let me = ArduinoNiclaSenseMeConfig::default();
+        assert!(!me.enabled);
+        assert!(me.boards.is_empty());
+        assert_eq!(me.poll_interval, std::time::Duration::from_secs(1));
     }
 }

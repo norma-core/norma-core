@@ -1,0 +1,608 @@
+use crate::arduino_nicla_sense_me_proto::{
+    ArduinoNiclaSenseMeDevice, ArduinoNiclaSenseMeDeviceInfo, ArduinoNiclaSenseMeSignalType,
+    RxEnvelope,
+};
+use bytes::Bytes;
+use i2c_async::AsyncI2cDevice;
+use log::{debug, error, info, warn};
+use normfs::{NormFS, QueueId, UintN};
+use prost::Message;
+use station_iface::StationEngine;
+use station_iface::iface_proto::drivers::QueueDataType;
+use std::collections::BTreeMap;
+use std::sync::Arc;
+use std::time::Duration;
+use tokio::io::{AsyncReadExt, AsyncWriteExt};
+use tokio::task::JoinHandle;
+use tokio::time::{MissedTickBehavior, interval};
+use tokio_serial::{SerialPort, SerialPortBuilderExt, SerialStream};
+
+pub const RX_QUEUE_ID: &str = "arduino-nicla-sense-me/rx";
+pub const DEFAULT_I2C_ADDRESS: u16 = 0x22;
+pub const RAW_REGISTER_START: u8 = 0x00;
+pub const RAW_REGISTER_LENGTH: usize = 0xA8;
+
+const SOFTWARE_REVISION_REGISTER: usize = 0x0C;
+const PRODUCT_ID_REGISTER: usize = 0x0D;
+const SERIAL_NUMBER_REGISTER: usize = 0x0E;
+const SERIAL_NUMBER_LENGTH: usize = 6;
+
+pub const USB_VID: u16 = 0x2341;
+pub const USB_PID: u16 = 0x0060;
+const SERIAL_CMD_DUMP: u8 = 0x01;
+const SERIAL_MAGIC: [u8; 2] = [0xA5, 0x5A];
+const SERIAL_FRAME_LEN: usize = 3 + RAW_REGISTER_LENGTH + 1;
+// Real UART baud of the SAMD11 usb-bridge link; must match the firmware's
+// Serial.begin. 115200 capped polling at ~50 Hz (~15 ms per 172-byte dump).
+const SERIAL_BAUD: u32 = 921_600;
+const SERIAL_RESPONSE_TIMEOUT: Duration = Duration::from_millis(500);
+const PRODUCT_ID: u8 = 0x4D;
+
+
+type DriverResult<T> = Result<T, Box<dyn std::error::Error + Send + Sync>>;
+
+#[derive(Debug, Clone)]
+pub struct ArduinoNiclaSenseMeDriverConfig {
+    pub poll_interval: Duration,
+    pub boards: Vec<ArduinoNiclaSenseMeBoardConfig>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ArduinoNiclaSenseMeTransport {
+    I2c { i2c_bus: u32 },
+    Usb,
+}
+
+#[derive(Debug, Clone)]
+pub struct ArduinoNiclaSenseMeBoardConfig {
+    pub id: Option<String>,
+    pub transport: ArduinoNiclaSenseMeTransport,
+    /// Per-board override of the driver-wide poll interval.
+    pub poll_interval: Option<Duration>,
+}
+
+impl Default for ArduinoNiclaSenseMeDriverConfig {
+    fn default() -> Self {
+        Self {
+            poll_interval: Duration::from_secs(1),
+            boards: Vec::new(),
+        }
+    }
+}
+
+pub struct ArduinoNiclaSenseMeDriver {
+    _tasks: Vec<JoinHandle<()>>,
+}
+
+#[derive(Debug, Clone)]
+struct Board {
+    id: String,
+    transport: ArduinoNiclaSenseMeTransport,
+    poll_interval: Option<Duration>,
+}
+
+impl Board {
+    fn key(transport: ArduinoNiclaSenseMeTransport) -> String {
+        match transport {
+            ArduinoNiclaSenseMeTransport::I2c { i2c_bus } => format!("i2c-{i2c_bus}"),
+            ArduinoNiclaSenseMeTransport::Usb => "usb".to_string(),
+        }
+    }
+
+    fn from_config(config: &ArduinoNiclaSenseMeBoardConfig) -> Self {
+        Self {
+            id: config
+                .id
+                .clone()
+                .filter(|id| !id.trim().is_empty())
+                .unwrap_or_else(|| Self::key(config.transport)),
+            transport: config.transport,
+            poll_interval: config.poll_interval,
+        }
+    }
+
+    fn proto(&self, data: Option<&[u8]>, usb_port: Option<&str>) -> ArduinoNiclaSenseMeDevice {
+        let (i2c_bus, i2c_address, transport) = match self.transport {
+            ArduinoNiclaSenseMeTransport::I2c { i2c_bus } => {
+                (i2c_bus, DEFAULT_I2C_ADDRESS as u32, "i2c")
+            }
+            ArduinoNiclaSenseMeTransport::Usb => (0, 0, "usb"),
+        };
+        ArduinoNiclaSenseMeDevice {
+            id: self.id.clone(),
+            i2c_bus,
+            i2c_address,
+            transport: transport.to_string(),
+            usb_port: usb_port.unwrap_or_default().to_string(),
+            info: data.and_then(parse_device_info),
+        }
+    }
+}
+
+impl ArduinoNiclaSenseMeDriver {
+    pub async fn new<T: StationEngine>(
+        normfs: Arc<NormFS>,
+        station_engine: Arc<T>,
+        config: ArduinoNiclaSenseMeDriverConfig,
+    ) -> DriverResult<Self> {
+        let rx_queue_id = normfs.resolve(RX_QUEUE_ID);
+        normfs.ensure_queue_exists_for_write(&rx_queue_id).await?;
+        station_engine.register_queue(
+            &rx_queue_id,
+            QueueDataType::QdtArduinoNiclaSenseMeRx,
+            vec![],
+        );
+
+        let poll_interval = if config.poll_interval == Duration::ZERO {
+            warn!("Arduino Nicla Sense ME poll interval is zero, using 1s");
+            Duration::from_secs(1)
+        } else {
+            config.poll_interval
+        };
+
+        let mut boards = BTreeMap::new();
+        for board_config in &config.boards {
+            let key = Board::key(board_config.transport);
+            if boards
+                .insert(key.clone(), Board::from_config(board_config))
+                .is_some()
+            {
+                warn!(
+                    "Arduino Nicla Sense ME board {:?} replaces an earlier board with the same transport key {key}",
+                    board_config.id
+                );
+            }
+        }
+        if boards.is_empty() {
+            warn!("Arduino Nicla Sense ME driver enabled with no boards configured");
+        }
+
+        let tasks = boards
+            .values()
+            .map(|board| {
+                let board = board.clone();
+                let normfs = normfs.clone();
+                let rx_queue_id = rx_queue_id.clone();
+                let effective_interval = board.poll_interval.unwrap_or(poll_interval);
+                match board.transport {
+                    ArduinoNiclaSenseMeTransport::I2c { .. } => tokio::spawn(run_i2c_board_worker(
+                        normfs,
+                        rx_queue_id,
+                        board,
+                        effective_interval,
+                    )),
+                    ArduinoNiclaSenseMeTransport::Usb => tokio::spawn(run_usb_board_worker(
+                        normfs,
+                        rx_queue_id,
+                        board,
+                        effective_interval,
+                    )),
+                }
+            })
+            .collect::<Vec<_>>();
+
+        info!(
+            "Started Arduino Nicla Sense ME driver for {} board(s)",
+            boards.len()
+        );
+
+        Ok(Self { _tasks: tasks })
+    }
+}
+
+pub async fn start_arduino_nicla_sense_me_driver<T: StationEngine>(
+    normfs: Arc<NormFS>,
+    station_engine: Arc<T>,
+    config: ArduinoNiclaSenseMeDriverConfig,
+) -> DriverResult<Arc<ArduinoNiclaSenseMeDriver>> {
+    let driver = ArduinoNiclaSenseMeDriver::new(normfs, station_engine, config).await?;
+    Ok(Arc::new(driver))
+}
+
+async fn run_i2c_board_worker(
+    normfs: Arc<NormFS>,
+    rx_queue_id: QueueId,
+    board: Board,
+    poll_interval: Duration,
+) {
+    let ArduinoNiclaSenseMeTransport::I2c { i2c_bus } = board.transport else {
+        return;
+    };
+    let i2c = AsyncI2cDevice::new(i2c_bus, DEFAULT_I2C_ADDRESS);
+    let mut connected = false;
+    let mut last_data = None::<Bytes>;
+    let mut last_error = None::<String>;
+    let mut tick = interval(poll_interval);
+    tick.set_missed_tick_behavior(MissedTickBehavior::Skip);
+
+    loop {
+        tick.tick().await;
+
+        match i2c
+            .read_smbus_i2c_block_registers(RAW_REGISTER_START, RAW_REGISTER_LENGTH)
+            .await
+        {
+            Ok(data) => {
+                if !connected {
+                    send_board_signal(
+                        &normfs,
+                        &rx_queue_id,
+                        &board,
+                        ArduinoNiclaSenseMeSignalType::ArduinoNiclaSenseMeConnected,
+                        Some(&data),
+                        None,
+                        None,
+                    );
+                    connected = true;
+                }
+
+                send_board_signal(
+                    &normfs,
+                    &rx_queue_id,
+                    &board,
+                    ArduinoNiclaSenseMeSignalType::ArduinoNiclaSenseMeRegistersSnapshot,
+                    Some(&data),
+                    None,
+                    None,
+                );
+                last_data = Some(data);
+                last_error = None;
+            }
+            Err(error) => {
+                if connected {
+                    send_board_signal(
+                        &normfs,
+                        &rx_queue_id,
+                        &board,
+                        ArduinoNiclaSenseMeSignalType::ArduinoNiclaSenseMeDisconnected,
+                        last_data.as_ref(),
+                        Some(error.clone()),
+                        None,
+                    );
+                    connected = false;
+                }
+
+                if last_error.as_deref() != Some(error.as_str()) {
+                    send_board_signal(
+                        &normfs,
+                        &rx_queue_id,
+                        &board,
+                        ArduinoNiclaSenseMeSignalType::ArduinoNiclaSenseMeError,
+                        last_data.as_ref(),
+                        Some(error.clone()),
+                        None,
+                    );
+                    last_error = Some(error);
+                }
+            }
+        }
+    }
+}
+
+fn crc8(data: &[u8]) -> u8 {
+    let mut crc: u8 = 0;
+    for &byte in data {
+        crc ^= byte;
+        for _ in 0..8 {
+            crc = if crc & 0x80 != 0 { (crc << 1) ^ 0x07 } else { crc << 1 };
+        }
+    }
+    crc
+}
+
+fn parse_dump_frame(frame: &[u8]) -> Result<Bytes, String> {
+    if frame.len() != SERIAL_FRAME_LEN {
+        return Err(format!("unexpected frame length {}", frame.len()));
+    }
+    if frame[0..2] != SERIAL_MAGIC {
+        return Err(format!("bad frame magic {:#04x} {:#04x}", frame[0], frame[1]));
+    }
+    if frame[2] as usize != RAW_REGISTER_LENGTH {
+        return Err(format!("bad payload length {:#04x}", frame[2]));
+    }
+    let payload = &frame[3..3 + RAW_REGISTER_LENGTH];
+    let expected = frame[3 + RAW_REGISTER_LENGTH];
+    let computed = crc8(payload);
+    if computed != expected {
+        return Err(format!("crc mismatch: computed {computed:#04x}, frame has {expected:#04x}"));
+    }
+    Ok(Bytes::copy_from_slice(payload))
+}
+
+pub fn find_usb_port() -> Option<String> {
+    let ports = tokio_serial::available_ports().ok()?;
+    ports.into_iter().find_map(|port| match &port.port_type {
+        tokio_serial::SerialPortType::UsbPort(usb) if usb.vid == USB_VID && usb.pid == USB_PID => {
+            // On macOS both /dev/tty.* and /dev/cu.* enumerate for one
+            // device; prefer the callout (cu) device for host-initiated
+            // CDC traffic. (Deliberate divergence from vesc-trampa, which
+            // prefers tty; validated against real hardware in this plan's
+            // Task 6 — if the probe hangs on open, flip this filter.)
+            #[cfg(target_os = "macos")]
+            if port.port_name.starts_with("/dev/tty.") {
+                return None;
+            }
+            Some(port.port_name)
+        }
+        _ => None,
+    })
+}
+
+/// Prepares a freshly opened port: asserts DTR (the mbed-core USB CDC stack
+/// treats the port as closed until the host raises DTR) and clears any stale
+/// input. Run once per connection — per-request ioctls cost milliseconds on
+/// macOS and cap the achievable poll rate.
+pub fn prepare_port(port: &mut SerialStream) -> Result<(), String> {
+    port.write_data_terminal_ready(true)
+        .map_err(|error| format!("failed to assert DTR: {error}"))?;
+    port.clear(tokio_serial::ClearBuffer::Input)
+        .map_err(|error| format!("failed to clear input buffer: {error}"))?;
+    Ok(())
+}
+
+pub async fn read_dump(port: &mut SerialStream) -> Result<Bytes, String> {
+    port.write_all(&[SERIAL_CMD_DUMP])
+        .await
+        .map_err(|error| format!("failed to send dump command: {error}"))?;
+    let mut frame = [0u8; SERIAL_FRAME_LEN];
+    tokio::time::timeout(SERIAL_RESPONSE_TIMEOUT, port.read_exact(&mut frame))
+        .await
+        .map_err(|_| "timed out waiting for dump frame".to_string())?
+        .map_err(|error| format!("failed to read dump frame: {error}"))?;
+    parse_dump_frame(&frame)
+}
+
+async fn poll_usb_once(
+    connection: &mut Option<(SerialStream, String)>,
+    verified: &mut bool,
+) -> Result<(Bytes, String), String> {
+    if connection.is_none() {
+        let name = find_usb_port()
+            .ok_or_else(|| "no Nicla Sense ME USB device found (vid 2341 pid 0060)".to_string())?;
+        let mut stream = tokio_serial::new(&name, SERIAL_BAUD)
+            .timeout(SERIAL_RESPONSE_TIMEOUT)
+            .open_native_async()
+            .map_err(|error| format!("failed to open {name}: {error}"))?;
+        prepare_port(&mut stream).map_err(|error| format!("{name}: {error}"))?;
+        debug!("Opened Arduino Nicla Sense ME USB port {name}");
+        *connection = Some((stream, name));
+        *verified = false;
+    }
+    let (stream, name) = connection.as_mut().expect("connection populated above");
+    let data = read_dump(stream).await.map_err(|error| format!("{name}: {error}"))?;
+    if !*verified {
+        let product_id = data.get(PRODUCT_ID_REGISTER).copied();
+        if product_id != Some(PRODUCT_ID) {
+            return Err(format!("{name}: unexpected product id {product_id:?}"));
+        }
+        *verified = true;
+    }
+    Ok((data, name.clone()))
+}
+
+async fn run_usb_board_worker(
+    normfs: Arc<NormFS>,
+    rx_queue_id: QueueId,
+    board: Board,
+    poll_interval: Duration,
+) {
+    let mut connection: Option<(SerialStream, String)> = None;
+    let mut verified = false;
+    let mut connected = false;
+    let mut last_port = None::<String>;
+    let mut last_data = None::<Bytes>;
+    let mut last_error = None::<String>;
+    // Min-interval pacing rather than a fixed-boundary interval: when the
+    // poll round-trip exceeds the interval (USB bridge latency is ~15 ms),
+    // the next poll starts immediately instead of being quantized up to the
+    // next interval boundary (which halved the achievable rate).
+    let mut next_poll = tokio::time::Instant::now();
+
+    loop {
+        tokio::time::sleep_until(next_poll).await;
+        let poll_started = tokio::time::Instant::now();
+        next_poll = poll_started + poll_interval;
+
+        match poll_usb_once(&mut connection, &mut verified).await {
+            Ok((data, port_name)) => {
+                if !connected {
+                    send_board_signal(
+                        &normfs,
+                        &rx_queue_id,
+                        &board,
+                        ArduinoNiclaSenseMeSignalType::ArduinoNiclaSenseMeConnected,
+                        Some(&data),
+                        None,
+                        Some(port_name.as_str()),
+                    );
+                    connected = true;
+                }
+                send_board_signal(
+                    &normfs,
+                    &rx_queue_id,
+                    &board,
+                    ArduinoNiclaSenseMeSignalType::ArduinoNiclaSenseMeRegistersSnapshot,
+                    Some(&data),
+                    None,
+                    Some(port_name.as_str()),
+                );
+                last_port = Some(port_name);
+                last_data = Some(data);
+                last_error = None;
+            }
+            Err(error) => {
+                connection = None;
+                verified = false;
+                if connected {
+                    send_board_signal(
+                        &normfs,
+                        &rx_queue_id,
+                        &board,
+                        ArduinoNiclaSenseMeSignalType::ArduinoNiclaSenseMeDisconnected,
+                        last_data.as_ref(),
+                        Some(error.clone()),
+                        last_port.as_deref(),
+                    );
+                    connected = false;
+                }
+                if last_error.as_deref() != Some(error.as_str()) {
+                    send_board_signal(
+                        &normfs,
+                        &rx_queue_id,
+                        &board,
+                        ArduinoNiclaSenseMeSignalType::ArduinoNiclaSenseMeError,
+                        last_data.as_ref(),
+                        Some(error.clone()),
+                        last_port.as_deref(),
+                    );
+                    last_error = Some(error);
+                }
+            }
+        }
+    }
+}
+
+fn parse_device_info(data: &[u8]) -> Option<ArduinoNiclaSenseMeDeviceInfo> {
+    let serial_end = SERIAL_NUMBER_REGISTER + SERIAL_NUMBER_LENGTH;
+    if data.len() < serial_end {
+        return None;
+    }
+
+    Some(ArduinoNiclaSenseMeDeviceInfo {
+        software_revision: data[SOFTWARE_REVISION_REGISTER] as u32,
+        product_id: data[PRODUCT_ID_REGISTER] as u32,
+        serial_number: Bytes::copy_from_slice(&data[SERIAL_NUMBER_REGISTER..serial_end]),
+    })
+}
+
+fn send_board_signal(
+    normfs: &Arc<NormFS>,
+    rx_queue_id: &QueueId,
+    board: &Board,
+    signal_type: ArduinoNiclaSenseMeSignalType,
+    data: Option<&Bytes>,
+    error_message: Option<String>,
+    usb_port: Option<&str>,
+
+) {
+    let envelope = RxEnvelope {
+        monotonic_stamp_ns: systime::get_monotonic_stamp_ns(),
+        local_stamp_ns: systime::get_local_stamp_ns(),
+        app_start_id: systime::get_app_start_id(),
+        signal_type: signal_type as i32,
+        device: Some(board.proto(data.map(|data| data.as_ref()), usb_port)),
+        data: data.cloned().unwrap_or_default(),
+        // Deprecated field (kept for old recorded envelopes): always empty.
+        motion: Bytes::new(),
+        error: error_message.unwrap_or_default(),
+    };
+
+    if let Err(error) = send_proto(normfs, rx_queue_id, &envelope) {
+        error!(
+            "Failed to send Arduino Nicla Sense ME {:?} signal for {}: {}",
+            signal_type, board.id, error
+        );
+    }
+}
+
+fn send_proto<M: Message>(
+    normfs: &NormFS,
+    queue_id: &QueueId,
+    envelope: &M,
+) -> DriverResult<UintN> {
+    let mut buffer = Vec::new();
+    envelope.encode(&mut buffer)?;
+    Ok(normfs.enqueue(queue_id, Bytes::from(buffer))?)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn board_id_defaults_to_transport_key() {
+        let board = Board::from_config(&ArduinoNiclaSenseMeBoardConfig {
+            id: None,
+            transport: ArduinoNiclaSenseMeTransport::I2c { i2c_bus: 2 },
+            poll_interval: None,
+        });
+        assert_eq!(board.id, "i2c-2");
+
+        let board = Board::from_config(&ArduinoNiclaSenseMeBoardConfig {
+            id: Some("  ".to_string()),
+            transport: ArduinoNiclaSenseMeTransport::Usb,
+            poll_interval: None,
+        });
+        assert_eq!(board.id, "usb");
+
+        let board = Board::from_config(&ArduinoNiclaSenseMeBoardConfig {
+            id: Some("imu-front".to_string()),
+            transport: ArduinoNiclaSenseMeTransport::Usb,
+            poll_interval: None,
+        });
+        assert_eq!(board.id, "imu-front");
+    }
+
+    #[test]
+    fn parse_device_info_reads_header() {
+        let mut data = vec![0u8; RAW_REGISTER_LENGTH];
+        data[SOFTWARE_REVISION_REGISTER] = 1;
+        data[PRODUCT_ID_REGISTER] = 0x4D;
+        data[SERIAL_NUMBER_REGISTER..SERIAL_NUMBER_REGISTER + SERIAL_NUMBER_LENGTH]
+            .copy_from_slice(&[0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF]);
+
+        let info = parse_device_info(&data).expect("info");
+        assert_eq!(info.software_revision, 1);
+        assert_eq!(info.product_id, 0x4D);
+        assert_eq!(info.serial_number.as_ref(), &[0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF]);
+    }
+
+    #[test]
+    fn parse_device_info_rejects_short_buffer() {
+        assert!(parse_device_info(&[0u8; 0x10]).is_none());
+    }
+
+    #[test]
+    fn crc8_matches_check_value() {
+        // Standard CRC-8 (poly 0x07, init 0x00) check value for "123456789".
+        assert_eq!(crc8(b"123456789"), 0xF4);
+        assert_eq!(crc8(&[]), 0x00);
+    }
+
+    fn build_frame(payload: &[u8]) -> Vec<u8> {
+        let mut frame = vec![0xA5, 0x5A, payload.len() as u8];
+        frame.extend_from_slice(payload);
+        frame.push(crc8(payload));
+        frame
+    }
+
+    #[test]
+    fn parse_dump_frame_roundtrip() {
+        let mut payload = vec![0u8; RAW_REGISTER_LENGTH];
+        payload[0x0D] = 0x4D;
+        let frame = build_frame(&payload);
+        let parsed = parse_dump_frame(&frame).expect("valid frame parses");
+        assert_eq!(parsed.as_ref(), payload.as_slice());
+    }
+
+    #[test]
+    fn parse_dump_frame_rejects_corruption() {
+        let payload = vec![0u8; RAW_REGISTER_LENGTH];
+        let good = build_frame(&payload);
+
+        let mut bad_magic = good.clone();
+        bad_magic[0] = 0x00;
+        assert!(parse_dump_frame(&bad_magic).is_err());
+
+        let mut bad_len = good.clone();
+        bad_len[2] = 0x10;
+        assert!(parse_dump_frame(&bad_len).is_err());
+
+        let mut bad_crc = good.clone();
+        *bad_crc.last_mut().unwrap() ^= 0xFF;
+        assert!(parse_dump_frame(&bad_crc).is_err());
+
+        assert!(parse_dump_frame(&good[..good.len() - 1]).is_err());
+    }
+
+}

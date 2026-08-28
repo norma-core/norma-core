@@ -1,4 +1,4 @@
-import { st3215, drivers, commands, motors_mirroring, inference_tags, vesc_trampa, pwm_output, yahboom_dogzilla_lite, usbvideo } from "./proto.js";
+import { st3215, drivers, commands, motors_mirroring, inference_tags, vesc_trampa, pwm_output, yahboom_dogzilla_lite, usbvideo, dfrobot_rs485 } from "./proto.js";
 import webSocketManager from "./websocket.js";
 
 function commandIdToBytes(id: number): Uint8Array {
@@ -8,12 +8,16 @@ function commandIdToBytes(id: number): Uint8Array {
     return new Uint8Array(buffer);
 }
 
-let nextCommandId = 1;
+// Seeded per page load so ids never collide with a previous session's acks
+// still lingering on the wire (a stale COMMAND_FAILED for id 1 could
+// otherwise match and abort a brand-new run). Stays well inside u32 range
+// even after many increments.
+let nextCommandId = (Date.now() & 0x3fffffff) >>> 0;
 
 export class CommandManager {
     private readonly COMMANDS_QUEUE = "commands";
 
-    private async sendCommand(commandType: drivers.StationCommandType, body: Uint8Array): Promise<void> {
+    private async sendCommand(commandType: drivers.StationCommandType, body: Uint8Array): Promise<number> {
         const commandId = nextCommandId++;
         const commandIdBytes = commandIdToBytes(commandId);
 
@@ -29,6 +33,7 @@ export class CommandManager {
 
         const packet = commands.StationCommandsPack.encode(commandsPack).finish();
         await webSocketManager.normFs.enqueuePack(this.COMMANDS_QUEUE, [packet]);
+        return commandId;
     }
 
     public async sendSt3215Command(command: st3215.ICommand): Promise<void> {
@@ -79,6 +84,13 @@ export class CommandManager {
     public async sendYahboomDogzillaLiteCommand(command: yahboom_dogzilla_lite.ICommand): Promise<void> {
         const body = yahboom_dogzilla_lite.Command.encode(command).finish();
         await this.sendCommand(drivers.StationCommandType.STC_YAHBOOM_DOGZILLA_LITE_COMMAND, body);
+    }
+
+    // Returns the command id; the driver echoes its 4-byte big-endian form
+    // in RxEnvelope.command.commandId on the DFROBOT_COMMAND_* ack.
+    public async sendDfrobotRs485Command(command: dfrobot_rs485.ICommand): Promise<number> {
+        const body = dfrobot_rs485.Command.encode(command).finish();
+        return this.sendCommand(drivers.StationCommandType.STC_DFROBOT_RS485_COMMAND, body);
     }
 }
 

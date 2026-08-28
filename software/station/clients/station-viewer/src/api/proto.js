@@ -202,6 +202,7 @@ export const commands = $root.commands = (() => {
                 case 5:
                 case 6:
                 case 7:
+                case 8:
                     break;
                 }
             if (message.body != null && message.hasOwnProperty("body"))
@@ -269,6 +270,10 @@ export const commands = $root.commands = (() => {
             case "STC_USB_VIDEO_COMMAND":
             case 7:
                 message.type = 7;
+                break;
+            case "STC_DFROBOT_RS485_COMMAND":
+            case 8:
+                message.type = 8;
                 break;
             }
             if (object.body != null)
@@ -736,6 +741,8 @@ export const drivers = $root.drivers = (() => {
      * @property {number} QDT_PWM_OUTPUT_TX=55 QDT_PWM_OUTPUT_TX value
      * @property {number} QDT_PWM_OUTPUT_RX=56 QDT_PWM_OUTPUT_RX value
      * @property {number} QDT_DMESG_RX=57 QDT_DMESG_RX value
+     * @property {number} QDT_DFROBOT_RS485_RX=58 QDT_DFROBOT_RS485_RX value
+     * @property {number} QDT_ARDUINO_NICLA_SENSE_ME_RX=59 QDT_ARDUINO_NICLA_SENSE_ME_RX value
      * @property {number} QDT_ARDUINO_PRO_4G_GNSS_RX=60 QDT_ARDUINO_PRO_4G_GNSS_RX value
      */
     drivers.QueueDataType = (function() {
@@ -769,6 +776,8 @@ export const drivers = $root.drivers = (() => {
         values[valuesById[55] = "QDT_PWM_OUTPUT_TX"] = 55;
         values[valuesById[56] = "QDT_PWM_OUTPUT_RX"] = 56;
         values[valuesById[57] = "QDT_DMESG_RX"] = 57;
+        values[valuesById[58] = "QDT_DFROBOT_RS485_RX"] = 58;
+        values[valuesById[59] = "QDT_ARDUINO_NICLA_SENSE_ME_RX"] = 59;
         values[valuesById[60] = "QDT_ARDUINO_PRO_4G_GNSS_RX"] = 60;
         return values;
     })();
@@ -785,6 +794,7 @@ export const drivers = $root.drivers = (() => {
      * @property {number} STC_ARDUINO_NICLA_SENSE_ENV_COMMAND=5 STC_ARDUINO_NICLA_SENSE_ENV_COMMAND value
      * @property {number} STC_PWM_OUTPUT_COMMAND=6 STC_PWM_OUTPUT_COMMAND value
      * @property {number} STC_USB_VIDEO_COMMAND=7 STC_USB_VIDEO_COMMAND value
+     * @property {number} STC_DFROBOT_RS485_COMMAND=8 STC_DFROBOT_RS485_COMMAND value
      */
     drivers.StationCommandType = (function() {
         const valuesById = {}, values = Object.create(valuesById);
@@ -796,6 +806,7 @@ export const drivers = $root.drivers = (() => {
         values[valuesById[5] = "STC_ARDUINO_NICLA_SENSE_ENV_COMMAND"] = 5;
         values[valuesById[6] = "STC_PWM_OUTPUT_COMMAND"] = 6;
         values[valuesById[7] = "STC_USB_VIDEO_COMMAND"] = 7;
+        values[valuesById[8] = "STC_DFROBOT_RS485_COMMAND"] = 8;
         return values;
     })();
 
@@ -1369,6 +1380,8 @@ export const inference = $root.inference = (() => {
                     case 55:
                     case 56:
                     case 57:
+                    case 58:
+                    case 59:
                     case 60:
                         break;
                     }
@@ -1520,6 +1533,14 @@ export const inference = $root.inference = (() => {
                 case "QDT_DMESG_RX":
                 case 57:
                     message.type = 57;
+                    break;
+                case "QDT_DFROBOT_RS485_RX":
+                case 58:
+                    message.type = 58;
+                    break;
+                case "QDT_ARDUINO_NICLA_SENSE_ME_RX":
+                case 59:
+                    message.type = 59;
                     break;
                 case "QDT_ARDUINO_PRO_4G_GNSS_RX":
                 case 60:
@@ -39441,6 +39462,1127 @@ export const arduino_nicla_sense_env = $root.arduino_nicla_sense_env = (() => {
     return arduino_nicla_sense_env;
 })();
 
+export const arduino_nicla_sense_me = $root.arduino_nicla_sense_me = (() => {
+
+    /**
+     * Namespace arduino_nicla_sense_me.
+     * @exports arduino_nicla_sense_me
+     * @namespace
+     */
+    const arduino_nicla_sense_me = {};
+
+    /**
+     * ArduinoNiclaSenseMeSignalType enum.
+     * @name arduino_nicla_sense_me.ArduinoNiclaSenseMeSignalType
+     * @enum {number}
+     * @property {number} ARDUINO_NICLA_SENSE_ME_SIGNAL_TYPE_UNSPECIFIED=0 ARDUINO_NICLA_SENSE_ME_SIGNAL_TYPE_UNSPECIFIED value
+     * @property {number} ARDUINO_NICLA_SENSE_ME_CONNECTED=1 ARDUINO_NICLA_SENSE_ME_CONNECTED value
+     * @property {number} ARDUINO_NICLA_SENSE_ME_DISCONNECTED=2 ARDUINO_NICLA_SENSE_ME_DISCONNECTED value
+     * @property {number} ARDUINO_NICLA_SENSE_ME_REGISTERS_SNAPSHOT=3 ARDUINO_NICLA_SENSE_ME_REGISTERS_SNAPSHOT value
+     * @property {number} ARDUINO_NICLA_SENSE_ME_ERROR=8 ARDUINO_NICLA_SENSE_ME_ERROR value
+     */
+    arduino_nicla_sense_me.ArduinoNiclaSenseMeSignalType = (function() {
+        const valuesById = {}, values = Object.create(valuesById);
+        values[valuesById[0] = "ARDUINO_NICLA_SENSE_ME_SIGNAL_TYPE_UNSPECIFIED"] = 0;
+        values[valuesById[1] = "ARDUINO_NICLA_SENSE_ME_CONNECTED"] = 1;
+        values[valuesById[2] = "ARDUINO_NICLA_SENSE_ME_DISCONNECTED"] = 2;
+        values[valuesById[3] = "ARDUINO_NICLA_SENSE_ME_REGISTERS_SNAPSHOT"] = 3;
+        values[valuesById[8] = "ARDUINO_NICLA_SENSE_ME_ERROR"] = 8;
+        return values;
+    })();
+
+    arduino_nicla_sense_me.ArduinoNiclaSenseMeDeviceInfo = (function() {
+
+        /**
+         * Properties of an ArduinoNiclaSenseMeDeviceInfo.
+         * @memberof arduino_nicla_sense_me
+         * @interface IArduinoNiclaSenseMeDeviceInfo
+         * @property {number|null} [softwareRevision] ArduinoNiclaSenseMeDeviceInfo softwareRevision
+         * @property {number|null} [productId] ArduinoNiclaSenseMeDeviceInfo productId
+         * @property {Uint8Array|null} [serialNumber] ArduinoNiclaSenseMeDeviceInfo serialNumber
+         */
+
+        /**
+         * Constructs a new ArduinoNiclaSenseMeDeviceInfo.
+         * @memberof arduino_nicla_sense_me
+         * @classdesc Represents an ArduinoNiclaSenseMeDeviceInfo.
+         * @implements IArduinoNiclaSenseMeDeviceInfo
+         * @constructor
+         * @param {arduino_nicla_sense_me.IArduinoNiclaSenseMeDeviceInfo=} [properties] Properties to set
+         */
+        function ArduinoNiclaSenseMeDeviceInfo(properties) {
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * ArduinoNiclaSenseMeDeviceInfo softwareRevision.
+         * @member {number} softwareRevision
+         * @memberof arduino_nicla_sense_me.ArduinoNiclaSenseMeDeviceInfo
+         * @instance
+         */
+        ArduinoNiclaSenseMeDeviceInfo.prototype.softwareRevision = 0;
+
+        /**
+         * ArduinoNiclaSenseMeDeviceInfo productId.
+         * @member {number} productId
+         * @memberof arduino_nicla_sense_me.ArduinoNiclaSenseMeDeviceInfo
+         * @instance
+         */
+        ArduinoNiclaSenseMeDeviceInfo.prototype.productId = 0;
+
+        /**
+         * ArduinoNiclaSenseMeDeviceInfo serialNumber.
+         * @member {Uint8Array} serialNumber
+         * @memberof arduino_nicla_sense_me.ArduinoNiclaSenseMeDeviceInfo
+         * @instance
+         */
+        ArduinoNiclaSenseMeDeviceInfo.prototype.serialNumber = $util.newBuffer([]);
+
+        /**
+         * Creates a new ArduinoNiclaSenseMeDeviceInfo instance using the specified properties.
+         * @function create
+         * @memberof arduino_nicla_sense_me.ArduinoNiclaSenseMeDeviceInfo
+         * @static
+         * @param {arduino_nicla_sense_me.IArduinoNiclaSenseMeDeviceInfo=} [properties] Properties to set
+         * @returns {arduino_nicla_sense_me.ArduinoNiclaSenseMeDeviceInfo} ArduinoNiclaSenseMeDeviceInfo instance
+         */
+        ArduinoNiclaSenseMeDeviceInfo.create = function create(properties) {
+            return new ArduinoNiclaSenseMeDeviceInfo(properties);
+        };
+
+        /**
+         * Encodes the specified ArduinoNiclaSenseMeDeviceInfo message. Does not implicitly {@link arduino_nicla_sense_me.ArduinoNiclaSenseMeDeviceInfo.verify|verify} messages.
+         * @function encode
+         * @memberof arduino_nicla_sense_me.ArduinoNiclaSenseMeDeviceInfo
+         * @static
+         * @param {arduino_nicla_sense_me.IArduinoNiclaSenseMeDeviceInfo} message ArduinoNiclaSenseMeDeviceInfo message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        ArduinoNiclaSenseMeDeviceInfo.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.softwareRevision != null && Object.hasOwnProperty.call(message, "softwareRevision"))
+                writer.uint32(/* id 1, wireType 0 =*/8).uint32(message.softwareRevision);
+            if (message.productId != null && Object.hasOwnProperty.call(message, "productId"))
+                writer.uint32(/* id 2, wireType 0 =*/16).uint32(message.productId);
+            if (message.serialNumber != null && Object.hasOwnProperty.call(message, "serialNumber"))
+                writer.uint32(/* id 3, wireType 2 =*/26).bytes(message.serialNumber);
+            return writer;
+        };
+
+        /**
+         * Encodes the specified ArduinoNiclaSenseMeDeviceInfo message, length delimited. Does not implicitly {@link arduino_nicla_sense_me.ArduinoNiclaSenseMeDeviceInfo.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof arduino_nicla_sense_me.ArduinoNiclaSenseMeDeviceInfo
+         * @static
+         * @param {arduino_nicla_sense_me.IArduinoNiclaSenseMeDeviceInfo} message ArduinoNiclaSenseMeDeviceInfo message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        ArduinoNiclaSenseMeDeviceInfo.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes an ArduinoNiclaSenseMeDeviceInfo message from the specified reader or buffer.
+         * @function decode
+         * @memberof arduino_nicla_sense_me.ArduinoNiclaSenseMeDeviceInfo
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {arduino_nicla_sense_me.ArduinoNiclaSenseMeDeviceInfo} ArduinoNiclaSenseMeDeviceInfo
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        ArduinoNiclaSenseMeDeviceInfo.decode = function decode(reader, length, error, long) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.arduino_nicla_sense_me.ArduinoNiclaSenseMeDeviceInfo();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                if (tag === error)
+                    break;
+                switch (tag >>> 3) {
+                case 1: {
+                        message.softwareRevision = reader.uint32();
+                        break;
+                    }
+                case 2: {
+                        message.productId = reader.uint32();
+                        break;
+                    }
+                case 3: {
+                        message.serialNumber = reader.bytes();
+                        break;
+                    }
+                default:
+                    reader.skipType(tag & 7, long);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes an ArduinoNiclaSenseMeDeviceInfo message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof arduino_nicla_sense_me.ArduinoNiclaSenseMeDeviceInfo
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {arduino_nicla_sense_me.ArduinoNiclaSenseMeDeviceInfo} ArduinoNiclaSenseMeDeviceInfo
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        ArduinoNiclaSenseMeDeviceInfo.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies an ArduinoNiclaSenseMeDeviceInfo message.
+         * @function verify
+         * @memberof arduino_nicla_sense_me.ArduinoNiclaSenseMeDeviceInfo
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        ArduinoNiclaSenseMeDeviceInfo.verify = function verify(message, long) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
+            if (message.softwareRevision != null && message.hasOwnProperty("softwareRevision"))
+                if (!$util.isInteger(message.softwareRevision))
+                    return "softwareRevision: integer expected";
+            if (message.productId != null && message.hasOwnProperty("productId"))
+                if (!$util.isInteger(message.productId))
+                    return "productId: integer expected";
+            if (message.serialNumber != null && message.hasOwnProperty("serialNumber"))
+                if (!(message.serialNumber && typeof message.serialNumber.length === "number" || $util.isString(message.serialNumber)))
+                    return "serialNumber: buffer expected";
+            return null;
+        };
+
+        /**
+         * Creates an ArduinoNiclaSenseMeDeviceInfo message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof arduino_nicla_sense_me.ArduinoNiclaSenseMeDeviceInfo
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {arduino_nicla_sense_me.ArduinoNiclaSenseMeDeviceInfo} ArduinoNiclaSenseMeDeviceInfo
+         */
+        ArduinoNiclaSenseMeDeviceInfo.fromObject = function fromObject(object, long) {
+            if (object instanceof $root.arduino_nicla_sense_me.ArduinoNiclaSenseMeDeviceInfo)
+                return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let message = new $root.arduino_nicla_sense_me.ArduinoNiclaSenseMeDeviceInfo();
+            if (object.softwareRevision != null)
+                message.softwareRevision = object.softwareRevision >>> 0;
+            if (object.productId != null)
+                message.productId = object.productId >>> 0;
+            if (object.serialNumber != null)
+                if (typeof object.serialNumber === "string")
+                    $util.base64.decode(object.serialNumber, message.serialNumber = $util.newBuffer($util.base64.length(object.serialNumber)), 0);
+                else if (object.serialNumber.length >= 0)
+                    message.serialNumber = object.serialNumber;
+            return message;
+        };
+
+        /**
+         * Creates a plain object from an ArduinoNiclaSenseMeDeviceInfo message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof arduino_nicla_sense_me.ArduinoNiclaSenseMeDeviceInfo
+         * @static
+         * @param {arduino_nicla_sense_me.ArduinoNiclaSenseMeDeviceInfo} message ArduinoNiclaSenseMeDeviceInfo
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        ArduinoNiclaSenseMeDeviceInfo.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.defaults) {
+                object.softwareRevision = 0;
+                object.productId = 0;
+                if (options.bytes === String)
+                    object.serialNumber = "";
+                else {
+                    object.serialNumber = [];
+                    if (options.bytes !== Array)
+                        object.serialNumber = $util.newBuffer(object.serialNumber);
+                }
+            }
+            if (message.softwareRevision != null && message.hasOwnProperty("softwareRevision"))
+                object.softwareRevision = message.softwareRevision;
+            if (message.productId != null && message.hasOwnProperty("productId"))
+                object.productId = message.productId;
+            if (message.serialNumber != null && message.hasOwnProperty("serialNumber"))
+                object.serialNumber = options.bytes === String ? $util.base64.encode(message.serialNumber, 0, message.serialNumber.length) : options.bytes === Array ? Array.prototype.slice.call(message.serialNumber) : message.serialNumber;
+            return object;
+        };
+
+        /**
+         * Converts this ArduinoNiclaSenseMeDeviceInfo to JSON.
+         * @function toJSON
+         * @memberof arduino_nicla_sense_me.ArduinoNiclaSenseMeDeviceInfo
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        ArduinoNiclaSenseMeDeviceInfo.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for ArduinoNiclaSenseMeDeviceInfo
+         * @function getTypeUrl
+         * @memberof arduino_nicla_sense_me.ArduinoNiclaSenseMeDeviceInfo
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        ArduinoNiclaSenseMeDeviceInfo.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+            if (typeUrlPrefix === undefined) {
+                typeUrlPrefix = "type.googleapis.com";
+            }
+            return typeUrlPrefix + "/arduino_nicla_sense_me.ArduinoNiclaSenseMeDeviceInfo";
+        };
+
+        return ArduinoNiclaSenseMeDeviceInfo;
+    })();
+
+    arduino_nicla_sense_me.ArduinoNiclaSenseMeDevice = (function() {
+
+        /**
+         * Properties of an ArduinoNiclaSenseMeDevice.
+         * @memberof arduino_nicla_sense_me
+         * @interface IArduinoNiclaSenseMeDevice
+         * @property {string|null} [id] ArduinoNiclaSenseMeDevice id
+         * @property {number|null} [i2cBus] ArduinoNiclaSenseMeDevice i2cBus
+         * @property {number|null} [i2cAddress] ArduinoNiclaSenseMeDevice i2cAddress
+         * @property {string|null} [transport] ArduinoNiclaSenseMeDevice transport
+         * @property {string|null} [usbPort] ArduinoNiclaSenseMeDevice usbPort
+         * @property {arduino_nicla_sense_me.IArduinoNiclaSenseMeDeviceInfo|null} [info] ArduinoNiclaSenseMeDevice info
+         */
+
+        /**
+         * Constructs a new ArduinoNiclaSenseMeDevice.
+         * @memberof arduino_nicla_sense_me
+         * @classdesc Represents an ArduinoNiclaSenseMeDevice.
+         * @implements IArduinoNiclaSenseMeDevice
+         * @constructor
+         * @param {arduino_nicla_sense_me.IArduinoNiclaSenseMeDevice=} [properties] Properties to set
+         */
+        function ArduinoNiclaSenseMeDevice(properties) {
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * ArduinoNiclaSenseMeDevice id.
+         * @member {string} id
+         * @memberof arduino_nicla_sense_me.ArduinoNiclaSenseMeDevice
+         * @instance
+         */
+        ArduinoNiclaSenseMeDevice.prototype.id = "";
+
+        /**
+         * ArduinoNiclaSenseMeDevice i2cBus.
+         * @member {number} i2cBus
+         * @memberof arduino_nicla_sense_me.ArduinoNiclaSenseMeDevice
+         * @instance
+         */
+        ArduinoNiclaSenseMeDevice.prototype.i2cBus = 0;
+
+        /**
+         * ArduinoNiclaSenseMeDevice i2cAddress.
+         * @member {number} i2cAddress
+         * @memberof arduino_nicla_sense_me.ArduinoNiclaSenseMeDevice
+         * @instance
+         */
+        ArduinoNiclaSenseMeDevice.prototype.i2cAddress = 0;
+
+        /**
+         * ArduinoNiclaSenseMeDevice transport.
+         * @member {string} transport
+         * @memberof arduino_nicla_sense_me.ArduinoNiclaSenseMeDevice
+         * @instance
+         */
+        ArduinoNiclaSenseMeDevice.prototype.transport = "";
+
+        /**
+         * ArduinoNiclaSenseMeDevice usbPort.
+         * @member {string} usbPort
+         * @memberof arduino_nicla_sense_me.ArduinoNiclaSenseMeDevice
+         * @instance
+         */
+        ArduinoNiclaSenseMeDevice.prototype.usbPort = "";
+
+        /**
+         * ArduinoNiclaSenseMeDevice info.
+         * @member {arduino_nicla_sense_me.IArduinoNiclaSenseMeDeviceInfo|null|undefined} info
+         * @memberof arduino_nicla_sense_me.ArduinoNiclaSenseMeDevice
+         * @instance
+         */
+        ArduinoNiclaSenseMeDevice.prototype.info = null;
+
+        /**
+         * Creates a new ArduinoNiclaSenseMeDevice instance using the specified properties.
+         * @function create
+         * @memberof arduino_nicla_sense_me.ArduinoNiclaSenseMeDevice
+         * @static
+         * @param {arduino_nicla_sense_me.IArduinoNiclaSenseMeDevice=} [properties] Properties to set
+         * @returns {arduino_nicla_sense_me.ArduinoNiclaSenseMeDevice} ArduinoNiclaSenseMeDevice instance
+         */
+        ArduinoNiclaSenseMeDevice.create = function create(properties) {
+            return new ArduinoNiclaSenseMeDevice(properties);
+        };
+
+        /**
+         * Encodes the specified ArduinoNiclaSenseMeDevice message. Does not implicitly {@link arduino_nicla_sense_me.ArduinoNiclaSenseMeDevice.verify|verify} messages.
+         * @function encode
+         * @memberof arduino_nicla_sense_me.ArduinoNiclaSenseMeDevice
+         * @static
+         * @param {arduino_nicla_sense_me.IArduinoNiclaSenseMeDevice} message ArduinoNiclaSenseMeDevice message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        ArduinoNiclaSenseMeDevice.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.id != null && Object.hasOwnProperty.call(message, "id"))
+                writer.uint32(/* id 1, wireType 2 =*/10).string(message.id);
+            if (message.i2cBus != null && Object.hasOwnProperty.call(message, "i2cBus"))
+                writer.uint32(/* id 2, wireType 0 =*/16).uint32(message.i2cBus);
+            if (message.i2cAddress != null && Object.hasOwnProperty.call(message, "i2cAddress"))
+                writer.uint32(/* id 3, wireType 0 =*/24).uint32(message.i2cAddress);
+            if (message.transport != null && Object.hasOwnProperty.call(message, "transport"))
+                writer.uint32(/* id 4, wireType 2 =*/34).string(message.transport);
+            if (message.usbPort != null && Object.hasOwnProperty.call(message, "usbPort"))
+                writer.uint32(/* id 5, wireType 2 =*/42).string(message.usbPort);
+            if (message.info != null && Object.hasOwnProperty.call(message, "info"))
+                $root.arduino_nicla_sense_me.ArduinoNiclaSenseMeDeviceInfo.encode(message.info, writer.uint32(/* id 10, wireType 2 =*/82).fork()).ldelim();
+            return writer;
+        };
+
+        /**
+         * Encodes the specified ArduinoNiclaSenseMeDevice message, length delimited. Does not implicitly {@link arduino_nicla_sense_me.ArduinoNiclaSenseMeDevice.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof arduino_nicla_sense_me.ArduinoNiclaSenseMeDevice
+         * @static
+         * @param {arduino_nicla_sense_me.IArduinoNiclaSenseMeDevice} message ArduinoNiclaSenseMeDevice message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        ArduinoNiclaSenseMeDevice.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes an ArduinoNiclaSenseMeDevice message from the specified reader or buffer.
+         * @function decode
+         * @memberof arduino_nicla_sense_me.ArduinoNiclaSenseMeDevice
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {arduino_nicla_sense_me.ArduinoNiclaSenseMeDevice} ArduinoNiclaSenseMeDevice
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        ArduinoNiclaSenseMeDevice.decode = function decode(reader, length, error, long) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.arduino_nicla_sense_me.ArduinoNiclaSenseMeDevice();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                if (tag === error)
+                    break;
+                switch (tag >>> 3) {
+                case 1: {
+                        message.id = reader.string();
+                        break;
+                    }
+                case 2: {
+                        message.i2cBus = reader.uint32();
+                        break;
+                    }
+                case 3: {
+                        message.i2cAddress = reader.uint32();
+                        break;
+                    }
+                case 4: {
+                        message.transport = reader.string();
+                        break;
+                    }
+                case 5: {
+                        message.usbPort = reader.string();
+                        break;
+                    }
+                case 10: {
+                        message.info = $root.arduino_nicla_sense_me.ArduinoNiclaSenseMeDeviceInfo.decode(reader, reader.uint32(), undefined, long + 1);
+                        break;
+                    }
+                default:
+                    reader.skipType(tag & 7, long);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes an ArduinoNiclaSenseMeDevice message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof arduino_nicla_sense_me.ArduinoNiclaSenseMeDevice
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {arduino_nicla_sense_me.ArduinoNiclaSenseMeDevice} ArduinoNiclaSenseMeDevice
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        ArduinoNiclaSenseMeDevice.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies an ArduinoNiclaSenseMeDevice message.
+         * @function verify
+         * @memberof arduino_nicla_sense_me.ArduinoNiclaSenseMeDevice
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        ArduinoNiclaSenseMeDevice.verify = function verify(message, long) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
+            if (message.id != null && message.hasOwnProperty("id"))
+                if (!$util.isString(message.id))
+                    return "id: string expected";
+            if (message.i2cBus != null && message.hasOwnProperty("i2cBus"))
+                if (!$util.isInteger(message.i2cBus))
+                    return "i2cBus: integer expected";
+            if (message.i2cAddress != null && message.hasOwnProperty("i2cAddress"))
+                if (!$util.isInteger(message.i2cAddress))
+                    return "i2cAddress: integer expected";
+            if (message.transport != null && message.hasOwnProperty("transport"))
+                if (!$util.isString(message.transport))
+                    return "transport: string expected";
+            if (message.usbPort != null && message.hasOwnProperty("usbPort"))
+                if (!$util.isString(message.usbPort))
+                    return "usbPort: string expected";
+            if (message.info != null && message.hasOwnProperty("info")) {
+                let error = $root.arduino_nicla_sense_me.ArduinoNiclaSenseMeDeviceInfo.verify(message.info, long + 1);
+                if (error)
+                    return "info." + error;
+            }
+            return null;
+        };
+
+        /**
+         * Creates an ArduinoNiclaSenseMeDevice message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof arduino_nicla_sense_me.ArduinoNiclaSenseMeDevice
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {arduino_nicla_sense_me.ArduinoNiclaSenseMeDevice} ArduinoNiclaSenseMeDevice
+         */
+        ArduinoNiclaSenseMeDevice.fromObject = function fromObject(object, long) {
+            if (object instanceof $root.arduino_nicla_sense_me.ArduinoNiclaSenseMeDevice)
+                return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let message = new $root.arduino_nicla_sense_me.ArduinoNiclaSenseMeDevice();
+            if (object.id != null)
+                message.id = String(object.id);
+            if (object.i2cBus != null)
+                message.i2cBus = object.i2cBus >>> 0;
+            if (object.i2cAddress != null)
+                message.i2cAddress = object.i2cAddress >>> 0;
+            if (object.transport != null)
+                message.transport = String(object.transport);
+            if (object.usbPort != null)
+                message.usbPort = String(object.usbPort);
+            if (object.info != null) {
+                if (typeof object.info !== "object")
+                    throw TypeError(".arduino_nicla_sense_me.ArduinoNiclaSenseMeDevice.info: object expected");
+                message.info = $root.arduino_nicla_sense_me.ArduinoNiclaSenseMeDeviceInfo.fromObject(object.info, long + 1);
+            }
+            return message;
+        };
+
+        /**
+         * Creates a plain object from an ArduinoNiclaSenseMeDevice message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof arduino_nicla_sense_me.ArduinoNiclaSenseMeDevice
+         * @static
+         * @param {arduino_nicla_sense_me.ArduinoNiclaSenseMeDevice} message ArduinoNiclaSenseMeDevice
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        ArduinoNiclaSenseMeDevice.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.defaults) {
+                object.id = "";
+                object.i2cBus = 0;
+                object.i2cAddress = 0;
+                object.transport = "";
+                object.usbPort = "";
+                object.info = null;
+            }
+            if (message.id != null && message.hasOwnProperty("id"))
+                object.id = message.id;
+            if (message.i2cBus != null && message.hasOwnProperty("i2cBus"))
+                object.i2cBus = message.i2cBus;
+            if (message.i2cAddress != null && message.hasOwnProperty("i2cAddress"))
+                object.i2cAddress = message.i2cAddress;
+            if (message.transport != null && message.hasOwnProperty("transport"))
+                object.transport = message.transport;
+            if (message.usbPort != null && message.hasOwnProperty("usbPort"))
+                object.usbPort = message.usbPort;
+            if (message.info != null && message.hasOwnProperty("info"))
+                object.info = $root.arduino_nicla_sense_me.ArduinoNiclaSenseMeDeviceInfo.toObject(message.info, options);
+            return object;
+        };
+
+        /**
+         * Converts this ArduinoNiclaSenseMeDevice to JSON.
+         * @function toJSON
+         * @memberof arduino_nicla_sense_me.ArduinoNiclaSenseMeDevice
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        ArduinoNiclaSenseMeDevice.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for ArduinoNiclaSenseMeDevice
+         * @function getTypeUrl
+         * @memberof arduino_nicla_sense_me.ArduinoNiclaSenseMeDevice
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        ArduinoNiclaSenseMeDevice.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+            if (typeUrlPrefix === undefined) {
+                typeUrlPrefix = "type.googleapis.com";
+            }
+            return typeUrlPrefix + "/arduino_nicla_sense_me.ArduinoNiclaSenseMeDevice";
+        };
+
+        return ArduinoNiclaSenseMeDevice;
+    })();
+
+    arduino_nicla_sense_me.RxEnvelope = (function() {
+
+        /**
+         * Properties of a RxEnvelope.
+         * @memberof arduino_nicla_sense_me
+         * @interface IRxEnvelope
+         * @property {Long|null} [monotonicStampNs] RxEnvelope monotonicStampNs
+         * @property {Long|null} [localStampNs] RxEnvelope localStampNs
+         * @property {Long|null} [appStartId] RxEnvelope appStartId
+         * @property {arduino_nicla_sense_me.ArduinoNiclaSenseMeSignalType|null} [signalType] RxEnvelope signalType
+         * @property {arduino_nicla_sense_me.IArduinoNiclaSenseMeDevice|null} [device] RxEnvelope device
+         * @property {Uint8Array|null} [data] RxEnvelope data
+         * @property {Uint8Array|null} [motion] RxEnvelope motion
+         * @property {string|null} [error] RxEnvelope error
+         */
+
+        /**
+         * Constructs a new RxEnvelope.
+         * @memberof arduino_nicla_sense_me
+         * @classdesc Represents a RxEnvelope.
+         * @implements IRxEnvelope
+         * @constructor
+         * @param {arduino_nicla_sense_me.IRxEnvelope=} [properties] Properties to set
+         */
+        function RxEnvelope(properties) {
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * RxEnvelope monotonicStampNs.
+         * @member {Long} monotonicStampNs
+         * @memberof arduino_nicla_sense_me.RxEnvelope
+         * @instance
+         */
+        RxEnvelope.prototype.monotonicStampNs = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+
+        /**
+         * RxEnvelope localStampNs.
+         * @member {Long} localStampNs
+         * @memberof arduino_nicla_sense_me.RxEnvelope
+         * @instance
+         */
+        RxEnvelope.prototype.localStampNs = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+
+        /**
+         * RxEnvelope appStartId.
+         * @member {Long} appStartId
+         * @memberof arduino_nicla_sense_me.RxEnvelope
+         * @instance
+         */
+        RxEnvelope.prototype.appStartId = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+
+        /**
+         * RxEnvelope signalType.
+         * @member {arduino_nicla_sense_me.ArduinoNiclaSenseMeSignalType} signalType
+         * @memberof arduino_nicla_sense_me.RxEnvelope
+         * @instance
+         */
+        RxEnvelope.prototype.signalType = 0;
+
+        /**
+         * RxEnvelope device.
+         * @member {arduino_nicla_sense_me.IArduinoNiclaSenseMeDevice|null|undefined} device
+         * @memberof arduino_nicla_sense_me.RxEnvelope
+         * @instance
+         */
+        RxEnvelope.prototype.device = null;
+
+        /**
+         * RxEnvelope data.
+         * @member {Uint8Array} data
+         * @memberof arduino_nicla_sense_me.RxEnvelope
+         * @instance
+         */
+        RxEnvelope.prototype.data = $util.newBuffer([]);
+
+        /**
+         * RxEnvelope motion.
+         * @member {Uint8Array} motion
+         * @memberof arduino_nicla_sense_me.RxEnvelope
+         * @instance
+         */
+        RxEnvelope.prototype.motion = $util.newBuffer([]);
+
+        /**
+         * RxEnvelope error.
+         * @member {string} error
+         * @memberof arduino_nicla_sense_me.RxEnvelope
+         * @instance
+         */
+        RxEnvelope.prototype.error = "";
+
+        /**
+         * Creates a new RxEnvelope instance using the specified properties.
+         * @function create
+         * @memberof arduino_nicla_sense_me.RxEnvelope
+         * @static
+         * @param {arduino_nicla_sense_me.IRxEnvelope=} [properties] Properties to set
+         * @returns {arduino_nicla_sense_me.RxEnvelope} RxEnvelope instance
+         */
+        RxEnvelope.create = function create(properties) {
+            return new RxEnvelope(properties);
+        };
+
+        /**
+         * Encodes the specified RxEnvelope message. Does not implicitly {@link arduino_nicla_sense_me.RxEnvelope.verify|verify} messages.
+         * @function encode
+         * @memberof arduino_nicla_sense_me.RxEnvelope
+         * @static
+         * @param {arduino_nicla_sense_me.IRxEnvelope} message RxEnvelope message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        RxEnvelope.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.monotonicStampNs != null && Object.hasOwnProperty.call(message, "monotonicStampNs"))
+                writer.uint32(/* id 1, wireType 0 =*/8).uint64(message.monotonicStampNs);
+            if (message.localStampNs != null && Object.hasOwnProperty.call(message, "localStampNs"))
+                writer.uint32(/* id 2, wireType 0 =*/16).uint64(message.localStampNs);
+            if (message.appStartId != null && Object.hasOwnProperty.call(message, "appStartId"))
+                writer.uint32(/* id 3, wireType 0 =*/24).uint64(message.appStartId);
+            if (message.signalType != null && Object.hasOwnProperty.call(message, "signalType"))
+                writer.uint32(/* id 10, wireType 0 =*/80).int32(message.signalType);
+            if (message.device != null && Object.hasOwnProperty.call(message, "device"))
+                $root.arduino_nicla_sense_me.ArduinoNiclaSenseMeDevice.encode(message.device, writer.uint32(/* id 11, wireType 2 =*/90).fork()).ldelim();
+            if (message.data != null && Object.hasOwnProperty.call(message, "data"))
+                writer.uint32(/* id 20, wireType 2 =*/162).bytes(message.data);
+            if (message.motion != null && Object.hasOwnProperty.call(message, "motion"))
+                writer.uint32(/* id 21, wireType 2 =*/170).bytes(message.motion);
+            if (message.error != null && Object.hasOwnProperty.call(message, "error"))
+                writer.uint32(/* id 50, wireType 2 =*/402).string(message.error);
+            return writer;
+        };
+
+        /**
+         * Encodes the specified RxEnvelope message, length delimited. Does not implicitly {@link arduino_nicla_sense_me.RxEnvelope.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof arduino_nicla_sense_me.RxEnvelope
+         * @static
+         * @param {arduino_nicla_sense_me.IRxEnvelope} message RxEnvelope message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        RxEnvelope.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes a RxEnvelope message from the specified reader or buffer.
+         * @function decode
+         * @memberof arduino_nicla_sense_me.RxEnvelope
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {arduino_nicla_sense_me.RxEnvelope} RxEnvelope
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        RxEnvelope.decode = function decode(reader, length, error, long) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.arduino_nicla_sense_me.RxEnvelope();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                if (tag === error)
+                    break;
+                switch (tag >>> 3) {
+                case 1: {
+                        message.monotonicStampNs = reader.uint64();
+                        break;
+                    }
+                case 2: {
+                        message.localStampNs = reader.uint64();
+                        break;
+                    }
+                case 3: {
+                        message.appStartId = reader.uint64();
+                        break;
+                    }
+                case 10: {
+                        message.signalType = reader.int32();
+                        break;
+                    }
+                case 11: {
+                        message.device = $root.arduino_nicla_sense_me.ArduinoNiclaSenseMeDevice.decode(reader, reader.uint32(), undefined, long + 1);
+                        break;
+                    }
+                case 20: {
+                        message.data = reader.bytes();
+                        break;
+                    }
+                case 21: {
+                        message.motion = reader.bytes();
+                        break;
+                    }
+                case 50: {
+                        message.error = reader.string();
+                        break;
+                    }
+                default:
+                    reader.skipType(tag & 7, long);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes a RxEnvelope message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof arduino_nicla_sense_me.RxEnvelope
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {arduino_nicla_sense_me.RxEnvelope} RxEnvelope
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        RxEnvelope.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies a RxEnvelope message.
+         * @function verify
+         * @memberof arduino_nicla_sense_me.RxEnvelope
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        RxEnvelope.verify = function verify(message, long) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
+            if (message.monotonicStampNs != null && message.hasOwnProperty("monotonicStampNs"))
+                if (!$util.isInteger(message.monotonicStampNs) && !(message.monotonicStampNs && $util.isInteger(message.monotonicStampNs.low) && $util.isInteger(message.monotonicStampNs.high)))
+                    return "monotonicStampNs: integer|Long expected";
+            if (message.localStampNs != null && message.hasOwnProperty("localStampNs"))
+                if (!$util.isInteger(message.localStampNs) && !(message.localStampNs && $util.isInteger(message.localStampNs.low) && $util.isInteger(message.localStampNs.high)))
+                    return "localStampNs: integer|Long expected";
+            if (message.appStartId != null && message.hasOwnProperty("appStartId"))
+                if (!$util.isInteger(message.appStartId) && !(message.appStartId && $util.isInteger(message.appStartId.low) && $util.isInteger(message.appStartId.high)))
+                    return "appStartId: integer|Long expected";
+            if (message.signalType != null && message.hasOwnProperty("signalType"))
+                switch (message.signalType) {
+                default:
+                    return "signalType: enum value expected";
+                case 0:
+                case 1:
+                case 2:
+                case 3:
+                case 8:
+                    break;
+                }
+            if (message.device != null && message.hasOwnProperty("device")) {
+                let error = $root.arduino_nicla_sense_me.ArduinoNiclaSenseMeDevice.verify(message.device, long + 1);
+                if (error)
+                    return "device." + error;
+            }
+            if (message.data != null && message.hasOwnProperty("data"))
+                if (!(message.data && typeof message.data.length === "number" || $util.isString(message.data)))
+                    return "data: buffer expected";
+            if (message.motion != null && message.hasOwnProperty("motion"))
+                if (!(message.motion && typeof message.motion.length === "number" || $util.isString(message.motion)))
+                    return "motion: buffer expected";
+            if (message.error != null && message.hasOwnProperty("error"))
+                if (!$util.isString(message.error))
+                    return "error: string expected";
+            return null;
+        };
+
+        /**
+         * Creates a RxEnvelope message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof arduino_nicla_sense_me.RxEnvelope
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {arduino_nicla_sense_me.RxEnvelope} RxEnvelope
+         */
+        RxEnvelope.fromObject = function fromObject(object, long) {
+            if (object instanceof $root.arduino_nicla_sense_me.RxEnvelope)
+                return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let message = new $root.arduino_nicla_sense_me.RxEnvelope();
+            if (object.monotonicStampNs != null)
+                if ($util.Long)
+                    (message.monotonicStampNs = $util.Long.fromValue(object.monotonicStampNs)).unsigned = true;
+                else if (typeof object.monotonicStampNs === "string")
+                    message.monotonicStampNs = parseInt(object.monotonicStampNs, 10);
+                else if (typeof object.monotonicStampNs === "number")
+                    message.monotonicStampNs = object.monotonicStampNs;
+                else if (typeof object.monotonicStampNs === "object")
+                    message.monotonicStampNs = new $util.LongBits(object.monotonicStampNs.low >>> 0, object.monotonicStampNs.high >>> 0).toNumber(true);
+            if (object.localStampNs != null)
+                if ($util.Long)
+                    (message.localStampNs = $util.Long.fromValue(object.localStampNs)).unsigned = true;
+                else if (typeof object.localStampNs === "string")
+                    message.localStampNs = parseInt(object.localStampNs, 10);
+                else if (typeof object.localStampNs === "number")
+                    message.localStampNs = object.localStampNs;
+                else if (typeof object.localStampNs === "object")
+                    message.localStampNs = new $util.LongBits(object.localStampNs.low >>> 0, object.localStampNs.high >>> 0).toNumber(true);
+            if (object.appStartId != null)
+                if ($util.Long)
+                    (message.appStartId = $util.Long.fromValue(object.appStartId)).unsigned = true;
+                else if (typeof object.appStartId === "string")
+                    message.appStartId = parseInt(object.appStartId, 10);
+                else if (typeof object.appStartId === "number")
+                    message.appStartId = object.appStartId;
+                else if (typeof object.appStartId === "object")
+                    message.appStartId = new $util.LongBits(object.appStartId.low >>> 0, object.appStartId.high >>> 0).toNumber(true);
+            switch (object.signalType) {
+            default:
+                if (typeof object.signalType === "number") {
+                    message.signalType = object.signalType;
+                    break;
+                }
+                break;
+            case "ARDUINO_NICLA_SENSE_ME_SIGNAL_TYPE_UNSPECIFIED":
+            case 0:
+                message.signalType = 0;
+                break;
+            case "ARDUINO_NICLA_SENSE_ME_CONNECTED":
+            case 1:
+                message.signalType = 1;
+                break;
+            case "ARDUINO_NICLA_SENSE_ME_DISCONNECTED":
+            case 2:
+                message.signalType = 2;
+                break;
+            case "ARDUINO_NICLA_SENSE_ME_REGISTERS_SNAPSHOT":
+            case 3:
+                message.signalType = 3;
+                break;
+            case "ARDUINO_NICLA_SENSE_ME_ERROR":
+            case 8:
+                message.signalType = 8;
+                break;
+            }
+            if (object.device != null) {
+                if (typeof object.device !== "object")
+                    throw TypeError(".arduino_nicla_sense_me.RxEnvelope.device: object expected");
+                message.device = $root.arduino_nicla_sense_me.ArduinoNiclaSenseMeDevice.fromObject(object.device, long + 1);
+            }
+            if (object.data != null)
+                if (typeof object.data === "string")
+                    $util.base64.decode(object.data, message.data = $util.newBuffer($util.base64.length(object.data)), 0);
+                else if (object.data.length >= 0)
+                    message.data = object.data;
+            if (object.motion != null)
+                if (typeof object.motion === "string")
+                    $util.base64.decode(object.motion, message.motion = $util.newBuffer($util.base64.length(object.motion)), 0);
+                else if (object.motion.length >= 0)
+                    message.motion = object.motion;
+            if (object.error != null)
+                message.error = String(object.error);
+            return message;
+        };
+
+        /**
+         * Creates a plain object from a RxEnvelope message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof arduino_nicla_sense_me.RxEnvelope
+         * @static
+         * @param {arduino_nicla_sense_me.RxEnvelope} message RxEnvelope
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        RxEnvelope.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.defaults) {
+                if ($util.Long) {
+                    let long = new $util.Long(0, 0, true);
+                    object.monotonicStampNs = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+                } else
+                    object.monotonicStampNs = options.longs === String ? "0" : 0;
+                if ($util.Long) {
+                    let long = new $util.Long(0, 0, true);
+                    object.localStampNs = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+                } else
+                    object.localStampNs = options.longs === String ? "0" : 0;
+                if ($util.Long) {
+                    let long = new $util.Long(0, 0, true);
+                    object.appStartId = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+                } else
+                    object.appStartId = options.longs === String ? "0" : 0;
+                object.signalType = options.enums === String ? "ARDUINO_NICLA_SENSE_ME_SIGNAL_TYPE_UNSPECIFIED" : 0;
+                object.device = null;
+                if (options.bytes === String)
+                    object.data = "";
+                else {
+                    object.data = [];
+                    if (options.bytes !== Array)
+                        object.data = $util.newBuffer(object.data);
+                }
+                if (options.bytes === String)
+                    object.motion = "";
+                else {
+                    object.motion = [];
+                    if (options.bytes !== Array)
+                        object.motion = $util.newBuffer(object.motion);
+                }
+                object.error = "";
+            }
+            if (message.monotonicStampNs != null && message.hasOwnProperty("monotonicStampNs"))
+                if (typeof message.monotonicStampNs === "number")
+                    object.monotonicStampNs = options.longs === String ? String(message.monotonicStampNs) : message.monotonicStampNs;
+                else
+                    object.monotonicStampNs = options.longs === String ? $util.Long.prototype.toString.call(message.monotonicStampNs) : options.longs === Number ? new $util.LongBits(message.monotonicStampNs.low >>> 0, message.monotonicStampNs.high >>> 0).toNumber(true) : message.monotonicStampNs;
+            if (message.localStampNs != null && message.hasOwnProperty("localStampNs"))
+                if (typeof message.localStampNs === "number")
+                    object.localStampNs = options.longs === String ? String(message.localStampNs) : message.localStampNs;
+                else
+                    object.localStampNs = options.longs === String ? $util.Long.prototype.toString.call(message.localStampNs) : options.longs === Number ? new $util.LongBits(message.localStampNs.low >>> 0, message.localStampNs.high >>> 0).toNumber(true) : message.localStampNs;
+            if (message.appStartId != null && message.hasOwnProperty("appStartId"))
+                if (typeof message.appStartId === "number")
+                    object.appStartId = options.longs === String ? String(message.appStartId) : message.appStartId;
+                else
+                    object.appStartId = options.longs === String ? $util.Long.prototype.toString.call(message.appStartId) : options.longs === Number ? new $util.LongBits(message.appStartId.low >>> 0, message.appStartId.high >>> 0).toNumber(true) : message.appStartId;
+            if (message.signalType != null && message.hasOwnProperty("signalType"))
+                object.signalType = options.enums === String ? $root.arduino_nicla_sense_me.ArduinoNiclaSenseMeSignalType[message.signalType] === undefined ? message.signalType : $root.arduino_nicla_sense_me.ArduinoNiclaSenseMeSignalType[message.signalType] : message.signalType;
+            if (message.device != null && message.hasOwnProperty("device"))
+                object.device = $root.arduino_nicla_sense_me.ArduinoNiclaSenseMeDevice.toObject(message.device, options);
+            if (message.data != null && message.hasOwnProperty("data"))
+                object.data = options.bytes === String ? $util.base64.encode(message.data, 0, message.data.length) : options.bytes === Array ? Array.prototype.slice.call(message.data) : message.data;
+            if (message.motion != null && message.hasOwnProperty("motion"))
+                object.motion = options.bytes === String ? $util.base64.encode(message.motion, 0, message.motion.length) : options.bytes === Array ? Array.prototype.slice.call(message.motion) : message.motion;
+            if (message.error != null && message.hasOwnProperty("error"))
+                object.error = message.error;
+            return object;
+        };
+
+        /**
+         * Converts this RxEnvelope to JSON.
+         * @function toJSON
+         * @memberof arduino_nicla_sense_me.RxEnvelope
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        RxEnvelope.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for RxEnvelope
+         * @function getTypeUrl
+         * @memberof arduino_nicla_sense_me.RxEnvelope
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        RxEnvelope.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+            if (typeUrlPrefix === undefined) {
+                typeUrlPrefix = "type.googleapis.com";
+            }
+            return typeUrlPrefix + "/arduino_nicla_sense_me.RxEnvelope";
+        };
+
+        return RxEnvelope;
+    })();
+
+    return arduino_nicla_sense_me;
+})();
+
 export const arduino_pro_4g_gnss = $root.arduino_pro_4g_gnss = (() => {
 
     /**
@@ -46220,6 +47362,1903 @@ export const dmesg = $root.dmesg = (() => {
     })();
 
     return dmesg;
+})();
+
+export const dfrobot_rs485 = $root.dfrobot_rs485 = (() => {
+
+    /**
+     * Namespace dfrobot_rs485.
+     * @exports dfrobot_rs485
+     * @namespace
+     */
+    const dfrobot_rs485 = {};
+
+    /**
+     * DfrobotSignalType enum.
+     * @name dfrobot_rs485.DfrobotSignalType
+     * @enum {number}
+     * @property {number} DFROBOT_SIGNAL_TYPE_UNSPECIFIED=0 DFROBOT_SIGNAL_TYPE_UNSPECIFIED value
+     * @property {number} DFROBOT_CONNECTED=1 DFROBOT_CONNECTED value
+     * @property {number} DFROBOT_DISCONNECTED=2 DFROBOT_DISCONNECTED value
+     * @property {number} DFROBOT_REGISTERS_SNAPSHOT=3 DFROBOT_REGISTERS_SNAPSHOT value
+     * @property {number} DFROBOT_ERROR=4 DFROBOT_ERROR value
+     * @property {number} DFROBOT_COMMAND_SUCCESS=5 DFROBOT_COMMAND_SUCCESS value
+     * @property {number} DFROBOT_COMMAND_REJECTED=6 DFROBOT_COMMAND_REJECTED value
+     * @property {number} DFROBOT_COMMAND_FAILED=7 DFROBOT_COMMAND_FAILED value
+     * @property {number} DFROBOT_FORGOTTEN=8 DFROBOT_FORGOTTEN value
+     */
+    dfrobot_rs485.DfrobotSignalType = (function() {
+        const valuesById = {}, values = Object.create(valuesById);
+        values[valuesById[0] = "DFROBOT_SIGNAL_TYPE_UNSPECIFIED"] = 0;
+        values[valuesById[1] = "DFROBOT_CONNECTED"] = 1;
+        values[valuesById[2] = "DFROBOT_DISCONNECTED"] = 2;
+        values[valuesById[3] = "DFROBOT_REGISTERS_SNAPSHOT"] = 3;
+        values[valuesById[4] = "DFROBOT_ERROR"] = 4;
+        values[valuesById[5] = "DFROBOT_COMMAND_SUCCESS"] = 5;
+        values[valuesById[6] = "DFROBOT_COMMAND_REJECTED"] = 6;
+        values[valuesById[7] = "DFROBOT_COMMAND_FAILED"] = 7;
+        values[valuesById[8] = "DFROBOT_FORGOTTEN"] = 8;
+        return values;
+    })();
+
+    /**
+     * DfrobotSensorModel enum.
+     * @name dfrobot_rs485.DfrobotSensorModel
+     * @enum {number}
+     * @property {number} DFROBOT_MODEL_UNSPECIFIED=0 DFROBOT_MODEL_UNSPECIFIED value
+     * @property {number} DFROBOT_SEN0640_IRRADIANCE=1 DFROBOT_SEN0640_IRRADIANCE value
+     * @property {number} DFROBOT_SEN0641_PAR=2 DFROBOT_SEN0641_PAR value
+     * @property {number} DFROBOT_SEN0642_UV=3 DFROBOT_SEN0642_UV value
+     * @property {number} DFROBOT_SEN0644_LIGHT=4 DFROBOT_SEN0644_LIGHT value
+     */
+    dfrobot_rs485.DfrobotSensorModel = (function() {
+        const valuesById = {}, values = Object.create(valuesById);
+        values[valuesById[0] = "DFROBOT_MODEL_UNSPECIFIED"] = 0;
+        values[valuesById[1] = "DFROBOT_SEN0640_IRRADIANCE"] = 1;
+        values[valuesById[2] = "DFROBOT_SEN0641_PAR"] = 2;
+        values[valuesById[3] = "DFROBOT_SEN0642_UV"] = 3;
+        values[valuesById[4] = "DFROBOT_SEN0644_LIGHT"] = 4;
+        return values;
+    })();
+
+    dfrobot_rs485.DfrobotDevice = (function() {
+
+        /**
+         * Properties of a DfrobotDevice.
+         * @memberof dfrobot_rs485
+         * @interface IDfrobotDevice
+         * @property {string|null} [id] DfrobotDevice id
+         * @property {dfrobot_rs485.DfrobotSensorModel|null} [model] DfrobotDevice model
+         * @property {number|null} [modbusId] DfrobotDevice modbusId
+         * @property {string|null} [portName] DfrobotDevice portName
+         * @property {number|null} [baud] DfrobotDevice baud
+         */
+
+        /**
+         * Constructs a new DfrobotDevice.
+         * @memberof dfrobot_rs485
+         * @classdesc Represents a DfrobotDevice.
+         * @implements IDfrobotDevice
+         * @constructor
+         * @param {dfrobot_rs485.IDfrobotDevice=} [properties] Properties to set
+         */
+        function DfrobotDevice(properties) {
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * DfrobotDevice id.
+         * @member {string} id
+         * @memberof dfrobot_rs485.DfrobotDevice
+         * @instance
+         */
+        DfrobotDevice.prototype.id = "";
+
+        /**
+         * DfrobotDevice model.
+         * @member {dfrobot_rs485.DfrobotSensorModel} model
+         * @memberof dfrobot_rs485.DfrobotDevice
+         * @instance
+         */
+        DfrobotDevice.prototype.model = 0;
+
+        /**
+         * DfrobotDevice modbusId.
+         * @member {number} modbusId
+         * @memberof dfrobot_rs485.DfrobotDevice
+         * @instance
+         */
+        DfrobotDevice.prototype.modbusId = 0;
+
+        /**
+         * DfrobotDevice portName.
+         * @member {string} portName
+         * @memberof dfrobot_rs485.DfrobotDevice
+         * @instance
+         */
+        DfrobotDevice.prototype.portName = "";
+
+        /**
+         * DfrobotDevice baud.
+         * @member {number} baud
+         * @memberof dfrobot_rs485.DfrobotDevice
+         * @instance
+         */
+        DfrobotDevice.prototype.baud = 0;
+
+        /**
+         * Creates a new DfrobotDevice instance using the specified properties.
+         * @function create
+         * @memberof dfrobot_rs485.DfrobotDevice
+         * @static
+         * @param {dfrobot_rs485.IDfrobotDevice=} [properties] Properties to set
+         * @returns {dfrobot_rs485.DfrobotDevice} DfrobotDevice instance
+         */
+        DfrobotDevice.create = function create(properties) {
+            return new DfrobotDevice(properties);
+        };
+
+        /**
+         * Encodes the specified DfrobotDevice message. Does not implicitly {@link dfrobot_rs485.DfrobotDevice.verify|verify} messages.
+         * @function encode
+         * @memberof dfrobot_rs485.DfrobotDevice
+         * @static
+         * @param {dfrobot_rs485.IDfrobotDevice} message DfrobotDevice message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        DfrobotDevice.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.id != null && Object.hasOwnProperty.call(message, "id"))
+                writer.uint32(/* id 1, wireType 2 =*/10).string(message.id);
+            if (message.model != null && Object.hasOwnProperty.call(message, "model"))
+                writer.uint32(/* id 2, wireType 0 =*/16).int32(message.model);
+            if (message.modbusId != null && Object.hasOwnProperty.call(message, "modbusId"))
+                writer.uint32(/* id 3, wireType 0 =*/24).uint32(message.modbusId);
+            if (message.portName != null && Object.hasOwnProperty.call(message, "portName"))
+                writer.uint32(/* id 4, wireType 2 =*/34).string(message.portName);
+            if (message.baud != null && Object.hasOwnProperty.call(message, "baud"))
+                writer.uint32(/* id 5, wireType 0 =*/40).uint32(message.baud);
+            return writer;
+        };
+
+        /**
+         * Encodes the specified DfrobotDevice message, length delimited. Does not implicitly {@link dfrobot_rs485.DfrobotDevice.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof dfrobot_rs485.DfrobotDevice
+         * @static
+         * @param {dfrobot_rs485.IDfrobotDevice} message DfrobotDevice message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        DfrobotDevice.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes a DfrobotDevice message from the specified reader or buffer.
+         * @function decode
+         * @memberof dfrobot_rs485.DfrobotDevice
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {dfrobot_rs485.DfrobotDevice} DfrobotDevice
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        DfrobotDevice.decode = function decode(reader, length, error, long) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.dfrobot_rs485.DfrobotDevice();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                if (tag === error)
+                    break;
+                switch (tag >>> 3) {
+                case 1: {
+                        message.id = reader.string();
+                        break;
+                    }
+                case 2: {
+                        message.model = reader.int32();
+                        break;
+                    }
+                case 3: {
+                        message.modbusId = reader.uint32();
+                        break;
+                    }
+                case 4: {
+                        message.portName = reader.string();
+                        break;
+                    }
+                case 5: {
+                        message.baud = reader.uint32();
+                        break;
+                    }
+                default:
+                    reader.skipType(tag & 7, long);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes a DfrobotDevice message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof dfrobot_rs485.DfrobotDevice
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {dfrobot_rs485.DfrobotDevice} DfrobotDevice
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        DfrobotDevice.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies a DfrobotDevice message.
+         * @function verify
+         * @memberof dfrobot_rs485.DfrobotDevice
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        DfrobotDevice.verify = function verify(message, long) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
+            if (message.id != null && message.hasOwnProperty("id"))
+                if (!$util.isString(message.id))
+                    return "id: string expected";
+            if (message.model != null && message.hasOwnProperty("model"))
+                switch (message.model) {
+                default:
+                    return "model: enum value expected";
+                case 0:
+                case 1:
+                case 2:
+                case 3:
+                case 4:
+                    break;
+                }
+            if (message.modbusId != null && message.hasOwnProperty("modbusId"))
+                if (!$util.isInteger(message.modbusId))
+                    return "modbusId: integer expected";
+            if (message.portName != null && message.hasOwnProperty("portName"))
+                if (!$util.isString(message.portName))
+                    return "portName: string expected";
+            if (message.baud != null && message.hasOwnProperty("baud"))
+                if (!$util.isInteger(message.baud))
+                    return "baud: integer expected";
+            return null;
+        };
+
+        /**
+         * Creates a DfrobotDevice message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof dfrobot_rs485.DfrobotDevice
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {dfrobot_rs485.DfrobotDevice} DfrobotDevice
+         */
+        DfrobotDevice.fromObject = function fromObject(object, long) {
+            if (object instanceof $root.dfrobot_rs485.DfrobotDevice)
+                return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let message = new $root.dfrobot_rs485.DfrobotDevice();
+            if (object.id != null)
+                message.id = String(object.id);
+            switch (object.model) {
+            default:
+                if (typeof object.model === "number") {
+                    message.model = object.model;
+                    break;
+                }
+                break;
+            case "DFROBOT_MODEL_UNSPECIFIED":
+            case 0:
+                message.model = 0;
+                break;
+            case "DFROBOT_SEN0640_IRRADIANCE":
+            case 1:
+                message.model = 1;
+                break;
+            case "DFROBOT_SEN0641_PAR":
+            case 2:
+                message.model = 2;
+                break;
+            case "DFROBOT_SEN0642_UV":
+            case 3:
+                message.model = 3;
+                break;
+            case "DFROBOT_SEN0644_LIGHT":
+            case 4:
+                message.model = 4;
+                break;
+            }
+            if (object.modbusId != null)
+                message.modbusId = object.modbusId >>> 0;
+            if (object.portName != null)
+                message.portName = String(object.portName);
+            if (object.baud != null)
+                message.baud = object.baud >>> 0;
+            return message;
+        };
+
+        /**
+         * Creates a plain object from a DfrobotDevice message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof dfrobot_rs485.DfrobotDevice
+         * @static
+         * @param {dfrobot_rs485.DfrobotDevice} message DfrobotDevice
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        DfrobotDevice.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.defaults) {
+                object.id = "";
+                object.model = options.enums === String ? "DFROBOT_MODEL_UNSPECIFIED" : 0;
+                object.modbusId = 0;
+                object.portName = "";
+                object.baud = 0;
+            }
+            if (message.id != null && message.hasOwnProperty("id"))
+                object.id = message.id;
+            if (message.model != null && message.hasOwnProperty("model"))
+                object.model = options.enums === String ? $root.dfrobot_rs485.DfrobotSensorModel[message.model] === undefined ? message.model : $root.dfrobot_rs485.DfrobotSensorModel[message.model] : message.model;
+            if (message.modbusId != null && message.hasOwnProperty("modbusId"))
+                object.modbusId = message.modbusId;
+            if (message.portName != null && message.hasOwnProperty("portName"))
+                object.portName = message.portName;
+            if (message.baud != null && message.hasOwnProperty("baud"))
+                object.baud = message.baud;
+            return object;
+        };
+
+        /**
+         * Converts this DfrobotDevice to JSON.
+         * @function toJSON
+         * @memberof dfrobot_rs485.DfrobotDevice
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        DfrobotDevice.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for DfrobotDevice
+         * @function getTypeUrl
+         * @memberof dfrobot_rs485.DfrobotDevice
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        DfrobotDevice.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+            if (typeUrlPrefix === undefined) {
+                typeUrlPrefix = "type.googleapis.com";
+            }
+            return typeUrlPrefix + "/dfrobot_rs485.DfrobotDevice";
+        };
+
+        return DfrobotDevice;
+    })();
+
+    dfrobot_rs485.RegisterRange = (function() {
+
+        /**
+         * Properties of a RegisterRange.
+         * @memberof dfrobot_rs485
+         * @interface IRegisterRange
+         * @property {number|null} [startRegister] RegisterRange startRegister
+         * @property {Uint8Array|null} [data] RegisterRange data
+         */
+
+        /**
+         * Constructs a new RegisterRange.
+         * @memberof dfrobot_rs485
+         * @classdesc Represents a RegisterRange.
+         * @implements IRegisterRange
+         * @constructor
+         * @param {dfrobot_rs485.IRegisterRange=} [properties] Properties to set
+         */
+        function RegisterRange(properties) {
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * RegisterRange startRegister.
+         * @member {number} startRegister
+         * @memberof dfrobot_rs485.RegisterRange
+         * @instance
+         */
+        RegisterRange.prototype.startRegister = 0;
+
+        /**
+         * RegisterRange data.
+         * @member {Uint8Array} data
+         * @memberof dfrobot_rs485.RegisterRange
+         * @instance
+         */
+        RegisterRange.prototype.data = $util.newBuffer([]);
+
+        /**
+         * Creates a new RegisterRange instance using the specified properties.
+         * @function create
+         * @memberof dfrobot_rs485.RegisterRange
+         * @static
+         * @param {dfrobot_rs485.IRegisterRange=} [properties] Properties to set
+         * @returns {dfrobot_rs485.RegisterRange} RegisterRange instance
+         */
+        RegisterRange.create = function create(properties) {
+            return new RegisterRange(properties);
+        };
+
+        /**
+         * Encodes the specified RegisterRange message. Does not implicitly {@link dfrobot_rs485.RegisterRange.verify|verify} messages.
+         * @function encode
+         * @memberof dfrobot_rs485.RegisterRange
+         * @static
+         * @param {dfrobot_rs485.IRegisterRange} message RegisterRange message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        RegisterRange.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.startRegister != null && Object.hasOwnProperty.call(message, "startRegister"))
+                writer.uint32(/* id 1, wireType 0 =*/8).uint32(message.startRegister);
+            if (message.data != null && Object.hasOwnProperty.call(message, "data"))
+                writer.uint32(/* id 2, wireType 2 =*/18).bytes(message.data);
+            return writer;
+        };
+
+        /**
+         * Encodes the specified RegisterRange message, length delimited. Does not implicitly {@link dfrobot_rs485.RegisterRange.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof dfrobot_rs485.RegisterRange
+         * @static
+         * @param {dfrobot_rs485.IRegisterRange} message RegisterRange message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        RegisterRange.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes a RegisterRange message from the specified reader or buffer.
+         * @function decode
+         * @memberof dfrobot_rs485.RegisterRange
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {dfrobot_rs485.RegisterRange} RegisterRange
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        RegisterRange.decode = function decode(reader, length, error, long) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.dfrobot_rs485.RegisterRange();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                if (tag === error)
+                    break;
+                switch (tag >>> 3) {
+                case 1: {
+                        message.startRegister = reader.uint32();
+                        break;
+                    }
+                case 2: {
+                        message.data = reader.bytes();
+                        break;
+                    }
+                default:
+                    reader.skipType(tag & 7, long);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes a RegisterRange message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof dfrobot_rs485.RegisterRange
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {dfrobot_rs485.RegisterRange} RegisterRange
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        RegisterRange.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies a RegisterRange message.
+         * @function verify
+         * @memberof dfrobot_rs485.RegisterRange
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        RegisterRange.verify = function verify(message, long) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
+            if (message.startRegister != null && message.hasOwnProperty("startRegister"))
+                if (!$util.isInteger(message.startRegister))
+                    return "startRegister: integer expected";
+            if (message.data != null && message.hasOwnProperty("data"))
+                if (!(message.data && typeof message.data.length === "number" || $util.isString(message.data)))
+                    return "data: buffer expected";
+            return null;
+        };
+
+        /**
+         * Creates a RegisterRange message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof dfrobot_rs485.RegisterRange
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {dfrobot_rs485.RegisterRange} RegisterRange
+         */
+        RegisterRange.fromObject = function fromObject(object, long) {
+            if (object instanceof $root.dfrobot_rs485.RegisterRange)
+                return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let message = new $root.dfrobot_rs485.RegisterRange();
+            if (object.startRegister != null)
+                message.startRegister = object.startRegister >>> 0;
+            if (object.data != null)
+                if (typeof object.data === "string")
+                    $util.base64.decode(object.data, message.data = $util.newBuffer($util.base64.length(object.data)), 0);
+                else if (object.data.length >= 0)
+                    message.data = object.data;
+            return message;
+        };
+
+        /**
+         * Creates a plain object from a RegisterRange message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof dfrobot_rs485.RegisterRange
+         * @static
+         * @param {dfrobot_rs485.RegisterRange} message RegisterRange
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        RegisterRange.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.defaults) {
+                object.startRegister = 0;
+                if (options.bytes === String)
+                    object.data = "";
+                else {
+                    object.data = [];
+                    if (options.bytes !== Array)
+                        object.data = $util.newBuffer(object.data);
+                }
+            }
+            if (message.startRegister != null && message.hasOwnProperty("startRegister"))
+                object.startRegister = message.startRegister;
+            if (message.data != null && message.hasOwnProperty("data"))
+                object.data = options.bytes === String ? $util.base64.encode(message.data, 0, message.data.length) : options.bytes === Array ? Array.prototype.slice.call(message.data) : message.data;
+            return object;
+        };
+
+        /**
+         * Converts this RegisterRange to JSON.
+         * @function toJSON
+         * @memberof dfrobot_rs485.RegisterRange
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        RegisterRange.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for RegisterRange
+         * @function getTypeUrl
+         * @memberof dfrobot_rs485.RegisterRange
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        RegisterRange.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+            if (typeUrlPrefix === undefined) {
+                typeUrlPrefix = "type.googleapis.com";
+            }
+            return typeUrlPrefix + "/dfrobot_rs485.RegisterRange";
+        };
+
+        return RegisterRange;
+    })();
+
+    dfrobot_rs485.WriteRegisterCommand = (function() {
+
+        /**
+         * Properties of a WriteRegisterCommand.
+         * @memberof dfrobot_rs485
+         * @interface IWriteRegisterCommand
+         * @property {number|null} [modbusId] WriteRegisterCommand modbusId
+         * @property {number|null} [register] WriteRegisterCommand register
+         * @property {number|null} [value] WriteRegisterCommand value
+         */
+
+        /**
+         * Constructs a new WriteRegisterCommand.
+         * @memberof dfrobot_rs485
+         * @classdesc Represents a WriteRegisterCommand.
+         * @implements IWriteRegisterCommand
+         * @constructor
+         * @param {dfrobot_rs485.IWriteRegisterCommand=} [properties] Properties to set
+         */
+        function WriteRegisterCommand(properties) {
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * WriteRegisterCommand modbusId.
+         * @member {number} modbusId
+         * @memberof dfrobot_rs485.WriteRegisterCommand
+         * @instance
+         */
+        WriteRegisterCommand.prototype.modbusId = 0;
+
+        /**
+         * WriteRegisterCommand register.
+         * @member {number} register
+         * @memberof dfrobot_rs485.WriteRegisterCommand
+         * @instance
+         */
+        WriteRegisterCommand.prototype.register = 0;
+
+        /**
+         * WriteRegisterCommand value.
+         * @member {number} value
+         * @memberof dfrobot_rs485.WriteRegisterCommand
+         * @instance
+         */
+        WriteRegisterCommand.prototype.value = 0;
+
+        /**
+         * Creates a new WriteRegisterCommand instance using the specified properties.
+         * @function create
+         * @memberof dfrobot_rs485.WriteRegisterCommand
+         * @static
+         * @param {dfrobot_rs485.IWriteRegisterCommand=} [properties] Properties to set
+         * @returns {dfrobot_rs485.WriteRegisterCommand} WriteRegisterCommand instance
+         */
+        WriteRegisterCommand.create = function create(properties) {
+            return new WriteRegisterCommand(properties);
+        };
+
+        /**
+         * Encodes the specified WriteRegisterCommand message. Does not implicitly {@link dfrobot_rs485.WriteRegisterCommand.verify|verify} messages.
+         * @function encode
+         * @memberof dfrobot_rs485.WriteRegisterCommand
+         * @static
+         * @param {dfrobot_rs485.IWriteRegisterCommand} message WriteRegisterCommand message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        WriteRegisterCommand.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.modbusId != null && Object.hasOwnProperty.call(message, "modbusId"))
+                writer.uint32(/* id 1, wireType 0 =*/8).uint32(message.modbusId);
+            if (message.register != null && Object.hasOwnProperty.call(message, "register"))
+                writer.uint32(/* id 2, wireType 0 =*/16).uint32(message.register);
+            if (message.value != null && Object.hasOwnProperty.call(message, "value"))
+                writer.uint32(/* id 3, wireType 0 =*/24).uint32(message.value);
+            return writer;
+        };
+
+        /**
+         * Encodes the specified WriteRegisterCommand message, length delimited. Does not implicitly {@link dfrobot_rs485.WriteRegisterCommand.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof dfrobot_rs485.WriteRegisterCommand
+         * @static
+         * @param {dfrobot_rs485.IWriteRegisterCommand} message WriteRegisterCommand message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        WriteRegisterCommand.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes a WriteRegisterCommand message from the specified reader or buffer.
+         * @function decode
+         * @memberof dfrobot_rs485.WriteRegisterCommand
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {dfrobot_rs485.WriteRegisterCommand} WriteRegisterCommand
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        WriteRegisterCommand.decode = function decode(reader, length, error, long) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.dfrobot_rs485.WriteRegisterCommand();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                if (tag === error)
+                    break;
+                switch (tag >>> 3) {
+                case 1: {
+                        message.modbusId = reader.uint32();
+                        break;
+                    }
+                case 2: {
+                        message.register = reader.uint32();
+                        break;
+                    }
+                case 3: {
+                        message.value = reader.uint32();
+                        break;
+                    }
+                default:
+                    reader.skipType(tag & 7, long);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes a WriteRegisterCommand message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof dfrobot_rs485.WriteRegisterCommand
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {dfrobot_rs485.WriteRegisterCommand} WriteRegisterCommand
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        WriteRegisterCommand.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies a WriteRegisterCommand message.
+         * @function verify
+         * @memberof dfrobot_rs485.WriteRegisterCommand
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        WriteRegisterCommand.verify = function verify(message, long) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
+            if (message.modbusId != null && message.hasOwnProperty("modbusId"))
+                if (!$util.isInteger(message.modbusId))
+                    return "modbusId: integer expected";
+            if (message.register != null && message.hasOwnProperty("register"))
+                if (!$util.isInteger(message.register))
+                    return "register: integer expected";
+            if (message.value != null && message.hasOwnProperty("value"))
+                if (!$util.isInteger(message.value))
+                    return "value: integer expected";
+            return null;
+        };
+
+        /**
+         * Creates a WriteRegisterCommand message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof dfrobot_rs485.WriteRegisterCommand
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {dfrobot_rs485.WriteRegisterCommand} WriteRegisterCommand
+         */
+        WriteRegisterCommand.fromObject = function fromObject(object, long) {
+            if (object instanceof $root.dfrobot_rs485.WriteRegisterCommand)
+                return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let message = new $root.dfrobot_rs485.WriteRegisterCommand();
+            if (object.modbusId != null)
+                message.modbusId = object.modbusId >>> 0;
+            if (object.register != null)
+                message.register = object.register >>> 0;
+            if (object.value != null)
+                message.value = object.value >>> 0;
+            return message;
+        };
+
+        /**
+         * Creates a plain object from a WriteRegisterCommand message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof dfrobot_rs485.WriteRegisterCommand
+         * @static
+         * @param {dfrobot_rs485.WriteRegisterCommand} message WriteRegisterCommand
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        WriteRegisterCommand.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.defaults) {
+                object.modbusId = 0;
+                object.register = 0;
+                object.value = 0;
+            }
+            if (message.modbusId != null && message.hasOwnProperty("modbusId"))
+                object.modbusId = message.modbusId;
+            if (message.register != null && message.hasOwnProperty("register"))
+                object.register = message.register;
+            if (message.value != null && message.hasOwnProperty("value"))
+                object.value = message.value;
+            return object;
+        };
+
+        /**
+         * Converts this WriteRegisterCommand to JSON.
+         * @function toJSON
+         * @memberof dfrobot_rs485.WriteRegisterCommand
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        WriteRegisterCommand.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for WriteRegisterCommand
+         * @function getTypeUrl
+         * @memberof dfrobot_rs485.WriteRegisterCommand
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        WriteRegisterCommand.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+            if (typeUrlPrefix === undefined) {
+                typeUrlPrefix = "type.googleapis.com";
+            }
+            return typeUrlPrefix + "/dfrobot_rs485.WriteRegisterCommand";
+        };
+
+        return WriteRegisterCommand;
+    })();
+
+    dfrobot_rs485.Command = (function() {
+
+        /**
+         * Properties of a Command.
+         * @memberof dfrobot_rs485
+         * @interface ICommand
+         * @property {dfrobot_rs485.IWriteRegisterCommand|null} [writeRegister] Command writeRegister
+         */
+
+        /**
+         * Constructs a new Command.
+         * @memberof dfrobot_rs485
+         * @classdesc Represents a Command.
+         * @implements ICommand
+         * @constructor
+         * @param {dfrobot_rs485.ICommand=} [properties] Properties to set
+         */
+        function Command(properties) {
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * Command writeRegister.
+         * @member {dfrobot_rs485.IWriteRegisterCommand|null|undefined} writeRegister
+         * @memberof dfrobot_rs485.Command
+         * @instance
+         */
+        Command.prototype.writeRegister = null;
+
+        /**
+         * Creates a new Command instance using the specified properties.
+         * @function create
+         * @memberof dfrobot_rs485.Command
+         * @static
+         * @param {dfrobot_rs485.ICommand=} [properties] Properties to set
+         * @returns {dfrobot_rs485.Command} Command instance
+         */
+        Command.create = function create(properties) {
+            return new Command(properties);
+        };
+
+        /**
+         * Encodes the specified Command message. Does not implicitly {@link dfrobot_rs485.Command.verify|verify} messages.
+         * @function encode
+         * @memberof dfrobot_rs485.Command
+         * @static
+         * @param {dfrobot_rs485.ICommand} message Command message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        Command.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.writeRegister != null && Object.hasOwnProperty.call(message, "writeRegister"))
+                $root.dfrobot_rs485.WriteRegisterCommand.encode(message.writeRegister, writer.uint32(/* id 10, wireType 2 =*/82).fork()).ldelim();
+            return writer;
+        };
+
+        /**
+         * Encodes the specified Command message, length delimited. Does not implicitly {@link dfrobot_rs485.Command.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof dfrobot_rs485.Command
+         * @static
+         * @param {dfrobot_rs485.ICommand} message Command message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        Command.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes a Command message from the specified reader or buffer.
+         * @function decode
+         * @memberof dfrobot_rs485.Command
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {dfrobot_rs485.Command} Command
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        Command.decode = function decode(reader, length, error, long) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.dfrobot_rs485.Command();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                if (tag === error)
+                    break;
+                switch (tag >>> 3) {
+                case 10: {
+                        message.writeRegister = $root.dfrobot_rs485.WriteRegisterCommand.decode(reader, reader.uint32(), undefined, long + 1);
+                        break;
+                    }
+                default:
+                    reader.skipType(tag & 7, long);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes a Command message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof dfrobot_rs485.Command
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {dfrobot_rs485.Command} Command
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        Command.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies a Command message.
+         * @function verify
+         * @memberof dfrobot_rs485.Command
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        Command.verify = function verify(message, long) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
+            if (message.writeRegister != null && message.hasOwnProperty("writeRegister")) {
+                let error = $root.dfrobot_rs485.WriteRegisterCommand.verify(message.writeRegister, long + 1);
+                if (error)
+                    return "writeRegister." + error;
+            }
+            return null;
+        };
+
+        /**
+         * Creates a Command message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof dfrobot_rs485.Command
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {dfrobot_rs485.Command} Command
+         */
+        Command.fromObject = function fromObject(object, long) {
+            if (object instanceof $root.dfrobot_rs485.Command)
+                return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let message = new $root.dfrobot_rs485.Command();
+            if (object.writeRegister != null) {
+                if (typeof object.writeRegister !== "object")
+                    throw TypeError(".dfrobot_rs485.Command.writeRegister: object expected");
+                message.writeRegister = $root.dfrobot_rs485.WriteRegisterCommand.fromObject(object.writeRegister, long + 1);
+            }
+            return message;
+        };
+
+        /**
+         * Creates a plain object from a Command message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof dfrobot_rs485.Command
+         * @static
+         * @param {dfrobot_rs485.Command} message Command
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        Command.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.defaults)
+                object.writeRegister = null;
+            if (message.writeRegister != null && message.hasOwnProperty("writeRegister"))
+                object.writeRegister = $root.dfrobot_rs485.WriteRegisterCommand.toObject(message.writeRegister, options);
+            return object;
+        };
+
+        /**
+         * Converts this Command to JSON.
+         * @function toJSON
+         * @memberof dfrobot_rs485.Command
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        Command.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for Command
+         * @function getTypeUrl
+         * @memberof dfrobot_rs485.Command
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        Command.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+            if (typeUrlPrefix === undefined) {
+                typeUrlPrefix = "type.googleapis.com";
+            }
+            return typeUrlPrefix + "/dfrobot_rs485.Command";
+        };
+
+        return Command;
+    })();
+
+    dfrobot_rs485.CommandResult = (function() {
+
+        /**
+         * Properties of a CommandResult.
+         * @memberof dfrobot_rs485
+         * @interface ICommandResult
+         * @property {Uint8Array|null} [commandId] CommandResult commandId
+         * @property {string|null} [description] CommandResult description
+         */
+
+        /**
+         * Constructs a new CommandResult.
+         * @memberof dfrobot_rs485
+         * @classdesc Represents a CommandResult.
+         * @implements ICommandResult
+         * @constructor
+         * @param {dfrobot_rs485.ICommandResult=} [properties] Properties to set
+         */
+        function CommandResult(properties) {
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * CommandResult commandId.
+         * @member {Uint8Array} commandId
+         * @memberof dfrobot_rs485.CommandResult
+         * @instance
+         */
+        CommandResult.prototype.commandId = $util.newBuffer([]);
+
+        /**
+         * CommandResult description.
+         * @member {string} description
+         * @memberof dfrobot_rs485.CommandResult
+         * @instance
+         */
+        CommandResult.prototype.description = "";
+
+        /**
+         * Creates a new CommandResult instance using the specified properties.
+         * @function create
+         * @memberof dfrobot_rs485.CommandResult
+         * @static
+         * @param {dfrobot_rs485.ICommandResult=} [properties] Properties to set
+         * @returns {dfrobot_rs485.CommandResult} CommandResult instance
+         */
+        CommandResult.create = function create(properties) {
+            return new CommandResult(properties);
+        };
+
+        /**
+         * Encodes the specified CommandResult message. Does not implicitly {@link dfrobot_rs485.CommandResult.verify|verify} messages.
+         * @function encode
+         * @memberof dfrobot_rs485.CommandResult
+         * @static
+         * @param {dfrobot_rs485.ICommandResult} message CommandResult message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        CommandResult.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.commandId != null && Object.hasOwnProperty.call(message, "commandId"))
+                writer.uint32(/* id 1, wireType 2 =*/10).bytes(message.commandId);
+            if (message.description != null && Object.hasOwnProperty.call(message, "description"))
+                writer.uint32(/* id 2, wireType 2 =*/18).string(message.description);
+            return writer;
+        };
+
+        /**
+         * Encodes the specified CommandResult message, length delimited. Does not implicitly {@link dfrobot_rs485.CommandResult.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof dfrobot_rs485.CommandResult
+         * @static
+         * @param {dfrobot_rs485.ICommandResult} message CommandResult message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        CommandResult.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes a CommandResult message from the specified reader or buffer.
+         * @function decode
+         * @memberof dfrobot_rs485.CommandResult
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {dfrobot_rs485.CommandResult} CommandResult
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        CommandResult.decode = function decode(reader, length, error, long) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.dfrobot_rs485.CommandResult();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                if (tag === error)
+                    break;
+                switch (tag >>> 3) {
+                case 1: {
+                        message.commandId = reader.bytes();
+                        break;
+                    }
+                case 2: {
+                        message.description = reader.string();
+                        break;
+                    }
+                default:
+                    reader.skipType(tag & 7, long);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes a CommandResult message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof dfrobot_rs485.CommandResult
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {dfrobot_rs485.CommandResult} CommandResult
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        CommandResult.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies a CommandResult message.
+         * @function verify
+         * @memberof dfrobot_rs485.CommandResult
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        CommandResult.verify = function verify(message, long) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
+            if (message.commandId != null && message.hasOwnProperty("commandId"))
+                if (!(message.commandId && typeof message.commandId.length === "number" || $util.isString(message.commandId)))
+                    return "commandId: buffer expected";
+            if (message.description != null && message.hasOwnProperty("description"))
+                if (!$util.isString(message.description))
+                    return "description: string expected";
+            return null;
+        };
+
+        /**
+         * Creates a CommandResult message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof dfrobot_rs485.CommandResult
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {dfrobot_rs485.CommandResult} CommandResult
+         */
+        CommandResult.fromObject = function fromObject(object, long) {
+            if (object instanceof $root.dfrobot_rs485.CommandResult)
+                return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let message = new $root.dfrobot_rs485.CommandResult();
+            if (object.commandId != null)
+                if (typeof object.commandId === "string")
+                    $util.base64.decode(object.commandId, message.commandId = $util.newBuffer($util.base64.length(object.commandId)), 0);
+                else if (object.commandId.length >= 0)
+                    message.commandId = object.commandId;
+            if (object.description != null)
+                message.description = String(object.description);
+            return message;
+        };
+
+        /**
+         * Creates a plain object from a CommandResult message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof dfrobot_rs485.CommandResult
+         * @static
+         * @param {dfrobot_rs485.CommandResult} message CommandResult
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        CommandResult.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.defaults) {
+                if (options.bytes === String)
+                    object.commandId = "";
+                else {
+                    object.commandId = [];
+                    if (options.bytes !== Array)
+                        object.commandId = $util.newBuffer(object.commandId);
+                }
+                object.description = "";
+            }
+            if (message.commandId != null && message.hasOwnProperty("commandId"))
+                object.commandId = options.bytes === String ? $util.base64.encode(message.commandId, 0, message.commandId.length) : options.bytes === Array ? Array.prototype.slice.call(message.commandId) : message.commandId;
+            if (message.description != null && message.hasOwnProperty("description"))
+                object.description = message.description;
+            return object;
+        };
+
+        /**
+         * Converts this CommandResult to JSON.
+         * @function toJSON
+         * @memberof dfrobot_rs485.CommandResult
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        CommandResult.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for CommandResult
+         * @function getTypeUrl
+         * @memberof dfrobot_rs485.CommandResult
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        CommandResult.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+            if (typeUrlPrefix === undefined) {
+                typeUrlPrefix = "type.googleapis.com";
+            }
+            return typeUrlPrefix + "/dfrobot_rs485.CommandResult";
+        };
+
+        return CommandResult;
+    })();
+
+    dfrobot_rs485.RxEnvelope = (function() {
+
+        /**
+         * Properties of a RxEnvelope.
+         * @memberof dfrobot_rs485
+         * @interface IRxEnvelope
+         * @property {Long|null} [monotonicStampNs] RxEnvelope monotonicStampNs
+         * @property {Long|null} [localStampNs] RxEnvelope localStampNs
+         * @property {Long|null} [appStartId] RxEnvelope appStartId
+         * @property {dfrobot_rs485.DfrobotSignalType|null} [signalType] RxEnvelope signalType
+         * @property {dfrobot_rs485.IDfrobotDevice|null} [device] RxEnvelope device
+         * @property {Array.<dfrobot_rs485.IRegisterRange>|null} [ranges] RxEnvelope ranges
+         * @property {dfrobot_rs485.ICommandResult|null} [command] RxEnvelope command
+         * @property {string|null} [error] RxEnvelope error
+         */
+
+        /**
+         * Constructs a new RxEnvelope.
+         * @memberof dfrobot_rs485
+         * @classdesc Represents a RxEnvelope.
+         * @implements IRxEnvelope
+         * @constructor
+         * @param {dfrobot_rs485.IRxEnvelope=} [properties] Properties to set
+         */
+        function RxEnvelope(properties) {
+            this.ranges = [];
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * RxEnvelope monotonicStampNs.
+         * @member {Long} monotonicStampNs
+         * @memberof dfrobot_rs485.RxEnvelope
+         * @instance
+         */
+        RxEnvelope.prototype.monotonicStampNs = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+
+        /**
+         * RxEnvelope localStampNs.
+         * @member {Long} localStampNs
+         * @memberof dfrobot_rs485.RxEnvelope
+         * @instance
+         */
+        RxEnvelope.prototype.localStampNs = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+
+        /**
+         * RxEnvelope appStartId.
+         * @member {Long} appStartId
+         * @memberof dfrobot_rs485.RxEnvelope
+         * @instance
+         */
+        RxEnvelope.prototype.appStartId = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+
+        /**
+         * RxEnvelope signalType.
+         * @member {dfrobot_rs485.DfrobotSignalType} signalType
+         * @memberof dfrobot_rs485.RxEnvelope
+         * @instance
+         */
+        RxEnvelope.prototype.signalType = 0;
+
+        /**
+         * RxEnvelope device.
+         * @member {dfrobot_rs485.IDfrobotDevice|null|undefined} device
+         * @memberof dfrobot_rs485.RxEnvelope
+         * @instance
+         */
+        RxEnvelope.prototype.device = null;
+
+        /**
+         * RxEnvelope ranges.
+         * @member {Array.<dfrobot_rs485.IRegisterRange>} ranges
+         * @memberof dfrobot_rs485.RxEnvelope
+         * @instance
+         */
+        RxEnvelope.prototype.ranges = $util.emptyArray;
+
+        /**
+         * RxEnvelope command.
+         * @member {dfrobot_rs485.ICommandResult|null|undefined} command
+         * @memberof dfrobot_rs485.RxEnvelope
+         * @instance
+         */
+        RxEnvelope.prototype.command = null;
+
+        /**
+         * RxEnvelope error.
+         * @member {string} error
+         * @memberof dfrobot_rs485.RxEnvelope
+         * @instance
+         */
+        RxEnvelope.prototype.error = "";
+
+        /**
+         * Creates a new RxEnvelope instance using the specified properties.
+         * @function create
+         * @memberof dfrobot_rs485.RxEnvelope
+         * @static
+         * @param {dfrobot_rs485.IRxEnvelope=} [properties] Properties to set
+         * @returns {dfrobot_rs485.RxEnvelope} RxEnvelope instance
+         */
+        RxEnvelope.create = function create(properties) {
+            return new RxEnvelope(properties);
+        };
+
+        /**
+         * Encodes the specified RxEnvelope message. Does not implicitly {@link dfrobot_rs485.RxEnvelope.verify|verify} messages.
+         * @function encode
+         * @memberof dfrobot_rs485.RxEnvelope
+         * @static
+         * @param {dfrobot_rs485.IRxEnvelope} message RxEnvelope message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        RxEnvelope.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.monotonicStampNs != null && Object.hasOwnProperty.call(message, "monotonicStampNs"))
+                writer.uint32(/* id 1, wireType 0 =*/8).uint64(message.monotonicStampNs);
+            if (message.localStampNs != null && Object.hasOwnProperty.call(message, "localStampNs"))
+                writer.uint32(/* id 2, wireType 0 =*/16).uint64(message.localStampNs);
+            if (message.appStartId != null && Object.hasOwnProperty.call(message, "appStartId"))
+                writer.uint32(/* id 3, wireType 0 =*/24).uint64(message.appStartId);
+            if (message.signalType != null && Object.hasOwnProperty.call(message, "signalType"))
+                writer.uint32(/* id 10, wireType 0 =*/80).int32(message.signalType);
+            if (message.device != null && Object.hasOwnProperty.call(message, "device"))
+                $root.dfrobot_rs485.DfrobotDevice.encode(message.device, writer.uint32(/* id 11, wireType 2 =*/90).fork()).ldelim();
+            if (message.ranges != null && message.ranges.length)
+                for (let i = 0; i < message.ranges.length; ++i)
+                    $root.dfrobot_rs485.RegisterRange.encode(message.ranges[i], writer.uint32(/* id 20, wireType 2 =*/162).fork()).ldelim();
+            if (message.command != null && Object.hasOwnProperty.call(message, "command"))
+                $root.dfrobot_rs485.CommandResult.encode(message.command, writer.uint32(/* id 30, wireType 2 =*/242).fork()).ldelim();
+            if (message.error != null && Object.hasOwnProperty.call(message, "error"))
+                writer.uint32(/* id 50, wireType 2 =*/402).string(message.error);
+            return writer;
+        };
+
+        /**
+         * Encodes the specified RxEnvelope message, length delimited. Does not implicitly {@link dfrobot_rs485.RxEnvelope.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof dfrobot_rs485.RxEnvelope
+         * @static
+         * @param {dfrobot_rs485.IRxEnvelope} message RxEnvelope message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        RxEnvelope.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes a RxEnvelope message from the specified reader or buffer.
+         * @function decode
+         * @memberof dfrobot_rs485.RxEnvelope
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {dfrobot_rs485.RxEnvelope} RxEnvelope
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        RxEnvelope.decode = function decode(reader, length, error, long) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.dfrobot_rs485.RxEnvelope();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                if (tag === error)
+                    break;
+                switch (tag >>> 3) {
+                case 1: {
+                        message.monotonicStampNs = reader.uint64();
+                        break;
+                    }
+                case 2: {
+                        message.localStampNs = reader.uint64();
+                        break;
+                    }
+                case 3: {
+                        message.appStartId = reader.uint64();
+                        break;
+                    }
+                case 10: {
+                        message.signalType = reader.int32();
+                        break;
+                    }
+                case 11: {
+                        message.device = $root.dfrobot_rs485.DfrobotDevice.decode(reader, reader.uint32(), undefined, long + 1);
+                        break;
+                    }
+                case 20: {
+                        if (!(message.ranges && message.ranges.length))
+                            message.ranges = [];
+                        message.ranges.push($root.dfrobot_rs485.RegisterRange.decode(reader, reader.uint32(), undefined, long + 1));
+                        break;
+                    }
+                case 30: {
+                        message.command = $root.dfrobot_rs485.CommandResult.decode(reader, reader.uint32(), undefined, long + 1);
+                        break;
+                    }
+                case 50: {
+                        message.error = reader.string();
+                        break;
+                    }
+                default:
+                    reader.skipType(tag & 7, long);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes a RxEnvelope message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof dfrobot_rs485.RxEnvelope
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {dfrobot_rs485.RxEnvelope} RxEnvelope
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        RxEnvelope.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies a RxEnvelope message.
+         * @function verify
+         * @memberof dfrobot_rs485.RxEnvelope
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        RxEnvelope.verify = function verify(message, long) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
+            if (message.monotonicStampNs != null && message.hasOwnProperty("monotonicStampNs"))
+                if (!$util.isInteger(message.monotonicStampNs) && !(message.monotonicStampNs && $util.isInteger(message.monotonicStampNs.low) && $util.isInteger(message.monotonicStampNs.high)))
+                    return "monotonicStampNs: integer|Long expected";
+            if (message.localStampNs != null && message.hasOwnProperty("localStampNs"))
+                if (!$util.isInteger(message.localStampNs) && !(message.localStampNs && $util.isInteger(message.localStampNs.low) && $util.isInteger(message.localStampNs.high)))
+                    return "localStampNs: integer|Long expected";
+            if (message.appStartId != null && message.hasOwnProperty("appStartId"))
+                if (!$util.isInteger(message.appStartId) && !(message.appStartId && $util.isInteger(message.appStartId.low) && $util.isInteger(message.appStartId.high)))
+                    return "appStartId: integer|Long expected";
+            if (message.signalType != null && message.hasOwnProperty("signalType"))
+                switch (message.signalType) {
+                default:
+                    return "signalType: enum value expected";
+                case 0:
+                case 1:
+                case 2:
+                case 3:
+                case 4:
+                case 5:
+                case 6:
+                case 7:
+                case 8:
+                    break;
+                }
+            if (message.device != null && message.hasOwnProperty("device")) {
+                let error = $root.dfrobot_rs485.DfrobotDevice.verify(message.device, long + 1);
+                if (error)
+                    return "device." + error;
+            }
+            if (message.ranges != null && message.hasOwnProperty("ranges")) {
+                if (!Array.isArray(message.ranges))
+                    return "ranges: array expected";
+                for (let i = 0; i < message.ranges.length; ++i) {
+                    let error = $root.dfrobot_rs485.RegisterRange.verify(message.ranges[i], long + 1);
+                    if (error)
+                        return "ranges." + error;
+                }
+            }
+            if (message.command != null && message.hasOwnProperty("command")) {
+                let error = $root.dfrobot_rs485.CommandResult.verify(message.command, long + 1);
+                if (error)
+                    return "command." + error;
+            }
+            if (message.error != null && message.hasOwnProperty("error"))
+                if (!$util.isString(message.error))
+                    return "error: string expected";
+            return null;
+        };
+
+        /**
+         * Creates a RxEnvelope message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof dfrobot_rs485.RxEnvelope
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {dfrobot_rs485.RxEnvelope} RxEnvelope
+         */
+        RxEnvelope.fromObject = function fromObject(object, long) {
+            if (object instanceof $root.dfrobot_rs485.RxEnvelope)
+                return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let message = new $root.dfrobot_rs485.RxEnvelope();
+            if (object.monotonicStampNs != null)
+                if ($util.Long)
+                    (message.monotonicStampNs = $util.Long.fromValue(object.monotonicStampNs)).unsigned = true;
+                else if (typeof object.monotonicStampNs === "string")
+                    message.monotonicStampNs = parseInt(object.monotonicStampNs, 10);
+                else if (typeof object.monotonicStampNs === "number")
+                    message.monotonicStampNs = object.monotonicStampNs;
+                else if (typeof object.monotonicStampNs === "object")
+                    message.monotonicStampNs = new $util.LongBits(object.monotonicStampNs.low >>> 0, object.monotonicStampNs.high >>> 0).toNumber(true);
+            if (object.localStampNs != null)
+                if ($util.Long)
+                    (message.localStampNs = $util.Long.fromValue(object.localStampNs)).unsigned = true;
+                else if (typeof object.localStampNs === "string")
+                    message.localStampNs = parseInt(object.localStampNs, 10);
+                else if (typeof object.localStampNs === "number")
+                    message.localStampNs = object.localStampNs;
+                else if (typeof object.localStampNs === "object")
+                    message.localStampNs = new $util.LongBits(object.localStampNs.low >>> 0, object.localStampNs.high >>> 0).toNumber(true);
+            if (object.appStartId != null)
+                if ($util.Long)
+                    (message.appStartId = $util.Long.fromValue(object.appStartId)).unsigned = true;
+                else if (typeof object.appStartId === "string")
+                    message.appStartId = parseInt(object.appStartId, 10);
+                else if (typeof object.appStartId === "number")
+                    message.appStartId = object.appStartId;
+                else if (typeof object.appStartId === "object")
+                    message.appStartId = new $util.LongBits(object.appStartId.low >>> 0, object.appStartId.high >>> 0).toNumber(true);
+            switch (object.signalType) {
+            default:
+                if (typeof object.signalType === "number") {
+                    message.signalType = object.signalType;
+                    break;
+                }
+                break;
+            case "DFROBOT_SIGNAL_TYPE_UNSPECIFIED":
+            case 0:
+                message.signalType = 0;
+                break;
+            case "DFROBOT_CONNECTED":
+            case 1:
+                message.signalType = 1;
+                break;
+            case "DFROBOT_DISCONNECTED":
+            case 2:
+                message.signalType = 2;
+                break;
+            case "DFROBOT_REGISTERS_SNAPSHOT":
+            case 3:
+                message.signalType = 3;
+                break;
+            case "DFROBOT_ERROR":
+            case 4:
+                message.signalType = 4;
+                break;
+            case "DFROBOT_COMMAND_SUCCESS":
+            case 5:
+                message.signalType = 5;
+                break;
+            case "DFROBOT_COMMAND_REJECTED":
+            case 6:
+                message.signalType = 6;
+                break;
+            case "DFROBOT_COMMAND_FAILED":
+            case 7:
+                message.signalType = 7;
+                break;
+            case "DFROBOT_FORGOTTEN":
+            case 8:
+                message.signalType = 8;
+                break;
+            }
+            if (object.device != null) {
+                if (typeof object.device !== "object")
+                    throw TypeError(".dfrobot_rs485.RxEnvelope.device: object expected");
+                message.device = $root.dfrobot_rs485.DfrobotDevice.fromObject(object.device, long + 1);
+            }
+            if (object.ranges) {
+                if (!Array.isArray(object.ranges))
+                    throw TypeError(".dfrobot_rs485.RxEnvelope.ranges: array expected");
+                message.ranges = [];
+                for (let i = 0; i < object.ranges.length; ++i) {
+                    if (typeof object.ranges[i] !== "object")
+                        throw TypeError(".dfrobot_rs485.RxEnvelope.ranges: object expected");
+                    message.ranges[i] = $root.dfrobot_rs485.RegisterRange.fromObject(object.ranges[i], long + 1);
+                }
+            }
+            if (object.command != null) {
+                if (typeof object.command !== "object")
+                    throw TypeError(".dfrobot_rs485.RxEnvelope.command: object expected");
+                message.command = $root.dfrobot_rs485.CommandResult.fromObject(object.command, long + 1);
+            }
+            if (object.error != null)
+                message.error = String(object.error);
+            return message;
+        };
+
+        /**
+         * Creates a plain object from a RxEnvelope message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof dfrobot_rs485.RxEnvelope
+         * @static
+         * @param {dfrobot_rs485.RxEnvelope} message RxEnvelope
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        RxEnvelope.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.arrays || options.defaults)
+                object.ranges = [];
+            if (options.defaults) {
+                if ($util.Long) {
+                    let long = new $util.Long(0, 0, true);
+                    object.monotonicStampNs = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+                } else
+                    object.monotonicStampNs = options.longs === String ? "0" : 0;
+                if ($util.Long) {
+                    let long = new $util.Long(0, 0, true);
+                    object.localStampNs = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+                } else
+                    object.localStampNs = options.longs === String ? "0" : 0;
+                if ($util.Long) {
+                    let long = new $util.Long(0, 0, true);
+                    object.appStartId = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+                } else
+                    object.appStartId = options.longs === String ? "0" : 0;
+                object.signalType = options.enums === String ? "DFROBOT_SIGNAL_TYPE_UNSPECIFIED" : 0;
+                object.device = null;
+                object.command = null;
+                object.error = "";
+            }
+            if (message.monotonicStampNs != null && message.hasOwnProperty("monotonicStampNs"))
+                if (typeof message.monotonicStampNs === "number")
+                    object.monotonicStampNs = options.longs === String ? String(message.monotonicStampNs) : message.monotonicStampNs;
+                else
+                    object.monotonicStampNs = options.longs === String ? $util.Long.prototype.toString.call(message.monotonicStampNs) : options.longs === Number ? new $util.LongBits(message.monotonicStampNs.low >>> 0, message.monotonicStampNs.high >>> 0).toNumber(true) : message.monotonicStampNs;
+            if (message.localStampNs != null && message.hasOwnProperty("localStampNs"))
+                if (typeof message.localStampNs === "number")
+                    object.localStampNs = options.longs === String ? String(message.localStampNs) : message.localStampNs;
+                else
+                    object.localStampNs = options.longs === String ? $util.Long.prototype.toString.call(message.localStampNs) : options.longs === Number ? new $util.LongBits(message.localStampNs.low >>> 0, message.localStampNs.high >>> 0).toNumber(true) : message.localStampNs;
+            if (message.appStartId != null && message.hasOwnProperty("appStartId"))
+                if (typeof message.appStartId === "number")
+                    object.appStartId = options.longs === String ? String(message.appStartId) : message.appStartId;
+                else
+                    object.appStartId = options.longs === String ? $util.Long.prototype.toString.call(message.appStartId) : options.longs === Number ? new $util.LongBits(message.appStartId.low >>> 0, message.appStartId.high >>> 0).toNumber(true) : message.appStartId;
+            if (message.signalType != null && message.hasOwnProperty("signalType"))
+                object.signalType = options.enums === String ? $root.dfrobot_rs485.DfrobotSignalType[message.signalType] === undefined ? message.signalType : $root.dfrobot_rs485.DfrobotSignalType[message.signalType] : message.signalType;
+            if (message.device != null && message.hasOwnProperty("device"))
+                object.device = $root.dfrobot_rs485.DfrobotDevice.toObject(message.device, options);
+            if (message.ranges && message.ranges.length) {
+                object.ranges = [];
+                for (let j = 0; j < message.ranges.length; ++j)
+                    object.ranges[j] = $root.dfrobot_rs485.RegisterRange.toObject(message.ranges[j], options);
+            }
+            if (message.command != null && message.hasOwnProperty("command"))
+                object.command = $root.dfrobot_rs485.CommandResult.toObject(message.command, options);
+            if (message.error != null && message.hasOwnProperty("error"))
+                object.error = message.error;
+            return object;
+        };
+
+        /**
+         * Converts this RxEnvelope to JSON.
+         * @function toJSON
+         * @memberof dfrobot_rs485.RxEnvelope
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        RxEnvelope.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for RxEnvelope
+         * @function getTypeUrl
+         * @memberof dfrobot_rs485.RxEnvelope
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        RxEnvelope.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+            if (typeUrlPrefix === undefined) {
+                typeUrlPrefix = "type.googleapis.com";
+            }
+            return typeUrlPrefix + "/dfrobot_rs485.RxEnvelope";
+        };
+
+        return RxEnvelope;
+    })();
+
+    return dfrobot_rs485;
 })();
 
 export const normvla = $root.normvla = (() => {

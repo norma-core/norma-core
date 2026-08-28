@@ -262,6 +262,8 @@ export namespace drivers {
         QDT_PWM_OUTPUT_TX = 55,
         QDT_PWM_OUTPUT_RX = 56,
         QDT_DMESG_RX = 57,
+        QDT_DFROBOT_RS485_RX = 58,
+        QDT_ARDUINO_NICLA_SENSE_ME_RX = 59,
         QDT_ARDUINO_PRO_4G_GNSS_RX = 60
     }
 
@@ -274,7 +276,8 @@ export namespace drivers {
         STC_VESC_TRAMPA_COMMAND = 4,
         STC_ARDUINO_NICLA_SENSE_ENV_COMMAND = 5,
         STC_PWM_OUTPUT_COMMAND = 6,
-        STC_USB_VIDEO_COMMAND = 7
+        STC_USB_VIDEO_COMMAND = 7,
+        STC_DFROBOT_RS485_COMMAND = 8
     }
 }
 
@@ -13524,6 +13527,394 @@ export namespace arduino_nicla_sense_env {
     }
 }
 
+/** Namespace arduino_nicla_sense_me. */
+export namespace arduino_nicla_sense_me {
+
+    /** ArduinoNiclaSenseMeSignalType enum. */
+    enum ArduinoNiclaSenseMeSignalType {
+        ARDUINO_NICLA_SENSE_ME_SIGNAL_TYPE_UNSPECIFIED = 0,
+        ARDUINO_NICLA_SENSE_ME_CONNECTED = 1,
+        ARDUINO_NICLA_SENSE_ME_DISCONNECTED = 2,
+        ARDUINO_NICLA_SENSE_ME_REGISTERS_SNAPSHOT = 3,
+        ARDUINO_NICLA_SENSE_ME_ERROR = 8
+    }
+
+    /** Properties of an ArduinoNiclaSenseMeDeviceInfo. */
+    interface IArduinoNiclaSenseMeDeviceInfo {
+
+        /** ArduinoNiclaSenseMeDeviceInfo softwareRevision */
+        softwareRevision?: (number|null);
+
+        /** ArduinoNiclaSenseMeDeviceInfo productId */
+        productId?: (number|null);
+
+        /** ArduinoNiclaSenseMeDeviceInfo serialNumber */
+        serialNumber?: (Uint8Array|null);
+    }
+
+    /** Represents an ArduinoNiclaSenseMeDeviceInfo. */
+    class ArduinoNiclaSenseMeDeviceInfo implements IArduinoNiclaSenseMeDeviceInfo {
+
+        /**
+         * Constructs a new ArduinoNiclaSenseMeDeviceInfo.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: arduino_nicla_sense_me.IArduinoNiclaSenseMeDeviceInfo);
+
+        /** ArduinoNiclaSenseMeDeviceInfo softwareRevision. */
+        public softwareRevision: number;
+
+        /** ArduinoNiclaSenseMeDeviceInfo productId. */
+        public productId: number;
+
+        /** ArduinoNiclaSenseMeDeviceInfo serialNumber. */
+        public serialNumber: Uint8Array;
+
+        /**
+         * Creates a new ArduinoNiclaSenseMeDeviceInfo instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns ArduinoNiclaSenseMeDeviceInfo instance
+         */
+        public static create(properties?: arduino_nicla_sense_me.IArduinoNiclaSenseMeDeviceInfo): arduino_nicla_sense_me.ArduinoNiclaSenseMeDeviceInfo;
+
+        /**
+         * Encodes the specified ArduinoNiclaSenseMeDeviceInfo message. Does not implicitly {@link arduino_nicla_sense_me.ArduinoNiclaSenseMeDeviceInfo.verify|verify} messages.
+         * @param message ArduinoNiclaSenseMeDeviceInfo message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: arduino_nicla_sense_me.IArduinoNiclaSenseMeDeviceInfo, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified ArduinoNiclaSenseMeDeviceInfo message, length delimited. Does not implicitly {@link arduino_nicla_sense_me.ArduinoNiclaSenseMeDeviceInfo.verify|verify} messages.
+         * @param message ArduinoNiclaSenseMeDeviceInfo message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: arduino_nicla_sense_me.IArduinoNiclaSenseMeDeviceInfo, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes an ArduinoNiclaSenseMeDeviceInfo message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns ArduinoNiclaSenseMeDeviceInfo
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): arduino_nicla_sense_me.ArduinoNiclaSenseMeDeviceInfo;
+
+        /**
+         * Decodes an ArduinoNiclaSenseMeDeviceInfo message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns ArduinoNiclaSenseMeDeviceInfo
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): arduino_nicla_sense_me.ArduinoNiclaSenseMeDeviceInfo;
+
+        /**
+         * Verifies an ArduinoNiclaSenseMeDeviceInfo message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates an ArduinoNiclaSenseMeDeviceInfo message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns ArduinoNiclaSenseMeDeviceInfo
+         */
+        public static fromObject(object: { [k: string]: any }): arduino_nicla_sense_me.ArduinoNiclaSenseMeDeviceInfo;
+
+        /**
+         * Creates a plain object from an ArduinoNiclaSenseMeDeviceInfo message. Also converts values to other types if specified.
+         * @param message ArduinoNiclaSenseMeDeviceInfo
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: arduino_nicla_sense_me.ArduinoNiclaSenseMeDeviceInfo, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this ArduinoNiclaSenseMeDeviceInfo to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for ArduinoNiclaSenseMeDeviceInfo
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
+    /** Properties of an ArduinoNiclaSenseMeDevice. */
+    interface IArduinoNiclaSenseMeDevice {
+
+        /** ArduinoNiclaSenseMeDevice id */
+        id?: (string|null);
+
+        /** ArduinoNiclaSenseMeDevice i2cBus */
+        i2cBus?: (number|null);
+
+        /** ArduinoNiclaSenseMeDevice i2cAddress */
+        i2cAddress?: (number|null);
+
+        /** ArduinoNiclaSenseMeDevice transport */
+        transport?: (string|null);
+
+        /** ArduinoNiclaSenseMeDevice usbPort */
+        usbPort?: (string|null);
+
+        /** ArduinoNiclaSenseMeDevice info */
+        info?: (arduino_nicla_sense_me.IArduinoNiclaSenseMeDeviceInfo|null);
+    }
+
+    /** Represents an ArduinoNiclaSenseMeDevice. */
+    class ArduinoNiclaSenseMeDevice implements IArduinoNiclaSenseMeDevice {
+
+        /**
+         * Constructs a new ArduinoNiclaSenseMeDevice.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: arduino_nicla_sense_me.IArduinoNiclaSenseMeDevice);
+
+        /** ArduinoNiclaSenseMeDevice id. */
+        public id: string;
+
+        /** ArduinoNiclaSenseMeDevice i2cBus. */
+        public i2cBus: number;
+
+        /** ArduinoNiclaSenseMeDevice i2cAddress. */
+        public i2cAddress: number;
+
+        /** ArduinoNiclaSenseMeDevice transport. */
+        public transport: string;
+
+        /** ArduinoNiclaSenseMeDevice usbPort. */
+        public usbPort: string;
+
+        /** ArduinoNiclaSenseMeDevice info. */
+        public info?: (arduino_nicla_sense_me.IArduinoNiclaSenseMeDeviceInfo|null);
+
+        /**
+         * Creates a new ArduinoNiclaSenseMeDevice instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns ArduinoNiclaSenseMeDevice instance
+         */
+        public static create(properties?: arduino_nicla_sense_me.IArduinoNiclaSenseMeDevice): arduino_nicla_sense_me.ArduinoNiclaSenseMeDevice;
+
+        /**
+         * Encodes the specified ArduinoNiclaSenseMeDevice message. Does not implicitly {@link arduino_nicla_sense_me.ArduinoNiclaSenseMeDevice.verify|verify} messages.
+         * @param message ArduinoNiclaSenseMeDevice message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: arduino_nicla_sense_me.IArduinoNiclaSenseMeDevice, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified ArduinoNiclaSenseMeDevice message, length delimited. Does not implicitly {@link arduino_nicla_sense_me.ArduinoNiclaSenseMeDevice.verify|verify} messages.
+         * @param message ArduinoNiclaSenseMeDevice message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: arduino_nicla_sense_me.IArduinoNiclaSenseMeDevice, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes an ArduinoNiclaSenseMeDevice message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns ArduinoNiclaSenseMeDevice
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): arduino_nicla_sense_me.ArduinoNiclaSenseMeDevice;
+
+        /**
+         * Decodes an ArduinoNiclaSenseMeDevice message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns ArduinoNiclaSenseMeDevice
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): arduino_nicla_sense_me.ArduinoNiclaSenseMeDevice;
+
+        /**
+         * Verifies an ArduinoNiclaSenseMeDevice message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates an ArduinoNiclaSenseMeDevice message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns ArduinoNiclaSenseMeDevice
+         */
+        public static fromObject(object: { [k: string]: any }): arduino_nicla_sense_me.ArduinoNiclaSenseMeDevice;
+
+        /**
+         * Creates a plain object from an ArduinoNiclaSenseMeDevice message. Also converts values to other types if specified.
+         * @param message ArduinoNiclaSenseMeDevice
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: arduino_nicla_sense_me.ArduinoNiclaSenseMeDevice, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this ArduinoNiclaSenseMeDevice to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for ArduinoNiclaSenseMeDevice
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
+    /** Properties of a RxEnvelope. */
+    interface IRxEnvelope {
+
+        /** RxEnvelope monotonicStampNs */
+        monotonicStampNs?: (Long|null);
+
+        /** RxEnvelope localStampNs */
+        localStampNs?: (Long|null);
+
+        /** RxEnvelope appStartId */
+        appStartId?: (Long|null);
+
+        /** RxEnvelope signalType */
+        signalType?: (arduino_nicla_sense_me.ArduinoNiclaSenseMeSignalType|null);
+
+        /** RxEnvelope device */
+        device?: (arduino_nicla_sense_me.IArduinoNiclaSenseMeDevice|null);
+
+        /** RxEnvelope data */
+        data?: (Uint8Array|null);
+
+        /** RxEnvelope motion */
+        motion?: (Uint8Array|null);
+
+        /** RxEnvelope error */
+        error?: (string|null);
+    }
+
+    /** Represents a RxEnvelope. */
+    class RxEnvelope implements IRxEnvelope {
+
+        /**
+         * Constructs a new RxEnvelope.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: arduino_nicla_sense_me.IRxEnvelope);
+
+        /** RxEnvelope monotonicStampNs. */
+        public monotonicStampNs: Long;
+
+        /** RxEnvelope localStampNs. */
+        public localStampNs: Long;
+
+        /** RxEnvelope appStartId. */
+        public appStartId: Long;
+
+        /** RxEnvelope signalType. */
+        public signalType: arduino_nicla_sense_me.ArduinoNiclaSenseMeSignalType;
+
+        /** RxEnvelope device. */
+        public device?: (arduino_nicla_sense_me.IArduinoNiclaSenseMeDevice|null);
+
+        /** RxEnvelope data. */
+        public data: Uint8Array;
+
+        /** RxEnvelope motion. */
+        public motion: Uint8Array;
+
+        /** RxEnvelope error. */
+        public error: string;
+
+        /**
+         * Creates a new RxEnvelope instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns RxEnvelope instance
+         */
+        public static create(properties?: arduino_nicla_sense_me.IRxEnvelope): arduino_nicla_sense_me.RxEnvelope;
+
+        /**
+         * Encodes the specified RxEnvelope message. Does not implicitly {@link arduino_nicla_sense_me.RxEnvelope.verify|verify} messages.
+         * @param message RxEnvelope message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: arduino_nicla_sense_me.IRxEnvelope, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified RxEnvelope message, length delimited. Does not implicitly {@link arduino_nicla_sense_me.RxEnvelope.verify|verify} messages.
+         * @param message RxEnvelope message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: arduino_nicla_sense_me.IRxEnvelope, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes a RxEnvelope message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns RxEnvelope
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): arduino_nicla_sense_me.RxEnvelope;
+
+        /**
+         * Decodes a RxEnvelope message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns RxEnvelope
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): arduino_nicla_sense_me.RxEnvelope;
+
+        /**
+         * Verifies a RxEnvelope message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates a RxEnvelope message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns RxEnvelope
+         */
+        public static fromObject(object: { [k: string]: any }): arduino_nicla_sense_me.RxEnvelope;
+
+        /**
+         * Creates a plain object from a RxEnvelope message. Also converts values to other types if specified.
+         * @param message RxEnvelope
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: arduino_nicla_sense_me.RxEnvelope, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this RxEnvelope to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for RxEnvelope
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+}
+
 /** Namespace arduino_pro_4g_gnss. */
 export namespace arduino_pro_4g_gnss {
 
@@ -15837,6 +16228,704 @@ export namespace dmesg {
          * @returns Plain object
          */
         public static toObject(message: dmesg.RxEnvelope, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this RxEnvelope to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for RxEnvelope
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+}
+
+/** Namespace dfrobot_rs485. */
+export namespace dfrobot_rs485 {
+
+    /** DfrobotSignalType enum. */
+    enum DfrobotSignalType {
+        DFROBOT_SIGNAL_TYPE_UNSPECIFIED = 0,
+        DFROBOT_CONNECTED = 1,
+        DFROBOT_DISCONNECTED = 2,
+        DFROBOT_REGISTERS_SNAPSHOT = 3,
+        DFROBOT_ERROR = 4,
+        DFROBOT_COMMAND_SUCCESS = 5,
+        DFROBOT_COMMAND_REJECTED = 6,
+        DFROBOT_COMMAND_FAILED = 7,
+        DFROBOT_FORGOTTEN = 8
+    }
+
+    /** DfrobotSensorModel enum. */
+    enum DfrobotSensorModel {
+        DFROBOT_MODEL_UNSPECIFIED = 0,
+        DFROBOT_SEN0640_IRRADIANCE = 1,
+        DFROBOT_SEN0641_PAR = 2,
+        DFROBOT_SEN0642_UV = 3,
+        DFROBOT_SEN0644_LIGHT = 4
+    }
+
+    /** Properties of a DfrobotDevice. */
+    interface IDfrobotDevice {
+
+        /** DfrobotDevice id */
+        id?: (string|null);
+
+        /** DfrobotDevice model */
+        model?: (dfrobot_rs485.DfrobotSensorModel|null);
+
+        /** DfrobotDevice modbusId */
+        modbusId?: (number|null);
+
+        /** DfrobotDevice portName */
+        portName?: (string|null);
+
+        /** DfrobotDevice baud */
+        baud?: (number|null);
+    }
+
+    /** Represents a DfrobotDevice. */
+    class DfrobotDevice implements IDfrobotDevice {
+
+        /**
+         * Constructs a new DfrobotDevice.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: dfrobot_rs485.IDfrobotDevice);
+
+        /** DfrobotDevice id. */
+        public id: string;
+
+        /** DfrobotDevice model. */
+        public model: dfrobot_rs485.DfrobotSensorModel;
+
+        /** DfrobotDevice modbusId. */
+        public modbusId: number;
+
+        /** DfrobotDevice portName. */
+        public portName: string;
+
+        /** DfrobotDevice baud. */
+        public baud: number;
+
+        /**
+         * Creates a new DfrobotDevice instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns DfrobotDevice instance
+         */
+        public static create(properties?: dfrobot_rs485.IDfrobotDevice): dfrobot_rs485.DfrobotDevice;
+
+        /**
+         * Encodes the specified DfrobotDevice message. Does not implicitly {@link dfrobot_rs485.DfrobotDevice.verify|verify} messages.
+         * @param message DfrobotDevice message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: dfrobot_rs485.IDfrobotDevice, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified DfrobotDevice message, length delimited. Does not implicitly {@link dfrobot_rs485.DfrobotDevice.verify|verify} messages.
+         * @param message DfrobotDevice message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: dfrobot_rs485.IDfrobotDevice, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes a DfrobotDevice message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns DfrobotDevice
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): dfrobot_rs485.DfrobotDevice;
+
+        /**
+         * Decodes a DfrobotDevice message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns DfrobotDevice
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): dfrobot_rs485.DfrobotDevice;
+
+        /**
+         * Verifies a DfrobotDevice message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates a DfrobotDevice message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns DfrobotDevice
+         */
+        public static fromObject(object: { [k: string]: any }): dfrobot_rs485.DfrobotDevice;
+
+        /**
+         * Creates a plain object from a DfrobotDevice message. Also converts values to other types if specified.
+         * @param message DfrobotDevice
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: dfrobot_rs485.DfrobotDevice, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this DfrobotDevice to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for DfrobotDevice
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
+    /** Properties of a RegisterRange. */
+    interface IRegisterRange {
+
+        /** RegisterRange startRegister */
+        startRegister?: (number|null);
+
+        /** RegisterRange data */
+        data?: (Uint8Array|null);
+    }
+
+    /** Represents a RegisterRange. */
+    class RegisterRange implements IRegisterRange {
+
+        /**
+         * Constructs a new RegisterRange.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: dfrobot_rs485.IRegisterRange);
+
+        /** RegisterRange startRegister. */
+        public startRegister: number;
+
+        /** RegisterRange data. */
+        public data: Uint8Array;
+
+        /**
+         * Creates a new RegisterRange instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns RegisterRange instance
+         */
+        public static create(properties?: dfrobot_rs485.IRegisterRange): dfrobot_rs485.RegisterRange;
+
+        /**
+         * Encodes the specified RegisterRange message. Does not implicitly {@link dfrobot_rs485.RegisterRange.verify|verify} messages.
+         * @param message RegisterRange message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: dfrobot_rs485.IRegisterRange, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified RegisterRange message, length delimited. Does not implicitly {@link dfrobot_rs485.RegisterRange.verify|verify} messages.
+         * @param message RegisterRange message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: dfrobot_rs485.IRegisterRange, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes a RegisterRange message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns RegisterRange
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): dfrobot_rs485.RegisterRange;
+
+        /**
+         * Decodes a RegisterRange message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns RegisterRange
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): dfrobot_rs485.RegisterRange;
+
+        /**
+         * Verifies a RegisterRange message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates a RegisterRange message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns RegisterRange
+         */
+        public static fromObject(object: { [k: string]: any }): dfrobot_rs485.RegisterRange;
+
+        /**
+         * Creates a plain object from a RegisterRange message. Also converts values to other types if specified.
+         * @param message RegisterRange
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: dfrobot_rs485.RegisterRange, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this RegisterRange to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for RegisterRange
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
+    /** Properties of a WriteRegisterCommand. */
+    interface IWriteRegisterCommand {
+
+        /** WriteRegisterCommand modbusId */
+        modbusId?: (number|null);
+
+        /** WriteRegisterCommand register */
+        register?: (number|null);
+
+        /** WriteRegisterCommand value */
+        value?: (number|null);
+    }
+
+    /** Represents a WriteRegisterCommand. */
+    class WriteRegisterCommand implements IWriteRegisterCommand {
+
+        /**
+         * Constructs a new WriteRegisterCommand.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: dfrobot_rs485.IWriteRegisterCommand);
+
+        /** WriteRegisterCommand modbusId. */
+        public modbusId: number;
+
+        /** WriteRegisterCommand register. */
+        public register: number;
+
+        /** WriteRegisterCommand value. */
+        public value: number;
+
+        /**
+         * Creates a new WriteRegisterCommand instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns WriteRegisterCommand instance
+         */
+        public static create(properties?: dfrobot_rs485.IWriteRegisterCommand): dfrobot_rs485.WriteRegisterCommand;
+
+        /**
+         * Encodes the specified WriteRegisterCommand message. Does not implicitly {@link dfrobot_rs485.WriteRegisterCommand.verify|verify} messages.
+         * @param message WriteRegisterCommand message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: dfrobot_rs485.IWriteRegisterCommand, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified WriteRegisterCommand message, length delimited. Does not implicitly {@link dfrobot_rs485.WriteRegisterCommand.verify|verify} messages.
+         * @param message WriteRegisterCommand message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: dfrobot_rs485.IWriteRegisterCommand, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes a WriteRegisterCommand message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns WriteRegisterCommand
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): dfrobot_rs485.WriteRegisterCommand;
+
+        /**
+         * Decodes a WriteRegisterCommand message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns WriteRegisterCommand
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): dfrobot_rs485.WriteRegisterCommand;
+
+        /**
+         * Verifies a WriteRegisterCommand message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates a WriteRegisterCommand message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns WriteRegisterCommand
+         */
+        public static fromObject(object: { [k: string]: any }): dfrobot_rs485.WriteRegisterCommand;
+
+        /**
+         * Creates a plain object from a WriteRegisterCommand message. Also converts values to other types if specified.
+         * @param message WriteRegisterCommand
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: dfrobot_rs485.WriteRegisterCommand, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this WriteRegisterCommand to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for WriteRegisterCommand
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
+    /** Properties of a Command. */
+    interface ICommand {
+
+        /** Command writeRegister */
+        writeRegister?: (dfrobot_rs485.IWriteRegisterCommand|null);
+    }
+
+    /** Represents a Command. */
+    class Command implements ICommand {
+
+        /**
+         * Constructs a new Command.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: dfrobot_rs485.ICommand);
+
+        /** Command writeRegister. */
+        public writeRegister?: (dfrobot_rs485.IWriteRegisterCommand|null);
+
+        /**
+         * Creates a new Command instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns Command instance
+         */
+        public static create(properties?: dfrobot_rs485.ICommand): dfrobot_rs485.Command;
+
+        /**
+         * Encodes the specified Command message. Does not implicitly {@link dfrobot_rs485.Command.verify|verify} messages.
+         * @param message Command message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: dfrobot_rs485.ICommand, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified Command message, length delimited. Does not implicitly {@link dfrobot_rs485.Command.verify|verify} messages.
+         * @param message Command message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: dfrobot_rs485.ICommand, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes a Command message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns Command
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): dfrobot_rs485.Command;
+
+        /**
+         * Decodes a Command message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns Command
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): dfrobot_rs485.Command;
+
+        /**
+         * Verifies a Command message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates a Command message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns Command
+         */
+        public static fromObject(object: { [k: string]: any }): dfrobot_rs485.Command;
+
+        /**
+         * Creates a plain object from a Command message. Also converts values to other types if specified.
+         * @param message Command
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: dfrobot_rs485.Command, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this Command to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for Command
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
+    /** Properties of a CommandResult. */
+    interface ICommandResult {
+
+        /** CommandResult commandId */
+        commandId?: (Uint8Array|null);
+
+        /** CommandResult description */
+        description?: (string|null);
+    }
+
+    /** Represents a CommandResult. */
+    class CommandResult implements ICommandResult {
+
+        /**
+         * Constructs a new CommandResult.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: dfrobot_rs485.ICommandResult);
+
+        /** CommandResult commandId. */
+        public commandId: Uint8Array;
+
+        /** CommandResult description. */
+        public description: string;
+
+        /**
+         * Creates a new CommandResult instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns CommandResult instance
+         */
+        public static create(properties?: dfrobot_rs485.ICommandResult): dfrobot_rs485.CommandResult;
+
+        /**
+         * Encodes the specified CommandResult message. Does not implicitly {@link dfrobot_rs485.CommandResult.verify|verify} messages.
+         * @param message CommandResult message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: dfrobot_rs485.ICommandResult, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified CommandResult message, length delimited. Does not implicitly {@link dfrobot_rs485.CommandResult.verify|verify} messages.
+         * @param message CommandResult message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: dfrobot_rs485.ICommandResult, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes a CommandResult message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns CommandResult
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): dfrobot_rs485.CommandResult;
+
+        /**
+         * Decodes a CommandResult message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns CommandResult
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): dfrobot_rs485.CommandResult;
+
+        /**
+         * Verifies a CommandResult message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates a CommandResult message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns CommandResult
+         */
+        public static fromObject(object: { [k: string]: any }): dfrobot_rs485.CommandResult;
+
+        /**
+         * Creates a plain object from a CommandResult message. Also converts values to other types if specified.
+         * @param message CommandResult
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: dfrobot_rs485.CommandResult, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this CommandResult to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for CommandResult
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
+    /** Properties of a RxEnvelope. */
+    interface IRxEnvelope {
+
+        /** RxEnvelope monotonicStampNs */
+        monotonicStampNs?: (Long|null);
+
+        /** RxEnvelope localStampNs */
+        localStampNs?: (Long|null);
+
+        /** RxEnvelope appStartId */
+        appStartId?: (Long|null);
+
+        /** RxEnvelope signalType */
+        signalType?: (dfrobot_rs485.DfrobotSignalType|null);
+
+        /** RxEnvelope device */
+        device?: (dfrobot_rs485.IDfrobotDevice|null);
+
+        /** RxEnvelope ranges */
+        ranges?: (dfrobot_rs485.IRegisterRange[]|null);
+
+        /** RxEnvelope command */
+        command?: (dfrobot_rs485.ICommandResult|null);
+
+        /** RxEnvelope error */
+        error?: (string|null);
+    }
+
+    /** Represents a RxEnvelope. */
+    class RxEnvelope implements IRxEnvelope {
+
+        /**
+         * Constructs a new RxEnvelope.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: dfrobot_rs485.IRxEnvelope);
+
+        /** RxEnvelope monotonicStampNs. */
+        public monotonicStampNs: Long;
+
+        /** RxEnvelope localStampNs. */
+        public localStampNs: Long;
+
+        /** RxEnvelope appStartId. */
+        public appStartId: Long;
+
+        /** RxEnvelope signalType. */
+        public signalType: dfrobot_rs485.DfrobotSignalType;
+
+        /** RxEnvelope device. */
+        public device?: (dfrobot_rs485.IDfrobotDevice|null);
+
+        /** RxEnvelope ranges. */
+        public ranges: dfrobot_rs485.IRegisterRange[];
+
+        /** RxEnvelope command. */
+        public command?: (dfrobot_rs485.ICommandResult|null);
+
+        /** RxEnvelope error. */
+        public error: string;
+
+        /**
+         * Creates a new RxEnvelope instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns RxEnvelope instance
+         */
+        public static create(properties?: dfrobot_rs485.IRxEnvelope): dfrobot_rs485.RxEnvelope;
+
+        /**
+         * Encodes the specified RxEnvelope message. Does not implicitly {@link dfrobot_rs485.RxEnvelope.verify|verify} messages.
+         * @param message RxEnvelope message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: dfrobot_rs485.IRxEnvelope, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified RxEnvelope message, length delimited. Does not implicitly {@link dfrobot_rs485.RxEnvelope.verify|verify} messages.
+         * @param message RxEnvelope message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: dfrobot_rs485.IRxEnvelope, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes a RxEnvelope message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns RxEnvelope
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): dfrobot_rs485.RxEnvelope;
+
+        /**
+         * Decodes a RxEnvelope message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns RxEnvelope
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): dfrobot_rs485.RxEnvelope;
+
+        /**
+         * Verifies a RxEnvelope message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates a RxEnvelope message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns RxEnvelope
+         */
+        public static fromObject(object: { [k: string]: any }): dfrobot_rs485.RxEnvelope;
+
+        /**
+         * Creates a plain object from a RxEnvelope message. Also converts values to other types if specified.
+         * @param message RxEnvelope
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: dfrobot_rs485.RxEnvelope, options?: $protobuf.IConversionOptions): { [k: string]: any };
 
         /**
          * Converts this RxEnvelope to JSON.

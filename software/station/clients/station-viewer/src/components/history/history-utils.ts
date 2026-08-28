@@ -1,4 +1,4 @@
-import { airgradient_open_air_o_1pst, arduino_nicla_sense_env, arduino_pro_4g_gnss, hikmicro, usbvideo, frame, st3215, motors_mirroring, sysinfo, yahboom_dogzilla_lite, normvla, ina226, victron_smartsolar_mppt } from '@/api/proto.js';
+import { airgradient_open_air_o_1pst, arduino_nicla_sense_env, arduino_nicla_sense_me, arduino_pro_4g_gnss, hikmicro, usbvideo, frame, st3215, motors_mirroring, sysinfo, yahboom_dogzilla_lite, normvla, ina226, victron_smartsolar_mppt, dfrobot_rs485 } from '@/api/proto.js';
 import { serverToLocal } from '@/api/timestamp-utils';
 
 type ParsedHistoryData =
@@ -8,11 +8,13 @@ type ParsedHistoryData =
   | motors_mirroring.IRxEnvelope
   | sysinfo.IEnvelope
   | arduino_nicla_sense_env.IRxEnvelope
+  | arduino_nicla_sense_me.IRxEnvelope
   | ina226.IRxEnvelope
   | airgradient_open_air_o_1pst.IRxEnvelope
   | yahboom_dogzilla_lite.IInferenceState
   | victron_smartsolar_mppt.IRxEnvelope
-  | normvla.IFrame;
+  | normvla.IFrame
+  | dfrobot_rs485.IRxEnvelope;
 
 export function formatBytes(bytes: Uint8Array, maxBytes: number = 256): string {
   if (!bytes) return '';
@@ -255,6 +257,18 @@ export function parseArduinoNiclaSenseEnvData(data: Uint8Array | ParsedHistoryDa
   }
 }
 
+export function parseArduinoNiclaSenseMeData(data: Uint8Array | ParsedHistoryData): arduino_nicla_sense_me.RxEnvelope | null {
+  if (!(data instanceof Uint8Array)) {
+    return data as arduino_nicla_sense_me.RxEnvelope;
+  }
+  try {
+    return arduino_nicla_sense_me.RxEnvelope.decode(data);
+  } catch (error) {
+    console.error('Failed to parse arduino_nicla_sense_me.RxEnvelope:', error);
+    return null;
+  }
+}
+
 export function parseArduinoPro4gGnssData(data: Uint8Array | ParsedHistoryData): arduino_pro_4g_gnss.RxEnvelope | null {
   if (!(data instanceof Uint8Array)) {
     return data as arduino_pro_4g_gnss.RxEnvelope;
@@ -275,6 +289,18 @@ export function parseIna226Data(data: Uint8Array | ParsedHistoryData): ina226.Rx
     return ina226.RxEnvelope.decode(data);
   } catch (error) {
     console.error('Failed to parse ina226.RxEnvelope:', error);
+    return null;
+  }
+}
+
+export function parseDfrobotRs485Data(data: Uint8Array | ParsedHistoryData): dfrobot_rs485.RxEnvelope | null {
+  if (!(data instanceof Uint8Array)) {
+    return data as dfrobot_rs485.RxEnvelope;
+  }
+  try {
+    return dfrobot_rs485.RxEnvelope.decode(data);
+  } catch (error) {
+    console.error('Failed to parse dfrobot_rs485.RxEnvelope:', error);
     return null;
   }
 }
