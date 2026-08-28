@@ -338,6 +338,7 @@ impl GravityCompPwm {
         let mut station_state = StationState::default();
         let mut stale_cycles: u32 = 0;
         let mut overcurrent_cycles: u32 = 0;
+        let mut overtemp_cycles: u32 = 0;
         let mut last_debug_log = tokio::time::Instant::now() - std::time::Duration::from_secs(1);
 
         loop {
@@ -399,6 +400,7 @@ impl GravityCompPwm {
 
             let mut theta = [0.0f64; JOINT_COUNT];
             let mut over_current = false;
+            let mut over_temperature = false;
             let mut have_all_motors = true;
             let mut missing_motor_ids = Vec::new();
 
@@ -409,6 +411,9 @@ impl GravityCompPwm {
                         theta[i] = raw_to_joint_angle(motor.present_position, motor.range_min, motor.range_max, lower, upper, &config);
                         if motor.current >= config.pwm_gravity_comp.current_cutoff {
                             over_current = true;
+                        }
+                        if motor.temperature >= config.pwm_gravity_comp.temperature_cutoff_celsius {
+                            over_temperature = true;
                         }
                     }
                     None => {
@@ -474,6 +479,49 @@ impl GravityCompPwm {
                 continue;
             }
             overcurrent_cycles = 0;
+
+            if over_temperature {
+                overtemp_cycles += 1;
+                if should_log {
+                    let temperatures: Vec<(u8, u8)> = ARM_MOTOR_IDS
+                        .iter()
+                        .filter_map(|id| bus_state.motors.get(id).map(|m| (*id, m.temperature)))
+                        .collect();
+                    log::info!(
+                        "PWM gravity comp on bus {}: overtemperature (cutoff={}C, overtemp_cycles={}/{}), temperatures={:?}",
+                        bus.bus_id,
+                        config.pwm_gravity_comp.temperature_cutoff_celsius,
+                        overtemp_cycles,
+                        config.pwm_gravity_comp.stale_cutoff_cycles,
+                        temperatures
+                    );
+                }
+                if overtemp_cycles >= config.pwm_gravity_comp.stale_cutoff_cycles {
+                    log::warn!(
+                        "PWM gravity comp on bus {} stopping: overtemperature for {} consecutive cycles",
+                        bus.bus_id,
+                        overtemp_cycles
+                    );
+                    Self::send_teardown_commands(&normfs, &bus.bus_id);
+                    on_self_stop(bus.clone());
+                    return;
+                }
+                // Same reasoning as the overcurrent branch above: zero every
+                // joint's duty rather than skip the cycle, since open-loop
+                // PWM has no "hold" to fall back on.
+                let mut commands = Vec::new();
+                for &motor_id in &ARM_MOTOR_IDS {
+                    commands.push(Command {
+                        target_bus_id: bus.bus_id.clone(),
+                        motor_id: motor_id as u32,
+                        command: MotorCommand::Pwm(0),
+                    });
+                }
+                Inference::send_st3215_commands(&normfs, &Bytes::new(), commands);
+                Self::sleep_remaining(loop_start).await;
+                continue;
+            }
+            overtemp_cycles = 0;
 
             let torques = gravity_torques(&theta);
             let current_gains = *duty_gains.read();

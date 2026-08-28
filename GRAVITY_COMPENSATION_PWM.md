@@ -91,6 +91,14 @@ feedback of its own:
   touching `Mode`/`Lock`. A stuck nonzero duty actively drives the motor for
   as long as it's in effect, unlike a stuck `GoalPosition` (which just holds
   a pose). This is the single most time-sensitive write the module makes.
+- **Temperature cutoff.** Position mode has a natural low-heat idle: once a
+  joint settles at its goal, the servo mostly coasts. Open-loop PWM has no
+  such idle - a joint holding against gravity keeps drawing whatever duty
+  it's been given, continuously. So every cycle, any arm motor whose
+  `PresentTemperature` register reaches `temperature_cutoff_celsius` (default
+  55C, hard-ceilinged at 70C) for `stale_cutoff_cycles` consecutive cycles
+  trips the same self-stop path as staleness/overcurrent - torque off,
+  duty zeroed immediately rather than held.
 - **`max_duty` is a pure software clamp**, not a hardware register — unlike
   the offset module's `torque_limit` (a real `TorqueLimit` register write on
   every change), updating `max_duty` just changes what the control loop

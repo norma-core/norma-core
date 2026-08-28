@@ -201,6 +201,13 @@ pub struct PwmGravityCompConfig {
     #[serde(rename = "current-cutoff", default = "default_pwm_gravity_comp_current_cutoff")]
     pub current_cutoff: u16,
 
+    /// Hard torque-off if any arm motor's temperature (Celsius) reaches this
+    /// for `stale-cutoff-cycles` consecutive cycles. Hard-clamped to a safety
+    /// ceiling in the motors-mirroring crate regardless of what's configured
+    /// here.
+    #[serde(rename = "temperature-cutoff-celsius", default = "default_pwm_gravity_comp_temperature_cutoff_celsius")]
+    pub temperature_cutoff_celsius: u8,
+
     #[serde(rename = "stale-cutoff-cycles", default = "default_pwm_gravity_comp_stale_cutoff_cycles")]
     pub stale_cutoff_cycles: u32,
 }
@@ -217,6 +224,10 @@ fn default_pwm_gravity_comp_current_cutoff() -> u16 {
     60
 }
 
+fn default_pwm_gravity_comp_temperature_cutoff_celsius() -> u8 {
+    55
+}
+
 fn default_pwm_gravity_comp_stale_cutoff_cycles() -> u32 {
     5
 }
@@ -227,6 +238,7 @@ impl Default for PwmGravityCompConfig {
             duty_per_nm: default_pwm_gravity_comp_duty_per_nm(),
             max_duty: default_pwm_gravity_comp_max_duty(),
             current_cutoff: default_pwm_gravity_comp_current_cutoff(),
+            temperature_cutoff_celsius: default_pwm_gravity_comp_temperature_cutoff_celsius(),
             stale_cutoff_cycles: default_pwm_gravity_comp_stale_cutoff_cycles(),
         }
     }

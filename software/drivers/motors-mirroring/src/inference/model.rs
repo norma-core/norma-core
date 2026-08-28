@@ -30,6 +30,10 @@ pub struct MotorState {
     pub error_status: u8,
     pub current: u16,
     pub current_limit: u16,
+    /// Present temperature in degrees Celsius (`RamRegister::PresentTemperature`,
+    /// a raw single-byte register - same convention the frontend already
+    /// reads directly for display in `motor-parser.ts::getMotorTemperature`).
+    pub temperature: u8,
 
     pub goal_speed: u16,
     pub goal_accel: u8,
@@ -101,6 +105,7 @@ impl StationState {
         const SPEED_REGISTER: u8 = RamRegister::GoalSpeed.address();
         const ACCEL_REGISTER: u8 = RamRegister::Acc.address();
         const TORQUE_REGISTER: u8 = RamRegister::TorqueEnable.address();
+        const TEMPERATURE_REGISTER: u8 = RamRegister::PresentTemperature.address();
 
         self.id = state_id.clone();
 
@@ -160,6 +165,10 @@ impl StationState {
                 }
 
                 motor_state.current = get_motor_current(state_bytes);
+
+                if state_bytes.len() > TEMPERATURE_REGISTER as usize {
+                    motor_state.temperature = state_bytes[TEMPERATURE_REGISTER as usize];
+                }
 
                 // Current limit is stored in motor metadata, not state bytes
                 // Keep existing value or use default

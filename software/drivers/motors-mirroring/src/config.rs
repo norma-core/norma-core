@@ -56,6 +56,20 @@ pub fn clamp_pwm_gravity_comp_duty_gain(duty_per_nm: f64) -> f64 {
     duty_per_nm.clamp(0.0, PWM_GRAVITY_COMP_DUTY_GAIN_CEILING)
 }
 
+/// Hard ceiling on the temperature cutoff (degrees Celsius), including when
+/// set via a config file - independent of source. Continuous PWM drive can
+/// keep a servo working against gravity indefinitely with no natural
+/// "settled and coasting" phase the way position mode has, so this control
+/// law is more exposed to sustained heating than the offset-based one -
+/// 70C is comfortably below the ~80C range where hobby-servo internal
+/// thermal protection typically kicks in, so the software cutoff trips
+/// first.
+pub const PWM_GRAVITY_COMP_TEMPERATURE_CUTOFF_CEILING: u8 = 70;
+
+pub fn clamp_pwm_gravity_comp_temperature_cutoff(value: u8) -> u8 {
+    value.min(PWM_GRAVITY_COMP_TEMPERATURE_CUTOFF_CEILING)
+}
+
 #[derive(Clone)]
 pub struct MotorConfig {
     pub safety_margin: u16,
@@ -130,6 +144,11 @@ pub struct PwmGravityCompConfig {
     pub duty_per_nm: f64,
     pub max_duty: u16,
     pub current_cutoff: u16,
+    /// Hard torque-off if any arm motor's `PresentTemperature` reaches this
+    /// many degrees Celsius for `stale_cutoff_cycles` consecutive cycles -
+    /// same self-stop path as the staleness/overcurrent cutoffs. See
+    /// `PWM_GRAVITY_COMP_TEMPERATURE_CUTOFF_CEILING`.
+    pub temperature_cutoff_celsius: u8,
     pub stale_cutoff_cycles: u32,
 }
 
@@ -139,6 +158,7 @@ impl PwmGravityCompConfig {
     pub fn clamped(mut self) -> Self {
         self.max_duty = clamp_pwm_gravity_comp_max_duty(self.max_duty);
         self.duty_per_nm = clamp_pwm_gravity_comp_duty_gain(self.duty_per_nm);
+        self.temperature_cutoff_celsius = clamp_pwm_gravity_comp_temperature_cutoff(self.temperature_cutoff_celsius);
         self
     }
 }
@@ -149,6 +169,7 @@ impl Default for PwmGravityCompConfig {
             duty_per_nm: 0.0,
             max_duty: 60,
             current_cutoff: 60,
+            temperature_cutoff_celsius: 55,
             stale_cutoff_cycles: 5,
         }
         .clamped()
@@ -215,6 +236,7 @@ impl From<&station_iface::config::St3215Config> for MotorConfig {
                 duty_per_nm: pgc.duty_per_nm,
                 max_duty: pgc.max_duty,
                 current_cutoff: pgc.current_cutoff,
+                temperature_cutoff_celsius: pgc.temperature_cutoff_celsius,
                 stale_cutoff_cycles: pgc.stale_cutoff_cycles,
             }.clamped())
             .unwrap_or_default();

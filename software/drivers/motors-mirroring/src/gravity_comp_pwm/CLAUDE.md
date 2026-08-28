@@ -90,6 +90,19 @@ that came for free in `gravity_comp` (via the servo's position loop and
   fixed `TorqueLimit` write still happens once at setup (see below) as
   defense in depth, but the real ceiling that matters day-to-day is
   `max_duty`.
+- **Temperature cutoff.** Continuous PWM drive has no natural "settled and
+  coasting" phase the way position mode does - a joint fighting gravity at a
+  nonzero duty is dissipating heat the whole time it's enabled, not just
+  while actively moving. Every cycle, if any arm motor's `PresentTemperature`
+  (`RamRegister::PresentTemperature`, populated into
+  `MotorState::temperature` in `inference/model.rs`) reaches
+  `temperature_cutoff_celsius` for `stale_cutoff_cycles` consecutive cycles,
+  hard torque-off via the same self-stop path as staleness/overcurrent -
+  zeroing duty immediately, not "holding," for the same reason overcurrent
+  does. Default cutoff is 55C, hard-ceilinged at 70C
+  (`PWM_GRAVITY_COMP_TEMPERATURE_CUTOFF_CEILING`) - comfortably below where a
+  hobby servo's own internal thermal protection would typically trip, so the
+  software cutoff acts first.
 - **Hard ceiling below `gravity_comp`'s ratio.**
   `PWM_GRAVITY_COMP_MAX_DUTY_CEILING` (100, out of the servo's native ±1000)
   is deliberately more conservative than `GRAVITY_COMP_TORQUE_LIMIT_CEILING`'s
