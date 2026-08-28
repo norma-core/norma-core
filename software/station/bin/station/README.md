@@ -156,6 +156,7 @@ asyncio.run(main())
 |  | [Arduino Nicla Sense Env](../../../drivers/arduino-nicla-sense-env) | ✅ Linux supported |
 |  | [INA226 power/current monitor](../../../drivers/ina226) | ✅ Linux supported |
 |  | [HIKMICRO thermal sensors](../../../drivers/hikmicro-thermal) | ✅ Linux supported |
+|  | [Arduino Pro 4G GNSS Module (Quectel EG25-G)](../../../drivers/arduino-pro-4g-gnss) | ✅ Linux supported |
 | **Cameras & Devices** | [UVC USB cameras](../../../drivers/usbvideo) | ✅ Supported |
 |  | [Raspberry Pi OV5647 camera](../../../drivers/ov5647) | ✅ Supported |
 |  | [VESC Trampa motor controllers](../../../drivers/vesc-trampa) | ✅ Supported |

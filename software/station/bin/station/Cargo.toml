@@ -23,6 +23,7 @@ airgradient-open-air-o-1pst = { path = "../../../drivers/airgradient-open-air-o-
 victron-smartsolar-mppt = { path = "../../../drivers/victron-smartsolar-mppt" }
 pwm-output = { path = "../../../drivers/pwm-output" }
 dmesg = { path = "../../../drivers/dmesg" }
+arduino-pro-4g-gnss = { path = "../../../drivers/arduino-pro-4g-gnss" }
 yahboom-dogzilla-lite = { path = "../../../drivers/yahboom-dogzilla-lite", optional = true }
 ov5647 = { path = "../../../drivers/ov5647", optional = true }
 systime = { path = "../../shared/systime-rs" }

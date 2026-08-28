@@ -1,0 +1,7 @@
+# Leave the Quectel EG25-G secondary AT interface (USB interface 3) free
+# for the station arduino-pro-4g-gnss driver: ModemManager otherwise claims
+# both AT ports and consumes the driver's command responses. MM keeps the
+# primary AT port (interface 2); cellular data runs over QMI (cdc-wdm0).
+ACTION!="add|change|move|bind", GOTO="mm_quectel_gnss_end"
+SUBSYSTEM=="tty", ATTRS{idVendor}=="2c7c", ATTRS{idProduct}=="0125", ATTRS{bInterfaceNumber}=="03", ENV{ID_MM_PORT_IGNORE}="1"
+LABEL="mm_quectel_gnss_end"

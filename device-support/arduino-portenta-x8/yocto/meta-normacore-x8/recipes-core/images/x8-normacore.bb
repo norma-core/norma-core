@@ -62,6 +62,7 @@ IMAGE_INSTALL = "\
     dosfstools \
     x8-grow-rootfs \
     x8-sdcard-automount \
+    x8-gnss-modem-udev \
     \
     v4l-utils \
     alsa-utils \

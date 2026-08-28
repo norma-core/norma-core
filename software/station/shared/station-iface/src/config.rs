@@ -116,6 +116,12 @@ pub struct Drivers {
 
     #[serde(rename = "dmesg", default, skip_serializing_if = "Option::is_none")]
     pub dmesg: Option<DmesgConfig>,
+    #[serde(
+        rename = "arduino-pro-4g-gnss",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub arduino_pro_4g_gnss: Option<ArduinoPro4gGnssConfig>,
 }
 
 /// ST3215 servo bus configuration
@@ -551,6 +557,41 @@ pub struct DmesgConfig {
     pub enabled: bool,
 }
 
+/// Arduino Pro 4G GNSS Module (Quectel EG25-G on the Portenta Max Carrier
+/// mini PCIe slot). Ports are found by USB VID/PID + interface number.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct ArduinoPro4gGnssConfig {
+    #[serde(default)]
+    pub enabled: bool,
+
+    /// NMEA fix rate in Hz (1, 2, 5 or 10), applied via AT+QGPSCFG="fixfreq".
+    #[serde(rename = "fix-frequency", default = "default_arduino_pro_4g_gnss_fix_frequency")]
+    pub fix_frequency: u32,
+
+    /// Keep gpsOneXTRA predicted-ephemeris assistance fresh (downloads
+    /// ~27 KB from izatcloud.net when stale; much faster fixes in weak signal).
+    #[serde(default = "default_arduino_pro_4g_gnss_assistance")]
+    pub assistance: bool,
+}
+
+fn default_arduino_pro_4g_gnss_fix_frequency() -> u32 {
+    10
+}
+
+fn default_arduino_pro_4g_gnss_assistance() -> bool {
+    true
+}
+
+impl Default for ArduinoPro4gGnssConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            fix_frequency: default_arduino_pro_4g_gnss_fix_frequency(),
+            assistance: default_arduino_pro_4g_gnss_assistance(),
+        }
+    }
+}
+
 fn default_ov5647_dimension() -> String {
     "320x240".to_string()
 }
@@ -590,6 +631,7 @@ impl Default for Drivers {
             airgradient_open_air_o_1pst: None,
             victron_smartsolar_mppt: None,
             dmesg: None,
+            arduino_pro_4g_gnss: None,
         }
     }
 }
@@ -692,6 +734,42 @@ mod config_tests {
         let steering = &pwm_output.outputs[0];
         assert_eq!(steering.id, "steering");
         assert_eq!(cfg.inference.as_ref().map(Vec::len), Some(0));
+    }
+
+    #[test]
+    fn parses_arduino_pro_4g_gnss_config() {
+        let cfg: Config = serde_yaml::from_str(
+            "drivers:\n  system-info: true\n  arduino-pro-4g-gnss:\n    enabled: true\n    fix-frequency: 5\ninference:\n",
+        )
+        .unwrap();
+        let gnss = cfg.drivers.arduino_pro_4g_gnss.unwrap();
+        assert!(gnss.enabled);
+        assert_eq!(gnss.fix_frequency, 5);
+    }
+
+    #[test]
+    fn arduino_pro_4g_gnss_assistance_defaults_on_and_can_be_disabled() {
+        let cfg: Config = serde_yaml::from_str(
+            "drivers:\n  system-info: true\n  arduino-pro-4g-gnss:\n    enabled: true\ninference:\n",
+        )
+        .unwrap();
+        assert!(cfg.drivers.arduino_pro_4g_gnss.unwrap().assistance);
+
+        let cfg: Config = serde_yaml::from_str(
+            "drivers:\n  system-info: true\n  arduino-pro-4g-gnss:\n    enabled: true\n    assistance: false\ninference:\n",
+        )
+        .unwrap();
+        assert!(!cfg.drivers.arduino_pro_4g_gnss.unwrap().assistance);
+    }
+
+    #[test]
+    fn arduino_pro_4g_gnss_fix_frequency_defaults_to_10() {
+        let cfg: Config = serde_yaml::from_str(
+            "drivers:\n  system-info: true\n  arduino-pro-4g-gnss:\n    enabled: true\ninference:\n",
+        )
+        .unwrap();
+        let gnss = cfg.drivers.arduino_pro_4g_gnss.unwrap();
+        assert_eq!(gnss.fix_frequency, 10);
     }
 }
 

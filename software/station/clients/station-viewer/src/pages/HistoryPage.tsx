@@ -62,6 +62,7 @@ function HistoryPage() {
   const mirroringCount = parsedFrame?.mirroring ? 1 : 0;
   const sysinfoCount = parsedFrame?.sysinfo ? 1 : 0;
   const arduinoNiclaSenseEnvCount = parsedFrame?.arduinoNiclaSenseEnv ? 1 : 0;
+  const arduinoPro4gGnssCount = parsedFrame?.arduinoPro4gGnss ? 1 : 0;
   const ina226Count = parsedFrame?.ina226?.length ?? 0;
   const airgradientOpenAirCount = parsedFrame?.airgradientOpenAir?.length ?? 0;
   const victronSmartSolarCount = parsedFrame?.victronSmartSolar?.length ?? 0;
@@ -78,7 +79,8 @@ function HistoryPage() {
   const mirroringIndex = hikmicroThermalIndex + hikmicroThermalCount;
   const sysinfoIndex = mirroringIndex + mirroringCount;
   const arduinoNiclaSenseEnvIndex = sysinfoIndex + sysinfoCount;
-  const ina226Index = arduinoNiclaSenseEnvIndex + arduinoNiclaSenseEnvCount;
+  const arduinoPro4gGnssIndex = arduinoNiclaSenseEnvIndex + arduinoNiclaSenseEnvCount;
+  const ina226Index = arduinoPro4gGnssIndex + arduinoPro4gGnssCount;
   const airgradientOpenAirIndex = ina226Index + ina226Count;
   const victronSmartSolarIndex = airgradientOpenAirIndex + airgradientOpenAirCount;
   const dmesgIndex = victronSmartSolarIndex + victronSmartSolarCount;
@@ -302,6 +304,17 @@ function HistoryPage() {
                             </div>
                           </div>
                         )}
+                        {parsedFrame.arduinoPro4gGnss && (
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <span className="text-accent-warning font-mono">{parsedFrame.arduinoPro4gGnss.queueId}</span>
+                              <span className="text-accent-info text-xs px-1 py-0.5 bg-accent-info/10 rounded">GNSS</span>
+                            </div>
+                            <div className="text-text-label font-mono">
+                              {formatPtrBytes(parsedFrame.arduinoPro4gGnss.ptr)}
+                            </div>
+                          </div>
+                        )}
                         {parsedFrame.ina226?.map((entry) => (
                           <div key={entry.queueId} className="flex items-center justify-between">
                             <div className="flex items-center gap-3">
@@ -513,6 +526,21 @@ function HistoryPage() {
                       index={arduinoNiclaSenseEnvIndex}
                       dataQueueType="arduino-nicla-sense-env"
                       dataQueueId={parsedFrame.arduinoNiclaSenseEnv.queueId}
+                    />
+                  )}
+                  {parsedFrame.arduinoPro4gGnss && (
+                    <HistoryElement
+                      element={{
+                        queueId: parsedFrame.arduinoPro4gGnss.queueId,
+                        entryId: parsedFrame.arduinoPro4gGnss.ptr,
+                        data: parsedFrame.arduinoPro4gGnss.data,
+                        rawData: parsedFrame.arduinoPro4gGnss.rawData ?? null,
+                        type: getQueueType(parsedFrame.arduinoPro4gGnss.queueType),
+                        queueType: parsedFrame.arduinoPro4gGnss.queueType,
+                      }}
+                      index={arduinoPro4gGnssIndex}
+                      dataQueueType="arduino-pro-4g-gnss"
+                      dataQueueId={parsedFrame.arduinoPro4gGnss.queueId}
                     />
                   )}
                   {parsedFrame.ina226?.map((entry, idx) => (

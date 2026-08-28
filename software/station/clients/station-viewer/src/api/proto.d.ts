@@ -261,7 +261,8 @@ export namespace drivers {
         QDT_VICTRON_SMARTSOLAR_MPPT_RX = 54,
         QDT_PWM_OUTPUT_TX = 55,
         QDT_PWM_OUTPUT_RX = 56,
-        QDT_DMESG_RX = 57
+        QDT_DMESG_RX = 57,
+        QDT_ARDUINO_PRO_4G_GNSS_RX = 60
     }
 
     /** StationCommandType enum. */
@@ -13507,6 +13508,292 @@ export namespace arduino_nicla_sense_env {
          * @returns Plain object
          */
         public static toObject(message: arduino_nicla_sense_env.RxEnvelope, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this RxEnvelope to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for RxEnvelope
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+}
+
+/** Namespace arduino_pro_4g_gnss. */
+export namespace arduino_pro_4g_gnss {
+
+    /** ArduinoPro4gGnssSignalType enum. */
+    enum ArduinoPro4gGnssSignalType {
+        ARDUINO_PRO_4G_GNSS_SIGNAL_TYPE_UNSPECIFIED = 0,
+        ARDUINO_PRO_4G_GNSS_CONNECTED = 1,
+        ARDUINO_PRO_4G_GNSS_DISCONNECTED = 2,
+        ARDUINO_PRO_4G_GNSS_NMEA_BATCH = 3,
+        ARDUINO_PRO_4G_GNSS_XTRA_INJECTED = 4,
+        ARDUINO_PRO_4G_GNSS_ERROR = 8
+    }
+
+    /** Properties of an ArduinoPro4gGnssDevice. */
+    interface IArduinoPro4gGnssDevice {
+
+        /** ArduinoPro4gGnssDevice id */
+        id?: (string|null);
+
+        /** ArduinoPro4gGnssDevice nmeaPort */
+        nmeaPort?: (string|null);
+
+        /** ArduinoPro4gGnssDevice atPort */
+        atPort?: (string|null);
+
+        /** ArduinoPro4gGnssDevice usbVid */
+        usbVid?: (number|null);
+
+        /** ArduinoPro4gGnssDevice usbPid */
+        usbPid?: (number|null);
+
+        /** ArduinoPro4gGnssDevice fixFrequencyHz */
+        fixFrequencyHz?: (number|null);
+
+        /** ArduinoPro4gGnssDevice xtraInjectedAtUnix */
+        xtraInjectedAtUnix?: (Long|null);
+    }
+
+    /** Represents an ArduinoPro4gGnssDevice. */
+    class ArduinoPro4gGnssDevice implements IArduinoPro4gGnssDevice {
+
+        /**
+         * Constructs a new ArduinoPro4gGnssDevice.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: arduino_pro_4g_gnss.IArduinoPro4gGnssDevice);
+
+        /** ArduinoPro4gGnssDevice id. */
+        public id: string;
+
+        /** ArduinoPro4gGnssDevice nmeaPort. */
+        public nmeaPort: string;
+
+        /** ArduinoPro4gGnssDevice atPort. */
+        public atPort: string;
+
+        /** ArduinoPro4gGnssDevice usbVid. */
+        public usbVid: number;
+
+        /** ArduinoPro4gGnssDevice usbPid. */
+        public usbPid: number;
+
+        /** ArduinoPro4gGnssDevice fixFrequencyHz. */
+        public fixFrequencyHz: number;
+
+        /** ArduinoPro4gGnssDevice xtraInjectedAtUnix. */
+        public xtraInjectedAtUnix: Long;
+
+        /**
+         * Creates a new ArduinoPro4gGnssDevice instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns ArduinoPro4gGnssDevice instance
+         */
+        public static create(properties?: arduino_pro_4g_gnss.IArduinoPro4gGnssDevice): arduino_pro_4g_gnss.ArduinoPro4gGnssDevice;
+
+        /**
+         * Encodes the specified ArduinoPro4gGnssDevice message. Does not implicitly {@link arduino_pro_4g_gnss.ArduinoPro4gGnssDevice.verify|verify} messages.
+         * @param message ArduinoPro4gGnssDevice message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: arduino_pro_4g_gnss.IArduinoPro4gGnssDevice, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified ArduinoPro4gGnssDevice message, length delimited. Does not implicitly {@link arduino_pro_4g_gnss.ArduinoPro4gGnssDevice.verify|verify} messages.
+         * @param message ArduinoPro4gGnssDevice message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: arduino_pro_4g_gnss.IArduinoPro4gGnssDevice, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes an ArduinoPro4gGnssDevice message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns ArduinoPro4gGnssDevice
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): arduino_pro_4g_gnss.ArduinoPro4gGnssDevice;
+
+        /**
+         * Decodes an ArduinoPro4gGnssDevice message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns ArduinoPro4gGnssDevice
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): arduino_pro_4g_gnss.ArduinoPro4gGnssDevice;
+
+        /**
+         * Verifies an ArduinoPro4gGnssDevice message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates an ArduinoPro4gGnssDevice message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns ArduinoPro4gGnssDevice
+         */
+        public static fromObject(object: { [k: string]: any }): arduino_pro_4g_gnss.ArduinoPro4gGnssDevice;
+
+        /**
+         * Creates a plain object from an ArduinoPro4gGnssDevice message. Also converts values to other types if specified.
+         * @param message ArduinoPro4gGnssDevice
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: arduino_pro_4g_gnss.ArduinoPro4gGnssDevice, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this ArduinoPro4gGnssDevice to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for ArduinoPro4gGnssDevice
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
+    /** Properties of a RxEnvelope. */
+    interface IRxEnvelope {
+
+        /** RxEnvelope monotonicStampNs */
+        monotonicStampNs?: (Long|null);
+
+        /** RxEnvelope localStampNs */
+        localStampNs?: (Long|null);
+
+        /** RxEnvelope appStartId */
+        appStartId?: (Long|null);
+
+        /** RxEnvelope signalType */
+        signalType?: (arduino_pro_4g_gnss.ArduinoPro4gGnssSignalType|null);
+
+        /** RxEnvelope device */
+        device?: (arduino_pro_4g_gnss.IArduinoPro4gGnssDevice|null);
+
+        /** RxEnvelope data */
+        data?: (Uint8Array|null);
+
+        /** RxEnvelope xtraValidityMinutes */
+        xtraValidityMinutes?: (number|null);
+
+        /** RxEnvelope error */
+        error?: (string|null);
+    }
+
+    /** Represents a RxEnvelope. */
+    class RxEnvelope implements IRxEnvelope {
+
+        /**
+         * Constructs a new RxEnvelope.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: arduino_pro_4g_gnss.IRxEnvelope);
+
+        /** RxEnvelope monotonicStampNs. */
+        public monotonicStampNs: Long;
+
+        /** RxEnvelope localStampNs. */
+        public localStampNs: Long;
+
+        /** RxEnvelope appStartId. */
+        public appStartId: Long;
+
+        /** RxEnvelope signalType. */
+        public signalType: arduino_pro_4g_gnss.ArduinoPro4gGnssSignalType;
+
+        /** RxEnvelope device. */
+        public device?: (arduino_pro_4g_gnss.IArduinoPro4gGnssDevice|null);
+
+        /** RxEnvelope data. */
+        public data: Uint8Array;
+
+        /** RxEnvelope xtraValidityMinutes. */
+        public xtraValidityMinutes: number;
+
+        /** RxEnvelope error. */
+        public error: string;
+
+        /**
+         * Creates a new RxEnvelope instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns RxEnvelope instance
+         */
+        public static create(properties?: arduino_pro_4g_gnss.IRxEnvelope): arduino_pro_4g_gnss.RxEnvelope;
+
+        /**
+         * Encodes the specified RxEnvelope message. Does not implicitly {@link arduino_pro_4g_gnss.RxEnvelope.verify|verify} messages.
+         * @param message RxEnvelope message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: arduino_pro_4g_gnss.IRxEnvelope, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified RxEnvelope message, length delimited. Does not implicitly {@link arduino_pro_4g_gnss.RxEnvelope.verify|verify} messages.
+         * @param message RxEnvelope message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: arduino_pro_4g_gnss.IRxEnvelope, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes a RxEnvelope message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns RxEnvelope
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): arduino_pro_4g_gnss.RxEnvelope;
+
+        /**
+         * Decodes a RxEnvelope message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns RxEnvelope
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): arduino_pro_4g_gnss.RxEnvelope;
+
+        /**
+         * Verifies a RxEnvelope message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates a RxEnvelope message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns RxEnvelope
+         */
+        public static fromObject(object: { [k: string]: any }): arduino_pro_4g_gnss.RxEnvelope;
+
+        /**
+         * Creates a plain object from a RxEnvelope message. Also converts values to other types if specified.
+         * @param message RxEnvelope
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: arduino_pro_4g_gnss.RxEnvelope, options?: $protobuf.IConversionOptions): { [k: string]: any };
 
         /**
          * Converts this RxEnvelope to JSON.
