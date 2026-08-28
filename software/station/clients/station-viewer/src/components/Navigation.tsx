@@ -66,6 +66,16 @@ function Navigation() {
           >
             History
           </Link>
+          <Link
+            to="/agent"
+            className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
+              isActive("/agent")
+                ? "bg-accent-success-bg text-text-primary"
+                : "text-text-secondary hover:text-text-primary hover:bg-surface-tertiary"
+            }`}
+          >
+            Agent
+          </Link>
         </nav>
 
         <button

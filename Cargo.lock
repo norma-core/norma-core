@@ -2557,6 +2557,8 @@ dependencies = [
  "prost-build",
  "pwm-output",
  "rust-embed",
+ "serde",
+ "serde_json",
  "st3215",
  "station_iface",
  "sysinfod",
