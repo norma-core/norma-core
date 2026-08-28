@@ -260,7 +260,8 @@ export namespace drivers {
         QDT_AIRGRADIENT_OPEN_AIR_O_1PST_RX = 53,
         QDT_VICTRON_SMARTSOLAR_MPPT_RX = 54,
         QDT_PWM_OUTPUT_TX = 55,
-        QDT_PWM_OUTPUT_RX = 56
+        QDT_PWM_OUTPUT_RX = 56,
+        QDT_DMESG_RX = 57
     }
 
     /** StationCommandType enum. */
@@ -3983,11 +3984,11 @@ export namespace vesc_trampa {
         /** TxEnvelope commandId */
         commandId?: (Uint8Array|null);
 
-        /** TxEnvelope boardCommand */
-        boardCommand?: (vesc_trampa.IVescTrampaBoardCommand|null);
-
         /** TxEnvelope motorMode */
         motorMode?: (vesc_trampa.IVescTrampaMotorModeCommand|null);
+
+        /** TxEnvelope boardCommands */
+        boardCommands?: (vesc_trampa.IVescTrampaBoardCommand[]|null);
     }
 
     /** Represents a TxEnvelope. */
@@ -4014,11 +4015,11 @@ export namespace vesc_trampa {
         /** TxEnvelope commandId. */
         public commandId: Uint8Array;
 
-        /** TxEnvelope boardCommand. */
-        public boardCommand?: (vesc_trampa.IVescTrampaBoardCommand|null);
-
         /** TxEnvelope motorMode. */
         public motorMode?: (vesc_trampa.IVescTrampaMotorModeCommand|null);
+
+        /** TxEnvelope boardCommands. */
+        public boardCommands: vesc_trampa.IVescTrampaBoardCommand[];
 
         /**
          * Creates a new TxEnvelope instance using the specified properties.
@@ -4104,11 +4105,11 @@ export namespace vesc_trampa {
         /** Command targetBoardUuid */
         targetBoardUuid?: (Uint8Array|null);
 
-        /** Command boardCommand */
-        boardCommand?: (vesc_trampa.IVescTrampaBoardCommand|null);
-
         /** Command motorMode */
         motorMode?: (vesc_trampa.IVescTrampaMotorModeCommand|null);
+
+        /** Command boardCommands */
+        boardCommands?: (vesc_trampa.IVescTrampaBoardCommand[]|null);
     }
 
     /** Represents a Command. */
@@ -4123,11 +4124,11 @@ export namespace vesc_trampa {
         /** Command targetBoardUuid. */
         public targetBoardUuid: Uint8Array;
 
-        /** Command boardCommand. */
-        public boardCommand?: (vesc_trampa.IVescTrampaBoardCommand|null);
-
         /** Command motorMode. */
         public motorMode?: (vesc_trampa.IVescTrampaMotorModeCommand|null);
+
+        /** Command boardCommands. */
+        public boardCommands: vesc_trampa.IVescTrampaBoardCommand[];
 
         /**
          * Creates a new Command instance using the specified properties.
@@ -4215,6 +4216,9 @@ export namespace vesc_trampa {
 
         /** VescTrampaBoardCommand responseExpected */
         responseExpected?: (boolean|null);
+
+        /** VescTrampaBoardCommand durationMs */
+        durationMs?: (number|null);
     }
 
     /** Represents a VescTrampaBoardCommand. */
@@ -4231,6 +4235,9 @@ export namespace vesc_trampa {
 
         /** VescTrampaBoardCommand responseExpected. */
         public responseExpected: boolean;
+
+        /** VescTrampaBoardCommand durationMs. */
+        public durationMs: number;
 
         /**
          * Creates a new VescTrampaBoardCommand instance using the specified properties.
@@ -15389,6 +15396,160 @@ export namespace pwm_output {
          * @returns Plain object
          */
         public static toObject(message: pwm_output.RxEnvelope, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this RxEnvelope to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for RxEnvelope
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+}
+
+/** Namespace dmesg. */
+export namespace dmesg {
+
+    /** DmesgSignalType enum. */
+    enum DmesgSignalType {
+        DMESG_SIGNAL_TYPE_UNSPECIFIED = 0,
+        DMESG_STARTED = 1,
+        DMESG_MESSAGES = 2,
+        DMESG_BACKLOG_COMPLETE = 3,
+        DMESG_GAP = 4,
+        DMESG_SOURCE_UNAVAILABLE = 5,
+        DMESG_ERROR = 6
+    }
+
+    /** Properties of a RxEnvelope. */
+    interface IRxEnvelope {
+
+        /** RxEnvelope monotonicStampNs */
+        monotonicStampNs?: (Long|null);
+
+        /** RxEnvelope localStampNs */
+        localStampNs?: (Long|null);
+
+        /** RxEnvelope appStartId */
+        appStartId?: (Long|null);
+
+        /** RxEnvelope signalType */
+        signalType?: (dmesg.DmesgSignalType|null);
+
+        /** RxEnvelope records */
+        records?: (string[]|null);
+
+        /** RxEnvelope fromBacklog */
+        fromBacklog?: (boolean|null);
+
+        /** RxEnvelope droppedRecords */
+        droppedRecords?: (Long|null);
+
+        /** RxEnvelope error */
+        error?: (string|null);
+    }
+
+    /** Represents a RxEnvelope. */
+    class RxEnvelope implements IRxEnvelope {
+
+        /**
+         * Constructs a new RxEnvelope.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: dmesg.IRxEnvelope);
+
+        /** RxEnvelope monotonicStampNs. */
+        public monotonicStampNs: Long;
+
+        /** RxEnvelope localStampNs. */
+        public localStampNs: Long;
+
+        /** RxEnvelope appStartId. */
+        public appStartId: Long;
+
+        /** RxEnvelope signalType. */
+        public signalType: dmesg.DmesgSignalType;
+
+        /** RxEnvelope records. */
+        public records: string[];
+
+        /** RxEnvelope fromBacklog. */
+        public fromBacklog: boolean;
+
+        /** RxEnvelope droppedRecords. */
+        public droppedRecords: Long;
+
+        /** RxEnvelope error. */
+        public error: string;
+
+        /**
+         * Creates a new RxEnvelope instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns RxEnvelope instance
+         */
+        public static create(properties?: dmesg.IRxEnvelope): dmesg.RxEnvelope;
+
+        /**
+         * Encodes the specified RxEnvelope message. Does not implicitly {@link dmesg.RxEnvelope.verify|verify} messages.
+         * @param message RxEnvelope message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: dmesg.IRxEnvelope, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified RxEnvelope message, length delimited. Does not implicitly {@link dmesg.RxEnvelope.verify|verify} messages.
+         * @param message RxEnvelope message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: dmesg.IRxEnvelope, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes a RxEnvelope message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns RxEnvelope
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): dmesg.RxEnvelope;
+
+        /**
+         * Decodes a RxEnvelope message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns RxEnvelope
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): dmesg.RxEnvelope;
+
+        /**
+         * Verifies a RxEnvelope message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates a RxEnvelope message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns RxEnvelope
+         */
+        public static fromObject(object: { [k: string]: any }): dmesg.RxEnvelope;
+
+        /**
+         * Creates a plain object from a RxEnvelope message. Also converts values to other types if specified.
+         * @param message RxEnvelope
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: dmesg.RxEnvelope, options?: $protobuf.IConversionOptions): { [k: string]: any };
 
         /**
          * Converts this RxEnvelope to JSON.

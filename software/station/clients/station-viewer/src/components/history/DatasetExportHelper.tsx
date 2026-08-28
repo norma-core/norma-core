@@ -183,7 +183,7 @@ function DatasetExportHelper({ tags }: DatasetExportHelperProps) {
         type="button"
         aria-haspopup="dialog"
         onClick={openDialog}
-        className="inline-flex h-[26px] w-auto self-end cursor-pointer items-center justify-center gap-1.5 rounded border border-accent-data/50 bg-accent-data/10 px-2 py-1 text-xs font-semibold text-accent-data transition-colors hover:bg-accent-data/20 active:bg-accent-data/30 sm:self-auto sm:border-0 sm:ring-1 sm:ring-inset sm:ring-accent-data/50"
+        className="hidden h-[26px] w-auto cursor-pointer items-center justify-center gap-1.5 rounded bg-accent-data/10 px-2 py-1 text-xs font-semibold text-accent-data transition-colors hover:bg-accent-data/20 active:bg-accent-data/30 lg:inline-flex lg:ring-1 lg:ring-inset lg:ring-accent-data/50"
       >
         <SquareTerminal className="h-3.5 w-3.5" aria-hidden="true" />
         Export dataset

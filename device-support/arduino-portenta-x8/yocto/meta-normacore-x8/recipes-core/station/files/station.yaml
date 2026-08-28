@@ -1,0 +1,28 @@
+drivers:
+  system-info: true
+  st3215:
+    enabled: false
+  vesc-trampa:
+    enabled: true
+    port-baud-rate: 115200
+  pwm-output:
+    enabled: true
+    device-path: /dev/x8h7_ui
+    outputs:
+      - id: steering
+  usb-video:
+    enabled: true
+    formats:
+      - format: "640x480@maxfps,jpeg"
+    frame-skip: 0
+  hikmicro-thermal:
+    enabled: true
+    frame-timeout: 5s
+    frame-skip: 0
+  airgradient-open-air-o-1pst:
+    enabled: true
+    read-timeout: 10s
+  victron-smartsolar-mppt:
+    enabled: true
+    read-timeout: 10s
+inference: []

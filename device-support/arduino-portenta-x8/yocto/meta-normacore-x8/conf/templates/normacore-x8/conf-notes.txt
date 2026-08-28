@@ -19,6 +19,14 @@ Optional cellular settings:
     X8_CELLULARD_SARA_APN = ""
     X8_CELLULARD_INTERVAL_SEC = "30"
 
+Optional private Station identity:
+
+  conf/station.crypto_seed
+
+  If this file exists, it is copied into
+  /opt/station/station_data/.crypto_seed. If it does not exist, the image does
+  not install a seed and Station creates a new NormFS identity on first boot.
+
 The image build intentionally fails if either X8_ROOT_HASH or
 X8_ROOT_AUTHORIZED_KEYS_FILE is missing or empty.
 

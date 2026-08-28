@@ -8,6 +8,7 @@ After=systemd-sysusers.service systemd-tmpfiles-setup.service firstboot-setup.se
 User=station
 Group=station
 SupplementaryGroups=gpio spi netdev dialout video
+AmbientCapabilities=CAP_SYSLOG
 WorkingDirectory=/opt/station
 RuntimeDirectory=station
 RuntimeDirectoryMode=0755

@@ -196,8 +196,8 @@ class TxEnvelope:
     app_start_id: int = 0
     target_board_uuid: typing.Optional[bytes] = None
     command_id: typing.Optional[bytes] = None
-    board_command: typing.Optional[VescTrampaBoardCommand] = None
     motor_mode: typing.Optional[VescTrampaMotorModeCommand] = None
+    board_commands: list[VescTrampaBoardCommand | None] | None = None
 
     def calc_protobuf_size(self) -> int:
         res = 0
@@ -215,14 +215,19 @@ class TxEnvelope:
             bytes_len = len(self.command_id)
             bytes_len_size = ((bytes_len | 1).bit_length() + 6) // 7
             res += 1 + bytes_len_size + bytes_len
-        if self.board_command is not None:
-            size = self.board_command.calc_protobuf_size()
-            if size > 0:
-                res += 1 + (((size | 1).bit_length() + 6) // 7) + size
         if self.motor_mode is not None:
             size = self.motor_mode.calc_protobuf_size()
             if size > 0:
                 res += 1 + (((size | 1).bit_length() + 6) // 7) + size
+        if self.board_commands is not None:
+            for v in self.board_commands:
+                res += 1
+                if v is not None:
+                    size = v.calc_protobuf_size()
+                    res += (((size | 1).bit_length() + 6) // 7) + size
+                else:
+                    res += 1
+        
         return res
 
     def encode(self) -> bytes:
@@ -245,16 +250,20 @@ class TxEnvelope:
             target.append_bytes(b'\x1a', self.target_board_uuid)
         if self.command_id is not None and len(self.command_id) > 0:
             target.append_bytes(b'"', self.command_id)
-        if self.board_command is not None:
-            size = self.board_command.calc_protobuf_size()
-            if size > 0:
-                target.append_bytes_size_with_tag(b'R', size)
-                self.board_command.encode_to(target)
         if self.motor_mode is not None:
             size = self.motor_mode.calc_protobuf_size()
             if size > 0:
                 target.append_bytes_size_with_tag(b'Z', size)
                 self.motor_mode.encode_to(target)
+        if self.board_commands is not None:
+            for v in self.board_commands:
+                if v is not None:
+                    size = v.calc_protobuf_size()
+                    target.append_bytes_size_with_tag(b'b', size)
+                    v.encode_to(target)
+                else:
+                    target.append_bytes_size_with_tag(b'b', 0)
+        
 
 
 class TxEnvelopeReader:
@@ -264,8 +273,8 @@ class TxEnvelopeReader:
         self._app_start_id: int = 0
         self._target_board_uuid: typing.Optional[memoryview] = None
         self._command_id: typing.Optional[memoryview] = None
-        self._board_command_buf: typing.Optional[memoryview] = None
         self._motor_mode_buf: typing.Optional[memoryview] = None
+        self._board_commands_bufs: list[memoryview] | None = None
 
         if not src:
             return
@@ -295,14 +304,17 @@ class TxEnvelopeReader:
                     result = self._buf.read_bytes_view(offset)
                     offset += result.size
                     self._command_id = result.value
-                case 10:
-                    result = self._buf.read_bytes_view(offset)
-                    offset += result.size
-                    self._board_command_buf = result.value
                 case 11:
                     result = self._buf.read_bytes_view(offset)
                     offset += result.size
                     self._motor_mode_buf = result.value
+                case 12:
+                    result = self._buf.read_bytes_view(offset)
+                    offset += result.size
+                    if self._board_commands_bufs is None:
+                        self._board_commands_bufs = []
+                    self._board_commands_bufs.append(result.value)
+            
                 case _:
                     offset = self._buf.skip_data(offset, tag.wire)
 
@@ -321,23 +333,27 @@ class TxEnvelopeReader:
     def get_command_id(self) -> memoryview:
         return self._command_id if self._command_id is not None else memoryview(b'')
 
-    def get_board_command(self) -> VescTrampaBoardCommandReader:
-        if self._board_command_buf is not None:
-            return VescTrampaBoardCommandReader(self._board_command_buf)
-        return VescTrampaBoardCommandReader(b'')
-
     def get_motor_mode(self) -> VescTrampaMotorModeCommandReader:
         if self._motor_mode_buf is not None:
             return VescTrampaMotorModeCommandReader(self._motor_mode_buf)
         return VescTrampaMotorModeCommandReader(b'')
+
+    def get_board_commands(self) -> list[VescTrampaBoardCommandReader]:
+        if self._board_commands_bufs is not None:
+            result: list[VescTrampaBoardCommandReader] = []
+            for buf in self._board_commands_bufs:
+                result.append(VescTrampaBoardCommandReader(buf))
+            return result
+        return []
+    
 
 
 @dataclasses.dataclass
 class Command:
     # fields
     target_board_uuid: typing.Optional[bytes] = None
-    board_command: typing.Optional[VescTrampaBoardCommand] = None
     motor_mode: typing.Optional[VescTrampaMotorModeCommand] = None
+    board_commands: list[VescTrampaBoardCommand | None] | None = None
 
     def calc_protobuf_size(self) -> int:
         res = 0
@@ -345,14 +361,19 @@ class Command:
             bytes_len = len(self.target_board_uuid)
             bytes_len_size = ((bytes_len | 1).bit_length() + 6) // 7
             res += 1 + bytes_len_size + bytes_len
-        if self.board_command is not None:
-            size = self.board_command.calc_protobuf_size()
-            if size > 0:
-                res += 1 + (((size | 1).bit_length() + 6) // 7) + size
         if self.motor_mode is not None:
             size = self.motor_mode.calc_protobuf_size()
             if size > 0:
                 res += 1 + (((size | 1).bit_length() + 6) // 7) + size
+        if self.board_commands is not None:
+            for v in self.board_commands:
+                res += 1
+                if v is not None:
+                    size = v.calc_protobuf_size()
+                    res += (((size | 1).bit_length() + 6) // 7) + size
+                else:
+                    res += 1
+        
         return res
 
     def encode(self) -> bytes:
@@ -367,23 +388,27 @@ class Command:
     def encode_to(self, target: typing.Union[gremlin.Writer, gremlin.StreamingWriter]):
         if self.target_board_uuid is not None and len(self.target_board_uuid) > 0:
             target.append_bytes(b'\n', self.target_board_uuid)
-        if self.board_command is not None:
-            size = self.board_command.calc_protobuf_size()
-            if size > 0:
-                target.append_bytes_size_with_tag(b'R', size)
-                self.board_command.encode_to(target)
         if self.motor_mode is not None:
             size = self.motor_mode.calc_protobuf_size()
             if size > 0:
                 target.append_bytes_size_with_tag(b'Z', size)
                 self.motor_mode.encode_to(target)
+        if self.board_commands is not None:
+            for v in self.board_commands:
+                if v is not None:
+                    size = v.calc_protobuf_size()
+                    target.append_bytes_size_with_tag(b'b', size)
+                    v.encode_to(target)
+                else:
+                    target.append_bytes_size_with_tag(b'b', 0)
+        
 
 
 class CommandReader:
     def __init__(self, src: memoryview):
         self._target_board_uuid: typing.Optional[memoryview] = None
-        self._board_command_buf: typing.Optional[memoryview] = None
         self._motor_mode_buf: typing.Optional[memoryview] = None
+        self._board_commands_bufs: list[memoryview] | None = None
 
         if not src:
             return
@@ -397,29 +422,36 @@ class CommandReader:
                     result = self._buf.read_bytes_view(offset)
                     offset += result.size
                     self._target_board_uuid = result.value
-                case 10:
-                    result = self._buf.read_bytes_view(offset)
-                    offset += result.size
-                    self._board_command_buf = result.value
                 case 11:
                     result = self._buf.read_bytes_view(offset)
                     offset += result.size
                     self._motor_mode_buf = result.value
+                case 12:
+                    result = self._buf.read_bytes_view(offset)
+                    offset += result.size
+                    if self._board_commands_bufs is None:
+                        self._board_commands_bufs = []
+                    self._board_commands_bufs.append(result.value)
+            
                 case _:
                     offset = self._buf.skip_data(offset, tag.wire)
 
     def get_target_board_uuid(self) -> memoryview:
         return self._target_board_uuid if self._target_board_uuid is not None else memoryview(b'')
 
-    def get_board_command(self) -> VescTrampaBoardCommandReader:
-        if self._board_command_buf is not None:
-            return VescTrampaBoardCommandReader(self._board_command_buf)
-        return VescTrampaBoardCommandReader(b'')
-
     def get_motor_mode(self) -> VescTrampaMotorModeCommandReader:
         if self._motor_mode_buf is not None:
             return VescTrampaMotorModeCommandReader(self._motor_mode_buf)
         return VescTrampaMotorModeCommandReader(b'')
+
+    def get_board_commands(self) -> list[VescTrampaBoardCommandReader]:
+        if self._board_commands_bufs is not None:
+            result: list[VescTrampaBoardCommandReader] = []
+            for buf in self._board_commands_bufs:
+                result.append(VescTrampaBoardCommandReader(buf))
+            return result
+        return []
+    
 
 
 @dataclasses.dataclass
@@ -427,6 +459,7 @@ class VescTrampaBoardCommand:
     # fields
     payload: typing.Optional[bytes] = None
     response_expected: bool = False
+    duration_ms: int = 0
 
     def calc_protobuf_size(self) -> int:
         res = 0
@@ -436,6 +469,8 @@ class VescTrampaBoardCommand:
             res += 1 + bytes_len_size + bytes_len
         if self.response_expected:
             res += 2
+        if self.duration_ms != 0:
+            res += 1 + gremlin.sizes.size_varint(self.duration_ms)
         return res
 
     def encode(self) -> bytes:
@@ -452,12 +487,15 @@ class VescTrampaBoardCommand:
             target.append_bytes(b'\n', self.payload)
         if self.response_expected:
             target.append_bool(b'\x10', self.response_expected)
+        if self.duration_ms != 0:
+            target.append_uint32(b'\x18', self.duration_ms)
 
 
 class VescTrampaBoardCommandReader:
     def __init__(self, src: memoryview):
         self._payload: typing.Optional[memoryview] = None
         self._response_expected: bool = False
+        self._duration_ms: int = 0
 
         if not src:
             return
@@ -475,6 +513,10 @@ class VescTrampaBoardCommandReader:
                     result = self._buf.read_bool(offset)
                     offset += result.size
                     self._response_expected = result.value
+                case 3:
+                    result = self._buf.read_uint32(offset)
+                    offset += result.size
+                    self._duration_ms = result.value
                 case _:
                     offset = self._buf.skip_data(offset, tag.wire)
 
@@ -483,6 +525,9 @@ class VescTrampaBoardCommandReader:
 
     def get_response_expected(self) -> bool:
         return self._response_expected
+
+    def get_duration_ms(self) -> int:
+        return self._duration_ms
 
 
 @dataclasses.dataclass

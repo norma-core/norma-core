@@ -8,7 +8,6 @@ import {
 import {
   PWM_OUTPUT_DEFAULT_CHANNEL,
   PWM_OUTPUT_DEFAULT_PERIOD_US,
-  PWM_OUTPUT_DEFAULT_REPEAT,
   PWM_OUTPUT_DEFAULT_STEERING_MAX_PULSE_US,
   PWM_OUTPUT_DEFAULT_STEERING_MIN_PULSE_US,
   PWM_OUTPUT_STEERING_CENTER_DEG,
@@ -31,6 +30,9 @@ import {
 } from './control-input';
 
 const CONTROL_SEND_INTERVAL_MS = 50;
+const CONTROL_COMMAND_HOLD_MS = 2_500;
+const DRIVE_COMMAND_DURATION_MS = CONTROL_COMMAND_HOLD_MS;
+const STEERING_COMMAND_REPEAT = Math.ceil((CONTROL_COMMAND_HOLD_MS * 1000) / PWM_OUTPUT_DEFAULT_PERIOD_US);
 const JOYSTICK_DEAD_ZONE = 0.12;
 
 interface KeyboardState {
@@ -175,7 +177,11 @@ export function useRoverControlSession({
           ? setVescTrampaCurrent(
             driveUuid,
             pending.target.currentA,
-            ROVER_MAX_DRIVE_CURRENT_A,
+            {
+              maxAbsCurrentA: ROVER_MAX_DRIVE_CURRENT_A,
+              durationMs: pending.target.currentA === 0 ? 0 : DRIVE_COMMAND_DURATION_MS,
+              finalCurrentA: 0,
+            },
           ).then(() => {
             lastDriveCurrentRef.current = pending.target.currentA;
           }).catch((commandError) => {
@@ -189,7 +195,7 @@ export function useRoverControlSession({
             PWM_OUTPUT_DEFAULT_CHANNEL,
             pending.target.steeringDeg,
             PWM_OUTPUT_DEFAULT_PERIOD_US,
-            PWM_OUTPUT_DEFAULT_REPEAT,
+            STEERING_COMMAND_REPEAT,
             PWM_OUTPUT_DEFAULT_STEERING_MIN_PULSE_US,
             PWM_OUTPUT_DEFAULT_STEERING_MAX_PULSE_US,
           ).then(() => {

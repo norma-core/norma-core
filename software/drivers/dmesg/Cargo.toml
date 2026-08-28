@@ -1,0 +1,20 @@
+[package]
+name = "dmesg"
+version.workspace = true
+edition = "2024"
+
+[dependencies]
+tokio = { workspace = true }
+normfs = { workspace = true }
+systime = { path = "../../station/shared/systime-rs" }
+station_iface = { path = "../../station/shared/station-iface" }
+prost = { workspace = true }
+bytes = { workspace = true }
+log = { workspace = true }
+libc = "0.2"
+
+[lib]
+path = "src/lib.rs"
+
+[build-dependencies]
+prost-build = { workspace = true }

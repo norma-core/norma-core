@@ -23,6 +23,7 @@ IMAGE_INSTALL = "\
     \
     m-x8h7 \
     linux-firmware-arduino-portenta-x8-stm32h7 \
+    x8-m4-pwm-output-firmware \
     x8h7-init \
     \
     m-bq24195 \
@@ -59,6 +60,7 @@ IMAGE_INSTALL = "\
     util-linux \
     e2fsprogs \
     dosfstools \
+    x8-grow-rootfs \
     x8-sdcard-automount \
     \
     v4l-utils \
@@ -78,6 +80,8 @@ IMAGE_INSTALL = "\
     chrony \
     chronyc \
     \
+    station \
+    \
     vim \
     tmux \
 "
@@ -85,6 +89,7 @@ IMAGE_INSTALL = "\
 IMAGE_FSTYPES += "wic.zst"
 WKS_FILE = "x8-normacore-emmc.wks.in"
 WKS_FILE:mx8mm-nxp-bsp = "x8-normacore-emmc.wks.in"
+X8_ROOTFS_FLASH_SIZE_MB ??= "3072"
 
 ROOTFS_POSTPROCESS_COMMAND += "x8_patch_uenv_for_max_carrier;"
 

@@ -4,16 +4,17 @@ use crate::protocol::{
 };
 use crate::state::VescTrampaCommunicator;
 use crate::vesc_trampa_proto::{
-    RxEnvelope, TxEnvelope, VescTrampaBoard, VescTrampaBoardPacket, VescTrampaMotorMode,
-    VescTrampaSignalType,
+    RxEnvelope, TxEnvelope, VescTrampaBoard, VescTrampaBoardCommand, VescTrampaBoardPacket,
+    VescTrampaMotorMode, VescTrampaSignalType,
 };
 use bytes::Bytes;
 use log::{debug, error, info, warn};
 use prost::Message;
+use std::collections::VecDeque;
 use std::fmt;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::time::Duration;
+use std::time::{Duration, Instant};
 use tokio::sync::mpsc;
 use tokio::time::MissedTickBehavior;
 use tokio_serial::{SerialPortBuilderExt, SerialPortInfo, SerialStream};
@@ -21,6 +22,20 @@ use tokio_serial::{SerialPortBuilderExt, SerialPortInfo, SerialStream};
 pub const VESC_TRAMPA_COMMAND_TIMEOUT_MS: u64 = 100;
 pub const VESC_TRAMPA_TICK_INTERVAL_MS: u64 = 20;
 pub const VESC_TRAMPA_HOLD_HANDBRAKE_CURRENT_A: f32 = 10.0;
+const VESC_TRAMPA_SET_CURRENT_COMMAND_ID: u8 = 6;
+
+#[derive(Debug, Clone)]
+struct ActiveBoardCommand {
+    payload: Bytes,
+    stop_at: Instant,
+    next_steps: VecDeque<TimedBoardCommandStep>,
+}
+
+#[derive(Debug, Clone)]
+struct TimedBoardCommandStep {
+    payload: Bytes,
+    duration: Duration,
+}
 
 #[derive(Debug)]
 pub struct VescTrampaProbeError {
@@ -142,6 +157,7 @@ impl VescTrampaPort {
             tokio::time::interval(Duration::from_millis(VESC_TRAMPA_TICK_INTERVAL_MS));
         tick_interval.set_missed_tick_behavior(MissedTickBehavior::Skip);
         let mut hold_mode_active = false;
+        let mut active_board_command: Option<ActiveBoardCommand> = None;
 
         loop {
             tokio::select! {
@@ -149,20 +165,12 @@ impl VescTrampaPort {
                     command_waiting.store(false, Ordering::SeqCst);
                     self.log_command_received(&command);
 
-                    if hold_mode_active && !Self::is_motor_mode_hold_command(&command) {
-                        info!(
-                            "Canceling VESC Trampa hold mode on {} before processing command_id={:02X?}",
-                            self.board_info.port_name, command.command_id
-                        );
-                        hold_mode_active = false;
-                    }
-
                     if let Err(error) = self.send_command_received_signal(&command) {
                         error!("Failed to send VESC Trampa command received signal: {}", error);
                         break;
                     }
 
-                    match self.process_command(&mut port, &command, &mut hold_mode_active).await {
+                    match self.process_command(&mut port, &command, &mut hold_mode_active, &mut active_board_command).await {
                         Ok(processed) => {
                             let signal_type = if processed {
                                 VescTrampaSignalType::VescTrampaCommandSuccess
@@ -199,6 +207,11 @@ impl VescTrampaPort {
                             warn!("VESC Trampa port {} disconnected while holding: {}", port_name, error);
                             break;
                         }
+                    }
+
+                    if let Err(error) = self.tick_active_board_command(&mut port, &mut active_board_command).await {
+                        warn!("VESC Trampa port {} disconnected while writing timed board command: {}", port_name, error);
+                        break;
                     }
 
                     if let Err(error) = self.read_values(&mut port).await {
@@ -255,6 +268,7 @@ impl VescTrampaPort {
         port: &mut SerialStream,
         command: &TxEnvelope,
         hold_mode_active: &mut bool,
+        active_board_command: &mut Option<ActiveBoardCommand>,
     ) -> Result<bool, Box<dyn std::error::Error + Send + Sync>> {
         let command_variant_count = Self::command_variant_count(command);
         if command_variant_count != 1 {
@@ -275,6 +289,7 @@ impl VescTrampaPort {
                     return Ok(false);
                 }
                 VescTrampaMotorMode::Hold => {
+                    active_board_command.take();
                     info!(
                         "Processing VESC Trampa motor mode HOLD command on {} with handbrake_current_a={:.3}",
                         self.board_info.port_name, VESC_TRAMPA_HOLD_HANDBRAKE_CURRENT_A
@@ -287,28 +302,41 @@ impl VescTrampaPort {
             }
         }
 
-        let Some(board_command) = command.board_command.as_ref() else {
+        if let Err(reason) = Self::validate_board_commands(&command.board_commands) {
             warn!(
-                "Rejected VESC Trampa command for {}: missing board_command",
-                self.board_info.port_name
-            );
-            return Ok(false);
-        };
-
-        if board_command.payload.is_empty() {
-            warn!(
-                "Rejected VESC Trampa command for {}: empty payload",
-                self.board_info.port_name
+                "Rejected VESC Trampa board command for {}: {}",
+                self.board_info.port_name, reason
             );
             return Ok(false);
         }
 
-        let request_packet = CommPacket::new(board_command.payload.clone())?;
-        request_packet
-            .async_write(port, VESC_TRAMPA_COMMAND_TIMEOUT_MS)
-            .await?;
+        if *hold_mode_active {
+            info!(
+                "Canceling VESC Trampa hold mode on {} before processing command_id={:02X?}",
+                self.board_info.port_name, command.command_id
+            );
+            *hold_mode_active = false;
+        }
 
-        if board_command.response_expected {
+        self.process_board_commands(port, &command.board_commands, active_board_command)
+            .await
+    }
+
+    async fn process_board_commands(
+        &self,
+        port: &mut SerialStream,
+        board_commands: &[VescTrampaBoardCommand],
+        active_board_command: &mut Option<ActiveBoardCommand>,
+    ) -> Result<bool, Box<dyn std::error::Error + Send + Sync>> {
+        let response_expected = board_commands.len() == 1 && board_commands[0].response_expected;
+        active_board_command.take();
+
+        if response_expected {
+            let request_packet = CommPacket::new(board_commands[0].payload.clone())?;
+            request_packet
+                .async_write(port, VESC_TRAMPA_COMMAND_TIMEOUT_MS)
+                .await?;
+
             let response_packet =
                 CommPacket::async_read(port, VESC_TRAMPA_COMMAND_TIMEOUT_MS).await?;
             if response_packet.command_id() != request_packet.command_id() {
@@ -323,9 +351,118 @@ impl VescTrampaPort {
                 .into());
             }
             self.send_board_packet_signal(&response_packet)?;
+            return Ok(true);
         }
 
+        let steps = board_commands
+            .iter()
+            .map(|command| TimedBoardCommandStep {
+                payload: command.payload.clone(),
+                duration: Duration::from_millis(u64::from(command.duration_ms)),
+            })
+            .collect();
+        self.advance_board_command_steps(port, active_board_command, steps)
+            .await?;
         Ok(true)
+    }
+
+    async fn tick_active_board_command(
+        &self,
+        port: &mut SerialStream,
+        active_board_command: &mut Option<ActiveBoardCommand>,
+    ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let Some(command) = active_board_command.as_mut() else {
+            return Ok(());
+        };
+
+        if Instant::now() < command.stop_at {
+            self.write_board_payload(port, command.payload.clone())
+                .await?;
+            return Ok(());
+        }
+
+        let next_steps = std::mem::take(&mut command.next_steps);
+        *active_board_command = None;
+        self.advance_board_command_steps(port, active_board_command, next_steps)
+            .await
+    }
+
+    async fn advance_board_command_steps(
+        &self,
+        port: &mut SerialStream,
+        active_board_command: &mut Option<ActiveBoardCommand>,
+        mut steps: VecDeque<TimedBoardCommandStep>,
+    ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        while let Some(step) = steps.pop_front() {
+            let payload = step.payload.clone();
+            self.write_board_payload(port, payload.clone()).await?;
+            if step.duration.is_zero() {
+                continue;
+            }
+
+            *active_board_command = Some(ActiveBoardCommand {
+                payload,
+                stop_at: Instant::now()
+                    .checked_add(step.duration)
+                    .ok_or_else(|| Self::duration_overflow_error("board command step"))?,
+                next_steps: steps,
+            });
+            return Ok(());
+        }
+
+        Ok(())
+    }
+
+    fn validate_board_commands(commands: &[VescTrampaBoardCommand]) -> Result<(), &'static str> {
+        if commands.is_empty() {
+            return Err("empty board_commands");
+        }
+
+        let response_commands = commands
+            .iter()
+            .filter(|command| command.response_expected)
+            .count();
+        if response_commands > 0 && (commands.len() != 1 || commands[0].duration_ms > 0) {
+            return Err("timed or multi-step board commands cannot expect responses");
+        }
+
+        for command in commands {
+            Self::validate_board_command_payload(command)?;
+            if command.duration_ms == 0
+                && Self::set_current_payload_ma(&command.payload).is_some_and(|ma| ma != 0)
+            {
+                return Err("non-zero current requires duration_ms");
+            }
+        }
+        Ok(())
+    }
+
+    fn validate_board_command_payload(
+        command: &VescTrampaBoardCommand,
+    ) -> Result<(), &'static str> {
+        if command.payload.is_empty() {
+            return Err("empty payload");
+        }
+        Ok(())
+    }
+
+    fn duration_overflow_error(command_type: &'static str) -> std::io::Error {
+        std::io::Error::new(
+            std::io::ErrorKind::InvalidInput,
+            format!("VESC Trampa {command_type} duration is too large"),
+        )
+    }
+
+    async fn write_board_payload(
+        &self,
+        port: &mut SerialStream,
+        payload: Bytes,
+    ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let packet = CommPacket::new(payload)?;
+        packet
+            .async_write(port, VESC_TRAMPA_COMMAND_TIMEOUT_MS)
+            .await?;
+        Ok(())
     }
 
     async fn write_set_handbrake(
@@ -333,11 +470,8 @@ impl VescTrampaPort {
         port: &mut SerialStream,
         current_a: f32,
     ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        let packet = CommPacket::new(Self::set_handbrake_payload(current_a))?;
-        packet
-            .async_write(port, VESC_TRAMPA_COMMAND_TIMEOUT_MS)
-            .await?;
-        Ok(())
+        self.write_board_payload(port, Self::set_handbrake_payload(current_a))
+            .await
     }
 
     fn set_handbrake_payload(current_a: f32) -> Bytes {
@@ -347,13 +481,16 @@ impl VescTrampaPort {
         Bytes::from(payload)
     }
 
-    fn command_variant_count(command: &TxEnvelope) -> usize {
-        (command.board_command.is_some() as usize) + (command.motor_mode.is_some() as usize)
+    fn set_current_payload_ma(payload: &[u8]) -> Option<i32> {
+        if payload.first().copied() != Some(VESC_TRAMPA_SET_CURRENT_COMMAND_ID) || payload.len() < 5
+        {
+            return None;
+        }
+        Some(i32::from_be_bytes(payload[1..5].try_into().ok()?))
     }
 
-    fn is_motor_mode_hold_command(command: &TxEnvelope) -> bool {
-        command.board_command.is_none()
-            && Self::motor_mode(command) == Some(VescTrampaMotorMode::Hold)
+    fn command_variant_count(command: &TxEnvelope) -> usize {
+        (!command.board_commands.is_empty() as usize) + (command.motor_mode.is_some() as usize)
     }
 
     fn motor_mode(command: &TxEnvelope) -> Option<VescTrampaMotorMode> {
@@ -366,15 +503,26 @@ impl VescTrampaPort {
         let now_ns = systime::get_monotonic_stamp_ns();
         let latency_ns = now_ns.saturating_sub(command.monotonic_stamp_ns);
         let latency_ms = latency_ns as f64 / 1_000_000.0;
-        let payload_len = command
-            .board_command
-            .as_ref()
+        let board_commands = command.board_commands.len();
+        let board_payload_total_len = command
+            .board_commands
+            .iter()
             .map(|command| command.payload.len())
-            .unwrap_or_default();
+            .sum::<usize>();
         let motor_mode = Self::motor_mode(command);
+        let board_duration_ms = command
+            .board_commands
+            .iter()
+            .map(|command| u64::from(command.duration_ms))
+            .sum::<u64>();
+        let board_response_expected = command
+            .board_commands
+            .iter()
+            .filter(|command| command.response_expected)
+            .count();
 
         debug!(
-            "Received VESC Trampa command for port {} uuid={} (latency: {:.2}ms): TxEnvelope {{ monotonic_stamp_ns: {}, local_stamp_ns: {}, app_start_id: {}, command_id: {:02X?}, payload_len: {}, response_expected: {}, motor_mode: {:?} }}",
+            "Received VESC Trampa command for port {} uuid={} (latency: {:.2}ms): TxEnvelope {{ monotonic_stamp_ns: {}, local_stamp_ns: {}, app_start_id: {}, command_id: {:02X?}, board_commands: {}, board_payload_total_len: {}, board_response_expected: {}, board_duration_ms: {}, motor_mode: {:?} }}",
             self.board_info.port_name,
             format_bytes(self.board_info.uuid.as_ref()),
             latency_ms,
@@ -382,12 +530,10 @@ impl VescTrampaPort {
             command.local_stamp_ns,
             command.app_start_id,
             command.command_id,
-            payload_len,
-            command
-                .board_command
-                .as_ref()
-                .map(|command| command.response_expected)
-                .unwrap_or_default(),
+            board_commands,
+            board_payload_total_len,
+            board_response_expected,
+            board_duration_ms,
             motor_mode,
         );
     }
@@ -574,4 +720,102 @@ fn format_bytes(value: &[u8]) -> String {
         write!(&mut formatted, "{byte:02x}").expect("writing to String cannot fail");
     }
     formatted
+}
+
+#[cfg(test)]
+mod tests {
+    use super::VescTrampaPort;
+    use crate::vesc_trampa_proto::{TxEnvelope, VescTrampaBoardCommand};
+    use bytes::Bytes;
+
+    #[test]
+    fn parses_set_current_payload_current_ma() {
+        let payload = [6, 0xff, 0xff, 0xfb, 0x1e];
+
+        assert_eq!(
+            VescTrampaPort::set_current_payload_ma(&payload),
+            Some(-1250)
+        );
+    }
+
+    #[test]
+    fn ignores_non_current_payload_for_current_guard() {
+        let payload = [10, 0, 0, 0, 0];
+
+        assert_eq!(VescTrampaPort::set_current_payload_ma(&payload), None);
+    }
+
+    #[test]
+    fn sequence_command_counts_as_one_variant() {
+        let envelope = TxEnvelope {
+            board_commands: vec![VescTrampaBoardCommand {
+                payload: Bytes::from_static(&[6, 0, 0, 0, 0]),
+                duration_ms: 100,
+                ..Default::default()
+            }],
+            ..Default::default()
+        };
+
+        assert_eq!(VescTrampaPort::command_variant_count(&envelope), 1);
+    }
+
+    #[test]
+    fn repeated_board_commands_count_as_one_variant() {
+        let envelope = TxEnvelope {
+            board_commands: vec![
+                VescTrampaBoardCommand {
+                    payload: Bytes::from_static(&[6, 0, 0, 0, 0]),
+                    duration_ms: 100,
+                    ..Default::default()
+                },
+                VescTrampaBoardCommand {
+                    payload: Bytes::from_static(&[6, 0, 0, 0, 0]),
+                    ..Default::default()
+                },
+            ],
+            ..Default::default()
+        };
+
+        assert_eq!(VescTrampaPort::command_variant_count(&envelope), 1);
+    }
+
+    #[test]
+    fn validates_board_command_sequence_shape() {
+        let commands = vec![
+            VescTrampaBoardCommand {
+                payload: Bytes::from_static(&[6, 0, 0, 0, 1]),
+                duration_ms: 100,
+                ..Default::default()
+            },
+            VescTrampaBoardCommand {
+                payload: Bytes::from_static(&[6, 0, 0, 0, 0]),
+                ..Default::default()
+            },
+        ];
+
+        assert!(VescTrampaPort::validate_board_commands(&commands).is_ok());
+    }
+
+    #[test]
+    fn rejects_non_zero_current_without_duration() {
+        let commands = vec![VescTrampaBoardCommand {
+            payload: Bytes::from_static(&[6, 0, 0, 0, 1]),
+            ..Default::default()
+        }];
+
+        assert_eq!(
+            VescTrampaPort::validate_board_commands(&commands),
+            Err("non-zero current requires duration_ms")
+        );
+    }
+
+    #[test]
+    fn accepts_zero_current_without_duration() {
+        let commands = vec![VescTrampaBoardCommand {
+            payload: Bytes::from_static(&[6, 0, 0, 0, 0]),
+            ..Default::default()
+        }];
+
+        assert!(VescTrampaPort::validate_board_commands(&commands).is_ok());
+    }
 }

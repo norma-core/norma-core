@@ -8,6 +8,12 @@ export const VESC_TRAMPA_CURRENT_STEP_A = 0.1;
 
 const COMMAND_SET_CURRENT = 6;
 
+export interface SetVescTrampaCurrentOptions {
+  maxAbsCurrentA?: number;
+  durationMs?: number;
+  finalCurrentA?: number;
+}
+
 function int32Payload(commandId: number, value: number): Uint8Array {
   const payload = new Uint8Array(5);
   payload[0] = commandId;
@@ -32,15 +38,32 @@ export function clampVescTrampaCurrent(
 export async function setVescTrampaCurrent(
   boardUuid: Uint8Array,
   currentA: number,
-  maxAbsCurrentA = VESC_TRAMPA_CURRENT_MAX_A,
+  optionsOrMaxAbsCurrentA: number | SetVescTrampaCurrentOptions = VESC_TRAMPA_CURRENT_MAX_A,
 ): Promise<void> {
+  const options = typeof optionsOrMaxAbsCurrentA === 'number'
+    ? { maxAbsCurrentA: optionsOrMaxAbsCurrentA }
+    : optionsOrMaxAbsCurrentA;
+  const maxAbsCurrentA = options.maxAbsCurrentA ?? VESC_TRAMPA_CURRENT_MAX_A;
   const clampedCurrentA = clampVescTrampaCurrent(currentA, maxAbsCurrentA);
+  const clampedFinalCurrentA = clampVescTrampaCurrent(options.finalCurrentA ?? 0, maxAbsCurrentA);
+  const durationMs = Number.isFinite(options.durationMs)
+    ? Math.max(0, Math.floor(options.durationMs ?? 0))
+    : 0;
+
   await commandManager.sendVescTrampaCommand({
     targetBoardUuid: boardUuid,
-    boardCommand: {
-      payload: int32Payload(COMMAND_SET_CURRENT, Math.round(clampedCurrentA * 1000)),
-      responseExpected: false,
-    },
+    boardCommands: [
+      {
+        payload: int32Payload(COMMAND_SET_CURRENT, Math.round(clampedCurrentA * 1000)),
+        responseExpected: false,
+        durationMs,
+      },
+      ...(durationMs > 0 ? [{
+        payload: int32Payload(COMMAND_SET_CURRENT, Math.round(clampedFinalCurrentA * 1000)),
+        responseExpected: false,
+        durationMs: 0,
+      }] : []),
+    ],
   });
 }
 

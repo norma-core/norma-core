@@ -735,6 +735,7 @@ export const drivers = $root.drivers = (() => {
      * @property {number} QDT_VICTRON_SMARTSOLAR_MPPT_RX=54 QDT_VICTRON_SMARTSOLAR_MPPT_RX value
      * @property {number} QDT_PWM_OUTPUT_TX=55 QDT_PWM_OUTPUT_TX value
      * @property {number} QDT_PWM_OUTPUT_RX=56 QDT_PWM_OUTPUT_RX value
+     * @property {number} QDT_DMESG_RX=57 QDT_DMESG_RX value
      */
     drivers.QueueDataType = (function() {
         const valuesById = {}, values = Object.create(valuesById);
@@ -766,6 +767,7 @@ export const drivers = $root.drivers = (() => {
         values[valuesById[54] = "QDT_VICTRON_SMARTSOLAR_MPPT_RX"] = 54;
         values[valuesById[55] = "QDT_PWM_OUTPUT_TX"] = 55;
         values[valuesById[56] = "QDT_PWM_OUTPUT_RX"] = 56;
+        values[valuesById[57] = "QDT_DMESG_RX"] = 57;
         return values;
     })();
 
@@ -1364,6 +1366,7 @@ export const inference = $root.inference = (() => {
                     case 54:
                     case 55:
                     case 56:
+                    case 57:
                         break;
                     }
                 return null;
@@ -1510,6 +1513,10 @@ export const inference = $root.inference = (() => {
                 case "QDT_PWM_OUTPUT_RX":
                 case 56:
                     message.type = 56;
+                    break;
+                case "QDT_DMESG_RX":
+                case 57:
+                    message.type = 57;
                     break;
                 }
                 return message;
@@ -11523,8 +11530,8 @@ export const vesc_trampa = $root.vesc_trampa = (() => {
          * @property {Long|null} [appStartId] TxEnvelope appStartId
          * @property {Uint8Array|null} [targetBoardUuid] TxEnvelope targetBoardUuid
          * @property {Uint8Array|null} [commandId] TxEnvelope commandId
-         * @property {vesc_trampa.IVescTrampaBoardCommand|null} [boardCommand] TxEnvelope boardCommand
          * @property {vesc_trampa.IVescTrampaMotorModeCommand|null} [motorMode] TxEnvelope motorMode
+         * @property {Array.<vesc_trampa.IVescTrampaBoardCommand>|null} [boardCommands] TxEnvelope boardCommands
          */
 
         /**
@@ -11536,6 +11543,7 @@ export const vesc_trampa = $root.vesc_trampa = (() => {
          * @param {vesc_trampa.ITxEnvelope=} [properties] Properties to set
          */
         function TxEnvelope(properties) {
+            this.boardCommands = [];
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
                     if (properties[keys[i]] != null && keys[i] !== "__proto__")
@@ -11583,20 +11591,20 @@ export const vesc_trampa = $root.vesc_trampa = (() => {
         TxEnvelope.prototype.commandId = $util.newBuffer([]);
 
         /**
-         * TxEnvelope boardCommand.
-         * @member {vesc_trampa.IVescTrampaBoardCommand|null|undefined} boardCommand
-         * @memberof vesc_trampa.TxEnvelope
-         * @instance
-         */
-        TxEnvelope.prototype.boardCommand = null;
-
-        /**
          * TxEnvelope motorMode.
          * @member {vesc_trampa.IVescTrampaMotorModeCommand|null|undefined} motorMode
          * @memberof vesc_trampa.TxEnvelope
          * @instance
          */
         TxEnvelope.prototype.motorMode = null;
+
+        /**
+         * TxEnvelope boardCommands.
+         * @member {Array.<vesc_trampa.IVescTrampaBoardCommand>} boardCommands
+         * @memberof vesc_trampa.TxEnvelope
+         * @instance
+         */
+        TxEnvelope.prototype.boardCommands = $util.emptyArray;
 
         /**
          * Creates a new TxEnvelope instance using the specified properties.
@@ -11632,10 +11640,11 @@ export const vesc_trampa = $root.vesc_trampa = (() => {
                 writer.uint32(/* id 4, wireType 2 =*/34).bytes(message.commandId);
             if (message.appStartId != null && Object.hasOwnProperty.call(message, "appStartId"))
                 writer.uint32(/* id 5, wireType 0 =*/40).uint64(message.appStartId);
-            if (message.boardCommand != null && Object.hasOwnProperty.call(message, "boardCommand"))
-                $root.vesc_trampa.VescTrampaBoardCommand.encode(message.boardCommand, writer.uint32(/* id 10, wireType 2 =*/82).fork()).ldelim();
             if (message.motorMode != null && Object.hasOwnProperty.call(message, "motorMode"))
                 $root.vesc_trampa.VescTrampaMotorModeCommand.encode(message.motorMode, writer.uint32(/* id 11, wireType 2 =*/90).fork()).ldelim();
+            if (message.boardCommands != null && message.boardCommands.length)
+                for (let i = 0; i < message.boardCommands.length; ++i)
+                    $root.vesc_trampa.VescTrampaBoardCommand.encode(message.boardCommands[i], writer.uint32(/* id 12, wireType 2 =*/98).fork()).ldelim();
             return writer;
         };
 
@@ -11696,12 +11705,14 @@ export const vesc_trampa = $root.vesc_trampa = (() => {
                         message.commandId = reader.bytes();
                         break;
                     }
-                case 10: {
-                        message.boardCommand = $root.vesc_trampa.VescTrampaBoardCommand.decode(reader, reader.uint32(), undefined, long + 1);
-                        break;
-                    }
                 case 11: {
                         message.motorMode = $root.vesc_trampa.VescTrampaMotorModeCommand.decode(reader, reader.uint32(), undefined, long + 1);
+                        break;
+                    }
+                case 12: {
+                        if (!(message.boardCommands && message.boardCommands.length))
+                            message.boardCommands = [];
+                        message.boardCommands.push($root.vesc_trampa.VescTrampaBoardCommand.decode(reader, reader.uint32(), undefined, long + 1));
                         break;
                     }
                 default:
@@ -11758,15 +11769,19 @@ export const vesc_trampa = $root.vesc_trampa = (() => {
             if (message.commandId != null && message.hasOwnProperty("commandId"))
                 if (!(message.commandId && typeof message.commandId.length === "number" || $util.isString(message.commandId)))
                     return "commandId: buffer expected";
-            if (message.boardCommand != null && message.hasOwnProperty("boardCommand")) {
-                let error = $root.vesc_trampa.VescTrampaBoardCommand.verify(message.boardCommand, long + 1);
-                if (error)
-                    return "boardCommand." + error;
-            }
             if (message.motorMode != null && message.hasOwnProperty("motorMode")) {
                 let error = $root.vesc_trampa.VescTrampaMotorModeCommand.verify(message.motorMode, long + 1);
                 if (error)
                     return "motorMode." + error;
+            }
+            if (message.boardCommands != null && message.hasOwnProperty("boardCommands")) {
+                if (!Array.isArray(message.boardCommands))
+                    return "boardCommands: array expected";
+                for (let i = 0; i < message.boardCommands.length; ++i) {
+                    let error = $root.vesc_trampa.VescTrampaBoardCommand.verify(message.boardCommands[i], long + 1);
+                    if (error)
+                        return "boardCommands." + error;
+                }
             }
             return null;
         };
@@ -11824,15 +11839,20 @@ export const vesc_trampa = $root.vesc_trampa = (() => {
                     $util.base64.decode(object.commandId, message.commandId = $util.newBuffer($util.base64.length(object.commandId)), 0);
                 else if (object.commandId.length >= 0)
                     message.commandId = object.commandId;
-            if (object.boardCommand != null) {
-                if (typeof object.boardCommand !== "object")
-                    throw TypeError(".vesc_trampa.TxEnvelope.boardCommand: object expected");
-                message.boardCommand = $root.vesc_trampa.VescTrampaBoardCommand.fromObject(object.boardCommand, long + 1);
-            }
             if (object.motorMode != null) {
                 if (typeof object.motorMode !== "object")
                     throw TypeError(".vesc_trampa.TxEnvelope.motorMode: object expected");
                 message.motorMode = $root.vesc_trampa.VescTrampaMotorModeCommand.fromObject(object.motorMode, long + 1);
+            }
+            if (object.boardCommands) {
+                if (!Array.isArray(object.boardCommands))
+                    throw TypeError(".vesc_trampa.TxEnvelope.boardCommands: array expected");
+                message.boardCommands = [];
+                for (let i = 0; i < object.boardCommands.length; ++i) {
+                    if (typeof object.boardCommands[i] !== "object")
+                        throw TypeError(".vesc_trampa.TxEnvelope.boardCommands: object expected");
+                    message.boardCommands[i] = $root.vesc_trampa.VescTrampaBoardCommand.fromObject(object.boardCommands[i], long + 1);
+                }
             }
             return message;
         };
@@ -11850,6 +11870,8 @@ export const vesc_trampa = $root.vesc_trampa = (() => {
             if (!options)
                 options = {};
             let object = {};
+            if (options.arrays || options.defaults)
+                object.boardCommands = [];
             if (options.defaults) {
                 if ($util.Long) {
                     let long = new $util.Long(0, 0, true);
@@ -11880,7 +11902,6 @@ export const vesc_trampa = $root.vesc_trampa = (() => {
                     object.appStartId = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
                 } else
                     object.appStartId = options.longs === String ? "0" : 0;
-                object.boardCommand = null;
                 object.motorMode = null;
             }
             if (message.monotonicStampNs != null && message.hasOwnProperty("monotonicStampNs"))
@@ -11902,10 +11923,13 @@ export const vesc_trampa = $root.vesc_trampa = (() => {
                     object.appStartId = options.longs === String ? String(message.appStartId) : message.appStartId;
                 else
                     object.appStartId = options.longs === String ? $util.Long.prototype.toString.call(message.appStartId) : options.longs === Number ? new $util.LongBits(message.appStartId.low >>> 0, message.appStartId.high >>> 0).toNumber(true) : message.appStartId;
-            if (message.boardCommand != null && message.hasOwnProperty("boardCommand"))
-                object.boardCommand = $root.vesc_trampa.VescTrampaBoardCommand.toObject(message.boardCommand, options);
             if (message.motorMode != null && message.hasOwnProperty("motorMode"))
                 object.motorMode = $root.vesc_trampa.VescTrampaMotorModeCommand.toObject(message.motorMode, options);
+            if (message.boardCommands && message.boardCommands.length) {
+                object.boardCommands = [];
+                for (let j = 0; j < message.boardCommands.length; ++j)
+                    object.boardCommands[j] = $root.vesc_trampa.VescTrampaBoardCommand.toObject(message.boardCommands[j], options);
+            }
             return object;
         };
 
@@ -11945,8 +11969,8 @@ export const vesc_trampa = $root.vesc_trampa = (() => {
          * @memberof vesc_trampa
          * @interface ICommand
          * @property {Uint8Array|null} [targetBoardUuid] Command targetBoardUuid
-         * @property {vesc_trampa.IVescTrampaBoardCommand|null} [boardCommand] Command boardCommand
          * @property {vesc_trampa.IVescTrampaMotorModeCommand|null} [motorMode] Command motorMode
+         * @property {Array.<vesc_trampa.IVescTrampaBoardCommand>|null} [boardCommands] Command boardCommands
          */
 
         /**
@@ -11958,6 +11982,7 @@ export const vesc_trampa = $root.vesc_trampa = (() => {
          * @param {vesc_trampa.ICommand=} [properties] Properties to set
          */
         function Command(properties) {
+            this.boardCommands = [];
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
                     if (properties[keys[i]] != null && keys[i] !== "__proto__")
@@ -11973,20 +11998,20 @@ export const vesc_trampa = $root.vesc_trampa = (() => {
         Command.prototype.targetBoardUuid = $util.newBuffer([]);
 
         /**
-         * Command boardCommand.
-         * @member {vesc_trampa.IVescTrampaBoardCommand|null|undefined} boardCommand
-         * @memberof vesc_trampa.Command
-         * @instance
-         */
-        Command.prototype.boardCommand = null;
-
-        /**
          * Command motorMode.
          * @member {vesc_trampa.IVescTrampaMotorModeCommand|null|undefined} motorMode
          * @memberof vesc_trampa.Command
          * @instance
          */
         Command.prototype.motorMode = null;
+
+        /**
+         * Command boardCommands.
+         * @member {Array.<vesc_trampa.IVescTrampaBoardCommand>} boardCommands
+         * @memberof vesc_trampa.Command
+         * @instance
+         */
+        Command.prototype.boardCommands = $util.emptyArray;
 
         /**
          * Creates a new Command instance using the specified properties.
@@ -12014,10 +12039,11 @@ export const vesc_trampa = $root.vesc_trampa = (() => {
                 writer = $Writer.create();
             if (message.targetBoardUuid != null && Object.hasOwnProperty.call(message, "targetBoardUuid"))
                 writer.uint32(/* id 1, wireType 2 =*/10).bytes(message.targetBoardUuid);
-            if (message.boardCommand != null && Object.hasOwnProperty.call(message, "boardCommand"))
-                $root.vesc_trampa.VescTrampaBoardCommand.encode(message.boardCommand, writer.uint32(/* id 10, wireType 2 =*/82).fork()).ldelim();
             if (message.motorMode != null && Object.hasOwnProperty.call(message, "motorMode"))
                 $root.vesc_trampa.VescTrampaMotorModeCommand.encode(message.motorMode, writer.uint32(/* id 11, wireType 2 =*/90).fork()).ldelim();
+            if (message.boardCommands != null && message.boardCommands.length)
+                for (let i = 0; i < message.boardCommands.length; ++i)
+                    $root.vesc_trampa.VescTrampaBoardCommand.encode(message.boardCommands[i], writer.uint32(/* id 12, wireType 2 =*/98).fork()).ldelim();
             return writer;
         };
 
@@ -12062,12 +12088,14 @@ export const vesc_trampa = $root.vesc_trampa = (() => {
                         message.targetBoardUuid = reader.bytes();
                         break;
                     }
-                case 10: {
-                        message.boardCommand = $root.vesc_trampa.VescTrampaBoardCommand.decode(reader, reader.uint32(), undefined, long + 1);
-                        break;
-                    }
                 case 11: {
                         message.motorMode = $root.vesc_trampa.VescTrampaMotorModeCommand.decode(reader, reader.uint32(), undefined, long + 1);
+                        break;
+                    }
+                case 12: {
+                        if (!(message.boardCommands && message.boardCommands.length))
+                            message.boardCommands = [];
+                        message.boardCommands.push($root.vesc_trampa.VescTrampaBoardCommand.decode(reader, reader.uint32(), undefined, long + 1));
                         break;
                     }
                 default:
@@ -12112,15 +12140,19 @@ export const vesc_trampa = $root.vesc_trampa = (() => {
             if (message.targetBoardUuid != null && message.hasOwnProperty("targetBoardUuid"))
                 if (!(message.targetBoardUuid && typeof message.targetBoardUuid.length === "number" || $util.isString(message.targetBoardUuid)))
                     return "targetBoardUuid: buffer expected";
-            if (message.boardCommand != null && message.hasOwnProperty("boardCommand")) {
-                let error = $root.vesc_trampa.VescTrampaBoardCommand.verify(message.boardCommand, long + 1);
-                if (error)
-                    return "boardCommand." + error;
-            }
             if (message.motorMode != null && message.hasOwnProperty("motorMode")) {
                 let error = $root.vesc_trampa.VescTrampaMotorModeCommand.verify(message.motorMode, long + 1);
                 if (error)
                     return "motorMode." + error;
+            }
+            if (message.boardCommands != null && message.hasOwnProperty("boardCommands")) {
+                if (!Array.isArray(message.boardCommands))
+                    return "boardCommands: array expected";
+                for (let i = 0; i < message.boardCommands.length; ++i) {
+                    let error = $root.vesc_trampa.VescTrampaBoardCommand.verify(message.boardCommands[i], long + 1);
+                    if (error)
+                        return "boardCommands." + error;
+                }
             }
             return null;
         };
@@ -12146,15 +12178,20 @@ export const vesc_trampa = $root.vesc_trampa = (() => {
                     $util.base64.decode(object.targetBoardUuid, message.targetBoardUuid = $util.newBuffer($util.base64.length(object.targetBoardUuid)), 0);
                 else if (object.targetBoardUuid.length >= 0)
                     message.targetBoardUuid = object.targetBoardUuid;
-            if (object.boardCommand != null) {
-                if (typeof object.boardCommand !== "object")
-                    throw TypeError(".vesc_trampa.Command.boardCommand: object expected");
-                message.boardCommand = $root.vesc_trampa.VescTrampaBoardCommand.fromObject(object.boardCommand, long + 1);
-            }
             if (object.motorMode != null) {
                 if (typeof object.motorMode !== "object")
                     throw TypeError(".vesc_trampa.Command.motorMode: object expected");
                 message.motorMode = $root.vesc_trampa.VescTrampaMotorModeCommand.fromObject(object.motorMode, long + 1);
+            }
+            if (object.boardCommands) {
+                if (!Array.isArray(object.boardCommands))
+                    throw TypeError(".vesc_trampa.Command.boardCommands: array expected");
+                message.boardCommands = [];
+                for (let i = 0; i < object.boardCommands.length; ++i) {
+                    if (typeof object.boardCommands[i] !== "object")
+                        throw TypeError(".vesc_trampa.Command.boardCommands: object expected");
+                    message.boardCommands[i] = $root.vesc_trampa.VescTrampaBoardCommand.fromObject(object.boardCommands[i], long + 1);
+                }
             }
             return message;
         };
@@ -12172,6 +12209,8 @@ export const vesc_trampa = $root.vesc_trampa = (() => {
             if (!options)
                 options = {};
             let object = {};
+            if (options.arrays || options.defaults)
+                object.boardCommands = [];
             if (options.defaults) {
                 if (options.bytes === String)
                     object.targetBoardUuid = "";
@@ -12180,15 +12219,17 @@ export const vesc_trampa = $root.vesc_trampa = (() => {
                     if (options.bytes !== Array)
                         object.targetBoardUuid = $util.newBuffer(object.targetBoardUuid);
                 }
-                object.boardCommand = null;
                 object.motorMode = null;
             }
             if (message.targetBoardUuid != null && message.hasOwnProperty("targetBoardUuid"))
                 object.targetBoardUuid = options.bytes === String ? $util.base64.encode(message.targetBoardUuid, 0, message.targetBoardUuid.length) : options.bytes === Array ? Array.prototype.slice.call(message.targetBoardUuid) : message.targetBoardUuid;
-            if (message.boardCommand != null && message.hasOwnProperty("boardCommand"))
-                object.boardCommand = $root.vesc_trampa.VescTrampaBoardCommand.toObject(message.boardCommand, options);
             if (message.motorMode != null && message.hasOwnProperty("motorMode"))
                 object.motorMode = $root.vesc_trampa.VescTrampaMotorModeCommand.toObject(message.motorMode, options);
+            if (message.boardCommands && message.boardCommands.length) {
+                object.boardCommands = [];
+                for (let j = 0; j < message.boardCommands.length; ++j)
+                    object.boardCommands[j] = $root.vesc_trampa.VescTrampaBoardCommand.toObject(message.boardCommands[j], options);
+            }
             return object;
         };
 
@@ -12229,6 +12270,7 @@ export const vesc_trampa = $root.vesc_trampa = (() => {
          * @interface IVescTrampaBoardCommand
          * @property {Uint8Array|null} [payload] VescTrampaBoardCommand payload
          * @property {boolean|null} [responseExpected] VescTrampaBoardCommand responseExpected
+         * @property {number|null} [durationMs] VescTrampaBoardCommand durationMs
          */
 
         /**
@@ -12263,6 +12305,14 @@ export const vesc_trampa = $root.vesc_trampa = (() => {
         VescTrampaBoardCommand.prototype.responseExpected = false;
 
         /**
+         * VescTrampaBoardCommand durationMs.
+         * @member {number} durationMs
+         * @memberof vesc_trampa.VescTrampaBoardCommand
+         * @instance
+         */
+        VescTrampaBoardCommand.prototype.durationMs = 0;
+
+        /**
          * Creates a new VescTrampaBoardCommand instance using the specified properties.
          * @function create
          * @memberof vesc_trampa.VescTrampaBoardCommand
@@ -12290,6 +12340,8 @@ export const vesc_trampa = $root.vesc_trampa = (() => {
                 writer.uint32(/* id 1, wireType 2 =*/10).bytes(message.payload);
             if (message.responseExpected != null && Object.hasOwnProperty.call(message, "responseExpected"))
                 writer.uint32(/* id 2, wireType 0 =*/16).bool(message.responseExpected);
+            if (message.durationMs != null && Object.hasOwnProperty.call(message, "durationMs"))
+                writer.uint32(/* id 3, wireType 0 =*/24).uint32(message.durationMs);
             return writer;
         };
 
@@ -12338,6 +12390,10 @@ export const vesc_trampa = $root.vesc_trampa = (() => {
                         message.responseExpected = reader.bool();
                         break;
                     }
+                case 3: {
+                        message.durationMs = reader.uint32();
+                        break;
+                    }
                 default:
                     reader.skipType(tag & 7, long);
                     break;
@@ -12383,6 +12439,9 @@ export const vesc_trampa = $root.vesc_trampa = (() => {
             if (message.responseExpected != null && message.hasOwnProperty("responseExpected"))
                 if (typeof message.responseExpected !== "boolean")
                     return "responseExpected: boolean expected";
+            if (message.durationMs != null && message.hasOwnProperty("durationMs"))
+                if (!$util.isInteger(message.durationMs))
+                    return "durationMs: integer expected";
             return null;
         };
 
@@ -12409,6 +12468,8 @@ export const vesc_trampa = $root.vesc_trampa = (() => {
                     message.payload = object.payload;
             if (object.responseExpected != null)
                 message.responseExpected = Boolean(object.responseExpected);
+            if (object.durationMs != null)
+                message.durationMs = object.durationMs >>> 0;
             return message;
         };
 
@@ -12434,11 +12495,14 @@ export const vesc_trampa = $root.vesc_trampa = (() => {
                         object.payload = $util.newBuffer(object.payload);
                 }
                 object.responseExpected = false;
+                object.durationMs = 0;
             }
             if (message.payload != null && message.hasOwnProperty("payload"))
                 object.payload = options.bytes === String ? $util.base64.encode(message.payload, 0, message.payload.length) : options.bytes === Array ? Array.prototype.slice.call(message.payload) : message.payload;
             if (message.responseExpected != null && message.hasOwnProperty("responseExpected"))
                 object.responseExpected = message.responseExpected;
+            if (message.durationMs != null && message.hasOwnProperty("durationMs"))
+                object.durationMs = message.durationMs;
             return object;
         };
 
@@ -44739,6 +44803,538 @@ export const pwm_output = $root.pwm_output = (() => {
     })();
 
     return pwm_output;
+})();
+
+export const dmesg = $root.dmesg = (() => {
+
+    /**
+     * Namespace dmesg.
+     * @exports dmesg
+     * @namespace
+     */
+    const dmesg = {};
+
+    /**
+     * DmesgSignalType enum.
+     * @name dmesg.DmesgSignalType
+     * @enum {number}
+     * @property {number} DMESG_SIGNAL_TYPE_UNSPECIFIED=0 DMESG_SIGNAL_TYPE_UNSPECIFIED value
+     * @property {number} DMESG_STARTED=1 DMESG_STARTED value
+     * @property {number} DMESG_MESSAGES=2 DMESG_MESSAGES value
+     * @property {number} DMESG_BACKLOG_COMPLETE=3 DMESG_BACKLOG_COMPLETE value
+     * @property {number} DMESG_GAP=4 DMESG_GAP value
+     * @property {number} DMESG_SOURCE_UNAVAILABLE=5 DMESG_SOURCE_UNAVAILABLE value
+     * @property {number} DMESG_ERROR=6 DMESG_ERROR value
+     */
+    dmesg.DmesgSignalType = (function() {
+        const valuesById = {}, values = Object.create(valuesById);
+        values[valuesById[0] = "DMESG_SIGNAL_TYPE_UNSPECIFIED"] = 0;
+        values[valuesById[1] = "DMESG_STARTED"] = 1;
+        values[valuesById[2] = "DMESG_MESSAGES"] = 2;
+        values[valuesById[3] = "DMESG_BACKLOG_COMPLETE"] = 3;
+        values[valuesById[4] = "DMESG_GAP"] = 4;
+        values[valuesById[5] = "DMESG_SOURCE_UNAVAILABLE"] = 5;
+        values[valuesById[6] = "DMESG_ERROR"] = 6;
+        return values;
+    })();
+
+    dmesg.RxEnvelope = (function() {
+
+        /**
+         * Properties of a RxEnvelope.
+         * @memberof dmesg
+         * @interface IRxEnvelope
+         * @property {Long|null} [monotonicStampNs] RxEnvelope monotonicStampNs
+         * @property {Long|null} [localStampNs] RxEnvelope localStampNs
+         * @property {Long|null} [appStartId] RxEnvelope appStartId
+         * @property {dmesg.DmesgSignalType|null} [signalType] RxEnvelope signalType
+         * @property {Array.<string>|null} [records] RxEnvelope records
+         * @property {boolean|null} [fromBacklog] RxEnvelope fromBacklog
+         * @property {Long|null} [droppedRecords] RxEnvelope droppedRecords
+         * @property {string|null} [error] RxEnvelope error
+         */
+
+        /**
+         * Constructs a new RxEnvelope.
+         * @memberof dmesg
+         * @classdesc Represents a RxEnvelope.
+         * @implements IRxEnvelope
+         * @constructor
+         * @param {dmesg.IRxEnvelope=} [properties] Properties to set
+         */
+        function RxEnvelope(properties) {
+            this.records = [];
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * RxEnvelope monotonicStampNs.
+         * @member {Long} monotonicStampNs
+         * @memberof dmesg.RxEnvelope
+         * @instance
+         */
+        RxEnvelope.prototype.monotonicStampNs = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+
+        /**
+         * RxEnvelope localStampNs.
+         * @member {Long} localStampNs
+         * @memberof dmesg.RxEnvelope
+         * @instance
+         */
+        RxEnvelope.prototype.localStampNs = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+
+        /**
+         * RxEnvelope appStartId.
+         * @member {Long} appStartId
+         * @memberof dmesg.RxEnvelope
+         * @instance
+         */
+        RxEnvelope.prototype.appStartId = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+
+        /**
+         * RxEnvelope signalType.
+         * @member {dmesg.DmesgSignalType} signalType
+         * @memberof dmesg.RxEnvelope
+         * @instance
+         */
+        RxEnvelope.prototype.signalType = 0;
+
+        /**
+         * RxEnvelope records.
+         * @member {Array.<string>} records
+         * @memberof dmesg.RxEnvelope
+         * @instance
+         */
+        RxEnvelope.prototype.records = $util.emptyArray;
+
+        /**
+         * RxEnvelope fromBacklog.
+         * @member {boolean} fromBacklog
+         * @memberof dmesg.RxEnvelope
+         * @instance
+         */
+        RxEnvelope.prototype.fromBacklog = false;
+
+        /**
+         * RxEnvelope droppedRecords.
+         * @member {Long} droppedRecords
+         * @memberof dmesg.RxEnvelope
+         * @instance
+         */
+        RxEnvelope.prototype.droppedRecords = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+
+        /**
+         * RxEnvelope error.
+         * @member {string} error
+         * @memberof dmesg.RxEnvelope
+         * @instance
+         */
+        RxEnvelope.prototype.error = "";
+
+        /**
+         * Creates a new RxEnvelope instance using the specified properties.
+         * @function create
+         * @memberof dmesg.RxEnvelope
+         * @static
+         * @param {dmesg.IRxEnvelope=} [properties] Properties to set
+         * @returns {dmesg.RxEnvelope} RxEnvelope instance
+         */
+        RxEnvelope.create = function create(properties) {
+            return new RxEnvelope(properties);
+        };
+
+        /**
+         * Encodes the specified RxEnvelope message. Does not implicitly {@link dmesg.RxEnvelope.verify|verify} messages.
+         * @function encode
+         * @memberof dmesg.RxEnvelope
+         * @static
+         * @param {dmesg.IRxEnvelope} message RxEnvelope message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        RxEnvelope.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.monotonicStampNs != null && Object.hasOwnProperty.call(message, "monotonicStampNs"))
+                writer.uint32(/* id 1, wireType 0 =*/8).uint64(message.monotonicStampNs);
+            if (message.localStampNs != null && Object.hasOwnProperty.call(message, "localStampNs"))
+                writer.uint32(/* id 2, wireType 0 =*/16).uint64(message.localStampNs);
+            if (message.appStartId != null && Object.hasOwnProperty.call(message, "appStartId"))
+                writer.uint32(/* id 3, wireType 0 =*/24).uint64(message.appStartId);
+            if (message.signalType != null && Object.hasOwnProperty.call(message, "signalType"))
+                writer.uint32(/* id 10, wireType 0 =*/80).int32(message.signalType);
+            if (message.records != null && message.records.length)
+                for (let i = 0; i < message.records.length; ++i)
+                    writer.uint32(/* id 11, wireType 2 =*/90).string(message.records[i]);
+            if (message.fromBacklog != null && Object.hasOwnProperty.call(message, "fromBacklog"))
+                writer.uint32(/* id 12, wireType 0 =*/96).bool(message.fromBacklog);
+            if (message.droppedRecords != null && Object.hasOwnProperty.call(message, "droppedRecords"))
+                writer.uint32(/* id 13, wireType 0 =*/104).uint64(message.droppedRecords);
+            if (message.error != null && Object.hasOwnProperty.call(message, "error"))
+                writer.uint32(/* id 50, wireType 2 =*/402).string(message.error);
+            return writer;
+        };
+
+        /**
+         * Encodes the specified RxEnvelope message, length delimited. Does not implicitly {@link dmesg.RxEnvelope.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof dmesg.RxEnvelope
+         * @static
+         * @param {dmesg.IRxEnvelope} message RxEnvelope message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        RxEnvelope.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes a RxEnvelope message from the specified reader or buffer.
+         * @function decode
+         * @memberof dmesg.RxEnvelope
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {dmesg.RxEnvelope} RxEnvelope
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        RxEnvelope.decode = function decode(reader, length, error, long) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.dmesg.RxEnvelope();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                if (tag === error)
+                    break;
+                switch (tag >>> 3) {
+                case 1: {
+                        message.monotonicStampNs = reader.uint64();
+                        break;
+                    }
+                case 2: {
+                        message.localStampNs = reader.uint64();
+                        break;
+                    }
+                case 3: {
+                        message.appStartId = reader.uint64();
+                        break;
+                    }
+                case 10: {
+                        message.signalType = reader.int32();
+                        break;
+                    }
+                case 11: {
+                        if (!(message.records && message.records.length))
+                            message.records = [];
+                        message.records.push(reader.string());
+                        break;
+                    }
+                case 12: {
+                        message.fromBacklog = reader.bool();
+                        break;
+                    }
+                case 13: {
+                        message.droppedRecords = reader.uint64();
+                        break;
+                    }
+                case 50: {
+                        message.error = reader.string();
+                        break;
+                    }
+                default:
+                    reader.skipType(tag & 7, long);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes a RxEnvelope message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof dmesg.RxEnvelope
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {dmesg.RxEnvelope} RxEnvelope
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        RxEnvelope.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies a RxEnvelope message.
+         * @function verify
+         * @memberof dmesg.RxEnvelope
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        RxEnvelope.verify = function verify(message, long) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
+            if (message.monotonicStampNs != null && message.hasOwnProperty("monotonicStampNs"))
+                if (!$util.isInteger(message.monotonicStampNs) && !(message.monotonicStampNs && $util.isInteger(message.monotonicStampNs.low) && $util.isInteger(message.monotonicStampNs.high)))
+                    return "monotonicStampNs: integer|Long expected";
+            if (message.localStampNs != null && message.hasOwnProperty("localStampNs"))
+                if (!$util.isInteger(message.localStampNs) && !(message.localStampNs && $util.isInteger(message.localStampNs.low) && $util.isInteger(message.localStampNs.high)))
+                    return "localStampNs: integer|Long expected";
+            if (message.appStartId != null && message.hasOwnProperty("appStartId"))
+                if (!$util.isInteger(message.appStartId) && !(message.appStartId && $util.isInteger(message.appStartId.low) && $util.isInteger(message.appStartId.high)))
+                    return "appStartId: integer|Long expected";
+            if (message.signalType != null && message.hasOwnProperty("signalType"))
+                switch (message.signalType) {
+                default:
+                    return "signalType: enum value expected";
+                case 0:
+                case 1:
+                case 2:
+                case 3:
+                case 4:
+                case 5:
+                case 6:
+                    break;
+                }
+            if (message.records != null && message.hasOwnProperty("records")) {
+                if (!Array.isArray(message.records))
+                    return "records: array expected";
+                for (let i = 0; i < message.records.length; ++i)
+                    if (!$util.isString(message.records[i]))
+                        return "records: string[] expected";
+            }
+            if (message.fromBacklog != null && message.hasOwnProperty("fromBacklog"))
+                if (typeof message.fromBacklog !== "boolean")
+                    return "fromBacklog: boolean expected";
+            if (message.droppedRecords != null && message.hasOwnProperty("droppedRecords"))
+                if (!$util.isInteger(message.droppedRecords) && !(message.droppedRecords && $util.isInteger(message.droppedRecords.low) && $util.isInteger(message.droppedRecords.high)))
+                    return "droppedRecords: integer|Long expected";
+            if (message.error != null && message.hasOwnProperty("error"))
+                if (!$util.isString(message.error))
+                    return "error: string expected";
+            return null;
+        };
+
+        /**
+         * Creates a RxEnvelope message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof dmesg.RxEnvelope
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {dmesg.RxEnvelope} RxEnvelope
+         */
+        RxEnvelope.fromObject = function fromObject(object, long) {
+            if (object instanceof $root.dmesg.RxEnvelope)
+                return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let message = new $root.dmesg.RxEnvelope();
+            if (object.monotonicStampNs != null)
+                if ($util.Long)
+                    (message.monotonicStampNs = $util.Long.fromValue(object.monotonicStampNs)).unsigned = true;
+                else if (typeof object.monotonicStampNs === "string")
+                    message.monotonicStampNs = parseInt(object.monotonicStampNs, 10);
+                else if (typeof object.monotonicStampNs === "number")
+                    message.monotonicStampNs = object.monotonicStampNs;
+                else if (typeof object.monotonicStampNs === "object")
+                    message.monotonicStampNs = new $util.LongBits(object.monotonicStampNs.low >>> 0, object.monotonicStampNs.high >>> 0).toNumber(true);
+            if (object.localStampNs != null)
+                if ($util.Long)
+                    (message.localStampNs = $util.Long.fromValue(object.localStampNs)).unsigned = true;
+                else if (typeof object.localStampNs === "string")
+                    message.localStampNs = parseInt(object.localStampNs, 10);
+                else if (typeof object.localStampNs === "number")
+                    message.localStampNs = object.localStampNs;
+                else if (typeof object.localStampNs === "object")
+                    message.localStampNs = new $util.LongBits(object.localStampNs.low >>> 0, object.localStampNs.high >>> 0).toNumber(true);
+            if (object.appStartId != null)
+                if ($util.Long)
+                    (message.appStartId = $util.Long.fromValue(object.appStartId)).unsigned = true;
+                else if (typeof object.appStartId === "string")
+                    message.appStartId = parseInt(object.appStartId, 10);
+                else if (typeof object.appStartId === "number")
+                    message.appStartId = object.appStartId;
+                else if (typeof object.appStartId === "object")
+                    message.appStartId = new $util.LongBits(object.appStartId.low >>> 0, object.appStartId.high >>> 0).toNumber(true);
+            switch (object.signalType) {
+            default:
+                if (typeof object.signalType === "number") {
+                    message.signalType = object.signalType;
+                    break;
+                }
+                break;
+            case "DMESG_SIGNAL_TYPE_UNSPECIFIED":
+            case 0:
+                message.signalType = 0;
+                break;
+            case "DMESG_STARTED":
+            case 1:
+                message.signalType = 1;
+                break;
+            case "DMESG_MESSAGES":
+            case 2:
+                message.signalType = 2;
+                break;
+            case "DMESG_BACKLOG_COMPLETE":
+            case 3:
+                message.signalType = 3;
+                break;
+            case "DMESG_GAP":
+            case 4:
+                message.signalType = 4;
+                break;
+            case "DMESG_SOURCE_UNAVAILABLE":
+            case 5:
+                message.signalType = 5;
+                break;
+            case "DMESG_ERROR":
+            case 6:
+                message.signalType = 6;
+                break;
+            }
+            if (object.records) {
+                if (!Array.isArray(object.records))
+                    throw TypeError(".dmesg.RxEnvelope.records: array expected");
+                message.records = [];
+                for (let i = 0; i < object.records.length; ++i)
+                    message.records[i] = String(object.records[i]);
+            }
+            if (object.fromBacklog != null)
+                message.fromBacklog = Boolean(object.fromBacklog);
+            if (object.droppedRecords != null)
+                if ($util.Long)
+                    (message.droppedRecords = $util.Long.fromValue(object.droppedRecords)).unsigned = true;
+                else if (typeof object.droppedRecords === "string")
+                    message.droppedRecords = parseInt(object.droppedRecords, 10);
+                else if (typeof object.droppedRecords === "number")
+                    message.droppedRecords = object.droppedRecords;
+                else if (typeof object.droppedRecords === "object")
+                    message.droppedRecords = new $util.LongBits(object.droppedRecords.low >>> 0, object.droppedRecords.high >>> 0).toNumber(true);
+            if (object.error != null)
+                message.error = String(object.error);
+            return message;
+        };
+
+        /**
+         * Creates a plain object from a RxEnvelope message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof dmesg.RxEnvelope
+         * @static
+         * @param {dmesg.RxEnvelope} message RxEnvelope
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        RxEnvelope.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.arrays || options.defaults)
+                object.records = [];
+            if (options.defaults) {
+                if ($util.Long) {
+                    let long = new $util.Long(0, 0, true);
+                    object.monotonicStampNs = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+                } else
+                    object.monotonicStampNs = options.longs === String ? "0" : 0;
+                if ($util.Long) {
+                    let long = new $util.Long(0, 0, true);
+                    object.localStampNs = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+                } else
+                    object.localStampNs = options.longs === String ? "0" : 0;
+                if ($util.Long) {
+                    let long = new $util.Long(0, 0, true);
+                    object.appStartId = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+                } else
+                    object.appStartId = options.longs === String ? "0" : 0;
+                object.signalType = options.enums === String ? "DMESG_SIGNAL_TYPE_UNSPECIFIED" : 0;
+                object.fromBacklog = false;
+                if ($util.Long) {
+                    let long = new $util.Long(0, 0, true);
+                    object.droppedRecords = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+                } else
+                    object.droppedRecords = options.longs === String ? "0" : 0;
+                object.error = "";
+            }
+            if (message.monotonicStampNs != null && message.hasOwnProperty("monotonicStampNs"))
+                if (typeof message.monotonicStampNs === "number")
+                    object.monotonicStampNs = options.longs === String ? String(message.monotonicStampNs) : message.monotonicStampNs;
+                else
+                    object.monotonicStampNs = options.longs === String ? $util.Long.prototype.toString.call(message.monotonicStampNs) : options.longs === Number ? new $util.LongBits(message.monotonicStampNs.low >>> 0, message.monotonicStampNs.high >>> 0).toNumber(true) : message.monotonicStampNs;
+            if (message.localStampNs != null && message.hasOwnProperty("localStampNs"))
+                if (typeof message.localStampNs === "number")
+                    object.localStampNs = options.longs === String ? String(message.localStampNs) : message.localStampNs;
+                else
+                    object.localStampNs = options.longs === String ? $util.Long.prototype.toString.call(message.localStampNs) : options.longs === Number ? new $util.LongBits(message.localStampNs.low >>> 0, message.localStampNs.high >>> 0).toNumber(true) : message.localStampNs;
+            if (message.appStartId != null && message.hasOwnProperty("appStartId"))
+                if (typeof message.appStartId === "number")
+                    object.appStartId = options.longs === String ? String(message.appStartId) : message.appStartId;
+                else
+                    object.appStartId = options.longs === String ? $util.Long.prototype.toString.call(message.appStartId) : options.longs === Number ? new $util.LongBits(message.appStartId.low >>> 0, message.appStartId.high >>> 0).toNumber(true) : message.appStartId;
+            if (message.signalType != null && message.hasOwnProperty("signalType"))
+                object.signalType = options.enums === String ? $root.dmesg.DmesgSignalType[message.signalType] === undefined ? message.signalType : $root.dmesg.DmesgSignalType[message.signalType] : message.signalType;
+            if (message.records && message.records.length) {
+                object.records = [];
+                for (let j = 0; j < message.records.length; ++j)
+                    object.records[j] = message.records[j];
+            }
+            if (message.fromBacklog != null && message.hasOwnProperty("fromBacklog"))
+                object.fromBacklog = message.fromBacklog;
+            if (message.droppedRecords != null && message.hasOwnProperty("droppedRecords"))
+                if (typeof message.droppedRecords === "number")
+                    object.droppedRecords = options.longs === String ? String(message.droppedRecords) : message.droppedRecords;
+                else
+                    object.droppedRecords = options.longs === String ? $util.Long.prototype.toString.call(message.droppedRecords) : options.longs === Number ? new $util.LongBits(message.droppedRecords.low >>> 0, message.droppedRecords.high >>> 0).toNumber(true) : message.droppedRecords;
+            if (message.error != null && message.hasOwnProperty("error"))
+                object.error = message.error;
+            return object;
+        };
+
+        /**
+         * Converts this RxEnvelope to JSON.
+         * @function toJSON
+         * @memberof dmesg.RxEnvelope
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        RxEnvelope.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for RxEnvelope
+         * @function getTypeUrl
+         * @memberof dmesg.RxEnvelope
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        RxEnvelope.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+            if (typeUrlPrefix === undefined) {
+                typeUrlPrefix = "type.googleapis.com";
+            }
+            return typeUrlPrefix + "/dmesg.RxEnvelope";
+        };
+
+        return RxEnvelope;
+    })();
+
+    return dmesg;
 })();
 
 export const normvla = $root.normvla = (() => {
