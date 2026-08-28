@@ -1,0 +1,6 @@
+[project]
+name = "arm2dog"
+version = "0.1.0"
+description = "Bridge specific leader-arm joints onto specific dog-arm joints, across stations"
+requires-python = ">=3.10"
+dependencies = ["pyyaml>=6.0"]
