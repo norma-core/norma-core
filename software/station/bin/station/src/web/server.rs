@@ -8,6 +8,7 @@ use normfs::NormFS;
 use rust_embed::RustEmbed;
 use std::error::Error;
 use std::net::SocketAddr;
+use std::path::PathBuf;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use tokio::net::TcpListener;
@@ -30,6 +31,7 @@ fn full<T: Into<Bytes>>(chunk: T) -> BoxBody<Bytes, hyper::Error> {
 
 struct WebServer {
     normfs: Arc<NormFS>,
+    static_path_override: Option<PathBuf>,
 }
 
 // Routes taken from `software/station/clients/station-viewer/src/App.tsx`.
@@ -53,6 +55,21 @@ impl WebServer {
     fn is_spa_route(path: &str) -> bool {
         let normalized = Self::normalize_route_path(path);
         SPA_ROUTE_ALLOWLIST.contains(&normalized)
+    }
+
+    /// Resolves `asset_path` against the `--static-path` override directory,
+    /// rejecting anything that escapes it (e.g. `../../etc/passwd`) since
+    /// unlike the old single-file `--elrobot-urdf-path` override, this is a
+    /// whole directory tree exposed over HTTP.
+    async fn resolve_static_override(static_dir: &std::path::Path, asset_path: &str) -> Option<PathBuf> {
+        let candidate = static_dir.join(asset_path);
+        let canonical_dir = tokio::fs::canonicalize(static_dir).await.ok()?;
+        let canonical_candidate = tokio::fs::canonicalize(&candidate).await.ok()?;
+        if canonical_candidate.starts_with(&canonical_dir) {
+            Some(canonical_candidate)
+        } else {
+            None
+        }
     }
 
     async fn handle_client(
@@ -91,6 +108,34 @@ impl WebServer {
         } else {
             asset_path
         };
+
+        if let Some(static_dir) = &self.static_path_override
+            && let Some(override_path) = Self::resolve_static_override(static_dir, asset_path).await
+        {
+            match tokio::fs::read(&override_path).await {
+                Ok(bytes) => {
+                    let mime = mime_guess::from_path(asset_path).first_or_octet_stream();
+                    let mut response = Response::new(full(bytes));
+                    response.headers_mut().insert(
+                        hyper::header::CONTENT_TYPE,
+                        hyper::header::HeaderValue::from_str(mime.as_ref())?,
+                    );
+                    // Deliberately not immutable/long-lived like the embedded
+                    // asset's cache header: the whole point of this override
+                    // is to iterate on files on disk between reloads.
+                    response.headers_mut().insert(
+                        hyper::header::CACHE_CONTROL,
+                        hyper::header::HeaderValue::from_static("no-store, no-cache, must-revalidate"),
+                    );
+                    return Ok(response);
+                }
+                Err(e) => {
+                    log::error!(
+                        "Failed to read static override at {override_path:?}: {e:#}. Falling back to the embedded asset."
+                    );
+                }
+            }
+        }
 
         let gz_path = format!("{}.gz", asset_path);
 
@@ -190,10 +235,14 @@ pub async fn start_server(
     addr: SocketAddr,
     normfs: Arc<NormFS>,
     shutdown: Arc<AtomicBool>,
+    static_path_override: Option<PathBuf>,
 ) -> Result<(), Box<dyn Error + Send + Sync>> {
     let listener = TcpListener::bind(addr).await?;
     log::info!("WebSocket server listening on {}", addr);
-    let server = Arc::new(WebServer { normfs });
+    let server = Arc::new(WebServer {
+        normfs,
+        static_path_override,
+    });
 
     loop {
         tokio::select! {

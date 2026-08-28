@@ -70,6 +70,14 @@ struct Args {
     /// Addr to listen for websocket server. If provided without a value, it will listen on 0.0.0.0:8889.
     #[arg(long, num_args = 0..=1, default_missing_value = "0.0.0.0:8889")]
     web: Option<String>,
+
+    /// Local filesystem directory whose contents are served in place of the
+    /// matching path embedded into this binary at build time (e.g. an
+    /// override at `<DIR>/devices/elrobot/elrobot_follower.urdf` replaces the
+    /// baked-in ElRobot URDF). Useful for iterating on any robot's assets
+    /// (URDFs, meshes, ...) without rebuilding station-viewer and station.
+    #[arg(long, value_parser = parse_existing_dir)]
+    static_path: Option<PathBuf>,
 }
 
 fn validate_normfs_file_size(args: &Args) -> Result<(), io::Error> {
@@ -104,6 +112,17 @@ fn validate_normfs_file_size(args: &Args) -> Result<(), io::Error> {
     }
 
     Ok(())
+}
+
+/// Rejects the CLI value up front (clap fails `Args::parse()` with a clear
+/// message) rather than letting a typo'd `--static-path` silently fall back
+/// to embedded assets on every request.
+fn parse_existing_dir(s: &str) -> Result<PathBuf, String> {
+    let path = PathBuf::from(s);
+    if !path.is_dir() {
+        return Err(format!("directory not found: {}", path.display()));
+    }
+    Ok(path)
 }
 
 struct Station {
@@ -749,6 +768,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     log::info!("NormFS file size: {} bytes", args.normfs_file_size);
     log::info!("NormFS base folder: {:?}", args.normfs_base_folder);
     log::info!("Configuration file: {:?}", args.config);
+    if let Some(path) = &args.static_path {
+        log::info!("Static asset override directory: {:?}", path);
+    }
 
     let mut station = Station::new(&args).await?;
 
@@ -796,9 +818,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         let normfs_clone = station.normfs.clone();
         let web_shutdown_clone = web_shutdown.clone();
+        let static_path = args.static_path.clone();
         web_server_handle = Some(tokio::spawn(async move {
-            if let Err(e) =
-                web::server::start_server(web_addr, normfs_clone, web_shutdown_clone).await
+            if let Err(e) = web::server::start_server(
+                web_addr,
+                normfs_clone,
+                web_shutdown_clone,
+                static_path,
+            )
+            .await
             {
                 log::error!("Web server error: {}", e);
             }
