@@ -182,12 +182,14 @@ function RoverCameraViewport({
     });
   }, [cameraFormats, currentCameraFrameSourceId, primaryCameraUniqueId]);
 
-  const cameraStage = !primaryCameraSourceId ? (
+  // Hold CameraViewer on the last-known source when the live queue is briefly
+  // empty (mobile gaps). Unmounting here is what flashes "Waiting for rover camera".
+  const cameraStage = !currentCameraFrameSourceId ? (
     <div className="flex h-full items-center justify-center bg-surface-base text-center text-sm text-text-muted">
       <div><Camera className="mx-auto mb-3 h-7 w-7" />Waiting for rover camera</div>
     </div>
   ) : (
-    <CameraPane sourceId={primaryCameraSourceId} />
+    <CameraPane sourceId={currentCameraFrameSourceId} />
   );
 
   return (
