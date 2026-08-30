@@ -108,13 +108,13 @@ function RoverCameraViewport({
 }: RoverCameraViewportProps) {
   const primaryVideoSource = videoSources[0] ?? null;
   const primaryControlVideoSource = primaryVideoSource ?? controlVideoSources[0] ?? null;
-  const primaryCameraSourceId = primaryVideoSource
+  const liveCameraSourceId = primaryVideoSource
     ? getVideoSourceId(primaryVideoSource)
     : null;
-  const primaryControlCameraSourceId = primaryControlVideoSource
-    ? getVideoSourceId(primaryControlVideoSource)
+  const lastKnownCameraSourceId = controlVideoSources[0]
+    ? getVideoSourceId(controlVideoSources[0])
     : null;
-  const currentCameraFrameSourceId = primaryCameraSourceId ?? primaryControlCameraSourceId;
+  const cameraPaneSourceId = liveCameraSourceId ?? lastKnownCameraSourceId;
   const primaryCameraUniqueId = primaryControlVideoSource?.data.camera?.uniqueId ?? '';
   const cameraFormats = useMemo(
     () => uniqueFormats(primaryControlVideoSource?.data.formats),
@@ -134,12 +134,12 @@ function RoverCameraViewport({
 
   const handleFormatChange = useCallback((nextFormatKey: string) => {
     setSelectedFormatKey(nextFormatKey);
-    if (currentCameraFrameSourceId) {
+    if (cameraPaneSourceId) {
       if (nextFormatKey === 'none') {
-        suppressLiveCameraFrame(currentCameraFrameSourceId);
+        suppressLiveCameraFrame(cameraPaneSourceId);
       } else {
-        resumeLiveCameraFrame(currentCameraFrameSourceId);
-        clearLiveCameraFrame(currentCameraFrameSourceId);
+        resumeLiveCameraFrame(cameraPaneSourceId);
+        clearLiveCameraFrame(cameraPaneSourceId);
       }
     }
     if (!primaryCameraUniqueId) return;
@@ -180,16 +180,14 @@ function RoverCameraViewport({
     }).catch((error) => {
       console.error('Failed to send USB video manual format command', error);
     });
-  }, [cameraFormats, currentCameraFrameSourceId, primaryCameraUniqueId]);
+  }, [cameraFormats, cameraPaneSourceId, primaryCameraUniqueId]);
 
-  // Hold CameraViewer on the last-known source when the live queue is briefly
-  // empty (mobile gaps). Unmounting here is what flashes "Waiting for rover camera".
-  const cameraStage = !currentCameraFrameSourceId ? (
+  const cameraStage = !cameraPaneSourceId ? (
     <div className="flex h-full items-center justify-center bg-surface-base text-center text-sm text-text-muted">
       <div><Camera className="mx-auto mb-3 h-7 w-7" />Waiting for rover camera</div>
     </div>
   ) : (
-    <CameraPane sourceId={currentCameraFrameSourceId} />
+    <CameraPane sourceId={cameraPaneSourceId} />
   );
 
   return (
