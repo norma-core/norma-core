@@ -166,6 +166,9 @@ struct Station {
 
     #[cfg(feature = "ov5647")]
     ov5647_handle: Mutex<Option<ov5647::Ov5647Handle>>,
+
+    victron_smartsolar_mppt_handle:
+        Mutex<Option<victron_smartsolar_mppt::VictronSmartSolarMpptDriver>>,
 }
 
 struct Engine {
@@ -222,6 +225,7 @@ impl Station {
             usbvideo_instances: parking_lot::Mutex::new(Vec::new()),
             #[cfg(target_os = "linux")]
             hikmicro_thermal_handle: Mutex::new(None),
+            victron_smartsolar_mppt_handle: Mutex::new(None),
             #[cfg(feature = "ov5647")]
             ov5647_handle: Mutex::new(None),
         })
@@ -545,14 +549,19 @@ impl Station {
                     read_timeout: victron_config.read_timeout,
                 };
 
-                if let Err(e) = victron_smartsolar_mppt::start_victron_smartsolar_mppt_driver(
+                match victron_smartsolar_mppt::start_victron_smartsolar_mppt_driver(
                     self.normfs.clone(),
                     self.engine.clone(),
                     config,
                 )
                 .await
                 {
-                    log::error!("Failed to start Victron SmartSolar MPPT driver: {}", e);
+                    Ok(handle) => {
+                        *self.victron_smartsolar_mppt_handle.lock() = Some(handle);
+                    }
+                    Err(e) => {
+                        log::error!("Failed to start Victron SmartSolar MPPT driver: {}", e);
+                    }
                 }
             } else {
                 log::info!("Victron SmartSolar MPPT driver disabled by configuration");
@@ -819,6 +828,13 @@ impl Station {
             log::info!("OV5647 driver stopped");
         }
 
+        let victron_handle = self.victron_smartsolar_mppt_handle.lock().take();
+        if let Some(handle) = victron_handle {
+            log::info!("Stopping Victron SmartSolar MPPT driver...");
+            handle.stop().await;
+            log::info!("Victron SmartSolar MPPT driver stopped");
+        }
+
         log::info!("Closing NormFS...");
 
         self.normfs.close().await?;
@@ -836,6 +852,24 @@ impl Station {
             vec![],
         );
         Ok(())
+    }
+}
+
+async fn wait_for_shutdown_signal() -> Result<(), std::io::Error> {
+    #[cfg(unix)]
+    {
+        use tokio::signal::unix::{SignalKind, signal};
+
+        let mut terminate = signal(SignalKind::terminate())?;
+        tokio::select! {
+            result = tokio::signal::ctrl_c() => result,
+            _ = terminate.recv() => Ok(()),
+        }
+    }
+
+    #[cfg(not(unix))]
+    {
+        tokio::signal::ctrl_c().await
     }
 }
 
@@ -921,6 +955,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // This MUST run on the main thread, so we use select! instead of spawn
     #[cfg(target_os = "macos")]
     {
+        let shutdown_signal = wait_for_shutdown_signal();
+        tokio::pin!(shutdown_signal);
         let mut interval = tokio::time::interval(tokio::time::Duration::from_millis(100));
         loop {
             tokio::select! {
@@ -928,7 +964,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     // Runs on main thread - tick the run loop
                     usbvideo::process_main_run_loop();
                 }
-                _ = tokio::signal::ctrl_c() => {
+                _ = &mut shutdown_signal => {
                     log::info!("\nShutting down...");
                     break;
                 }
@@ -938,7 +974,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     #[cfg(not(target_os = "macos"))]
     {
-        tokio::signal::ctrl_c().await?;
+        wait_for_shutdown_signal().await?;
         log::info!("\nShutting down...");
     }
 
