@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { dfrobot_rs485 } from '@/api/proto.js';
+import { dfrobot_light_rs485 } from '@/api/proto.js';
 import {
   DFROBOT_SPECS,
   commandIdMatches,
@@ -11,9 +11,9 @@ import {
   readDfrobotWord,
 } from './values';
 
-const { DfrobotSensorModel } = dfrobot_rs485;
+const { DfrobotSensorModel } = dfrobot_light_rs485;
 
-function range(startRegister: number, words: number[]): dfrobot_rs485.IRegisterRange {
+function range(startRegister: number, words: number[]): dfrobot_light_rs485.IRegisterRange {
   const data = new Uint8Array(words.length * 2);
   words.forEach((word, i) => {
     data[i * 2] = (word >> 8) & 0xff;
@@ -126,7 +126,7 @@ describe('static register specs', () => {
 });
 
 describe('dfrobotCommsProfile', () => {
-  const Model = dfrobot_rs485.DfrobotSensorModel;
+  const Model = dfrobot_light_rs485.DfrobotSensorModel;
 
   it('maps the radiation family to 0x07D0/0x07D1 with immediate effect', () => {
     for (const model of [
@@ -191,7 +191,7 @@ describe('commandIdMatches', () => {
 });
 
 describe('planDfrobotConfigWrites', () => {
-  const Model = dfrobot_rs485.DfrobotSensorModel;
+  const Model = dfrobot_light_rs485.DfrobotSensorModel;
 
   it('radiation: writes ID first, then baud addressed to the NEW id', () => {
     expect(planDfrobotConfigWrites(Model.DFROBOT_SEN0641_PAR, 2, 5, 9600)).toEqual([

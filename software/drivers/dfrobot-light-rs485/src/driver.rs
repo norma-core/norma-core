@@ -1,4 +1,4 @@
-use crate::dfrobot_rs485_proto::{
+use crate::dfrobot_light_rs485_proto::{
     Command, CommandResult, DfrobotDevice, DfrobotSignalType, RegisterRange, RxEnvelope,
     WriteRegisterCommand,
 };
@@ -18,7 +18,7 @@ use tokio::task::JoinHandle;
 use tokio::time::{MissedTickBehavior, interval, sleep};
 use tokio_serial::{SerialPort, SerialPortBuilderExt};
 
-pub const QUEUE_PREFIX: &str = "dfrobot-rs485";
+pub const QUEUE_PREFIX: &str = "dfrobot-light-rs485";
 
 /// Per-transaction response timeout. The Python tooling uses 300 ms with the
 /// same sensors and adapters.
@@ -49,12 +49,12 @@ const KNOWN_ADAPTER_USB_SERIALS: &[&str] = &["BH001F1W"];
 type DriverResult<T> = Result<T, Box<dyn std::error::Error + Send + Sync>>;
 
 #[derive(Debug, Clone)]
-pub struct DfrobotRs485DriverConfig {
+pub struct DfrobotLightRs485DriverConfig {
     pub ports: Vec<String>,
     pub scan_ids: Vec<u8>,
 }
 
-pub struct DfrobotRs485Driver {
+pub struct DfrobotLightRs485Driver {
     _worker: JoinHandle<()>,
 }
 
@@ -109,11 +109,11 @@ struct SensorState {
     pending_forget: bool,
 }
 
-impl DfrobotRs485Driver {
+impl DfrobotLightRs485Driver {
     pub async fn new<T: StationEngine + Send + Sync + 'static>(
         normfs: Arc<NormFS>,
         station_engine: Arc<T>,
-        config: DfrobotRs485DriverConfig,
+        config: DfrobotLightRs485DriverConfig,
     ) -> DriverResult<Self> {
         if config.scan_ids.is_empty() {
             warn!("DFRobot RS485 driver enabled with no scan range configured");
@@ -135,7 +135,7 @@ impl DfrobotRs485Driver {
                         continue;
                     };
                     for cmd in &pack.commands {
-                        if cmd.r#type() != StationCommandType::StcDfrobotRs485Command {
+                        if cmd.r#type() != StationCommandType::StcDfrobotLightRs485Command {
                             continue;
                         }
                         let command = match Command::decode(cmd.body.clone()) {
@@ -163,12 +163,12 @@ impl DfrobotRs485Driver {
     }
 }
 
-pub async fn start_dfrobot_rs485_driver<T: StationEngine + Send + Sync + 'static>(
+pub async fn start_dfrobot_light_rs485_driver<T: StationEngine + Send + Sync + 'static>(
     normfs: Arc<NormFS>,
     station_engine: Arc<T>,
-    config: DfrobotRs485DriverConfig,
-) -> DriverResult<Arc<DfrobotRs485Driver>> {
-    let driver = DfrobotRs485Driver::new(normfs, station_engine, config).await?;
+    config: DfrobotLightRs485DriverConfig,
+) -> DriverResult<Arc<DfrobotLightRs485Driver>> {
+    let driver = DfrobotLightRs485Driver::new(normfs, station_engine, config).await?;
     Ok(Arc::new(driver))
 }
 
@@ -378,7 +378,7 @@ async fn handle_write_command(
 async fn run_bus_worker<T: StationEngine + Send + Sync + 'static>(
     normfs: Arc<NormFS>,
     station_engine: Arc<T>,
-    config: DfrobotRs485DriverConfig,
+    config: DfrobotLightRs485DriverConfig,
     mut command_rx: mpsc::UnboundedReceiver<(Vec<u8>, WriteRegisterCommand)>,
 ) {
     // Queues survive re-acquisition: the same sensor id maps to the same
@@ -421,7 +421,7 @@ async fn run_bus_worker<T: StationEngine + Send + Sync + 'static>(
                 }
                 station_engine.register_queue(
                     &queue_id,
-                    QueueDataType::QdtDfrobotRs485Rx,
+                    QueueDataType::QdtDfrobotLightRs485Rx,
                     vec![],
                 );
                 registered.insert(path.clone(), (queue_id.clone(), sensor.clone()));
@@ -782,7 +782,7 @@ struct ScanOutcome {
 /// answered.
 async fn scan_bus(
     port: &mut tokio_serial::SerialStream,
-    config: &DfrobotRs485DriverConfig,
+    config: &DfrobotLightRs485DriverConfig,
 ) -> ScanOutcome {
     let mut sensors = Vec::new();
     let mut responding_ids = Vec::new();
@@ -805,7 +805,7 @@ async fn scan_bus(
 /// the most responding devices (tie: earlier in the list). Devices answering
 /// at a non-claimed baud are warned about and not polled (mixed bus).
 async fn acquire_and_scan(
-    config: &DfrobotRs485DriverConfig,
+    config: &DfrobotLightRs485DriverConfig,
 ) -> (tokio_serial::SerialStream, String, u32, Vec<Sensor>) {
     loop {
         for candidate in candidate_ports(&config.ports) {
@@ -1142,11 +1142,11 @@ mod tests {
     fn detected_sensor_naming() {
         let known = Sensor::detected(SensorModel::Par, 2);
         assert_eq!(known.id, "par-2");
-        assert_eq!(known.rx_queue_path(), "dfrobot-rs485/par-2/rx");
+        assert_eq!(known.rx_queue_path(), "dfrobot-light-rs485/par-2/rx");
 
         let unknown = Sensor::detected(SensorModel::Unknown, 5);
         assert_eq!(unknown.id, "unknown-5");
-        assert_eq!(unknown.rx_queue_path(), "dfrobot-rs485/unknown-5/rx");
+        assert_eq!(unknown.rx_queue_path(), "dfrobot-light-rs485/unknown-5/rx");
     }
 
     #[test]

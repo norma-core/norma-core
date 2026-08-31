@@ -23,7 +23,7 @@ npm exec -- pbjs --wrap es6 --force-long -t static-module --es6 -l eslint-disabl
   ${SRC}/drivers/victron-smartsolar-mppt/victron_smartsolar_mppt.proto \
   ${SRC}/drivers/pwm-output/pwm_output.proto \
   ${SRC}/drivers/dmesg/dmesg.proto \
-  ${SRC}/drivers/dfrobot-rs485/dfrobot_rs485.proto \
+  ${SRC}/drivers/dfrobot-light-rs485/dfrobot_light_rs485.proto \
   ${SRC}/drivers/inferences/normvla.proto \
   ${SRC}/drivers/hikmicro/hikmicro.proto \
   ${SRC}/normfs/normfs.proto \

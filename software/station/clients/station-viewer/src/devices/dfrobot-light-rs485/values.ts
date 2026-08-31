@@ -1,6 +1,6 @@
-import { dfrobot_rs485 } from '@/api/proto.js';
+import { dfrobot_light_rs485 } from '@/api/proto.js';
 
-const Model = dfrobot_rs485.DfrobotSensorModel;
+const Model = dfrobot_light_rs485.DfrobotSensorModel;
 
 export type DfrobotRegisterKind = 'measurement' | 'setting' | 'comms' | 'info' | 'undocumented';
 
@@ -86,7 +86,7 @@ export const DFROBOT_SPECS: Record<number, DfrobotRegisterSpec[]> = {
   ],
 };
 
-type Ranges = dfrobot_rs485.IRegisterRange[] | null | undefined;
+type Ranges = dfrobot_light_rs485.IRegisterRange[] | null | undefined;
 
 export function readDfrobotWord(ranges: Ranges, register: number): number | null {
   if (!ranges) {

@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import webSocketManager from '../api/websocket';
 import { useInferenceState, useWakeLock } from '../hooks';
-import { dfrobot_rs485 } from '../api/proto';
+import { dfrobot_light_rs485 } from '../api/proto';
 import {
   commandIdMatches,
   dfrobotCommsProfile,
@@ -10,9 +10,9 @@ import {
   planDfrobotConfigWrites,
   readDfrobotWord,
   type DfrobotConfigWrite,
-} from '../devices/dfrobot-rs485/values';
+} from '../devices/dfrobot-light-rs485/values';
 
-const SignalType = dfrobot_rs485.DfrobotSignalType;
+const SignalType = dfrobot_light_rs485.DfrobotSignalType;
 const ONLINE_SIGNALS = new Set<number>([
   SignalType.DFROBOT_CONNECTED,
   SignalType.DFROBOT_REGISTERS_SNAPSHOT,
@@ -68,7 +68,7 @@ const DfrobotSensorConfigPage: React.FC = () => {
   // ack effect below reads them.
   const entries = useMemo(
     () =>
-      (frame?.dfrobotRs485 ?? []).filter(
+      (frame?.dfrobotLightRs485 ?? []).filter(
         (entry) => (entry.data.signalType ?? 0) !== SignalType.DFROBOT_FORGOTTEN,
       ),
     [frame],
@@ -124,7 +124,7 @@ const DfrobotSensorConfigPage: React.FC = () => {
   ) => {
     for (const write of plan) {
       try {
-        const commandId = await webSocketManager.commands.sendDfrobotRs485Command({
+        const commandId = await webSocketManager.commands.sendDfrobotLightRs485Command({
           writeRegister: {
             modbusId: write.modbusId,
             register: write.register,

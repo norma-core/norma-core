@@ -9,12 +9,12 @@ fn main() -> Result<()> {
         .out_dir(&out_dir)
         .bytes(["."])
         .compile_protos(
-            &["../../../protobufs/drivers/dfrobot-rs485/dfrobot_rs485.proto"],
-            &["../../../protobufs/drivers/dfrobot-rs485"],
+            &["../../../protobufs/drivers/dfrobot-light-rs485/dfrobot_light_rs485.proto"],
+            &["../../../protobufs/drivers/dfrobot-light-rs485"],
         )?;
 
     println!(
-        "cargo:rerun-if-changed=../../../protobufs/drivers/dfrobot-rs485/dfrobot_rs485.proto"
+        "cargo:rerun-if-changed=../../../protobufs/drivers/dfrobot-light-rs485/dfrobot_light_rs485.proto"
     );
 
     Ok(())

@@ -1,5 +1,5 @@
 [package]
-name = "dfrobot-rs485"
+name = "dfrobot-light-rs485"
 version.workspace = true
 edition = "2024"
 

@@ -1,4 +1,4 @@
-use crate::dfrobot_rs485_proto::DfrobotSensorModel;
+use crate::dfrobot_light_rs485_proto::DfrobotSensorModel;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum SensorModel {

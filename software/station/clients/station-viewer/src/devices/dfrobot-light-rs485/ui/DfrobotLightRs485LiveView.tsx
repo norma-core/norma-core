@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { dfrobot_rs485 } from '@/api/proto.js';
+import { dfrobot_light_rs485 } from '@/api/proto.js';
 import type { FrameEntry } from '@/api/frame-parser';
 import DeviceWidgetShell from '@/components/DeviceWidgetShell';
 import {
@@ -8,18 +8,18 @@ import {
 } from '../values';
 
 const ONLINE_SIGNALS = new Set<number>([
-  dfrobot_rs485.DfrobotSignalType.DFROBOT_CONNECTED,
-  dfrobot_rs485.DfrobotSignalType.DFROBOT_REGISTERS_SNAPSHOT,
+  dfrobot_light_rs485.DfrobotSignalType.DFROBOT_CONNECTED,
+  dfrobot_light_rs485.DfrobotSignalType.DFROBOT_REGISTERS_SNAPSHOT,
 ]);
 
-export interface DfrobotRs485LiveViewProps {
-  entries: FrameEntry<dfrobot_rs485.IRxEnvelope>[];
+export interface DfrobotLightRs485LiveViewProps {
+  entries: FrameEntry<dfrobot_light_rs485.IRxEnvelope>[];
 }
 
-function DfrobotRs485LiveView({ entries }: DfrobotRs485LiveViewProps) {
+function DfrobotLightRs485LiveView({ entries }: DfrobotLightRs485LiveViewProps) {
   const sorted = [...entries].sort((a, b) => a.queueId.localeCompare(b.queueId));
   const visible = sorted.filter(
-    (entry) => (entry.data.signalType ?? 0) !== dfrobot_rs485.DfrobotSignalType.DFROBOT_FORGOTTEN,
+    (entry) => (entry.data.signalType ?? 0) !== dfrobot_light_rs485.DfrobotSignalType.DFROBOT_FORGOTTEN,
   );
   const firstError = visible.map((entry) => entry.data.error).find((error) => !!error);
   const onlineCount = visible.filter((entry) =>
@@ -66,4 +66,4 @@ function DfrobotRs485LiveView({ entries }: DfrobotRs485LiveViewProps) {
   );
 }
 
-export default DfrobotRs485LiveView;
+export default DfrobotLightRs485LiveView;

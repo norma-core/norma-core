@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import { airgradient_open_air_o_1pst, arduino_nicla_sense_env, hikmicro, ina226, usbvideo, st3215, motors_mirroring, sysinfo, yahboom_dogzilla_lite, normvla, vesc_trampa, victron_smartsolar_mppt, dfrobot_rs485 } from '@/api/proto.js';
-import { formatBytes, parseUsbVideoData, parseHikmicroThermalData, parseMirroringData, parseSysinfoData, parseArduinoNiclaSenseEnvData, parseIna226Data, parseAirGradientData, parseVictronSmartSolarData, parseYahboomDogzillaLiteData, parseNormvlaData, parseDfrobotRs485Data } from '@/components/history/history-utils';
+import { airgradient_open_air_o_1pst, arduino_nicla_sense_env, hikmicro, ina226, usbvideo, st3215, motors_mirroring, sysinfo, yahboom_dogzilla_lite, normvla, vesc_trampa, victron_smartsolar_mppt, dfrobot_light_rs485 } from '@/api/proto.js';
+import { formatBytes, parseUsbVideoData, parseHikmicroThermalData, parseMirroringData, parseSysinfoData, parseArduinoNiclaSenseEnvData, parseIna226Data, parseAirGradientData, parseVictronSmartSolarData, parseYahboomDogzillaLiteData, parseNormvlaData, parseDfrobotLightRs485Data } from '@/components/history/history-utils';
 import ExpandedView from '@/components/history/ExpandedView';
 import { readArduinoNiclaSenseEnvMainValues } from '@/devices/arduino-nicla-sense-env/values';
 import { formatIna226Current, readIna226CurrentAmps, readIna226ShuntMillivolts } from '@/devices/ina226/values';
 import { airGradientDeviceLabel, readAirGradientValues } from '@/devices/airgradient-open-air-o-1pst/values';
-import { dfrobotModelLabel, dfrobotPrimaryText } from '@/devices/dfrobot-rs485/values';
+import { dfrobotModelLabel, dfrobotPrimaryText } from '@/devices/dfrobot-light-rs485/values';
 import { formatCelsius, latestThermalFrame, renderThermalFrame } from '@/devices/hikmicro-thermal/thermal';
 import {
   describeRegisterValue,
@@ -19,7 +19,7 @@ import {
 export interface HistoryElementData {
   queueId: string;
   entryId: Uint8Array;
-  data: Uint8Array | usbvideo.IRxEnvelope | usbvideo.ITxEnvelope | hikmicro.IRxEnvelope | st3215.IInferenceState | st3215.ITxEnvelope | motors_mirroring.IRxEnvelope | sysinfo.IEnvelope | arduino_nicla_sense_env.IRxEnvelope | ina226.IRxEnvelope | airgradient_open_air_o_1pst.IRxEnvelope | victron_smartsolar_mppt.IRxEnvelope | yahboom_dogzilla_lite.IInferenceState | vesc_trampa.IInferenceState | vesc_trampa.IRxEnvelope | vesc_trampa.ITxEnvelope | normvla.IFrame | dfrobot_rs485.IRxEnvelope | null;
+  data: Uint8Array | usbvideo.IRxEnvelope | usbvideo.ITxEnvelope | hikmicro.IRxEnvelope | st3215.IInferenceState | st3215.ITxEnvelope | motors_mirroring.IRxEnvelope | sysinfo.IEnvelope | arduino_nicla_sense_env.IRxEnvelope | ina226.IRxEnvelope | airgradient_open_air_o_1pst.IRxEnvelope | victron_smartsolar_mppt.IRxEnvelope | yahboom_dogzilla_lite.IInferenceState | vesc_trampa.IInferenceState | vesc_trampa.IRxEnvelope | vesc_trampa.ITxEnvelope | normvla.IFrame | dfrobot_light_rs485.IRxEnvelope | null;
   rawData?: Uint8Array | null;
   error?: string;
   type?: string;
@@ -80,7 +80,7 @@ function HistoryElement({ element, index, dataQueueType, dataQueueId }: HistoryE
   const ina226ShuntVoltage = formatSensorValue(readIna226ShuntMillivolts(ina226Data?.data), 'mV', 4);
   const ina226CurrentValue = readIna226CurrentAmps(ina226Data?.data, ina226Data?.device?.info?.shuntResistanceOhms);
   const ina226Current = ina226CurrentValue === null ? null : formatIna226Current(ina226CurrentValue).text;
-  const dfrobotData = element.type === 'dfrobot-rs485' && element.data ? parseDfrobotRs485Data(element.data) : null;
+  const dfrobotData = element.type === 'dfrobot-light-rs485' && element.data ? parseDfrobotLightRs485Data(element.data) : null;
   const airgradientData = element.type === 'airgradient-open-air-o-1pst' && element.data ? parseAirGradientData(element.data) : null;
   const airgradientValues = readAirGradientValues(airgradientData?.data);
   const airgradientPm25 = formatSensorValue(airgradientValues.pm25, ' ug/m3', 0);
@@ -290,7 +290,7 @@ function HistoryElement({ element, index, dataQueueType, dataQueueId }: HistoryE
           {dfrobotData && (
             <div className="flex flex-wrap items-center gap-2 text-xs">
               <span className="text-text-muted">
-                {dfrobot_rs485.DfrobotSignalType[dfrobotData.signalType]
+                {dfrobot_light_rs485.DfrobotSignalType[dfrobotData.signalType]
                   ?.replace(/^DFROBOT_/, '')
                   .replace(/_/g, ' ') ?? dfrobotData.signalType}
               </span>

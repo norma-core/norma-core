@@ -63,7 +63,7 @@ function HistoryPage() {
   const sysinfoCount = parsedFrame?.sysinfo ? 1 : 0;
   const arduinoNiclaSenseEnvCount = parsedFrame?.arduinoNiclaSenseEnv ? 1 : 0;
   const ina226Count = parsedFrame?.ina226?.length ?? 0;
-  const dfrobotRs485Count = parsedFrame?.dfrobotRs485?.length ?? 0;
+  const dfrobotLightRs485Count = parsedFrame?.dfrobotLightRs485?.length ?? 0;
   const airgradientOpenAirCount = parsedFrame?.airgradientOpenAir?.length ?? 0;
   const victronSmartSolarCount = parsedFrame?.victronSmartSolar?.length ?? 0;
   const dmesgCount = parsedFrame?.dmesg ? 1 : 0;
@@ -80,8 +80,8 @@ function HistoryPage() {
   const sysinfoIndex = mirroringIndex + mirroringCount;
   const arduinoNiclaSenseEnvIndex = sysinfoIndex + sysinfoCount;
   const ina226Index = arduinoNiclaSenseEnvIndex + arduinoNiclaSenseEnvCount;
-  const dfrobotRs485Index = ina226Index + ina226Count;
-  const airgradientOpenAirIndex = dfrobotRs485Index + dfrobotRs485Count;
+  const dfrobotLightRs485Index = ina226Index + ina226Count;
+  const airgradientOpenAirIndex = dfrobotLightRs485Index + dfrobotLightRs485Count;
   const victronSmartSolarIndex = airgradientOpenAirIndex + airgradientOpenAirCount;
   const dmesgIndex = victronSmartSolarIndex + victronSmartSolarCount;
   const yahboomDogzillaLiteIndex = dmesgIndex + dmesgCount;
@@ -315,7 +315,7 @@ function HistoryPage() {
                             </div>
                           </div>
                         ))}
-                        {parsedFrame.dfrobotRs485?.map((entry) => (
+                        {parsedFrame.dfrobotLightRs485?.map((entry) => (
                           <div key={entry.queueId} className="flex items-center justify-between">
                             <div className="flex items-center gap-3">
                               <span className="text-accent-warning font-mono">{entry.queueId}</span>
@@ -544,7 +544,7 @@ function HistoryPage() {
                       dataQueueId={entry.queueId}
                     />
                   ))}
-                  {parsedFrame.dfrobotRs485?.map((entry, idx) => (
+                  {parsedFrame.dfrobotLightRs485?.map((entry, idx) => (
                     <HistoryElement
                       key={entry.queueId}
                       element={{
@@ -555,8 +555,8 @@ function HistoryPage() {
                         type: getQueueType(entry.queueType),
                         queueType: entry.queueType,
                       }}
-                      index={dfrobotRs485Index + idx}
-                      dataQueueType="dfrobot-rs485"
+                      index={dfrobotLightRs485Index + idx}
+                      dataQueueType="dfrobot-light-rs485"
                       dataQueueId={entry.queueId}
                     />
                   ))}

@@ -1,4 +1,4 @@
-import { dfrobot_rs485 } from '@/api/proto.js';
+import { dfrobot_light_rs485 } from '@/api/proto.js';
 import {
   DFROBOT_SPECS,
   decodeDfrobotRegisters,
@@ -7,10 +7,10 @@ import {
   formatDfrobotValue,
   type DecodedDfrobotRegister,
   type DfrobotRegisterKind,
-} from '@/devices/dfrobot-rs485/values';
+} from '@/devices/dfrobot-light-rs485/values';
 
-interface DfrobotRs485ExpandedProps {
-  data: dfrobot_rs485.IRxEnvelope;
+interface DfrobotLightRs485ExpandedProps {
+  data: dfrobot_light_rs485.IRxEnvelope;
 }
 
 const KIND_ORDER: { kind: DfrobotRegisterKind; title: string }[] = [
@@ -26,8 +26,8 @@ function hexWord(value: number): string {
 }
 
 function signalLabel(signalType: number | null | undefined): string {
-  const value = signalType ?? dfrobot_rs485.DfrobotSignalType.DFROBOT_SIGNAL_TYPE_UNSPECIFIED;
-  const name = dfrobot_rs485.DfrobotSignalType[value];
+  const value = signalType ?? dfrobot_light_rs485.DfrobotSignalType.DFROBOT_SIGNAL_TYPE_UNSPECIFIED;
+  const name = dfrobot_light_rs485.DfrobotSignalType[value];
   return name ? name.replace(/^DFROBOT_/, '').replace(/_/g, ' ') : String(value);
 }
 
@@ -56,7 +56,7 @@ function RegisterRow({ decoded }: { decoded: DecodedDfrobotRegister }) {
   );
 }
 
-export default function DfrobotRs485Expanded({ data }: DfrobotRs485ExpandedProps) {
+export default function DfrobotLightRs485Expanded({ data }: DfrobotLightRs485ExpandedProps) {
   const device = data.device ?? null;
   const model = device?.model;
   const { known, unknown } = decodeDfrobotRegisters(model, data.ranges);

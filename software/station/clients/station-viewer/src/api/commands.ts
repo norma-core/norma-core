@@ -1,4 +1,4 @@
-import { st3215, drivers, commands, motors_mirroring, inference_tags, vesc_trampa, pwm_output, yahboom_dogzilla_lite, usbvideo, dfrobot_rs485 } from "./proto.js";
+import { st3215, drivers, commands, motors_mirroring, inference_tags, vesc_trampa, pwm_output, yahboom_dogzilla_lite, usbvideo, dfrobot_light_rs485 } from "./proto.js";
 import webSocketManager from "./websocket.js";
 
 function commandIdToBytes(id: number): Uint8Array {
@@ -88,9 +88,9 @@ export class CommandManager {
 
     // Returns the command id; the driver echoes its 4-byte big-endian form
     // in RxEnvelope.command.commandId on the DFROBOT_COMMAND_* ack.
-    public async sendDfrobotRs485Command(command: dfrobot_rs485.ICommand): Promise<number> {
-        const body = dfrobot_rs485.Command.encode(command).finish();
-        return this.sendCommand(drivers.StationCommandType.STC_DFROBOT_RS485_COMMAND, body);
+    public async sendDfrobotLightRs485Command(command: dfrobot_light_rs485.ICommand): Promise<number> {
+        const body = dfrobot_light_rs485.Command.encode(command).finish();
+        return this.sendCommand(drivers.StationCommandType.STC_DFROBOT_LIGHT_RS485_COMMAND, body);
     }
 }
 

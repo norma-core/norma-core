@@ -1,4 +1,4 @@
-import { airgradient_open_air_o_1pst, arduino_nicla_sense_env, hikmicro, usbvideo, frame, st3215, motors_mirroring, sysinfo, yahboom_dogzilla_lite, normvla, ina226, victron_smartsolar_mppt, dfrobot_rs485 } from '@/api/proto.js';
+import { airgradient_open_air_o_1pst, arduino_nicla_sense_env, hikmicro, usbvideo, frame, st3215, motors_mirroring, sysinfo, yahboom_dogzilla_lite, normvla, ina226, victron_smartsolar_mppt, dfrobot_light_rs485 } from '@/api/proto.js';
 import { serverToLocal } from '@/api/timestamp-utils';
 
 type ParsedHistoryData =
@@ -13,7 +13,7 @@ type ParsedHistoryData =
   | yahboom_dogzilla_lite.IInferenceState
   | victron_smartsolar_mppt.IRxEnvelope
   | normvla.IFrame
-  | dfrobot_rs485.IRxEnvelope;
+  | dfrobot_light_rs485.IRxEnvelope;
 
 export function formatBytes(bytes: Uint8Array, maxBytes: number = 256): string {
   if (!bytes) return '';
@@ -268,14 +268,14 @@ export function parseIna226Data(data: Uint8Array | ParsedHistoryData): ina226.Rx
   }
 }
 
-export function parseDfrobotRs485Data(data: Uint8Array | ParsedHistoryData): dfrobot_rs485.RxEnvelope | null {
+export function parseDfrobotLightRs485Data(data: Uint8Array | ParsedHistoryData): dfrobot_light_rs485.RxEnvelope | null {
   if (!(data instanceof Uint8Array)) {
-    return data as dfrobot_rs485.RxEnvelope;
+    return data as dfrobot_light_rs485.RxEnvelope;
   }
   try {
-    return dfrobot_rs485.RxEnvelope.decode(data);
+    return dfrobot_light_rs485.RxEnvelope.decode(data);
   } catch (error) {
-    console.error('Failed to parse dfrobot_rs485.RxEnvelope:', error);
+    console.error('Failed to parse dfrobot_light_rs485.RxEnvelope:', error);
     return null;
   }
 }

@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package dfrobot_rs485;
+package dfrobot_light_rs485;
 
 enum DfrobotSignalType {
     DFROBOT_SIGNAL_TYPE_UNSPECIFIED = 0;
@@ -51,7 +51,7 @@ message WriteRegisterCommand {
 }
 
 // Client-facing command envelope: the body of a commands.DriverCommand with
-// type STC_DFROBOT_RS485_COMMAND.
+// type STC_DFROBOT_LIGHT_RS485_COMMAND.
 message Command {
     WriteRegisterCommand write_register = 10;
 }

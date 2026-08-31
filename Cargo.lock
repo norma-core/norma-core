@@ -496,8 +496,8 @@ dependencies = [
 ]
 
 [[package]]
-name = "dfrobot-rs485"
-version = "0.1.0-beta.10"
+name = "dfrobot-light-rs485"
+version = "0.1.0-beta.11"
 dependencies = [
  "bytes",
  "log",
@@ -2552,8 +2552,8 @@ dependencies = [
  "bytes",
  "clap",
  "dashmap",
+ "dfrobot-light-rs485",
  "dmesg",
- "dfrobot-rs485",
  "env_logger",
  "fastwebsockets",
  "hikmicro-thermal",
