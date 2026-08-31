@@ -454,6 +454,69 @@ impl Station {
             log::warn!("INA226 driver requested but is Linux-only");
         }
 
+        #[cfg(feature = "dfrobot-light-rs485")]
+        if let Some(dfrobot_config) = &self.config.drivers.dfrobot_light_rs485 {
+            if dfrobot_config.enabled {
+                let scan_ids = match &dfrobot_config.scan_ids {
+                    None => dfrobot_light_rs485::default_scan_ids(),
+                    Some(station_iface::config::DfrobotScanIds::Range(spec)) => {
+                        match dfrobot_light_rs485::parse_scan_ids(spec) {
+                            Some(ids) => ids,
+                            None => {
+                                log::error!(
+                                    "Invalid DFRobot RS485 scan-ids '{}' (expected e.g. \"1-10\"); using default 1-10",
+                                    spec
+                                );
+                                dfrobot_light_rs485::default_scan_ids()
+                            }
+                        }
+                    }
+                    Some(station_iface::config::DfrobotScanIds::List(ids)) => {
+                        let sanitized = dfrobot_light_rs485::sanitize_scan_ids(ids);
+                        if sanitized.is_empty() && !ids.is_empty() {
+                            log::error!(
+                                "Invalid DFRobot RS485 scan-ids list {:?} (no valid ids in 1-254); using default 1-10",
+                                ids
+                            );
+                            dfrobot_light_rs485::default_scan_ids()
+                        } else {
+                            sanitized
+                        }
+                    }
+                };
+
+                let config = dfrobot_light_rs485::DfrobotLightRs485DriverConfig {
+                    ports: dfrobot_config.ports.clone(),
+                    scan_ids,
+                };
+
+                if let Err(error) = dfrobot_light_rs485::start_dfrobot_light_rs485_driver(
+                    self.normfs.clone(),
+                    self.engine.clone(),
+                    config,
+                )
+                .await
+                {
+                    log::error!("Failed to start DFRobot RS485 driver: {}", error);
+                }
+            } else {
+                log::info!("DFRobot RS485 driver disabled by configuration");
+            }
+        }
+
+        #[cfg(not(feature = "dfrobot-light-rs485"))]
+        if self
+            .config
+            .drivers
+            .dfrobot_light_rs485
+            .as_ref()
+            .is_some_and(|config| config.enabled)
+        {
+            log::warn!(
+                "DFRobot RS485 driver requested but not compiled (missing 'dfrobot-light-rs485' feature)"
+            );
+        }
+
         // Start ST3215 bus if configured
         let st3215_config = if let Some(st3215) = &self.config.drivers.st3215 {
             if st3215.enabled {

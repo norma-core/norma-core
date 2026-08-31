@@ -42,6 +42,7 @@ enum QueueDataType {
     QDT_PWM_OUTPUT_RX = 56; // pwm_output.RxEnvelope
 
     QDT_DMESG_RX = 57; // dmesg.RxEnvelope
+    QDT_DFROBOT_LIGHT_RS485_RX = 58; // dfrobot_light_rs485.RxEnvelope
 }
 
 enum StationCommandType {
@@ -53,4 +54,5 @@ enum StationCommandType {
     STC_ARDUINO_NICLA_SENSE_ENV_COMMAND = 5; // arduino_nicla_sense_env.Command
     STC_PWM_OUTPUT_COMMAND              = 6; // pwm_output.Command
     STC_USB_VIDEO_COMMAND               = 7; // usbvideo.Command
+    STC_DFROBOT_LIGHT_RS485_COMMAND         = 8; // dfrobot_light_rs485.Command
 }
