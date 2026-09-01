@@ -8,7 +8,7 @@ import type { BusViewerProps } from '@/modules/st3215/BusViewer';
 export default customLive<BusViewerProps>({
   label: 'ST3215',
   order: 10,
-  claims: frameFieldClaims('st3215', 'videoQueues', 'mirroring'),
+  claims: frameFieldClaims('st3215', 'mirroring'),
   traits: [LIVE_TRAIT_REALTIME],
   select: (frame) => {
     const inferenceState = frame.st3215?.data;
@@ -20,7 +20,6 @@ export default customLive<BusViewerProps>({
       key: 'st3215',
       props: {
         inferenceState,
-        videoSources: frame.videoQueues,
         mirroringState: frame.mirroring?.data.state ?? undefined,
       },
     }];

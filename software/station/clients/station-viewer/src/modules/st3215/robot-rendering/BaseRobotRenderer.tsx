@@ -1,7 +1,7 @@
 import { forwardRef, useEffect, useImperativeHandle, useLayoutEffect, useRef } from 'react';
 import * as THREE from 'three';
 import { useTheme } from '@/hooks/useTheme';
-import { getMotorPosition } from '../motor-parser';
+import { getEffectiveMotorRange, getMotorPosition } from '../motor-parser';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { STLLoader } from 'three/examples/jsm/loaders/STLLoader.js';
 import URDFLoader from 'urdf-loader';
@@ -172,8 +172,7 @@ const BaseRobotRenderer = forwardRef<BaseRobotRendererRef, BaseRobotRendererProp
               }
               const motor = bus.motors[i];
               const position = motor.state ? getMotorPosition(motor.state) : 0;
-              const rangeMin = motor.rangeMin || 0;
-              const rangeMax = motor.rangeMax || 4095;
+              const { min: rangeMin, max: rangeMax } = getEffectiveMotorRange(motor);
 
               const MAX_ANGLE_STEP = 4095;
               let normalizedPosition = 0;
@@ -344,8 +343,7 @@ const BaseRobotRenderer = forwardRef<BaseRobotRendererRef, BaseRobotRendererProp
         }
         const motor = bus.motors[i];
         const position = motor.state ? getMotorPosition(motor.state) : 0;
-        const rangeMin = motor.rangeMin || 0;
-        const rangeMax = motor.rangeMax || 4095;
+        const { min: rangeMin, max: rangeMax } = getEffectiveMotorRange(motor);
         
         const MAX_ANGLE_STEP = 4095;
         let normalizedPosition = 0;

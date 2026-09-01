@@ -68,4 +68,27 @@ describe('live presentation composition', () => {
     expect(moduleIds).toContain('ina226');
     expect(moduleIds).not.toContain('usb-video');
   });
+
+  it('keeps the camera module mounted across ST3215 lifecycle changes', () => {
+    const cameraEntry = entry('camera/front', {
+      camera: { uniqueId: 'front-camera' },
+    });
+    const withoutArm = {
+      videoQueues: [cameraEntry],
+    } as Frame;
+    const withArm = {
+      st3215: entry('st3215/state', {
+        buses: [{ bus: { serialNumber: 'arm-1' }, motors: [{}] }],
+      }),
+      videoQueues: [cameraEntry],
+    } as Frame;
+
+    const plans = [withoutArm, withArm, withoutArm].map(resolveLiveModules);
+
+    expect(plans.map((plan) => plan.views.map((view) => view.moduleId))).toEqual([
+      ['usb-video'],
+      ['st3215', 'usb-video'],
+      ['usb-video'],
+    ]);
+  });
 });

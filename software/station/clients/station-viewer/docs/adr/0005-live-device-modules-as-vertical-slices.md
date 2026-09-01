@@ -41,7 +41,7 @@ Adding a layout profile requires at least two real modules that cannot use the e
 
 Claims name data, not competing module IDs. When active modules overlap, the adapter with more claims wins; ties use `order` and then module ID. All views from one adapter are arbitrated together.
 
-This lets Rover claim VESC, PWM, video, and power data without naming their atomic modules. Dogzilla and ST3215 suppress standalone cameras by claiming video data, not by setting camera-specific host flags.
+This lets Rover claim VESC, PWM, video, and power data without naming their atomic modules. Dogzilla suppresses standalone cameras because its combined dashboard presents video. ST3215 leaves video unclaimed so the camera surface and its state remain independent of arm connection and calibration lifecycles.
 
 Layout does not affect claim priority. Traits are aggregated only from visible modules; the current `realtime` trait controls FPS visibility.
 
