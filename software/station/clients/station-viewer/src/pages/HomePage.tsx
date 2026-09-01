@@ -4,13 +4,12 @@ import { Tag as TagIcon } from 'lucide-react';
 import { copyToClipboard } from '@/api/clipboard-utils';
 import { commandManager } from '@/api/commands';
 import { inference_tags } from '@/api/proto.js';
-import AsciiRobot from '@/components/AsciiRobot';
 import ConnectionUptime from '@/components/ConnectionUptime';
 import TagDialog from '@/components/TagDialog';
 import { useConnectionStats, useLiveSnapshot, useWakeLock, invalidateTagsCache } from '@/hooks';
-import LiveDeviceSurface from '@/devices/LiveDeviceSurface';
-import { resolveLiveDevices } from '@/devices/live-registry';
-import CameraSurface from '@/usbvideo/CameraSurface';
+import LiveSurface from '@/live/LiveSurface';
+import { LIVE_TRAIT_REALTIME } from '@/live/define-live-module';
+import { resolveLiveModules } from '@/live/live-registry';
 import { getFPSColor } from '@/utils/color-utils';
 import { defaultTag } from '@/utils/tag-phrases';
 
@@ -35,19 +34,11 @@ function HomePage() {
   const [tagDialog, setTagDialog] = useState<TagDialogState | null>(null);
   const [isTagSubmitting, setIsTagSubmitting] = useState(false);
   const [tagError, setTagError] = useState<string | null>(null);
-  const liveDevicePlan = useMemo(
-    () => resolveLiveDevices(inferenceState),
+  const livePlan = useMemo(
+    () => resolveLiveModules(inferenceState),
     [inferenceState],
   );
-  const hasLiveDeviceViews = !liveDevicePlan.isEmpty;
-  const videoSources = inferenceState?.videoQueues ?? [];
-  const shouldShowStandaloneCameras = videoSources.length > 0
-    && !liveDevicePlan.ownsCameras;
-  const hasOnlySummaryDeviceViews = liveDevicePlan.views.length > 0
-    && liveDevicePlan.views.every((view) => view.slot === 'summary')
-    && liveDevicePlan.errors.length === 0;
-  const shouldUseCameraSensorLayout = shouldShowStandaloneCameras
-    && hasOnlySummaryDeviceViews;
+  const hasRealtimeModule = livePlan.traits.includes(LIVE_TRAIT_REALTIME);
   const isDesktopApp = window.stationDesktop?.isDesktop === true;
 
   useEffect(() => {
@@ -126,7 +117,7 @@ function HomePage() {
                     }`} aria-label={connectionStats.status}></span>
                   </div>
                 )}
-                {connectionStats.status === 'connected' && liveDevicePlan.hasRealtimeDevice && (
+                {connectionStats.status === 'connected' && hasRealtimeModule && (
                   <div className="hidden sm:flex items-center gap-2 px-2 py-1 bg-surface-secondary rounded border border-border-default">
                     <span className="text-text-label text-xs uppercase tracking-wide">FPS</span>
                     <span className={`font-bold text-xs font-mono ${connectionStats.isFpsReady ? getFPSColor(connectionStats.fps) : 'text-text-label'}`}>
@@ -188,35 +179,8 @@ function HomePage() {
           onSubmit={handleSubmitTag}
         />
       )}
-      <div className={`min-h-0 flex-1 ${liveDevicePlan.isImmersive ? 'overflow-auto p-0 lg:p-4' : 'overflow-auto p-4'}`}>
-        <div className={`flex min-h-full w-full flex-col ${liveDevicePlan.isImmersive ? 'gap-0 lg:gap-4' : 'gap-4'}`}>
-          {shouldUseCameraSensorLayout ? (
-            <div className="grid w-full gap-4 xl:grid-cols-[minmax(0,2fr)_minmax(20rem,1fr)] xl:items-start">
-              <CameraSurface
-                videoSources={videoSources}
-                desktopAspectRatio
-              />
-              <LiveDeviceSurface
-                plan={liveDevicePlan}
-                summaryLayout="stacked"
-              />
-            </div>
-          ) : (
-            <>
-              {shouldShowStandaloneCameras && (
-                <CameraSurface videoSources={videoSources} />
-              )}
-              {hasLiveDeviceViews && (
-                <LiveDeviceSurface plan={liveDevicePlan} />
-              )}
-            </>
-          )}
-          {!hasLiveDeviceViews && !shouldShowStandaloneCameras && (
-            <div className="flex flex-1 min-h-full w-full items-center justify-center rounded-lg border border-dashed border-border-default bg-surface-primary/40 px-6">
-              <AsciiRobot />
-            </div>
-          )}
-        </div>
+      <div className="min-h-0 flex-1 overflow-auto">
+        <LiveSurface plan={livePlan} />
       </div>
     </div>
   );

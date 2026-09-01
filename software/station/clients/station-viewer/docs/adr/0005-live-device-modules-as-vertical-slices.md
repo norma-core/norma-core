@@ -1,49 +1,74 @@
-# ADR 0005: Organize live device presentation as vertical modules
+# ADR 0005: Organize live presentation as composable vertical modules
 
 - Date: 2026-07-12
+- Amended: 2026-08-23
 
 ## Context
 
-Station Viewer presents data from multiple concrete devices. Adding each device directly to `HomePage` would make the page depend on every protocol-specific view, spread device knowledge across shared layout code, and require a central registration edit for every extension.
+Station Viewer presents sensors, cameras, individual devices, and composite operator interfaces such as Rover. Concrete imports and selection rules in `HomePage` made every new product a shared-page change.
 
-Live presentation also needs deterministic ordering, stable React keys, lazy UI loading, layout slots, realtime capability reporting, and isolation when one device fails to select or render.
+The first module interface removed those imports but added product-specific fields such as `ownsCameras`, `isImmersive`, and `replaces`. Composite products still widened the common interface and knew which atomic modules they superseded.
+
+We need one presentation seam that supports small sensors and complete operator screens without central registration or product-specific host logic.
 
 ## Decision
 
-Each concrete live device is a vertical module under `src/devices/<device-id>/`. Its `module.ts` exports one `LiveDeviceAdapter`. Device-only views, commands, parsing helpers, formatting, and labels remain beside that manifest.
+The shared live mechanism lives in `src/live/`. Concrete implementations are flat vertical modules under `src/modules/<module-id>/`; product modules use stable product names, while hardware modules retain their hardware names.
 
-The live catalog discovers `src/devices/*/module.ts` with Vite's bundled `import.meta.glob`. Manifests are loaded eagerly so catalog validation happens at startup; their React views are loaded lazily.
+An optional `live.ts` exports one `LiveModule`. The registry discovers `src/modules/*/live.ts` with `import.meta.glob`; the directory name is the module ID. Adapters load eagerly for validation and React views load lazily.
 
-The normal authoring interface is `live()`. It selects one `FrameEntry` field, normalizes single and repeated entries, uses `queueId` as the stable view key, and supplies a typed `{ data }` prop. `customLive()` is reserved for views whose props require more than one frame field.
+The presentation interface contains four concepts:
 
-Selection is pure. A selector does not use hooks, JSX, I/O, timers, mutation, or subscriptions. It returns stable keys and props; the factory owns React element creation and lazy loading.
+- `resolve(frame)` selects keyed views;
+- `layout` controls host placement;
+- `claims` identify presented frame data;
+- `traits` report host-consumed capabilities.
 
-Module IDs and display orders are globally unique. View keys are non-empty and unique within a module. Shared layout is expressed through the closed `summary` and `primary` slots rather than arbitrary layout strings. Selection failures are reported for the affected module without preventing other modules from resolving.
+`live()` covers a single `FrameEntry` field and derives its claim. `customLive()` covers custom props or multiple fields and declares claims explicitly. Selection is synchronous and pure; the factory owns React element creation and lazy loading.
 
-`HomePage` depends only on `resolveLiveDevices(frame)` and `LiveDeviceSurface`; it never imports a concrete device.
+### Layout Profiles
+
+Layouts express visual scale, not product identity:
+
+- `card` — a small block in the responsive grid;
+- `section` — a full-width normal-flow block and the default;
+- `feature` — dominant content, optionally paired with a card sidebar;
+- `screen` — a complete operator interface with edge-to-edge mobile spacing.
+
+Adding a layout profile requires at least two real modules that cannot use the existing profiles.
+
+### Claim-Based Composition
+
+Claims name data, not competing module IDs. When active modules overlap, the adapter with more claims wins; ties use `order` and then module ID. All views from one adapter are arbitrated together.
+
+This lets Rover claim VESC, PWM, video, and power data without naming their atomic modules. Dogzilla suppresses standalone cameras because its combined dashboard presents video. ST3215 leaves video unclaimed so the camera surface and its state remain independent of arm connection and calibration lifecycles.
+
+Layout does not affect claim priority. Traits are aggregated only from visible modules; the current `realtime` trait controls FPS visibility.
+
+`HomePage` depends only on `resolveLiveModules(frame)` and `LiveSurface`. It does not import concrete modules or interpret frame fields, layouts, or claims.
 
 ## Consequences
 
-- A device can add or change live presentation without editing `HomePage` or a central registry.
-- Device-specific knowledge has locality inside one vertical module.
-- Shared code owns ordering, validation, lazy loading, layout slots, and error isolation once.
-- The authoring interface deliberately covers live presentation only; it is not a general plugin contract.
-- Adding a new layout slot changes the shared interface and requires evidence that multiple modules need it.
+- Adding live presentation requires one module-local adapter and no central registration edit.
+- Product knowledge, UI, commands, parsing, and formatting remain local to the module.
+- Shared code owns discovery, ordering, validation, arbitration, layout, lazy loading, and error isolation.
+- Composite modules depend on presented data rather than the identities of other modules.
+- Live presentation remains separate from frame decoding, history presentation, commands, and physical-model resolution.
 
-## Rejected alternatives
+## Rejected Alternatives
 
-### Import every concrete device from `HomePage`
+### Product-Specific Host Orchestration
 
-This couples shared layout to device growth and spreads device-selection conditions through the page.
+Booleans such as `ownsCameras`, explicit `replaces` lists, and camera branches in `HomePage` couple the host and composite products to the current module catalog.
 
-### Maintain a central registration list
+### Central Registration or Concrete Page Imports
 
-That adds a second edit location for every module and permits the list to drift from the filesystem.
+A registry list creates a second edit location and can drift from the filesystem. Concrete imports spread product selection through shared page code.
 
-### Put hooks or side effects in selectors
+### Group Modules by Layout or Device Category
 
-Selectors run during plan resolution and must remain deterministic, synchronous, and testable through `resolveLiveDevices(frame)`.
+Layout changes should not move an implementation. Categories such as robot, camera, or sensor are ambiguous for composite products such as Rover, which spans control, video, power, and telemetry.
 
-### Create a universal device plugin manifest
+### Universal Device Plugin
 
-Live presentation, history rendering, decoding, configuration, actions, and physical models vary independently. Combining them would produce a wide interface dominated by optional fields.
+Live presentation, decoding, history, commands, and physical models vary independently. Combining them would produce a wide interface dominated by optional fields; their separate interfaces may instead be colocated in one vertical module.

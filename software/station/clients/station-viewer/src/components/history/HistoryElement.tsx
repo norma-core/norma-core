@@ -2,10 +2,10 @@ import { useState } from 'react';
 import { airgradient_open_air_o_1pst, arduino_nicla_sense_env, hikmicro, ina226, usbvideo, st3215, motors_mirroring, sysinfo, yahboom_dogzilla_lite, normvla, vesc_trampa, victron_smartsolar_mppt } from '@/api/proto.js';
 import { formatBytes, parseUsbVideoData, parseHikmicroThermalData, parseMirroringData, parseSysinfoData, parseArduinoNiclaSenseEnvData, parseIna226Data, parseAirGradientData, parseVictronSmartSolarData, parseYahboomDogzillaLiteData, parseNormvlaData } from '@/components/history/history-utils';
 import ExpandedView from '@/components/history/ExpandedView';
-import { readArduinoNiclaSenseEnvMainValues } from '@/devices/arduino-nicla-sense-env/values';
-import { formatIna226Current, readIna226CurrentAmps, readIna226ShuntMillivolts } from '@/devices/ina226/values';
-import { airGradientDeviceLabel, readAirGradientValues } from '@/devices/airgradient-open-air-o-1pst/values';
-import { formatCelsius, latestThermalFrame, renderThermalFrame } from '@/devices/hikmicro-thermal/thermal';
+import { readArduinoNiclaSenseEnvMainValues } from '@/modules/arduino-nicla-sense-env/values';
+import { formatIna226Current, readIna226CurrentAmps, readIna226ShuntMillivolts } from '@/modules/ina226/values';
+import { airGradientDeviceLabel, readAirGradientValues } from '@/modules/airgradient-open-air-o-1pst/values';
+import { formatCelsius, latestThermalFrame, renderThermalFrame } from '@/modules/hikmicro-thermal/thermal';
 import {
   describeRegisterValue,
   formatRegisterHex,
@@ -13,7 +13,7 @@ import {
   parseVeDirectTextBlock,
   registerLabel,
   victronDeviceLabel,
-} from '@/devices/victron-smartsolar-mppt/values';
+} from '@/modules/victron-smartsolar-mppt/values';
 
 export interface HistoryElementData {
   queueId: string;

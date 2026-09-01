@@ -19,7 +19,7 @@ const mocks = vi.hoisted(() => ({
   sendSt3215Command: vi.fn(),
 }));
 
-vi.mock('../api/websocket', () => ({
+vi.mock('@/api/websocket', () => ({
   default: {
     commands: {
       sendMirroringCommand: mocks.sendMirroringCommand,
@@ -28,16 +28,16 @@ vi.mock('../api/websocket', () => ({
   },
 }));
 
-vi.mock('../hooks', () => ({
+vi.mock('@/hooks', () => ({
   useInferenceState: () => null,
   useWakeLock: () => undefined,
 }));
 
-vi.mock('../st3215/BusWebGLRenderer', () => ({
+vi.mock('@/modules/st3215/BusWebGLRenderer', () => ({
   default: () => null,
 }));
 
-vi.mock('@/devices/st3215-models', () => ({
+vi.mock('@/modules/st3215/model-registry', () => ({
   supportsSt3215Bus: () => true,
 }));
 

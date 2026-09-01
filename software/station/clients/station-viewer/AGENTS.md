@@ -1,424 +1,157 @@
 # AGENTS.md
 
-Guidelines for AI coding agents operating in this React/TypeScript project.
+Project-specific guidance for AI coding agents working on Station Viewer.
 
 ## Commands
 
 ```bash
-npm run dev          # Start Vite dev server (http://localhost:5173)
-npm run build        # Full build: hashes, proto, type-check, and Vite build
-npm run build:proto  # Regenerate protobuf bindings from ../../../../../protobufs
-npm run lint         # Run oxlint (Rust-based linter)
-npm run type-check   # Run TypeScript compiler without emitting
-npm test             # Run Vitest once
-npm run test:watch   # Run Vitest in watch mode
-npm run preview      # Preview production build locally
+npm run dev          # Vite dev server on http://localhost:5173
+npm run build        # Hashes, protobuf, type-check, and production build
+npm run build:proto  # Regenerate bindings from ../../../../../protobufs
+npm run lint         # oxlint
+npm run type-check   # TypeScript without emit
+npm test             # Vitest once
+npm run test:watch   # Vitest watch mode
+npm run preview      # Preview production output
 ```
 
-## Testing
+## Verification
 
-Vitest runs in the Node environment. Keep tests beside the module as `*.test.ts`.
+- Keep Vitest tests beside the implementation as `*.test.ts`; tests run in Node unless they declare another environment.
+- Test plausible regressions through public interfaces. Prefer ownership, cleanup, async ordering, state transitions, and non-trivial domain rules over coverage targets.
+- Mock only true system seams such as WebSocket, browser APIs, and time. Do not test private helpers, types, constants, CSS classes, static markup, or snapshots merely to detect change.
+- For bug fixes, reproduce the failure before fixing it.
+- For responsive UI changes, exercise mobile portrait, mobile landscape in a normal browser tab, and desktop. Interact with affected controls; screenshots alone are insufficient.
+- Run tests, type-check, lint, and build in proportion to the change.
 
-Tests are regression guards, not a coverage target. Before adding a test, name the plausible bug it should catch. Prioritize behavior with a history of failure, async races, ownership or cleanup boundaries, atomic external-store updates, and non-trivial domain rules. A small set of tests around these risks is preferable to exhaustive coverage of trivial branches.
+## Stack and Structure
 
-Exercise behavior through public interfaces and assert caller-visible outcomes. Tests must survive an internal refactor that preserves behavior. Mock only true system boundaries when necessary, such as WebSocket, browser APIs, or time; use real Station Viewer modules together whenever practical. Avoid tests that mirror implementation steps, test private helpers, merely restate types, or assert mock call counts unless the count itself is part of the public contract.
+The client uses React 19, strict TypeScript, Vite 7, Tailwind CSS 4, React Router 7, protobuf.js, Three.js, and Vitest. State is owned by React hooks and external stores; there is no general state-management library.
 
-Do not add tests whose only purpose is to detect a change to an exported constant, lookup-table entry, CSS class, static markup fragment, or snapshot. In particular, do not pass an exported constant into a function and assert the same literal value, and do not render a component only to search its HTML for implementation classes. These tests are change detectors, not regression guards. When configuration data drives non-trivial behavior, test the public properties and boundaries that matter to a caller—such as clamping, monotonicity, safety limits, state transitions, or derived outputs—rather than copying every configured value into the test.
-
-For a bug fix, first demonstrate that the test fails for the broken behavior, then make it pass. If a test cannot be connected to a realistic regression, do not add it.
-
-For responsive UI changes, do not commit after checking only one viewport. Verify the affected flow in mobile portrait, mobile landscape, and desktop layouts. Mobile landscape must also be checked in a normal browser tab, not only in element fullscreen, because browser chrome reduces the available height. Exercise the changed controls at each relevant size; a screenshot alone is not sufficient for interactive behavior such as dragging, tapping, or pointer capture.
-
-## Tech Stack
-
-- **React 19** with function components only
-- **TypeScript 5.9** with strict mode enabled
-- **Vite 7** for bundling (supports top-level await, URDF/STL assets)
-- **Tailwind CSS v4** with @tailwindcss/vite plugin
-- **Three.js** for 3D rendering (URDF robot visualization)
-- **Protobuf.js** for binary protocol communication
-- **React Router v7** for routing with lazy-loaded pages
-- **oxlint** for linting (fast Rust-based linter)
-- **lucide-react** for icons
-- **urdf-loader** for loading URDF robot models
-- **nosleep.js** for screen wake lock
-
-## Project Structure
-
-```
+```text
 src/
-  api/            # WebSocket, protobuf, time sync, queue, normfs, commands, clipboard, frame parsing
-  components/     # Shared UI components
-    history/      # History page detail views (ExpandedView, HistoryElement, etc.)
-  devices/        # Concrete device modules, live registry, ST3215 model manifests
-  hooks/          # Custom React hooks (re-exported from index.ts)
-  pages/          # Route components (suffixed with Page)
-  st3215/         # Motor driver components, utilities, and robot renderers
-    robot-rendering/ # Shared ST3215 URDF/Three.js rendering host and base renderer
-  usbvideo/       # Camera/video stream components
-  utils/          # Shared utilities (asset-hashes, format-bytes, tag-phrases)
-public/
-  devices/        # Device URDF models and STL assets, keyed by device id
+  api/          # Transport, protobuf, NormFS, commands, frame decoding
+  components/   # Shared UI and history presentation
+  hooks/        # React adapters and reusable UI state
+  live/         # Live-module interface, discovery, composition, host surface
+  modules/      # Product, hardware, protocol, and physical-model modules
+  pages/        # Route components
+  utils/        # Cross-module utilities
+public/devices/ # URDF and STL assets keyed by physical-model ID
 ```
 
-## Device Modules
+## Frontend Modules
 
-Concrete device code lives under `src/devices/<device-id>/`. A device module is a **vertical live slice**: its manifest, device-only UI, protocol/formatting helpers, commands, and model-specific assets live together. `HomePage` and shared protocol/rendering code must never import a concrete device.
+Concrete product and hardware knowledge belongs in `src/modules/<module-id>/`. Use stable product names such as `rover` and `dogzilla`; do not name product modules after their current implementation combination.
 
-The shared implementation is deliberately split into two deep modules with different interfaces:
+`src/live/live-registry.ts` discovers `src/modules/*/live.ts`. The directory name is the module ID, so `live.ts` must not repeat it. Adapters load eagerly for validation; React views load lazily.
 
-```
-src/devices/
-  live.ts                 # live()/customLive() authoring factories
-  live-registry.ts        # discovers live manifests and resolves a LiveDevicePlan
-  LiveDeviceSurface.tsx   # lazy rendering, slots, and error isolation
-  st3215-model.ts         # st3215Model() authoring factory and model contract
-  st3215-models.ts        # discovers and resolves ST3215 robot models
-  <device-id>/
-    module.ts             # one live-module manifest
-    ui/                   # lazy device UI
-    values.ts             # device-only parsers/formatters when needed
-    commands.ts           # device-only commands when needed
-    st3215-model.ts       # optional ST3215 robot-model manifest
-```
+### Normal Live Adapter
 
-Do not recreate a general plugin framework. Live UI, ST3215 robot models, history, decoding, configuration, and actions are separate concerns. Introduce another seam only when it has a real caller and at least two concrete adapters.
-
-### Live Device Modules
-
-`live-registry.ts` discovers `src/devices/*/module.ts` using Vite's bundled `import.meta.glob`. **Never edit a central registration list and never import a concrete module from `HomePage`.** A manifest is eagerly loaded, but its UI must be loaded lazily.
-
-Use `live()` for the normal case: the data lives in one `Frame` field whose value is either one `FrameEntry` or an array of entries. The factory normalizes single/multiple entries, uses `queueId` as the stable key, supplies the typed `{ data }` prop, and creates the lazy React element.
+Use `live()` when one `FrameEntry` field supplies `{ data }`:
 
 ```typescript
-import { live } from '@/devices/live';
+import { live } from '@/live/define-live-module';
 
 export default live({
-  id: 'new-sensor',
   label: 'New Sensor',
-  order: 40,
-  slot: 'summary',
+  layout: 'card',
   field: 'newSensor',
-  when: (data) => data.readings?.length > 0,
   loadView: () => import('./ui/NewSensorLiveView'),
 });
 ```
 
-The UI prop must match the factory convention:
+Use `customLive()` only when the view needs custom props or multiple frame fields. Declare all presented fields with `frameFieldClaims(...)`; keep `select(frame)` pure and return only stable keys and props. See `src/modules/st3215/live.ts` for a concrete example.
 
-```typescript
-export interface NewSensorLiveViewProps {
-  data: new_sensor.IRxEnvelope;
-}
-```
+### Layouts
 
-Use `customLive()` only when `{ data }` is insufficient—for example, ST3215 also needs video and mirroring state. Its `select(frame)` must be pure: no hooks, I/O, mutations, JSX, timers, or subscriptions. It returns only stable keys and typed props; the factory owns lazy rendering.
+- `card` — small block in the responsive grid.
+- `section` — full-width normal-flow block; the default.
+- `feature` — dominant content, optionally paired with a card sidebar.
+- `screen` — complete operator interface with edge-to-edge mobile spacing.
 
-```typescript
-import { customLive } from '@/devices/live';
+Layout controls placement only. It does not determine ownership or conflict priority.
 
-export default customLive<NewViewerProps>({
-  id: 'new-device',
-  label: 'New Device',
-  order: 40,
-  select: (frame) => {
-    const data = frame.newDevice?.data;
-    return data ? [{ key: 'new-device', props: { data, videos: frame.videoQueues } }] : [];
-  },
-  loadView: () => import('./ui/NewDeviceViewer'),
-});
-```
+### Rules
 
-Rules and invariants:
+- Module directories use kebab-case. `order` is optional and defaults to zero; ordering is `order`, module ID, then view key.
+- Every `live.ts` must default-export `live(...)` or `customLive(...)`; the contract test discovers and verifies all current and future adapters.
+- Do not edit a registration list or teach `HomePage` about concrete modules, frame fields, layouts, or claims.
+- `live()` derives its frame claim. A custom adapter declares every presented field; it must not name competing module IDs. On overlap, the adapter with more claims wins, then lower `order`, then module ID.
+- View keys are non-empty and unique within a module. Use `queueId` for repeated driver entries.
+- `select(frame)` has no hooks, JSX, I/O, timers, mutation, subscriptions, or side effects.
+- Use `when(data)` only to suppress an empty but valid entry. Use `customLive()` when props differ from `{ data }`.
+- Add `LIVE_TRAIT_REALTIME` only when the module supplies the active realtime stream. Do not add product-specific booleans to `LiveModule` or `LivePlan`.
+- Keep adapters small. Put UI in `ui/` and module-only commands, parsing, and formatting beside it. Do not add pass-through view wrappers.
+- Selection and lazy-render failures are isolated by the live host; do not catch them in `HomePage`.
 
-- `id` and `order` are globally unique across live manifests. The display order is deterministic: `order`, then `id`, then entry key.
-- A view key must be non-empty and unique within its module. Use `queueId` for multi-instance driver entries.
-- `slot: 'summary'` renders compact cards in the shared sensor grid; the default `primary` slot renders full-width device UI. Do not add ad-hoc layout strings.
-- Use `when(data)` only to suppress an empty but valid entry. If the view needs different props or shared frame data, use `customLive()` instead.
-- Set `isRealtime: true` only for a device that actually supplies the active realtime stream. The resolved plan uses this capability to decide whether to show connection FPS.
-- Selection and lazy-render failures are isolated to the affected device. Do not catch them in `HomePage`.
-- Do not add wrappers that only render another component with identical props. They fail the deletion test; import the shared implementation directly from the manifest. In particular, do not add a `St3215LiveView` pass-through around `BusViewer`.
-- Keep module manifests small. Heavy React UI belongs in `ui/`, and device-only formatting, commands, or parser code stays beside that manifest rather than in generic `src/utils/`.
+### Adding a Module
 
-### ST3215 Robot Models
+1. If the queue type is new, update backend/protobuf definitions and normalized `Frame` decoding first.
+2. Add `src/modules/<module-id>/live.ts` and colocate its lazy UI and module-only implementation.
+3. Add a physical-model adapter only when needed; keep it separate from live presentation.
+4. Test live selection through `resolveLiveModules(frame)` and physical models through their registry interface.
+5. Do not edit `HomePage`, `LiveSurface`, or a central registration list.
 
-`st3215-models.ts` is independent from the live-device registry. Shared ST3215 code stays under `src/st3215/` and contains only protocol handling and generic rendering. Concrete URDF paths, transforms, joint names, material mapping, and kinematic quirks belong to the physical model directory.
+[ADR 0005](docs/adr/0005-live-device-modules-as-vertical-slices.md) records the live-module decision. [ADR 0006](docs/adr/0006-keep-live-and-physical-model-registries-separate.md) covers ST3215 physical-model resolution, and [ADR 0010](docs/adr/0010-centralize-frame-decoding-before-device-presentation.md) keeps frame decoding outside presentation.
 
-Register a model through `st3215Model()`:
+### ST3215 Physical Models
 
-```typescript
-import { st3215Model } from '@/devices/st3215-model';
+`src/modules/st3215/model-registry.ts` discovers `src/modules/*/st3215-model.ts` independently of live adapters.
 
-export default st3215Model({
-  id: 'new-model',
-  label: 'New Model',
-  motorCount: 7,
-  kinematics: {
-    urdfPath: 'devices/new-model/robot.urdf',
-    basePos: [0, 0, 0],
-    baseRpy: [0, 0, 0],
-    jointNames: ['joint-1', 'joint-2'],
-  },
-  loadRenderer: () => import('./Renderer'),
-});
-```
+- Model `id` and `motorCount` are globally unique.
+- `matchesBus` may narrow the motor-count match but cannot bypass it.
+- Unsupported buses resolve explicitly; there is no first-model fallback.
+- Shared ST3215 implementation may query the registry but must not import concrete models.
+- Model-specific URDF paths, transforms, joints, materials, and kinematic quirks stay in the physical-model module.
 
-Rules and invariants:
+## Code Conventions
 
-- `id` and `motorCount` are globally unique. The normalized-joint renderer has only joint count as its identity, so two models with the same count are ambiguous and rejected at startup.
-- The factory owns the default motor-count match. Add `matchesBus` only for an additional discriminator; it cannot bypass the motor-count requirement.
-- There is no implicit “first model” fallback. An unsupported bus or joint count must render the explicit unsupported state.
-- Do not duplicate `id`, `label`, or `motorCount` inside `kinematics`.
-- Shared ST3215 components may ask `st3215-models.ts` whether a bus is supported, but must not import a concrete model.
+### Imports and Formatting
 
-### Adding or Extending a Device
+- Prefer `@/*` aliases outside a module's own directory. Order imports as external, `@/api`, `@/components`, `@/hooks`, `@/live`, `@/modules`, then types.
+- Some ESM imports require `.js`, notably generated protobuf imports; follow the surrounding file.
+- Use 2-space indentation and semicolons. Generated `src/api/proto.*` files are excluded from linting.
 
-1. Add the backend/protobuf queue type and `Frame` decoding when the driver itself is new. The current module system owns live presentation, not frame decoding.
-2. Create `src/devices/<device-id>/module.ts`; use `live()` unless shared frame data makes `customLive()` necessary.
-3. Put device-only UI under `ui/` and supporting device code beside it.
-4. For a physical ST3215 robot, add `st3215-model.ts`, `Renderer.tsx`, config, and public assets in the same model directory.
-5. Put URDF/STL files in `public/devices/<device-id>/`, then run `node scripts/generate-asset-hashes.mjs` so `src/assets-manifest.json` includes them.
-6. Test through the public seams: `resolveLiveDevices(frame)` for live selection and `resolveSt3215Model(bus)` / `resolveSt3215Kinematics(count)` for robot models. Do not test factory internals or rendering past the module interface.
-
-History rendering remains in `HistoryPage` / `HistoryElement` / `ExpandedView`. When history and decoding are deliberately migrated, introduce a real history/decoder seam with multiple device adapters; do not add speculative optional fields to live manifests now.
-
-## Code Style
-
-### Imports
-Use `@/*` path aliases. Order: external deps → `@/api/*` → `@/components/*` → `@/hooks` → types.
-
-Some internal imports use `.js` extensions (required for ESM module resolution):
-
-```typescript
-import { forwardRef, memo, useImperativeHandle, useRef } from 'react';
-import Long from 'long';
-import webSocketManager from '@/api/websocket';
-import { serverToLocal } from '@/api/timestamp-utils';
-import { st3215 } from '@/api/proto.js';
-import Timeline from '@/components/Timeline';
-import { useFrameData, useTimelineState } from '@/hooks';
-```
-
-### Formatting & Linting
-- 2-space indentation, semicolons required
-- `src/api/proto.*` files are auto-generated and excluded from linting
-- oxlint enforces rules (see `.oxlintrc.json`)
-
-### Naming Conventions
+### Naming
 
 | Entity | Convention | Example |
-|--------|------------|---------|
-| Components | PascalCase | `TimelineControls`, `BusViewer` |
-| Page components | PascalCase + Page suffix | `HomePage`, `HistoryPage` |
-| Hooks | camelCase with `use` prefix | `useTimelineState`, `useFrameData` |
-| Utilities | kebab-case filenames | `queue-utils.ts`, `time-sync.ts` |
-| Variables/functions | camelCase | `currentFrame`, `selectFrame` |
-| Constants | UPPER_SNAKE_CASE | `WS_EVENTS`, `DEFAULT_TIMEOUT` |
-| Interfaces | PascalCase | `TimelineState`, `ConnectionStats` |
-| Props interfaces | PascalCase + Props suffix | `TimelineProps`, `BusViewerProps` |
-| Error singletons | Err prefix | `ErrNotConnected`, `ErrBufferFull` |
-| Protobuf interfaces | I prefix (from codegen) | `web.IClientPacket`, `st3215.IInferenceState` |
+| --- | --- | --- |
+| Components | PascalCase | `BusViewer` |
+| Pages | PascalCase + `Page` | `HistoryPage` |
+| Hooks | `use` + camelCase | `useFrameData` |
+| Utilities | kebab-case filename | `queue-utils.ts` |
+| Functions and variables | camelCase | `selectFrame` |
+| Constants | UPPER_SNAKE_CASE | `WS_EVENTS` |
+| Interfaces and types | PascalCase | `LivePlan` |
+| Props | PascalCase + `Props` | `BusViewerProps` |
+| Error singletons | `Err` prefix | `ErrNotConnected` |
+| Generated protobuf interfaces | `I` prefix | `st3215.IInferenceState` |
 
-## Component Patterns
+### React and State
 
-### Function Components
-Two accepted patterns:
+- Use function components and default component exports. Define props directly above the component.
+- Use `memo()` for expensive or frequently rerendered views and `forwardRef()` only for a real imperative interface.
+- Route components use the `Page` suffix and load lazily.
+- Complex hooks return separate `state` and `actions`; simple hooks return a value or flat object.
+- Import hooks through `@/hooks`; hook implementations import sibling hooks directly to avoid barrel cycles.
+- Use `useSyncExternalStore` for long-lived managers. Snapshot getters must preserve object identity until state changes and publish related values atomically.
+- Clean up listeners, timers, subscriptions, animation frames, and browser resources in effects.
+- Keep UI state in its owning page or module; do not turn transport snapshots into a general application store.
 
-**Pattern 1 — Explicit memo + forwardRef** (used for complex/re-rendered components):
-```typescript
-interface TimelineControlsProps {
-  state: TimelineState;
-  actions: TimelineActions;
-  frameStep?: number;
-}
+## Transport and Protobuf
 
-const TimelineControlsComponent = forwardRef<TimelineControlsRef, TimelineControlsProps>(
-  function TimelineControls({ state, actions, frameStep = 1 }: TimelineControlsProps, ref) {
-    // ...
-  }
-);
+- `frame-parser.ts` owns queue decoding into the normalized `Frame`; live selectors remain synchronous and pure.
+- Use generated `I...` protobuf interfaces for plain values and generated classes for `create`, `encode`, and `decode`.
+- Run `npm run build:proto` after changing protobuf definitions.
+- Send commands through the shared command manager rather than creating transport clients in views.
+- WebSocket live and connection-statistics snapshots are separate atomic stores. The manager initializes through the side-effect import in `main.tsx`.
+- The dev server proxy target is configured in `vite.config.ts`.
 
-const TimelineControls = memo(TimelineControlsComponent);
-TimelineControls.displayName = 'TimelineControls';
-export default TimelineControls;
-```
+## Assets and Build
 
-**Pattern 2 — React.FC** (used for simpler components):
-```typescript
-const MainLayout: React.FC = () => {
-  // ...
-};
-export default MainLayout;
-```
-
-**Pattern 3 — Inline memo** (alternative shorthand):
-```typescript
-const BusViewer = memo(function BusViewer({ ... }: BusViewerProps) {
-  // ...
-});
-export default BusViewer;
-```
-
-Conventions:
-- Use function components only
-- All components use default exports
-- Define props interfaces directly above the component
-- Use `memo()` for components with complex props that re-render frequently (e.g., timeline components)
-- Use `forwardRef` when exposing imperative handles
-- Route components are lazy-loaded: `const HomePage = lazy(() => import('./pages/HomePage'));`
-
-## Routes
-
-```typescript
-// MainLayout wraps Home and History pages
-<Route path="/" element={<MainLayout><HomePage /></MainLayout>} />
-<Route path="/history" element={<MainLayout><HistoryPage /></MainLayout>} />
-
-// Standalone pages
-<Route path="/st3215-bus-calibration" element={<St3215BusCalibrationPage />} />
-<Route path="/st3215-bind-motors" element={<St3215MotorConfigPage />} />
-```
-
-## Hook Patterns
-
-### State/Actions Pattern
-Complex stateful hooks return separate state and actions objects:
-
-```typescript
-export interface UseTimelineStateReturn {
-  state: TimelineState;
-  actions: TimelineActions;
-}
-
-export function useTimelineState(): UseTimelineStateReturn {
-  const [currentFrame, setCurrentFrame] = useState(0);
-  // ...
-  
-  const state = useMemo(() => ({
-    currentFrame,
-    range,
-    isLoading,
-    error,
-  }), [currentFrame, range, isLoading, error]);
-
-  const actions = useMemo(() => ({
-    selectFrame,
-    nextFrame,
-    prevFrame,
-  }), [selectFrame, nextFrame, prevFrame]);
-
-  return { state, actions };
-}
-```
-
-Simpler hooks return plain values or flat objects. For example, `useInferenceState` returns `Frame | null`, while `useFrameData({ frameNumber, immediate })` returns `{ parsedFrame, isLoading, error }`; timeline state is the sole owner of the selected frame number.
-
-### External Stores and Effect Cleanup
-
-Use `useSyncExternalStore` for state owned by long-lived managers. Snapshot getters must return the same object reference until the underlying state changes, and related values must be published atomically. `WebSocketManager` exposes the canonical live and connection-statistics snapshots; do not mirror them into hook-local `useState`.
-
-For component-owned effects, always clean up event listeners, timers, and subscriptions:
-
-```typescript
-useEffect(() => {
-  const handler = () => setIsFullscreen(document.fullscreenElement === elementRef.current);
-  document.addEventListener('fullscreenchange', handler);
-  return () => document.removeEventListener('fullscreenchange', handler);
-}, []);
-```
-
-### Hook Exports
-All hooks are re-exported from `src/hooks/index.ts`:
-```typescript
-export { useInferenceState } from "./useInferenceState";
-export { useLatestEntryId } from "./useLatestEntryId";
-export { useLiveSnapshot } from "./useLiveSnapshot";
-export { useConnectionStats } from "./useConnectionStats";
-export { useElapsedSeconds } from "./useElapsedSeconds";
-export { useFrameData } from "./useFrameData";
-export { useQueueEntries } from "./useQueueEntries";
-export { useTimelineState } from "./useTimelineState";
-export { useStartupMarkers } from "./useStartupMarkers";
-export { useInferenceTags, invalidateTagsCache } from "./useInferenceTags";
-export { useKeyboardNavigation } from "./useKeyboardNavigation";
-export { useWakeLock } from "./useWakeLock";
-export { useBusMonitor } from "./useBusMonitor";
-export { useElementFullscreen } from "./useElementFullscreen";
-export { ThemeProvider, useTheme } from "./useTheme";
-// Plus hook-owned type exports: Theme, TimelineControlsRef, UseWakeLockReturn, BusStatus, ErrorPacketDump
-```
-
-Modules outside `src/hooks/` import hooks through `@/hooks`. Hook implementations import sibling hooks directly rather than through the barrel, which avoids a cycle from `index.ts` back into the implementation being exported.
-
-## Error Handling
-
-### Module-Level Error Singletons
-```typescript
-export const ErrNotConnected = new Error("client not connected or setup not complete");
-export const ErrBufferFull = new Error("client request buffer is full");
-export const ErrRequestTimeout = new Error("request timed out waiting for server response");
-```
-
-### Async Error Handling
-```typescript
-try {
-  const result = await fetchData();
-  setError(null);
-  return result;
-} catch (err) {
-  console.error('Failed to fetch data:', err);
-  setError(err instanceof Error ? err.message : 'Unknown error');
-  return null;
-}
-```
-
-## Protobuf Patterns
-
-- Use `IInterface` (with I prefix) for plain objects passed as parameters
-- Use `Class` for static methods (create, encode, decode)
-
-```typescript
-public send(packet: web.IClientPacket) {
-  const clientPacket = web.ClientPacket.create(packet);
-  const buffer = web.ClientPacket.encode(clientPacket).finish();
-  this.ws.send(buffer);
-}
-```
-
-Run `npm run build:proto` after modifying .proto files.
-
-## State Management
-
-State is managed through custom hooks, not global state libraries. WebSocket events drive stable immutable snapshots exposed to React through `useSyncExternalStore`. Global managers are exported as default singletons:
-
-```typescript
-const webSocketManager = new WebSocketManager(`ws://${host}/api`);
-export default webSocketManager;
-```
-
-The live snapshot contains the frame and latest entry ID as one atomic observation. Connection statistics use a separate snapshot. Keep local UI state in the owning page or device view; do not turn these transport snapshots into a general application store. See `docs/adr/README.md` for the accepted decisions and invariants.
-
-The WebSocket manager is initialized at app startup via side-effect import in `main.tsx`:
-```typescript
-import './api/websocket.ts';
-```
-
-## WebSocket Configuration
-
-The dev server proxies `/api` to the robot backend. Update `vite.config.ts` to change the target:
-
-```typescript
-proxy: {
-  '/api': {
-    target: 'ws://localhost:8889',
-    ws: true,
-    changeOrigin: false,
-  }
-}
-```
-
-## Build Notes
-
-- `npm run build:hashes` generates `src/assets-manifest.json` for cache-busting (used by `src/utils/asset-hashes.ts`)
-- `__STATION_VERSION__` global is defined at build time (workspace version + git hash) — declared in `vite-env.d.ts`, used in `Navigation.tsx`
-- Vite is configured with `vite-plugin-compression` for gzip output
+- Put URDF/STL files in `public/devices/<model-id>/`.
+- Run `node scripts/generate-asset-hashes.mjs` after changing public model assets.
+- `npm run build:hashes` generates `src/assets-manifest.json` for cache busting.
+- `__STATION_VERSION__` is defined at build time from the workspace version and git hash.
+- Production output is gzip-compressed by Vite.

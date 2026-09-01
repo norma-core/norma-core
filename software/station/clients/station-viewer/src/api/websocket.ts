@@ -5,7 +5,7 @@ import { NormFsClient } from "@/api/normfs.js";
 import { normfs, inference } from "@/api/proto.js";
 import { timeSyncManager } from "@/api/time-sync.js";
 import { WS_EVENTS } from "@/api/websocket-events.js";
-import { shouldLoadLiveCameraFrame } from "@/usbvideo/live-camera-store.js";
+import { shouldLoadLiveCameraFrame } from "@/modules/usb-video/live-camera-store.js";
 
 export const ErrConnectionNotOpen = new Error("WebSocket: Connection not open.");
 
