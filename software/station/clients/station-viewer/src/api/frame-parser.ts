@@ -493,6 +493,25 @@ export async function parseFrame(
           };
         } catch (error) {
           console.error(`Failed to read entry from queue ${entry.queue}:`, error);
+          // Keep a live thermal surface mounted through a temporary queue-read
+          // failure, including native fullscreen and its last image. Retain the
+          // OLD pointer/data identity so the view can mark it stale and the next
+          // observation will retry the failed pointer. History stays exact.
+          if (entry.type === drivers.QueueDataType.QDT_HIKMICRO_THERMAL && options.shouldPublishVideoFrames?.()) {
+            const previous = previousFrame?.hikmicroThermal?.find(camera => camera.queueId === entry.queue);
+            if (previous) {
+              return {
+                queue: entry.queue,
+                type: entry.type,
+                ptr: previous.ptr,
+                decoded: previous.data,
+                rawData: previous.rawData ?? null,
+                id: null,
+                reused: true,
+                isNormvla: false,
+              };
+            }
+          }
           return null;
         }
       })();
