@@ -57,6 +57,7 @@ type DecodedEntry = st3215.IInferenceState | st3215.ITxEnvelope | usbvideo.IRxEn
 
 interface ParseFrameOptions {
   retainRawData?: boolean;
+  thermalDiscoveryOnly?: boolean;
   shouldPublishVideoFrames?: () => boolean;
   shouldLoadVideoFrame?: (
     queueId: string,
@@ -295,6 +296,13 @@ export async function parseFrame(
       if (!entry.queue || !entry.ptr) {
         console.warn("Entry missing queue or ptr:", entry);
         return Promise.resolve(null);
+      }
+
+      // Live thermal viewers own their reads; a slow camera must not stall
+      // unrelated sensors. History still follows the exact recorded pointer.
+      if (options.thermalDiscoveryOnly && entry.type === drivers.QueueDataType.QDT_HIKMICRO_THERMAL) {
+        return Promise.resolve({ queue: entry.queue, type: entry.type, ptr: entry.ptr,
+          decoded: {}, rawData: null, id: null, reused: true, isNormvla: false });
       }
 
       // Check if we can reuse from previous frame

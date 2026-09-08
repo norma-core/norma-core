@@ -24,7 +24,8 @@ const XU_UNIT_ID: u8 = 10;
 const XU_INTERFACE: u8 = 0;
 const XU_W_INDEX: u16 = (XU_UNIT_ID as u16) << 8;
 const USB_TIMEOUT_MS: u32 = 1_000;
-const FRAMES_PER_RX_ENVELOPE: usize = 25;
+// Publish each captured frame immediately for the live thermal mirror.
+const FRAMES_PER_RX_ENVELOPE: usize = 1;
 const SHORT_FRAME_LOG_INTERVAL: Duration = Duration::from_secs(5);
 
 /// `frame_skip` is the number of frames dropped after each kept frame,

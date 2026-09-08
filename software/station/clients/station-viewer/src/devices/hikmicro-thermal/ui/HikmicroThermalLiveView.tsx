@@ -5,18 +5,21 @@ import DeviceStatusBadge from '@/components/DeviceStatusBadge';
 import { useElementFullscreen, useTheme } from '@/hooks';
 import { isElectron } from '@/utils/platform';
 import { formatTemperatureDelta, hikmicroDeviceLabel, latestThermalFrame, type ThermalPalette } from '../thermal';
+import { useThermalLiveStream } from './useThermalLiveStream';
 import { useThermalPreview } from './useThermalPreview';
 // oxlint-disable-next-line import/no-unassigned-import -- Load styles with this lazy device view.
 import './thermal-mirror.css';
 
-export interface HikmicroThermalLiveViewProps { data: hikmicro.IRxEnvelope; }
+export interface HikmicroThermalLiveViewProps { data: hikmicro.IRxEnvelope; queueId?: string; }
 
 function Metric({ label, value, tone }: { label: string; value: string; tone?: string }) {
   const hasUnit = value.endsWith(' °C');
   return <div className="thermal-mirror__metric" data-tone={tone}><dt>{label}</dt><dd>{hasUnit ? <>{value.slice(0, -3)} <span className="thermal-mirror__unit">°C</span></> : value}</dd></div>;
 }
 
-function HikmicroThermalLiveView({ data }: HikmicroThermalLiveViewProps) {
+function HikmicroThermalLiveView({ data: recordedData, queueId }: HikmicroThermalLiveViewProps) {
+  const liveData = useThermalLiveStream(queueId);
+  const data = liveData ?? recordedData;
   const surfaceRef = useRef<HTMLElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const contourRef = useRef<HTMLCanvasElement>(null);

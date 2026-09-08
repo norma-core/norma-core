@@ -1,11 +1,14 @@
-import { live } from '@/devices/live';
+import { customLive } from '@/devices/live';
+import type { HikmicroThermalLiveViewProps } from './ui/HikmicroThermalLiveView';
 
-export default live({
+export default customLive<HikmicroThermalLiveViewProps>({
   id: 'hikmicro-thermal',
   label: 'HIKMICRO Thermal',
   order: 26,
   slot: 'summary',
-  field: 'hikmicroThermal',
-  when: (data) => Boolean(data.frames?.frames?.length),
+  select: frame => (frame.hikmicroThermal ?? []).map(entry => ({
+    key: entry.queueId,
+    props: { data: entry.data, queueId: entry.queueId },
+  })),
   loadView: () => import('./ui/HikmicroThermalLiveView'),
 });

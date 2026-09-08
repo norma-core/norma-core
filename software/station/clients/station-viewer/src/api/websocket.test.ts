@@ -158,22 +158,17 @@ describe('WebSocketManager state', () => {
     vi.unstubAllGlobals();
   });
 
-  it('recovers an evicted live thermal entry from the actual tail and preserves its identity', async () => {
+  it('publishes thermal discovery without waiting for an unresponsive camera queue', async () => {
     vi.useFakeTimers();
     vi.spyOn(console, 'log').mockImplementation(() => undefined);
-    vi.spyOn(console, 'error').mockImplementation(() => undefined);
     const { default: manager } = await import('@/api/websocket');
     const socket = getSocket();
     const queue = 'hikmicro-thermal/EA2976465';
-    const entry = { queue, ptr: Uint8Array.of(9), type: drivers.QueueDataType.QDT_HIKMICRO_THERMAL };
-    queueFrame(socket, 40, [entry]);
-    socket.queueReadResponse(queue, { entryId: 9, data: new Uint8Array(), result: normfs.ReadResponse.Result.RR_NOT_FOUND });
-    socket.queueReadResponse(queue, { entryId: 10, data: hikmicro.RxEnvelope.encode({ frames: { sequence: 123 } }).finish(), onlyLatestAvailable: true });
-    const next = waitForNextLiveSnapshot(manager);
+    queueFrame(socket, 40, [{ queue, ptr: Uint8Array.of(9), type: drivers.QueueDataType.QDT_HIKMICRO_THERMAL }]);
+    // No thermal response: unrelated live state must still publish.
     socket.open();
-    const frame = (await next).frame;
-    expect(frame?.hikmicroThermal?.[0]?.ptr).toEqual(Uint8Array.of(10));
-    expect(frame?.hikmicroThermal?.[0]?.data.frames?.sequence).toBe(123);
+    await vi.advanceTimersByTimeAsync(10);
+    expect(manager.getLiveSnapshot().frame?.hikmicroThermal?.[0]?.queueId).toBe(queue);
     socket.disconnect();
   });
 

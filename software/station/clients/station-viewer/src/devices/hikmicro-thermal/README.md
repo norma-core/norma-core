@@ -19,3 +19,21 @@ The overlay canvas has a fixed backing scale relative to the small sensor image,
 not the screen resolution. Disabling hides the overlay immediately and stops
 contour generation on subsequent requests. Hidden tabs dispose the thermal Worker
 and scheduled drawing through the existing preview lifecycle.
+
+## Low-latency acquisition
+
+Live discovery only lists thermal queues. Each mounted viewer independently reads
+its current tail, at most once per 40 ms with one outstanding request. Older
+stations with multi-frame batches are polled at the batch cadence (up to 1 s). Duplicate
+entries are not decoded or published again. Hidden tabs and history mode suspend
+reads; unmount disposes the loop. An outstanding NormFS request may finish (or hit
+its existing timeout), but its response cannot publish after suspension/disposal.
+History continues to read the exact recorded entry. No frame backlog is replayed.
+
+The station driver publishes one frame per envelope. Rebuild and restart the
+station to enable this behavior; no new configuration is needed. Old binaries
+still produce 25-frame batches and roughly one displayed frame per second.
+Single-frame entries also change recording granularity and repeat calibration
+metadata more frequently. Raw image traffic alone is about 2.5 MB/s at 25 FPS.
+
+The FPS label describes the configured sensor rate, not measured display FPS.

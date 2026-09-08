@@ -123,6 +123,7 @@ class WebSocketManager extends EventTarget {
         }
         const frame = await parseFrame(inferenceRx, entry.id, this.normFs, previousFrame, {
           retainRawData: false,
+          thermalDiscoveryOnly: true,
           shouldLoadVideoFrame: shouldLoadLiveCameraFrame,
           shouldPublishVideoFrames: () =>
             this.isLiveMode() && acquisitionGeneration === this.acquisitionGeneration,
