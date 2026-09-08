@@ -17,6 +17,7 @@ const CameraSurface: React.FC<CameraSurfaceProps> = ({
 }) => {
   const [cameraLayout, setCameraLayout] = useState<CameraLayoutMode>('pip');
   const [areCamerasSwapped, setAreCamerasSwapped] = useState(false);
+  const [detectObjects, setDetectObjects] = useState(false);
   const surfaceRef = useRef<HTMLElement>(null);
   const { isFullscreen, toggleFullscreen } = useElementFullscreen(surfaceRef);
   const hasCameraPair = videoSources.length === 2;
@@ -44,6 +45,7 @@ const CameraSurface: React.FC<CameraSurfaceProps> = ({
         sourceId={getVideoSourceId(videoSource)}
         className="h-full w-full"
         overlay={overlay}
+        detectObjects={isFullscreen && detectObjects && videoSource.queueId === primaryVideoSource.queueId}
       />
       <figcaption className="absolute bottom-0 left-0 max-w-full rounded-tr-lg bg-surface-secondary/80 px-3 py-2 text-xs font-medium text-text-primary backdrop-blur-sm">
         <span className="block truncate">{getVideoSourceLabel(videoSource)}</span>
@@ -97,6 +99,8 @@ const CameraSurface: React.FC<CameraSurfaceProps> = ({
         onSwapCameras={() => setAreCamerasSwapped((swapped) => !swapped)}
         onToggleMotorData={() => undefined}
         onToggleFullscreen={() => void toggleFullscreen()}
+        objectDetectionEnabled={detectObjects}
+        onToggleObjectDetection={() => setDetectObjects(enabled => !enabled)}
       />
     </section>
   );

@@ -7,6 +7,7 @@ type ThermalStats = Omit<ThermalRenderResult, 'rgba'>;
 
 export function useThermalPreview(data: hikmicro.IRxEnvelope, frame: hikmicro.IThermalFrame | null, palette: ThermalPalette, canvasRef: RefObject<HTMLCanvasElement | null>) {
   const rendererRef = useRef<ThermalFrameRenderer | null>(null);
+  const renderedFrameRef = useRef(0);
   const latestRef = useRef({ data, frame, palette });
   const lastInputAtRef = useRef(performance.now());
   const [stats, setStats] = useState<ThermalStats | null>(null);
@@ -50,6 +51,7 @@ export function useThermalPreview(data: hikmicro.IRxEnvelope, frame: hikmicro.IT
           // Transferred pixels are already owned by this thread: no extra pixel
           // copy and no canvas backing-store reset on every frame.
           ctx.putImageData(new ImageData(rendered.rgba as Uint8ClampedArray<ArrayBuffer>, rendered.width, rendered.height), 0, 0);
+          renderedFrameRef.current += 1;
           setError(null);
           const now = performance.now();
           setStale(now - lastInputAtRef.current > 5000);
@@ -77,5 +79,5 @@ export function useThermalPreview(data: hikmicro.IRxEnvelope, frame: hikmicro.IT
       document.removeEventListener('visibilitychange', syncVisibility);
     };
   }, [canvasRef]);
-  return { stats, stale, error };
+  return { stats, stale, error, renderedFrameRef };
 }
