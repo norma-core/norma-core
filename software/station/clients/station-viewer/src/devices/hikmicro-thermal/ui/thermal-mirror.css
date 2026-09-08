@@ -41,12 +41,13 @@
 .thermal-mirror button[aria-pressed="true"] { background: #e0f6f4; border-color: var(--thermal-accent); color: #005c66; }
 .thermal-mirror__controls button { width: 44px; height: 44px; display: grid; place-items: center; }
 .thermal-mirror__controls svg { width: 19px; height: 19px; }
-.thermal-mirror:fullscreen .thermal-mirror__objects { width: auto; padding: 0 8px; display: flex; gap: 5px; font-size: 11px; font-weight: 600; }
+.thermal-mirror:fullscreen .thermal-mirror__contour-control { width: auto; padding: 0 8px; display: flex; gap: 5px; font-size: 11px; font-weight: 600; }
 .thermal-mirror__body { min-height: 0; }
 .thermal-mirror__view { display: flex; align-items: center; justify-content: center; padding: 0 12px; min-height: 0; }
 .thermal-mirror__image { width: 100%; aspect-ratio: var(--thermal-image-aspect, 4 / 3); position: relative; overflow: hidden; border-radius: 6px; background: #edf5f6; }
 .thermal-mirror__canvas { display: block; width: 100%; height: 100%; object-fit: contain; image-rendering: pixelated; }
-.thermal-mirror__canvas[data-mirrored="true"] { transform: scaleX(-1); }
+.thermal-mirror__contours { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.thermal-mirror__contours[data-mirrored="true"], .thermal-mirror__canvas[data-mirrored="true"] { transform: scaleX(-1); }
 .thermal-mirror__image[data-ready="false"] .thermal-mirror__canvas { visibility: hidden; }
 .thermal-mirror__crosshair { position: absolute; left: 50%; top: 50%; width: 22px; height: 22px; transform: translate(-50%, -50%); border: 1px solid #fff; border-radius: 50%; box-shadow: 0 0 0 1px #12323d; pointer-events: none; }
 .thermal-mirror__crosshair::after { content: ''; position: absolute; inset: 8px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 1px #12323d; }
@@ -113,7 +114,7 @@
 .thermal-mirror:fullscreen button:hover { background: var(--thermal-hover); }
 .thermal-mirror:fullscreen button[aria-pressed="true"] { background: var(--thermal-selected); color: var(--thermal-accent); }
 .thermal-mirror:fullscreen .thermal-mirror__controls button { border-radius: 7px; }
-.thermal-mirror:fullscreen .thermal-mirror__objects,
+.thermal-mirror:fullscreen .thermal-mirror__contour-control,
 .thermal-mirror:fullscreen .thermal-mirror__labeled-control { width: auto; display: flex; gap: 7px; padding: 0 12px; font-size: 12px; font-weight: 600; }
 .thermal-mirror:fullscreen .thermal-mirror__resolution { display: inline; }
 .thermal-mirror:fullscreen .thermal-mirror__body {
@@ -154,9 +155,7 @@
   color-scheme: dark;
 }
 :root[data-theme="dark"] .thermal-mirror:fullscreen .thermal-mirror__brand { filter: brightness(0) invert(1); }
-.thermal-mirror:fullscreen .thermal-mirror__notice,
-.thermal-mirror:fullscreen .thermal-mirror__image > span[role="status"],
-.thermal-mirror:fullscreen [aria-label="Object detections"] [role="status"] { color: var(--thermal-ink); background: var(--thermal-surface); border-color: var(--thermal-line); }
+.thermal-mirror:fullscreen .thermal-mirror__notice { color: var(--thermal-ink); background: var(--thermal-surface); border-color: var(--thermal-line); }
 @media (orientation: portrait) {
   .thermal-mirror:fullscreen .thermal-mirror__body { width: 100%; padding: 16px; display: flex; flex-direction: column; gap: 18px; }
   .thermal-mirror:fullscreen .thermal-mirror__view { flex: 1; }
@@ -177,8 +176,8 @@
   .thermal-mirror:fullscreen .thermal-mirror__controls { gap: 4px; }
   .thermal-mirror:fullscreen .thermal-mirror__control-label { display: none; }
   .thermal-mirror:fullscreen .thermal-mirror__labeled-control { width: 44px; padding: 0; justify-content: center; }
-  .thermal-mirror:fullscreen .thermal-mirror__objects { width: 44px; padding: 0; justify-content: center; }
-  .thermal-mirror:fullscreen .thermal-mirror__objects span { display: none; }
+  .thermal-mirror:fullscreen .thermal-mirror__contour-control { width: 44px; padding: 0; justify-content: center; }
+  .thermal-mirror:fullscreen .thermal-mirror__contour-control span { display: none; }
   .thermal-mirror:fullscreen .thermal-mirror__metric dt { font-size: 10px; letter-spacing: .02em; }
   .thermal-mirror:fullscreen .thermal-mirror__relative .thermal-mirror__eyebrow { font-size: 10px; }
   .thermal-mirror:fullscreen .thermal-mirror__note { font-size: 11px; }

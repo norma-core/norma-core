@@ -1,6 +1,6 @@
 import Long from 'long';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { drivers, inference, normfs, sysinfo } from '@/api/proto.js';
+import { drivers, hikmicro, inference, normfs, sysinfo } from '@/api/proto.js';
 
 type WebSocketManager = (typeof import('@/api/websocket'))['default'];
 type MessageHandler = (event: MessageEvent<ArrayBuffer>) => void | Promise<void>;
@@ -8,6 +8,8 @@ type MessageHandler = (event: MessageEvent<ArrayBuffer>) => void | Promise<void>
 interface QueuedReadResponse {
   entryId: number;
   data: Uint8Array;
+  result?: normfs.ReadResponse.Result;
+  onlyLatestAvailable?: boolean;
 }
 
 const sockets: FakeWebSocket[] = [];
@@ -55,8 +57,12 @@ class FakeWebSocket {
     }
 
     const readId = Long.fromValue(readIdValue).toNumber();
+    // NormFS offsets are zero-based: offset 1 misses if only the tail remains.
+    const missedTail = response.onlyLatestAvailable
+      && read.offset?.type === normfs.OffsetType.OT_SHIFT_FROM_TAIL
+      && Long.fromBytesLE(Array.from(read.offset.id?.raw ?? [])).greaterThan(0);
     queueMicrotask(() => {
-      void this.receive(createReadResponse(readId, response.entryId, response.data));
+      void this.receive(createReadResponse(readId, response.entryId, response.data, missedTail ? normfs.ReadResponse.Result.RR_NOT_FOUND : response.result));
     });
   }
 
@@ -92,11 +98,11 @@ function getSocket(): FakeWebSocket {
   return socket;
 }
 
-function createReadResponse(readId: number, entryId: number, data: Uint8Array): Uint8Array {
+function createReadResponse(readId: number, entryId: number, data: Uint8Array, result = normfs.ReadResponse.Result.RR_ENTRY): Uint8Array {
   return normfs.ServerResponse.encode({
     read: {
       readId: Long.fromNumber(readId),
-      result: normfs.ReadResponse.Result.RR_ENTRY,
+      result,
       id: { raw: Uint8Array.of(entryId) },
       data,
     },
@@ -150,6 +156,54 @@ describe('WebSocketManager state', () => {
   afterEach(() => {
     vi.useRealTimers();
     vi.unstubAllGlobals();
+  });
+
+  it('recovers a missing live thermal pointer with the latest entry and preserves its real identity', async () => {
+    vi.useFakeTimers();
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const { default: manager } = await import('@/api/websocket');
+    const socket = getSocket();
+    const queue = 'hikmicro-thermal/EA2976465';
+    const entry = { queue, ptr: Uint8Array.of(9), type: drivers.QueueDataType.QDT_HIKMICRO_THERMAL };
+    queueFrame(socket, 40, [entry]);
+    socket.queueReadResponse(queue, { entryId: 9, data: new Uint8Array(), result: normfs.ReadResponse.Result.RR_NOT_FOUND });
+    socket.queueReadResponse(queue, { entryId: 10, data: hikmicro.RxEnvelope.encode({ frames: { sequence: 123 } }).finish() });
+    const next = waitForNextLiveSnapshot(manager);
+    socket.open();
+    const frame = (await next).frame;
+    expect(frame?.hikmicroThermal?.[0]?.ptr).toEqual(Uint8Array.of(10));
+    expect(frame?.hikmicroThermal?.[0]?.data.frames?.sequence).toBe(123);
+    socket.disconnect();
+  });
+
+  it('does not substitute a different thermal entry when reading history', async () => {
+    vi.useFakeTimers();
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const { default: manager } = await import('@/api/websocket');
+    manager.acquireHistoryMode();
+    const socket = getSocket();
+    socket.open();
+    const queue = 'hikmicro-thermal/EA2976465';
+    queueFrame(socket, 40, [{ queue, ptr: Uint8Array.of(9), type: drivers.QueueDataType.QDT_HIKMICRO_THERMAL }]);
+    socket.queueReadResponse(queue, { entryId: 9, data: new Uint8Array(), result: normfs.ReadResponse.Result.RR_NOT_FOUND });
+    socket.queueReadResponse(queue, { entryId: 10, data: hikmicro.RxEnvelope.encode({ frames: { sequence: 123 } }).finish() });
+    const frame = await manager.getFrame(Uint8Array.of(40));
+    expect(frame.hikmicroThermal).toEqual([]);
+    socket.disconnect();
+  });
+
+  it('reads the actual tail when earlier queue entries have been evicted', async () => {
+    vi.useFakeTimers();
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    const { default: manager } = await import('@/api/websocket');
+    manager.acquireHistoryMode();
+    const socket = getSocket();
+    socket.open();
+    socket.queueReadResponse('thermal', { entryId: 10, data: Uint8Array.of(42), onlyLatestAvailable: true });
+    await expect(manager.normFs.readLastEntry('thermal')).resolves.toEqual({ id: Uint8Array.of(10), data: Uint8Array.of(42) });
+    socket.disconnect();
   });
 
   it('reports a malformed packet as one atomic statistics update', async () => {

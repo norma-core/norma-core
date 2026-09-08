@@ -15,7 +15,7 @@ export class ThermalFrameRenderer {
     private readonly onError: (message: string) => void,
   ) {}
 
-  render(envelope: hikmicro.IRxEnvelope, frame: hikmicro.IThermalFrame, palette: ThermalPalette): void {
+  render(envelope: hikmicro.IRxEnvelope, frame: hikmicro.IThermalFrame, palette: ThermalPalette, showContours = false): void {
     if (this.disposed) return;
     // Send only the displayed frame and calibration, not the entire frames block
     // or redundant USB descriptors/calibration chunks. Input buffers stay owned
@@ -31,6 +31,7 @@ export class ThermalFrameRenderer {
         factoryBlobLength: calibration.factoryBlobLength,
       } : null },
       palette,
+      showContours,
     };
     this.pump();
   }

@@ -1,4 +1,5 @@
 import type { hikmicro } from '@/api/proto.js';
+import { thermalContours } from './thermal-contours';
 
 const SENSOR_WIDTH = 256;
 const SENSOR_HEIGHT = 192;
@@ -19,6 +20,7 @@ export interface ThermalRenderResult {
   width: number;
   height: number;
   rgba: Uint8ClampedArray;
+  contours?: Float32Array;
   minC: number | null;
   maxC: number | null;
   centerC: number | null;
@@ -654,6 +656,7 @@ export function renderThermalFrame(
   envelope: hikmicro.IRxEnvelope,
   frame: hikmicro.IThermalFrame,
   paletteName: ThermalPalette = 'iron',
+  showContours = false,
 ): ThermalRenderResult {
   let error: string | null = null;
   const payload = frame.payload ?? new Uint8Array();
@@ -687,6 +690,7 @@ export function renderThermalFrame(
     width: rotateCounterclockwise ? SENSOR_HEIGHT : SENSOR_WIDTH,
     height: rotateCounterclockwise ? SENSOR_WIDTH : SENSOR_HEIGHT,
     rgba: toRgba(map, lo, hi, paletteName, rotateCounterclockwise),
+    contours: showContours ? thermalContours(map, SENSOR_WIDTH, SENSOR_HEIGHT, usedCalibration ? 0.5 : 16, rotateCounterclockwise) : undefined,
     minC: usedCalibration ? stats.min : null,
     maxC: usedCalibration ? stats.max : null,
     centerC: usedCalibration ? stats.center : null,

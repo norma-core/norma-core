@@ -5,6 +5,7 @@ export interface ThermalRenderRequest {
   payload: Uint8Array;
   deviceInfo: hikmicro.IDeviceInfo | null;
   palette: ThermalPalette;
+  showContours: boolean;
 }
 
 export interface ThermalRenderResponse {

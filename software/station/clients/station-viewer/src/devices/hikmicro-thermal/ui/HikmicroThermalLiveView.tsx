@@ -1,5 +1,5 @@
-import { lazy, Suspense, useEffect, useRef, useState, type CSSProperties } from 'react';
-import { FlipHorizontal2, Maximize2, Minimize2, Moon, ScanSearch, Sun } from 'lucide-react';
+import { useEffect, useRef, useState, type CSSProperties } from 'react';
+import { FlipHorizontal2, Maximize2, Minimize2, Moon, Waves, Sun } from 'lucide-react';
 import type { hikmicro } from '@/api/proto.js';
 import DeviceStatusBadge from '@/components/DeviceStatusBadge';
 import { useElementFullscreen, useTheme } from '@/hooks';
@@ -10,7 +10,6 @@ import { useThermalPreview } from './useThermalPreview';
 import './thermal-mirror.css';
 
 export interface HikmicroThermalLiveViewProps { data: hikmicro.IRxEnvelope; }
-const ObjectDetectionOverlay = lazy(() => import('@/components/object-detection/ObjectDetectionOverlay'));
 
 function Metric({ label, value, tone }: { label: string; value: string; tone?: string }) {
   const hasUnit = value.endsWith(' °C');
@@ -20,13 +19,14 @@ function Metric({ label, value, tone }: { label: string; value: string; tone?: s
 function HikmicroThermalLiveView({ data }: HikmicroThermalLiveViewProps) {
   const surfaceRef = useRef<HTMLElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const contourRef = useRef<HTMLCanvasElement>(null);
   const { isFullscreen, toggleFullscreen } = useElementFullscreen(surfaceRef);
   const { theme, setThemePreference } = useTheme();
   const [mirrored, setMirrored] = useState(true);
-  const [detectObjects, setDetectObjects] = useState(false);
+  const [showContours, setShowContours] = useState(false);
   const [palette, setPalette] = useState<ThermalPalette>('arctic');
   const frame = latestThermalFrame(data);
-  const { stats, stale, error, renderedFrameRef } = useThermalPreview(data, frame, palette, canvasRef);
+  const { stats, stale, error } = useThermalPreview(data, frame, palette, canvasRef, contourRef, showContours);
   const label = hikmicroDeviceLabel(data, 'HIKMICRO');
   const available = Boolean(stats && !stale && !error);
   const reference = available ? stats!.avgC : null;
@@ -51,7 +51,7 @@ function HikmicroThermalLiveView({ data }: HikmicroThermalLiveViewProps) {
     try { localStorage.setItem(`thermal-mirror:${label}`, JSON.stringify({ palette, mirrored: !mirrored })); } catch { /* Optional preference. */ }
   };
   const controls = <div className="thermal-mirror__controls">
-    <button type="button" className="thermal-mirror__objects" onClick={() => setDetectObjects(value => !value)} aria-pressed={detectObjects} aria-label="Detect objects in thermal camera" title="Objects · experimental thermal detection"><ScanSearch aria-hidden="true" />{isFullscreen && <span>Objects</span>}</button>
+    <button type="button" className="thermal-mirror__contour-control" onClick={() => setShowContours(value => !value)} aria-pressed={showContours} aria-label="Toggle thermal contours" title="Contours · lines of equal temperature"><Waves aria-hidden="true" />{isFullscreen && <span>Contours</span>}</button>
     {isFullscreen && <button type="button" className="thermal-mirror__labeled-control" onClick={changeMirror} aria-pressed={mirrored} aria-label="Mirror thermal image" title="Mirror thermal image"><FlipHorizontal2 aria-hidden="true" /><span className="thermal-mirror__control-label">Mirror</span></button>}
     {isFullscreen && <button type="button" onClick={() => setThemePreference(theme === 'light' ? 'dark' : 'light')} aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} theme`} title={`Switch to ${theme === 'light' ? 'dark' : 'light'} theme`}>{theme === 'light' ? <Moon aria-hidden="true" /> : <Sun aria-hidden="true" />}</button>}
     <button type="button" onClick={() => void toggleFullscreen()} aria-label={fullscreenLabel} title={fullscreenLabel}>
@@ -84,7 +84,7 @@ function HikmicroThermalLiveView({ data }: HikmicroThermalLiveViewProps) {
         <div className="thermal-mirror__view">
           <div className="thermal-mirror__image" data-ready={Boolean(stats)}>
             <canvas ref={canvasRef} width={256} height={192} className="thermal-mirror__canvas" data-mirrored={mirrored} aria-label="HIKMICRO thermal frame" />
-            {detectObjects && stats && <Suspense fallback={<span role="status" className="absolute bottom-3 left-3 rounded bg-white px-2 py-1 text-xs text-slate-800">Loading object detection…</span>}><ObjectDetectionOverlay imageRef={canvasRef} frameIdRef={renderedFrameRef} fit="contain" mirrored={mirrored} sourceStale={!available} experimental /></Suspense>}
+            <canvas ref={contourRef} width={1} height={1} className="thermal-mirror__contours" data-mirrored={mirrored} hidden={!showContours} aria-hidden="true" />
             {!isFullscreen && controls}
             {isFullscreen && available && <span className="thermal-mirror__crosshair" aria-hidden="true" />}
             {!available && <div className="thermal-mirror__notice" data-stale={Boolean(stats)} role="status">

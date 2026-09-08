@@ -9,8 +9,8 @@ const worker = self as unknown as {
 
 worker.onmessage = ({ data }) => {
   try {
-    const result = renderThermalFrame({ deviceInfo: data.deviceInfo }, { payload: data.payload }, data.palette);
-    worker.postMessage({ result, error: null }, [result.rgba.buffer]);
+    const result = renderThermalFrame({ deviceInfo: data.deviceInfo }, { payload: data.payload }, data.palette, data.showContours);
+    worker.postMessage({ result, error: null }, result.contours ? [result.rgba.buffer, result.contours.buffer] : [result.rgba.buffer]);
   } catch (error) {
     worker.postMessage({ result: null, error: error instanceof Error ? error.message : 'Thermal decoding failed' }, []);
   }
