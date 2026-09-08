@@ -85,6 +85,7 @@ impl VescTrampaCommunicator {
             Ok(vesc_trampa_proto::VescTrampaSignalType::VescTrampaCommandSuccess) => {
                 self.update_mode_for_command_success(board, envelope);
             }
+            Ok(vesc_trampa_proto::VescTrampaSignalType::VescTrampaCommandDone) => {}
             _ => {}
         }
 

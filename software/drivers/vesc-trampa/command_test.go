@@ -69,6 +69,47 @@ func TestSetCurrentSequenceStationCommand(t *testing.T) {
 	}
 }
 
+func TestSetRPMSequenceStationCommand(t *testing.T) {
+	commandID := []byte{0x09, 0x0a}
+	uuid := []byte{0x40, 0x50, 0x60}
+
+	command := SetRPMSequenceStationCommand(commandID, uuid, []RPMStep{
+		{RPM: -800, DurationMS: 500},
+		{RPM: -400, DurationMS: 1_000},
+		{RPM: 0},
+	})
+	body := stationCommandBody(t, command, commandID, uuid)
+	boardCommands := stationBoardCommands(t, body, 3)
+	assertRPMPayload(t, boardCommands[0].GetPayload(), -800)
+	if boardCommands[0].GetDurationMs() != 500 {
+		t.Fatalf("first duration_ms = %d", boardCommands[0].GetDurationMs())
+	}
+	assertRPMPayload(t, boardCommands[1].GetPayload(), -400)
+	if boardCommands[1].GetDurationMs() != 1_000 {
+		t.Fatalf("second duration_ms = %d", boardCommands[1].GetDurationMs())
+	}
+	assertRPMPayload(t, boardCommands[2].GetPayload(), 0)
+	if boardCommands[2].GetDurationMs() != 0 {
+		t.Fatalf("third duration_ms = %d", boardCommands[2].GetDurationMs())
+	}
+}
+
+func TestSetBoardCommandSequenceStationCommand(t *testing.T) {
+	commandID := []byte{0x0b, 0x0c}
+	uuid := []byte{0x70, 0x80, 0x90}
+
+	command := SetBoardCommandSequenceStationCommand(commandID, uuid, []BoardCommandStep{
+		{Payload: SetCurrentPayload(-12_000), DurationMS: 50},
+		{Payload: SetRPMPayload(-800), DurationMS: 1_000},
+		{Payload: SetRPMPayload(0)},
+	})
+	body := stationCommandBody(t, command, commandID, uuid)
+	boardCommands := stationBoardCommands(t, body, 3)
+	assertCurrentPayload(t, boardCommands[0].GetPayload(), -12_000)
+	assertRPMPayload(t, boardCommands[1].GetPayload(), -800)
+	assertRPMPayload(t, boardCommands[2].GetPayload(), 0)
+}
+
 func TestSetMotorModeStationCommand(t *testing.T) {
 	commandID := []byte{0x05, 0x06}
 	uuid := []byte{0x11, 0x22, 0x33}
@@ -165,10 +206,24 @@ func assertCurrentPayload(t *testing.T, payload []byte, expectedMA int32) {
 	if len(payload) != 5 {
 		t.Fatalf("payload len = %d", len(payload))
 	}
-	if payload[0] != commandSetCurrent {
+	if payload[0] != CommandSetCurrent {
 		t.Fatalf("payload command = %d", payload[0])
 	}
 	if got := int32(binary.BigEndian.Uint32(payload[1:])); got != expectedMA {
 		t.Fatalf("current payload = %d", got)
+	}
+}
+
+func assertRPMPayload(t *testing.T, payload []byte, expectedRPM int32) {
+	t.Helper()
+
+	if len(payload) != 5 {
+		t.Fatalf("payload len = %d", len(payload))
+	}
+	if payload[0] != CommandSetRPM {
+		t.Fatalf("payload command = %d", payload[0])
+	}
+	if got := int32(binary.BigEndian.Uint32(payload[1:])); got != expectedRPM {
+		t.Fatalf("rpm payload = %d", got)
 	}
 }

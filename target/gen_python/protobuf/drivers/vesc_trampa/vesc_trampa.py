@@ -19,6 +19,7 @@ class VescTrampaSignalType(enum.IntEnum):
     VESC_TRAMPA_COMMAND_SUCCESS = 5
     VESC_TRAMPA_COMMAND_REJECTED = 6
     VESC_TRAMPA_COMMAND_FAILED = 7
+    VESC_TRAMPA_COMMAND_DONE = 8
 
 class VescTrampaMotorMode(enum.IntEnum):
     VESC_TRAMPA_MOTOR_MODE_UNSPECIFIED = 0
