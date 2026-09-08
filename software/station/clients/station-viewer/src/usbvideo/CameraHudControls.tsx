@@ -1,4 +1,4 @@
-import { Maximize2, Minimize2, ScanSearch, SlidersHorizontal } from 'lucide-react';
+import { Maximize2, Minimize2, SlidersHorizontal } from 'lucide-react';
 import CameraLayoutControls, { type CameraLayoutMode } from './CameraLayoutControls';
 
 export type { CameraLayoutMode } from './CameraLayoutControls';
@@ -14,8 +14,6 @@ interface CameraHudControlsProps {
   onSwapCameras: () => void;
   onToggleMotorData: () => void;
   onToggleFullscreen: () => void;
-  objectDetectionEnabled?: boolean;
-  onToggleObjectDetection?: () => void;
 }
 
 export default function CameraHudControls({
@@ -29,8 +27,6 @@ export default function CameraHudControls({
   onSwapCameras,
   onToggleMotorData,
   onToggleFullscreen,
-  objectDetectionEnabled = false,
-  onToggleObjectDetection,
 }: CameraHudControlsProps) {
   return (
     <div className="absolute left-2 top-2 z-50 flex max-w-[calc(100%-1rem)] flex-wrap gap-1.5 rounded-lg border border-border-default bg-surface-primary/75 p-1.5 shadow-lg backdrop-blur-sm sm:left-3 sm:top-3">
@@ -57,14 +53,6 @@ export default function CameraHudControls({
           <SlidersHorizontal className="h-4 w-4" aria-hidden="true" />
         </button>
       )}
-      {isFullscreen && onToggleObjectDetection && <button
-        type="button"
-        onClick={onToggleObjectDetection}
-        aria-label="Detect objects in primary camera"
-        aria-pressed={objectDetectionEnabled}
-        title="Detect objects in primary camera"
-        className={`flex h-9 items-center justify-center gap-1.5 rounded-md border px-2 text-xs font-semibold transition-colors ${objectDetectionEnabled ? 'border-accent-success-deep bg-accent-success-bg text-text-primary' : 'border-border-subtle bg-surface-primary text-text-muted hover:text-text-primary'}`}
-      ><ScanSearch className="h-4 w-4" aria-hidden="true" />Objects</button>}
       <button
         type="button"
         onClick={onToggleFullscreen}

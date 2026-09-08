@@ -4,7 +4,7 @@ The `Contours` toggle overlays lines of equal temperature across the whole scene
 The compact widget uses an icon; fullscreen adds a text label. Contours stay enabled
 across fullscreen and palette changes, and follow the camera's rotation and mirror.
 There are no object labels, boxes, identities, counts, or detection-model loads in
-this thermal view. The shared RGB detection implementation remains separate.
+this thermal view. RGB cameras also have no object detection controls or model loads.
 
 Contours use the decoded temperature field (raw intensity when calibration is
 unavailable), independently of the display palette. A spatial filter reduces sensor

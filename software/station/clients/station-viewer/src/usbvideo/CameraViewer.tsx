@@ -1,8 +1,6 @@
-import { lazy, memo, Suspense, useCallback, useEffect, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import type { LiveCameraFrame } from './live-camera-store';
 import { subscribeLiveCameraFrame } from './live-camera-store';
-
-const ObjectDetectionOverlay = lazy(() => import('@/components/object-detection/ObjectDetectionOverlay'));
 
 interface CameraViewerProps {
   sourceId: string | null | undefined;
@@ -10,7 +8,6 @@ interface CameraViewerProps {
   imageClassName?: string;
   overlay?: 'none' | 'fps';
   fit?: 'contain' | 'cover';
-  detectObjects?: boolean;
 }
 
 function toBlobPart(data: Uint8Array): BlobPart {
@@ -31,7 +28,6 @@ const CameraViewer = memo(function CameraViewer({
   imageClassName = '',
   overlay = 'fps',
   fit = 'contain',
-  detectObjects = false,
 }: CameraViewerProps) {
   const [fps, setFps] = useState<number>(0);
   const [hasImage, setHasImage] = useState(false);
@@ -173,9 +169,6 @@ const CameraViewer = memo(function CameraViewer({
         {!hasImage && (
           <div className="p-4 text-white/70">Waiting for USB Video data...</div>
         )}
-        {detectObjects && hasImage && <Suspense fallback={<span role="status" className="absolute bottom-3 left-3 rounded bg-white px-2 py-1 text-xs text-slate-800">Loading object detection…</span>}>
-          <ObjectDetectionOverlay key={sourceId} imageRef={imageRef} fit={fit} />
-        </Suspense>}
         {overlay === 'fps' && (
           <div className="absolute top-0 right-0 p-2 text-right bg-surface-secondary/70 rounded-bl-lg backdrop-blur-sm">
             <span className="text-xs text-text-label">FPS: </span>
