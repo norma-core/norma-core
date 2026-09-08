@@ -41,7 +41,7 @@
 .thermal-mirror button[aria-pressed="true"] { background: #e0f6f4; border-color: var(--thermal-accent); color: #005c66; }
 .thermal-mirror__controls button { width: 44px; height: 44px; display: grid; place-items: center; }
 .thermal-mirror__controls svg { width: 19px; height: 19px; }
-.thermal-mirror__controls .thermal-mirror__objects { width: auto; padding: 0 8px; display: flex; gap: 5px; font-size: 11px; font-weight: 600; }
+.thermal-mirror:fullscreen .thermal-mirror__objects { width: auto; padding: 0 8px; display: flex; gap: 5px; font-size: 11px; font-weight: 600; }
 .thermal-mirror__body { min-height: 0; }
 .thermal-mirror__view { display: flex; align-items: center; justify-content: center; padding: 0 12px; min-height: 0; }
 .thermal-mirror__image { width: 100%; aspect-ratio: var(--thermal-image-aspect, 4 / 3); position: relative; overflow: hidden; border-radius: 6px; background: #edf5f6; }

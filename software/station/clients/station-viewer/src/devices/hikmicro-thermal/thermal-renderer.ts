@@ -23,13 +23,13 @@ export class ThermalFrameRenderer {
     const calibration = envelope.deviceInfo?.calibration;
     this.pending = {
       payload: frame.payload ?? new Uint8Array(),
-      deviceInfo: calibration ? { calibration: {
+      deviceInfo: { usb: { serialNumber: envelope.deviceInfo?.usb?.serialNumber }, calibration: calibration ? {
         ok: calibration.ok,
         error: calibration.error,
         container: calibration.container,
         factoryBlobOffset: calibration.factoryBlobOffset,
         factoryBlobLength: calibration.factoryBlobLength,
-      } } : null,
+      } : null },
       palette,
     };
     this.pump();
@@ -94,7 +94,7 @@ export class ThermalFrameRenderer {
       const payload = Uint8Array.from(request.payload);
       const calibration = request.deviceInfo?.calibration;
       const container = calibration?.container ? Uint8Array.from(calibration.container) : null;
-      const deviceInfo = calibration ? { calibration: { ...calibration, container } } : null;
+      const deviceInfo = { ...request.deviceInfo, calibration: calibration ? { ...calibration, container } : null };
       const transfer: Transferable[] = [payload.buffer];
       if (container) transfer.push(container.buffer);
       worker.postMessage({ ...request, payload, deviceInfo }, transfer);

@@ -8,14 +8,18 @@ interface ObjectDetectionOverlayProps {
   frameIdRef?: RefObject<number>;
   mirrored?: boolean;
   experimental?: boolean;
+  sourceStale?: boolean;
   fit: 'contain' | 'cover';
 }
 
-export default function ObjectDetectionOverlay({ imageRef, frameIdRef, mirrored = false, experimental = false, fit }: ObjectDetectionOverlayProps) {
+export default function ObjectDetectionOverlay({ imageRef, frameIdRef, mirrored = false, experimental = false, sourceStale = false, fit }: ObjectDetectionOverlayProps) {
   const surface = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState({ width: 0, height: 0 });
   const [frame, setFrame] = useState<DetectionFrame | null>(null);
   const [status, setStatus] = useState<DetectionStatus | 'paused'>('loading');
+  const sourceStaleRef = useRef(sourceStale);
+
+  useEffect(() => { sourceStaleRef.current = sourceStale; }, [sourceStale]);
 
   useEffect(() => {
     const observer = new ResizeObserver(([entry]) => setSize({ width: entry.contentRect.width, height: entry.contentRect.height }));
@@ -26,22 +30,19 @@ export default function ObjectDetectionOverlay({ imageRef, frameIdRef, mirrored 
   useEffect(() => {
     let session: DetectionSession | undefined;
     let interval: ReturnType<typeof setInterval> | undefined;
-    let expiry: ReturnType<typeof setTimeout> | undefined;
     const stop = () => {
       session?.dispose();
       clearInterval(interval);
-      clearTimeout(expiry);
     };
     const syncVisibility = () => {
       stop();
       setFrame(null);
       if (document.visibilityState === 'hidden') { setStatus('paused'); return; }
-      session = new DetectionSession(result => {
-        setFrame(result);
-        clearTimeout(expiry);
-        expiry = setTimeout(() => setFrame(null), 1500);
-      }, next => { setStatus(next); if (next === 'error') setFrame(null); });
+      // A slow stream is not evidence that an object left the scene. Replace
+      // boxes only when another inference completes, including empty results.
+      session = new DetectionSession(setFrame, setStatus);
       interval = setInterval(() => {
+        if (sourceStaleRef.current) return;
         const image = imageRef.current;
         if (image) void session?.detect(image, frameIdRef ? String(frameIdRef.current || '') : 'currentSrc' in image ? image.currentSrc : '');
       }, 350);
@@ -59,7 +60,7 @@ export default function ObjectDetectionOverlay({ imageRef, frameIdRef, mirrored 
       </div>)}
     </div>}
     <div role="status" className="absolute bottom-12 left-3 max-w-[calc(100%-1.5rem)] rounded border border-slate-300 bg-white/95 px-2 py-1 text-xs text-slate-800">
-      {status === 'loading' ? 'Loading object detection…' : status === 'error' ? 'Detection unavailable · toggle Objects to retry' : status === 'paused' ? 'Detection paused' : `Objects · ${frame ? frame.boxes.length : 'waiting for a fresh frame'}`}
+      {sourceStale ? 'Signal delayed · last detections' : status === 'loading' ? 'Loading object detection…' : status === 'error' ? 'Detection unavailable · toggle Objects to retry' : status === 'paused' ? 'Detection paused' : `Objects · ${frame ? frame.boxes.length : 'waiting for a fresh frame'}`}
       {experimental && <span className="block text-[10px]">Experimental · thermal image</span>}
     </div>
   </div>;

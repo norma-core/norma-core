@@ -24,8 +24,9 @@ export class DetectionSession {
         if (data.type === 'error') { this.fail(); return; }
         if (data.type === 'ready') { this.ready = true; this.onStatus('ready'); return; }
         this.busy = false;
-        // Do not draw delayed detections over a scene which may have moved on.
-        if (performance.now() - this.lastStarted < 1500) this.onResult(data);
+        // Inferences are serialized and bounded by the watchdog. A completed
+        // result must replace the previous boxes even on a slower device.
+        this.onResult(data);
       };
       worker.onerror = event => { event.preventDefault(); this.fail(); };
       worker.onmessageerror = () => this.fail();

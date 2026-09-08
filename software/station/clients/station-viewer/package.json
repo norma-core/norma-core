@@ -21,6 +21,7 @@
     "type-check": "tsc -b"
   },
   "dependencies": {
+    "@mediapipe/tasks-vision": "1.0.1",
     "@types/three": "^0.184.0",
     "long": "^5.2.3",
     "lucide-react": "^0.552.0",

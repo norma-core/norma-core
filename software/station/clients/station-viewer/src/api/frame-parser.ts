@@ -1,6 +1,6 @@
 import Long from 'long';
 import { airgradient_open_air_o_1pst, arduino_nicla_sense_env, dmesg, hikmicro, ina226, yahboom_dogzilla_lite, drivers, inference, motors_mirroring, normvla, pwm_output, st3215, sysinfo, usbvideo, vesc_trampa, victron_smartsolar_mppt } from '@/api/proto.js';
-import { NormFsClient } from "./normfs.js";
+import { ErrEntryNotFound, NormFsClient, type StreamEntry } from "./normfs.js";
 import { getGlobalTimeAdjustmentNs, isTimeSyncActive } from '@/api/time-sync.js';
 import {
   createLiveCameraMetadataEnvelope,
@@ -338,7 +338,18 @@ export async function parseFrame(
       // Pointer changed, fetch from StreamFS
       return (async () => {
         try {
-          const streamEntry = await normFs.readSingleEntry(entry.queue!, entry.ptr!);
+          let streamEntry: StreamEntry;
+          let resolvedPtr = entry.ptr;
+          try {
+            streamEntry = await normFs.readSingleEntry(entry.queue!, entry.ptr!);
+          } catch (error) {
+            // A live snapshot can outlast a thermal entry's retention window.
+            // Recover once from the tail, keeping history reads exact and
+            // allowing connection/server errors to follow normal handling.
+            if (error !== ErrEntryNotFound || entry.type !== drivers.QueueDataType.QDT_HIKMICRO_THERMAL || !options.shouldPublishVideoFrames?.()) throw error;
+            streamEntry = await normFs.readLastEntry(entry.queue!);
+            resolvedPtr = streamEntry.id;
+          }
 
           // Decode based on queue data type
           let decoded = null;
@@ -484,7 +495,7 @@ export async function parseFrame(
           return {
             queue: entry.queue,
             type: entry.type,
-            ptr: entry.ptr,
+            ptr: resolvedPtr,
             decoded,
             rawData: streamEntry.data,
             id: streamEntry.id,
