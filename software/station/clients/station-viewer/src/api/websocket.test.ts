@@ -158,7 +158,7 @@ describe('WebSocketManager state', () => {
     vi.unstubAllGlobals();
   });
 
-  it('recovers a missing live thermal pointer with the latest entry and preserves its real identity', async () => {
+  it('recovers an evicted live thermal entry from the actual tail and preserves its identity', async () => {
     vi.useFakeTimers();
     vi.spyOn(console, 'log').mockImplementation(() => undefined);
     vi.spyOn(console, 'error').mockImplementation(() => undefined);
@@ -168,7 +168,7 @@ describe('WebSocketManager state', () => {
     const entry = { queue, ptr: Uint8Array.of(9), type: drivers.QueueDataType.QDT_HIKMICRO_THERMAL };
     queueFrame(socket, 40, [entry]);
     socket.queueReadResponse(queue, { entryId: 9, data: new Uint8Array(), result: normfs.ReadResponse.Result.RR_NOT_FOUND });
-    socket.queueReadResponse(queue, { entryId: 10, data: hikmicro.RxEnvelope.encode({ frames: { sequence: 123 } }).finish() });
+    socket.queueReadResponse(queue, { entryId: 10, data: hikmicro.RxEnvelope.encode({ frames: { sequence: 123 } }).finish(), onlyLatestAvailable: true });
     const next = waitForNextLiveSnapshot(manager);
     socket.open();
     const frame = (await next).frame;
@@ -191,18 +191,6 @@ describe('WebSocketManager state', () => {
     socket.queueReadResponse(queue, { entryId: 10, data: hikmicro.RxEnvelope.encode({ frames: { sequence: 123 } }).finish() });
     const frame = await manager.getFrame(Uint8Array.of(40));
     expect(frame.hikmicroThermal).toEqual([]);
-    socket.disconnect();
-  });
-
-  it('reads the actual tail when earlier queue entries have been evicted', async () => {
-    vi.useFakeTimers();
-    vi.spyOn(console, 'log').mockImplementation(() => undefined);
-    const { default: manager } = await import('@/api/websocket');
-    manager.acquireHistoryMode();
-    const socket = getSocket();
-    socket.open();
-    socket.queueReadResponse('thermal', { entryId: 10, data: Uint8Array.of(42), onlyLatestAvailable: true });
-    await expect(manager.normFs.readLastEntry('thermal')).resolves.toEqual({ id: Uint8Array.of(10), data: Uint8Array.of(42) });
     socket.disconnect();
   });
 
