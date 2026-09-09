@@ -203,3 +203,47 @@
   .thermal-mirror:fullscreen .thermal-mirror__footer { padding: 6px 16px; font-size: 10px; }
 }
 @media (prefers-reduced-motion: reduce) { .thermal-mirror button { transition: none; } }
+
+/* T-800 treatment is confined to the fullscreen video, inside its existing bounds. */
+.thermal-mirror [data-palette="terminator"] { --thermal-palette: linear-gradient(90deg, #000, #a00000, #ff1a08, #fff4e1); }
+.thermal-mirror__image { container-type: inline-size; }
+.thermal-mirror__hud { position: absolute; inset: 0; pointer-events: none; color: #fff0e5; font-family: 'Courier New', Courier, monospace; font-weight: 700; font-variant-numeric: tabular-nums slashed-zero; text-shadow: 0 1px 3px #230000, 0 0 5px #190000; }
+.thermal-mirror__hud::before { content: ''; position: absolute; inset: 0; opacity: .16; background: repeating-linear-gradient(transparent 0 3px, #000 3px 4px); }
+.thermal-mirror__hud-readout { position: absolute; left: 4%; top: 5%; display: flex; flex-direction: column; align-items: flex-start; gap: .25em; font-size: clamp(6px, 1.6cqi, 16px); line-height: 1.55; letter-spacing: .045em; }
+.thermal-mirror__hud-readout > span:first-child { opacity: .7; letter-spacing: .13em; }
+.thermal-mirror__hud-readout strong { font-weight: 500; margin-bottom: .8em; }
+.thermal-mirror__hud-divider { opacity: .5; margin-bottom: .4em; }
+.thermal-mirror__hud-caption { font-size: .8em; letter-spacing: .1em; opacity: .65; }
+.thermal-mirror__hud-readout > .thermal-mirror__hud-caption { margin-top: .6em; }
+.thermal-mirror__hud-reticle { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 24%; max-width: 170px; fill: none; stroke: currentColor; stroke-width: .8; filter: drop-shadow(0 1px 2px #2a0000); }
+.thermal-mirror__hud-reticle-inner { opacity: .25; }
+.thermal-mirror__hud-bottom { position: absolute; bottom: 4%; left: 4%; right: 4%; display: flex; justify-content: space-between; font-size: clamp(5px, 1.2cqi, 9px); }
+
+.thermal-mirror__machine { position: absolute; left: 4%; top: 41%; font-size: clamp(5px, 1.35cqi, 14px); line-height: 1.5; letter-spacing: 0; white-space: nowrap; }
+.thermal-mirror__machine-heading { display: flex; justify-content: space-between; gap: 1.5em; margin-bottom: .65em; padding-bottom: .45em; border-bottom: 1px solid #ffe6d43d; font-size: .8em; letter-spacing: .05em; opacity: .6; }
+.thermal-mirror__machine-lines { height: 12em; display: flex; flex-direction: column; justify-content: flex-end; overflow: hidden; }
+.thermal-mirror__machine-row { display: flex; gap: .9em; flex: 0 0 1.5em; opacity: .53; animation: thermal-log-arrive 160ms ease-out; }
+.thermal-mirror__machine-row > span:first-child { opacity: .5; }
+.thermal-mirror__machine-row:nth-last-child(3) { opacity: .65; }
+.thermal-mirror__machine-row:nth-last-child(2) { opacity: .8; }
+.thermal-mirror__machine-row:last-child { opacity: 1; color: #fffaf2; text-shadow: 0 0 5px #ffd7b87a, 0 1px 3px #230000; }
+.thermal-mirror__machine-cursor { display: inline-block; margin-top: .3em; animation: thermal-log-cursor 1s steps(2, jump-none) infinite; opacity: .85; }
+@keyframes thermal-log-arrive { from { transform: translateY(.6em); opacity: 0; } }
+@keyframes thermal-log-cursor { 50% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .thermal-mirror__machine-row, .thermal-mirror__machine-cursor { animation: none; } }
+
+/* The T-800 mode uses the existing fullscreen shell with a single video column. */
+.thermal-mirror:fullscreen[data-hud="true"] .thermal-mirror__body { width: 100%; grid-template-columns: minmax(0, 1fr); }
+.thermal-mirror__spectrogram { position: absolute; left: 0; right: 0; bottom: 8%; padding: 1.3em 4% .7em; background: linear-gradient(transparent, #1303026b); font-size: clamp(5px, 1.1cqi, 11px); font-weight: 400; letter-spacing: .04em; }
+.thermal-mirror__spectrum-heading { display: flex; justify-content: space-between; gap: 1em; margin-bottom: .9em; font-size: .8em; color: #ffdccc; }
+.thermal-mirror__spectrum-heading > span:last-child { opacity: .6; }
+.thermal-mirror__spectrum-plot { position: relative; height: clamp(30px, 8cqi, 108px); padding-left: 5em; }
+.thermal-mirror__spectrum-plot canvas { width: 100%; height: 100%; display: block; image-rendering: pixelated; opacity: .65; background: transparent; border-right: 1px solid #ffccae; }
+.thermal-mirror__spectrum-axis { position: absolute; top: 0; bottom: 0; left: 0; display: flex; flex-direction: column; justify-content: space-between; font-size: .8em; opacity: .7; }
+.thermal-mirror__spectrum-grid { position: absolute; inset: 0 0 0 5em; background-image: linear-gradient(#ffd0aa12 1px, transparent 1px), linear-gradient(90deg, #ffd0aa12 1px, transparent 1px); background-size: 12.5% 25%; }
+.thermal-mirror__spectrum-time { display: flex; justify-content: space-between; padding-left: 6.25em; margin-top: .6em; font-size: .8em; opacity: .6; }
+@media (max-width: 480px) { .thermal-mirror__spectrum-heading > span:last-child { display: none; } }
+
+.thermal-mirror__raw-stream { position: absolute; right: 4%; top: 5%; font-size: clamp(4px, 1.1cqi, 11px); line-height: 1.5; font-weight: 400; letter-spacing: .035em; white-space: nowrap; }
+.thermal-mirror__raw-lines { height: 24em; display: flex; flex-direction: column; justify-content: flex-end; overflow: hidden; mask-image: linear-gradient(transparent, #000 25%); }
+.thermal-mirror__raw-footer { margin-top: 1em; font-size: .75em; opacity: .45; letter-spacing: .1em; }

@@ -1,5 +1,5 @@
 /** Marching squares over a spatially smoothed field; no object detection or history. */
-export function thermalContours(values: Float32Array, width: number, height: number, minimumStep: number, rotated: boolean): Float32Array {
+export function thermalContours(values: Float32Array, width: number, height: number, minimumStep: number): Float32Array {
   const stride = 4;
   const cols = Math.ceil((width - 1) / stride) + 1;
   const rows = Math.ceil((height - 1) / stride) + 1;
@@ -25,8 +25,7 @@ export function thermalContours(values: Float32Array, width: number, height: num
   const step = Math.max(minimumStep, 2 ** Math.ceil(Math.log2((hi - lo) / 8)));
   const segments: number[] = [];
   const addPoint = (x: number, y: number) => {
-    if (rotated) segments.push(y, width - x);
-    else segments.push(x, y);
+    segments.push(x, y);
   };
   for (let level = (Math.floor(lo / step) + 1) * step; level < hi; level += step) {
     for (let row = 0; row < rows - 1; row++) for (let col = 0; col < cols - 1; col++) {

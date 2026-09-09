@@ -1,5 +1,6 @@
 import type { hikmicro } from '@/api/proto.js';
 import { thermalContours } from './thermal-contours';
+import { buildThermalSpectrum, type ThermalSpectrum } from './hud/spectrum';
 
 const SENSOR_WIDTH = 256;
 const SENSOR_HEIGHT = 192;
@@ -14,12 +15,13 @@ const KELVIN_OFFSET_Q12 = 0x111266;
 // runtime calibration states. Decoding is synchronous (and runs in a Worker).
 const TEMPERATURE_CACHE = new Float32Array(0x10000);
 
-export type ThermalPalette = 'arctic' | 'iron' | 'silver';
+export type ThermalPalette = 'arctic' | 'iron' | 'silver' | 'terminator';
 
 export interface ThermalRenderResult {
   width: number;
   height: number;
   rgba: Uint8ClampedArray;
+  spectrum?: ThermalSpectrum;
   contours?: Float32Array;
   minC: number | null;
   maxC: number | null;
@@ -618,13 +620,13 @@ const ARCTIC_STOPS = [
   [57, 70, 157], [45, 139, 212], [75, 207, 216], [174, 238, 208], [255, 236, 135],
 ];
 
-function toRgba(values: Float32Array, lo: number, hi: number, paletteName: ThermalPalette, rotateCounterclockwise: boolean): Uint8ClampedArray {
+function toRgba(values: Float32Array, lo: number, hi: number, paletteName: ThermalPalette): Uint8ClampedArray {
   const rgba = new Uint8ClampedArray(values.length * 4);
   const span = hi > lo ? hi - lo : 1;
   for (let i = 0; i < values.length; i += 1) {
     const value = values[i];
     // Rotate while writing the output: no extra frame allocation or pixel pass.
-    const j = (rotateCounterclockwise ? (SENSOR_WIDTH - 1 - i % SENSOR_WIDTH) * SENSOR_HEIGHT + Math.floor(i / SENSOR_WIDTH) : i) * 4;
+    const j = i * 4;
     if (!Number.isFinite(value)) {
       rgba[j] = rgba[j + 1] = rgba[j + 2] = 241;
     } else if (paletteName === 'iron') {
@@ -634,7 +636,11 @@ function toRgba(values: Float32Array, lo: number, hi: number, paletteName: Therm
       rgba[j + 2] = b;
     } else {
       const t = Math.max(0, Math.min(1, (value - lo) / span));
-      if (paletteName === 'silver') {
+      if (paletteName === 'terminator') {
+        rgba[j] = Math.min(255, Math.round(t * 420));
+        rgba[j + 1] = Math.round(Math.max(0, (t - 0.65) / 0.35) ** 1.5 * 244);
+        rgba[j + 2] = Math.round(Math.max(0, (t - 0.72) / 0.28) ** 1.5 * 225);
+      } else if (paletteName === 'silver') {
         const gray = Math.round(65 + t * 190);
         rgba[j] = rgba[j + 1] = rgba[j + 2] = gray;
       } else {
@@ -683,14 +689,13 @@ export function renderThermalFrame(
   const stats = finiteStats(map);
   const lo = stats.min ?? 0;
   const hi = stats.max ?? lo + 1;
-  // This physical camera is mounted sideways; other HIKMICRO units stay native.
-  const rotateCounterclockwise = envelope.deviceInfo?.usb?.serialNumber === 'EA2976465';
 
   return {
-    width: rotateCounterclockwise ? SENSOR_HEIGHT : SENSOR_WIDTH,
-    height: rotateCounterclockwise ? SENSOR_WIDTH : SENSOR_HEIGHT,
-    rgba: toRgba(map, lo, hi, paletteName, rotateCounterclockwise),
-    contours: showContours ? thermalContours(map, SENSOR_WIDTH, SENSOR_HEIGHT, usedCalibration ? 0.5 : 16, rotateCounterclockwise) : undefined,
+    width: SENSOR_WIDTH,
+    height: SENSOR_HEIGHT,
+    rgba: toRgba(map, lo, hi, paletteName),
+    spectrum: paletteName === 'terminator' ? buildThermalSpectrum(map, usedCalibration) : undefined,
+    contours: showContours ? thermalContours(map, SENSOR_WIDTH, SENSOR_HEIGHT, usedCalibration ? 0.5 : 16) : undefined,
     minC: usedCalibration ? stats.min : null,
     maxC: usedCalibration ? stats.max : null,
     centerC: usedCalibration ? stats.center : null,
