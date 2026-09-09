@@ -29,11 +29,8 @@
   box-shadow: none;
 }
 .thermal-mirror__header { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 12px; }
-.thermal-mirror__identity { min-width: 0; }
 .thermal-mirror__eyebrow { font: 650 9px ui-monospace, monospace; letter-spacing: .08em; color: var(--thermal-muted); }
 .thermal-mirror__eyebrow span { padding: 0 5px; color: var(--thermal-accent); }
-.thermal-mirror h2 { margin: 3px 0 0; font-size: 20px; font-weight: 650; letter-spacing: -.05em; line-height: 1.15; }
-.thermal-mirror__delta { margin-left: 8px; color: var(--thermal-accent); font-weight: 400; }
 .thermal-mirror__controls { display: flex; gap: 8px; flex-shrink: 0; }
 .thermal-mirror button { cursor: pointer; color: var(--thermal-ink); border: 1px solid var(--thermal-line); background: #fff; border-radius: 8px; transition: background 120ms ease, border-color 120ms ease; }
 .thermal-mirror button:hover { background: #eef9f9; border-color: var(--thermal-accent); }
@@ -41,16 +38,12 @@
 .thermal-mirror button[aria-pressed="true"] { background: #e0f6f4; border-color: var(--thermal-accent); color: #005c66; }
 .thermal-mirror__controls button { width: 44px; height: 44px; display: grid; place-items: center; }
 .thermal-mirror__controls svg { width: 19px; height: 19px; }
-.thermal-mirror:fullscreen .thermal-mirror__contour-control { width: auto; padding: 0 8px; display: flex; gap: 5px; font-size: 11px; font-weight: 600; }
 .thermal-mirror__body { min-height: 0; }
 .thermal-mirror__view { display: flex; align-items: center; justify-content: center; padding: 0 12px; min-height: 0; }
 .thermal-mirror__image { width: 100%; aspect-ratio: var(--thermal-image-aspect, 4 / 3); position: relative; overflow: hidden; border-radius: 6px; background: #edf5f6; }
 .thermal-mirror__canvas { display: block; width: 100%; height: 100%; object-fit: contain; image-rendering: pixelated; }
-.thermal-mirror__contours { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
-.thermal-mirror__contours[data-mirrored="true"], .thermal-mirror__canvas[data-mirrored="true"] { transform: scaleX(-1); }
+.thermal-mirror__canvas[data-mirrored="true"] { transform: scaleX(-1); }
 .thermal-mirror__image[data-ready="false"] .thermal-mirror__canvas { visibility: hidden; }
-.thermal-mirror__crosshair { position: absolute; left: 50%; top: 50%; width: 22px; height: 22px; transform: translate(-50%, -50%); border: 1px solid #fff; border-radius: 50%; box-shadow: 0 0 0 1px #12323d; pointer-events: none; }
-.thermal-mirror__crosshair::after { content: ''; position: absolute; inset: 8px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 1px #12323d; }
 .thermal-mirror__notice { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 8px; padding: 24px; text-align: center; background: #f1f8f8ed; }
 .thermal-mirror__notice strong { font-size: 16px; font-weight: 600; }
 .thermal-mirror__notice span { font-size: 12px; color: var(--thermal-muted); }
@@ -105,17 +98,12 @@
 }
 .thermal-mirror::backdrop { background: var(--color-surface-primary); }
 .thermal-mirror:fullscreen .thermal-mirror__header { padding: 18px var(--thermal-gutter); gap: 24px; flex-shrink: 0; border-bottom: 1px solid var(--thermal-divider); }
-.thermal-mirror__brand { display: block; width: 108px; height: auto; flex-shrink: 0; filter: brightness(0); }
-.thermal-mirror:fullscreen .thermal-mirror__identity { flex: 1; }
-.thermal-mirror:fullscreen h2 { font-size: 26px; letter-spacing: -.035em; }
 .thermal-mirror:fullscreen .thermal-mirror__eyebrow { font-size: 11px; letter-spacing: .09em; }
 .thermal-mirror:fullscreen .thermal-mirror__controls { gap: 6px; }
 .thermal-mirror:fullscreen button { background: var(--thermal-surface); }
 .thermal-mirror:fullscreen button:hover { background: var(--thermal-hover); }
 .thermal-mirror:fullscreen button[aria-pressed="true"] { background: var(--thermal-selected); color: var(--thermal-accent); }
 .thermal-mirror:fullscreen .thermal-mirror__controls button { border-radius: 7px; }
-.thermal-mirror:fullscreen .thermal-mirror__contour-control,
-.thermal-mirror:fullscreen .thermal-mirror__labeled-control { width: auto; display: flex; gap: 7px; padding: 0 12px; font-size: 12px; font-weight: 600; }
 .thermal-mirror:fullscreen .thermal-mirror__resolution { display: inline; }
 .thermal-mirror:fullscreen .thermal-mirror__body {
   flex: 1; display: grid; grid-template-columns: minmax(0, 1fr) var(--thermal-panel-width);
@@ -154,7 +142,6 @@
   --thermal-divider: #2a3c47;
   color-scheme: dark;
 }
-:root[data-theme="dark"] .thermal-mirror:fullscreen .thermal-mirror__brand { filter: brightness(0) invert(1); }
 .thermal-mirror:fullscreen .thermal-mirror__notice { color: var(--thermal-ink); background: var(--thermal-surface); border-color: var(--thermal-line); }
 @media (orientation: portrait) {
   .thermal-mirror:fullscreen .thermal-mirror__body { width: 100%; padding: 16px; display: flex; flex-direction: column; gap: 18px; }
@@ -170,14 +157,7 @@
 }
 @media (max-width: 480px) {
   .thermal-mirror:fullscreen .thermal-mirror__header { padding: 12px 16px; gap: 8px; flex-wrap: wrap; }
-  .thermal-mirror:fullscreen .thermal-mirror__brand { width: 64px; }
-  .thermal-mirror:fullscreen .thermal-mirror__identity .thermal-mirror__eyebrow { display: none; }
-  .thermal-mirror:fullscreen h2 { font-size: 16px; }
   .thermal-mirror:fullscreen .thermal-mirror__controls { gap: 4px; }
-  .thermal-mirror:fullscreen .thermal-mirror__control-label { display: none; }
-  .thermal-mirror:fullscreen .thermal-mirror__labeled-control { width: 44px; padding: 0; justify-content: center; }
-  .thermal-mirror:fullscreen .thermal-mirror__contour-control { width: 44px; padding: 0; justify-content: center; }
-  .thermal-mirror:fullscreen .thermal-mirror__contour-control span { display: none; }
   .thermal-mirror:fullscreen .thermal-mirror__metric dt { font-size: 10px; letter-spacing: .02em; }
   .thermal-mirror:fullscreen .thermal-mirror__relative .thermal-mirror__eyebrow { font-size: 10px; }
   .thermal-mirror:fullscreen .thermal-mirror__note { font-size: 11px; }
@@ -186,8 +166,6 @@
 @media (max-height: 540px) and (orientation: landscape) {
   .thermal-mirror:fullscreen { --thermal-panel-width: 280px; }
   .thermal-mirror:fullscreen .thermal-mirror__header { padding: 8px 16px; }
-  .thermal-mirror:fullscreen .thermal-mirror__brand { width: 80px; }
-  .thermal-mirror:fullscreen h2 { font-size: 22px; }
   .thermal-mirror:fullscreen .thermal-mirror__body { width: min(100%, calc((100dvh - 110px) * var(--thermal-image-aspect, 4 / 3) + var(--thermal-panel-width) + 32px)); padding: 12px 16px; }
   .thermal-mirror:fullscreen .thermal-mirror__readings { padding: 0 0 0 24px; }
   .thermal-mirror:fullscreen .thermal-mirror__relative p { margin-top: 3px; font-size: 11px; }
@@ -230,8 +208,6 @@
 @keyframes thermal-log-cursor { 50% { opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .thermal-mirror__machine-row, .thermal-mirror__machine-cursor { animation: none; } }
 
-/* The T-800 mode uses the existing fullscreen shell with a single video column. */
-.thermal-mirror:fullscreen[data-hud="true"] .thermal-mirror__body { width: 100%; grid-template-columns: minmax(0, 1fr); }
 .thermal-mirror__spectrogram { position: absolute; left: 0; right: 0; bottom: 8%; padding: 1.3em 4% .7em; background: linear-gradient(transparent, #1303026b); }
 .thermal-mirror__spectrum-heading { display: flex; justify-content: space-between; gap: 1em; margin-bottom: .9em; color: #ffdccc; }
 .thermal-mirror__spectrum-heading > span:last-child { opacity: .6; }
@@ -245,3 +221,51 @@
 .thermal-mirror__raw-stream { position: absolute; right: 4%; top: 5%; white-space: nowrap; }
 .thermal-mirror__raw-lines { height: 24em; display: flex; flex-direction: column; justify-content: flex-end; overflow: hidden; mask-image: linear-gradient(transparent, #000 25%); }
 .thermal-mirror__raw-footer { margin-top: 1em; opacity: .45; }
+
+/* Fullscreen is an edge-to-edge video surface; chrome floats over the pixels. */
+.thermal-mirror:fullscreen { position: fixed; inset: 0; display: block; width: 100vw; height: 100dvh; background: #000; }
+.thermal-mirror:fullscreen .thermal-mirror__header {
+  position: absolute; inset: 0 0 auto; z-index: 3; padding: 16px 24px;
+  border: 0; flex-wrap: nowrap; pointer-events: none;
+  background: linear-gradient(#0008, transparent);
+}
+.thermal-mirror:fullscreen .thermal-mirror__brand {
+  color: #fff0e5; font: 400 22px/1 'Share Tech Mono', monospace;
+  white-space: nowrap; text-shadow: 0 1px 4px #000;
+}
+.thermal-mirror:fullscreen .thermal-mirror__controls { pointer-events: auto; }
+.thermal-mirror:fullscreen .thermal-mirror__controls button {
+  color: #fff0e5; border-color: #fff4; background: #0006;
+  font-family: 'Share Tech Mono', monospace; font-weight: 400;
+}
+.thermal-mirror:fullscreen .thermal-mirror__controls button:hover,
+.thermal-mirror:fullscreen .thermal-mirror__controls button[aria-pressed="true"] { background: #ffffff26; border-color: #fff9; }
+.thermal-mirror:fullscreen .thermal-mirror__body,
+.thermal-mirror:fullscreen .thermal-mirror__view,
+.thermal-mirror:fullscreen .thermal-mirror__image {
+  position: absolute; inset: 0; width: 100%; height: 100%; max-height: none;
+  margin: 0; padding: 0; display: block; border-radius: 0; aspect-ratio: auto;
+}
+.thermal-mirror:fullscreen .thermal-mirror__image { container-type: size; }
+.thermal-mirror:fullscreen .thermal-mirror__canvas { object-fit: fill; }
+.thermal-mirror:fullscreen .thermal-mirror__footer {
+  position: absolute; inset: auto 0 0; z-index: 2; padding: 8px 24px;
+  border: 0; background: linear-gradient(transparent, #0009); color: #fff9;
+  font: 400 11px/1.5 'Share Tech Mono', monospace; pointer-events: none;
+}
+.thermal-mirror:fullscreen .thermal-mirror__status { color: #fff0e5; font-weight: 400; }
+.thermal-mirror:fullscreen .thermal-mirror__readings {
+  position: absolute; z-index: 2; right: 24px; top: 80px; bottom: 44px;
+  width: min(280px, calc(100% - 48px)); max-height: calc(100% - 124px);
+  padding: 16px; border-radius: 6px; background: var(--thermal-surface); overflow: auto;
+}
+.thermal-mirror__hud { font-size: clamp(5px, min(1.6cqw, 1.5cqh), 14px); }
+.thermal-mirror__hud-readout, .thermal-mirror__raw-stream { top: max(12%, 80px); }
+.thermal-mirror__machine { top: max(41%, calc(80px + 18em)); }
+.thermal-mirror__spectrum-plot { height: clamp(24px, 12cqh, 108px); }
+.thermal-mirror:fullscreen .thermal-mirror__notice[data-stale="true"] { bottom: 32px; }
+@media (max-width: 480px), (max-height: 540px) {
+  .thermal-mirror:fullscreen .thermal-mirror__header { padding: 12px 16px; }
+  .thermal-mirror:fullscreen .thermal-mirror__brand { font-size: 18px; }
+  .thermal-mirror:fullscreen .thermal-mirror__footer { padding: 6px 16px; font-size: 9px; }
+}
