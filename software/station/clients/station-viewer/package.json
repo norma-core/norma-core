@@ -21,6 +21,7 @@
     "type-check": "tsc -b"
   },
   "dependencies": {
+    "@fontsource/share-tech-mono": "5.3.0",
     "@types/three": "^0.184.0",
     "long": "^5.2.3",
     "lucide-react": "^0.552.0",

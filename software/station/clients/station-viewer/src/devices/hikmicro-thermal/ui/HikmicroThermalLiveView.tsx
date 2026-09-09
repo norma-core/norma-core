@@ -9,6 +9,8 @@ import { useThermalLiveStream } from './useThermalLiveStream';
 import { useThermalPreview } from './useThermalPreview';
 import ThermalHudLog from '../hud/ThermalHudLog';
 import ThermalSpectrogram from '../hud/ThermalSpectrogram';
+// oxlint-disable-next-line import/no-unassigned-import -- Bundle the HUD font with this device view.
+import '@fontsource/share-tech-mono/400.css';
 // oxlint-disable-next-line import/no-unassigned-import -- Load styles with this lazy device view.
 import './thermal-mirror.css';
 
@@ -109,7 +111,6 @@ function HikmicroThermalLiveView({ data: recordedData, queueId, demo = false }: 
               </div>
               {stats && <ThermalHudLog frame={frame} stats={stats} />}
               {stats?.spectrum && <ThermalSpectrogram spectrum={stats.spectrum} />}
-              <svg className="thermal-mirror__hud-reticle" viewBox="0 0 140 140" aria-hidden="true"><circle cx="70" cy="70" r="44" /><circle className="thermal-mirror__hud-reticle-inner" cx="70" cy="70" r="36" /><path d="M70 8V42 M70 98V132 M8 70H42 M98 70H132 M65 70H75 M70 65V75" /></svg>
               <span className="thermal-mirror__hud-caption thermal-mirror__hud-bottom">{demo ? 'SIMULATED INPUT' : 'HIKMICRO / THERMAL STREAM'}<span>SCAN ACTIVE</span></span>
             </div> : <span className="thermal-mirror__crosshair" aria-hidden="true" />)}
             {!available && <div className="thermal-mirror__notice" data-stale={Boolean(stats)} role="status">

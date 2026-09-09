@@ -9,7 +9,11 @@ it('keeps every camera in native orientation, including the formerly rotated ser
   const original = renderThermalFrame({}, frame, 'silver');
   expect([original.width, original.height]).toEqual([256, 192]);
   for (const serialNumber of ['EA2976465', 'EA2976466']) {
-    expect(renderThermalFrame({ deviceInfo: { usb: { serialNumber } } }, frame, 'silver')).toEqual(original);
+    const { rgba, ...metadata } = renderThermalFrame({ deviceInfo: { usb: { serialNumber } } }, frame, 'silver');
+    const { rgba: originalPixels, ...originalMetadata } = original;
+    expect(metadata).toEqual(originalMetadata);
+    expect(rgba.length).toBe(originalPixels.length);
+    expect(rgba.every((value, index) => value === originalPixels[index])).toBe(true);
   }
 });
 

@@ -41,7 +41,7 @@ The FPS label describes the configured sensor rate, not measured display FPS.
 ## Fullscreen video HUD
 
 The existing fullscreen thermal mirror adds a T-800 treatment inside the video
-bounds: a red palette, central reticle, subtle scanlines and compact thermal
+bounds: a red palette, subtle scanlines and compact thermal
 readings. The header and theme stay in the existing fullscreen shell. T-800 mode hides
 the side readings and uses a single video column; switching HUD off restores
 the normal temperature panel and palette controls.
@@ -55,8 +55,10 @@ use detector counts. It adds no object detection, tracking or extra frame data.
 The `/thermal-hud` route is only a synthetic preview of the actual thermal widget:
 open its fullscreen control to review the result. Demo input is labeled as such.
 
-The fullscreen video also has an eight-line machine log in a local Courier
-monospace font. It publishes at most four batches per second, samples only the
+The fullscreen video also has an eight-line machine log. All text over the video
+uses Share Tech Mono 400 with a uniform size and character spacing. The
+`@fontsource/share-tech-mono` package bundles the font with the app; no external
+font service is needed at runtime. Unsupported glyphs use monospace fallbacks. It publishes at most four batches per second, samples only the
 latest incoming Y16 frame, and displays received-frame counts, native-plane byte
 addresses/hex words, and the latest decoded range/calibration state. RX is the
 number of frames observed since this HUD log mounted, not a device sequence or
