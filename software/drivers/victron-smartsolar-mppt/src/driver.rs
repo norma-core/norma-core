@@ -6,7 +6,7 @@ use station_iface::StationEngine;
 use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
-use tokio::sync::RwLock;
+use tokio::sync::{RwLock, watch};
 use tokio::task::JoinHandle;
 use tokio::time::interval;
 use tokio_serial::{SerialPortInfo, SerialPortType, available_ports};
@@ -52,7 +52,17 @@ pub(crate) struct PortParams {
 }
 
 pub struct VictronSmartSolarMpptDriver {
-    _worker: JoinHandle<()>,
+    shutdown: watch::Sender<bool>,
+    worker: JoinHandle<()>,
+}
+
+impl VictronSmartSolarMpptDriver {
+    pub async fn stop(self) {
+        let _ = self.shutdown.send(true);
+        if let Err(err) = self.worker.await {
+            warn!("Victron SmartSolar MPPT scan task failed during shutdown: {err}");
+        }
+    }
 }
 
 impl VictronSmartSolarMpptDriver {
@@ -73,9 +83,15 @@ impl VictronSmartSolarMpptDriver {
             "Victron SmartSolar MPPT scanning USB serial ports ({} match rule(s))",
             DEFAULT_USB_MATCHES.len()
         );
-        let worker = tokio::spawn(run_scan_loop(normfs.clone(), station_engine, config));
+        let (shutdown, shutdown_rx) = watch::channel(false);
+        let worker = tokio::spawn(run_scan_loop(
+            normfs.clone(),
+            station_engine,
+            config,
+            shutdown_rx,
+        ));
 
-        Ok(Self { _worker: worker })
+        Ok(Self { shutdown, worker })
     }
 }
 
@@ -101,15 +117,15 @@ pub async fn start_victron_smartsolar_mppt_driver<T: StationEngine>(
     normfs: Arc<NormFS>,
     station_engine: Arc<T>,
     config: VictronSmartSolarMpptDriverConfig,
-) -> Result<Arc<VictronSmartSolarMpptDriver>, Box<dyn std::error::Error>> {
-    let driver = VictronSmartSolarMpptDriver::new(normfs, station_engine, config).await?;
-    Ok(Arc::new(driver))
+) -> Result<VictronSmartSolarMpptDriver, Box<dyn std::error::Error>> {
+    VictronSmartSolarMpptDriver::new(normfs, station_engine, config).await
 }
 
 async fn run_scan_loop<T: StationEngine>(
     normfs: Arc<NormFS>,
     station_engine: Arc<T>,
     config: VictronSmartSolarMpptDriverConfig,
+    mut shutdown: watch::Receiver<bool>,
 ) {
     let base_params = PortParams {
         read_timeout: config.read_timeout,
@@ -120,9 +136,19 @@ async fn run_scan_loop<T: StationEngine>(
     let managed: Arc<RwLock<HashSet<String>>> = Arc::new(RwLock::new(HashSet::new()));
     let rejected: Arc<RwLock<HashMap<String, Instant>>> = Arc::new(RwLock::new(HashMap::new()));
     let mut scan = interval(Duration::from_secs(1));
+    let mut port_tasks: Vec<JoinHandle<()>> = Vec::new();
 
     loop {
-        scan.tick().await;
+        tokio::select! {
+            _ = scan.tick() => {}
+            _ = shutdown.changed() => break,
+        }
+
+        if *shutdown.borrow() {
+            break;
+        }
+
+        port_tasks.retain(|task| !task.is_finished());
 
         let ports = match available_ports() {
             Ok(ports) => ports,
@@ -167,8 +193,9 @@ async fn run_scan_loop<T: StationEngine>(
             let station_engine = station_engine.clone();
             let managed = managed.clone();
             let rejected = rejected.clone();
-            tokio::spawn(async move {
-                let port = VictronPort::new(normfs, station_engine, device, params);
+            let port_shutdown = shutdown.clone();
+            port_tasks.push(tokio::spawn(async move {
+                let port = VictronPort::new(normfs, station_engine, device, params, port_shutdown);
                 match port.open().await {
                     Ok(()) => {
                         info!(
@@ -205,7 +232,14 @@ async fn run_scan_loop<T: StationEngine>(
                     }
                 }
                 managed.write().await.remove(&port_name);
-            });
+            }));
+        }
+    }
+
+    info!("Victron SmartSolar MPPT scan loop stopping, waiting for {} port task(s)", port_tasks.len());
+    for task in port_tasks {
+        if let Err(err) = task.await {
+            warn!("Victron SmartSolar MPPT port task failed during shutdown: {err}");
         }
     }
 }
