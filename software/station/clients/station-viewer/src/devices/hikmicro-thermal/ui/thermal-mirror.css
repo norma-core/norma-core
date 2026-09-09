@@ -269,3 +269,8 @@
   .thermal-mirror:fullscreen .thermal-mirror__brand { font-size: 18px; }
   .thermal-mirror:fullscreen .thermal-mirror__footer { padding: 6px 16px; font-size: 9px; }
 }
+
+/* Connection feedback stays in the fullscreen stream indicator. */
+.thermal-mirror:fullscreen .thermal-mirror__status[data-live="false"] { color: #ffd08a; }
+.thermal-mirror:fullscreen .thermal-mirror__status[data-error="true"] { color: #ffaaa0; }
+.thermal-mirror__status-detail { opacity: .75; }

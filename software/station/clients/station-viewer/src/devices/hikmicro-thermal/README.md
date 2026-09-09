@@ -1,6 +1,6 @@
 # Thermal mirror
 
-The thermal view renders the decoded sensor image with a mirror control in fullscreen.
+The thermal view renders the decoded sensor image and restores saved mirror preferences.
 Decoding uses the thermal Worker with one frame in flight and one latest pending
 frame. Hidden tabs dispose the Worker and scheduled drawing.
 
@@ -27,9 +27,9 @@ The FPS label describes the configured sensor rate, not measured display FPS.
 The existing fullscreen thermal mirror adds a T-800 treatment inside the video
 bounds: a red palette, subtle scanlines and compact thermal
 readings. Fullscreen stretches the sensor image to fill the entire viewport, including
-when its aspect ratio differs from the sensor. Text branding (`// C //`), controls
-and stream status float over the image. Fullscreen always uses the T-800 HUD;
-its only controls are mirror and exit, both shown as icons. Compact widgets keep
+when its aspect ratio differs from the sensor. Text branding (`// C //`) and stream status float over the image. Fullscreen always uses the T-800 HUD;
+it has no on-screen buttons. Escape exits fullscreen through the shared
+fullscreen hook. The compact widget retains its fullscreen entry button. Compact widgets keep
 their regular palette and readings and have no HUD overlay.
 
 The overlay reads the existing decoded statistics. Calibrated readings are
@@ -81,3 +81,10 @@ of 250 ms. Same-bucket updates replace the column, real gaps stay empty, and no
 full frames are retained. Hidden-tab decoding already stops in the existing
 preview lifecycle; the graph adds no timers or additional Worker. Exiting HUD
 or losing available input unmounts the graph and releases its bounded history.
+
+Fullscreen connection feedback lives in the stream indicator: LIVE (or SYNTHETIC
+DEMO), CONNECTING / WAITING FOR FRAME, SIGNAL DELAYED / LAST FRAME, or RECOVERING.
+Unavailable input uses amber, decoder errors use red, and retained pixels remain
+visible without a banner. The indicator announces status changes politely;
+new decoded frames restore the normal status automatically. The compact widget
+keeps its existing connection notice.

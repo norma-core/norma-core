@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
-import { FlipHorizontal2, Maximize2, Minimize2 } from 'lucide-react';
+import { Maximize2 } from 'lucide-react';
 import type { hikmicro } from '@/api/proto.js';
 import DeviceStatusBadge from '@/components/DeviceStatusBadge';
 import { useElementFullscreen } from '@/hooks';
@@ -35,8 +35,8 @@ function HikmicroThermalLiveView({ data: recordedData, queueId, demo = false }: 
   const available = Boolean(stats && !stale && !error);
   const reference = available ? stats!.avgC : null;
   const delta = (value: number | null | undefined) => formatTemperatureDelta(available ? value ?? null : null, reference);
-  const status = error ? 'RECOVERING' : stale ? 'SIGNAL DELAYED' : stats ? demo ? 'SYNTHETIC DEMO' : 'LIVE' : 'CONNECTING';
-  const fullscreenLabel = isFullscreen ? 'Exit thermal fullscreen' : 'Fullscreen thermal camera';
+  const status = error ? 'RECOVERING' : !stats ? 'CONNECTING' : stale ? 'SIGNAL DELAYED' : demo ? 'SYNTHETIC DEMO' : 'LIVE';
+  const statusDetail = available ? null : stats ? 'LAST FRAME' : 'WAITING FOR FRAME';
 
   useEffect(() => {
     try {
@@ -46,14 +46,9 @@ function HikmicroThermalLiveView({ data: recordedData, queueId, demo = false }: 
     } catch { /* Optional preferences; outdoor defaults still work. */ }
   }, [label]);
 
-  const changeMirror = () => {
-    setMirrored(!mirrored);
-    try { localStorage.setItem(`thermal-mirror:${label}`, JSON.stringify({ palette, mirrored: !mirrored })); } catch { /* Optional preference. */ }
-  };
   const controls = <div className="thermal-mirror__controls">
-    {isFullscreen && <button type="button" onClick={changeMirror} aria-pressed={mirrored} aria-label="Mirror thermal image" title="Mirror thermal image"><FlipHorizontal2 aria-hidden="true" /></button>}
-    <button type="button" onClick={() => void toggleFullscreen()} aria-label={fullscreenLabel} title={fullscreenLabel}>
-      {isFullscreen ? <Minimize2 aria-hidden="true" /> : <Maximize2 aria-hidden="true" />}
+    <button type="button" onClick={() => void toggleFullscreen()} aria-label="Fullscreen thermal camera" title="Fullscreen thermal camera">
+      <Maximize2 aria-hidden="true" />
     </button>
   </div>;
 
@@ -72,7 +67,6 @@ function HikmicroThermalLiveView({ data: recordedData, queueId, demo = false }: 
             {stats?.usedCalibration ? 'CALIBRATED' : 'RAW'}
           </DeviceStatusBadge>
         </>}
-        {isFullscreen && controls}
       </header>
       <div className="thermal-mirror__body">
         <div className="thermal-mirror__view">
@@ -94,7 +88,7 @@ function HikmicroThermalLiveView({ data: recordedData, queueId, demo = false }: 
               {stats?.spectrum && <ThermalSpectrogram spectrum={stats.spectrum} />}
               <span className="thermal-mirror__hud-caption thermal-mirror__hud-bottom">{demo ? 'SIMULATED INPUT' : 'HIKMICRO / THERMAL STREAM'}<span>SCAN ACTIVE</span></span>
             </div>}
-            {!available && <div className="thermal-mirror__notice" data-stale={Boolean(stats)} role="status">
+            {!isFullscreen && !available && <div className="thermal-mirror__notice" data-stale={Boolean(stats)} role="status">
               <strong>{stats ? 'Signal delayed · showing last frame' : 'Connecting to thermal camera'}</strong>
               <span>{error || stats ? 'The image will resume automatically.' : 'The first frame can take a little while.'}</span>
             </div>}
@@ -112,7 +106,9 @@ function HikmicroThermalLiveView({ data: recordedData, queueId, demo = false }: 
         </aside>}
       </div>
       {isFullscreen && <footer className="thermal-mirror__footer">
-        <span className="thermal-mirror__status" data-live={available}><i aria-hidden="true" />{status}</span>
+        <span className="thermal-mirror__status" data-live={available} data-error={Boolean(error)} role="status" aria-live="polite" aria-atomic="true">
+          <i aria-hidden="true" />{status}{statusDetail && <span className="thermal-mirror__status-detail"> / {statusDetail}</span>}
+        </span>
         <span className="thermal-mirror__device" title={label}>{label}</span>
         <span className="thermal-mirror__resolution">{stats?.width ?? 256} × {stats?.height ?? 192}</span>
       </footer>}
