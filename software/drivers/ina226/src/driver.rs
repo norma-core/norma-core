@@ -2,10 +2,10 @@ use crate::ina226_proto::{Ina226Device, Ina226DeviceInfo, Ina226SignalType, RxEn
 use bytes::{Bytes, BytesMut};
 use i2c_async::AsyncI2cDevice;
 use log::{error, info, warn};
-use normfs::{NormFS, QueueId, UintN};
+use normfs::NormFS;
 use prost::Message;
-use station_iface::StationEngine;
 use station_iface::iface_proto::drivers::QueueDataType;
+use station_iface::{Backpressure, StationEngine, enqueue_with};
 use std::collections::BTreeMap;
 use std::sync::Arc;
 use std::time::Duration;
@@ -157,7 +157,7 @@ pub async fn start_ina226_driver<T: StationEngine>(
 
 async fn run_device_worker(
     normfs: Arc<NormFS>,
-    rx_queue_id: QueueId,
+    queue_id: normfs::QueueId,
     device: Device,
     poll_interval: Duration,
 ) {
@@ -174,52 +174,59 @@ async fn run_device_worker(
         match read_register_dump(&i2c).await {
             Ok(dump) => {
                 if !connected {
+                    if let Err(e) = normfs.ensure_queue_exists_for_write(&queue_id).await {
+                        error!("Failed to reopen INA226 queue {}: {}", queue_id, e);
+                        continue;
+                    }
                     send_device_signal(
                         &normfs,
-                        &rx_queue_id,
+                        &queue_id,
                         &device,
                         Ina226SignalType::Ina226Connected,
                         Some(&dump),
                         None,
-                    );
+                    )
+                    .await;
                     connected = true;
                 }
 
                 send_device_signal(
                     &normfs,
-                    &rx_queue_id,
+                    &queue_id,
                     &device,
                     Ina226SignalType::Ina226RegistersSnapshot,
                     Some(&dump),
                     None,
-                );
+                )
+                .await;
                 last_dump = Some(dump);
                 last_error = None;
             }
             Err(error) => {
                 if connected {
-                    send_device_signal(
-                        &normfs,
-                        &rx_queue_id,
-                        &device,
+                    for signal_type in [
                         Ina226SignalType::Ina226Disconnected,
-                        last_dump.as_ref(),
-                        Some(error.clone()),
-                    );
-                    connected = false;
-                }
-
-                if last_error.as_deref() != Some(error.as_str()) {
-                    send_device_signal(
-                        &normfs,
-                        &rx_queue_id,
-                        &device,
                         Ina226SignalType::Ina226Error,
-                        last_dump.as_ref(),
-                        Some(error.clone()),
-                    );
-                    last_error = Some(error);
+                    ] {
+                        send_device_signal(
+                            &normfs,
+                            &queue_id,
+                            &device,
+                            signal_type,
+                            last_dump.as_ref(),
+                            Some(error.clone()),
+                        )
+                        .await;
+                    }
+                    connected = false;
+                    // Logged only; the queue is closed while the device is away.
+                    if let Err(e) = normfs.close_queue(&queue_id).await {
+                        error!("Failed to close INA226 queue {}: {}", queue_id, e);
+                    }
+                } else if last_error.as_deref() != Some(error.as_str()) {
+                    warn!("INA226 {} unreachable: {}", device.id, error);
                 }
+                last_error = Some(error);
             }
         }
     }
@@ -277,9 +284,9 @@ fn read_u16_be(dump: &RegisterDump, register: u8) -> Option<u16> {
     Some(u16::from_be_bytes([bytes[0], bytes[1]]))
 }
 
-fn send_device_signal(
-    normfs: &Arc<NormFS>,
-    rx_queue_id: &QueueId,
+async fn send_device_signal(
+    normfs: &NormFS,
+    queue_id: &normfs::QueueId,
     device: &Device,
     signal_type: Ina226SignalType,
     dump: Option<&RegisterDump>,
@@ -295,20 +302,22 @@ fn send_device_signal(
         error: error_message.unwrap_or_default(),
     };
 
-    if let Err(error) = send_proto(normfs, rx_queue_id, &envelope) {
+    let mut buffer = Vec::new();
+    if let Err(error) = envelope.encode(&mut buffer) {
+        error!("Failed to encode INA226 envelope: {error}");
+        return;
+    }
+    let data = Bytes::from(buffer);
+
+    let policy = if signal_type == Ina226SignalType::Ina226RegistersSnapshot {
+        Backpressure::Skip
+    } else {
+        Backpressure::Keep
+    };
+    if let Err(error) = enqueue_with(normfs, queue_id, data, policy).await {
         error!(
             "Failed to send INA226 {:?} signal for {}: {}",
             signal_type, device.id, error
         );
     }
-}
-
-fn send_proto<M: Message>(
-    normfs: &NormFS,
-    queue_id: &QueueId,
-    envelope: &M,
-) -> DriverResult<UintN> {
-    let mut buffer = Vec::new();
-    envelope.encode(&mut buffer)?;
-    Ok(normfs.enqueue(queue_id, Bytes::from(buffer))?)
 }

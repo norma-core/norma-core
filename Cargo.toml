@@ -26,7 +26,8 @@ members = [
 version = "0.1.0-beta.11"
 
 [workspace.dependencies]
-normfs = "0.2.0-beta.3"
+normfs = "0.3.2"
+normfs-types = "0.3.2"
 tokio = { version = "1.49", features = ["full"] }
 prost = "0.12"
 prost-build = "0.12"

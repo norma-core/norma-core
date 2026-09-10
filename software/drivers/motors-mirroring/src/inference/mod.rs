@@ -1,18 +1,22 @@
 #![allow(clippy::collapsible_if)]
 #![allow(clippy::needless_borrow)]
 
-mod model;
 mod mirror;
+mod model;
 mod normalize;
+use crate::proto::mirroring;
+use crate::types::{Command, MotorCommand};
+use crate::{
+    config, proto::mirroring::inference_state::Bus, proto::mirroring::inference_state::Mirroring,
+    types::BusKey,
+};
 use bytes::Bytes;
+use normfs::NormFS;
+use parking_lot::RwLock;
 use prost::Message;
 use station_iface::iface_proto::commands::{DriverCommand, StationCommandsPack};
-use normfs::NormFS;
+use station_iface::{Backpressure, enqueue_with};
 use std::sync::Arc;
-use parking_lot::RwLock;
-use crate::types::{Command, MotorCommand};
-use crate::{config, proto::mirroring::inference_state::Mirroring, proto::mirroring::inference_state::Bus, types::BusKey};
-use crate::proto::mirroring;
 
 /// Maximum acceptable data age before considering it stale (100ms in nanoseconds)
 const MAX_DATA_AGE_NS: u64 = 100_000_000;
@@ -20,25 +24,31 @@ const MAX_DATA_AGE_NS: u64 = 100_000_000;
 pub struct Inference {
     state: Arc<RwLock<model::State>>,
     normfs: Arc<NormFS>,
+    commands_queue_id: normfs::QueueId,
 }
 
 impl Inference {
-    pub fn new(
+    pub async fn new(
         config: config::MotorConfig,
         normfs: Arc<NormFS>,
-    ) -> Self {
+    ) -> Result<Self, normfs::Error> {
+        let commands_queue_id = normfs.resolve("commands");
+        normfs
+            .ensure_queue_exists_for_write(&commands_queue_id)
+            .await?;
         let res = Self {
             state: Arc::new(RwLock::new(model::State::default())),
             normfs,
+            commands_queue_id: commands_queue_id.clone(),
         };
 
         let state = Arc::clone(&res.state);
         let normfs = Arc::clone(&res.normfs);
         tokio::spawn(async move {
-            Self::mirror(state, &normfs, config).await;
+            Self::mirror(state, &normfs, commands_queue_id, config).await;
         });
 
-        res
+        Ok(res)
     }
 
     pub fn start(&self, from: BusKey, to: Vec<BusKey>) {
@@ -67,6 +77,7 @@ impl Inference {
 
         // Enable torque on target motors
         let normfs = Arc::clone(&self.normfs);
+        let commands_queue_id = self.commands_queue_id.clone();
         let targets_to_enable = to.clone();
         tokio::spawn(async move {
             let mut station_state = model::StationState::default();
@@ -82,7 +93,14 @@ impl Inference {
                             command: MotorCommand::Torque(1),
                         });
                     }
-                    Self::send_st3215_commands(&normfs, &Bytes::new(), commands);
+                    Self::send_st3215_commands(
+                        &normfs,
+                        &commands_queue_id,
+                        &Bytes::new(),
+                        commands,
+                        true,
+                    )
+                    .await;
                 }
             }
         });
@@ -113,6 +131,7 @@ impl Inference {
 
         // Spawn async task to send torque=0 commands to free buses
         let normfs = Arc::clone(&self.normfs);
+        let commands_queue_id = self.commands_queue_id.clone();
         tokio::spawn(async move {
             let mut station_state = model::StationState::default();
             station_state.update_from_st3215_queue(&normfs).await;
@@ -127,7 +146,15 @@ impl Inference {
                             command: MotorCommand::Torque(0),
                         });
                     }
-                    Self::send_st3215_commands(&normfs, &Bytes::new(), commands);
+                    // Must not be dropped: the bus would stay torqued.
+                    Self::send_st3215_commands(
+                        &normfs,
+                        &commands_queue_id,
+                        &Bytes::new(),
+                        commands,
+                        true,
+                    )
+                    .await;
                 }
             }
         });
@@ -140,7 +167,7 @@ impl Inference {
             .iter()
             .map(|(from, to_keys)| Mirroring {
                 source: Some(Bus {
-                    id: Some(mirroring::MirroringBus { 
+                    id: Some(mirroring::MirroringBus {
                         unique_id: from.bus_id.clone(),
                         r#type: from.bus_type as i32,
                     }),
@@ -149,7 +176,7 @@ impl Inference {
                 targets: to_keys
                     .iter()
                     .map(|k| Bus {
-                        id: Some(mirroring::MirroringBus { 
+                        id: Some(mirroring::MirroringBus {
                             unique_id: k.bus_id.clone(),
                             r#type: k.bus_type as i32,
                         }),
@@ -163,6 +190,7 @@ impl Inference {
     async fn mirror(
         state: Arc<RwLock<model::State>>,
         normfs: &Arc<NormFS>,
+        commands_queue_id: normfs::QueueId,
         config: config::MotorConfig,
     ) {
         let mut station_state = model::StationState::default();
@@ -173,20 +201,22 @@ impl Inference {
         let tx = Arc::new(std::sync::Mutex::new(Some(tx)));
         let tx_clone = Arc::clone(&tx);
 
-        normfs.subscribe(
-            &queue_id,
-            Box::new(move |entries| {
-                if !entries.is_empty() {
-                    if let Ok(mut guard) = tx_clone.lock() {
-                        if let Some(sender) = guard.take() {
-                            let _ = sender.send(());
+        normfs
+            .subscribe(
+                &queue_id,
+                Box::new(move |entries| {
+                    if !entries.is_empty() {
+                        if let Ok(mut guard) = tx_clone.lock() {
+                            if let Some(sender) = guard.take() {
+                                let _ = sender.send(());
+                            }
                         }
+                        return false;
                     }
-                    return false;
-                }
-                true
-            })
-        ).ok();
+                    true
+                }),
+            )
+            .ok();
 
         let _ = rx.await;
 
@@ -195,7 +225,8 @@ impl Inference {
         // Match inference frame-stats cadence: 100 frames * 100ms/frame = 10s.
         let stats_interval = std::time::Duration::from_secs(10);
 
-        let mut mirroring_states: std::collections::HashMap<BusKey, bool> = std::collections::HashMap::new();
+        let mut mirroring_states: std::collections::HashMap<BusKey, bool> =
+            std::collections::HashMap::new();
 
         loop {
             let loop_start = std::time::Instant::now();
@@ -208,28 +239,45 @@ impl Inference {
 
             for (source_bus_key, target_bus_keys) in &from_to {
                 // Check if source has fresh data
-                let source_fresh = station_state.buses.get(source_bus_key)
-                    .map(|bus| bus.monotonic_stamp_ns > 0 &&
-                               now_ns.saturating_sub(bus.monotonic_stamp_ns) < MAX_DATA_AGE_NS)
+                let source_fresh = station_state
+                    .buses
+                    .get(source_bus_key)
+                    .map(|bus| {
+                        bus.monotonic_stamp_ns > 0
+                            && now_ns.saturating_sub(bus.monotonic_stamp_ns) < MAX_DATA_AGE_NS
+                    })
                     .unwrap_or(false);
 
                 // Check if ALL targets have fresh data
                 let targets_fresh = target_bus_keys.iter().all(|target_key| {
-                    station_state.buses.get(target_key)
-                        .map(|bus| bus.monotonic_stamp_ns > 0 &&
-                                   now_ns.saturating_sub(bus.monotonic_stamp_ns) < MAX_DATA_AGE_NS)
+                    station_state
+                        .buses
+                        .get(target_key)
+                        .map(|bus| {
+                            bus.monotonic_stamp_ns > 0
+                                && now_ns.saturating_sub(bus.monotonic_stamp_ns) < MAX_DATA_AGE_NS
+                        })
                         .unwrap_or(false)
                 });
 
                 let has_fresh_data = source_fresh && targets_fresh;
-                let was_active = mirroring_states.get(source_bus_key).copied().unwrap_or(true);
+                let was_active = mirroring_states
+                    .get(source_bus_key)
+                    .copied()
+                    .unwrap_or(true);
 
                 // Log only on state transitions
                 if !has_fresh_data && was_active {
-                    log::warn!("Mirroring paused for source {}: stale data detected", source_bus_key.bus_id);
+                    log::warn!(
+                        "Mirroring paused for source {}: stale data detected",
+                        source_bus_key.bus_id
+                    );
                     mirroring_states.insert(source_bus_key.clone(), false);
                 } else if has_fresh_data && !was_active {
-                    log::info!("Mirroring resumed for source {}: fresh data available", source_bus_key.bus_id);
+                    log::info!(
+                        "Mirroring resumed for source {}: fresh data available",
+                        source_bus_key.bus_id
+                    );
                     mirroring_states.insert(source_bus_key.clone(), true);
                 }
 
@@ -243,9 +291,11 @@ impl Inference {
                     target_bus_keys,
                     &station_state,
                     &mut protection_states,
+                    &commands_queue_id,
                     normfs,
                     &config,
-                );
+                )
+                .await;
             }
 
             let processing_done = std::time::Instant::now();
@@ -303,11 +353,15 @@ impl Inference {
         }
     }
 
-    fn process_mirroring_for_source(
+    async fn process_mirroring_for_source(
         source_bus_key: &BusKey,
         target_bus_keys: &[BusKey],
         station_state: &model::StationState,
-        protection_states: &mut std::collections::HashMap<model::ProtectionKey, model::MotorProtectionState>,
+        protection_states: &mut std::collections::HashMap<
+            model::ProtectionKey,
+            model::MotorProtectionState,
+        >,
+        commands_queue_id: &normfs::QueueId,
         normfs: &Arc<NormFS>,
         config: &config::MotorConfig,
     ) {
@@ -325,7 +379,14 @@ impl Inference {
                 );
             }
             if !commands.is_empty() {
-                Self::send_st3215_commands(normfs, &station_state.id, commands);
+                Self::send_st3215_commands(
+                    normfs,
+                    commands_queue_id,
+                    &station_state.id,
+                    commands,
+                    false,
+                )
+                .await;
             }
         }
     }
@@ -335,7 +396,10 @@ impl Inference {
         source_motor_state: &model::MotorState,
         target_bus_keys: &[BusKey],
         station_state: &model::StationState,
-        protection_states: &mut std::collections::HashMap<model::ProtectionKey, model::MotorProtectionState>,
+        protection_states: &mut std::collections::HashMap<
+            model::ProtectionKey,
+            model::MotorProtectionState,
+        >,
         config: &config::MotorConfig,
         commands: &mut Vec<Command>,
     ) {
@@ -389,15 +453,18 @@ impl Inference {
 
         pack.commands.push(DriverCommand {
             command_id: cmd_id,
-            r#type: station_iface::iface_proto::drivers::StationCommandType::StcSt3215Command as i32,
+            r#type: station_iface::iface_proto::drivers::StationCommandType::StcSt3215Command
+                as i32,
             body: cmd_bytes,
         });
     }
 
-    fn send_st3215_commands(
-        normfs: &Arc<NormFS>,
+    async fn send_st3215_commands(
+        normfs: &NormFS,
+        commands_queue_id: &normfs::QueueId,
         state_id: &Bytes,
         commands: Vec<Command>,
+        keep: bool,
     ) {
         use std::collections::HashMap;
 
@@ -483,8 +550,14 @@ impl Inference {
             );
         }
 
-        let encoded = pack.encode_to_vec();
-        let commands_queue_id = normfs.resolve("commands");
-        let _ = normfs.enqueue(&commands_queue_id, Bytes::from(encoded));
+        let data = Bytes::from(pack.encode_to_vec());
+        let policy = if keep {
+            Backpressure::Keep
+        } else {
+            Backpressure::Skip
+        };
+        if let Err(e) = enqueue_with(normfs, commands_queue_id, data, policy).await {
+            log::error!("Failed to publish mirroring commands: {e}");
+        }
     }
 }

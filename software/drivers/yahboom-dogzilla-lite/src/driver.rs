@@ -46,11 +46,15 @@ impl YahboomDogzillaLiteDriver {
         let tx_queue_id = normfs.resolve(TX_QUEUE_ID);
         let inference_queue_id = normfs.resolve(INFERENCE_QUEUE_ID);
 
-        normfs.ensure_queue_exists_for_write(&rx_queue_id).await?;
-        normfs.ensure_queue_exists_for_write(&tx_queue_id).await?;
-        normfs
-            .ensure_queue_exists_for_write(&inference_queue_id)
-            .await?;
+        let com = Arc::new(
+            YahboomDogzillaLiteCommunicator::new(
+                normfs.clone(),
+                rx_queue_id.clone(),
+                tx_queue_id.clone(),
+                inference_queue_id.clone(),
+            )
+            .await?,
+        );
 
         station_engine.register_queue(&rx_queue_id, QueueDataType::QdtYahboomDogzillaLiteSerialRx, vec![]);
         station_engine.register_queue(&tx_queue_id, QueueDataType::QdtYahboomDogzillaLiteSerialTx, vec![]);
@@ -59,13 +63,6 @@ impl YahboomDogzillaLiteDriver {
             QueueDataType::QdtYahboomDogzillaLiteInference,
             vec![],
         );
-
-        let com = Arc::new(YahboomDogzillaLiteCommunicator::new(
-            normfs.clone(),
-            rx_queue_id,
-            tx_queue_id.clone(),
-            inference_queue_id,
-        ));
 
         let com_for_commands = com.clone();
         let commands_queue_id = normfs.resolve("commands");

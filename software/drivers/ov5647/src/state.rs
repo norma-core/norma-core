@@ -2,8 +2,10 @@ use bytes::{Bytes, BytesMut};
 use prost::Message;
 use std::sync::Arc;
 
-use normfs::{NormFS, UintN};
-use station_iface::{StationEngine, iface_proto::drivers::QueueDataType};
+use normfs::NormFS;
+use station_iface::{
+    Backpressure, StationEngine, enqueue_with, iface_proto::drivers::QueueDataType,
+};
 use usbvideo::usbvideo_proto::{
     frame::{FrameFormat, FrameFormatKind, FrameStamp, FramesPack},
     usbvideo::{Camera, CameraFormat, RxEnvelope, RxEnvelopeType},
@@ -39,10 +41,14 @@ impl<K: StationEngine> StateTracker<K> {
     }
 
     pub(crate) async fn start_queue(&self) {
-        let _ = self
+        if let Err(e) = self
             .normfs
             .ensure_queue_exists_for_write(&self.queue_id)
-            .await;
+            .await
+        {
+            log::error!("OV5647 failed to start queue {}: {}", self.queue_id, e);
+            return;
+        }
         self.engine
             .register_queue(&self.queue_id, QueueDataType::QdtUsbVideoFrames, vec![]);
     }
@@ -83,14 +89,16 @@ impl<K: StationEngine> StateTracker<K> {
             return false;
         }
 
-        match self.normfs.enqueue(&self.queue_id, buf.freeze()) {
+        match self.normfs.try_enqueue(&self.queue_id, buf.freeze()) {
             Ok(_) => {
                 self.frames_captured
                     .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
                 true
             }
             Err(e) => {
-                log::error!("OV5647 failed to enqueue frame: {}", e);
+                if !matches!(e, normfs::Error::WouldBlock) {
+                    log::error!("OV5647 failed to enqueue frame: {}", e);
+                }
                 self.frames_dropped
                     .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
                 false
@@ -98,7 +106,11 @@ impl<K: StationEngine> StateTracker<K> {
         }
     }
 
-    pub(crate) fn enqueue_device_connected(&self, camera: &Camera, formats: Vec<CameraFormat>) {
+    pub(crate) async fn enqueue_device_connected(
+        &self,
+        camera: &Camera,
+        formats: Vec<CameraFormat>,
+    ) {
         self.camera.store(Arc::new(Some(camera.clone())));
         if let Some(format) = formats.first() {
             self.format.store(Arc::new(Some(format.clone())));
@@ -117,10 +129,10 @@ impl<K: StationEngine> StateTracker<K> {
             ..Default::default()
         };
 
-        let _ = self.send_envelope(&envelope);
+        let _ = self.send_envelope(&envelope).await;
     }
 
-    pub(crate) fn enqueue_device_disconnected(&self, camera: &Camera) {
+    pub(crate) async fn enqueue_device_disconnected(&self, camera: &Camera) {
         self.camera.store(Arc::new(None));
         self.format.store(Arc::new(None));
         self.recording
@@ -138,10 +150,10 @@ impl<K: StationEngine> StateTracker<K> {
             ..Default::default()
         };
 
-        let _ = self.send_envelope(&envelope);
+        let _ = self.send_envelope(&envelope).await;
     }
 
-    pub(crate) fn enqueue_recording_start(&self, camera: &Camera, format: &CameraFormat) {
+    pub(crate) async fn enqueue_recording_start(&self, camera: &Camera, format: &CameraFormat) {
         self.recording
             .store(true, std::sync::atomic::Ordering::Relaxed);
         self.format.store(Arc::new(Some(format.clone())));
@@ -159,10 +171,10 @@ impl<K: StationEngine> StateTracker<K> {
             ..Default::default()
         };
 
-        let _ = self.send_envelope(&envelope);
+        let _ = self.send_envelope(&envelope).await;
     }
 
-    pub(crate) fn enqueue_recording_end(&self, camera: &Camera) {
+    pub(crate) async fn enqueue_recording_end(&self, camera: &Camera) {
         self.recording
             .store(false, std::sync::atomic::Ordering::Relaxed);
 
@@ -178,10 +190,10 @@ impl<K: StationEngine> StateTracker<K> {
             ..Default::default()
         };
 
-        let _ = self.send_envelope(&envelope);
+        let _ = self.send_envelope(&envelope).await;
     }
 
-    pub(crate) fn enqueue_error(&self, camera: &Camera, error: String) {
+    pub(crate) async fn enqueue_error(&self, camera: &Camera, error: String) {
         let envelope = RxEnvelope {
             r#type: RxEnvelopeType::EtError as i32,
             camera: Some(camera.clone()),
@@ -195,16 +207,20 @@ impl<K: StationEngine> StateTracker<K> {
             ..Default::default()
         };
 
-        let _ = self.send_envelope(&envelope);
+        let _ = self.send_envelope(&envelope).await;
     }
 
-    fn send_envelope(&self, envelope: &RxEnvelope) -> Result<UintN, String> {
+    async fn send_envelope(&self, envelope: &RxEnvelope) -> Result<(), String> {
         let mut buf = BytesMut::new();
         envelope.encode(&mut buf).map_err(|e| e.to_string())?;
-
-        self.normfs
-            .enqueue(&self.queue_id, buf.freeze())
-            .map_err(|e| e.to_string())
+        enqueue_with(
+            &self.normfs,
+            &self.queue_id,
+            buf.freeze(),
+            Backpressure::Keep,
+        )
+        .await
+        .map_err(|e| e.to_string())
     }
 
     fn get_last_inference_id_bytes(&self) -> Bytes {

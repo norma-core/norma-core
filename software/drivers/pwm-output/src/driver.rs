@@ -4,11 +4,13 @@ use crate::pwm_output_proto::{
 };
 use bytes::{BufMut, Bytes, BytesMut};
 use log::{error, info, warn};
-use normfs::{NormFS, QueueId};
+use normfs::NormFS;
 use parking_lot::Mutex;
 use prost::Message;
-use station_iface::StationEngine;
 use station_iface::iface_proto::{commands, drivers};
+use station_iface::{
+    Backpressure, STARTUP_WRITE_TIMEOUT, StationEngine, enqueue_waiting, try_enqueue_with,
+};
 use std::collections::BTreeMap;
 use std::fs::OpenOptions;
 use std::io::{self, Write};
@@ -83,23 +85,28 @@ impl PwmOutputDriver {
             }
 
             let runtime = OutputRuntime::new(output_config);
-            send_rx(
-                &normfs,
-                &rx_queue_id,
+            if let Some(data) = rx_envelope(
                 PwmOutputSignalType::PwmOutputConfigured,
                 Some(runtime.device_proto()),
                 Some(runtime.state.clone()),
                 None,
                 None,
-            );
+            ) && let Err(error) =
+                enqueue_waiting(&normfs, &rx_queue_id, data, STARTUP_WRITE_TIMEOUT).await
+            {
+                error!(
+                    "Failed to record PWM output '{}' as configured: {}",
+                    runtime.config.id, error
+                );
+            }
             outputs.insert(runtime.config.id.clone(), runtime);
         }
 
         let outputs = Arc::new(Mutex::new(outputs));
         let transport = Arc::new(H7WaveTransport::new(config.device_path));
         subscribe_commands(
-            normfs.clone(),
-            rx_queue_id.clone(),
+            normfs,
+            rx_queue_id,
             tx_queue_id,
             outputs.clone(),
             transport.clone(),
@@ -127,13 +134,13 @@ pub async fn start_pwm_output_driver<T: StationEngine>(
 
 fn subscribe_commands(
     normfs: Arc<NormFS>,
-    rx_queue_id: QueueId,
-    tx_queue_id: QueueId,
+    rx_queue_id: normfs::QueueId,
+    tx_queue_id: normfs::QueueId,
     outputs: Arc<Mutex<BTreeMap<String, OutputRuntime>>>,
     transport: Arc<H7WaveTransport>,
 ) -> Result<(), normfs::Error> {
     let commands_queue_id = normfs.resolve(station_iface::COMMANDS_QUEUE_ID);
-    let callback_normfs = normfs.clone();
+    let cb_normfs = normfs.clone();
     normfs.subscribe(
         &commands_queue_id,
         Box::new(move |entries: &[(normfs::UintN, Bytes)]| {
@@ -168,16 +175,10 @@ fn subscribe_commands(
                         command: Some(decoded),
                     };
 
-                    if let Err(error) = send_tx(&callback_normfs, &tx_queue_id, &envelope) {
+                    if let Err(error) = send_tx(&cb_normfs, &tx_queue_id, &envelope) {
                         error!("Failed to publish PWM output TX command: {}", error);
                     }
-                    process_command(
-                        &callback_normfs,
-                        &rx_queue_id,
-                        &outputs,
-                        &transport,
-                        envelope,
-                    );
+                    process_command(&cb_normfs, &rx_queue_id, &outputs, &transport, envelope);
                 }
             }
             true
@@ -188,8 +189,8 @@ fn subscribe_commands(
 }
 
 fn process_command(
-    normfs: &Arc<NormFS>,
-    rx_queue_id: &QueueId,
+    normfs: &NormFS,
+    rx_queue_id: &normfs::QueueId,
     outputs: &Arc<Mutex<BTreeMap<String, OutputRuntime>>>,
     transport: &Arc<H7WaveTransport>,
     envelope: TxEnvelope,
@@ -283,22 +284,41 @@ fn process_command(
     }
 }
 
-fn send_tx(normfs: &Arc<NormFS>, queue_id: &QueueId, envelope: &TxEnvelope) -> DriverResult<()> {
+/// Both run inside the commands subscriber callback and must not block.
+fn send_tx(
+    normfs: &NormFS,
+    tx_queue_id: &normfs::QueueId,
+    envelope: &TxEnvelope,
+) -> DriverResult<()> {
     let mut buf = Vec::new();
     envelope.encode(&mut buf)?;
-    normfs.enqueue(queue_id, Bytes::from(buf))?;
+    try_enqueue_with(normfs, tx_queue_id, Bytes::from(buf), Backpressure::Keep)?;
     Ok(())
 }
 
 fn send_rx(
-    normfs: &Arc<NormFS>,
-    queue_id: &QueueId,
+    normfs: &NormFS,
+    rx_queue_id: &normfs::QueueId,
     signal_type: PwmOutputSignalType,
     device: Option<PwmOutputDevice>,
     state: Option<OutputState>,
     command: Option<TxEnvelope>,
     error_message: Option<String>,
 ) {
+    if let Some(data) = rx_envelope(signal_type, device, state, command, error_message)
+        && let Err(error) = try_enqueue_with(normfs, rx_queue_id, data, Backpressure::Keep)
+    {
+        error!("Failed to publish PWM output RX record: {}", error);
+    }
+}
+
+fn rx_envelope(
+    signal_type: PwmOutputSignalType,
+    device: Option<PwmOutputDevice>,
+    state: Option<OutputState>,
+    command: Option<TxEnvelope>,
+    error_message: Option<String>,
+) -> Option<Bytes> {
     let envelope = RxEnvelope {
         monotonic_stamp_ns: systime::get_monotonic_stamp_ns(),
         local_stamp_ns: systime::get_local_stamp_ns(),
@@ -313,11 +333,9 @@ fn send_rx(
     let mut buf = Vec::new();
     if let Err(error) = envelope.encode(&mut buf) {
         error!("Failed to encode PWM output RX envelope: {}", error);
-        return;
+        return None;
     }
-    if let Err(error) = normfs.enqueue(queue_id, Bytes::from(buf)) {
-        error!("Failed to publish PWM output RX envelope: {}", error);
-    }
+    Some(Bytes::from(buf))
 }
 
 impl OutputRuntime {

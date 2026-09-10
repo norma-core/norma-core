@@ -1,13 +1,13 @@
+use bytes::Bytes;
+use memmap2::MmapMut;
+use normfs::NormFS;
+use normfs::UintN;
+use parking_lot::Mutex;
+use prost::Message;
+use station_iface::StationEngine;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicU64, Ordering};
-use normfs::NormFS;
-use station_iface::StationEngine;
 use tokio::sync::mpsc;
-use bytes::Bytes;
-use normfs::UintN;
-use prost::Message;
-use memmap2::MmapMut;
-use parking_lot::Mutex;
 
 pub mod proto {
     pub mod normvla {
@@ -49,20 +49,45 @@ impl ShmWriter {
         let buffer_size = total_size / BUFFER_COUNT;
         let max_data_size = buffer_size - HEADER_SIZE;
 
-        let file = std::fs::OpenOptions::new()
+        let with_path = |e: std::io::Error| {
+            normfs::Error::Io(std::io::Error::new(
+                e.kind(),
+                format!("inference shm {}: {e}", shm_path.display()),
+            ))
+        };
+        log::info!(
+            "Opening inference shm {} ({}MB)",
+            shm_path.display(),
+            shm_size_mb
+        );
+        // No O_CREAT on an existing file: fs.protected_regular refuses that
+        // for another user's file in /dev/shm, even for root.
+        let file = match std::fs::OpenOptions::new()
             .read(true)
             .write(true)
-            .create(true)
             .open(shm_path)
-            .map_err(|e| normfs::Error::Io(e))?;
+        {
+            Ok(file) => file,
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => std::fs::OpenOptions::new()
+                .read(true)
+                .write(true)
+                .create_new(true)
+                .open(shm_path)
+                .map_err(with_path)?,
+            Err(e) => return Err(with_path(e)),
+        };
 
-        file.set_len(total_size as u64)
-            .map_err(|e| normfs::Error::Io(e))?;
+        file.set_len(total_size as u64).map_err(with_path)?;
 
-        log::info!("Starting inference shared memory writer at {:?} ({}MB, {} buffers, {} bytes per buffer)",
-            shm_path, shm_size_mb, BUFFER_COUNT, max_data_size);
+        log::info!(
+            "Starting inference shared memory writer at {:?} ({}MB, {} buffers, {} bytes per buffer)",
+            shm_path,
+            shm_size_mb,
+            BUFFER_COUNT,
+            max_data_size
+        );
 
-        let mut mmap = unsafe { MmapMut::map_mut(&file).map_err(|e| normfs::Error::Io(e))? };
+        let mut mmap = unsafe { MmapMut::map_mut(&file).map_err(with_path)? };
 
         // Initialize all buffer headers with MAX sequence
         for i in 0..BUFFER_COUNT {
@@ -82,8 +107,11 @@ impl ShmWriter {
 
     pub fn write_bytes(&self, data: &Bytes, timestamp_ns: u64) {
         if data.len() > self.max_data_size {
-            log::error!("Inference data too large to fit in shared memory buffer: {} bytes (max: {})",
-                data.len(), self.max_data_size);
+            log::error!(
+                "Inference data too large to fit in shared memory buffer: {} bytes (max: {})",
+                data.len(),
+                self.max_data_size
+            );
             return;
         }
 
@@ -99,7 +127,8 @@ impl ShmWriter {
 
         // Update header
         let header_offset = offset;
-        let header_slice = &mut mmap[header_offset..header_offset + std::mem::size_of::<DataFrameHeader>()];
+        let header_slice =
+            &mut mmap[header_offset..header_offset + std::mem::size_of::<DataFrameHeader>()];
         let header = unsafe { &mut *(header_slice.as_mut_ptr() as *mut DataFrameHeader) };
 
         header.data_size = data.len() as u32;
@@ -121,7 +150,10 @@ pub async fn start<T: StationEngine>(
         return Ok(());
     }
 
-    log::info!("Starting inference driver with {} configurations", inference_configs.len());
+    log::info!(
+        "Starting inference driver with {} configurations",
+        inference_configs.len()
+    );
 
     // Create a channel for each inference config
     let mut channels = Vec::new();
@@ -139,7 +171,9 @@ pub async fn start<T: StationEngine>(
         );
 
         // Create unbounded channel for this inference config
-        let (tx, rx) = mpsc::unbounded_channel::<(UintN, station_iface::iface_proto::inference::InferenceRx)>();
+        let (tx, rx) =
+            mpsc::unbounded_channel::<(UintN, station_iface::iface_proto::inference::InferenceRx)>(
+            );
 
         let channel = InferenceChannel {
             tx: tx.clone(),
@@ -162,7 +196,10 @@ pub async fn start<T: StationEngine>(
 
         tokio::spawn(async move {
             let mut rx = rx;
-            log::info!("Inference processor started for queue: {}", config_clone.queue_id);
+            log::info!(
+                "Inference processor started for queue: {}",
+                config_clone.queue_id
+            );
             while let Some((id, inference_rx)) = rx.recv().await {
                 if let Err(e) = formats::process_inference_entry(
                     &normfs_clone,
@@ -170,11 +207,20 @@ pub async fn start<T: StationEngine>(
                     &inference_rx,
                     &config_clone,
                     shm_writer_clone.as_ref().map(|w| w.as_ref()),
-                ).await {
-                    log::error!("Failed to process inference entry for queue {}: {}", config_clone.queue_id, e);
+                )
+                .await
+                {
+                    log::error!(
+                        "Failed to process inference entry for queue {}: {}",
+                        config_clone.queue_id,
+                        e
+                    );
                 }
             }
-            log::warn!("Inference processor exited for queue: {} (channel closed)", config_clone.queue_id);
+            log::warn!(
+                "Inference processor exited for queue: {} (channel closed)",
+                config_clone.queue_id
+            );
         });
     }
 
@@ -182,34 +228,41 @@ pub async fn start<T: StationEngine>(
 
     // Subscribe to inference-states queue
     let inference_states_queue_id = normfs.resolve(INFERENCE_STATES_QUEUE);
-    normfs.subscribe(&inference_states_queue_id, Box::new(move |entries: &[(UintN, Bytes)]| {
-        for (id, data) in entries {
-            // Parse InferenceRx once
-            let inference_rx = match station_iface::iface_proto::inference::InferenceRx::decode(data.as_ref()) {
-                Ok(rx) => rx,
-                Err(e) => {
-                    log::error!("Failed to decode InferenceRx at id {}: {}", id, e);
-                    continue;
-                }
-            };
+    normfs.subscribe(
+        &inference_states_queue_id,
+        Box::new(move |entries: &[(UintN, Bytes)]| {
+            for (id, data) in entries {
+                // Parse InferenceRx once
+                let inference_rx =
+                    match station_iface::iface_proto::inference::InferenceRx::decode(data.as_ref())
+                    {
+                        Ok(rx) => rx,
+                        Err(e) => {
+                            log::error!("Failed to decode InferenceRx at id {}: {}", id, e);
+                            continue;
+                        }
+                    };
 
-            let timestamp_ns = inference_rx.monotonic_stamp_ns;
+                let timestamp_ns = inference_rx.monotonic_stamp_ns;
 
-            // Check each channel's interval and send if elapsed
-            for channel in channels.iter() {
-                let last_ts = channel.last_timestamp_ns.load(Ordering::Relaxed);
-                let elapsed = timestamp_ns.saturating_sub(last_ts);
+                // Check each channel's interval and send if elapsed
+                for channel in channels.iter() {
+                    let last_ts = channel.last_timestamp_ns.load(Ordering::Relaxed);
+                    let elapsed = timestamp_ns.saturating_sub(last_ts);
 
-                if elapsed >= channel.interval_ns {
-                    if let Err(e) = channel.tx.send((id.clone(), inference_rx.clone())) {
-                        log::error!("Failed to send to inference channel: {}", e);
+                    if elapsed >= channel.interval_ns {
+                        if let Err(e) = channel.tx.send((id.clone(), inference_rx.clone())) {
+                            log::error!("Failed to send to inference channel: {}", e);
+                        }
+                        channel
+                            .last_timestamp_ns
+                            .store(timestamp_ns, Ordering::Relaxed);
                     }
-                    channel.last_timestamp_ns.store(timestamp_ns, Ordering::Relaxed);
                 }
             }
-        }
-        true
-    }))?;
+            true
+        }),
+    )?;
 
     log::info!("Inference driver started");
 

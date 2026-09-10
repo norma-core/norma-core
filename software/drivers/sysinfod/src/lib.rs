@@ -1,8 +1,8 @@
 use bytes::Bytes;
 use normfs::NormFS;
 use prost::Message;
-use station_iface::StationEngine;
 use station_iface::iface_proto::drivers::QueueDataType;
+use station_iface::StationEngine;
 #[cfg(target_os = "linux")]
 use std::fs;
 #[cfg(target_os = "macos")]
@@ -116,7 +116,11 @@ impl SystemMonitor {
         let mut buf = Vec::new();
         envelope.encode(&mut buf)?;
 
-        self.normfs.enqueue(&self.queue_id, Bytes::from(buf))?;
+        if let Err(e) = self.normfs.try_enqueue(&self.queue_id, Bytes::from(buf))
+            && !matches!(e, normfs::Error::WouldBlock)
+        {
+            eprintln!("Failed to enqueue system info: {e}");
+        }
 
         Ok(())
     }

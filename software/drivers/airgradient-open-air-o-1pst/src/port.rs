@@ -5,10 +5,10 @@ use crate::driver::device_rx_queue_path;
 use crate::parse;
 use bytes::Bytes;
 use log::{debug, error, info};
-use normfs::{NormFS, QueueId};
+use normfs::NormFS;
 use prost::Message;
-use station_iface::StationEngine;
 use station_iface::iface_proto::drivers::QueueDataType;
+use station_iface::{Backpressure, StationEngine, enqueue_with};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 use tokio::io::{AsyncBufReadExt, BufReader};
@@ -52,11 +52,14 @@ impl<T: StationEngine> AirGradientPort<T> {
         let port = tokio_serial::new(&port_name, self.device.port_baud_rate)
             .timeout(Duration::from_millis(OPEN_TIMEOUT_MS))
             .open_native_async()?;
-        info!("Successfully opened AirGradient Open Air O-1PST port: {}", port_name);
+        info!(
+            "Successfully opened AirGradient Open Air O-1PST port: {}",
+            port_name
+        );
 
         let mut reader = BufReader::new(port);
         let mut buf: Vec<u8> = Vec::with_capacity(256);
-        let mut session: Option<(QueueId, Arc<AirGradientDevice>)> = None;
+        let mut session: Option<(normfs::QueueId, Arc<AirGradientDevice>)> = None;
         let mut malformed_count: u64 = 0;
         let mut last_malformed_log: Option<Instant> = None;
 
@@ -65,7 +68,11 @@ impl<T: StationEngine> AirGradientPort<T> {
                 Err(reason) => break reason,
                 Ok(Line::Eof) => break "device closed the connection (EOF)".to_string(),
                 Ok(Line::Oversized) => {
-                    note_malformed(&mut malformed_count, &mut last_malformed_log, b"<oversized line>");
+                    note_malformed(
+                        &mut malformed_count,
+                        &mut last_malformed_log,
+                        b"<oversized line>",
+                    );
                 }
                 Ok(Line::Ready) => {
                     let line = String::from_utf8_lossy(&buf);
@@ -79,7 +86,7 @@ impl<T: StationEngine> AirGradientPort<T> {
                                 .to_string();
 
                             let rx_queue_id = match self.ensure_device_queue(&device).await {
-                                Ok(rx_queue_id) => rx_queue_id,
+                                Ok(id) => id,
                                 Err(err) => break format!("failed to create device queue: {err}"),
                             };
                             info!(
@@ -93,7 +100,8 @@ impl<T: StationEngine> AirGradientPort<T> {
                                 AirGradientSignalType::AirgradientConnected,
                                 Some(payload.clone()),
                                 String::new(),
-                            );
+                            )
+                            .await;
                             session = Some((rx_queue_id, device));
                         }
 
@@ -104,7 +112,8 @@ impl<T: StationEngine> AirGradientPort<T> {
                                 AirGradientSignalType::AirgradientMeasurement,
                                 Some(payload),
                                 String::new(),
-                            );
+                            )
+                            .await;
                         }
                     } else {
                         note_malformed(
@@ -117,7 +126,10 @@ impl<T: StationEngine> AirGradientPort<T> {
             }
         };
 
-        info!("AirGradient Open Air O-1PST port {} closed: {}", port_name, reason);
+        info!(
+            "AirGradient Open Air O-1PST port {} closed: {}",
+            port_name, reason
+        );
         if let Some((rx_queue_id, device)) = &session {
             self.publish(
                 rx_queue_id,
@@ -125,7 +137,11 @@ impl<T: StationEngine> AirGradientPort<T> {
                 AirGradientSignalType::AirgradientDisconnected,
                 None,
                 reason,
-            );
+            )
+            .await;
+            if let Err(err) = self.normfs.close_queue(rx_queue_id).await {
+                error!("Failed to close AirGradient queue {}: {}", rx_queue_id, err);
+            }
         }
         Ok(())
     }
@@ -133,9 +149,11 @@ impl<T: StationEngine> AirGradientPort<T> {
     async fn ensure_device_queue(
         &self,
         device: &AirGradientDevice,
-    ) -> Result<QueueId, Box<dyn std::error::Error + Send + Sync>> {
+    ) -> Result<normfs::QueueId, Box<dyn std::error::Error + Send + Sync>> {
         let rx_queue_id = self.normfs.resolve(&device_rx_queue_path(device));
-        self.normfs.ensure_queue_exists_for_write(&rx_queue_id).await?;
+        self.normfs
+            .ensure_queue_exists_for_write(&rx_queue_id)
+            .await?;
         self.station_engine.register_queue(
             &rx_queue_id,
             QueueDataType::QdtAirgradientOpenAirO1pstRx,
@@ -148,9 +166,9 @@ impl<T: StationEngine> AirGradientPort<T> {
         Ok(rx_queue_id)
     }
 
-    fn publish(
+    async fn publish(
         &self,
-        rx_queue_id: &QueueId,
+        rx_queue_id: &normfs::QueueId,
         device: &AirGradientDevice,
         signal_type: AirGradientSignalType,
         data: Option<Bytes>,
@@ -168,11 +186,23 @@ impl<T: StationEngine> AirGradientPort<T> {
 
         let mut buffer = Vec::new();
         if let Err(err) = envelope.encode(&mut buffer) {
-            error!("Failed to encode AirGradient Open Air O-1PST envelope: {}", err);
+            error!(
+                "Failed to encode AirGradient Open Air O-1PST envelope: {}",
+                err
+            );
             return;
         }
-        if let Err(err) = self.normfs.enqueue(rx_queue_id, Bytes::from(buffer)) {
-            error!("Failed to enqueue AirGradient Open Air O-1PST envelope: {}", err);
+        let policy = if signal_type == AirGradientSignalType::AirgradientMeasurement {
+            Backpressure::Skip
+        } else {
+            Backpressure::Keep
+        };
+        if let Err(err) = enqueue_with(&self.normfs, rx_queue_id, Bytes::from(buffer), policy).await
+        {
+            error!(
+                "Failed to enqueue AirGradient Open Air O-1PST envelope: {}",
+                err
+            );
         }
     }
 }
@@ -196,7 +226,11 @@ async fn read_line(
             if buf.is_empty() && !oversized {
                 return Ok(Line::Eof);
             }
-            return Ok(if oversized { Line::Oversized } else { Line::Ready });
+            return Ok(if oversized {
+                Line::Oversized
+            } else {
+                Line::Ready
+            });
         }
 
         match chunk.iter().position(|&byte| byte == b'\n') {
@@ -207,7 +241,11 @@ async fn read_line(
                     oversized = true;
                 }
                 reader.consume(pos + 1);
-                return Ok(if oversized { Line::Oversized } else { Line::Ready });
+                return Ok(if oversized {
+                    Line::Oversized
+                } else {
+                    Line::Ready
+                });
             }
             None => {
                 let len = chunk.len();

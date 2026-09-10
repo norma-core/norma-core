@@ -1,6 +1,8 @@
 use crate::queues::MainQueue;
 use clap::{Parser, ValueEnum};
-use normfs::{CloudSettings, NormFS, NormFsSettings, PersistenceMode, QueueConfig, QueueSettings};
+use normfs::{
+    CloudSettings, NormFS, NormFsSettings, PersistenceMode, PoolKind, QueueConfig, QueueSettings,
+};
 use normfs_types::{CompressionType, EncryptionType};
 use parking_lot::Mutex;
 use station_iface::StationEngine;
@@ -54,6 +56,12 @@ impl From<NormFsPersistenceMode> for PersistenceMode {
         }
     }
 }
+
+/// Page size of the active pool, and with it the largest record.
+const ACTIVE_PAGE_SIZE: usize = 4 * 1024 * 1024;
+/// How long a record can sit in memory before the WAL writes it. A full page
+/// and the close write at once.
+const WAL_WRITE_INTERVAL: std::time::Duration = std::time::Duration::from_secs(2);
 
 /// NormaCore.Dev station: physical operations platform
 #[derive(Parser, Debug)]
@@ -137,6 +145,27 @@ fn validate_normfs_file_size(args: &Args) -> Result<(), io::Error> {
 /// Rejects the CLI value up front (clap fails `Args::parse()` with a clear
 /// message) rather than letting a typo'd `--static-path` silently fall back
 /// to embedded assets on every request.
+const BIND_ATTEMPTS: u32 = 30;
+const BIND_RETRY_INTERVAL: std::time::Duration = std::time::Duration::from_millis(100);
+
+/// Retries `AddrInUse`; macOS refuses a just-closed port briefly.
+async fn bind_retrying<T, F, Fut>(what: &str, addr: SocketAddr, mut bind: F) -> Result<T, String>
+where
+    F: FnMut() -> Fut,
+    Fut: std::future::Future<Output = std::io::Result<T>>,
+{
+    for attempt in 1..=BIND_ATTEMPTS {
+        match bind().await {
+            Ok(bound) => return Ok(bound),
+            Err(e) if e.kind() == io::ErrorKind::AddrInUse && attempt < BIND_ATTEMPTS => {
+                tokio::time::sleep(BIND_RETRY_INTERVAL).await;
+            }
+            Err(e) => return Err(format!("{what} port {} is busy: {e}", addr.port())),
+        }
+    }
+    unreachable!("the last attempt returns")
+}
+
 fn parse_existing_dir(s: &str) -> Result<PathBuf, String> {
     let path = PathBuf::from(s);
     if !path.is_dir() {
@@ -171,6 +200,65 @@ struct Station {
 struct Engine {
     main_queue: Option<MainQueue>,
     inference: Mutex<Option<inference::Inference>>,
+}
+
+fn queue_settings() -> Result<QueueSettings, Box<dyn std::error::Error>> {
+    use CompressionType::{None as Raw, Zstd};
+    use PoolKind::{Active, Passive};
+
+    // Matched against the absolute id `/<instance_id>/<path>`, first match wins, so every
+    // pattern starts with `*`. Active pages are `ACTIVE_PAGE_SIZE`, passive 32 KiB.
+    let rules = [
+        // (pattern, pool, compression, fsync)
+        // Before `*video/*`, which would match it.
+        ("*/usbvideo/tx", Passive, Zstd, true),
+        // Wide records.
+        ("*video/*", Active, Raw, false),
+        ("*/hikmicro-thermal/*", Active, Zstd, false),
+        ("*dmesg/*", Active, Zstd, false),
+        ("*/inference-states", Active, Raw, false),
+        ("*/inference/*", Active, Raw, false),
+        ("*/*/inference", Active, Raw, false),
+        ("*/system/rx", Active, Zstd, true),
+        ("*/st3215/meta", Active, Zstd, true),
+        // Streams.
+        ("*/st3215/rx", Active, Zstd, true),
+        ("*/st3215/tx", Active, Zstd, true),
+        ("*/vesc-trampa/rx", Active, Zstd, true),
+        ("*/vesc-trampa/tx", Active, Zstd, true),
+        ("*/yahboom-dogzilla-lite/rx", Active, Zstd, true),
+        ("*/yahboom-dogzilla-lite/tx", Active, Zstd, true),
+        ("*/pwm-output/rx", Active, Zstd, true),
+        ("*/pwm-output/tx", Active, Zstd, true),
+        ("*/commands", Active, Zstd, true),
+        // 1 Hz sensors.
+        ("*/arduino-nicla-sense-env/rx", Active, Zstd, true),
+        ("*/ina226/*/rx", Active, Zstd, true),
+        ("*/airgradient-open-air-o-1pst/*/rx", Active, Zstd, true),
+        ("*/victron-smartsolar-mppt/*/rx", Active, Zstd, true),
+        // Rare records.
+        ("*/main", Passive, Zstd, true),
+        ("*/startups", Passive, Zstd, true),
+        ("*/inference-tags/rx", Passive, Zstd, true),
+        ("*/motors_mirroring/modes", Passive, Zstd, true),
+    ];
+
+    QueueSettings::new(
+        rules
+            .iter()
+            .map(|&(pattern, pool, compression_type, enable_fsync)| {
+                let config = QueueConfig {
+                    compression_type,
+                    enable_fsync,
+                    encryption_type: EncryptionType::Aes,
+                    pool,
+                };
+                (pattern.to_string(), config)
+            })
+            .collect(),
+        QueueConfig::default(), // passive, for queues not listed above
+    )
+    .map_err(Into::into)
 }
 
 impl station_iface::StationEngine for Engine {
@@ -241,53 +329,18 @@ impl Station {
                 NormFsPersistenceMode::MemoryOnly => None,
             },
             max_memory_usage: args.max_memory_usage,
+            mem_page_size: ACTIVE_PAGE_SIZE,
             persistence_mode: args.normfs_persistence_mode.into(),
             ..Default::default()
         };
         settings.wal_settings.max_file_size = args.normfs_file_size;
+        settings.wal_settings.write_interval = WAL_WRITE_INTERVAL;
         settings.wal_settings.write_buffer_size = settings
             .wal_settings
             .write_buffer_size
             .min(args.normfs_file_size);
 
-        // Configure queue-specific settings
-        settings.queue_settings = QueueSettings::new(
-            vec![
-                (
-                    "*video/*".to_string(),
-                    QueueConfig {
-                        compression_type: CompressionType::None,
-                        enable_fsync: false,
-                        encryption_type: EncryptionType::Aes,
-                    },
-                ),
-                (
-                    "*inference-queues/*".to_string(),
-                    QueueConfig {
-                        compression_type: CompressionType::None,
-                        enable_fsync: false,
-                        encryption_type: EncryptionType::Aes,
-                    },
-                ),
-                (
-                    "hikmicro-thermal/*".to_string(),
-                    QueueConfig {
-                        compression_type: CompressionType::Zstd,
-                        enable_fsync: false,
-                        encryption_type: EncryptionType::Aes,
-                    },
-                ),
-                (
-                    "*dmesg/*".to_string(),
-                    QueueConfig {
-                        compression_type: CompressionType::Zstd,
-                        enable_fsync: false,
-                        encryption_type: EncryptionType::Aes,
-                    },
-                ),
-            ],
-            QueueConfig::default(), // default config for all other queues
-        )?;
+        settings.queue_settings = queue_settings()?;
 
         // Configure Cloud settings if provided
         if matches!(
@@ -337,7 +390,9 @@ impl Station {
     async fn start_main_queue(&mut self) -> Result<(), Box<dyn std::error::Error>> {
         let main_queue =
             MainQueue::new(self.normfs.clone(), self.normfs.get_instance_id_bytes()).await?;
-        main_queue.send_app_start().unwrap();
+        if let Err(e) = main_queue.send_app_start().await {
+            log::error!("Failed to record the app start: {}", e);
+        }
 
         if let Some(engine) = Arc::get_mut(&mut self.engine) {
             engine.main_queue = Some(main_queue);
@@ -784,7 +839,10 @@ impl Station {
         &self,
         addr: SocketAddr,
     ) -> Result<tokio::task::JoinHandle<()>, Box<dyn std::error::Error>> {
-        let server = normfs::server::Server::new(addr, self.normfs.clone()).await?;
+        let server = bind_retrying("NormFS TCP", addr, || {
+            normfs::server::Server::new(addr, self.normfs.clone())
+        })
+        .await?;
         log::info!("NormFS server listening on {}", addr);
 
         Ok(tokio::spawn(async move {
@@ -843,6 +901,7 @@ impl Station {
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Args::parse();
 
+    log::info!("Station {}", VERSION);
     log::info!("TCP address: {:?}", args.tcp);
     log::info!("Max queue disk size: {} bytes", args.max_queue_disk_size);
     log::info!("NormFS file size: {} bytes", args.normfs_file_size);
@@ -868,54 +927,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     tags::start(station.normfs.clone()).await?;
 
-    let inference = inference::Inference::start(station.normfs.clone());
+    let inference = inference::Inference::start(station.normfs.clone()).await?;
     *station.engine.inference.lock() = Some(inference);
 
-    station.start_drivers().await?;
-    log::info!("Drivers started");
-
-    let mut server_handle: Option<tokio::task::JoinHandle<()>> = None;
-    if let Some(tcp_addr_str) = args.tcp {
-        let tcp_addr: SocketAddr = tcp_addr_str
-            .parse()
-            .or_else(|_| format!("0.0.0.0:{}", tcp_addr_str).parse())
-            .map_err(|e| format!("Invalid address '{}': {}", tcp_addr_str, e))?;
-
-        if let Err(e) = tokio::net::TcpListener::bind(tcp_addr).await {
-            panic!("NormFS TCP port {} is busy: {}", tcp_addr.port(), e);
+    let services = match start_services(&station, &args).await {
+        Ok(services) => services,
+        Err(e) => {
+            log::error!("Startup failed: {}", e);
+            shutdown_station(&station, None).await?;
+            return Err(e);
         }
-
-        server_handle = Some(station.start_server(tcp_addr).await?);
-    }
-
-    let web_shutdown = Arc::new(AtomicBool::new(false));
-    let mut web_server_handle: Option<tokio::task::JoinHandle<()>> = None;
-    if let Some(web_addr_str) = args.web {
-        let web_addr: SocketAddr = web_addr_str
-            .parse()
-            .or_else(|_| format!("0.0.0.0:{}", web_addr_str).parse())
-            .map_err(|e| format!("Invalid address '{}': {}", web_addr_str, e))?;
-
-        if let Err(e) = tokio::net::TcpListener::bind(web_addr).await {
-            panic!("Web server port {} is busy: {}", web_addr.port(), e);
-        }
-
-        let normfs_clone = station.normfs.clone();
-        let web_shutdown_clone = web_shutdown.clone();
-        let static_path = args.static_path.clone();
-        web_server_handle = Some(tokio::spawn(async move {
-            if let Err(e) = web::server::start_server(
-                web_addr,
-                normfs_clone,
-                web_shutdown_clone,
-                static_path,
-            )
-            .await
-            {
-                log::error!("Web server error: {}", e);
-            }
-        }));
-    }
+    };
 
     // On macOS, periodically tick the main run loop for AVFoundation notifications
     // This MUST run on the main thread, so we use select! instead of spawn
@@ -942,29 +964,163 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         log::info!("\nShutting down...");
     }
 
-    if let Some(handle) = web_server_handle {
-        log::info!("Shutting down web server...");
-        web_shutdown.store(true, Ordering::Relaxed);
-        if let Err(e) = handle.await {
-            log::error!("Web server shutdown error: {}", e);
-        } else {
-            log::info!("Web server shut down.");
-        }
+    shutdown_station(&station, Some(services)).await?;
+    log::info!("Data persisted at: {:?}", args.normfs_base_folder);
+
+    Ok(())
+}
+
+struct Services {
+    server: Option<tokio::task::JoinHandle<()>>,
+    web: Option<tokio::task::JoinHandle<()>>,
+    web_shutdown: Arc<AtomicBool>,
+}
+
+async fn start_services(
+    station: &Station,
+    args: &Args,
+) -> Result<Services, Box<dyn std::error::Error>> {
+    station.start_drivers().await?;
+    log::info!("Drivers started");
+
+    let mut server_handle = None;
+    if let Some(tcp_addr_str) = args.tcp.as_deref() {
+        let tcp_addr: SocketAddr = tcp_addr_str
+            .parse()
+            .or_else(|_| format!("0.0.0.0:{}", tcp_addr_str).parse())
+            .map_err(|e| format!("Invalid address '{}': {}", tcp_addr_str, e))?;
+
+        server_handle = Some(station.start_server(tcp_addr).await?);
     }
 
-    if let Some(handle) = server_handle {
-        log::info!("Shutting down TCP server...");
-        handle.abort();
-        log::info!("TCP server shut down.");
+    let web_shutdown = Arc::new(AtomicBool::new(false));
+    let mut web_server_handle = None;
+    if let Some(web_addr_str) = args.web.as_deref() {
+        let web_addr: SocketAddr = web_addr_str
+            .parse()
+            .or_else(|_| format!("0.0.0.0:{}", web_addr_str).parse())
+            .map_err(|e| format!("Invalid address '{}': {}", web_addr_str, e))?;
+
+        let listener = bind_retrying("Web server", web_addr, || {
+            tokio::net::TcpListener::bind(web_addr)
+        })
+        .await?;
+
+        let normfs_clone = station.normfs.clone();
+        let web_shutdown_clone = web_shutdown.clone();
+        let static_path = args.static_path.clone();
+        web_server_handle = Some(tokio::spawn(async move {
+            if let Err(e) =
+                web::server::start_server(listener, normfs_clone, web_shutdown_clone, static_path)
+                    .await
+            {
+                log::error!("Web server error: {}", e);
+            }
+        }));
+    }
+
+    Ok(Services {
+        server: server_handle,
+        web: web_server_handle,
+        web_shutdown,
+    })
+}
+
+/// Also the exit path of a failed startup.
+async fn shutdown_station(
+    station: &Station,
+    services: Option<Services>,
+) -> Result<(), Box<dyn std::error::Error>> {
+    if let Some(services) = services {
+        if let Some(handle) = services.web {
+            log::info!("Shutting down web server...");
+            services.web_shutdown.store(true, Ordering::Relaxed);
+            if let Err(e) = handle.await {
+                log::error!("Web server shutdown error: {}", e);
+            } else {
+                log::info!("Web server shut down.");
+            }
+        }
+
+        if let Some(handle) = services.server {
+            log::info!("Shutting down TCP server...");
+            handle.abort();
+            log::info!("TCP server shut down.");
+        }
     }
 
     if let Some(inference) = station.engine.inference.lock().as_ref() {
         inference.shutdown();
     }
 
-    station.shutdown().await?;
+    station.shutdown().await
+}
 
-    log::info!("Data persisted at: {:?}", args.normfs_base_folder);
+#[cfg(test)]
+mod tests {
+    use super::*;
 
-    Ok(())
+    fn pool_for(queue_path: &str) -> PoolKind {
+        queue_settings().unwrap().get_config(queue_path).pool
+    }
+
+    #[test]
+    fn wide_records_and_streams_draw_from_the_active_arena() {
+        for queue in [
+            "/inst123/usbvideo/9f86d081884c7d65",
+            "/inst123/video/ov5647",
+            "/inst123/hikmicro-thermal/E12345",
+            "/inst123/dmesg/rx",
+            "/inst123/system/rx",
+            "/inst123/st3215/meta",
+            "/inst123/inference-states",
+            "/inst123/inference/normvla",
+            "/inst123/inference/mirroring",
+            "/inst123/st3215/inference",
+            "/inst123/vesc-trampa/inference",
+            "/inst123/yahboom-dogzilla-lite/inference",
+            "/inst123/st3215/rx",
+            "/inst123/st3215/tx",
+            "/inst123/vesc-trampa/rx",
+            "/inst123/vesc-trampa/tx",
+            "/inst123/yahboom-dogzilla-lite/rx",
+            "/inst123/yahboom-dogzilla-lite/tx",
+            "/inst123/pwm-output/rx",
+            "/inst123/pwm-output/tx",
+            "/inst123/commands",
+            "/inst123/arduino-nicla-sense-env/rx",
+            "/inst123/ina226/i2c-1-0x40/rx",
+            "/inst123/airgradient-open-air-o-1pst/usb-1-2/rx",
+            "/inst123/victron-smartsolar-mppt/HQ2222ABCDE/rx",
+        ] {
+            assert_eq!(pool_for(queue), PoolKind::Active, "{queue}");
+        }
+    }
+
+    #[test]
+    fn rare_queues_stay_on_the_passive_arena() {
+        for queue in [
+            "/inst123/main",
+            "/inst123/startups",
+            "/inst123/inference-tags/rx",
+            "/inst123/motors_mirroring/modes",
+            "/inst123/usbvideo/tx",
+        ] {
+            assert_eq!(pool_for(queue), PoolKind::Passive, "{queue}");
+        }
+    }
+
+    /// A rule without a leading `*` never matches an absolute id.
+    #[test]
+    fn a_rule_without_a_leading_star_matches_no_absolute_id() {
+        let settings = QueueSettings::new(
+            vec![("hikmicro-thermal/*".to_string(), QueueConfig::active())],
+            QueueConfig::default(),
+        )
+        .unwrap();
+        assert_eq!(
+            settings.get_config("/inst123/hikmicro-thermal/E12345").pool,
+            PoolKind::Passive
+        );
+    }
 }

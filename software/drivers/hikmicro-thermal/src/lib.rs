@@ -11,7 +11,9 @@ use bytes::BytesMut;
 use log::{info, warn};
 use normfs::NormFS;
 use prost::Message;
-use station_iface::{StationEngine, iface_proto::drivers::QueueDataType};
+use station_iface::{
+    StationEngine, WRITE_TIMEOUT, enqueue_waiting, iface_proto::drivers::QueueDataType,
+};
 use tokio::task::{JoinHandle, JoinSet};
 
 pub mod hikmicro_proto {
@@ -34,6 +36,7 @@ pub const THERMAL_Y16_LEN: usize = SENSOR_WIDTH as usize * SENSOR_HEIGHT as usiz
 pub const RUNTIME_BLOCK_LEN: usize = 2048;
 pub const COMPACT_PAYLOAD_LEN: usize = THERMAL_Y16_LEN + RUNTIME_BLOCK_LEN;
 const DISCOVERY_POLL_INTERVAL: Duration = Duration::from_secs(1);
+const CAPTURE_STOP_TIMEOUT: Duration = Duration::from_secs(5);
 
 #[derive(Debug, Clone)]
 pub struct HikmicroThermalConfig {
@@ -121,16 +124,22 @@ async fn run_manager<T: StationEngine + Send + Sync + 'static>(
                         running.lock().unwrap().remove(&camera.unique_id);
                         continue;
                     }
+                    let sink = Sink {
+                        normfs: normfs.clone(),
+                        queue_id: queue_id.clone(),
+                        runtime: tokio::runtime::Handle::current(),
+                    };
                     station_engine.register_queue(
                         &queue_id,
                         QueueDataType::QdtHikmicroThermal,
                         vec![],
                     );
 
-                    let normfs_capture = normfs.clone();
-                    let queue_id_capture = queue_id.clone();
+                    let sink_capture = sink;
                     let stop_capture = stop.clone();
                     let running_capture = running.clone();
+                    let close_normfs = normfs.clone();
+                    let close_queue_id = queue_id.clone();
                     let unique_id = camera.unique_id.clone();
                     let timeout = config.frame_timeout;
                     let frame_skip = config.frame_skip;
@@ -138,8 +147,7 @@ async fn run_manager<T: StationEngine + Send + Sync + 'static>(
                     captures.spawn(async move {
                         let result = run_camera_capture(
                             camera,
-                            normfs_capture,
-                            queue_id_capture,
+                            sink_capture,
                             stop_capture,
                             timeout,
                             frame_skip,
@@ -152,6 +160,9 @@ async fn run_manager<T: StationEngine + Send + Sync + 'static>(
                             );
                         } else {
                             info!("HIKMICRO capture {} stopped", unique_id);
+                        }
+                        if let Err(e) = close_normfs.close_queue(&close_queue_id).await {
+                            warn!("Failed to close HIKMICRO queue {}: {}", close_queue_id, e);
                         }
                         running_capture.lock().unwrap().remove(&unique_id);
                     });
@@ -169,48 +180,48 @@ async fn run_manager<T: StationEngine + Send + Sync + 'static>(
         tokio::time::sleep(DISCOVERY_POLL_INTERVAL).await;
     }
 
-    while let Some(result) = captures.join_next().await {
-        if let Err(e) = result {
-            warn!(
-                "HIKMICRO capture task failed to join during shutdown: {}",
-                e
-            );
+    let drained = tokio::time::timeout(CAPTURE_STOP_TIMEOUT, async {
+        while let Some(result) = captures.join_next().await {
+            if let Err(e) = result {
+                warn!(
+                    "HIKMICRO capture task failed to join during shutdown: {}",
+                    e
+                );
+            }
         }
+    })
+    .await;
+    if drained.is_err() {
+        warn!(
+            "HIKMICRO capture tasks did not finish within {:?}",
+            CAPTURE_STOP_TIMEOUT
+        );
     }
 }
 
 #[cfg(target_os = "linux")]
 async fn run_camera_capture(
     camera: CameraIdentity,
-    normfs: Arc<NormFS>,
-    queue_id: normfs::QueueId,
+    sink: Sink,
     stop: Arc<AtomicBool>,
     frame_timeout: Duration,
     frame_skip: u32,
 ) -> Result<(), String> {
     let device_info_camera = camera.clone();
-    let device_info_normfs = normfs.clone();
-    let device_info_queue_id = queue_id.clone();
+    let device_info_sink = sink.clone();
     let device_info = tokio::task::spawn_blocking(move || {
-        linux::enqueue_device_info(
-            &device_info_camera,
-            device_info_normfs.as_ref(),
-            &device_info_queue_id,
-        )
+        linux::enqueue_device_info(&device_info_camera, &device_info_sink)
     })
     .await
     .map_err(|e| format!("HIKMICRO device-info task failed: {}", e))??;
 
     let capture_camera = camera.clone();
-    let capture_normfs = normfs.clone();
-    let capture_queue_id = queue_id.clone();
     let capture_stop = stop.clone();
     tokio::task::spawn_blocking(move || {
         linux::capture_continuous(
             &capture_camera,
             device_info,
-            capture_normfs.as_ref(),
-            &capture_queue_id,
+            &sink,
             capture_stop.as_ref(),
             frame_timeout,
             frame_skip,
@@ -261,17 +272,39 @@ pub struct CameraIdentity {
     pub unique_id: String,
 }
 
+/// Write target for the capture thread, which runs on `spawn_blocking`.
+#[derive(Clone)]
+pub(crate) struct Sink {
+    pub(crate) normfs: Arc<NormFS>,
+    pub(crate) queue_id: normfs::QueueId,
+    pub(crate) runtime: tokio::runtime::Handle,
+}
+
 fn enqueue_envelope(
-    normfs: &NormFS,
-    queue_id: &normfs::QueueId,
+    sink: &Sink,
     envelope: hikmicro_proto::hikmicro::RxEnvelope,
 ) -> Result<(), String> {
+    let frames = envelope.frames.is_some();
     let mut buf = BytesMut::new();
     envelope.encode(&mut buf).map_err(|e| e.to_string())?;
-    normfs
-        .enqueue(queue_id, buf.freeze())
-        .map_err(|e| e.to_string())?;
-    Ok(())
+    let data = buf.freeze();
+
+    if frames {
+        match sink.normfs.try_enqueue(&sink.queue_id, data) {
+            Ok(_) | Err(normfs::Error::WouldBlock) => Ok(()),
+            Err(e) => Err(e.to_string()),
+        }
+    } else {
+        // Bounded so shutdown can join this thread.
+        sink.runtime
+            .block_on(enqueue_waiting(
+                &sink.normfs,
+                &sink.queue_id,
+                data,
+                WRITE_TIMEOUT,
+            ))
+            .map_err(|e| e.to_string())
+    }
 }
 
 fn compact_layout() -> hikmicro_proto::hikmicro::CompactPayloadLayout {

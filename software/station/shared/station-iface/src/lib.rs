@@ -1,8 +1,10 @@
 pub mod config;
+mod backpressure;
 mod traits;
 
 pub const COMMANDS_QUEUE_ID: &str = "commands";
 
+pub use backpressure::*;
 pub use traits::*;
 
 pub mod iface_proto {

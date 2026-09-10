@@ -6,6 +6,7 @@ use normfs::NormFS;
 use normfs::UintN;
 use parking_lot::{Condvar, Mutex};
 use prost::Message;
+use station_iface::{STARTUP_WRITE_TIMEOUT, enqueue_waiting};
 use std::sync::Arc;
 use tokio::sync::mpsc;
 
@@ -22,11 +23,17 @@ pub struct Inference {
     signal: InferenceSignal,
 }
 
+/// Stops the worker on drop; otherwise a failed startup hangs on the runtime drop.
+impl Drop for Inference {
+    fn drop(&mut self) {
+        self.shutdown();
+    }
+}
+
 impl Inference {
     pub fn shutdown(&self) {
         let _ = self.shutdown_tx.send(());
 
-        // Signal worker thread to wake up and exit
         let (lock, cvar) = &*self.signal;
         let mut signaled = lock.lock();
         *signaled = true;
@@ -45,7 +52,7 @@ impl Inference {
         Ok(())
     }
 
-    fn notify_startup(normfs: &Arc<NormFS>) -> Result<(), normfs::Error> {
+    async fn notify_startup(normfs: &Arc<NormFS>) -> Result<(), normfs::Error> {
         let inference_queue_id = normfs.resolve(QUEUE_ID);
         let inference_queue_ptr = match normfs.get_last_id(&inference_queue_id) {
             Ok(id) => id.value_to_bytes(),
@@ -63,12 +70,20 @@ impl Inference {
         };
 
         let startups_queue_id = normfs.resolve(STARTUPS_QUEUE_ID);
-        normfs.enqueue(&startups_queue_id, Bytes::from(startup.encode_to_vec()))?;
-        Ok(())
+        normfs
+            .ensure_queue_exists_for_write(&startups_queue_id)
+            .await?;
+        enqueue_waiting(
+            normfs,
+            &startups_queue_id,
+            Bytes::from(startup.encode_to_vec()),
+            STARTUP_WRITE_TIMEOUT,
+        )
+        .await
     }
 
-    pub fn start(normfs: Arc<NormFS>) -> Self {
-        if let Err(e) = Self::notify_startup(&normfs) {
+    pub async fn start(normfs: Arc<NormFS>) -> Result<Self, normfs::Error> {
+        if let Err(e) = Self::notify_startup(&normfs).await {
             log::error!("Failed to publish station startup: {:?}", e);
         }
 
@@ -78,11 +93,11 @@ impl Inference {
         let latest_pointers: Arc<DashMap<String, (UintN, i32)>> = Arc::new(DashMap::new());
 
         let queue_id = normfs.resolve(QUEUE_ID);
+        let worker_normfs = normfs.clone();
+        let worker_queue_id = queue_id.clone();
 
         let worker_signal = signal.clone();
-        let worker_normfs = normfs.clone();
         let worker_pointers = latest_pointers.clone();
-        let worker_queue_id = queue_id.clone();
 
         tokio::task::spawn_blocking(move || {
             let (lock, cvar) = &*worker_signal;
@@ -94,8 +109,10 @@ impl Inference {
                     cvar.wait(&mut signaled);
                 }
 
-                // Check if shutdown requested
-                if shutdown_rx.try_recv().is_ok() {
+                if !matches!(
+                    shutdown_rx.try_recv(),
+                    Err(mpsc::error::TryRecvError::Empty)
+                ) {
                     break;
                 }
 
@@ -124,11 +141,11 @@ impl Inference {
                         app_start_id: systime::get_app_start_id(),
                     };
 
-                    match worker_normfs.enqueue(&worker_queue_id, Bytes::from(rx.encode_to_vec())) {
-                        Ok(_) => {}
-                        Err(e) => {
-                            log::error!("Failed to enqueue inference state to NormFS: {:?}", e);
-                        }
+                    if let Err(e) =
+                        worker_normfs.try_enqueue(&worker_queue_id, Bytes::from(rx.encode_to_vec()))
+                        && !matches!(e, normfs::Error::WouldBlock)
+                    {
+                        log::error!("Failed to enqueue inference state: {e}");
                     }
                 }
 
@@ -139,12 +156,12 @@ impl Inference {
             log::info!("Inference worker thread exiting");
         });
 
-        Self {
+        Ok(Self {
             shutdown_tx,
             normfs,
             latest_pointers,
             signal,
-        }
+        })
     }
 
     pub fn register_queue(&self, queue_id: &normfs::QueueId, queue_data_type: i32) {

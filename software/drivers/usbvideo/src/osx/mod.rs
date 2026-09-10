@@ -5,6 +5,7 @@ use log::error;
 use std::ffi::{CStr, CString};
 use std::mem::MaybeUninit;
 use std::sync::Arc;
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::Duration;
 use tokio::time::Instant;
 
@@ -17,6 +18,8 @@ use station_iface::StationEngine;
 
 pub struct CameraMacDriver {
     enabled: bool,
+    /// Bumped by `stop`; a capture exits when it no longer matches.
+    stop_generation: AtomicU64,
 }
 
 impl Default for CameraMacDriver {
@@ -28,7 +31,10 @@ impl Default for CameraMacDriver {
 impl CameraMacDriver {
     pub fn new() -> Self {
         let enabled = unsafe { ffi::requestCameraAccess() == 0 };
-        Self { enabled }
+        Self {
+            enabled,
+            stop_generation: AtomicU64::new(0),
+        }
     }
 }
 
@@ -183,7 +189,12 @@ impl USBCameraDriver for CameraMacDriver {
 
         let mut frame_index = 0;
         let mut last_frame_time = Instant::now();
+        let stop_generation = self.stop_generation.load(Ordering::Acquire);
         loop {
+            if self.stop_generation.load(Ordering::Acquire) != stop_generation {
+                log::info!("Capture for camera {} stopped", camera.unique_id);
+                break;
+            }
             let max_buffer_size = 1920 * 1080 * 4;
             let mut buffer = vec![0u8; max_buffer_size];
 
@@ -309,7 +320,9 @@ impl USBCameraDriver for CameraMacDriver {
         }
     }
 
-    async fn stop(&self) {}
+    async fn stop(&self) {
+        self.stop_generation.fetch_add(1, Ordering::AcqRel);
+    }
 }
 
 /// Process main run loop briefly to handle AVFoundation notifications
@@ -317,5 +330,90 @@ impl USBCameraDriver for CameraMacDriver {
 pub fn process_main_run_loop() {
     unsafe {
         ffi::processMainRunLoop();
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::pipeline::USBCameraDriver;
+    use normfs::{NormFS, NormFsSettings, PersistenceMode};
+
+    struct NoopEngine;
+
+    impl StationEngine for NoopEngine {
+        fn register_queue(
+            &self,
+            _: &normfs::QueueId,
+            _: station_iface::iface_proto::drivers::QueueDataType,
+            _: Vec<station_iface::iface_proto::envelope::QueueOpt>,
+        ) {
+        }
+    }
+
+    /// Needs a camera.
+    #[ignore]
+    #[tokio::test(flavor = "multi_thread")]
+    async fn stop_only_ends_the_capture_running_at_the_time() {
+        let dir = std::env::temp_dir().join(format!("usbvideo-stop-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let settings = NormFsSettings {
+            persistence_mode: PersistenceMode::MemoryOnly,
+            ..Default::default()
+        };
+        let normfs = Arc::new(NormFS::new(dir.clone(), settings).await.unwrap());
+        let queue_id = normfs.resolve("usbvideo/test");
+        normfs
+            .ensure_queue_exists_for_write(&queue_id)
+            .await
+            .unwrap();
+        let tracker = Arc::new(StateTracker::new(
+            normfs,
+            Arc::new(NoopEngine),
+            crate::USBVideoConfig::default(),
+        ));
+
+        let driver = Arc::new(CameraMacDriver::new());
+        let mut cameras = Vec::new();
+        for _ in 0..50 {
+            process_main_run_loop();
+            cameras = driver.get_available_cameras().await;
+            if !cameras.is_empty() {
+                break;
+            }
+            tokio::time::sleep(Duration::from_millis(100)).await;
+        }
+        let camera = cameras.into_iter().next().expect("no camera");
+        let format = driver.get_camera_formats(&camera).await.remove(0);
+
+        let capture = |driver: Arc<CameraMacDriver>, camera: framesrec_proto::Camera| {
+            let tracker = tracker.clone();
+            let format = format.clone();
+            let queue_id = queue_id.clone();
+            tokio::spawn(async move {
+                driver
+                    .run_capture(tracker, &camera, &format, 0, &queue_id)
+                    .await
+            })
+        };
+
+        let first = capture(driver.clone(), camera.clone());
+        tokio::time::sleep(Duration::from_secs(3)).await;
+        driver.stop().await;
+        let result = tokio::time::timeout(Duration::from_secs(5), first)
+            .await
+            .expect("capture did not stop")
+            .unwrap();
+        assert!(result.has_frames, "no frames before stop");
+
+        let second = capture(driver.clone(), camera);
+        tokio::time::sleep(Duration::from_secs(3)).await;
+        assert!(
+            !second.is_finished(),
+            "capture exited after an earlier stop"
+        );
+        driver.stop().await;
+        let _ = tokio::time::timeout(Duration::from_secs(5), second).await;
+        let _ = std::fs::remove_dir_all(dir);
     }
 }

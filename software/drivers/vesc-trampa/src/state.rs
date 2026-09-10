@@ -5,6 +5,7 @@ use normfs::NormFS;
 use normfs::UintN;
 use parking_lot::RwLock;
 use prost::Message;
+use station_iface::{Backpressure, WRITE_TIMEOUT, enqueue_with, try_enqueue_with};
 use std::sync::Arc;
 
 #[derive(Default)]
@@ -14,59 +15,83 @@ struct VescInferenceState {
 
 pub struct VescTrampaCommunicator {
     pub normfs: Arc<NormFS>,
-    pub rx_queue_id: normfs::QueueId,
     pub tx_queue_id: normfs::QueueId,
+    rx_queue_id: normfs::QueueId,
     inference_queue_id: normfs::QueueId,
     inference_states_queue_id: normfs::QueueId,
     state: Arc<RwLock<VescInferenceState>>,
 }
 
 impl VescTrampaCommunicator {
-    pub fn new(
+    pub async fn new(
         normfs: Arc<NormFS>,
         rx_queue_id: normfs::QueueId,
         tx_queue_id: normfs::QueueId,
         inference_queue_id: normfs::QueueId,
-    ) -> Self {
+    ) -> Result<Self, normfs::Error> {
         let inference_states_queue_id = normfs.resolve("inference-states");
-        Self {
+        normfs.ensure_queue_exists_for_write(&rx_queue_id).await?;
+        normfs.ensure_queue_exists_for_write(&tx_queue_id).await?;
+        normfs
+            .ensure_queue_exists_for_write(&inference_queue_id)
+            .await?;
+        Ok(Self {
             normfs,
-            rx_queue_id,
             tx_queue_id,
+            rx_queue_id,
             inference_queue_id,
             inference_states_queue_id,
             state: Arc::new(RwLock::new(VescInferenceState::default())),
+        })
+    }
+
+    fn encode<M: Message>(envelope: &M) -> Bytes {
+        let mut envelope_buf = Vec::new();
+        envelope.encode(&mut envelope_buf).unwrap();
+        Bytes::from(envelope_buf)
+    }
+
+    /// A skipped record does not update the inference state.
+    pub async fn send_rx(
+        &self,
+        envelope: &crate::vesc_trampa_proto::RxEnvelope,
+        policy: Backpressure,
+    ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let data = Self::encode(envelope);
+        let ptr = match policy {
+            Backpressure::Skip => match self.normfs.try_enqueue(&self.rx_queue_id, data) {
+                Ok(id) => id,
+                Err(normfs::Error::WouldBlock) => return Ok(()),
+                Err(e) => return Err(Box::new(e)),
+            },
+            Backpressure::Keep => {
+                tokio::time::timeout(WRITE_TIMEOUT, self.normfs.enqueue(&self.rx_queue_id, data))
+                    .await
+                    .map_err(|_| "no page became free in time")??
+            }
+        };
+        self.update_state(envelope, ptr, policy).await;
+        Ok(())
+    }
+
+    /// Called from the commands subscriber callback; must not block.
+    pub fn send_tx(&self, envelope: &crate::vesc_trampa_proto::TxEnvelope) {
+        if let Err(e) = try_enqueue_with(
+            &self.normfs,
+            &self.tx_queue_id,
+            Self::encode(envelope),
+            Backpressure::Keep,
+        ) {
+            log::warn!("Failed to publish VESC Trampa command echo: {e}");
         }
     }
 
-    fn send_envelope<M: Message>(
+    async fn update_state(
         &self,
-        queue_id: &normfs::QueueId,
-        envelope: &M,
-    ) -> Result<normfs::UintN, normfs::Error> {
-        let mut envelope_buf = Vec::new();
-        envelope.encode(&mut envelope_buf).unwrap();
-        self.normfs.enqueue(queue_id, Bytes::from(envelope_buf))
-    }
-
-    pub fn send_rx(
-        &self,
-        envelope: &crate::vesc_trampa_proto::RxEnvelope,
-    ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        let ptr = self.send_envelope(&self.rx_queue_id, envelope)?;
-        self.update_state(envelope, ptr);
-        Ok(())
-    }
-
-    pub fn send_tx(
-        &self,
-        envelope: &crate::vesc_trampa_proto::TxEnvelope,
-    ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        self.send_envelope(&self.tx_queue_id, envelope)?;
-        Ok(())
-    }
-
-    fn update_state(&self, envelope: &vesc_trampa_proto::RxEnvelope, ptr: UintN) {
+        envelope: &vesc_trampa_proto::RxEnvelope,
+        ptr: UintN,
+        policy: Backpressure,
+    ) {
         let Some(board) = envelope.board.as_ref() else {
             return;
         };
@@ -93,7 +118,7 @@ impl VescTrampaCommunicator {
             let mut state = self.state.write();
             state.state.last_inference_queue_ptr = self.get_last_inference_id_bytes();
         }
-        self.publish_inference_state();
+        self.publish_inference_state(policy).await;
     }
 
     fn add_board(
@@ -240,11 +265,18 @@ impl VescTrampaCommunicator {
         }
     }
 
-    fn publish_inference_state(&self) {
-        let state = self.state.read();
+    async fn publish_inference_state(&self, policy: Backpressure) {
         let mut buf = Vec::new();
-        state.state.encode(&mut buf).unwrap();
-        let data = Bytes::from(buf);
-        let _ = self.normfs.enqueue(&self.inference_queue_id, data);
+        self.state.read().state.encode(&mut buf).unwrap();
+        if let Err(e) = enqueue_with(
+            &self.normfs,
+            &self.inference_queue_id,
+            Bytes::from(buf),
+            policy,
+        )
+        .await
+        {
+            log::warn!("Failed to publish VESC Trampa inference state: {e}");
+        }
     }
 }

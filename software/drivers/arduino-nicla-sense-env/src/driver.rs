@@ -5,10 +5,10 @@ use crate::arduino_nicla_sense_env_proto::{
 use bytes::Bytes;
 use i2c_async::AsyncI2cDevice;
 use log::{error, info, warn};
-use normfs::{NormFS, QueueId, UintN};
+use normfs::NormFS;
 use prost::Message;
-use station_iface::StationEngine;
 use station_iface::iface_proto::drivers::QueueDataType;
+use station_iface::{Backpressure, StationEngine, enqueue_with};
 use std::collections::BTreeMap;
 use std::sync::Arc;
 use std::time::Duration;
@@ -143,7 +143,7 @@ pub async fn start_arduino_nicla_sense_env_driver<T: StationEngine>(
 
 async fn run_board_worker(
     normfs: Arc<NormFS>,
-    rx_queue_id: QueueId,
+    queue_id: normfs::QueueId,
     board: Board,
     poll_interval: Duration,
 ) {
@@ -165,23 +165,25 @@ async fn run_board_worker(
                 if !connected {
                     send_board_signal(
                         &normfs,
-                        &rx_queue_id,
+                        &queue_id,
                         &board,
                         ArduinoNiclaSenseEnvSignalType::ArduinoNiclaSenseEnvConnected,
                         Some(&data),
                         None,
-                    );
+                    )
+                    .await;
                     connected = true;
                 }
 
                 send_board_signal(
                     &normfs,
-                    &rx_queue_id,
+                    &queue_id,
                     &board,
                     ArduinoNiclaSenseEnvSignalType::ArduinoNiclaSenseEnvRegistersSnapshot,
                     Some(&data),
                     None,
-                );
+                )
+                .await;
                 last_data = Some(data);
                 last_error = None;
             }
@@ -189,24 +191,26 @@ async fn run_board_worker(
                 if connected {
                     send_board_signal(
                         &normfs,
-                        &rx_queue_id,
+                        &queue_id,
                         &board,
                         ArduinoNiclaSenseEnvSignalType::ArduinoNiclaSenseEnvDisconnected,
                         last_data.as_ref(),
                         Some(error.clone()),
-                    );
+                    )
+                    .await;
                     connected = false;
                 }
 
                 if last_error.as_deref() != Some(error.as_str()) {
                     send_board_signal(
                         &normfs,
-                        &rx_queue_id,
+                        &queue_id,
                         &board,
                         ArduinoNiclaSenseEnvSignalType::ArduinoNiclaSenseEnvError,
                         last_data.as_ref(),
                         Some(error.clone()),
-                    );
+                    )
+                    .await;
                     last_error = Some(error);
                 }
             }
@@ -227,9 +231,9 @@ fn parse_device_info(data: &[u8]) -> Option<ArduinoNiclaSenseEnvDeviceInfo> {
     })
 }
 
-fn send_board_signal(
-    normfs: &Arc<NormFS>,
-    rx_queue_id: &QueueId,
+async fn send_board_signal(
+    normfs: &NormFS,
+    queue_id: &normfs::QueueId,
     board: &Board,
     signal_type: ArduinoNiclaSenseEnvSignalType,
     data: Option<&Bytes>,
@@ -246,20 +250,23 @@ fn send_board_signal(
         error: error_message.unwrap_or_default(),
     };
 
-    if let Err(error) = send_proto(normfs, rx_queue_id, &envelope) {
+    let mut buffer = Vec::new();
+    if let Err(error) = envelope.encode(&mut buffer) {
+        error!("Failed to encode Arduino Nicla Sense Env envelope: {error}");
+        return;
+    }
+    let data = Bytes::from(buffer);
+
+    let policy =
+        if signal_type == ArduinoNiclaSenseEnvSignalType::ArduinoNiclaSenseEnvRegistersSnapshot {
+            Backpressure::Skip
+        } else {
+            Backpressure::Keep
+        };
+    if let Err(error) = enqueue_with(normfs, queue_id, data, policy).await {
         error!(
             "Failed to send Arduino Nicla Sense Env {:?} signal for {}: {}",
             signal_type, board.id, error
         );
     }
-}
-
-fn send_proto<M: Message>(
-    normfs: &NormFS,
-    queue_id: &QueueId,
-    envelope: &M,
-) -> DriverResult<UintN> {
-    let mut buffer = Vec::new();
-    envelope.encode(&mut buffer)?;
-    Ok(normfs.enqueue(queue_id, Bytes::from(buffer))?)
 }

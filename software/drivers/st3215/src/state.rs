@@ -4,8 +4,9 @@ use log::warn;
 use normfs::NormFS;
 use normfs::UintN;
 use prost::Message;
-use std::{collections::HashMap, sync::Arc};
+use station_iface::{Backpressure, WRITE_TIMEOUT, enqueue_with, try_enqueue_with};
 use std::sync::atomic::AtomicBool;
+use std::{collections::HashMap, sync::Arc};
 
 type MotorBounds = HashMap<String, HashMap<u32, (u32, u32, bool)>>;
 type CalibrationStops = HashMap<String, Arc<AtomicBool>>;
@@ -36,15 +37,21 @@ pub struct ST3215BusCommunicator {
 }
 
 impl ST3215BusCommunicator {
-    pub fn new(
+    pub async fn new(
         normfs: Arc<NormFS>,
         rx_queue_id: normfs::QueueId,
         tx_queue_id: normfs::QueueId,
         meta_queue_id: normfs::QueueId,
         inference_queue_id: normfs::QueueId,
-    ) -> Self {
+    ) -> Result<Self, normfs::Error> {
         let inference_states_queue_id = normfs.resolve("inference-states");
-        Self {
+        normfs.ensure_queue_exists_for_write(&rx_queue_id).await?;
+        normfs.ensure_queue_exists_for_write(&meta_queue_id).await?;
+        normfs.ensure_queue_exists_for_write(&tx_queue_id).await?;
+        normfs
+            .ensure_queue_exists_for_write(&inference_queue_id)
+            .await?;
+        Ok(Self {
             normfs,
             rx_queue_id,
             tx_queue_id,
@@ -54,11 +61,13 @@ impl ST3215BusCommunicator {
             state: Arc::new(parking_lot::RwLock::new(InferenceState::default())),
             bounds: Arc::new(parking_lot::RwLock::new(HashMap::new())),
             calibration_stops: Arc::new(parking_lot::RwLock::new(HashMap::new())),
-        }
+        })
     }
 
     pub fn set_calibration_stop(&self, bus_serial: &str, stop_flag: Arc<AtomicBool>) {
-        self.calibration_stops.write().insert(bus_serial.to_string(), stop_flag);
+        self.calibration_stops
+            .write()
+            .insert(bus_serial.to_string(), stop_flag);
     }
 
     pub fn get_calibration_stop(&self, bus_serial: &str) -> Option<Arc<AtomicBool>> {
@@ -80,7 +89,10 @@ impl ST3215BusCommunicator {
     ) {
         log::info!(
             "update_calibration_progress called: bus='{}', status={:?}, step={}/{}",
-            bus_serial, status, current_step, total_steps
+            bus_serial,
+            status,
+            current_step,
+            total_steps
         );
 
         // Update InferenceState with calibration progress
@@ -88,21 +100,37 @@ impl ST3215BusCommunicator {
             let mut state = self.state.write();
             log::info!(
                 "InferenceState has {} buses, looking for '{}'",
-                state.state.buses.len(), bus_serial
+                state.state.buses.len(),
+                bus_serial
             );
-            if let Some(bus_state) = state.state.buses.iter_mut().find(|b| {
-                b.bus.as_ref().map(|b| b.serial_number.as_str()) == Some(bus_serial)
-            }) {
+            if let Some(bus_state) = state
+                .state
+                .buses
+                .iter_mut()
+                .find(|b| b.bus.as_ref().map(|b| b.serial_number.as_str()) == Some(bus_serial))
+            {
                 log::info!(
                     "Updating auto_calibration for bus '{}': status={:?}, step={}/{}, phase='{}'",
-                    bus_serial, status, current_step, total_steps, phase
+                    bus_serial,
+                    status,
+                    current_step,
+                    total_steps,
+                    phase
                 );
                 bus_state.auto_calibration = Some(st3215_proto::AutoCalibrationState {
                     status: match status {
-                        CalibrationStatus::InProgress => st3215_proto::auto_calibration_state::Status::InProgress as i32,
-                        CalibrationStatus::Done => st3215_proto::auto_calibration_state::Status::Done as i32,
-                        CalibrationStatus::Failed => st3215_proto::auto_calibration_state::Status::Failed as i32,
-                        CalibrationStatus::Stopped => st3215_proto::auto_calibration_state::Status::Stopped as i32,
+                        CalibrationStatus::InProgress => {
+                            st3215_proto::auto_calibration_state::Status::InProgress as i32
+                        }
+                        CalibrationStatus::Done => {
+                            st3215_proto::auto_calibration_state::Status::Done as i32
+                        }
+                        CalibrationStatus::Failed => {
+                            st3215_proto::auto_calibration_state::Status::Failed as i32
+                        }
+                        CalibrationStatus::Stopped => {
+                            st3215_proto::auto_calibration_state::Status::Stopped as i32
+                        }
                     },
                     current_step,
                     total_steps,
@@ -110,75 +138,97 @@ impl ST3215BusCommunicator {
                     error_message: error_message.unwrap_or("").to_string(),
                 });
             } else {
-                warn!("Bus '{}' not found in InferenceState when updating calibration progress", bus_serial);
+                warn!(
+                    "Bus '{}' not found in InferenceState when updating calibration progress",
+                    bus_serial
+                );
             }
             state.state.last_inference_queue_ptr = self.get_last_inference_id_bytes();
         }
 
         // Publish updated InferenceState
-        self.publish_inference_state();
+        self.publish_inference_state_now();
     }
 
     pub fn clear_auto_calibration(&self, bus_serial: &str) {
         // Update InferenceState to set auto_calibration to None
         {
             let mut state = self.state.write();
-            if let Some(bus_state) = state.state.buses.iter_mut().find(|b| {
-                b.bus.as_ref().map(|b| b.serial_number.as_str()) == Some(bus_serial)
-            }) {
+            if let Some(bus_state) = state
+                .state
+                .buses
+                .iter_mut()
+                .find(|b| b.bus.as_ref().map(|b| b.serial_number.as_str()) == Some(bus_serial))
+            {
                 bus_state.auto_calibration = None;
             }
             state.state.last_inference_queue_ptr = self.get_last_inference_id_bytes();
         }
 
         // Publish updated InferenceState
-        self.publish_inference_state();
+        self.publish_inference_state_now();
     }
 
-    fn send_envelope<M: Message>(
-        &self,
-        queue_id: &normfs::QueueId,
-        envelope: &M,
-    ) -> Result<normfs::UintN, normfs::Error> {
+    fn encode<M: Message>(envelope: &M) -> Bytes {
         let mut envelope_buf = Vec::new();
         envelope.encode(&mut envelope_buf).unwrap();
-        self.normfs.enqueue(queue_id, Bytes::from(envelope_buf))
+        Bytes::from(envelope_buf)
     }
 
-    pub fn send_rx(
+    /// A skipped record does not update the inference state.
+    pub async fn send_rx(
         &self,
         envelope: &st3215_proto::RxEnvelope,
     ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        let res = self.send_envelope(&self.rx_queue_id, envelope);
-
-        if let Err(e) = res {
-            return Err(Box::new(e));
-        }
-        if let Ok(id) = res {
-            self.update_state(envelope, id);
-        }
+        let data = Self::encode(envelope);
+        let policy = Self::rx_policy(envelope.signal_type);
+        let id = match policy {
+            Backpressure::Skip => match self.normfs.try_enqueue(&self.rx_queue_id, data) {
+                Ok(id) => id,
+                Err(normfs::Error::WouldBlock) => return Ok(()),
+                Err(e) => return Err(Box::new(e)),
+            },
+            Backpressure::Keep => {
+                tokio::time::timeout(WRITE_TIMEOUT, self.normfs.enqueue(&self.rx_queue_id, data))
+                    .await
+                    .map_err(|_| "no page became free in time")??
+            }
+        };
+        self.update_state(envelope, id, policy).await;
         Ok(())
     }
 
-    pub fn send_tx(
-        &self,
-        envelope: &st3215_proto::TxEnvelope,
-    ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        let res = self.send_envelope(&self.tx_queue_id, envelope);
-        if res.is_err() {
-            return Err(Box::new(res.err().unwrap()));
+    fn rx_policy(signal_type: i32) -> Backpressure {
+        match st3215_proto::St3215SignalType::try_from(signal_type) {
+            Ok(st3215_proto::St3215SignalType::St3215DriveState)
+            | Ok(st3215_proto::St3215SignalType::St3215Error) => Backpressure::Skip,
+            _ => Backpressure::Keep,
         }
-        Ok(())
     }
 
-    pub fn send_meta(
+    /// Called from the commands subscriber callback; must not block.
+    pub fn send_tx(&self, envelope: &st3215_proto::TxEnvelope) {
+        if let Err(e) = try_enqueue_with(
+            &self.normfs,
+            &self.tx_queue_id,
+            Self::encode(envelope),
+            Backpressure::Keep,
+        ) {
+            warn!("Failed to publish ST3215 command echo: {e}");
+        }
+    }
+
+    pub async fn send_meta(
         &self,
         envelope: &st3215_proto::MetaEnvelope,
     ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        let res = self.send_envelope(&self.meta_queue_id, envelope);
-        if res.is_err() {
-            return Err(Box::new(res.err().unwrap()));
-        }
+        enqueue_with(
+            &self.normfs,
+            &self.meta_queue_id,
+            Self::encode(envelope),
+            Backpressure::Keep,
+        )
+        .await?;
         Ok(())
     }
 
@@ -293,7 +343,12 @@ impl ST3215BusCommunicator {
         }
     }
 
-    fn update_state(&self, envelope: &st3215_proto::RxEnvelope, ptr: UintN) {
+    async fn update_state(
+        &self,
+        envelope: &st3215_proto::RxEnvelope,
+        ptr: UintN,
+        policy: Backpressure,
+    ) {
         let bus_info = match &envelope.bus {
             Some(bus) => bus,
             None => return,
@@ -341,13 +396,7 @@ impl ST3215BusCommunicator {
             let mut state = self.state.write();
             state.state.last_inference_queue_ptr = self.get_last_inference_id_bytes();
         }
-        let state = self.state.read();
-        let mut buf = Vec::new();
-        state.state.encode(&mut buf).unwrap();
-
-        let data = Bytes::from(buf);
-
-        let _ = self.normfs.enqueue(&self.inference_queue_id, data.clone());
+        self.publish_inference_state(policy).await;
     }
 
     pub fn reset_bounds(&self, bus_serial: &str) {
@@ -364,9 +413,7 @@ impl ST3215BusCommunicator {
         range_freezed: bool,
     ) {
         let mut bounds = self.bounds.write();
-        let bus_bounds = bounds
-            .entry(bus_serial.to_string())
-            .or_default();
+        let bus_bounds = bounds.entry(bus_serial.to_string()).or_default();
         bus_bounds.insert(motor_id, (min_angle, max_angle, range_freezed));
     }
 
@@ -417,7 +464,11 @@ impl ST3215BusCommunicator {
                     .find(|b| b.bus.as_ref().map(|b| &b.port_name) == Some(&bus_info.port_name))
                 {
                     for motor_write in &sync_write.motors {
-                        if let Some(motor_state) = bus_state.motors.iter_mut().find(|m| m.id == motor_write.motor_id) {
+                        if let Some(motor_state) = bus_state
+                            .motors
+                            .iter_mut()
+                            .find(|m| m.id == motor_write.motor_id)
+                        {
                             motor_state.last_command = Some(st3215_proto::InferenceCommandState {
                                 command: Some(command.clone()),
                                 result: result as i32,
@@ -492,11 +543,29 @@ impl ST3215BusCommunicator {
         }
     }
 
-    fn publish_inference_state(&self) {
-        let state = self.state.read();
+    fn encode_inference_state(&self) -> Bytes {
         let mut buf = Vec::new();
-        state.state.encode(&mut buf).unwrap();
-        let data = Bytes::from(buf);
-        let _ = self.normfs.enqueue(&self.inference_queue_id, data);
+        self.state.read().state.encode(&mut buf).unwrap();
+        Bytes::from(buf)
+    }
+
+    async fn publish_inference_state(&self, policy: Backpressure) {
+        let data = self.encode_inference_state();
+        if let Err(e) = enqueue_with(&self.normfs, &self.inference_queue_id, data, policy).await {
+            warn!("Failed to publish ST3215 inference state: {e}");
+        }
+    }
+
+    /// Synchronous; some calibration paths run inside the meta subscriber callback.
+    fn publish_inference_state_now(&self) {
+        let data = self.encode_inference_state();
+        if let Err(e) = try_enqueue_with(
+            &self.normfs,
+            &self.inference_queue_id,
+            data,
+            Backpressure::Keep,
+        ) {
+            warn!("Failed to publish ST3215 inference state: {e}");
+        }
     }
 }
