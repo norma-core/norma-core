@@ -63,6 +63,7 @@ function HistoryPage() {
   const sysinfoCount = parsedFrame?.sysinfo ? 1 : 0;
   const arduinoNiclaSenseEnvCount = parsedFrame?.arduinoNiclaSenseEnv ? 1 : 0;
   const ina226Count = parsedFrame?.ina226?.length ?? 0;
+  const dfrobotLightRs485Count = parsedFrame?.dfrobotLightRs485?.length ?? 0;
   const airgradientOpenAirCount = parsedFrame?.airgradientOpenAir?.length ?? 0;
   const victronSmartSolarCount = parsedFrame?.victronSmartSolar?.length ?? 0;
   const dmesgCount = parsedFrame?.dmesg ? 1 : 0;
@@ -79,7 +80,8 @@ function HistoryPage() {
   const sysinfoIndex = mirroringIndex + mirroringCount;
   const arduinoNiclaSenseEnvIndex = sysinfoIndex + sysinfoCount;
   const ina226Index = arduinoNiclaSenseEnvIndex + arduinoNiclaSenseEnvCount;
-  const airgradientOpenAirIndex = ina226Index + ina226Count;
+  const dfrobotLightRs485Index = ina226Index + ina226Count;
+  const airgradientOpenAirIndex = dfrobotLightRs485Index + dfrobotLightRs485Count;
   const victronSmartSolarIndex = airgradientOpenAirIndex + airgradientOpenAirCount;
   const dmesgIndex = victronSmartSolarIndex + victronSmartSolarCount;
   const yahboomDogzillaLiteIndex = dmesgIndex + dmesgCount;
@@ -313,6 +315,17 @@ function HistoryPage() {
                             </div>
                           </div>
                         ))}
+                        {parsedFrame.dfrobotLightRs485?.map((entry) => (
+                          <div key={entry.queueId} className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <span className="text-accent-warning font-mono">{entry.queueId}</span>
+                              <span className="text-accent-data text-xs px-1 py-0.5 bg-accent-data/10 rounded">DFROBOT RS485</span>
+                            </div>
+                            <div className="text-text-label font-mono">
+                              {formatPtrBytes(entry.ptr)}
+                            </div>
+                          </div>
+                        ))}
                         {parsedFrame.victronSmartSolar?.map((entry) => (
                           <div key={entry.queueId} className="flex items-center justify-between">
                             <div className="flex items-center gap-3">
@@ -528,6 +541,22 @@ function HistoryPage() {
                       }}
                       index={ina226Index + idx}
                       dataQueueType="ina226"
+                      dataQueueId={entry.queueId}
+                    />
+                  ))}
+                  {parsedFrame.dfrobotLightRs485?.map((entry, idx) => (
+                    <HistoryElement
+                      key={entry.queueId}
+                      element={{
+                        queueId: entry.queueId,
+                        entryId: entry.ptr,
+                        data: entry.data,
+                        rawData: entry.rawData ?? null,
+                        type: getQueueType(entry.queueType),
+                        queueType: entry.queueType,
+                      }}
+                      index={dfrobotLightRs485Index + idx}
+                      dataQueueType="dfrobot-light-rs485"
                       dataQueueId={entry.queueId}
                     />
                   ))}

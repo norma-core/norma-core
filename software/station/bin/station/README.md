@@ -156,6 +156,7 @@ asyncio.run(main())
 |  | [Arduino Nicla Sense Env](../../../drivers/arduino-nicla-sense-env) | ✅ Linux supported |
 |  | [INA226 power/current monitor](../../../drivers/ina226) | ✅ Linux supported |
 |  | [HIKMICRO thermal sensors](../../../drivers/hikmicro-thermal) | ✅ Linux supported |
+|  | [DFRobot RS-485 light sensors (SEN0640 / SEN0641 / SEN0642 / SEN0644)](../../../drivers/dfrobot-light-rs485) | ✅ Supported |
 | **Cameras & Devices** | [UVC USB cameras](../../../drivers/usbvideo) | ✅ Supported |
 |  | [Raspberry Pi OV5647 camera](../../../drivers/ov5647) | ✅ Supported |
 |  | [VESC Trampa motor controllers](../../../drivers/vesc-trampa) | ✅ Supported |
@@ -247,6 +248,13 @@ drivers:
     resolution: auto      # Capture format: "auto" or "<width>x<height>", e.g. "1280x720"
     resize_target: 224    # Resize shortest dimension of stored frames to 224px
     frame-skip: 0         # Drop N frames after each kept frame; 0 records every frame
+
+  # DFRobot RS-485 light sensors (SEN0640 solar radiation, SEN0641 PAR,
+  # SEN0642 UV, SEN0644 ambient light) behind a USB-to-RS485 adapter
+  dfrobot-light-rs485:
+    enabled: true
+    ports: ["/dev/ttyUSB*", "/dev/cu.usbserial-*"]  # Candidate serial ports, tried in order; globs allowed
+    # scan-ids: "1-10"    # Modbus IDs to probe; "A-B" range or a list like [1, 2, 3]. Quote a single ID: "5"
 ```
 
 `resolution` chooses which camera format to open. With `auto` the best available
@@ -261,6 +269,14 @@ each frame it keeps, recording one of every three. Skipped frames are discarded
 before any image conversion, so this reduces CPU load. Note that the live camera
 view in `station-viewer` reads the same queue as the recorder, so `frame-skip`
 also thins the live preview by the same factor.
+
+`dfrobot-light-rs485` opens the first matching port and probes every Modbus ID
+in `scan-ids` at 4800 and 9600 baud. Each sensor found is identified by its
+register signature, so the model does not need to be declared; every sensor
+gets its own queue. Poll interval (1 s) and baud candidates are fixed by the
+driver. Sensor settings (Modbus ID, baud rate) can be changed from the
+`station-viewer` sensor config page; SEN0644 applies a new baud rate only after
+its power is cut, not after the USB adapter is replugged.
 
 ```yaml
 # ML inference integration
