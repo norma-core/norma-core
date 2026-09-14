@@ -58,6 +58,7 @@ const stationVersion = `${resolveWorkspaceVersion()} (${resolveGitHash()})`;
 export default defineConfig({
   // Required for loading the built viewer from Electron via file://.
   base: './',
+  worker: { format: 'es' },
   define: {
     __STATION_VERSION__: JSON.stringify(stationVersion),
   },

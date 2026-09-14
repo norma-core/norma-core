@@ -1,6 +1,6 @@
 import Long from 'long';
 import { airgradient_open_air_o_1pst, arduino_nicla_sense_env, dmesg, hikmicro, ina226, yahboom_dogzilla_lite, drivers, inference, motors_mirroring, normvla, pwm_output, st3215, sysinfo, usbvideo, vesc_trampa, victron_smartsolar_mppt } from '@/api/proto.js';
-import { NormFsClient } from "./normfs.js";
+import { ErrEntryNotFound, NormFsClient, type StreamEntry } from "./normfs.js";
 import { getGlobalTimeAdjustmentNs, isTimeSyncActive } from '@/api/time-sync.js';
 import {
   createLiveCameraMetadataEnvelope,
@@ -57,6 +57,7 @@ type DecodedEntry = st3215.IInferenceState | st3215.ITxEnvelope | usbvideo.IRxEn
 
 interface ParseFrameOptions {
   retainRawData?: boolean;
+  thermalDiscoveryOnly?: boolean;
   shouldPublishVideoFrames?: () => boolean;
   shouldLoadVideoFrame?: (
     queueId: string,
@@ -297,6 +298,13 @@ export async function parseFrame(
         return Promise.resolve(null);
       }
 
+      // Live thermal viewers own their reads; a slow camera must not stall
+      // unrelated sensors. History still follows the exact recorded pointer.
+      if (options.thermalDiscoveryOnly && entry.type === drivers.QueueDataType.QDT_HIKMICRO_THERMAL) {
+        return Promise.resolve({ queue: entry.queue, type: entry.type, ptr: entry.ptr,
+          decoded: {}, rawData: null, id: null, reused: true, isNormvla: false });
+      }
+
       // Check if we can reuse from previous frame
       const previousEntry = findPreviousEntry(previousFrame, entry.queue, entry.ptr);
       if (previousEntry) {
@@ -338,7 +346,18 @@ export async function parseFrame(
       // Pointer changed, fetch from StreamFS
       return (async () => {
         try {
-          const streamEntry = await normFs.readSingleEntry(entry.queue!, entry.ptr!);
+          let streamEntry: StreamEntry;
+          let resolvedPtr = entry.ptr;
+          try {
+            streamEntry = await normFs.readSingleEntry(entry.queue!, entry.ptr!);
+          } catch (error) {
+            // A live snapshot can outlast a thermal entry's retention window.
+            // Recover once from the tail, keeping history reads exact and
+            // allowing connection/server errors to follow normal handling.
+            if (error !== ErrEntryNotFound || entry.type !== drivers.QueueDataType.QDT_HIKMICRO_THERMAL || !options.shouldPublishVideoFrames?.()) throw error;
+            streamEntry = await normFs.readLastEntry(entry.queue!);
+            resolvedPtr = streamEntry.id;
+          }
 
           // Decode based on queue data type
           let decoded = null;
@@ -484,7 +503,7 @@ export async function parseFrame(
           return {
             queue: entry.queue,
             type: entry.type,
-            ptr: entry.ptr,
+            ptr: resolvedPtr,
             decoded,
             rawData: streamEntry.data,
             id: streamEntry.id,
@@ -493,6 +512,25 @@ export async function parseFrame(
           };
         } catch (error) {
           console.error(`Failed to read entry from queue ${entry.queue}:`, error);
+          // Keep a live thermal surface mounted through a temporary queue-read
+          // failure, including native fullscreen and its last image. Retain the
+          // OLD pointer/data identity so the view can mark it stale and the next
+          // observation will retry the failed pointer. History stays exact.
+          if (entry.type === drivers.QueueDataType.QDT_HIKMICRO_THERMAL && options.shouldPublishVideoFrames?.()) {
+            const previous = previousFrame?.hikmicroThermal?.find(camera => camera.queueId === entry.queue);
+            if (previous) {
+              return {
+                queue: entry.queue,
+                type: entry.type,
+                ptr: previous.ptr,
+                decoded: previous.data,
+                rawData: previous.rawData ?? null,
+                id: null,
+                reused: true,
+                isNormvla: false,
+              };
+            }
+          }
           return null;
         }
       })();

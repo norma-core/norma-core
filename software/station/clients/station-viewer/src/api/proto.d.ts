@@ -3824,7 +3824,8 @@ export namespace vesc_trampa {
         VESC_TRAMPA_COMMAND = 4,
         VESC_TRAMPA_COMMAND_SUCCESS = 5,
         VESC_TRAMPA_COMMAND_REJECTED = 6,
-        VESC_TRAMPA_COMMAND_FAILED = 7
+        VESC_TRAMPA_COMMAND_FAILED = 7,
+        VESC_TRAMPA_COMMAND_DONE = 8
     }
 
     /** Properties of a RxEnvelope. */

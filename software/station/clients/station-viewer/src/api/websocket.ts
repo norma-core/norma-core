@@ -109,7 +109,7 @@ class WebSocketManager extends EventTarget {
     const acquisitionGeneration = this.acquisitionGeneration;
 
     try {
-      // Read the latest entry directly: backward from offset 1, limit 1
+      // Read the latest entry directly: offset 0 from the tail, limit 1.
       const entry = await this.normFs.readLastEntry('inference-states');
       const entryId = Long.fromBytesLE(Array.from(entry.id)).toNumber();
 
@@ -123,6 +123,7 @@ class WebSocketManager extends EventTarget {
         }
         const frame = await parseFrame(inferenceRx, entry.id, this.normFs, previousFrame, {
           retainRawData: false,
+          thermalDiscoveryOnly: true,
           shouldLoadVideoFrame: shouldLoadLiveCameraFrame,
           shouldPublishVideoFrames: () =>
             this.isLiveMode() && acquisitionGeneration === this.acquisitionGeneration,

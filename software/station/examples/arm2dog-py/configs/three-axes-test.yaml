@@ -1,0 +1,48 @@
+# arm2dog config: M1 -> yaw, M6 -> follower 52 (shoulder), M4 -> follower 53
+# (base), M8 -> follower 51 (gripper). No follower_limits by default -- see
+# README "Safety".
+#
+# Load with:
+#   uv run python main.py --config configs/three-axes-test.yaml
+
+leader_server: 192.168.68.66
+follower_server: 192.168.68.64
+# leader_bus: auto        # default, only needed for multi-bus leader stations
+# follower_device: auto   # default, only needed for multi-device follower stations
+
+joints:
+  # M6 at its sampled rest -> follower 0; toward M6's calibrated 100% ->
+  # follower ramps up to 255. Below rest, clamps to 0.
+  - leader_id: 6
+    follower_id: 52
+    leader_range_pct: ["rest", 100]
+
+  # M4 at its sampled rest (~100%) -> follower 255; toward M4's calibrated
+  # 0% -> follower ramps down to 0. Not yet confirmed on the real rig.
+  - leader_id: 4
+    follower_id: 53
+    leader_range_pct: [0, "rest"]
+
+  # M8 full-arc, no windowing. invert:true -- confirmed on this rig against
+  # the real DogZilla (leader 0%=closed/100%=open does NOT match dog
+  # 0=closed/255=open here; the two sides disagree on sense, opposite of
+  # an earlier assumption based on leader-side calibration alone).
+  - leader_id: 8
+    follower_id: 51
+    invert: true
+
+# follower_limits:
+#   52: [low, high]
+#   53: [low, high]
+
+yaw:
+  leader_id: 1
+  invert: true   # confirmed on this rig against the real DogZilla: uninverted
+                 # spins the dog the wrong way (which absolute direction is
+                 # Q/E is still just the sim.rs-inferred label, not verified
+                 # -- see README "Direction was inferred").
+  # deadzone_steps: 100   # default
+  # ramp_step_per_tick: 6 # default
+  # center_pct:           # omitted: use the sampled rest position
+
+# fwd: intentionally omitted -- forward/backward disabled.

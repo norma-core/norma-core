@@ -11020,6 +11020,7 @@ export const vesc_trampa = $root.vesc_trampa = (() => {
      * @property {number} VESC_TRAMPA_COMMAND_SUCCESS=5 VESC_TRAMPA_COMMAND_SUCCESS value
      * @property {number} VESC_TRAMPA_COMMAND_REJECTED=6 VESC_TRAMPA_COMMAND_REJECTED value
      * @property {number} VESC_TRAMPA_COMMAND_FAILED=7 VESC_TRAMPA_COMMAND_FAILED value
+     * @property {number} VESC_TRAMPA_COMMAND_DONE=8 VESC_TRAMPA_COMMAND_DONE value
      */
     vesc_trampa.VescTrampaSignalType = (function() {
         const valuesById = {}, values = Object.create(valuesById);
@@ -11031,6 +11032,7 @@ export const vesc_trampa = $root.vesc_trampa = (() => {
         values[valuesById[5] = "VESC_TRAMPA_COMMAND_SUCCESS"] = 5;
         values[valuesById[6] = "VESC_TRAMPA_COMMAND_REJECTED"] = 6;
         values[valuesById[7] = "VESC_TRAMPA_COMMAND_FAILED"] = 7;
+        values[valuesById[8] = "VESC_TRAMPA_COMMAND_DONE"] = 8;
         return values;
     })();
 
@@ -11301,6 +11303,7 @@ export const vesc_trampa = $root.vesc_trampa = (() => {
                 case 5:
                 case 6:
                 case 7:
+                case 8:
                     break;
                 }
             if (message.board != null && message.hasOwnProperty("board")) {
@@ -11405,6 +11408,10 @@ export const vesc_trampa = $root.vesc_trampa = (() => {
             case "VESC_TRAMPA_COMMAND_FAILED":
             case 7:
                 message.signalType = 7;
+                break;
+            case "VESC_TRAMPA_COMMAND_DONE":
+            case 8:
+                message.signalType = 8;
                 break;
             }
             if (object.board != null) {

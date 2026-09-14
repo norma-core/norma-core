@@ -39,6 +39,7 @@ export const ErrConnectionClosed = new Error("connection closed while waiting fo
 export const ErrInvalidResponse = new Error("invalid or unexpected response from server");
 export const ErrServerSide = new Error("server returned an error");
 export const ErrQueueNotFound = new Error("queue not found on server");
+export const ErrEntryNotFound = new Error("Entry not found");
 export const ErrReadStreamClosed = new Error("read stream closed by server or connection error");
 
 export interface StreamEntry {
@@ -129,7 +130,7 @@ export class NormFsClient extends EventTarget {
                         break;
                     case normfs.ReadResponse.Result.RR_NOT_FOUND:
                         clearTimeout(stream.timeout);
-                        stream.emitter.dispatchEvent(new CustomEvent('error', { detail: new Error("Entry not found") }));
+                        stream.emitter.dispatchEvent(new CustomEvent('error', { detail: ErrEntryNotFound }));
                         this.pendingReads.delete(readId);
                         break;
                     case normfs.ReadResponse.Result.RR_SERVER_ERROR:
@@ -277,7 +278,7 @@ export class NormFsClient extends EventTarget {
     
             const onEnd = () => {
                 if (!dataReceived) {
-                    reject(new Error("Entry not found"));
+                    reject(ErrEntryNotFound);
                 }
                 cleanup();
             };
@@ -296,7 +297,9 @@ export class NormFsClient extends EventTarget {
 
     public readLastEntry(queueID: string): Promise<StreamEntry> {
         return new Promise((resolve, reject) => {
-            const offset = Long.fromNumber(1).toBytesLE();
+            // NormFS computes last_id - offset. Zero reads the actual tail;
+            // one can miss immediately after older entries leave memory.
+            const offset = Long.ZERO.toBytesLE();
             const stream = this.read(queueID, new Uint8Array(offset), normfs.OffsetType.OT_SHIFT_FROM_TAIL, 1);
             let dataReceived = false;
 

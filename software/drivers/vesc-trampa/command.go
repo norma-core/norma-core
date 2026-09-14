@@ -9,7 +9,8 @@ import (
 )
 
 const (
-	commandSetCurrent uint8 = 6
+	CommandSetCurrent uint8 = 6
+	CommandSetRPM     uint8 = 8
 )
 
 type CurrentStep struct {
@@ -17,8 +18,26 @@ type CurrentStep struct {
 	DurationMS uint32
 }
 
+type RPMStep struct {
+	RPM        int32
+	DurationMS uint32
+}
+
+type BoardCommandStep struct {
+	Payload    []byte
+	DurationMS uint32
+}
+
 func setCurrentPayload(currentMA int32) []byte {
-	return int32Payload(commandSetCurrent, currentMA)
+	return SetCurrentPayload(currentMA)
+}
+
+func SetCurrentPayload(currentMA int32) []byte {
+	return int32Payload(CommandSetCurrent, currentMA)
+}
+
+func SetRPMPayload(rpm int32) []byte {
+	return int32Payload(CommandSetRPM, rpm)
 }
 
 func int32Payload(commandID uint8, value int32) []byte {
@@ -61,10 +80,59 @@ func SetCurrentSequenceStationCommand(
 	targetBoardUUID []byte,
 	steps []CurrentStep,
 ) *commandspb.DriverCommand {
+	boardSteps := make([]BoardCommandStep, 0, len(steps))
+	for _, step := range steps {
+		boardSteps = append(boardSteps, BoardCommandStep{
+			Payload:    SetCurrentPayload(step.CurrentMA),
+			DurationMS: step.DurationMS,
+		})
+	}
+	return SetBoardCommandSequenceStationCommand(commandID, targetBoardUUID, boardSteps)
+}
+
+func SetRPMStationCommand(commandID []byte, targetBoardUUID []byte, rpm int32) *commandspb.DriverCommand {
+	return SetRPMSequenceStationCommand(commandID, targetBoardUUID, []RPMStep{
+		{RPM: rpm},
+	})
+}
+
+func SetRPMForDurationStationCommand(
+	commandID []byte,
+	targetBoardUUID []byte,
+	rpm int32,
+	durationMS uint32,
+	finalRPM int32,
+) *commandspb.DriverCommand {
+	return SetRPMSequenceStationCommand(commandID, targetBoardUUID, []RPMStep{
+		{RPM: rpm, DurationMS: durationMS},
+		{RPM: finalRPM},
+	})
+}
+
+func SetRPMSequenceStationCommand(
+	commandID []byte,
+	targetBoardUUID []byte,
+	steps []RPMStep,
+) *commandspb.DriverCommand {
+	boardSteps := make([]BoardCommandStep, 0, len(steps))
+	for _, step := range steps {
+		boardSteps = append(boardSteps, BoardCommandStep{
+			Payload:    SetRPMPayload(step.RPM),
+			DurationMS: step.DurationMS,
+		})
+	}
+	return SetBoardCommandSequenceStationCommand(commandID, targetBoardUUID, boardSteps)
+}
+
+func SetBoardCommandSequenceStationCommand(
+	commandID []byte,
+	targetBoardUUID []byte,
+	steps []BoardCommandStep,
+) *commandspb.DriverCommand {
 	commands := make([]*vescpb.VescTrampaBoardCommand, 0, len(steps))
 	for _, step := range steps {
 		commands = append(commands, &vescpb.VescTrampaBoardCommand{
-			Payload:          setCurrentPayload(step.CurrentMA),
+			Payload:          step.Payload,
 			ResponseExpected: false,
 			DurationMs:       step.DurationMS,
 		})
