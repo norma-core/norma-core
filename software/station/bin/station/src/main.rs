@@ -836,24 +836,6 @@ impl Station {
     }
 }
 
-async fn wait_for_shutdown_signal() -> Result<(), std::io::Error> {
-    #[cfg(unix)]
-    {
-        use tokio::signal::unix::{SignalKind, signal};
-
-        let mut terminate = signal(SignalKind::terminate())?;
-        tokio::select! {
-            result = tokio::signal::ctrl_c() => result,
-            _ = terminate.recv() => Ok(()),
-        }
-    }
-
-    #[cfg(not(unix))]
-    {
-        tokio::signal::ctrl_c().await
-    }
-}
-
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Args::parse();
@@ -927,8 +909,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // This MUST run on the main thread, so we use select! instead of spawn
     #[cfg(target_os = "macos")]
     {
-        let shutdown_signal = wait_for_shutdown_signal();
-        tokio::pin!(shutdown_signal);
         let mut interval = tokio::time::interval(tokio::time::Duration::from_millis(100));
         loop {
             tokio::select! {
@@ -936,7 +916,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     // Runs on main thread - tick the run loop
                     usbvideo::process_main_run_loop();
                 }
-                _ = &mut shutdown_signal => {
+                _ = tokio::signal::ctrl_c() => {
                     log::info!("\nShutting down...");
                     break;
                 }
@@ -946,7 +926,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     #[cfg(not(target_os = "macos"))]
     {
-        wait_for_shutdown_signal().await?;
+        tokio::signal::ctrl_c().await?;
         log::info!("\nShutting down...");
     }
 

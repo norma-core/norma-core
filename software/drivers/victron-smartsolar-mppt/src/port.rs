@@ -13,7 +13,6 @@ use std::collections::BTreeMap;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader, ReadHalf, WriteHalf};
-use tokio::sync::watch;
 use tokio::task::JoinHandle;
 use tokio::time::{MissedTickBehavior, interval, sleep, timeout};
 use tokio_serial::{SerialPortBuilderExt, SerialStream};
@@ -61,7 +60,6 @@ pub struct VictronPort<T: StationEngine> {
     station_engine: Arc<T>,
     device: VictronDevice,
     params: PortParams,
-    shutdown: watch::Receiver<bool>,
 }
 
 impl<T: StationEngine> VictronPort<T> {
@@ -70,14 +68,12 @@ impl<T: StationEngine> VictronPort<T> {
         station_engine: Arc<T>,
         device: VictronDevice,
         params: PortParams,
-        shutdown: watch::Receiver<bool>,
     ) -> Self {
         Self {
             normfs,
             station_engine,
             device,
             params,
-            shutdown,
         }
     }
 
@@ -124,8 +120,7 @@ impl<T: StationEngine> VictronPort<T> {
             String::new(),
         );
 
-        let poller: JoinHandle<()> =
-            tokio::spawn(run_hex_poller(write_half, self.shutdown.clone()));
+        let poller = AbortOnDrop(tokio::spawn(run_hex_poller(write_half)));
 
         let reason = self
             .read_loop(
@@ -138,7 +133,7 @@ impl<T: StationEngine> VictronPort<T> {
             )
             .await;
 
-        poller.abort();
+        drop(poller);
         info!(
             "Victron SmartSolar MPPT port {} closed: {}",
             port_name, reason
@@ -248,7 +243,6 @@ impl<T: StationEngine> VictronPort<T> {
         leftover: Vec<u8>,
         probe_block: Vec<u8>,
     ) -> String {
-        let mut shutdown = self.shutdown.clone();
         let mut malformed_count: u64 = 0;
         let mut last_malformed_log: Option<Instant> = None;
         let mut last_valid = Instant::now();
@@ -258,19 +252,10 @@ impl<T: StationEngine> VictronPort<T> {
         let mut regs: BTreeMap<u16, Bytes> = BTreeMap::new();
 
         loop {
-            if *shutdown.borrow() {
-                return "station shutting down".to_string();
-            }
-
             let bytes = if !carry.is_empty() {
                 std::mem::take(&mut carry)
             } else {
-                let read = tokio::select! {
-                    _ = shutdown.changed() => return "station shutting down".to_string(),
-                    result = timeout(self.params.read_timeout, reader.fill_buf()) => result,
-                };
-
-                match read {
+                match timeout(self.params.read_timeout, reader.fill_buf()).await {
                     Err(_) => {
                         return format!("no data received within {:?}", self.params.read_timeout);
                     }
@@ -405,16 +390,20 @@ fn enrich_device(device: &mut VictronDevice, block: &[u8], product_id: u16) {
         .unwrap_or_default();
 }
 
-async fn run_hex_poller(mut writer: Writer, mut shutdown: watch::Receiver<bool>) {
+struct AbortOnDrop(JoinHandle<()>);
+
+impl Drop for AbortOnDrop {
+    fn drop(&mut self) {
+        self.0.abort();
+    }
+}
+
+async fn run_hex_poller(mut writer: Writer) {
     let mut poll = interval(HEX_POLL_INTERVAL);
     poll.set_missed_tick_behavior(MissedTickBehavior::Skip);
 
     loop {
-        tokio::select! {
-            _ = poll.tick() => {}
-            _ = shutdown.changed() => return,
-        }
-
+        poll.tick().await;
         if send_group(&mut writer, registers::CURRENT_GROUP).await.is_err() {
             return;
         }
