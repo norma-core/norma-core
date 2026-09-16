@@ -103,13 +103,21 @@ pub fn enqueue_device_info(
     queue_id: &normfs::QueueId,
 ) -> Result<hikmicro::DeviceInfo, String> {
     let calibration = read_calibration_for_camera(camera);
+    if !calibration.ok {
+        log::warn!(
+            "HIKMICRO {} calibration read failed: {}; frames will have no calibrated temperatures",
+            camera.unique_id,
+            calibration.error
+        );
+    }
     let device_info = hikmicro::DeviceInfo {
         driver: "hikmicro-thermal/linux/libuvc+libusb".to_string(),
         usb: Some(usb_device_info(camera).unwrap_or_else(|e| {
             log::warn!("Failed to read HIKMICRO USB descriptors: {}", e);
             fallback_usb_info(camera)
         })),
-        stream_format: Some(compact_stream_format()),
+        // The descriptor index is device-specific and is known only after negotiation.
+        stream_format: None,
         layout: Some(compact_layout()),
         calibration: Some(calibration),
     };
@@ -127,7 +135,7 @@ pub fn enqueue_device_info(
 
 pub fn capture_continuous(
     camera: &CameraIdentity,
-    device_info: hikmicro::DeviceInfo,
+    mut device_info: hikmicro::DeviceInfo,
     normfs: &NormFS,
     queue_id: &normfs::QueueId,
     stop: &AtomicBool,
@@ -137,6 +145,17 @@ pub fn capture_continuous(
     let ctx = UvcContext::new()?;
     let mut stream = open_compact_stream(&ctx, camera)?;
     stream.start()?;
+    device_info.stream_format = Some(compact_stream_format(&stream.ctrl));
+    log::info!(
+        "HIKMICRO {} stream started: format_index={}, frame_index={}, interval_100ns={}, max_frame_bytes={}, max_transfer_bytes={}, calibration_ok={}",
+        camera.unique_id,
+        stream.ctrl.bFormatIndex,
+        stream.ctrl.bFrameIndex,
+        stream.ctrl.dwFrameInterval,
+        stream.ctrl.dwMaxVideoFrameSize,
+        stream.ctrl.dwMaxPayloadTransferSize,
+        device_info.calibration.as_ref().is_some_and(|c| c.ok)
+    );
 
     let mut block_sequence = 0u32;
     let mut last_valid_frame = Instant::now();
@@ -185,6 +204,19 @@ pub fn capture_continuous(
                 last_valid_frame = now;
                 short_frame_count = 0;
                 last_short_frame_warn = None;
+
+                if valid_frame_count == 0 {
+                    let runtime =
+                        parse_runtime_block(&frame.data[THERMAL_Y16_LEN..COMPACT_PAYLOAD_LEN]);
+                    log::info!(
+                        "HIKMICRO {} first complete frame: bytes={}, runtime_marker_ok={}, sensor={}x{}",
+                        camera.unique_id,
+                        frame.data.len(),
+                        runtime.marker_ok,
+                        runtime.frame_width,
+                        runtime.frame_height
+                    );
+                }
 
                 let count = valid_frame_count;
                 valid_frame_count = valid_frame_count.wrapping_add(1);
@@ -267,7 +299,7 @@ fn enqueue_frames_block(
         monotonic_end_ns: last.monotonic_stamp_ns,
         local_start_ns: first.local_stamp_ns,
         local_end_ns: last.local_stamp_ns,
-        stream_format: Some(compact_stream_format()),
+        stream_format: device_info.stream_format.clone(),
         layout: Some(compact_layout()),
         frames,
     };
@@ -298,14 +330,18 @@ fn thermal_frame_from_capture(frame: CapturedFrame) -> hikmicro::ThermalFrame {
     }
 }
 
-fn compact_stream_format() -> hikmicro::CompactStreamFormat {
+fn compact_stream_format(ctrl: &uvc_stream_ctrl_t) -> hikmicro::CompactStreamFormat {
     hikmicro::CompactStreamFormat {
         fourcc: FOURCC_YUY2,
-        format_index: 1,
-        frame_index: 2,
+        format_index: ctrl.bFormatIndex as u32,
+        frame_index: ctrl.bFrameIndex as u32,
         uvc_width: COMPACT_UVC_WIDTH,
         uvc_height: COMPACT_UVC_HEIGHT,
-        frames_per_second: COMPACT_FPS,
+        frames_per_second: if ctrl.dwFrameInterval == 0 {
+            0.0
+        } else {
+            10_000_000.0 / ctrl.dwFrameInterval as f32
+        },
         guid: Bytes::copy_from_slice(b"YUY2\0\0\x10\0\x80\0\0\xaa\0\x38\x9b\x71"),
         source_format: uvc_frame_format_UVC_FRAME_FORMAT_YUYV,
     }
@@ -444,7 +480,7 @@ fn read_calibration_claimed(dev: &UsbDeviceHandle) -> Result<hikmicro::Calibrati
     while container.len() < declared {
         let len = xu_get_len(dev, 3)? as usize;
         let chunk = xu_get_cur(dev, 3, len as u16)?;
-        if chunk.len() < 5 {
+        if chunk.len() <= 5 {
             return Err(format!("short calibration chunk: {}", chunk.len()));
         }
 
@@ -460,6 +496,9 @@ fn read_calibration_claimed(dev: &UsbDeviceHandle) -> Result<hikmicro::Calibrati
     }
 
     let (blob_offset, blob_len) = parse_factory_blob_range(&container);
+    if blob_len == 0 {
+        return Err("calibration container has no valid factory blob".to_string());
+    }
     Ok(hikmicro::CalibrationData {
         attempted: true,
         ok: true,
@@ -681,11 +720,19 @@ impl StreamHandle {
         let err = unsafe { uvc_stream_get_frame(self.stream, &mut frame, timeout_us as i32) };
         if err != uvc_error_UVC_SUCCESS {
             Err(err)
-        } else if frame.is_null() {
-            Err(uvc_error_UVC_ERROR_NO_MEM)
         } else {
-            Ok(frame)
+            polled_frame(frame)
         }
+    }
+}
+
+// libuvc can wake without a new sequence (including a spurious condition-variable
+// wakeup). A successful call with NULL means no frame, not allocation failure.
+fn polled_frame(frame: *mut uvc_frame) -> Result<*mut uvc_frame, uvc_error> {
+    if frame.is_null() {
+        Err(uvc_error_UVC_ERROR_TIMEOUT)
+    } else {
+        Ok(frame)
     }
 }
 
@@ -708,7 +755,77 @@ impl Drop for StreamHandle {
 
 #[cfg(test)]
 mod tests {
-    use super::should_keep;
+    use super::*;
+
+    #[test]
+    fn reports_negotiated_descriptor_index_for_each_camera() {
+        let mut ctrl: uvc_stream_ctrl_t = unsafe { std::mem::zeroed() };
+        ctrl.bFormatIndex = 1;
+        ctrl.dwFrameInterval = 400_000;
+        for index in [2, 6] {
+            ctrl.bFrameIndex = index;
+            let format = compact_stream_format(&ctrl);
+            assert_eq!(format.frame_index, index as u32);
+            assert_eq!(format.format_index, 1);
+            assert_eq!(format.frames_per_second, 25.0);
+        }
+    }
+
+    #[test]
+    fn successful_poll_without_frame_is_retryable() {
+        assert_eq!(
+            polled_frame(ptr::null_mut()),
+            Err(uvc_error_UVC_ERROR_TIMEOUT)
+        );
+        let mut frame = MaybeUninit::<uvc_frame>::uninit();
+        assert_eq!(polled_frame(frame.as_mut_ptr()), Ok(frame.as_mut_ptr()));
+    }
+
+    /// Exercise the production USB sequence, rather than the separate V4L2 probe.
+    #[test]
+    #[ignore = "requires one connected 2bdf:0102 camera and USB access"]
+    fn camera_calibration_and_compact_stream() {
+        let cameras = discover_cameras().expect("camera discovery");
+        assert_eq!(cameras.len(), 1, "connect exactly one HIKMICRO camera");
+        let camera = &cameras[0];
+        eprintln!("camera: {:?}", camera);
+        let calibration = read_calibration_for_camera(camera);
+        assert!(calibration.ok, "calibration: {}", calibration.error);
+        assert_eq!(calibration.factory_blob_length, 0x3800);
+        let ctx = UvcContext::new().expect("UVC context");
+        let mut stream = open_compact_stream(&ctx, camera).expect("compact negotiation");
+        stream.start().expect("start stream");
+        eprintln!("negotiated: {:?}", compact_stream_format(&stream.ctrl));
+        let deadline = Instant::now() + Duration::from_secs(5);
+        let mut count = 0;
+        while Instant::now() < deadline {
+            let frame = match stream.read_frame(200_000) {
+                Ok(frame) if frame.data.len() >= COMPACT_PAYLOAD_LEN => frame,
+                Ok(_) => continue,
+                Err(err) if err == uvc_error_UVC_ERROR_TIMEOUT => continue,
+                Err(err) => panic!("frame poll failed: {}", err),
+            };
+            let runtime = parse_runtime_block(&frame.data[THERMAL_Y16_LEN..COMPACT_PAYLOAD_LEN]);
+            assert!(runtime.marker_ok, "wrong compact layout: {:?}", runtime);
+            assert_eq!((runtime.frame_width, runtime.frame_height), (256, 192));
+            count += 1;
+            if count == 10 {
+                if let Some(out) = std::env::var_os("HIKMICRO_PROBE_OUT") {
+                    let out = std::path::PathBuf::from(out);
+                    std::fs::create_dir(&out).expect("create new probe output directory");
+                    std::fs::write(out.join("frame.bin"), &frame.data).unwrap();
+                    std::fs::write(out.join("calibration.container"), &calibration.container)
+                        .unwrap();
+                }
+                eprintln!(
+                    "received {} complete frames with valid runtime metadata",
+                    count
+                );
+                return;
+            }
+        }
+        panic!("only {} complete frames within 5 seconds", count);
+    }
 
     #[test]
     fn should_keep_zero_skip_keeps_every_frame() {
