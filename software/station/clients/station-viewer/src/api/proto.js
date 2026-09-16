@@ -43163,6 +43163,20 @@ export const pwm_output = $root.pwm_output = (() => {
         return WaveSegment;
     })();
 
+    /**
+     * WaveRepeatMode enum.
+     * @name pwm_output.WaveRepeatMode
+     * @enum {number}
+     * @property {number} WAVE_REPEAT_MODE_FINITE=0 WAVE_REPEAT_MODE_FINITE value
+     * @property {number} WAVE_REPEAT_MODE_FOREVER=1 WAVE_REPEAT_MODE_FOREVER value
+     */
+    pwm_output.WaveRepeatMode = (function() {
+        const valuesById = {}, values = Object.create(valuesById);
+        values[valuesById[0] = "WAVE_REPEAT_MODE_FINITE"] = 0;
+        values[valuesById[1] = "WAVE_REPEAT_MODE_FOREVER"] = 1;
+        return values;
+    })();
+
     pwm_output.WaveCommand = (function() {
 
         /**
@@ -43172,6 +43186,7 @@ export const pwm_output = $root.pwm_output = (() => {
          * @property {number|null} [channel] WaveCommand channel
          * @property {Array.<pwm_output.IWaveSegment>|null} [segments] WaveCommand segments
          * @property {number|null} [repeat] WaveCommand repeat
+         * @property {pwm_output.WaveRepeatMode|null} [repeatMode] WaveCommand repeatMode
          */
 
         /**
@@ -43215,6 +43230,14 @@ export const pwm_output = $root.pwm_output = (() => {
         WaveCommand.prototype.repeat = 0;
 
         /**
+         * WaveCommand repeatMode.
+         * @member {pwm_output.WaveRepeatMode} repeatMode
+         * @memberof pwm_output.WaveCommand
+         * @instance
+         */
+        WaveCommand.prototype.repeatMode = 0;
+
+        /**
          * Creates a new WaveCommand instance using the specified properties.
          * @function create
          * @memberof pwm_output.WaveCommand
@@ -43245,6 +43268,8 @@ export const pwm_output = $root.pwm_output = (() => {
                     $root.pwm_output.WaveSegment.encode(message.segments[i], writer.uint32(/* id 2, wireType 2 =*/18).fork()).ldelim();
             if (message.repeat != null && Object.hasOwnProperty.call(message, "repeat"))
                 writer.uint32(/* id 3, wireType 0 =*/24).uint32(message.repeat);
+            if (message.repeatMode != null && Object.hasOwnProperty.call(message, "repeatMode"))
+                writer.uint32(/* id 4, wireType 0 =*/32).int32(message.repeatMode);
             return writer;
         };
 
@@ -43297,6 +43322,10 @@ export const pwm_output = $root.pwm_output = (() => {
                     }
                 case 3: {
                         message.repeat = reader.uint32();
+                        break;
+                    }
+                case 4: {
+                        message.repeatMode = reader.int32();
                         break;
                     }
                 default:
@@ -43353,6 +43382,14 @@ export const pwm_output = $root.pwm_output = (() => {
             if (message.repeat != null && message.hasOwnProperty("repeat"))
                 if (!$util.isInteger(message.repeat))
                     return "repeat: integer expected";
+            if (message.repeatMode != null && message.hasOwnProperty("repeatMode"))
+                switch (message.repeatMode) {
+                default:
+                    return "repeatMode: enum value expected";
+                case 0:
+                case 1:
+                    break;
+                }
             return null;
         };
 
@@ -43386,6 +43423,22 @@ export const pwm_output = $root.pwm_output = (() => {
             }
             if (object.repeat != null)
                 message.repeat = object.repeat >>> 0;
+            switch (object.repeatMode) {
+            default:
+                if (typeof object.repeatMode === "number") {
+                    message.repeatMode = object.repeatMode;
+                    break;
+                }
+                break;
+            case "WAVE_REPEAT_MODE_FINITE":
+            case 0:
+                message.repeatMode = 0;
+                break;
+            case "WAVE_REPEAT_MODE_FOREVER":
+            case 1:
+                message.repeatMode = 1;
+                break;
+            }
             return message;
         };
 
@@ -43407,6 +43460,7 @@ export const pwm_output = $root.pwm_output = (() => {
             if (options.defaults) {
                 object.channel = 0;
                 object.repeat = 0;
+                object.repeatMode = options.enums === String ? "WAVE_REPEAT_MODE_FINITE" : 0;
             }
             if (message.channel != null && message.hasOwnProperty("channel"))
                 object.channel = message.channel;
@@ -43417,6 +43471,8 @@ export const pwm_output = $root.pwm_output = (() => {
             }
             if (message.repeat != null && message.hasOwnProperty("repeat"))
                 object.repeat = message.repeat;
+            if (message.repeatMode != null && message.hasOwnProperty("repeatMode"))
+                object.repeatMode = options.enums === String ? $root.pwm_output.WaveRepeatMode[message.repeatMode] === undefined ? message.repeatMode : $root.pwm_output.WaveRepeatMode[message.repeatMode] : message.repeatMode;
             return object;
         };
 

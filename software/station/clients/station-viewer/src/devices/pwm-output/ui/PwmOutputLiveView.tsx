@@ -76,7 +76,9 @@ function formatWave(wave?: pwm_output.IWaveCommand | null): string {
     .slice(0, 4)
     .map((segment) => `${formatLevel(segment.level)}${segment.durationUs ?? 0}us`)
     .join(' ');
-  return `ch${wave.channel ?? 0} x${wave.repeat ?? 0}${segments ? ` ${segments}` : ''}`;
+  const repeat = wave.repeatMode === pwm_output.WaveRepeatMode.WAVE_REPEAT_MODE_FOREVER
+    ? 'forever' : `x${wave.repeat ?? 0}`;
+  return `ch${wave.channel ?? 0} ${repeat}${segments ? ` ${segments}` : ''}`;
 }
 
 function formatAge(stampNs?: Long | number | null): string {

@@ -22,6 +22,11 @@ enum pwm_output_wave_level {
 	PWM_OUTPUT_WAVE_LEVEL_HIGH = 1,
 };
 
+enum pwm_output_wave_repeat_mode {
+	PWM_OUTPUT_WAVE_REPEAT_FINITE = 0,
+	PWM_OUTPUT_WAVE_REPEAT_FOREVER = 1,
+};
+
 enum pwm_output_wave_status {
 	PWM_OUTPUT_WAVE_OK = 0,
 	PWM_OUTPUT_WAVE_ERROR_PROTO,
@@ -41,6 +46,7 @@ struct pwm_output_wave_segment_state {
 
 struct pwm_output_wave_channel_state {
 	bool active;
+	enum pwm_output_wave_repeat_mode repeat_mode;
 	size_t segment_index;
 	size_t segment_count;
 	uint32_t repeat_remaining;
@@ -51,6 +57,20 @@ struct pwm_output_wave_channel_state {
 struct pwm_output_wave_engine {
 	struct pwm_output_wave_channel_state channels[PWM_OUTPUT_WAVE_MAX_CHANNELS];
 };
+
+/* Owns decoded data: preparing does not touch the engine or output pins. */
+struct pwm_output_wave_update {
+	uint32_t channel;
+	struct pwm_output_wave_channel_state state;
+};
+
+enum pwm_output_wave_status pwm_output_wave_prepare_tx_payload(
+	struct pwm_output_wave_update *update, const uint8_t *payload, size_t payload_len);
+/* Commit only successfully prepared updates; serialize with tick(). */
+void pwm_output_wave_engine_commit(
+	struct pwm_output_wave_engine *engine, const struct pwm_output_wave_update *update);
+/* Returns zero when idle. */
+uint32_t pwm_output_wave_engine_next_edge_us(const struct pwm_output_wave_engine *engine);
 
 void pwm_output_wave_engine_init(struct pwm_output_wave_engine *engine);
 void pwm_output_wave_engine_tick(struct pwm_output_wave_engine *engine, uint32_t elapsed_us);

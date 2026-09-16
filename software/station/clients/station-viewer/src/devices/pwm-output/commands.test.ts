@@ -51,4 +51,18 @@ describe('PWM output steering helpers', () => {
     expect(pwmOutputPulseWidthForSteeringDeg(130, 2000, 1000)).toBe(1278);
     expect(pwmOutputPulseWidthForSteeringDeg(180, 2000, 1000)).toBe(1278);
   });
+
+  it('encodes an explicit hold without changing the servo pulse timings or finite default', async () => {
+    const { buildPwmOutputServoWave } = await import('./commands');
+    const { pwm_output } = await import('@/api/proto.js');
+    const finite = buildPwmOutputServoWave(7, 1500);
+    const held = buildPwmOutputServoWave(7, 1500, 20000, 'forever');
+    const decoded = pwm_output.WaveCommand.decode(pwm_output.WaveCommand.encode(held).finish());
+    expect(decoded.repeatMode).toBe(pwm_output.WaveRepeatMode.WAVE_REPEAT_MODE_FOREVER);
+    expect(decoded.repeat).toBe(0);
+    expect(decoded.segments.map(segment => segment.durationUs)).toEqual([1500, 18500]);
+    expect(held.segments).toEqual(finite.segments);
+    expect(finite.repeat).toBeGreaterThan(0);
+    expect(finite.repeatMode).toBe(pwm_output.WaveRepeatMode.WAVE_REPEAT_MODE_FINITE);
+  });
 });

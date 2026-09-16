@@ -20,6 +20,11 @@ typedef enum pwm_output_WaveLevel {
 	pwm_output_WaveLevel_WAVE_LEVEL_HIGH = 2,
 } pwm_output_WaveLevel;
 
+typedef enum pwm_output_WaveRepeatMode {
+	pwm_output_WaveRepeatMode_WAVE_REPEAT_MODE_FINITE = 0,
+	pwm_output_WaveRepeatMode_WAVE_REPEAT_MODE_FOREVER = 1,
+} pwm_output_WaveRepeatMode;
+
 typedef struct pwm_output_PwmOutputDevice {
 	struct gremlin_bytes	id;
 	size_t	_size;
@@ -229,6 +234,7 @@ typedef struct pwm_output_WaveCommand {
 	const pwm_output_WaveSegment * const	*segments;
 	size_t	segments_count;
 	uint32_t	repeat;
+	pwm_output_WaveRepeatMode	repeat_mode;
 	size_t	_size;
 } pwm_output_WaveCommand;
 
@@ -259,6 +265,10 @@ pwm_output_WaveCommand_size(const pwm_output_WaveCommand *m)
 	if (m->repeat != 0) {
 		s += 1 + gremlin_varint32_size(m->repeat);
 	}
+	if (m->repeat_mode != 0) {
+		s += 1
+		   + gremlin_varint_size((uint64_t)(int64_t)m->repeat_mode);
+	}
 	((pwm_output_WaveCommand *)m)->_size = s;
 	return s;
 }
@@ -285,6 +295,10 @@ pwm_output_WaveCommand_encode_at(const pwm_output_WaveCommand *m, uint8_t * __re
 		_off = gremlin_varint32_encode_at(_buf, _off, 24u);
 		_off = gremlin_varint32_encode_at(_buf, _off, m->repeat);
 	}
+	if (m->repeat_mode != 0) {
+		_off = gremlin_varint32_encode_at(_buf, _off, 32u);
+		_off = gremlin_varint_encode_at(_buf, _off, (uint64_t)(int64_t)m->repeat_mode);
+	}
 	return _off;
 }
 
@@ -301,11 +315,13 @@ typedef struct pwm_output_WaveCommand_reader {
 		unsigned	channel : 1;
 		unsigned	segments : 1;
 		unsigned	repeat : 1;
+		unsigned	repeat_mode : 1;
 	} _has;
 	uint32_t	channel;
 	size_t	segments_count;
 	size_t	segments_first_offset;
 	uint32_t	repeat;
+	pwm_output_WaveRepeatMode	repeat_mode;
 } pwm_output_WaveCommand_reader;
 
 static inline enum gremlin_error
@@ -346,6 +362,15 @@ pwm_output_WaveCommand_reader_init(pwm_output_WaveCommand_reader *r, const uint8
 			offset += d.consumed;
 			r->repeat = d.value;
 			r->_has.repeat = true;
+			continue;
+		}
+		if (t.value == 32u /* field 4, GREMLIN_WIRE_VARINT */) {
+			struct gremlin_varint_decode_result d =
+				gremlin_varint_decode(src + offset, len - offset);
+			if (d.error != GREMLIN_OK) return d.error;
+			offset += d.consumed;
+			r->repeat_mode = (pwm_output_WaveRepeatMode)(int32_t)(uint32_t)d.value;
+			r->_has.repeat_mode = 1;
 			continue;
 		}
 		unsigned _wt = (unsigned)(t.value % 8u);
@@ -430,6 +455,13 @@ pwm_output_WaveCommand_reader_get_repeat(const pwm_output_WaveCommand_reader *r)
 {
 	if (r == NULL || !r->_has.repeat) return 0;
 	return r->repeat;
+}
+
+static inline pwm_output_WaveRepeatMode
+pwm_output_WaveCommand_reader_get_repeat_mode(const pwm_output_WaveCommand_reader *r)
+{
+	if (r == NULL || !r->_has.repeat_mode) return 0;
+	return r->repeat_mode;
 }
 
 typedef struct pwm_output_OutputState {

@@ -13,6 +13,7 @@ import { commandManager } from '@/api/commands.js';
 import type { FrameEntry } from '@/api/frame-parser';
 import { usbvideo } from '@/api/proto.js';
 import CameraViewer from '@/usbvideo/CameraViewer';
+import RoverCameraServoControl from './RoverCameraServoControl';
 import { getVideoSourceId } from '@/usbvideo/camera-source';
 import {
   clearLiveCameraFrame,
@@ -193,6 +194,9 @@ function RoverCameraViewport({
   return (
     <div className="relative min-h-0 overflow-hidden bg-black [@media(max-width:1023px)_and_(orientation:landscape)]:absolute [@media(max-width:1023px)_and_(orientation:landscape)]:inset-0">
       {cameraStage}
+      <div className="absolute bottom-2 left-1/2 z-40 w-[min(20rem,calc(100%-1rem))] -translate-x-1/2 [@media(max-width:1023px)_and_(orientation:landscape)]:bottom-[calc(0.5rem+env(safe-area-inset-bottom))] [@media(max-width:1023px)_and_(orientation:landscape)]:left-[calc(1rem+env(safe-area-inset-left)+var(--rover-landscape-left-zone)+var(--rover-landscape-power-zone))] [@media(max-width:1023px)_and_(orientation:landscape)]:right-[calc(1rem+env(safe-area-inset-right)+var(--rover-landscape-right-safe-zone))] [@media(max-width:1023px)_and_(orientation:landscape)]:w-auto [@media(max-width:1023px)_and_(orientation:landscape)]:translate-x-0">
+        <RoverCameraServoControl />
+      </div>
       <div className="pointer-events-none absolute inset-0 z-10 hidden [background:radial-gradient(circle_at_18%_82%,rgba(34,211,238,0.14),transparent_27%),radial-gradient(circle_at_84%_78%,rgba(34,211,238,0.10),transparent_24%),linear-gradient(90deg,rgba(0,0,0,0.30),transparent_32%,transparent_68%,rgba(0,0,0,0.30)),linear-gradient(180deg,rgba(0,0,0,0.18),transparent_34%,rgba(0,0,0,0.22))] [@media(max-width:1023px)_and_(orientation:landscape)]:block" aria-hidden="true" />
       <span className="pointer-events-none absolute left-[0.55rem] top-[0.55rem] z-20 hidden h-[0.95rem] w-[0.95rem] border-l-2 border-t-2 border-accent-data/70 [@media(max-width:1023px)_and_(orientation:landscape)]:block" aria-hidden />
       <span className="pointer-events-none absolute right-[0.55rem] top-[0.55rem] z-20 hidden h-[0.95rem] w-[0.95rem] border-r-2 border-t-2 border-accent-data/70 [@media(max-width:1023px)_and_(orientation:landscape)]:block" aria-hidden />

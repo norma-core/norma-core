@@ -10,6 +10,7 @@ drivers:
     device-path: /dev/x8h7_ui
     outputs:
       - id: steering
+      - id: cameras
   usb-video:
     enabled: true
     formats:

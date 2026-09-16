@@ -56,10 +56,26 @@ static void force_pwm_pins_push_pull() {
   }
 }
 
+// Serialize the main loop and RPC thread when advancing or replacing a wave.
+static void advance_wave_clock() {
+  uint32_t now = micros();
+  uint32_t elapsed = now - last_tick_us;
+  last_tick_us = now;
+  pwm_output_wave_engine_tick(&wave_engine, elapsed);
+}
+
 static int apply_payload(const uint8_t *payload, size_t payload_len) {
+  pwm_output_wave_update update;
   enum pwm_output_wave_status status =
-      pwm_output_wave_engine_apply_tx_payload(&wave_engine, payload, payload_len);
-  return (status == PWM_OUTPUT_WAVE_OK) ? 0 : -(int)status;
+      pwm_output_wave_prepare_tx_payload(&update, payload, payload_len);
+  if (status != PWM_OUTPUT_WAVE_OK) {
+    return -(int)status;
+  }
+  // Parse before locking so validation does not block the waveform loop.
+  mbed::CriticalSectionLock lock;
+  advance_wave_clock();
+  pwm_output_wave_engine_commit(&wave_engine, &update);
+  return 0;
 }
 
 static int apply_frame_bytes(const uint8_t *frame, size_t frame_len) {
@@ -80,10 +96,8 @@ int pwmFrame(clmdep_msgpack::type::raw_ref frame) {
     return -1;
   }
 
-  for (size_t i = 0; i < frame_len; i++) {
-    rx_buf[i] = (uint8_t)frame.ptr[i];
-  }
-  return apply_frame_bytes(rx_buf, frame_len);
+  // RPC dispatch has its own thread; do not overwrite the serial RX buffer.
+  return apply_frame_bytes(reinterpret_cast<const uint8_t *>(frame.ptr), frame_len);
 }
 
 static void drop_rx_prefix(size_t count) {
@@ -142,9 +156,9 @@ void setup() {
 }
 
 void loop() {
-  uint32_t now = micros();
-  uint32_t elapsed = now - last_tick_us;
-  last_tick_us = now;
-  pwm_output_wave_engine_tick(&wave_engine, elapsed);
+  {
+    mbed::CriticalSectionLock lock;
+    advance_wave_clock();
+  }
   read_stream();
 }

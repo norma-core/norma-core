@@ -1,6 +1,6 @@
 use crate::pwm_output_proto::{
     Command, OutputState, PwmOutputDevice, PwmOutputSignalType, RxEnvelope, TxEnvelope,
-    WaveCommand, WaveLevel,
+    WaveCommand, WaveLevel, WaveRepeatMode,
 };
 use bytes::{BufMut, Bytes, BytesMut};
 use log::{error, info, warn};
@@ -495,9 +495,14 @@ fn validate_output_config(config: &PwmOutputDeviceConfig) -> DriverResult<()> {
 }
 
 fn validate_wave(wave: &WaveCommand) -> Result<(), CommandError> {
-    if wave.repeat == 0 {
+    let valid_repeat = match WaveRepeatMode::try_from(wave.repeat_mode) {
+        Ok(WaveRepeatMode::Finite) => wave.repeat > 0,
+        Ok(WaveRepeatMode::Forever) => wave.repeat == 0,
+        Err(_) => false,
+    };
+    if !valid_repeat {
         return Err(CommandError::Rejected(
-            "wave repeat must be greater than 0".to_string(),
+            "wave requires FINITE mode with repeat > 0 or FOREVER mode with repeat = 0".to_string(),
         ));
     }
     if wave.segments.is_empty() {
@@ -546,6 +551,7 @@ mod tests {
                 },
             ],
             repeat: 5,
+            repeat_mode: WaveRepeatMode::Finite as i32,
         }
     }
 
@@ -568,6 +574,7 @@ mod tests {
             channel: 7,
             segments: Vec::new(),
             repeat: 1,
+            repeat_mode: WaveRepeatMode::Finite as i32,
         };
         assert!(matches!(
             validate_wave(&command),
@@ -589,6 +596,44 @@ mod tests {
     fn rejects_zero_duration() {
         let mut command = wave();
         command.segments[0].duration_us = 0;
+        assert!(matches!(
+            validate_wave(&command),
+            Err(CommandError::Rejected(_))
+        ));
+    }
+
+    #[test]
+    fn accepts_hold_and_preserves_it_in_transport_payload() {
+        let mut command = wave();
+        command.repeat = 0;
+        command.repeat_mode = WaveRepeatMode::Forever as i32;
+        assert!(validate_wave(&command).is_ok());
+        let envelope = TxEnvelope {
+            command: Some(crate::pwm_output_proto::Command {
+                wave: Some(command.clone()),
+                ..Default::default()
+            }),
+            ..Default::default()
+        };
+        let frame = encode_frame(Bytes::from(envelope.encode_to_vec())).unwrap();
+        let decoded = TxEnvelope::decode(&frame[FRAME_HEADER_LEN..frame.len() - 4]).unwrap();
+        assert_eq!(decoded.command.unwrap().wave.unwrap(), command);
+    }
+
+    #[test]
+    fn rejects_conflicting_repeat_modes() {
+        let mut command = wave();
+        command.repeat_mode = WaveRepeatMode::Forever as i32;
+        assert!(matches!(
+            validate_wave(&command),
+            Err(CommandError::Rejected(_))
+        ));
+    }
+
+    #[test]
+    fn rejects_unknown_repeat_mode() {
+        let mut command = wave();
+        command.repeat_mode = 99;
         assert!(matches!(
             validate_wave(&command),
             Err(CommandError::Rejected(_))

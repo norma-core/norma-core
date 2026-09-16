@@ -34,10 +34,19 @@ message WaveSegment {
     uint32    duration_us = 2;
 }
 
+enum WaveRepeatMode {
+    // Default preserves existing finite commands.
+    WAVE_REPEAT_MODE_FINITE = 0;
+    WAVE_REPEAT_MODE_FOREVER = 1;
+}
+
 message WaveCommand {
     uint32 channel = 1;
     repeated WaveSegment segments = 2;
+    // Finite cycle count. Must be > 0 in FINITE mode; must be 0 in FOREVER mode.
     uint32 repeat = 3;
+    // FOREVER repeats on the MCU until replaced, disabled, or the MCU restarts.
+    WaveRepeatMode repeat_mode = 4;
 }
 
 message DisableCommand {

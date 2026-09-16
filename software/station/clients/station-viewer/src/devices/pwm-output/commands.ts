@@ -21,6 +21,9 @@ export const PWM_OUTPUT_DEFAULT_STEERING_MAX_PULSE_US = 2000;
 export const PWM_OUTPUT_MIN_PULSE_US = 500;
 export const PWM_OUTPUT_MAX_PULSE_US = 2500;
 
+/** 'forever' keeps PWM running on the MCU until replaced or disabled. */
+export type PwmOutputRepeat = number | 'forever';
+
 function positiveInt(value: number, fallback: number): number {
   if (!Number.isFinite(value)) {
     return fallback;
@@ -88,7 +91,7 @@ export function buildPwmOutputServoWave(
   channel: number,
   pulseWidthUs: number,
   periodUs = PWM_OUTPUT_DEFAULT_PERIOD_US,
-  repeat = PWM_OUTPUT_DEFAULT_REPEAT,
+  repeat: PwmOutputRepeat = PWM_OUTPUT_DEFAULT_REPEAT,
 ): pwm_output.IWaveCommand {
   const period = positiveInt(periodUs, PWM_OUTPUT_DEFAULT_PERIOD_US);
   const pulse = clampPwmOutputPulseWidthUs(pulseWidthUs, period);
@@ -96,7 +99,10 @@ export function buildPwmOutputServoWave(
 
   return {
     channel: uint32(channel, PWM_OUTPUT_DEFAULT_CHANNEL),
-    repeat: positiveInt(repeat, PWM_OUTPUT_DEFAULT_REPEAT),
+    repeat: repeat === 'forever' ? 0 : positiveInt(repeat, PWM_OUTPUT_DEFAULT_REPEAT),
+    repeatMode: repeat === 'forever'
+      ? pwm_output.WaveRepeatMode.WAVE_REPEAT_MODE_FOREVER
+      : pwm_output.WaveRepeatMode.WAVE_REPEAT_MODE_FINITE,
     segments: [
       {
         level: pwm_output.WaveLevel.WAVE_LEVEL_HIGH,
@@ -125,7 +131,7 @@ export async function setPwmOutputServoPulse(
   channel: number,
   pulseWidthUs: number,
   periodUs = PWM_OUTPUT_DEFAULT_PERIOD_US,
-  repeat = PWM_OUTPUT_DEFAULT_REPEAT,
+  repeat: PwmOutputRepeat = PWM_OUTPUT_DEFAULT_REPEAT,
 ): Promise<void> {
   await setPwmOutputWave(
     targetOutputId,
@@ -138,7 +144,7 @@ export async function setPwmOutputSteeringAngle(
   channel: number,
   steeringDeg: number,
   periodUs = PWM_OUTPUT_DEFAULT_PERIOD_US,
-  repeat = PWM_OUTPUT_DEFAULT_REPEAT,
+  repeat: PwmOutputRepeat = PWM_OUTPUT_DEFAULT_REPEAT,
   minPulseUs = PWM_OUTPUT_DEFAULT_STEERING_MIN_PULSE_US,
   maxPulseUs = PWM_OUTPUT_DEFAULT_STEERING_MAX_PULSE_US,
 ): Promise<void> {

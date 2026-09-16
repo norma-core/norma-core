@@ -47,11 +47,11 @@ static bool level_from_proto(pwm_output_WaveLevel src, enum pwm_output_wave_leve
 	return false;
 }
 
-static enum pwm_output_wave_status apply_wave(
-	struct pwm_output_wave_engine *engine,
+static enum pwm_output_wave_status prepare_wave(
+	struct pwm_output_wave_update *update,
 	const pwm_output_WaveCommand_reader *wave)
 {
-	if (engine == NULL || wave == NULL) {
+	if (update == NULL || wave == NULL) {
 		return PWM_OUTPUT_WAVE_ERROR_PROTO;
 	}
 
@@ -69,7 +69,10 @@ static enum pwm_output_wave_status apply_wave(
 	}
 
 	uint32_t repeat = pwm_output_WaveCommand_reader_get_repeat(wave);
-	if (repeat == 0) {
+	pwm_output_WaveRepeatMode mode = pwm_output_WaveCommand_reader_get_repeat_mode(wave);
+	if ((mode != pwm_output_WaveRepeatMode_WAVE_REPEAT_MODE_FINITE &&
+	     mode != pwm_output_WaveRepeatMode_WAVE_REPEAT_MODE_FOREVER) ||
+	    (mode == pwm_output_WaveRepeatMode_WAVE_REPEAT_MODE_FINITE ? repeat == 0 : repeat != 0)) {
 		return PWM_OUTPUT_WAVE_ERROR_BAD_REPEAT;
 	}
 
@@ -78,6 +81,8 @@ static enum pwm_output_wave_status apply_wave(
 	next.active = true;
 	next.segment_count = count;
 	next.repeat_remaining = repeat;
+	next.repeat_mode = mode == pwm_output_WaveRepeatMode_WAVE_REPEAT_MODE_FOREVER
+		? PWM_OUTPUT_WAVE_REPEAT_FOREVER : PWM_OUTPUT_WAVE_REPEAT_FINITE;
 
 	pwm_output_WaveCommand_reader_segments_iter it =
 		pwm_output_WaveCommand_reader_segments_begin(wave);
@@ -102,8 +107,8 @@ static enum pwm_output_wave_status apply_wave(
 
 	next.segment_index = 0;
 	next.remaining_us = next.segments[0].duration_us;
-	engine->channels[channel] = next;
-	pwm_output_wave_write_level(channel, next.segments[0].level);
+	update->channel = channel;
+	update->state = next;
 	return PWM_OUTPUT_WAVE_OK;
 }
 
@@ -118,8 +123,10 @@ static void advance_channel(
 		return;
 	}
 
-	if (state->repeat_remaining > 1u) {
-		state->repeat_remaining--;
+	if (state->repeat_mode == PWM_OUTPUT_WAVE_REPEAT_FOREVER || state->repeat_remaining > 1u) {
+		if (state->repeat_mode == PWM_OUTPUT_WAVE_REPEAT_FINITE) {
+			state->repeat_remaining--;
+		}
 		state->segment_index = 0;
 		state->remaining_us = state->segments[0].duration_us;
 		pwm_output_wave_write_level(channel, state->segments[0].level);
@@ -158,12 +165,12 @@ void pwm_output_wave_engine_tick(struct pwm_output_wave_engine *engine, uint32_t
 	}
 }
 
-enum pwm_output_wave_status pwm_output_wave_engine_apply_tx_payload(
-	struct pwm_output_wave_engine *engine,
+enum pwm_output_wave_status pwm_output_wave_prepare_tx_payload(
+	struct pwm_output_wave_update *update,
 	const uint8_t *payload,
 	size_t payload_len)
 {
-	if (engine == NULL || (payload == NULL && payload_len > 0)) {
+	if (update == NULL || (payload == NULL && payload_len > 0)) {
 		return PWM_OUTPUT_WAVE_ERROR_PROTO;
 	}
 
@@ -195,7 +202,8 @@ enum pwm_output_wave_status pwm_output_wave_engine_apply_tx_payload(
 		if (channel >= PWM_OUTPUT_WAVE_MAX_CHANNELS) {
 			return PWM_OUTPUT_WAVE_ERROR_BAD_CHANNEL;
 		}
-		disable_channel(engine, channel);
+		memset(update, 0, sizeof(*update));
+		update->channel = channel;
 		return PWM_OUTPUT_WAVE_OK;
 	}
 
@@ -203,7 +211,66 @@ enum pwm_output_wave_status pwm_output_wave_engine_apply_tx_payload(
 	if (pwm_output_Command_reader_get_wave(&command, &wave) != GREMLIN_OK) {
 		return PWM_OUTPUT_WAVE_ERROR_PROTO;
 	}
-	return apply_wave(engine, &wave);
+	return prepare_wave(update, &wave);
+}
+
+/* Call only with a successfully prepared update, serialized with tick(). */
+void pwm_output_wave_engine_commit(
+	struct pwm_output_wave_engine *engine,
+	const struct pwm_output_wave_update *update)
+{
+	if (engine == NULL || update == NULL || update->channel >= PWM_OUTPUT_WAVE_MAX_CHANNELS) {
+		return;
+	}
+	if (!update->state.active) {
+		disable_channel(engine, update->channel);
+		return;
+	}
+	struct pwm_output_wave_channel_state *state = &engine->channels[update->channel];
+	const struct pwm_output_wave_channel_state *next = &update->state;
+	bool same_wave = state->active && state->segment_count == next->segment_count;
+	for (size_t i = 0; same_wave && i < next->segment_count; i++) {
+		same_wave = state->segments[i].level == next->segments[i].level &&
+			state->segments[i].duration_us == next->segments[i].duration_us;
+	}
+	if (same_wave) {
+		/* Refresh the lease, counting the current cycle, without moving an edge.
+		 * This also avoids a glitch when switching finite/forever modes. */
+		state->repeat_mode = next->repeat_mode;
+		state->repeat_remaining = next->repeat_remaining;
+		return;
+	}
+	*state = *next;
+	pwm_output_wave_write_level(update->channel, state->segments[0].level);
+}
+
+uint32_t pwm_output_wave_engine_next_edge_us(const struct pwm_output_wave_engine *engine)
+{
+	uint32_t next = 0;
+	if (engine == NULL) {
+		return 0;
+	}
+	for (size_t i = 0; i < PWM_OUTPUT_WAVE_MAX_CHANNELS; i++) {
+		const struct pwm_output_wave_channel_state *state = &engine->channels[i];
+		if (state->active && (next == 0 || state->remaining_us < next)) {
+			next = state->remaining_us;
+		}
+	}
+	return next;
+}
+
+enum pwm_output_wave_status pwm_output_wave_engine_apply_tx_payload(
+	struct pwm_output_wave_engine *engine, const uint8_t *payload, size_t payload_len)
+{
+	if (engine == NULL) {
+		return PWM_OUTPUT_WAVE_ERROR_PROTO;
+	}
+	struct pwm_output_wave_update update;
+	enum pwm_output_wave_status status = pwm_output_wave_prepare_tx_payload(&update, payload, payload_len);
+	if (status == PWM_OUTPUT_WAVE_OK) {
+		pwm_output_wave_engine_commit(engine, &update);
+	}
+	return status;
 }
 
 const char *pwm_output_wave_status_name(enum pwm_output_wave_status status)

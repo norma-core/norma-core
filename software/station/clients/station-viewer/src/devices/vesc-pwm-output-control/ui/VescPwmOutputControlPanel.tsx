@@ -21,6 +21,7 @@ import {
   type VictronState,
 } from '@/devices/victron-smartsolar-mppt/values';
 import { useRoverControlSession } from '../useRoverControlSession';
+import { CAMERA_OUTPUT_ID } from '../camera-servo';
 import RoverCameraViewport from './RoverCameraViewport';
 import RoverDriveControls from './RoverDriveControls';
 import RoverDriveSummary from './RoverDriveSummary';
@@ -57,7 +58,7 @@ function outputIdsFromFrame(
     tx?.command?.targetOutputId,
   ]
     .map((value) => value?.trim() ?? '')
-    .filter((value, index, values) => value.length > 0 && values.indexOf(value) === index);
+    .filter((value, index, values) => value.length > 0 && value !== CAMERA_OUTPUT_ID && values.indexOf(value) === index);
 }
 
 function boardOptionsFromState(vesc: vesc_trampa.IInferenceState): BoardOption[] {
@@ -97,12 +98,16 @@ const VescPwmOutputControlPanel = memo(function VescPwmOutputControlPanel({
   const powerAppStartRef = useRef('');
   const { isFullscreen, toggleFullscreen } = useElementFullscreen(rootRef);
   const boards = useMemo(() => boardOptionsFromState(vesc), [vesc]);
+  const [selectedOutputId, setSelectedOutputId] = useState(
+    () => outputIdsFromFrame(pwmOutputRx, pwmOutputTx)[0] ?? 'steering',
+  );
+  // RX/TX contain only the latest shared queue entry, not a list of outputs.
+  // Keep the chosen target even while another output publishes messages.
   const outputIds = useMemo(
-    () => outputIdsFromFrame(pwmOutputRx, pwmOutputTx),
-    [pwmOutputRx, pwmOutputTx],
+    () => Array.from(new Set([selectedOutputId, ...outputIdsFromFrame(pwmOutputRx, pwmOutputTx)])),
+    [selectedOutputId, pwmOutputRx, pwmOutputTx],
   );
   const [selectedBoardKey, setSelectedBoardKey] = useState('');
-  const [selectedOutputId, setSelectedOutputId] = useState('');
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [powerState, setPowerState] = useState<VictronState>(EMPTY_STATE);
   const [cameraControlSources, setCameraControlSources] = useState<FrameEntry<usbvideo.IRxEnvelope>[]>([]);
@@ -111,9 +116,7 @@ const VescPwmOutputControlPanel = memo(function VescPwmOutputControlPanel({
     ?? boards[0]
     ?? null;
   const selectedBoardKeyValue = selectedBoard?.key ?? '';
-  const selectedOutputIdValue = outputIds.includes(selectedOutputId)
-    ? selectedOutputId
-    : outputIds[0] ?? '';
+  const selectedOutputIdValue = selectedOutputId;
   const valuesResult = useMemo(
     () => parseVescTrampaValuesPayload(selectedBoard?.state.valuesPayload),
     [selectedBoard?.state.valuesPayload],
@@ -121,7 +124,9 @@ const VescPwmOutputControlPanel = memo(function VescPwmOutputControlPanel({
   const values = valuesResult.values;
   const valuesAge = formatAge(selectedBoard?.state.valuesMonotonicStampNs);
   const faultCode = values?.faultCode ?? 0;
-  const hasFault = faultCode !== 0 || Boolean(pwmOutputRx?.error) || Boolean(valuesResult.error);
+  const pwmFault = Boolean(pwmOutputRx?.error)
+    && outputIdsFromFrame(pwmOutputRx).includes(selectedOutputId);
+  const hasFault = faultCode !== 0 || pwmFault || Boolean(valuesResult.error);
 
   const controlSession = useRoverControlSession({
     boardUuid: selectedBoard?.uuid ?? EMPTY_UUID,
@@ -140,12 +145,6 @@ const VescPwmOutputControlPanel = memo(function VescPwmOutputControlPanel({
       setSelectedBoardKey(boards[0]?.key ?? '');
     }
   }, [boards, selectedBoardKey]);
-
-  useEffect(() => {
-    if (!outputIds.includes(selectedOutputId)) {
-      setSelectedOutputId(outputIds[0] ?? '');
-    }
-  }, [outputIds, selectedOutputId]);
 
   useEffect(() => {
     if (previousControlTargetKeyRef.current !== controlTargetKey) {

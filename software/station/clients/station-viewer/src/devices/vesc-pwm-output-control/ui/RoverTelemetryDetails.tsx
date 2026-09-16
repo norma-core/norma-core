@@ -70,7 +70,9 @@ function formatPwmWave(wave?: pwm_output.IWaveCommand | null): string {
   const segments = (wave.segments ?? [])
     .map((segment) => `${formatPwmLevel(segment.level)}${segment.durationUs ?? 0}µs`)
     .join(' ');
-  return `ch${wave.channel ?? 0} ×${wave.repeat ?? 0}${segments ? ` · ${segments}` : ''}`;
+  const repeat = wave.repeatMode === pwm_output.WaveRepeatMode.WAVE_REPEAT_MODE_FOREVER
+    ? 'forever' : `×${wave.repeat ?? 0}`;
+  return `ch${wave.channel ?? 0} ${repeat}${segments ? ` · ${segments}` : ''}`;
 }
 
 function formatPwmCommand(command?: pwm_output.ICommand | null): string {
