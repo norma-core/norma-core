@@ -3,3 +3,4 @@ dist/
 release/
 src/generated/version.ts
 .env.local
+build/station/

@@ -251,9 +251,16 @@ jobs:
           path: dist-out/*.tar.gz
 
   build-macos:
-    name: Build macOS binary (arm64)
+    name: Build macOS binary (${{ matrix.arch }})
     needs: build-frontend
-    runs-on: macos-latest
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      matrix:
+        include:
+          - runner: macos-latest
+            arch: arm64
+          - runner: macos-15-intel
+            arch: amd64
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -282,12 +289,12 @@ jobs:
         run: |
           mkdir -p dist-out
           cp target/release/station dist-out/station
-          cd dist-out && zip station-macos-arm64.zip station && rm station
+          cd dist-out && zip station-macos-${{ matrix.arch }}.zip station && rm station
 
       - name: Upload macOS binary
         uses: actions/upload-artifact@v4
         with:
-          name: station-macos-binary
+          name: station-macos-binary-${{ matrix.arch }}
           path: dist-out/*.zip
 
   create-release:
@@ -303,11 +310,12 @@ jobs:
           name: station-linux-binaries
           path: release-assets
 
-      - name: Download macOS binary
+      - name: Download macOS binaries
         uses: actions/download-artifact@v4
         with:
-          name: station-macos-binary
+          pattern: station-macos-binary-*
           path: release-assets
+          merge-multiple: true
 
       - name: Create release
         env:

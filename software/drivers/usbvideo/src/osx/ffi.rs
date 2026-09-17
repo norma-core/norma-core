@@ -48,8 +48,11 @@ pub struct CameraFrameInfo {
 
 #[link(name = "avf", kind = "static")]
 unsafe extern "C" {
-    /// Request camera access permission (returns 0 if granted/already granted, -1 if denied, -2 if not determined)
-    pub fn requestCameraAccess() -> i32;
+    /// Request camera access permission asynchronously; the callback gets 1 if granted, 0 if denied
+    pub fn requestCameraAccessAsync(callback: unsafe extern "C" fn(granted: i32));
+
+    /// Get the current camera authorization status (0=not determined, 1=restricted, 2=denied, 3=authorized)
+    pub fn getCameraAuthorizationStatus() -> i32;
 
     /// Get the number of available video devices
     pub fn getVideoDeviceCount() -> i32;

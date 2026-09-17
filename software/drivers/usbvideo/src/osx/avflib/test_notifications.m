@@ -50,8 +50,10 @@
     NSLog(@"=== Current devices ===");
 
     NSMutableArray<AVCaptureDeviceType> *deviceTypes = [NSMutableArray array];
-    if (@available(macOS 10.15, *)) {
+    if (@available(macOS 14.0, *)) {
         [deviceTypes addObject:AVCaptureDeviceTypeExternal];
+    } else {
+        [deviceTypes addObject:AVCaptureDeviceTypeExternalUnknown];
     }
     if (@available(macOS 13.0, *)) {
         [deviceTypes addObject:AVCaptureDeviceTypeContinuityCamera];

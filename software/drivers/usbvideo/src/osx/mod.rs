@@ -3,6 +3,7 @@ mod ffi;
 use std::ffi::{CStr, CString};
 use std::mem::MaybeUninit;
 use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Duration;
 use bytes::Bytes;
 use log::error;
@@ -15,9 +16,16 @@ use crate::state::StateTracker;
 use crate::usbvideo_proto::frame::FrameStamp;
 use crate::usbvideo_proto::usbvideo as framesrec_proto;
 
-pub struct CameraMacDriver {
-    enabled: bool,
+static CAMERA_ACCESS_GRANTED: AtomicBool = AtomicBool::new(false);
+
+unsafe extern "C" fn on_camera_access(granted: i32) {
+    CAMERA_ACCESS_GRANTED.store(granted != 0, Ordering::Release);
+    if granted == 0 {
+        log::warn!("Camera access denied; no cameras will be captured");
+    }
 }
+
+pub struct CameraMacDriver {}
 
 impl Default for CameraMacDriver {
     fn default() -> Self {
@@ -27,16 +35,24 @@ impl Default for CameraMacDriver {
 
 impl CameraMacDriver {
     pub fn new() -> Self {
-        let enabled = unsafe {
-            ffi::requestCameraAccess() == 0
-        };
-        Self { enabled }
+        match unsafe { ffi::getCameraAuthorizationStatus() } {
+            3 => CAMERA_ACCESS_GRANTED.store(true, Ordering::Release),
+            0 => {
+                log::info!("Camera access not determined yet; asking");
+                unsafe { ffi::requestCameraAccessAsync(on_camera_access) }
+            }
+            status => log::warn!(
+                "Camera access is {}; no cameras will be captured",
+                if status == 1 { "restricted" } else { "denied" }
+            ),
+        }
+        Self {}
     }
 }
 
 impl USBCameraDriver for CameraMacDriver {
     async fn get_available_cameras(&self) -> Vec<framesrec_proto::Camera> {
-        if !self.enabled {
+        if !CAMERA_ACCESS_GRANTED.load(Ordering::Acquire) {
             return vec![];
         }
 

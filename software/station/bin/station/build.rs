@@ -48,5 +48,14 @@ fn main() -> Result<()> {
 
     println!("cargo:rustc-env=GIT_HASH={}", git_hash);
 
+    if std::env::var("CARGO_CFG_TARGET_VENDOR").as_deref() == Ok("apple") {
+        let plist = PathBuf::from(std::env::var("CARGO_MANIFEST_DIR").unwrap()).join("Info.plist");
+        println!(
+            "cargo:rustc-link-arg-bins=-Wl,-sectcreate,__TEXT,__info_plist,{}",
+            plist.display()
+        );
+        println!("cargo:rerun-if-changed={}", plist.display());
+    }
+
     Ok(())
 }
