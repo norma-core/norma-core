@@ -1,0 +1,88 @@
+.rover-cockpit{--rover-height:calc(100dvh - 50px);position:relative;isolation:isolate;min-height:180px;width:100%;height:var(--rover-height);overflow:hidden;background:var(--color-surface-base);color:var(--color-text-primary)}
+.rover-cockpit:fullscreen{position:fixed;inset:0;width:100vw;height:100dvh!important;--rover-height:100dvh!important;z-index:60}
+.rover-cockpit button,.rover-cockpit select{font:inherit;color:inherit;background:var(--color-surface-secondary);border:1px solid var(--color-border-default);border-radius:5px;cursor:pointer}
+.rover-cockpit button{min-height:44px;padding:8px 10px;touch-action:manipulation}
+.rover-cockpit button:hover{border-color:var(--color-accent-data)}
+.rover-cockpit button:disabled,.rover-cockpit input:disabled,.rover-cockpit select:disabled{opacity:.45;cursor:default}
+.rover-cockpit :focus-visible{outline:2px solid var(--color-accent-data);outline-offset:2px}
+.rover-cockpit input[type=range]{display:block;width:100%;height:44px;margin:0;accent-color:var(--color-accent-data);touch-action:none;cursor:pointer}
+.rover-statusbar{height:40px;display:flex;align-items:center;gap:16px;padding:0 18px;background:var(--color-surface-primary);border-bottom:1px solid var(--color-border-default);font:12px system-ui,sans-serif}
+.rover-name{font-weight:700;letter-spacing:2px}.rover-battery{margin-left:auto;font-variant-numeric:tabular-nums}.rover-health{display:flex;gap:7px;align-items:center}.rover-health i{width:6px;height:6px;background:currentColor;border-radius:50%}.rover-health.ready{color:var(--color-accent-success)}.rover-health.unavailable{color:var(--color-accent-warning)}
+.rover-statusbar select{min-width:0;max-width:140px;height:30px}
+.rover-workspace{display:grid;grid-template-columns:minmax(0,1fr) 300px;grid-template-rows:minmax(0,1fr);height:calc(100% - 40px);gap:10px;padding:14px;position:relative}
+.rover-video{position:relative;min-height:0;min-width:0;overflow:hidden;border:1px solid var(--color-border-default);border-radius:8px;background:#050a0f;color:#fff}
+.rover-camera-image{height:100%;width:100%}.rover-camera-empty{display:grid;place-items:center;height:100%;color:#cbd5e1;font-size:14px}
+.rover-video-tools{position:absolute;z-index:3;right:10px;top:10px;display:flex;gap:4px;max-width:44%}
+.rover-video-tools select{min-width:0;max-width:230px;font-size:12px;background:#101827e8;color:#fff;padding:0 5px}
+.rover-video-tools button{display:grid;place-items:center;min-width:36px;min-height:36px;padding:5px;background:#101827e8;color:#fff}
+.rover-video-error{position:absolute;bottom:8px;left:8px;right:8px;padding:8px;background:#3f1212f2;color:#fecaca;font-size:12px}
+.rover-control-rail{display:flex;flex-direction:column;gap:10px;min-width:0;min-height:0;overflow-y:auto;scrollbar-width:thin;scrollbar-gutter:stable}
+.rover-panel{background:var(--color-surface-primary);border:1px solid var(--color-border-default);border-radius:7px;padding:12px;min-width:0}
+.rover-panel-heading{display:flex;align-items:center;justify-content:space-between;gap:8px;font:12px system-ui,sans-serif;text-transform:uppercase;letter-spacing:.5px;color:var(--color-text-muted);margin-bottom:8px}
+.rover-panel-heading output{color:var(--color-accent-data);letter-spacing:0;text-transform:none}
+.rover-drive{order:1;flex:1 0 auto;display:flex;flex-direction:column;justify-content:space-between;gap:10px}
+.rover-drive .rover-panel-heading{margin:0}
+.rover-settings{display:contents}.rover-limit{order:2}.rover-camera{order:3}
+.rover-joystick{position:relative;width:100%;aspect-ratio:1;flex:none;touch-action:none;user-select:none;border:1px solid #22d3ee70;border-radius:18px;background:radial-gradient(circle,#22d3ee16,transparent 65%);cursor:grab}
+.rover-joystick[aria-disabled=true]{opacity:.45;cursor:default}
+.rover-joystick::before{content:'';position:absolute;inset:20%;border:1px solid var(--color-border-default);border-radius:50%}
+.rover-joystick>span{pointer-events:none;position:absolute;font:11px system-ui,sans-serif;text-transform:uppercase;color:var(--color-text-muted)}
+.rover-north{top:10px;left:50%;transform:translateX(-50%)}.rover-south{bottom:10px;left:50%;transform:translateX(-50%)}.rover-west{left:10px;top:47%}.rover-east{right:10px;top:47%}
+.rover-joystick .rover-stick{width:38px;height:38px;transform:translate(-50%,-50%);border:2px solid var(--color-accent-data);border-radius:50%;background:#163a46}.rover-joystick .rover-stick.active{background:var(--color-accent-data)}
+.rover-drive-readout{display:flex;align-items:center;justify-content:space-between;gap:8px;font:11px system-ui,sans-serif;color:var(--color-accent-data)}.rover-key-hint{color:var(--color-text-muted);white-space:nowrap}
+.rover-setting-toggle{display:none!important}.rover-setting-content{display:block}
+.rover-angle-line,.rover-rpm-scale{display:flex;justify-content:space-between;color:var(--color-text-muted);font-size:12px}
+.rover-camera-presets{display:grid;grid-template-columns:1.2fr 1fr .65fr;gap:5px}.rover-camera-presets button{font-size:12px;padding:6px 3px}
+.rover-error{font-size:12px;color:var(--color-accent-critical);padding-top:4px;overflow-wrap:anywhere}
+.rover-compass{position:absolute;top:8px;left:50%;transform:translateX(-50%);width:min(320px,45%);height:44px;pointer-events:none;filter:drop-shadow(0 1px 2px #000);text-align:center;color:#e2e8f0}
+.rover-compass-tape{height:25px;position:relative;overflow:hidden;mask-image:linear-gradient(90deg,transparent,#000 10%,#000 90%,transparent);background:#07111c66}
+.rover-compass-tape>span{position:absolute;transform:translateX(-50%);top:6px;font:10px ui-monospace,monospace}
+.rover-compass-tape>span:after{content:'';display:block;margin:2px auto 0;width:1px;height:4px;background:currentColor}.rover-compass-tape .cardinal{font-weight:bold;color:#fff}
+.rover-compass-pointer{position:absolute;top:0;left:50%;transform:translateX(-50%);border-left:4px solid transparent;border-right:4px solid transparent;border-top:5px solid #22d3ee}
+.rover-compass output{font:12px ui-monospace,monospace;color:#67e8f9;background:#07111caa;border-radius:3px;padding:0 4px}
+.rover-motion-model{pointer-events:none;position:absolute;top:62px;left:12px;width:190px;padding:4px;background:radial-gradient(ellipse at 50% 58%,#07111cb3 15%,#07111c66 60%,#07111c00 75%)}
+.rover-motion-model svg{display:block;width:100%;height:98px;filter:drop-shadow(0 2px 2px #0009)}
+.rover-motion-readings{padding:4px 6px;background:#07111cef;border-radius:5px;font:12px/1.5 system-ui,sans-serif;color:#e2e8f0}.rover-motion-readings>div{display:flex;align-items:center;justify-content:space-between;gap:8px;white-space:nowrap}.rover-motion-readings output{font-size:14px;font-weight:650;font-variant-numeric:tabular-nums}.rover-motion-readings .accel{color:#67e8f9}.rover-motion-readings .gyro{color:#d8b4fe}
+.rover-no-motion{display:block;padding:5px;border-radius:4px;background:#07111cdd;color:#cbd5e1;font:12px system-ui,sans-serif}
+@media(max-width:1023px){
+ .rover-setting-toggle{display:flex!important;align-items:center;gap:8px;width:100%;font-size:12px!important;text-transform:uppercase}.rover-setting-toggle output{margin-left:auto;color:var(--color-accent-data);text-transform:none}.rover-setting-content{display:none}.expanded .rover-setting-content{display:block}
+ .rover-key-hint{display:none}.rover-control-rail{display:contents}
+}
+@media(max-width:1023px) and (orientation:portrait){
+ .rover-workspace{padding:8px;gap:8px;grid-template-columns:minmax(0,1fr);grid-template-rows:max-content max-content max-content;align-content:start;overflow-y:auto;overscroll-behavior-y:contain;scrollbar-width:none}
+ .rover-video{grid-row:1;width:100%;height:clamp(96px,calc(var(--rover-height) - 100vw - 150px),240px);aspect-ratio:var(--camera-aspect,4/3)}
+ .rover-settings{display:grid;grid-row:2;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px;align-items:start}
+ .rover-settings .rover-panel{display:contents}.rover-camera .rover-setting-toggle{grid-column:1;grid-row:1}.rover-limit .rover-setting-toggle{grid-column:2;grid-row:1}
+ .rover-settings .rover-setting-content{grid-column:1/-1;grid-row:2;border:1px solid var(--color-border-default);border-radius:7px;background:var(--color-surface-primary);padding:10px}
+ .rover-settings .rover-panel-heading{display:none}
+ .rover-drive{grid-row:3;padding:10px;gap:10px}
+ .rover-statusbar{padding:0 12px;gap:10px}
+ .rover-compass{top:6px;width:calc(100% - 20px)}
+ .rover-video-tools{top:auto;bottom:8px;right:8px;max-width:65%}.rover-video-tools select{max-width:175px;min-height:36px}
+ .rover-motion-model{top:auto;left:6px;bottom:6px;width:100px;padding:0}.rover-motion-model svg{height:64px}.rover-motion-readings{display:none}
+}
+@media(max-width:1023px) and (orientation:landscape){
+ .rover-statusbar{height:34px;padding:0 12px;font-size:11px}
+ .rover-workspace{--drive-size:min(34vw,300px,calc(var(--rover-height) - 152px));--drive-panel-width:calc(var(--drive-size) + 18px);height:calc(100% - 34px);display:block;padding:0}
+ .rover-workspace.rpm-expanded{--drive-size:min(34vw,300px,calc(var(--rover-height) - 202px))}
+ .rover-video{position:absolute;inset:0;border:0;border-radius:0}
+ .rover-drive{position:absolute;top:60px;left:10px;width:var(--drive-panel-width);padding:8px;gap:6px;background:color-mix(in srgb,var(--color-surface-primary) 90%,transparent)}
+ .rover-workspace.rpm-expanded .rover-drive{top:110px}
+ .rover-drive-readout{font-size:10px;min-height:15px}.rover-drive .rover-panel-heading{font-size:11px}
+ .rover-limit{position:absolute;left:10px;top:8px;width:var(--drive-panel-width);padding:0;overflow:hidden}.rover-limit .rover-setting-toggle{border:0;border-radius:0}.rover-limit .rover-setting-content{padding:0 8px 6px}.rover-limit .rover-panel-heading,.rover-rpm-scale{display:none}
+ .rover-camera{position:absolute;bottom:8px;right:10px;width:220px;padding:0;background:color-mix(in srgb,var(--color-surface-primary) 92%,transparent)}
+ .rover-camera .rover-setting-toggle{border:0}.rover-camera.expanded{right:206px;width:min(260px,calc(100vw - var(--drive-panel-width) - 244px))}.rover-camera .rover-setting-content{padding:0 8px 8px}.rover-camera .rover-panel-heading{display:none}
+ .rover-compass{width:220px;left:calc(50% + 10px);top:6px}
+ .rover-video-tools{top:6px;right:10px;max-width:190px}.rover-video-tools select{font-size:11px;max-width:150px}
+ .rover-motion-model{left:auto;right:10px;top:48px;width:180px;padding:0}.rover-motion-model svg{height:70px}
+}
+@media(min-width:1024px) and (max-height:650px){.rover-motion-model{width:180px}.rover-motion-model svg{height:70px}}
+
+@media(min-width:1024px) and (max-width:1250px){
+ .rover-compass{left:40%;width:min(250px,35%)}
+}
+
+.rover-video-status{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);padding:6px 10px;border-radius:4px;background:#07111cef;color:#facc15;font:13px system-ui,sans-serif;pointer-events:none}
+
+.rover-battery[data-flow="charging"]{color:var(--color-accent-success)}
+.rover-battery[data-flow="discharging"]{color:var(--color-accent-warning)}

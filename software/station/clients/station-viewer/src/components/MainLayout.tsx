@@ -4,7 +4,7 @@ import Navigation from './Navigation';
 
 const MainLayout: React.FC = () => {
   return (
-    <div className="flex min-h-screen w-full flex-col bg-surface-base text-text-primary">
+    <div className="flex min-h-dvh w-full flex-col bg-surface-base text-text-primary">
       <Navigation />
       <Outlet />
     </div>

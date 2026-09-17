@@ -15,7 +15,7 @@ const ThermalHudPreviewPage = lazy(() => import('./devices/hikmicro-thermal/hud/
 function App() {
   return (
     <Router>
-      <Suspense fallback={<div className="min-h-screen bg-surface-base flex items-center justify-center text-accent-data font-mono">Loading...</div>}>
+      <Suspense fallback={<div className="min-h-dvh bg-surface-base flex items-center justify-center text-accent-data font-mono">Loading...</div>}>
         <Routes>
           <Route element={<MainLayout />}>
             <Route path="/" element={<HomePage />} />

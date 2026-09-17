@@ -81,6 +81,10 @@ export function suppressLiveCameraFrame(sourceId: string): void {
   clearLiveCameraFrame(sourceId);
 }
 
+export function isLiveCameraSuppressed(sourceId: string): boolean {
+  return suppressedSourceIds.has(sourceId);
+}
+
 export function resumeLiveCameraFrame(sourceId: string): void {
   suppressedSourceIds.delete(sourceId);
 }

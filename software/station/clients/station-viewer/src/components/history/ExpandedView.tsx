@@ -182,7 +182,7 @@ export default function ExpandedView({ data, type, rawData, queueId, entryId }: 
       );
     }
     if (type === 'hikmicro-thermal' && data instanceof hikmicro.RxEnvelope) {
-      return <HikmicroThermalLiveView data={data} />;
+      return <HikmicroThermalLiveView data={data} mode="history" />;
     }
     if (type === 'yahboom_dogzilla_lite' && data instanceof yahboom_dogzilla_lite.InferenceState) {
       return <YahboomDogzillaLiteExpanded data={data} />;

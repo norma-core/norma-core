@@ -1,24 +1,18 @@
+import { isRoverQueueSet } from '@/api/live-queue-policy';
 import { customLive } from '@/devices/live';
 
 export default customLive({
   id: 'vesc-pwm-output-control',
-  label: 'Joystick',
+  label: 'Rover',
   order: 29,
   isRealtime: true,
   ownsCameras: true,
   isImmersive: true,
-  replaces: ['vesc-trampa', 'pwm-output', 'victron-smartsolar-mppt'],
+  replaces: ['vesc-trampa', 'pwm-output', 'victron-smartsolar-mppt', 'arduino-nicla-sense-me'],
   loadView: () => import('./ui/VescPwmOutputControlPanel'),
   select: (frame) => {
     const hasVesc = Boolean(frame.vescTrampa?.data.boards?.length);
-    const hasPwmOutput = Boolean(
-      frame.pwmOutputRx?.data.device?.id
-        || frame.pwmOutputRx?.data.state?.id
-        || frame.pwmOutputTx?.data.targetOutputId
-        || frame.pwmOutputTx?.data.command?.targetOutputId,
-    );
-
-    if (!hasVesc || !hasPwmOutput || !frame.vescTrampa) {
+    if (!hasVesc || !isRoverQueueSet(frame.availableQueues ?? []) || !frame.vescTrampa) {
       return [];
     }
 
@@ -26,10 +20,9 @@ export default customLive({
       key: 'vesc-pwm-output-control',
       props: {
         vesc: frame.vescTrampa.data,
-        pwmOutputRx: frame.pwmOutputRx?.data,
-        pwmOutputTx: frame.pwmOutputTx?.data,
         videoSources: frame.videoQueues,
-        powerSources: frame.victronSmartSolar,
+        motionSource: frame.arduinoNiclaSenseMe?.[0],
+        powerSource: frame.victronSmartSolar?.[0],
       },
     }];
   },

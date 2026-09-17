@@ -5,7 +5,7 @@ import type { ThermalPalette, ThermalRenderResult } from '../thermal';
 
 type ThermalStats = Omit<ThermalRenderResult, 'rgba'>;
 
-export function useThermalPreview(data: hikmicro.IRxEnvelope, frame: hikmicro.IThermalFrame | null, palette: ThermalPalette, canvasRef: RefObject<HTMLCanvasElement | null>) {
+export function useThermalPreview(data: hikmicro.IRxEnvelope, frame: hikmicro.IThermalFrame | null, palette: ThermalPalette, canvasRef: RefObject<HTMLCanvasElement | null>, monitorFreshness = true) {
   const rendererRef = useRef<ThermalFrameRenderer | null>(null);
   const latestRef = useRef({ data, frame, palette });
   const lastInputAtRef = useRef(performance.now());
@@ -52,7 +52,7 @@ export function useThermalPreview(data: hikmicro.IRxEnvelope, frame: hikmicro.IT
           ctx.putImageData(new ImageData(rendered.rgba as Uint8ClampedArray<ArrayBuffer>, rendered.width, rendered.height), 0, 0);
           setError(null);
           const now = performance.now();
-          setStale(now - lastInputAtRef.current > 5000);
+          setStale(monitorFreshness && now - lastInputAtRef.current > 5000);
           if (now - lastStatsAt >= 250) {
             const { rgba: _rgba, ...nextStats } = rendered;
             setStats(nextStats);
@@ -70,12 +70,12 @@ export function useThermalPreview(data: hikmicro.IRxEnvelope, frame: hikmicro.IT
     };
     syncVisibility();
     document.addEventListener('visibilitychange', syncVisibility);
-    const freshnessTimer = setInterval(() => setStale(performance.now() - lastInputAtRef.current > 5000), 1000);
+    const freshnessTimer = monitorFreshness ? setInterval(() => setStale(performance.now() - lastInputAtRef.current > 5000), 1000) : null;
     return () => {
       stop();
-      clearInterval(freshnessTimer);
+      if (freshnessTimer !== null) clearInterval(freshnessTimer);
       document.removeEventListener('visibilitychange', syncVisibility);
     };
-  }, [canvasRef]);
+  }, [canvasRef, monitorFreshness]);
   return { stats, stale, error };
 }

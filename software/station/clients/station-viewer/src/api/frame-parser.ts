@@ -16,6 +16,8 @@ export interface FrameEntry<T> {
 }
 
 export interface Frame {
+  // Queue descriptors are already carried in the inference index; no payload reads.
+  availableQueues?: inference.InferenceRx.IEntry[];
   stateId?: Uint8Array;
   st3215?: FrameEntry<st3215.IInferenceState>;
   st3215Tx?: FrameEntry<st3215.ITxEnvelope>;
@@ -57,6 +59,8 @@ export interface Frame {
 type DecodedEntry = st3215.IInferenceState | st3215.ITxEnvelope | usbvideo.IRxEnvelope | usbvideo.ITxEnvelope | hikmicro.IRxEnvelope | motors_mirroring.IRxEnvelope | sysinfo.IEnvelope | arduino_nicla_sense_env.IRxEnvelope | ina226.IRxEnvelope | airgradient_open_air_o_1pst.IRxEnvelope | victron_smartsolar_mppt.IRxEnvelope | dmesg.IRxEnvelope | yahboom_dogzilla_lite.IInferenceState | normvla.IFrame | vesc_trampa.IInferenceState | vesc_trampa.IRxEnvelope | vesc_trampa.ITxEnvelope | pwm_output.IRxEnvelope | pwm_output.ITxEnvelope | arduino_nicla_sense_me.IRxEnvelope | null;
 
 interface ParseFrameOptions {
+  queueAllowlist?: ReadonlySet<string> | null;
+  shouldReadQueue?: (queue: string) => boolean;
   retainRawData?: boolean;
   thermalDiscoveryOnly?: boolean;
   shouldPublishVideoFrames?: () => boolean;
@@ -273,6 +277,7 @@ export async function parseFrame(
   const retainRawData = options.retainRawData ?? true;
   const frame: Frame = {
     stateId: new Uint8Array(Array.from(entryIdBytes)),
+    availableQueues: inferenceRx.entries ?? [],
     videoQueues: [],
     hikmicroThermal: [],
     arduinoNiclaSenseMe: [],
@@ -308,6 +313,21 @@ export async function parseFrame(
     const entryPromises = inferenceRx.entries.map((entry) => {
       if (!entry.queue || !entry.ptr) {
         console.warn("Entry missing queue or ptr:", entry);
+        return Promise.resolve(null);
+      }
+
+      if (options.queueAllowlist && !options.queueAllowlist.has(entry.queue)) {
+        return Promise.resolve(null);
+      }
+      // Throttle before I/O and preserve the old pointer with cached data, so a
+      // skipped sample cannot be mistaken for an already downloaded new sample.
+      if (options.shouldReadQueue && !options.shouldReadQueue(entry.queue)) {
+        const cached = [previousFrame?.vescTrampa,
+          ...(previousFrame?.victronSmartSolar ?? []),
+          ...(previousFrame?.arduinoNiclaSenseMe ?? [])].find(e => e?.queueId === entry.queue);
+        if (cached) return Promise.resolve({ queue: entry.queue, type: entry.type,
+          ptr: cached.ptr, decoded: cached.data, rawData: null, id: null,
+          reused: true, isNormvla: false });
         return Promise.resolve(null);
       }
 

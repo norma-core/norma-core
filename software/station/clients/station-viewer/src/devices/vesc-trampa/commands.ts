@@ -75,3 +75,21 @@ export async function holdVescTrampaMotor(boardUuid: Uint8Array): Promise<void> 
     },
   });
 }
+
+/** Same signed COMM_SET_RPM wire payload and terminal zero as station-pi. */
+export async function setVescTrampaRpm(
+  boardUuid: Uint8Array,
+  rpm: number,
+  durationMs = 250,
+): Promise<void> {
+  if (!Number.isFinite(rpm) || !Number.isFinite(durationMs)) throw new Error('Invalid RPM command');
+  const target = Math.round(Math.max(-10_000, Math.min(10_000, rpm)));
+  const duration = target === 0 ? 0 : Math.max(1, Math.min(2500, Math.floor(durationMs)));
+  await commandManager.sendVescTrampaCommand({
+    targetBoardUuid: boardUuid,
+    boardCommands: [
+      { payload: int32Payload(8, target), responseExpected: false, durationMs: duration },
+      ...(target !== 0 ? [{ payload: int32Payload(8, 0), responseExpected: false, durationMs: 0 }] : []),
+    ],
+  });
+}

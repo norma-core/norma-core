@@ -1,67 +1,79 @@
-import { useRef, useState } from 'react';
-import { Camera } from 'lucide-react';
-import { useConnectionStats } from '@/hooks';
+import { useEffect, useId, useRef, useState } from 'react';
 import { CAMERA_MAX_DEG, CAMERA_MIN_DEG, clampCameraAngle, setCameraAngle } from '../camera-servo';
-
-const buttonClass = 'min-h-11 rounded border border-accent-data/30 bg-surface-secondary/80 px-1 font-mono text-[10px] font-bold text-text-primary hover:bg-accent-data/20 focus-visible:outline-2 focus-visible:outline-accent-data disabled:opacity-40';
-
-export default function RoverCameraServoControl() {
-  const connection = useConnectionStats();
+interface RoverCameraServoControlProps {
+  expanded: boolean;
+  onToggle: () => void;
+  disabled: boolean;
+}
+export default function RoverCameraServoControl({ expanded, onToggle, disabled }: RoverCameraServoControlProps) {
+  const id = useId();
   const [angle, setAngle] = useState(0);
   const [sentAngle, setSentAngle] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const sending = useRef(false);
-  const disabled = busy || connection.status !== 'connected' || connection.acquisitionMode !== 'live';
-
-  async function move(nextAngle: number) {
-    if (disabled || sending.current) return;
-    const target = clampCameraAngle(nextAngle);
-    sending.current = true;
-    setBusy(true);
-    setError('');
-    setAngle(target);
+  const pending = useRef<number | null>(null);
+  const lastSent = useRef<number | null>(null);
+  const mounted = useRef(false);
+  const enabled = useRef(!disabled);
+  useEffect(() => {
+    mounted.current = true;
+    return () => { mounted.current = false; pending.current = null; };
+  }, []);
+  useEffect(() => {
+    enabled.current = !disabled;
+    if (disabled) pending.current = null;
+  }, [disabled]);
+  async function flush() {
+    if (sending.current) return;
+    sending.current = true; setBusy(true);
     try {
-      await setCameraAngle(target);
-      setSentAngle(target);
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Camera command failed');
+      // One write in flight, one replaceable target. A slow connection must not
+      // replay obsolete angles after the user has finished dragging.
+      while (mounted.current && enabled.current && pending.current !== null) {
+        const target = pending.current;
+        pending.current = null;
+        if (target === lastSent.current) continue;
+        try {
+          // eslint-disable-next-line no-await-in-loop -- servo writes must stay ordered with only the latest target pending
+          await setCameraAngle(target);
+          if (mounted.current) {
+            lastSent.current = target; setSentAngle(target); setError('');
+          }
+        } catch (cause) {
+          if (mounted.current) setError(cause instanceof Error ? cause.message : 'Camera command failed');
+        }
+      }
     } finally {
       sending.current = false;
-      setBusy(false);
+      if (mounted.current) setBusy(false);
     }
   }
-
-  return (
-    <section aria-label="Camera position" className="pointer-events-auto rounded-md border border-accent-data/40 bg-surface-primary/90 p-2 shadow-lg backdrop-blur-md">
-      <div className="flex items-center justify-between gap-2 font-mono text-[10px]">
-        <span className="flex items-center gap-1.5 font-bold uppercase tracking-wide text-accent-data"><Camera className="h-3.5 w-3.5" />Camera</span>
-        <output aria-live="polite" className="text-text-primary">Target {angle > 0 ? '+' : ''}{angle}°</output>
+  function move(value: number) {
+    if (disabled) return;
+    const target = clampCameraAngle(value);
+    setAngle(target); setError('');
+    pending.current = target;
+    void flush();
+  }
+  const displayAngle = `${angle > 0 ? '+' : ''}${angle}°`;
+  return <section className={`rover-camera rover-panel ${expanded ? 'expanded' : ''}`} aria-label="Camera travel">
+    <button type="button" className="rover-setting-toggle" aria-expanded={expanded} aria-controls={id} onClick={onToggle}>
+      <span>Camera</span><output>{sentAngle === null && !busy ? '—' : displayAngle}</output><span aria-hidden>⌄</span>
+    </button>
+    <div id={id} className="rover-setting-content">
+      <div className="rover-panel-heading"><span>Camera</span><output>{displayAngle}</output></div>
+      <div className="rover-angle-line"><span>Under wheels</span><span>Rear</span></div>
+      <input aria-label="Camera angle" aria-valuetext={`${angle} degrees target`} type="range" min={CAMERA_MIN_DEG} max={CAMERA_MAX_DEG} step={1}
+        value={angle} disabled={disabled}
+        onChange={event => move(event.currentTarget.valueAsNumber)}
+        onPointerDown={event => event.currentTarget.setPointerCapture(event.pointerId)} />
+      <div className="rover-camera-presets">
+        <button type="button" disabled={disabled} onClick={() => void move(CAMERA_MIN_DEG)}>Under wheels</button>
+        <button type="button" disabled={disabled} onClick={() => void move(0)}>Reference</button>
+        <button type="button" disabled={disabled} onClick={() => void move(CAMERA_MAX_DEG)}>Rear</button>
       </div>
-      <input
-        aria-label="Camera angle"
-        aria-valuetext={`${angle} degrees${angle < 0 ? ', forward' : angle > 0 ? ', backward' : ''}`}
-        type="range" min={CAMERA_MIN_DEG} max={CAMERA_MAX_DEG} step={1} value={angle}
-        disabled={disabled}
-        onChange={event => setAngle(event.currentTarget.valueAsNumber)}
-        onPointerDown={event => event.currentTarget.setPointerCapture(event.pointerId)}
-        onPointerUp={event => void move(event.currentTarget.valueAsNumber)}
-        onPointerCancel={() => setAngle(sentAngle ?? 0)}
-        onKeyUp={event => {
-          if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End', 'PageUp', 'PageDown'].includes(event.key)) {
-            void move(event.currentTarget.valueAsNumber);
-          }
-        }}
-        className="block h-11 w-full cursor-pointer touch-none accent-accent-data disabled:opacity-40"
-      />
-      <div className="grid grid-cols-[1fr_2.75rem_1fr] gap-1">
-        <button type="button" className={buttonClass} disabled={disabled || angle <= CAMERA_MIN_DEG} onClick={() => void move(angle - 5)} aria-label="Look forward 5 degrees">− Forward</button>
-        <button type="button" className={buttonClass} disabled={disabled} onClick={() => void move(0)} aria-label="Camera zero">0°</button>
-        <button type="button" className={buttonClass} disabled={disabled || angle >= CAMERA_MAX_DEG} onClick={() => void move(angle + 5)} aria-label="Look backward 5 degrees">Backward +</button>
-      </div>
-      <div role="status" className="mt-1 truncate font-mono text-[9px] text-text-muted" title={error || undefined}>
-        {error || (connection.status !== 'connected' ? 'Offline' : busy ? 'Sending…' : sentAngle === null ? 'Release slider to move · Hold mode' : `Sent ${sentAngle}° · Hold mode`)}
-      </div>
-    </section>
-  );
+      {(error || busy) && <div className="rover-error" role="status">{error || 'Sending…'}</div>}
+    </div>
+  </section>;
 }

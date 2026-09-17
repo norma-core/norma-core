@@ -274,3 +274,5 @@
 .thermal-mirror:fullscreen .thermal-mirror__status[data-live="false"] { color: #ffd08a; }
 .thermal-mirror:fullscreen .thermal-mirror__status[data-error="true"] { color: #ffaaa0; }
 .thermal-mirror__status-detail { opacity: .75; }
+
+.thermal-mirror[data-mode="history"]:not(:fullscreen) .thermal-mirror__view { padding-bottom: 12px; }

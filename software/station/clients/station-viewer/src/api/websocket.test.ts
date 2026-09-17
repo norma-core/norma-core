@@ -1,6 +1,6 @@
 import Long from 'long';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { drivers, hikmicro, inference, normfs, sysinfo } from '@/api/proto.js';
+import { drivers, hikmicro, inference, normfs, sysinfo, vesc_trampa, pwm_output, victron_smartsolar_mppt, arduino_nicla_sense_me } from '@/api/proto.js';
 
 type WebSocketManager = (typeof import('@/api/websocket'))['default'];
 type MessageHandler = (event: MessageEvent<ArrayBuffer>) => void | Promise<void>;
@@ -18,6 +18,7 @@ class FakeWebSocket {
   static readonly OPEN = 1;
   static readonly CLOSED = 3;
 
+  reads: string[] = [];
   readyState = 0;
   binaryType: BinaryType = 'arraybuffer';
   onopen: (() => void) | null = null;
@@ -44,6 +45,7 @@ class FakeWebSocket {
       return;
     }
 
+    this.reads.push(queueId);
     const responses = this.queuedReadResponses.get(queueId);
     if (!responses || responses.length === 0) {
       return;
@@ -156,6 +158,84 @@ describe('WebSocketManager state', () => {
   afterEach(() => {
     vi.useRealTimers();
     vi.unstubAllGlobals();
+  });
+
+  it('opens rover mode without reading diagnostics or unselected camera/IMU queues, but history can still read them', async () => {
+    vi.useFakeTimers();
+    const { default: manager } = await import('@/api/websocket');
+    const socket = getSocket();
+    const Q = drivers.QueueDataType;
+    const entries = [
+      ['vesc', Q.QDT_VESC_TRAMPA_INFERENCE], ['pwm', Q.QDT_PWM_OUTPUT_RX],
+      ['camera-a', Q.QDT_USB_VIDEO_FRAMES], ['camera-b', Q.QDT_USB_VIDEO_FRAMES],
+      ['imu-a', Q.QDT_ARDUINO_NICLA_SENSE_ME_RX], ['imu-b', Q.QDT_ARDUINO_NICLA_SENSE_ME_RX],
+      ['sysinfo', Q.QDT_SYSTEM], ['tx', Q.QDT_PWM_OUTPUT_TX],
+      ['power', Q.QDT_VICTRON_SMARTSOLAR_MPPT_RX], ['power-unused', Q.QDT_VICTRON_SMARTSOLAR_MPPT_RX], ['thermal', Q.QDT_HIKMICRO_THERMAL],
+    ].map(([queue, type]) => ({ queue: queue as string, type: type as drivers.QueueDataType, ptr: Uint8Array.of(1) }));
+    queueFrame(socket, 1, entries);
+    for (const queue of ['vesc','camera-a','imu-a','power']) socket.queueReadResponse(queue, { entryId: 1, data: new Uint8Array() });
+    socket.open();
+    await vi.advanceTimersByTimeAsync(10);
+    expect(manager.getLiveSnapshot().latestEntryId).toBe(1);
+    expect(socket.reads).toEqual(['inference-states','vesc','camera-a','imu-a','power']);
+    const release = manager.acquireHistoryMode();
+    queueFrame(socket, 2, [
+      { queue: 'sysinfo', type: Q.QDT_SYSTEM, ptr: Uint8Array.of(2) },
+      { queue: 'pwm', type: Q.QDT_PWM_OUTPUT_RX, ptr: Uint8Array.of(2) },
+    ]);
+    socket.queueReadResponse('sysinfo', { entryId: 2, data: createSysinfoData('diagnostics') });
+    socket.queueReadResponse('pwm', { entryId: 2, data: pwm_output.RxEnvelope.encode({ device: { id: 'cameras' } }).finish() });
+    const history = await manager.getFrame(Uint8Array.of(2));
+    expect(history.sysinfo?.data.data?.hostname).toBe('diagnostics');
+    expect(history.pwmOutputRx?.data.device?.id).toBe('cameras');
+    socket.disconnect(); release();
+  });
+
+  it('coalesces rover IMU reads before download without marking skipped pointers as fetched', async () => {
+    vi.useFakeTimers();
+    Object.assign(window, { setInterval, clearInterval, setTimeout, clearTimeout });
+    const { default: manager } = await import('@/api/websocket');
+    const socket = getSocket();
+    const Q = drivers.QueueDataType;
+    for (let i = 1; i <= 6; i++) queueFrame(socket, i, [
+      { queue: 'vesc', type: Q.QDT_VESC_TRAMPA_INFERENCE, ptr: Uint8Array.of(1) },
+      { queue: 'pwm', type: Q.QDT_PWM_OUTPUT_RX, ptr: Uint8Array.of(1) },
+      { queue: 'imu', type: Q.QDT_ARDUINO_NICLA_SENSE_ME_RX, ptr: Uint8Array.of(i) },
+    ]);
+    socket.queueReadResponse('vesc', { entryId: 1, data: vesc_trampa.InferenceState.encode({}).finish() });
+    for (const i of [1,6]) socket.queueReadResponse('imu', { entryId: i, data: arduino_nicla_sense_me.RxEnvelope.encode({ data: Uint8Array.of(i) }).finish() });
+    socket.open();
+    await vi.advanceTimersByTimeAsync(85);
+    expect(manager.getLiveSnapshot().frame?.arduinoNiclaSenseMe?.[0]?.ptr).toEqual(Uint8Array.of(1));
+    expect(socket.reads.filter(q => q === 'imu')).toHaveLength(1);
+    await vi.advanceTimersByTimeAsync(20);
+    expect(manager.getLiveSnapshot().frame?.arduinoNiclaSenseMe?.[0]?.data.data).toEqual(Uint8Array.of(6));
+    expect(socket.reads.filter(q => q === 'imu')).toHaveLength(2);
+    socket.disconnect();
+  });
+
+  it('reads the Victron power queue at most once per second and preserves skipped pointers', async () => {
+    vi.useFakeTimers();
+    Object.assign(window, { setInterval, clearInterval, setTimeout, clearTimeout });
+    const { default: manager } = await import('@/api/websocket');
+    const socket = getSocket();
+    const Q = drivers.QueueDataType;
+    for (let i = 1; i <= 56; i++) queueFrame(socket, i, [
+      { queue: 'vesc', type: Q.QDT_VESC_TRAMPA_INFERENCE, ptr: Uint8Array.of(1) },
+      { queue: 'pwm', type: Q.QDT_PWM_OUTPUT_RX, ptr: Uint8Array.of(1) },
+      { queue: 'power', type: Q.QDT_VICTRON_SMARTSOLAR_MPPT_RX, ptr: Uint8Array.of(i) },
+    ]);
+    socket.queueReadResponse('vesc', { entryId: 1, data: vesc_trampa.InferenceState.encode({}).finish() });
+    for (const i of [1,51]) socket.queueReadResponse('power', { entryId: i,
+      data: victron_smartsolar_mppt.RxEnvelope.encode({ data: Uint8Array.of(i) }).finish() });
+    socket.open();
+    await vi.advanceTimersByTimeAsync(950);
+    expect(socket.reads.filter(q => q === 'power')).toHaveLength(1);
+    expect(manager.getLiveSnapshot().frame?.victronSmartSolar?.[0]?.ptr).toEqual(Uint8Array.of(1));
+    await vi.advanceTimersByTimeAsync(100);
+    expect(socket.reads.filter(q => q === 'power')).toHaveLength(2);
+    expect(manager.getLiveSnapshot().frame?.victronSmartSolar?.[0]?.data.data).toEqual(Uint8Array.of(51));
+    socket.disconnect();
   });
 
   it('publishes thermal discovery without waiting for an unresponsive camera queue', async () => {

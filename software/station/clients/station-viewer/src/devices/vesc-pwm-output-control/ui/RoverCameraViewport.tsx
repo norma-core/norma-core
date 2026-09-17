@@ -1,56 +1,25 @@
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-} from 'react';
-import {
-  Camera,
-  Maximize2,
-  Minimize2,
-} from 'lucide-react';
-import { commandManager } from '@/api/commands.js';
+import { useEffect, useMemo, useState, type CSSProperties } from 'react';
+import Long from 'long';
+import { Maximize2, Minimize2 } from 'lucide-react';
+import { serverToLocal } from '@/api/timestamp-utils';
+import { commandManager } from '@/api/commands';
 import type { FrameEntry } from '@/api/frame-parser';
 import { usbvideo } from '@/api/proto.js';
 import CameraViewer from '@/usbvideo/CameraViewer';
-import RoverCameraServoControl from './RoverCameraServoControl';
 import { getVideoSourceId } from '@/usbvideo/camera-source';
-import {
-  clearLiveCameraFrame,
-  resumeLiveCameraFrame,
-  suppressLiveCameraFrame,
-} from '@/usbvideo/live-camera-store';
-
-interface RoverCameraStatus {
-  ready: boolean;
-  hasFault: boolean;
-  boardLabel: string;
-  outputLabel: string;
-}
+import { clearLiveCameraFrame, isLiveCameraSuppressed, resumeLiveCameraFrame, suppressLiveCameraFrame } from '@/usbvideo/live-camera-store';
+import type { RoverMotion } from '../rover-motion';
+import RoverMotionHud from './RoverMotionHud';
 
 interface RoverCameraViewportProps {
-  videoSources: FrameEntry<usbvideo.IRxEnvelope>[];
-  controlVideoSources?: FrameEntry<usbvideo.IRxEnvelope>[];
-  status: RoverCameraStatus;
+  source?: FrameEntry<usbvideo.IRxEnvelope>;
+  motion: RoverMotion | null;
+  now: number;
   isFullscreen: boolean;
-  onOpenDetails: () => void;
   onToggleFullscreen: () => void;
+  onBeforeChange: () => void;
+  disabled: boolean;
 }
-
-function CameraPane({ sourceId }: { sourceId: string }) {
-  return (
-    <div className="relative h-full min-h-0 min-w-0 overflow-hidden bg-black">
-      <CameraViewer
-        sourceId={sourceId}
-        className="h-full w-full"
-        imageClassName="select-none"
-        fit="cover"
-        overlay="none"
-      />
-    </div>
-  );
-}
-
 function bytesToHex(bytes?: Uint8Array | null): string {
   if (!bytes || bytes.length === 0) return '';
   return Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('');
@@ -99,146 +68,57 @@ function uniqueFormats(formats: usbvideo.ICameraFormat[] | null | undefined) {
   });
 }
 
-function RoverCameraViewport({
-  videoSources,
-  controlVideoSources = videoSources,
-  status,
-  isFullscreen,
-  onOpenDetails,
-  onToggleFullscreen,
-}: RoverCameraViewportProps) {
-  const primaryVideoSource = videoSources[0] ?? null;
-  const primaryControlVideoSource = primaryVideoSource ?? controlVideoSources[0] ?? null;
-  const liveCameraSourceId = primaryVideoSource
-    ? getVideoSourceId(primaryVideoSource)
-    : null;
-  const lastKnownCameraSourceId = controlVideoSources[0]
-    ? getVideoSourceId(controlVideoSources[0])
-    : null;
-  const cameraPaneSourceId = liveCameraSourceId ?? lastKnownCameraSourceId;
-  const primaryCameraUniqueId = primaryControlVideoSource?.data.camera?.uniqueId ?? '';
-  const cameraFormats = useMemo(
-    () => uniqueFormats(primaryControlVideoSource?.data.formats),
-    [primaryControlVideoSource?.data.formats],
-  );
-  const [selectedFormatKey, setSelectedFormatKey] = useState('auto');
 
+export default function RoverCameraViewport({ source, motion, now, isFullscreen, onToggleFullscreen, onBeforeChange, disabled }: RoverCameraViewportProps) {
+  const sourceId = source ? getVideoSourceId(source) : null;
+  const cameraId = source?.data.camera?.uniqueId ?? '';
+  const formats = useMemo(() => uniqueFormats(source?.data.formats), [source?.data.formats]);
+  const [selected, setSelected] = useState('auto');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
   useEffect(() => {
-    if (selectedFormatKey === 'auto' || selectedFormatKey === 'none') return;
-    if (cameraFormats.some((format) => format.key === selectedFormatKey)) return;
-    setSelectedFormatKey('auto');
-  }, [cameraFormats, selectedFormatKey]);
-
-  useEffect(() => {
-    setSelectedFormatKey('auto');
-  }, [primaryCameraUniqueId]);
-
-  const handleFormatChange = useCallback((nextFormatKey: string) => {
-    setSelectedFormatKey(nextFormatKey);
-    if (cameraPaneSourceId) {
-      if (nextFormatKey === 'none') {
-        suppressLiveCameraFrame(cameraPaneSourceId);
-      } else {
-        resumeLiveCameraFrame(cameraPaneSourceId);
-        clearLiveCameraFrame(cameraPaneSourceId);
+    setSelected(sourceId && isLiveCameraSuppressed(sourceId) ? 'none' : 'auto');
+    setError('');
+  }, [cameraId, sourceId]);
+  const format = formats.find(f => f.key === selected)?.format ?? formats[0]?.format;
+  const dimensions = source?.data.frames?.format ?? format;
+  const aspect = dimensions?.width && dimensions?.height ? `${dimensions.width} / ${dimensions.height}` : '4 / 3';
+  const stamp = source?.data.frames?.stamps?.at(-1)?.monotonicStampNs
+    ?? (source?.data.type === usbvideo.RxEnvelopeType.ET_FRAMES ? source.data.stamp?.monotonicStampNs : undefined);
+  const frameAgeMs = stamp ? now - serverToLocal(Long.fromValue(stamp)).toNumber() / 1e6 : Infinity;
+  const videoStale = !!sourceId && selected !== 'none' && (!Number.isFinite(frameAgeMs) || frameAgeMs > 1500 || frameAgeMs < -1000);
+  async function changeFormat(next: string) {
+    if (busy || disabled || !cameraId) return;
+    onBeforeChange(); setBusy(true); setError('');
+    const manual = formats.find(f => f.key === next)?.format;
+    try {
+      await commandManager.sendUsbVideoCommand({ targetCameraUniqueId: cameraId,
+        setFormat: { mode: next === 'none' ? usbvideo.SetFormatMode.SET_FORMAT_MODE_NONE : manual ? usbvideo.SetFormatMode.SET_FORMAT_MODE_MANUAL : usbvideo.SetFormatMode.SET_FORMAT_MODE_AUTO,
+          ...(manual ? { format: manual } : {}) } });
+      setSelected(next);
+      if (sourceId) {
+        if (next === 'none') suppressLiveCameraFrame(sourceId);
+        else { resumeLiveCameraFrame(sourceId); clearLiveCameraFrame(sourceId); }
       }
+    } catch {
+      setError('Camera format command failed');
     }
-    if (!primaryCameraUniqueId) return;
-
-    if (nextFormatKey === 'auto') {
-      void commandManager.sendUsbVideoCommand({
-        targetCameraUniqueId: primaryCameraUniqueId,
-        setFormat: {
-          mode: usbvideo.SetFormatMode.SET_FORMAT_MODE_AUTO,
-        },
-      }).catch((error) => {
-        console.error('Failed to send USB video auto format command', error);
-      });
-      return;
-    }
-
-    if (nextFormatKey === 'none') {
-      void commandManager.sendUsbVideoCommand({
-        targetCameraUniqueId: primaryCameraUniqueId,
-        setFormat: {
-          mode: usbvideo.SetFormatMode.SET_FORMAT_MODE_NONE,
-        },
-      }).catch((error) => {
-        console.error('Failed to send USB video none format command', error);
-      });
-      return;
-    }
-
-    const selectedFormat = cameraFormats.find((format) => format.key === nextFormatKey)?.format;
-    if (!selectedFormat) return;
-
-    void commandManager.sendUsbVideoCommand({
-      targetCameraUniqueId: primaryCameraUniqueId,
-      setFormat: {
-        mode: usbvideo.SetFormatMode.SET_FORMAT_MODE_MANUAL,
-        format: selectedFormat,
-      },
-    }).catch((error) => {
-      console.error('Failed to send USB video manual format command', error);
-    });
-  }, [cameraFormats, cameraPaneSourceId, primaryCameraUniqueId]);
-
-  const cameraStage = !cameraPaneSourceId ? (
-    <div className="flex h-full items-center justify-center bg-surface-base text-center text-sm text-text-muted">
-      <div><Camera className="mx-auto mb-3 h-7 w-7" />Waiting for rover camera</div>
+    finally { setBusy(false); }
+  }
+  return <section className="rover-video" aria-label="Selected camera view" style={{ '--camera-aspect': aspect } as CSSProperties}>
+    {selected === 'none' ? <div className="rover-camera-empty">Camera off</div> : sourceId ? <CameraViewer sourceId={sourceId} fit="contain" overlay="none" className="rover-camera-image" /> : <div className="rover-camera-empty">Waiting for camera</div>}
+    <RoverMotionHud motion={motion} />
+    <div className="rover-video-tools">
+      {cameraId && <select key={cameraId} aria-label="Camera format" title={format ? formatLabel(format) : 'Camera format'} value={selected} disabled={disabled || busy} onChange={event => void changeFormat(event.target.value)}>
+        <option value="auto">Auto{dimensions ? ` · ${dimensions.width} × ${dimensions.height}` : ''}</option>
+        <option value="none">Off</option>
+        {formats.map(({ key, format: f }) => <option key={key} value={key}>{formatLabel(f)}</option>)}
+      </select>}
+      <button type="button" onClick={() => { onBeforeChange(); onToggleFullscreen(); }} aria-label={isFullscreen ? 'Exit fullscreen rover control' : 'Fullscreen rover control'}>
+        {isFullscreen ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
+      </button>
     </div>
-  ) : (
-    <CameraPane sourceId={cameraPaneSourceId} />
-  );
-
-  return (
-    <div className="relative min-h-0 overflow-hidden bg-black [@media(max-width:1023px)_and_(orientation:landscape)]:absolute [@media(max-width:1023px)_and_(orientation:landscape)]:inset-0">
-      {cameraStage}
-      <div className="absolute bottom-2 left-1/2 z-40 w-[min(20rem,calc(100%-1rem))] -translate-x-1/2 [@media(max-width:1023px)_and_(orientation:landscape)]:bottom-[calc(0.5rem+env(safe-area-inset-bottom))] [@media(max-width:1023px)_and_(orientation:landscape)]:left-[calc(1rem+env(safe-area-inset-left)+var(--rover-landscape-left-zone)+var(--rover-landscape-power-zone))] [@media(max-width:1023px)_and_(orientation:landscape)]:right-[calc(1rem+env(safe-area-inset-right)+var(--rover-landscape-right-safe-zone))] [@media(max-width:1023px)_and_(orientation:landscape)]:w-auto [@media(max-width:1023px)_and_(orientation:landscape)]:translate-x-0">
-        <RoverCameraServoControl />
-      </div>
-      <div className="pointer-events-none absolute inset-0 z-10 hidden [background:radial-gradient(circle_at_18%_82%,rgba(34,211,238,0.14),transparent_27%),radial-gradient(circle_at_84%_78%,rgba(34,211,238,0.10),transparent_24%),linear-gradient(90deg,rgba(0,0,0,0.30),transparent_32%,transparent_68%,rgba(0,0,0,0.30)),linear-gradient(180deg,rgba(0,0,0,0.18),transparent_34%,rgba(0,0,0,0.22))] [@media(max-width:1023px)_and_(orientation:landscape)]:block" aria-hidden="true" />
-      <span className="pointer-events-none absolute left-[0.55rem] top-[0.55rem] z-20 hidden h-[0.95rem] w-[0.95rem] border-l-2 border-t-2 border-accent-data/70 [@media(max-width:1023px)_and_(orientation:landscape)]:block" aria-hidden />
-      <span className="pointer-events-none absolute right-[0.55rem] top-[0.55rem] z-20 hidden h-[0.95rem] w-[0.95rem] border-r-2 border-t-2 border-accent-data/70 [@media(max-width:1023px)_and_(orientation:landscape)]:block" aria-hidden />
-      <span className="pointer-events-none absolute bottom-[0.55rem] left-[0.55rem] z-20 hidden h-[0.95rem] w-[0.95rem] border-b-2 border-l-2 border-accent-data/70 [@media(max-width:1023px)_and_(orientation:landscape)]:block" aria-hidden />
-      <span className="pointer-events-none absolute bottom-[0.55rem] right-[0.55rem] z-20 hidden h-[0.95rem] w-[0.95rem] border-b-2 border-r-2 border-accent-data/70 [@media(max-width:1023px)_and_(orientation:landscape)]:block" aria-hidden />
-      <div className="absolute left-2 right-2 top-2 z-40 flex items-start justify-between gap-2 [@media(max-width:1023px)_and_(orientation:landscape)]:left-[calc(0.5rem+env(safe-area-inset-left))] [@media(max-width:1023px)_and_(orientation:landscape)]:right-[calc(0.5rem+env(safe-area-inset-right))] [@media(max-width:1023px)_and_(orientation:landscape)]:top-[calc(0.5rem+env(safe-area-inset-top))]">
-        <button type="button" onClick={onOpenDetails} aria-label="Open rover status" className="flex min-w-0 items-center gap-2 rounded-md border border-accent-data/35 bg-surface-primary/55 px-2.5 py-2 text-left shadow-[0_0.6rem_1.5rem_rgba(0,0,0,0.18)] backdrop-blur-md transition hover:border-accent-data/60 hover:bg-surface-primary/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-data [@media(max-width:1023px)_and_(orientation:landscape)]:hidden">
-          <span className={`h-2 w-2 shrink-0 rounded-full ${status.ready ? 'bg-accent-success' : status.hasFault ? 'bg-accent-critical' : 'bg-accent-warning'}`} />
-          <div className="min-w-0">
-            <div className="font-mono text-[10px] font-black uppercase tracking-[0.18em] text-text-primary">Rover</div>
-            <div className="max-w-28 truncate font-mono text-[8px] uppercase tracking-wide text-text-muted">
-              {status.boardLabel || 'no drive'} · {status.outputLabel || 'no steering'}
-            </div>
-          </div>
-        </button>
-        <div className="relative ml-auto flex min-w-0 shrink items-center gap-1 rounded-md border border-accent-data/35 bg-surface-primary/55 p-1 shadow-[0_0.6rem_1.5rem_rgba(0,0,0,0.18)] backdrop-blur-md">
-          {primaryCameraUniqueId && (
-            <label className="min-w-0">
-              <span className="sr-only">Camera format</span>
-              <select
-                value={selectedFormatKey}
-                onChange={(event) => handleFormatChange(event.target.value)}
-                className="h-11 max-w-[min(13rem,54vw)] rounded border border-accent-data/20 bg-surface-secondary/75 px-2 pr-7 font-mono text-[10px] font-semibold text-text-primary outline-none transition focus:border-accent-data focus:ring-1 focus:ring-accent-data lg:h-8 lg:max-w-[16rem] lg:text-[11px]"
-                title="Camera format"
-              >
-                <option value="auto">Auto</option>
-                <option value="none">None</option>
-                {cameraFormats.map(({ key, format }) => (
-                  <option key={key} value={key}>
-                    {formatLabel(format)}
-                  </option>
-                ))}
-              </select>
-            </label>
-          )}
-          <button type="button" onClick={onToggleFullscreen} className="flex h-11 w-11 items-center justify-center rounded text-text-secondary hover:bg-accent-data/12 hover:text-accent-data lg:h-8 lg:w-8" aria-label={isFullscreen ? 'Exit fullscreen rover control' : 'Fullscreen rover control'} aria-pressed={isFullscreen}>
-            {isFullscreen ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
+    {videoStale && <div className="rover-video-status" role="status">Video stale</div>}
+    {error && <div className="rover-video-error" role="alert">{error}</div>}
+  </section>;
 }
-
-export default RoverCameraViewport;

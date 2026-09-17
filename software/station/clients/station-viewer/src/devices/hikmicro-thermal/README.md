@@ -12,7 +12,7 @@ stations with multi-frame batches are polled at the batch cadence (up to 1 s). D
 entries are not decoded or published again. Hidden tabs and history mode suspend
 reads; unmount disposes the loop. An outstanding NormFS request may finish (or hit
 its existing timeout), but its response cannot publish after suspension/disposal.
-History continues to read the exact recorded entry. No frame backlog is replayed.
+History continues to read the exact recorded entry. Its preview uses the red palette, omits live freshness warnings and temperature delta readouts, and never starts a live thermal reader or freshness timer. No frame backlog is replayed.
 
 The station driver publishes one frame per envelope. Rebuild and restart the
 station to enable this behavior; no new configuration is needed. Old binaries

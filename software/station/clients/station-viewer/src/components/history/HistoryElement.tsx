@@ -6,7 +6,7 @@ import { readArduinoNiclaSenseEnvMainValues } from '@/devices/arduino-nicla-sens
 import { cardinalName, readArduinoNiclaSenseMeMainValues, vecMagnitude } from '@/devices/arduino-nicla-sense-me/values';
 import { formatIna226Current, readIna226CurrentAmps, readIna226ShuntMillivolts } from '@/devices/ina226/values';
 import { airGradientDeviceLabel, readAirGradientValues } from '@/devices/airgradient-open-air-o-1pst/values';
-import { formatCelsius, latestThermalFrame, renderThermalFrame } from '@/devices/hikmicro-thermal/thermal';
+import { latestThermalFrame, renderThermalFrame } from '@/devices/hikmicro-thermal/thermal';
 import {
   describeRegisterValue,
   formatRegisterHex,
@@ -197,14 +197,6 @@ function HistoryElement({ element, index, dataQueueType, dataQueueId }: HistoryE
               <span className={hikmicroRendered?.usedCalibration ? 'text-accent-success' : 'text-accent-warning'}>
                 {hikmicroRendered?.usedCalibration ? 'Calibrated' : 'Raw'}
               </span>
-              {hikmicroRendered && (
-                <>
-                  <span className="text-accent-warning">Center: {formatCelsius(hikmicroRendered.centerC)}</span>
-                  <span className="text-accent-data">Avg: {formatCelsius(hikmicroRendered.avgC)}</span>
-                  <span className="text-accent-info">Min: {formatCelsius(hikmicroRendered.minC)}</span>
-                  <span className="text-accent-critical">Max: {formatCelsius(hikmicroRendered.maxC)}</span>
-                </>
-              )}
               <span className="text-text-label">
                 Frames: {hikmicroThermalData.frames?.frameCount ?? hikmicroThermalData.frames?.frames?.length ?? 0}
               </span>

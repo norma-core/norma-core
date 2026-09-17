@@ -48,6 +48,7 @@ export interface ArduinoNiclaSenseMeQuat {
 
 export interface ArduinoNiclaSenseMeMainValues {
   accelG: Vec3 | null;
+  linearAccelG: Vec3 | null;
   gyroDps: Vec3 | null;
   magUt: Vec3 | null;
   quat: ArduinoNiclaSenseMeQuat | null;
@@ -158,6 +159,7 @@ export function readArduinoNiclaSenseMeMainValues(
   const quat = readQuat(bytes);
   return {
     accelG: vec3(bytes, ME_OFFSETS.accel),
+    linearAccelG: quat ? vec3(bytes, ME_OFFSETS.linAccel) : null,
     gyroDps: vec3(bytes, ME_OFFSETS.gyro),
     magUt: vec3(bytes, ME_OFFSETS.mag),
     quat,

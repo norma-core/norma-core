@@ -13,30 +13,31 @@ import '@fontsource/share-tech-mono/400.css';
 // oxlint-disable-next-line import/no-unassigned-import -- Load styles with this lazy device view.
 import './thermal-mirror.css';
 
-export interface HikmicroThermalLiveViewProps { data: hikmicro.IRxEnvelope; queueId?: string; demo?: boolean; }
+export interface HikmicroThermalLiveViewProps { data: hikmicro.IRxEnvelope; queueId?: string; demo?: boolean; mode?: 'live' | 'history'; }
 
 function Metric({ label, value, tone }: { label: string; value: string; tone?: string }) {
   const hasUnit = value.endsWith(' °C');
   return <div className="thermal-mirror__metric" data-tone={tone}><dt>{label}</dt><dd>{hasUnit ? <>{value.slice(0, -3)} <span className="thermal-mirror__unit">°C</span></> : value}</dd></div>;
 }
 
-function HikmicroThermalLiveView({ data: recordedData, queueId, demo = false }: HikmicroThermalLiveViewProps) {
-  const liveData = useThermalLiveStream(queueId);
+function HikmicroThermalLiveView({ data: recordedData, queueId, demo = false, mode = 'live' }: HikmicroThermalLiveViewProps) {
+  const isHistory = mode === 'history';
+  const liveData = useThermalLiveStream(isHistory ? undefined : queueId);
   const data = liveData ?? recordedData;
   const surfaceRef = useRef<HTMLElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const { isFullscreen, toggleFullscreen } = useElementFullscreen(surfaceRef);
   const [mirrored, setMirrored] = useState(true);
   const [palette, setPalette] = useState<ThermalPalette>('arctic');
-  const displayPalette = isFullscreen ? 'terminator' : palette;
+  const displayPalette = isHistory || isFullscreen ? 'terminator' : palette;
   const frame = latestThermalFrame(data);
-  const { stats, stale, error } = useThermalPreview(data, frame, displayPalette, canvasRef);
+  const { stats, stale, error } = useThermalPreview(data, frame, displayPalette, canvasRef, !isHistory);
   const label = hikmicroDeviceLabel(data, 'HIKMICRO');
-  const available = Boolean(stats && !stale && !error);
+  const available = Boolean(stats && (isHistory || !stale) && !error);
   const reference = available ? stats!.avgC : null;
   const delta = (value: number | null | undefined) => formatTemperatureDelta(available ? value ?? null : null, reference);
-  const status = error ? 'RECOVERING' : !stats ? 'CONNECTING' : stale ? 'SIGNAL DELAYED' : demo ? 'SYNTHETIC DEMO' : 'LIVE';
-  const statusDetail = available ? null : stats ? 'LAST FRAME' : 'WAITING FOR FRAME';
+  const status = isHistory ? (error ? 'DECODE ERROR' : 'RECORDED FRAME') : error ? 'RECOVERING' : !stats ? 'CONNECTING' : stale ? 'SIGNAL DELAYED' : demo ? 'SYNTHETIC DEMO' : 'LIVE';
+  const statusDetail = isHistory || available ? null : stats ? 'LAST FRAME' : 'WAITING FOR FRAME';
 
   useEffect(() => {
     try {
@@ -53,7 +54,7 @@ function HikmicroThermalLiveView({ data: recordedData, queueId, demo = false }: 
   </div>;
 
   return (
-    <section ref={surfaceRef} aria-label="Thermal mirror" className="thermal-mirror" data-fullscreen={isFullscreen} style={{ '--thermal-image-aspect': stats ? stats.width / stats.height : 4 / 3 } as CSSProperties}>
+    <section ref={surfaceRef} aria-label="Thermal mirror" className="thermal-mirror" data-fullscreen={isFullscreen} data-mode={mode} style={{ '--thermal-image-aspect': stats ? stats.width / stats.height : 4 / 3 } as CSSProperties}>
       <header className="thermal-mirror__header">
         {isFullscreen ? <span className="thermal-mirror__brand" aria-label="NormaCore">{'// C //'}</span> : <>
           <div className="min-w-0">
@@ -70,10 +71,10 @@ function HikmicroThermalLiveView({ data: recordedData, queueId, demo = false }: 
       </header>
       <div className="thermal-mirror__body">
         <div className="thermal-mirror__view">
-          <div className="thermal-mirror__image" data-ready={Boolean(stats)}>
+          <div className="thermal-mirror__image" data-ready={Boolean(stats && (!isHistory || frame))}>
             <canvas ref={canvasRef} width={256} height={192} className="thermal-mirror__canvas" data-mirrored={mirrored} aria-label="HIKMICRO thermal frame" />
             {!isFullscreen && controls}
-            {isFullscreen && available && <div className="thermal-mirror__hud" aria-label="Video HUD telemetry">
+            {!isHistory && isFullscreen && available && <div className="thermal-mirror__hud" aria-label="Video HUD telemetry">
               <div className="thermal-mirror__hud-readout">
                 <span>THERMAL VISION</span>
                 <strong>{demo ? 'DEMO / SYNTHETIC' : 'SENSOR / ONLINE'}</strong>
@@ -88,13 +89,17 @@ function HikmicroThermalLiveView({ data: recordedData, queueId, demo = false }: 
               {stats?.spectrum && <ThermalSpectrogram spectrum={stats.spectrum} />}
               <span className="thermal-mirror__hud-caption thermal-mirror__hud-bottom">{demo ? 'SIMULATED INPUT' : 'HIKMICRO / THERMAL STREAM'}<span>SCAN ACTIVE</span></span>
             </div>}
-            {!isFullscreen && !available && <div className="thermal-mirror__notice" data-stale={Boolean(stats)} role="status">
+            {isHistory && (error || !stats || !frame) && <div className="thermal-mirror__notice" role="status">
+              <strong>{error ? 'Recorded frame unavailable' : frame ? 'Loading recorded frame' : 'No thermal frame in this entry'}</strong>
+              {error && <span>{error}</span>}
+            </div>}
+            {!isHistory && !isFullscreen && !available && <div className="thermal-mirror__notice" data-stale={Boolean(stats)} role="status">
               <strong>{stats ? 'Signal delayed · showing last frame' : 'Connecting to thermal camera'}</strong>
               <span>{error || stats ? 'The image will resume automatically.' : 'The first frame can take a little while.'}</span>
             </div>}
           </div>
         </div>
-        {!isFullscreen && <aside className="thermal-mirror__readings">
+        {!isHistory && !isFullscreen && <aside className="thermal-mirror__readings">
           <div className="thermal-mirror__relative"><p>Δ relative to the frame average</p></div>
           <dl className="thermal-mirror__metrics">
             <Metric label="Center Δ" value={delta(stats?.centerC)} tone="warning" />
@@ -106,7 +111,7 @@ function HikmicroThermalLiveView({ data: recordedData, queueId, demo = false }: 
         </aside>}
       </div>
       {isFullscreen && <footer className="thermal-mirror__footer">
-        <span className="thermal-mirror__status" data-live={available} data-error={Boolean(error)} role="status" aria-live="polite" aria-atomic="true">
+        <span className="thermal-mirror__status" data-live={!isHistory && available} data-error={Boolean(error)} role="status" aria-live="polite" aria-atomic="true">
           <i aria-hidden="true" />{status}{statusDetail && <span className="thermal-mirror__status-detail"> / {statusDetail}</span>}
         </span>
         <span className="thermal-mirror__device" title={label}>{label}</span>
