@@ -4,10 +4,10 @@ use log::{debug, error, info, warn};
 use normfs::NormFS;
 use station_iface::StationEngine;
 use std::collections::{HashMap, HashSet};
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 use tokio::sync::RwLock;
-use tokio::task::JoinHandle;
+use tokio::task::{JoinHandle, JoinSet};
 use tokio::time::interval;
 use tokio_serial::{SerialPortInfo, SerialPortType, available_ports};
 
@@ -52,7 +52,25 @@ pub(crate) struct PortParams {
 }
 
 pub struct VictronSmartSolarMpptDriver {
-    _worker: JoinHandle<()>,
+    worker: JoinHandle<()>,
+    port_tasks: Arc<Mutex<JoinSet<()>>>,
+}
+
+impl VictronSmartSolarMpptDriver {
+    pub async fn stop(self) {
+        self.worker.abort();
+        if let Err(err) = self.worker.await
+            && !err.is_cancelled()
+        {
+            warn!("Victron SmartSolar MPPT scan task failed during shutdown: {err}");
+        }
+        let mut port_tasks = std::mem::take(&mut *self.port_tasks.lock().unwrap());
+        info!(
+            "Victron SmartSolar MPPT aborting {} port task(s)",
+            port_tasks.len()
+        );
+        port_tasks.shutdown().await;
+    }
 }
 
 impl VictronSmartSolarMpptDriver {
@@ -73,9 +91,15 @@ impl VictronSmartSolarMpptDriver {
             "Victron SmartSolar MPPT scanning USB serial ports ({} match rule(s))",
             DEFAULT_USB_MATCHES.len()
         );
-        let worker = tokio::spawn(run_scan_loop(normfs.clone(), station_engine, config));
+        let port_tasks = Arc::new(Mutex::new(JoinSet::new()));
+        let worker = tokio::spawn(run_scan_loop(
+            normfs.clone(),
+            station_engine,
+            config,
+            port_tasks.clone(),
+        ));
 
-        Ok(Self { _worker: worker })
+        Ok(Self { worker, port_tasks })
     }
 }
 
@@ -101,15 +125,15 @@ pub async fn start_victron_smartsolar_mppt_driver<T: StationEngine>(
     normfs: Arc<NormFS>,
     station_engine: Arc<T>,
     config: VictronSmartSolarMpptDriverConfig,
-) -> Result<Arc<VictronSmartSolarMpptDriver>, Box<dyn std::error::Error>> {
-    let driver = VictronSmartSolarMpptDriver::new(normfs, station_engine, config).await?;
-    Ok(Arc::new(driver))
+) -> Result<VictronSmartSolarMpptDriver, Box<dyn std::error::Error>> {
+    VictronSmartSolarMpptDriver::new(normfs, station_engine, config).await
 }
 
 async fn run_scan_loop<T: StationEngine>(
     normfs: Arc<NormFS>,
     station_engine: Arc<T>,
     config: VictronSmartSolarMpptDriverConfig,
+    port_tasks: Arc<Mutex<JoinSet<()>>>,
 ) {
     let base_params = PortParams {
         read_timeout: config.read_timeout,
@@ -123,6 +147,11 @@ async fn run_scan_loop<T: StationEngine>(
 
     loop {
         scan.tick().await;
+
+        {
+            let mut port_tasks = port_tasks.lock().unwrap();
+            while port_tasks.try_join_next().is_some() {}
+        }
 
         let ports = match available_ports() {
             Ok(ports) => ports,
@@ -167,7 +196,7 @@ async fn run_scan_loop<T: StationEngine>(
             let station_engine = station_engine.clone();
             let managed = managed.clone();
             let rejected = rejected.clone();
-            tokio::spawn(async move {
+            port_tasks.lock().unwrap().spawn(async move {
                 let port = VictronPort::new(normfs, station_engine, device, params);
                 match port.open().await {
                     Ok(()) => {

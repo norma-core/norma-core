@@ -120,7 +120,7 @@ impl<T: StationEngine> VictronPort<T> {
             String::new(),
         );
 
-        let poller: JoinHandle<()> = tokio::spawn(run_hex_poller(write_half));
+        let poller = AbortOnDrop(tokio::spawn(run_hex_poller(write_half)));
 
         let reason = self
             .read_loop(
@@ -133,7 +133,7 @@ impl<T: StationEngine> VictronPort<T> {
             )
             .await;
 
-        poller.abort();
+        drop(poller);
         info!(
             "Victron SmartSolar MPPT port {} closed: {}",
             port_name, reason
@@ -388,6 +388,14 @@ fn enrich_device(device: &mut VictronDevice, block: &[u8], product_id: u16) {
     device.device_serial = parse::text_field(block, "SER#")
         .map(str::to_string)
         .unwrap_or_default();
+}
+
+struct AbortOnDrop(JoinHandle<()>);
+
+impl Drop for AbortOnDrop {
+    fn drop(&mut self) {
+        self.0.abort();
+    }
 }
 
 async fn run_hex_poller(mut writer: Writer) {

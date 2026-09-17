@@ -166,6 +166,9 @@ struct Station {
 
     #[cfg(feature = "ov5647")]
     ov5647_handle: Mutex<Option<ov5647::Ov5647Handle>>,
+
+    victron_smartsolar_mppt_handle:
+        Mutex<Option<victron_smartsolar_mppt::VictronSmartSolarMpptDriver>>,
 }
 
 struct Engine {
@@ -222,6 +225,7 @@ impl Station {
             usbvideo_instances: parking_lot::Mutex::new(Vec::new()),
             #[cfg(target_os = "linux")]
             hikmicro_thermal_handle: Mutex::new(None),
+            victron_smartsolar_mppt_handle: Mutex::new(None),
             #[cfg(feature = "ov5647")]
             ov5647_handle: Mutex::new(None),
         })
@@ -574,14 +578,19 @@ impl Station {
                     read_timeout: victron_config.read_timeout,
                 };
 
-                if let Err(e) = victron_smartsolar_mppt::start_victron_smartsolar_mppt_driver(
+                match victron_smartsolar_mppt::start_victron_smartsolar_mppt_driver(
                     self.normfs.clone(),
                     self.engine.clone(),
                     config,
                 )
                 .await
                 {
-                    log::error!("Failed to start Victron SmartSolar MPPT driver: {}", e);
+                    Ok(handle) => {
+                        *self.victron_smartsolar_mppt_handle.lock() = Some(handle);
+                    }
+                    Err(e) => {
+                        log::error!("Failed to start Victron SmartSolar MPPT driver: {}", e);
+                    }
                 }
             } else {
                 log::info!("Victron SmartSolar MPPT driver disabled by configuration");
@@ -846,6 +855,13 @@ impl Station {
             log::info!("Stopping OV5647 driver...");
             handle.stop().await;
             log::info!("OV5647 driver stopped");
+        }
+
+        let victron_handle = self.victron_smartsolar_mppt_handle.lock().take();
+        if let Some(handle) = victron_handle {
+            log::info!("Stopping Victron SmartSolar MPPT driver...");
+            handle.stop().await;
+            log::info!("Victron SmartSolar MPPT driver stopped");
         }
 
         log::info!("Closing NormFS...");
