@@ -7,19 +7,19 @@ const signed = (value: number) => `${value > 0 ? '+' : ''}${Math.round(value)}°
 const RoverMotionHud = memo(function RoverMotionHud({ motion }: RoverMotionHudProps) {
   const id = useId().replace(/[^a-zA-Z0-9_-]/g, '');
   const svg = useMemo(() => motion ? renderRoverModel(motion, id) : '', [motion, id]);
-  const heading = motion?.heading ?? 0;
+  const heading = motion?.heading ?? null;
   const ticks = [];
-  if (motion) for (let bearing = Math.floor((heading - 75) / 15) * 15; bearing <= heading + 75; bearing += 15) {
+  if (heading !== null) for (let bearing = Math.floor((heading - 75) / 15) * 15; bearing <= heading + 75; bearing += 15) {
     const normal = ((bearing % 360) + 360) % 360;
     ticks.push(<span key={bearing} className={normal % 45 === 0 ? 'cardinal' : ''} style={{ left: `${50 + (bearing-heading)/1.5}%` }}>
       {normal % 45 === 0 ? cardinals[normal/45] : normal}
     </span>);
   }
   return <>
-    <div className="rover-compass" role="img" aria-label={motion ? `Rover heading ${Math.round(heading)} degrees` : 'Heading unavailable'}>
+    <div className="rover-compass" role="img" title="Magnetic heading" aria-label={heading !== null ? `Rover magnetic heading ${Math.round(heading) % 360} degrees` : 'Heading unavailable'}>
       <div className="rover-compass-tape" aria-hidden>{ticks}</div>
-      {motion && <span className="rover-compass-pointer" aria-hidden />}
-      <output>{motion ? `${String(Math.round(heading)%360).padStart(3,'0')}° ${cardinals[Math.round(heading/45)%8]}` : 'NO HEADING'}</output>
+      {heading !== null && <span className="rover-compass-pointer" aria-hidden />}
+      <output>{heading !== null ? `${String(Math.round(heading)%360).padStart(3,'0')}° ${cardinals[Math.round(heading/45)%8]}` : 'NO HEADING'}</output>
     </div>
     <div className="rover-motion-model" title="Chassis attitude · X forward, Y left, Z up">
       {motion ? <>

@@ -1,5 +1,6 @@
 import Long from 'long';
 import { describe, expect, it } from 'vitest';
+import { Euler, Quaternion } from 'three';
 import { arduino_nicla_sense_me as me } from '@/api/proto.js';
 import { readRoverMotion } from './rover-motion';
 
@@ -28,14 +29,14 @@ describe('rover motion validity', () => {
     view.setFloat32(0x6c, 180, true);
     expect(readRoverMotion(s, 1100)).toMatchObject({ pitch:0,roll:sensorPitch });
   });
-  it('uses all three gravity-compensated acceleration axes and preserves gyro axes', () => {
+  it('maps gravity-free acceleration and gyro from sensor right/forward/up to rover forward/left/up', () => {
     const s = sample();
     const view = new DataView(s.data!.buffer);
     [0.15, -0.25, 0.35].forEach((n, i) => view.setFloat32(0x38 + i * 4, n, true));
     const motion = readRoverMotion(s, 1100)!;
-    expect(motion).toMatchObject({ heading:359,pitch:-5,roll:8,gyro:{x:1,y:2,z:3} });
-    expect(motion.accel.x).toBeCloseTo(0.15);
-    expect(motion.accel.y).toBeCloseTo(-0.25);
+    expect(motion).toMatchObject({ heading:0,pitch:-5,roll:8,gyro:{x:2,y:-1,z:3} });
+    expect(motion.accel.x).toBeCloseTo(-0.25);
+    expect(motion.accel.y).toBeCloseTo(-0.15);
     expect(motion.accel.z).toBeCloseTo(0.35);
   });
   it.each([[0, 0, 1], [0, 0.6, 0.8]])('shows zero stationary acceleration with gravity along (%s, %s, %s)', (x, y, z) => {
@@ -52,9 +53,9 @@ describe('rover motion validity', () => {
       const motion = readRoverMotion(s, 1100)!;
       expect(motion.pitch).toBe(expected);
       expect(motion.roll).toBe(8);
-      expect(motion.heading).toBe(359);
+      expect(motion.heading).toBe(0);
       expect(motion.accel.z).toBe(0);
-      expect(motion.gyro).toEqual({ x: 1, y: 2, z: 3 });
+      expect(motion.gyro).toEqual({ x: 2, y: -1, z: 3 });
     }
   });
   it('does not show cached event data, stale samples, invalid rotation or nonfinite axes as fresh attitude', () => {
@@ -70,5 +71,34 @@ describe('rover motion validity', () => {
     const s = sample();
     new DataView(s.data!.buffer).setFloat32(0x38, NaN, true);
     expect(readRoverMotion(s, 1100)).toBeNull();
+  });
+});
+
+function orientedSample(heading: number, pitch = 0, roll = 0, scale = 1): me.IRxEnvelope {
+  const s = sample();
+  // Physical poses: clockwise compass turn about ENU Z, then nose-up
+  // around sensor X (right), then left-side-up around sensor Y (forward).
+  const radians = Math.PI / 180;
+  const q = new Quaternion().setFromEuler(new Euler(pitch * radians, roll * radians, -heading * radians, 'ZXY'));
+  const view = new DataView(s.data!.buffer);
+  [q.w, q.x, q.y, q.z].forEach((value, i) => view.setFloat32(0x50 + i * 4, value * scale, true));
+  return s;
+}
+
+describe('rover magnetic compass', () => {
+  it.each([0, 45, 90, 180, 270, 359])('reports clockwise heading %s from the mounted forward axis', (heading) => {
+    expect(readRoverMotion(orientedSample(heading), 1100)!.heading).toBeCloseTo(heading);
+  });
+  it.each([[35, 25, -30], [120, -40, 20], [280, 50, 45]])('keeps heading %s with pitch %s and roll %s', (heading, pitch, roll) => {
+    expect(readRoverMotion(orientedSample(heading, pitch, roll), 1100)!.heading).toBeCloseTo(heading);
+  });
+  it('normalizes scaled quaternions and treats opposite quaternion signs as the same orientation', () => {
+    expect(readRoverMotion(orientedSample(120, 25, -30, 1.2), 1100)!.heading).toBeCloseTo(120);
+    expect(readRoverMotion(orientedSample(120, 25, -30, -1), 1100)!.heading).toBeCloseTo(120);
+  });
+  it('keeps motion available but hides undefined bearing when the forward axis is vertical', () => {
+    const motion = readRoverMotion(orientedSample(90, 90), 1100);
+    expect(motion).not.toBeNull();
+    expect(motion!.heading).toBeNull();
   });
 });
