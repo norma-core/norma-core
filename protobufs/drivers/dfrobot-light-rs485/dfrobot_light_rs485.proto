@@ -1,0 +1,84 @@
+syntax = "proto3";
+
+package dfrobot_light_rs485;
+
+enum DfrobotSignalType {
+    DFROBOT_SIGNAL_TYPE_UNSPECIFIED = 0;
+    DFROBOT_CONNECTED               = 1;
+    DFROBOT_DISCONNECTED            = 2;
+    DFROBOT_REGISTERS_SNAPSHOT      = 3;
+    DFROBOT_ERROR                   = 4;
+    DFROBOT_COMMAND_SUCCESS         = 5;
+    DFROBOT_COMMAND_REJECTED        = 6;
+    DFROBOT_COMMAND_FAILED          = 7;
+    // Final marker on a sensor's queue: this identity left the bus (ID
+    // changed or auto-detected sensor no longer present). UI hides the row.
+    DFROBOT_FORGOTTEN               = 8;
+}
+
+enum DfrobotSensorModel {
+    DFROBOT_MODEL_UNSPECIFIED  = 0;
+    DFROBOT_SEN0640_IRRADIANCE = 1; // total solar irradiance, W/m², 400-1100 nm
+    DFROBOT_SEN0641_PAR        = 2; // photosynthetically active radiation, µmol/m²·s
+    DFROBOT_SEN0642_UV         = 3; // UV intensity mW/cm² + UV index
+    DFROBOT_SEN0644_LIGHT      = 4; // illuminance, Lux, 32-bit
+}
+
+message DfrobotDevice {
+    // Queue key. Defaults to "<model>-<modbus_id>", e.g. "irradiance-1".
+    string id = 1;
+    DfrobotSensorModel model = 2;
+    uint32 modbus_id = 3;
+    string port_name = 4;
+    uint32 baud = 5;
+}
+
+message RegisterRange {
+    // Address of the first register in this block, e.g. 0x07D0.
+    uint32 start_register = 1;
+
+    // Raw Modbus payload exactly as read off the wire:
+    // big-endian 16-bit register values, 2 bytes per register.
+    bytes data = 2;
+}
+
+// One Modbus fc 0x06 single-register write. The driver refuses the reset
+// registers 0x00E0 / 0x00F0 (writing them factory-resets the sensor).
+message WriteRegisterCommand {
+    uint32 modbus_id = 1; // 1-254
+    uint32 register  = 2; // 16-bit register address
+    uint32 value     = 3; // 16-bit value
+}
+
+// Client-facing command envelope: the body of a commands.DriverCommand with
+// type STC_DFROBOT_LIGHT_RS485_COMMAND.
+message Command {
+    WriteRegisterCommand write_register = 10;
+}
+
+// Echo of a processed command, attached to DFROBOT_COMMAND_* envelopes.
+message CommandResult {
+    // commands.DriverCommand.command_id, verbatim.
+    bytes command_id = 1;
+    // Success summary or rejection/failure reason.
+    string description = 2;
+}
+
+message RxEnvelope {
+    uint64 monotonic_stamp_ns = 1;
+    uint64 local_stamp_ns     = 2;
+    uint64 app_start_id       = 3;
+
+    DfrobotSignalType signal_type = 10;
+    DfrobotDevice     device      = 11;
+
+    // Self-describing snapshot: one entry per Modbus transaction, as read.
+    // Decoders look registers up by address, so the polled register list can
+    // grow over time without breaking old recordings.
+    repeated RegisterRange ranges = 20;
+
+    // Present on DFROBOT_COMMAND_* signals: the ack for one command.
+    CommandResult command = 30;
+
+    string error = 50;
+}
