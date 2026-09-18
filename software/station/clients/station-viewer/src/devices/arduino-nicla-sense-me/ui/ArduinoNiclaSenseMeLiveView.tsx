@@ -3,9 +3,10 @@ import { arduino_nicla_sense_me } from '@/api/proto.js';
 import DeviceMetricPill from '@/components/DeviceMetricPill';
 import DeviceWidgetShell from '@/components/DeviceWidgetShell';
 import NiclaBoardScene from './NiclaBoardScene';
+import { HUB_TO_ROVER, compassHeadingDeg, displayAttitude, rpyRep103, withMount } from '../attitude';
 import { buildDecimatedAxisPolylines, historyFor } from '../sparkline';
 import type { AxisPolylines } from '../sparkline';
-import { cardinalName, readArduinoNiclaSenseMeMainValues, vecMagnitude } from '../values';
+import { cardinalName, decodeArduinoNiclaSenseMe, vecMagnitude } from '../values';
 
 const AXIS_COLORS = {
   x: 'var(--color-accent-info)',
@@ -13,15 +14,22 @@ const AXIS_COLORS = {
   z: 'var(--color-accent-success)',
 } as const;
 
-function formatDecimal(value: number | null, decimals = 2): string {
-  return value === null || !Number.isFinite(value) ? 'N/A' : value.toFixed(decimals);
+function formatDecimal(value: number | null | undefined, decimals = 2): string {
+  return value === null || value === undefined || !Number.isFinite(value) ? 'N/A' : value.toFixed(decimals);
 }
 
-function formatMeasured(value: number | null, unit: string, decimals = 2): string {
-  if (value === null || !Number.isFinite(value)) {
+function formatMeasured(value: number | null | undefined, unit: string, decimals = 2): string {
+  if (value === null || value === undefined || !Number.isFinite(value)) {
     return 'N/A';
   }
   return `${value.toFixed(decimals)} ${unit}`;
+}
+
+function formatSigned(value: number | null, decimals = 1): string {
+  if (value === null || !Number.isFinite(value)) {
+    return 'N/A';
+  }
+  return `${value > 0 ? '+' : ''}${value.toFixed(decimals)}°`;
 }
 
 function deviceLabel(data: arduino_nicla_sense_me.IRxEnvelope): string {
@@ -97,11 +105,22 @@ export interface ArduinoNiclaSenseMeLiveViewProps {
 }
 
 function ArduinoNiclaSenseMeLiveView({ data }: ArduinoNiclaSenseMeLiveViewProps) {
-  const values = readArduinoNiclaSenseMeMainValues(data.data);
-  const accelMagnitude = vecMagnitude(values.accelG);
-  const gyroMagnitude = vecMagnitude(values.gyroDps);
-  const magMagnitude = vecMagnitude(values.magUt);
-  const heading = values.headingDeg;
+  const sample = decodeArduinoNiclaSenseMe(data.data);
+  const accelG = sample?.accelG ?? null;
+  const gyroDps = sample?.gyroDps ?? null;
+  const magUt = sample?.magUt ?? null;
+  const quat = sample?.quat ?? null;
+
+  // Attitude in the viewer, from the raw rotation vector. "Forward" is the
+  // hub's +Y axis (the mounted rover's forward), so heading here matches the
+  // rover HUD; pitch is nose-up positive, roll right-side-down positive.
+  const forward = quat ? withMount(quat, HUB_TO_ROVER) : null;
+  const heading = forward ? compassHeadingDeg(forward) : null;
+  const attitude = forward ? displayAttitude(rpyRep103(forward)) : null;
+
+  const accelMagnitude = vecMagnitude(accelG);
+  const gyroMagnitude = vecMagnitude(gyroDps);
+  const magMagnitude = vecMagnitude(magUt);
 
   // Rolling graph history: only REGISTERS_SNAPSHOT envelopes carry a fresh
   // sample — connected/disconnected/error envelopes re-send the last good
@@ -117,9 +136,9 @@ function ArduinoNiclaSenseMeLiveView({ data }: ArduinoNiclaSenseMeLiveViewProps)
   const gyroHistory = historyFor(`${historyKey}/gyro`, 600);
   const magHistory = historyFor(`${historyKey}/mag`, 600);
   if (isSnapshot && sampleKey !== '') {
-    accelHistory.push(sampleKey, values.accelG);
-    gyroHistory.push(sampleKey, values.gyroDps);
-    magHistory.push(sampleKey, values.magUt);
+    accelHistory.push(sampleKey, accelG);
+    gyroHistory.push(sampleKey, gyroDps);
+    magHistory.push(sampleKey, magUt);
   }
 
   // The histories are module-level stores mutated in place: sampleKey
@@ -135,20 +154,24 @@ function ArduinoNiclaSenseMeLiveView({ data }: ArduinoNiclaSenseMeLiveViewProps)
     [historyKey, sampleKey],
   );
 
+  const error = data.error || (data.data && data.data.length > 0 && !sample
+    ? `Unsupported register image (${data.data.length} bytes, revision ${data.data[0x0c] ?? 'N/A'}); firmware revision 6 required`
+    : undefined);
+
   return (
-    <DeviceWidgetShell title={deviceLabel(data)} subtitle="Arduino Sense ME" error={data.error}>
+    <DeviceWidgetShell title={deviceLabel(data)} subtitle="Arduino Sense ME" error={error}>
       <div className="flex items-end gap-2">
         <div className="min-w-0">
           <div className="text-[10px] uppercase text-text-label">Temperature</div>
           <div className="font-mono text-2xl font-semibold leading-none text-accent-danger">
-            {formatDecimal(values.temperatureC, 1)}
+            {formatDecimal(sample?.temperatureC, 1)}
             <span className="ml-1 text-sm text-text-muted">C</span>
           </div>
         </div>
         <div className="ml-auto min-w-0 text-right">
           <div className="text-[10px] uppercase text-text-label">Humidity</div>
           <div className="font-mono text-lg font-semibold leading-none text-accent-info">
-            {formatDecimal(values.humidityPercent, 0)}
+            {formatDecimal(sample?.humidityPercent, 0)}
             <span className="ml-1 text-xs text-text-muted">%</span>
           </div>
         </div>
@@ -156,10 +179,10 @@ function ArduinoNiclaSenseMeLiveView({ data }: ArduinoNiclaSenseMeLiveViewProps)
 
       <div className="mt-2 flex items-start justify-around gap-2">
         <div className="text-center">
-          <NiclaBoardScene quat={values.quat} />
-          <div className="text-[10px] uppercase text-text-label">Attitude</div>
+          <NiclaBoardScene quat={quat} />
+          <div className="text-[10px] uppercase text-text-label">Attitude · nose up + · right down +</div>
           <div className="font-mono text-xs text-text-secondary">
-            pitch {formatDecimal(values.pitchDeg, 1)}° roll {formatDecimal(values.rollDeg, 1)}°
+            pitch {formatSigned(attitude?.pitchNoseUpDeg ?? null)} roll {formatSigned(attitude?.rollRightDownDeg ?? null)}
           </div>
         </div>
         <div className="text-center">
@@ -200,8 +223,8 @@ function ArduinoNiclaSenseMeLiveView({ data }: ArduinoNiclaSenseMeLiveViewProps)
       </div>
 
       <div className="mt-2 flex min-w-0 flex-wrap gap-1.5">
-        <DeviceMetricPill label="IAQ" value={formatDecimal(values.iaq, 0)} tone="text-accent-warning" />
-        <DeviceMetricPill label="Pressure" value={formatMeasured(values.pressureHpa, 'hPa', 0)} tone="text-accent-success" />
+        <DeviceMetricPill label="IAQ" value={formatDecimal(sample?.iaq, 0)} tone="text-accent-warning" />
+        <DeviceMetricPill label="Pressure" value={formatMeasured(sample?.pressureHpa, 'hPa', 0)} tone="text-accent-success" />
       </div>
     </DeviceWidgetShell>
   );
