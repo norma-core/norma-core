@@ -6,7 +6,14 @@ import NiclaBoardScene from './NiclaBoardScene';
 import { HUB_TO_ROVER, compassHeadingDeg, displayAttitude, rpyRep103, withMount } from '../attitude';
 import { buildDecimatedAxisPolylines, historyFor } from '../sparkline';
 import type { AxisPolylines } from '../sparkline';
-import { ME_OFFSETS, ME_REVISION, cardinalName, decodeArduinoNiclaSenseMe, vecMagnitude } from '../values';
+import { ME_OFFSETS, ME_REVISION, cardinalName, decodeArduinoNiclaSenseMe, headingAccuracy, vecMagnitude } from '../values';
+import type { HeadingAccuracyLevel } from '../values';
+
+const ACCURACY_TONE: Record<HeadingAccuracyLevel, string> = {
+  good: 'text-accent-success',
+  fair: 'text-accent-warning',
+  poor: 'text-accent-critical',
+};
 
 const AXIS_COLORS = {
   x: 'var(--color-accent-info)',
@@ -115,8 +122,11 @@ function ArduinoNiclaSenseMeLiveView({ data }: ArduinoNiclaSenseMeLiveViewProps)
   // hub's +Y axis (the mounted rover's forward), so heading here matches the
   // rover HUD; pitch is nose-up positive, roll right-side-down positive.
   const forward = quat ? withMount(quat, HUB_TO_ROVER) : null;
-  const heading = forward ? compassHeadingDeg(forward) : null;
   const attitude = forward ? displayAttitude(rpyRep103(forward)) : null;
+  // The hub's own heading-error estimate. While the magnetometer is
+  // uncalibrated it reads ~180° and the heading is withheld, as on the rover HUD.
+  const accuracy = sample ? headingAccuracy(sample.quatAccuracyRad) : null;
+  const heading = forward && !accuracy?.uncalibrated ? compassHeadingDeg(forward) : null;
 
   const accelMagnitude = vecMagnitude(accelG);
   const gyroMagnitude = vecMagnitude(gyroDps);
@@ -189,9 +199,17 @@ function ArduinoNiclaSenseMeLiveView({ data }: ArduinoNiclaSenseMeLiveViewProps)
           <CompassDial headingDeg={heading} />
           <div className="text-[10px] uppercase text-text-label">Heading</div>
           <div className="font-mono text-xs text-text-secondary">
-            {heading === null || !Number.isFinite(heading)
-              ? 'N/A'
-              : `${heading.toFixed(0)}° ${cardinalName(heading)}`}
+            {accuracy?.uncalibrated
+              ? 'calibrating'
+              : heading === null || !Number.isFinite(heading)
+                ? 'N/A'
+                : `${heading.toFixed(0)}° ${cardinalName(heading)}`}
+          </div>
+          <div
+            className={`font-mono text-[10px] ${accuracy ? ACCURACY_TONE[accuracy.level] : 'text-text-muted'}`}
+            title="Sensor hub's heading error estimate (rotation-vector accuracy)"
+          >
+            {accuracy ? `±${accuracy.deg.toFixed(0)}°` : 'accuracy N/A'}
           </div>
         </div>
       </div>

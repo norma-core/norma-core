@@ -56,6 +56,37 @@ export const ME_STATUS = {
  */
 export const ME_HEADING_UNCALIBRATED_RAD = 3.0;
 
+export type HeadingAccuracyLevel = 'good' | 'fair' | 'poor';
+
+export interface HeadingAccuracy {
+  /** Hub-estimated heading error in degrees. */
+  deg: number;
+  /**
+   * Tier for display. The hub reports quantized levels: a calibrated
+   * magnetometer settles at 25–30° on this board (the firmware saves its
+   * profile below ~35°), ~59° early in calibration, 180° uncalibrated.
+   */
+  level: HeadingAccuracyLevel;
+  /** True at the uncalibrated level: any heading derived from the quaternion is meaningless. */
+  uncalibrated: boolean;
+}
+
+/**
+ * Interprets the rotation-vector accuracy register. Null when the hub has not
+ * reported one yet (register still 0) or the value is not finite.
+ */
+export function headingAccuracy(rad: number): HeadingAccuracy | null {
+  if (!Number.isFinite(rad) || rad <= 0) {
+    return null;
+  }
+  const deg = rad * (180 / Math.PI);
+  return {
+    deg,
+    level: deg < 35 ? 'good' : deg < 70 ? 'fair' : 'poor',
+    uncalibrated: rad >= ME_HEADING_UNCALIBRATED_RAD,
+  };
+}
+
 /** Bits of the freshness register: the sensor delivered a new sample this tick. */
 export const ME_FRESH = {
   accel: 1 << 0,

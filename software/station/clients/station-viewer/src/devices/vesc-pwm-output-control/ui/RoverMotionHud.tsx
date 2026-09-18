@@ -1,4 +1,5 @@
 import { memo, useId, useMemo } from 'react';
+import { headingAccuracy } from '@/devices/arduino-nicla-sense-me/values';
 import type { RoverMotion } from '../rover-motion';
 import { renderRoverModel } from './rover-model';
 interface RoverMotionHudProps { motion: RoverMotion | null }
@@ -10,12 +11,9 @@ const RoverMotionHud = memo(function RoverMotionHud({ motion }: RoverMotionHudPr
   const heading = motion?.heading ?? null;
   // Hub-estimated heading error. While the magnetometer is uncalibrated the
   // hub reports ~180° and readRoverMotion withholds the heading entirely.
-  // The hub reports quantized levels: a calibrated magnetometer settles at
-  // 25–30° on this board (the firmware saves its profile below ~35°), ~59°
-  // early in calibration, 180° uncalibrated; the tiers follow those levels.
   const accuracy = motion?.headingAccuracyDeg ?? null;
   const uncalibrated = motion?.headingUncalibrated ?? false;
-  const accuracyLevel = accuracy === null ? null : accuracy < 35 ? 'good' : accuracy < 70 ? 'fair' : 'poor';
+  const accuracyLevel = accuracy === null ? null : headingAccuracy(accuracy * Math.PI / 180)?.level ?? null;
   const accuracyLabel = uncalibrated ? 'CALIBRATING' : accuracy === null || heading === null ? null : `±${Math.round(accuracy)}°`;
   const ticks = [];
   if (heading !== null) for (let bearing = Math.floor((heading - 75) / 15) * 15; bearing <= heading + 75; bearing += 15) {

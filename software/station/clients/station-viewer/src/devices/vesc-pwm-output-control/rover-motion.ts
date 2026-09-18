@@ -11,13 +11,11 @@ import {
   withMount,
 } from '@/devices/arduino-nicla-sense-me/attitude';
 import {
-  ME_HEADING_UNCALIBRATED_RAD,
   ME_STATUS,
   decodeArduinoNiclaSenseMe,
+  headingAccuracy,
   type Vec3,
 } from '@/devices/arduino-nicla-sense-me/values';
-
-const DEG = 180 / Math.PI;
 
 export interface RoverMotion {
   /**
@@ -61,12 +59,11 @@ export function readRoverMotion(envelope: me.IRxEnvelope | undefined, now: numbe
   if (!sample.quat || !sample.accelG || !sample.gyroDps) return null;
   const rover = withMount(sample.quat, HUB_TO_ROVER);
   const { pitchNoseUpDeg: pitch, rollRightDownDeg: roll } = displayAttitude(rpyRep103(rover));
-  const accuracyRad = sample.quatAccuracyRad;
-  const accuracyKnown = Number.isFinite(accuracyRad) && accuracyRad > 0;
-  const uncalibrated = accuracyKnown && accuracyRad >= ME_HEADING_UNCALIBRATED_RAD;
+  const accuracy = headingAccuracy(sample.quatAccuracyRad);
+  const uncalibrated = accuracy?.uncalibrated ?? false;
   return {
     heading: uncalibrated ? null : compassHeadingDeg(rover),
-    headingAccuracyDeg: accuracyKnown ? accuracyRad * DEG : null,
+    headingAccuracyDeg: accuracy?.deg ?? null,
     headingUncalibrated: uncalibrated,
     pitch,
     roll,

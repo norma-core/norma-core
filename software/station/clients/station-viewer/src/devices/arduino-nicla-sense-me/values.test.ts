@@ -7,6 +7,7 @@ import {
   ME_REVISION,
   cardinalName,
   decodeArduinoNiclaSenseMe,
+  headingAccuracy,
   isFresh,
   vecMagnitude,
 } from './values';
@@ -180,5 +181,21 @@ describe('helpers', () => {
     expect(cardinalName(63)).toBe('NE');
     expect(cardinalName(180)).toBe('S');
     expect(cardinalName(359)).toBe('N');
+  });
+});
+
+describe('headingAccuracy', () => {
+  it('is unknown while the register is zero or not finite', () => {
+    expect(headingAccuracy(0)).toBeNull();
+    expect(headingAccuracy(NaN)).toBeNull();
+    expect(headingAccuracy(Infinity)).toBeNull();
+  });
+
+  it('rates the hub\'s quantized levels: calibrated good, early fair, uncalibrated poor', () => {
+    expect(headingAccuracy(0.436)).toMatchObject({ level: 'good', uncalibrated: false });
+    expect(headingAccuracy(0.525)).toMatchObject({ level: 'good', uncalibrated: false });
+    expect(headingAccuracy(1.03)).toMatchObject({ level: 'fair', uncalibrated: false });
+    expect(headingAccuracy(Math.PI)).toMatchObject({ level: 'poor', uncalibrated: true });
+    expect(headingAccuracy(0.2)?.deg).toBeCloseTo(11.46, 1);
   });
 });
