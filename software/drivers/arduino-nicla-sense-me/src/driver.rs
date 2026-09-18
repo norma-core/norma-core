@@ -17,7 +17,10 @@ use tokio_serial::{SerialPort, SerialPortBuilderExt, SerialStream};
 
 /// Queue name prefix; each board gets `<prefix>/<serial-hex>/rx`.
 pub const RX_QUEUE_PREFIX: &str = "arduino-nicla-sense-me";
-pub const RAW_REGISTER_LENGTH: usize = 0xA8;
+/// Length of the firmware's register image (revision 6). The layout is the
+/// contract with the firmware and the viewer; frames of any other length are
+/// rejected as malformed, there is no legacy path.
+pub const RAW_REGISTER_LENGTH: usize = 0x7C;
 
 const SOFTWARE_REVISION_REGISTER: usize = 0x0C;
 const PRODUCT_ID_REGISTER: usize = 0x0D;
@@ -627,6 +630,19 @@ mod tests {
     #[test]
     fn parse_device_info_rejects_short_buffer() {
         assert!(parse_device_info(&[0u8; 0x10]).is_none());
+    }
+
+    #[test]
+    fn register_image_is_the_rev6_layout() {
+        // Firmware revision 6 publishes a 124-byte image; there is no legacy
+        // path, so a rev-5 (168-byte) frame must be rejected as malformed.
+        assert_eq!(RAW_REGISTER_LENGTH, 0x7C);
+        let legacy_payload = vec![0u8; 0xA8];
+        let frame = build_frame(&legacy_payload);
+        assert!(parse_dump_frame(&frame).is_err());
+        let mut scanner = FrameScanner::default();
+        scanner.push(&frame);
+        assert_eq!(scanner.next_frame(), None);
     }
 
     #[test]

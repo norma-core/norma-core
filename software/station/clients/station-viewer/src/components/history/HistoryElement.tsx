@@ -3,7 +3,8 @@ import { airgradient_open_air_o_1pst, arduino_nicla_sense_env, arduino_nicla_sen
 import { formatBytes, parseUsbVideoData, parseHikmicroThermalData, parseMirroringData, parseSysinfoData, parseArduinoNiclaSenseEnvData, parseArduinoNiclaSenseMeData, parseIna226Data, parseAirGradientData, parseVictronSmartSolarData, parseYahboomDogzillaLiteData, parseNormvlaData } from '@/components/history/history-utils';
 import ExpandedView from '@/components/history/ExpandedView';
 import { readArduinoNiclaSenseEnvMainValues } from '@/devices/arduino-nicla-sense-env/values';
-import { cardinalName, readArduinoNiclaSenseMeMainValues, vecMagnitude } from '@/devices/arduino-nicla-sense-me/values';
+import { HUB_TO_ROVER, compassHeadingDeg, withMount } from '@/devices/arduino-nicla-sense-me/attitude';
+import { cardinalName, decodeArduinoNiclaSenseMe, vecMagnitude } from '@/devices/arduino-nicla-sense-me/values';
 import { formatIna226Current, readIna226CurrentAmps, readIna226ShuntMillivolts } from '@/devices/ina226/values';
 import { airGradientDeviceLabel, readAirGradientValues } from '@/devices/airgradient-open-air-o-1pst/values';
 import { latestThermalFrame, renderThermalFrame } from '@/devices/hikmicro-thermal/thermal';
@@ -77,13 +78,17 @@ function HistoryElement({ element, index, dataQueueType, dataQueueId }: HistoryE
   const arduinoNiclaSenseEnvTvoc = formatSensorValue(arduinoNiclaSenseEnvValues.tvocMgM3, 'mg/m^3');
   const arduinoNiclaSenseEnvEco2 = formatSensorValue(arduinoNiclaSenseEnvValues.eco2Ppm, 'ppm');
   const arduinoNiclaSenseMeData = element.type === 'arduino-nicla-sense-me' && element.data ? parseArduinoNiclaSenseMeData(element.data) : null;
-  const arduinoNiclaSenseMeValues = readArduinoNiclaSenseMeMainValues(arduinoNiclaSenseMeData?.data);
-  const arduinoNiclaSenseMeTemperature = formatSensorValue(arduinoNiclaSenseMeValues.temperatureC, 'C', 1);
-  const arduinoNiclaSenseMeHumidity = formatSensorValue(arduinoNiclaSenseMeValues.humidityPercent, '%', 0);
-  const arduinoNiclaSenseMeIaq = formatSensorValue(arduinoNiclaSenseMeValues.iaq, '', 0);
-  const arduinoNiclaSenseMeAccel = formatSensorValue(vecMagnitude(arduinoNiclaSenseMeValues.accelG), 'g');
-  const arduinoNiclaSenseMeHeading = arduinoNiclaSenseMeValues.headingDeg !== null && Number.isFinite(arduinoNiclaSenseMeValues.headingDeg)
-    ? `${arduinoNiclaSenseMeValues.headingDeg.toFixed(0)}° ${cardinalName(arduinoNiclaSenseMeValues.headingDeg)}`
+  const arduinoNiclaSenseMeSample = decodeArduinoNiclaSenseMe(arduinoNiclaSenseMeData?.data);
+  const arduinoNiclaSenseMeTemperature = formatSensorValue(arduinoNiclaSenseMeSample?.temperatureC ?? null, 'C', 1);
+  const arduinoNiclaSenseMeHumidity = formatSensorValue(arduinoNiclaSenseMeSample?.humidityPercent ?? null, '%', 0);
+  const arduinoNiclaSenseMeIaq = formatSensorValue(arduinoNiclaSenseMeSample?.iaq ?? null, '', 0);
+  const arduinoNiclaSenseMeAccel = formatSensorValue(vecMagnitude(arduinoNiclaSenseMeSample?.accelG ?? null), 'g');
+  // Heading computed from the raw rotation vector; forward = hub +Y, as on the rover HUD.
+  const arduinoNiclaSenseMeHeadingDeg = arduinoNiclaSenseMeSample?.quat
+    ? compassHeadingDeg(withMount(arduinoNiclaSenseMeSample.quat, HUB_TO_ROVER))
+    : null;
+  const arduinoNiclaSenseMeHeading = arduinoNiclaSenseMeHeadingDeg !== null && Number.isFinite(arduinoNiclaSenseMeHeadingDeg)
+    ? `${arduinoNiclaSenseMeHeadingDeg.toFixed(0)}° ${cardinalName(arduinoNiclaSenseMeHeadingDeg)}`
     : null;
   const ina226Data = element.type === 'ina226' && element.data ? parseIna226Data(element.data) : null;
   const ina226ShuntVoltage = formatSensorValue(readIna226ShuntMillivolts(ina226Data?.data), 'mV', 4);
