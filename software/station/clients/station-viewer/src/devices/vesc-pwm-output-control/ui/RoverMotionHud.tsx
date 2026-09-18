@@ -8,6 +8,11 @@ const RoverMotionHud = memo(function RoverMotionHud({ motion }: RoverMotionHudPr
   const id = useId().replace(/[^a-zA-Z0-9_-]/g, '');
   const svg = useMemo(() => motion ? renderRoverModel(motion, id) : '', [motion, id]);
   const heading = motion?.heading ?? null;
+  // Hub-estimated heading error. While the magnetometer is uncalibrated the
+  // hub reports ~180° and readRoverMotion withholds the heading entirely.
+  const accuracy = motion?.headingAccuracyDeg ?? null;
+  const accuracyLevel = accuracy === null ? null : accuracy < 10 ? 'good' : accuracy < 30 ? 'fair' : 'poor';
+  const accuracyLabel = accuracy === null ? null : heading === null ? 'CALIBRATING' : `±${Math.round(accuracy)}°`;
   const ticks = [];
   if (heading !== null) for (let bearing = Math.floor((heading - 75) / 15) * 15; bearing <= heading + 75; bearing += 15) {
     const normal = ((bearing % 360) + 360) % 360;
@@ -16,10 +21,11 @@ const RoverMotionHud = memo(function RoverMotionHud({ motion }: RoverMotionHudPr
     </span>);
   }
   return <>
-    <div className="rover-compass" role="img" title="Magnetic heading" aria-label={heading !== null ? `Rover magnetic heading ${Math.round(heading) % 360} degrees` : 'Heading unavailable'}>
+    <div className="rover-compass" role="img" title="Magnetic heading · ± is the sensor hub's heading error estimate" aria-label={heading !== null ? `Rover magnetic heading ${Math.round(heading) % 360} degrees${accuracy !== null ? `, plus or minus ${Math.round(accuracy)} degrees` : ''}` : accuracy !== null ? 'Heading unavailable, magnetometer calibrating' : 'Heading unavailable'}>
       <div className="rover-compass-tape" aria-hidden>{ticks}</div>
       {heading !== null && <span className="rover-compass-pointer" aria-hidden />}
       <output>{heading !== null ? `${String(Math.round(heading)%360).padStart(3,'0')}° ${cardinals[Math.round(heading/45)%8]}` : 'NO HEADING'}</output>
+      {accuracyLabel !== null && <span className="rover-compass-accuracy" data-level={accuracyLevel}>{accuracyLabel}</span>}
     </div>
     <div className="rover-motion-model" title="Chassis attitude · X forward, Y left, Z up">
       {motion ? <>
