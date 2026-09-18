@@ -98,6 +98,9 @@ int8_t readBsxState(uint16_t param, uint8_t *out, uint32_t cap, uint32_t *total)
     if (*total == 0 || *total > cap) {
       return BHY2_E_BUFFER;
     }
+    if (blockLen > BHY2_BSX_STATE_BLOCK_LEN) {
+      return BHY2_E_INVALID_PARAM;  // corrupt header: never read past the 68-byte block
+    }
     if ((uint32_t)section * BHY2_BSX_STATE_BLOCK_LEN + blockLen <= cap) {
       memcpy(&out[section * BHY2_BSX_STATE_BLOCK_LEN], &block[4], blockLen);
     }

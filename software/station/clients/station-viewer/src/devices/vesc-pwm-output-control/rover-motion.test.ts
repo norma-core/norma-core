@@ -155,8 +155,18 @@ describe('rover heading accuracy', () => {
     new DataView(s.data!.buffer).setFloat32(ME_OFFSETS.quat + 16, Math.PI, true);
     const motion = readRoverMotion(s, 1100)!;
     expect(motion.heading).toBeNull();
+    expect(motion.headingUncalibrated).toBe(true);
     expect(motion.headingAccuracyDeg).toBeCloseTo(180, 0);
     expect(motion.pitch).toBeCloseTo(10);
+  });
+
+  it('distinguishes a vertical forward axis from an uncalibrated magnetometer', () => {
+    const s = orientedSample(0, 90);
+    new DataView(s.data!.buffer).setFloat32(ME_OFFSETS.quat + 16, 0.44, true);
+    const motion = readRoverMotion(s, 1100)!;
+    expect(motion.heading).toBeNull();
+    expect(motion.headingUncalibrated).toBe(false);
+    expect(motion.headingAccuracyDeg).toBeCloseTo(25.2, 1);
   });
 
   it('treats an accuracy of zero as unknown rather than perfect', () => {

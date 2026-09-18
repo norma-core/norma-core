@@ -46,5 +46,4 @@ void service(float rvAccuracyRad, uint32_t nowMillis);
 
 Status status(uint32_t nowMillis);
 
-
 }  // namespace bhy2calib

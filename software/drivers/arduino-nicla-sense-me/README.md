@@ -37,6 +37,7 @@ That is the entire configuration. There is no port, baud or board list:
   UART rate between the bridge and the nRF52, so it bounds throughput; it is a
   constant in the driver, not a config key.
 - **Multiple boards** work out of the box; each gets its own worker and queue.
+
 ## Reading the data
 
 The driver forwards the firmware's register image untouched in
@@ -67,10 +68,14 @@ How to read it:
 - **Dropping well below π:** the hub has locked onto the earth field and the
   heading can be trusted to roughly that many radians. Calibrate by moving the
   board through a figure-eight for a few seconds; the value falls as the
-  calibration converges. Calibration is not persisted across power cycles.
+  calibration converges. Once a good heading has been held for 30 s the
+  firmware stores the hub's calibration profiles in flash and restores them at
+  the next boot (see the firmware README, "Calibration persistence"), so this
+  state normally lasts only for the first session.
 
-The viewer shows the value in the history detail panel and does not gate on it:
-it only rejects a quaternion whose norm is far from 1 (unpopulated registers).
-A consumer that wants a trustworthy compass should additionally require the
-accuracy to be below its own threshold; the raw value is recorded in every frame
-so that decision can be made, or changed, later.
+The viewer shows the value in the history detail panel. The rover HUD shows it
+next to the compass as `±N°` and withholds the heading entirely while it reads
+≈ π (see `vesc-pwm-output-control/rover-motion.ts`); attitude is still shown,
+since only a quaternion whose norm is far from 1 (unpopulated registers) is
+rejected. Any other consumer should pick its own threshold; the raw value is
+recorded in every frame so that decision can be made, or changed, later.
