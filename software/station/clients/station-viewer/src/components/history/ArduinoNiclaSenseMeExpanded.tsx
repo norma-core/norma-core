@@ -11,8 +11,10 @@ import {
 import {
   ME_CALIB,
   ME_FRESH,
+  ME_HEADING_UNCALIBRATED_RAD,
   ME_OFFSETS,
   ME_REVISION,
+  ME_STATUS,
   decodeArduinoNiclaSenseMe,
   isFresh,
 } from '@/devices/arduino-nicla-sense-me/values';
@@ -95,6 +97,14 @@ function freshList(sample: ArduinoNiclaSenseMeSample): string {
   return names.length === 0 ? 'none' : names.join(', ');
 }
 
+function quatAccuracy(rad: number): string {
+  if (!Number.isFinite(rad)) {
+    return 'N/A';
+  }
+  const uncalibrated = rad >= ME_HEADING_UNCALIBRATED_RAD ? ', magnetometer uncalibrated' : '';
+  return `${measured(rad, 'rad')} (±${(rad * 180 / Math.PI).toFixed(0)}° heading${uncalibrated})`;
+}
+
 function calibrationState(sample: ArduinoNiclaSenseMeSample): string {
   const names = (Object.keys(ME_CALIB) as Array<keyof typeof ME_CALIB>).filter((name) => (sample.calibFlags & ME_CALIB[name]) !== 0);
   return names.length === 0 ? 'cold start (no stored profile)' : names.join(', ');
@@ -126,7 +136,7 @@ function parsedGroups(sample: ArduinoNiclaSenseMeSample, bytes: Uint8Array): Val
       title: 'Board',
       values: [
         { label: 'Status', value: byteValue(sample.statusByte), tone: 'text-accent-success' },
-        { label: 'BHY2 running', value: (sample.statusByte & 0x01) !== 0 ? 'yes' : 'no', tone: 'text-accent-success' },
+        { label: 'BHY2 running', value: (sample.statusByte & ME_STATUS.bhy2Running) !== 0 ? 'yes' : 'no', tone: 'text-accent-success' },
         { label: 'Sample counter (u8)', value: uintValue(sample.sampleCounter), tone: 'text-accent-data' },
         { label: 'Tick counter', value: uintValue(sample.tickCounter), tone: 'text-accent-data' },
         { label: 'Fresh this tick', value: freshList(sample), tone: 'text-accent-secondary' },
@@ -159,7 +169,7 @@ function parsedGroups(sample: ArduinoNiclaSenseMeSample, bytes: Uint8Array): Val
           value: `w ${finiteNumber(sample.quatRaw.w)}, x ${finiteNumber(sample.quatRaw.x)}, y ${finiteNumber(sample.quatRaw.y)}, z ${finiteNumber(sample.quatRaw.z)}`,
           tone: 'text-accent-data',
         },
-        { label: 'Quaternion accuracy', value: `${measured(sample.quatAccuracyRad, 'rad')} (±${(sample.quatAccuracyRad * 180 / Math.PI).toFixed(0)}° heading${sample.quatAccuracyRad >= 3 ? ', magnetometer uncalibrated' : ''})`, tone: sample.quatAccuracyRad >= 3 ? 'text-accent-critical' : 'text-accent-info' },
+        { label: 'Quaternion accuracy', value: quatAccuracy(sample.quatAccuracyRad), tone: Number.isFinite(sample.quatAccuracyRad) && sample.quatAccuracyRad >= ME_HEADING_UNCALIBRATED_RAD ? 'text-accent-critical' : 'text-accent-info' },
         { label: 'Rotation vector usable', value: q ? 'yes' : 'no (unpopulated or off-scale)', tone: q ? 'text-accent-success' : 'text-accent-critical' },
         { label: 'Heading (fwd = sensor +Y)', value: measured(heading, '°', 1), tone: 'text-accent-warning' },
         { label: 'Pitch (nose up +)', value: measured(attitude?.pitchNoseUpDeg ?? null, '°', 1), tone: 'text-accent-warning' },
@@ -263,7 +273,8 @@ export default function ArduinoNiclaSenseMeExpanded({ data }: ArduinoNiclaSenseM
       {!sample && bytes.length > 0 && (
         <div className="rounded bg-surface-primary p-2 text-xs text-accent-critical">
           Register image not decodable: {bytes.length} bytes, revision {revisionByte ?? 'N/A'}. The viewer
-          understands firmware revision {ME_REVISION} only; reflash the board.
+          decodes firmware revision {ME_REVISION} only; recordings from older firmware cannot be shown, and a
+          live board on older firmware must be reflashed.
         </div>
       )}
 

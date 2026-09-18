@@ -44,6 +44,18 @@ export const ME_OFFSETS = {
   freshFlags: 0x78, // u16, see ME_FRESH
 } as const;
 
+/** Bits of the status register. */
+export const ME_STATUS = {
+  bhy2Running: 1 << 0,
+} as const;
+
+/**
+ * Rotation-vector accuracy (rad) at or above which the hub has no magnetic
+ * reference at all: the register reads π while the magnetometer is
+ * uncalibrated and the quaternion then carries no heading information.
+ */
+export const ME_HEADING_UNCALIBRATED_RAD = 3.0;
+
 /** Bits of the freshness register: the sensor delivered a new sample this tick. */
 export const ME_FRESH = {
   accel: 1 << 0,

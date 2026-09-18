@@ -50,7 +50,7 @@ be recomputed on recorded data.
 | 0x6B | — | reserved (zero) |
 | 0x6C | u32 | step count |
 | 0x70 | u32 | activity recognition bitfield |
-| 0x74 | u32 | tick counter since boot (the u8 at 0x01 wraps every 2.56 s) |
+| 0x74 | u32 | tick counter since boot |
 | 0x78 | u16 | fresh-sample flags for this tick: bit0 accel, bit1 gyro, bit2 mag, bit3 quaternion, bit4 temperature, bit5 humidity, bit6 pressure, bit7 gas, bit8 BSEC, bit9 steps, bit10 activity |
 | 0x7A–0x7B | — | reserved (zero) |
 | — | — | total length 0x7C (124 bytes) |
@@ -91,25 +91,6 @@ firmware (`src/bhy2_calibration.cpp`) removes that cost:
   leaves flash untouched.
 - **Status:** register 0x69 flags and 0x6A minutes since the last save.
 
-Bench-verified behaviour (2026-09-18): the profiles must be written **before**
-the virtual sensors are enabled; written afterwards the hub silently keeps its
-own state (bit5 set). Written before, the read-back is byte-identical (bit4)
-and the magnetometer offsets are active from the first frame (the corrected
-field magnitude matches the pre-reboot value). The rotation-vector accuracy
-still reads π after a restore until the board's first small motion lets the
-fusion confirm the state, which takes seconds, versus 10–15 s of vigorous
-figure-eight from a cold start. The hub reports quantized accuracy levels; on
-this board a calibrated magnetometer settles at 0.436 rad (25°) or 0.525 rad
-(30°) depending on the local field, hence the 0.6 rad save threshold. A store
-error (bit2) or mismatch (bit5) is shown in red in the viewer's history panel.
-
-Implementation note: the stock Arduino_BHY2 synchronous parameter read fails
-on this board whenever a stale entry sits in the hub's status FIFO (one is
-present right after `BHY2.begin()`), which is also why a one-shot range
-read-back returned nonsense. The module drains the status FIFO until the
-response code matches the request; it reaches the library's private hub
-handle through an explicit-instantiation accessor.
-
 ## USB serial transport
 
 The sketch serves a command protocol over the board's USB CDC serial port at
@@ -135,10 +116,10 @@ within 2 s, so a dead host cannot leave the board transmitting. `0x03`
 stops streaming immediately. The RGB LED glows red while streaming is
 active. Unknown command bytes are ignored.
 
-Hosts should send `0x03` when they open the port and scan for the magic 
-rather than assume a frame starts at the first byte; 
-the station driver does both. Frames whose length or CRC fail are discarded 
-and the scan resumes at the next byte.
+Hosts should send `0x03` when they open the port (a previous host may have
+left the board streaming) and scan for the magic rather than assume a frame
+starts at the first byte; the station driver does both. Frames whose length or
+CRC fail are discarded and the scan resumes at the next byte.
 
 ## Flashing
 

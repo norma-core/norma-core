@@ -6,7 +6,7 @@ import NiclaBoardScene from './NiclaBoardScene';
 import { HUB_TO_ROVER, compassHeadingDeg, displayAttitude, rpyRep103, withMount } from '../attitude';
 import { buildDecimatedAxisPolylines, historyFor } from '../sparkline';
 import type { AxisPolylines } from '../sparkline';
-import { cardinalName, decodeArduinoNiclaSenseMe, vecMagnitude } from '../values';
+import { ME_OFFSETS, ME_REVISION, cardinalName, decodeArduinoNiclaSenseMe, vecMagnitude } from '../values';
 
 const AXIS_COLORS = {
   x: 'var(--color-accent-info)',
@@ -155,7 +155,7 @@ function ArduinoNiclaSenseMeLiveView({ data }: ArduinoNiclaSenseMeLiveViewProps)
   );
 
   const error = data.error || (data.data && data.data.length > 0 && !sample
-    ? `Unsupported register image (${data.data.length} bytes, revision ${data.data[0x0c] ?? 'N/A'}); firmware revision 6 required`
+    ? `Unsupported register image (${data.data.length} bytes, revision ${data.data[ME_OFFSETS.softwareRevision] ?? 'N/A'}); firmware revision ${ME_REVISION} required`
     : undefined);
 
   return (
