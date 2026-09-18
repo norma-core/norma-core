@@ -50,5 +50,14 @@ fn main() -> Result<()> {
 
     println!("cargo:rustc-env=GIT_HASH={}", git_hash);
 
+    // Rerun when HEAD moves so the hash stays current.
+    let git_dir = Path::new("../../../../.git");
+    println!("cargo:rerun-if-changed={}", git_dir.join("HEAD").display());
+    if let Ok(head) = std::fs::read_to_string(git_dir.join("HEAD"))
+        && let Some(reference) = head.trim().strip_prefix("ref: ")
+    {
+        println!("cargo:rerun-if-changed={}", git_dir.join(reference).display());
+    }
+
     Ok(())
 }

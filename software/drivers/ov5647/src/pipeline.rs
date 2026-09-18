@@ -123,7 +123,9 @@ async fn watch_camera<K: StationEngine + Send + Sync + 'static>(
                 )
                 .await;
 
-                tracker.enqueue_device_disconnected(&session_camera_info);
+                tracker
+                    .enqueue_device_disconnected(&session_camera_info)
+                    .await;
 
                 log::info!("OV5647 camera disconnected (id={})", camera_id);
             }
@@ -156,10 +158,12 @@ async fn run_capture_session<K: StationEngine + Send + Sync + 'static>(
         Ok(s) => s,
         Err(e) => {
             log::error!("OV5647 failed to create capture session: {}", e);
-            tracker.enqueue_error(
-                camera_info,
-                format!("Failed to create capture session: {}", e),
-            );
+            tracker
+                .enqueue_error(
+                    camera_info,
+                    format!("Failed to create capture session: {}", e),
+                )
+                .await;
             return camera_info.clone();
         }
     };
@@ -215,8 +219,12 @@ async fn run_capture_session<K: StationEngine + Send + Sync + 'static>(
         actual_fourcc
     );
 
-    tracker.enqueue_device_connected(&actual_camera_info, supported_formats);
-    tracker.enqueue_recording_start(&actual_camera_info, &active_format);
+    tracker
+        .enqueue_device_connected(&actual_camera_info, supported_formats)
+        .await;
+    tracker
+        .enqueue_recording_start(&actual_camera_info, &active_format)
+        .await;
 
     let frame_interval = Duration::from_secs_f64(1.0 / fps as f64);
     let capture_timeout = Duration::from_secs(5);
@@ -279,7 +287,9 @@ async fn run_capture_session<K: StationEngine + Send + Sync + 'static>(
             }
             Err(e) => {
                 log::error!("OV5647 capture error: {}", e);
-                tracker.enqueue_error(&actual_camera_info, format!("Capture error: {}", e));
+                tracker
+                    .enqueue_error(&actual_camera_info, format!("Capture error: {}", e))
+                    .await;
                 end_reason = "capture_error";
                 break;
             }
@@ -296,7 +306,7 @@ async fn run_capture_session<K: StationEngine + Send + Sync + 'static>(
         end_reason = "stop_error";
     }
 
-    tracker.enqueue_recording_end(&actual_camera_info);
+    tracker.enqueue_recording_end(&actual_camera_info).await;
 
     log::info!(
         "OV5647 capture session ended (id={}, reason={}, frames={})",

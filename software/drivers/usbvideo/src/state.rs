@@ -6,7 +6,9 @@ use log::{error, warn};
 use normfs::NormFS;
 use parking_lot::Mutex;
 use prost::Message;
-use station_iface::{StationEngine, iface_proto::drivers::QueueDataType};
+use station_iface::{
+    Backpressure, StationEngine, enqueue_with, iface_proto::drivers::QueueDataType,
+};
 
 use crate::{
     converters::{self, FourCCFormat},
@@ -126,20 +128,27 @@ impl<T: StationEngine> StateTracker<T> {
     }
 
     pub async fn handle_queue_start(&self, queue_id: &normfs::QueueId) {
-        let _ = self.normfs.ensure_queue_exists_for_write(queue_id).await;
+        if let Err(e) = self.normfs.ensure_queue_exists_for_write(queue_id).await {
+            error!("Failed to start USB video queue {}: {}", queue_id, e);
+            return;
+        }
         self.station_engine
             .register_queue(queue_id, QueueDataType::QdtUsbVideoFrames, vec![])
     }
+    pub async fn handle_queue_end(&self, queue_id: &normfs::QueueId) {
+        if let Err(e) = self.normfs.close_queue(queue_id).await {
+            error!("Failed to close USB video queue {}: {}", queue_id, e);
+        }
+    }
 
-    pub fn send_envelope(
+    pub async fn send_envelope(
         &self,
         queue_id: &normfs::QueueId,
         envelope: RxEnvelope,
     ) -> Result<(), normfs::Error> {
         let mut buf = BytesMut::new();
         envelope.encode(&mut buf).unwrap();
-        self.normfs.enqueue(queue_id, buf.freeze())?;
-        Ok(())
+        enqueue_with(&self.normfs, queue_id, buf.freeze(), Backpressure::Keep).await
     }
 
     pub fn get_last_inference_id_bytes(&self) -> Bytes {
@@ -228,11 +237,11 @@ impl<T: StationEngine> StateTracker<T> {
 
         let mut buf = BytesMut::new();
         envelope.encode(&mut buf).unwrap();
-        if let Err(e) = self.normfs.enqueue(queue_id, buf.freeze()) {
-            error!(
-                "Failed to enqueue envelope for camera {}: {}",
-                camera.unique_id, e
-            );
+        // Runs on the capture thread; must not block.
+        if let Err(e) = self.normfs.try_enqueue(queue_id, buf.freeze())
+            && !matches!(e, normfs::Error::WouldBlock)
+        {
+            log::error!("Failed to enqueue frame on {queue_id}: {e}");
         }
     }
 }

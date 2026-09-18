@@ -3,60 +3,73 @@ use crate::yahboom_dogzilla_lite_proto::{
 };
 use bytes::{Bytes, BytesMut};
 use log::warn;
-use normfs::{NormFS, UintN};
+use normfs::NormFS;
 use prost::Message;
+use station_iface::{Backpressure, try_enqueue_with};
 use std::sync::Arc;
 
 type SendResult<T> = Result<T, Box<dyn std::error::Error + Send + Sync>>;
 
 pub(crate) struct YahboomDogzillaLiteCommunicator {
     pub(crate) normfs: Arc<NormFS>,
-    pub(crate) rx_queue_id: normfs::QueueId,
     pub(crate) tx_queue_id: normfs::QueueId,
-    pub(crate) inference_queue_id: normfs::QueueId,
+    rx_queue_id: normfs::QueueId,
+    inference_queue_id: normfs::QueueId,
     inference_states_queue_id: normfs::QueueId,
     state: Arc<parking_lot::RwLock<InferenceState>>,
 }
 
 impl YahboomDogzillaLiteCommunicator {
-    pub(crate) fn new(
+    pub(crate) async fn new(
         normfs: Arc<NormFS>,
         rx_queue_id: normfs::QueueId,
         tx_queue_id: normfs::QueueId,
         inference_queue_id: normfs::QueueId,
-    ) -> Self {
+    ) -> Result<Self, normfs::Error> {
         let inference_states_queue_id = normfs.resolve("inference-states");
-        Self {
+        normfs.ensure_queue_exists_for_write(&rx_queue_id).await?;
+        normfs.ensure_queue_exists_for_write(&tx_queue_id).await?;
+        normfs
+            .ensure_queue_exists_for_write(&inference_queue_id)
+            .await?;
+        Ok(Self {
             normfs,
-            rx_queue_id,
             tx_queue_id,
+            rx_queue_id,
             inference_queue_id,
             inference_states_queue_id,
             state: Arc::new(parking_lot::RwLock::new(InferenceState::default())),
+        })
+    }
+
+    fn rx_policy(signal_type: i32) -> Backpressure {
+        match YahboomDogzillaLiteSignalType::try_from(signal_type) {
+            Ok(YahboomDogzillaLiteSignalType::YahboomDogzillaLiteStatusUpdate) => {
+                Backpressure::Skip
+            }
+            _ => Backpressure::Keep,
         }
     }
 
+    /// The command path runs inside the tx subscriber callback; nothing here blocks.
     pub(crate) fn send_rx(&self, envelope: &RxEnvelope) -> SendResult<()> {
-        self.send_envelope(&self.rx_queue_id, envelope)?;
-        if let Err(e) = self.update_state(envelope) {
+        let policy = Self::rx_policy(envelope.signal_type);
+        try_enqueue_with(&self.normfs, &self.rx_queue_id, Self::encode(envelope)?, policy)?;
+        if let Err(e) = self.update_state(envelope, policy) {
             warn!("Failed to update YAHBOOM_DOGZILLA_LITE inference state: {}", e);
         }
         Ok(())
     }
 
     pub(crate) fn send_tx(&self, envelope: &TxEnvelope) -> SendResult<()> {
-        self.send_envelope(&self.tx_queue_id, envelope)?;
+        try_enqueue_with(&self.normfs, &self.tx_queue_id, Self::encode(envelope)?, Backpressure::Keep)?;
         Ok(())
     }
 
-    fn send_envelope<M: Message>(
-        &self,
-        queue_id: &normfs::QueueId,
-        envelope: &M,
-    ) -> SendResult<UintN> {
+    fn encode<M: Message>(envelope: &M) -> SendResult<Bytes> {
         let mut buf = Vec::new();
         envelope.encode(&mut buf)?;
-        Ok(self.normfs.enqueue(queue_id, Bytes::from(buf))?)
+        Ok(Bytes::from(buf))
     }
 
     fn add_device(&self, device: &YahboomDogzillaLiteDevice, envelope: &RxEnvelope) {
@@ -117,7 +130,7 @@ impl YahboomDogzillaLiteCommunicator {
         }
     }
 
-    fn update_state(&self, envelope: &RxEnvelope) -> SendResult<()> {
+    fn update_state(&self, envelope: &RxEnvelope, policy: Backpressure) -> SendResult<()> {
         let device = match &envelope.device {
             Some(d) => d,
             None => return Ok(()),
@@ -139,15 +152,16 @@ impl YahboomDogzillaLiteCommunicator {
             state.last_inference_queue_ptr = self.get_last_inference_id_bytes().to_vec();
         }
 
-        self.publish_state()
+        self.publish_state(policy)
     }
 
-    fn publish_state(&self) -> SendResult<()> {
-        let state = self.state.read();
+    fn publish_state(&self, policy: Backpressure) -> SendResult<()> {
         let mut buf = Vec::new();
-        state.encode(&mut buf)?;
-        self.normfs
-            .enqueue(&self.inference_queue_id, Bytes::from(buf))?;
+        {
+            let state = self.state.read();
+            state.encode(&mut buf)?;
+        }
+        try_enqueue_with(&self.normfs, &self.inference_queue_id, Bytes::from(buf), policy)?;
         Ok(())
     }
 

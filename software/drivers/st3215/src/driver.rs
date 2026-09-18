@@ -7,15 +7,15 @@ use crate::st3215_proto::{
 use log::{debug, error, info, warn};
 use normfs::NormFS;
 use prost::Message;
+use station_iface::StationEngine;
 use station_iface::iface_proto::commands;
 use station_iface::iface_proto::drivers::{self, QueueDataType};
-use station_iface::StationEngine;
 use std::collections::HashSet;
 use std::sync::Arc;
 use std::time::Duration;
 use tokio::sync::RwLock;
 use tokio::time::interval;
-use tokio_serial::{available_ports, SerialPortInfo, SerialPortType};
+use tokio_serial::{SerialPortInfo, SerialPortType, available_ports};
 
 pub const RX_QUEUE_ID: &str = "st3215/rx";
 pub const TX_QUEUE_ID: &str = "st3215/tx";
@@ -39,10 +39,16 @@ impl St3215Driver {
         let meta_queue_id = normfs.resolve(META_QUEUE_ID);
         let inference_queue_id = normfs.resolve(INFERENCE_QUEUE_ID);
 
-        normfs.ensure_queue_exists_for_write(&rx_queue_id).await?;
-        normfs.ensure_queue_exists_for_write(&tx_queue_id).await?;
-        normfs.ensure_queue_exists_for_write(&meta_queue_id).await?;
-        normfs.ensure_queue_exists_for_write(&inference_queue_id).await?;
+        let com = Arc::new(
+            ST3215BusCommunicator::new(
+                normfs.clone(),
+                rx_queue_id.clone(),
+                tx_queue_id.clone(),
+                meta_queue_id.clone(),
+                inference_queue_id.clone(),
+            )
+            .await?,
+        );
 
         station_engine.register_queue(
             &rx_queue_id,
@@ -56,14 +62,6 @@ impl St3215Driver {
             QueueDataType::QdtSt3215Inference,
             vec![],
         );
-
-        let com = Arc::new(ST3215BusCommunicator::new(
-            normfs.clone(),
-            rx_queue_id,
-            tx_queue_id.clone(),
-            meta_queue_id.clone(),
-            inference_queue_id,
-        ));
 
         let com4commands = com.clone();
         let commands_queue_id = normfs.resolve("commands");
@@ -103,9 +101,7 @@ impl St3215Driver {
                                 sync_write: command.sync_write,
                             };
 
-                            if let Err(e) = com4commands.send_tx(&envelope) {
-                                error!("Failed to send ST3215 command to tx queue: {}", e);
-                            }
+                            com4commands.send_tx(&envelope);
                         }
                     }
                 }
@@ -148,12 +144,13 @@ impl St3215Driver {
                     .filter(|port| Self::is_st3215_device(port) && Self::can_use_port(port))
                     .collect();
 
-                let mut ports_guard = ports.write().await;
+                // The lock must not be held across the awaits below.
+                let known = ports.read().await.clone();
 
                 for port_info in st3215_ports {
                     let port_name = port_info.port_name.clone();
 
-                    if !ports_guard.contains(&port_name) {
+                    if !known.contains(&port_name) {
                         info!("New ST3215 port detected: {}", port_name);
                         let bus_info = Self::create_bus_info(&port_info);
 
@@ -161,8 +158,8 @@ impl St3215Driver {
                             .await
                         {
                             Ok(mut port) => {
-                                Self::send_bus_connect_signal(com, &bus_info);
-                                ports_guard.insert(port_name.clone());
+                                Self::send_bus_connect_signal(com, &bus_info).await;
+                                ports.write().await.insert(port_name.clone());
                                 info!("Added ST3215 port to management: {}", port_name);
 
                                 let port_name_clone = port_name.clone();
@@ -183,7 +180,8 @@ impl St3215Driver {
                                             Self::send_bus_disconnect_signal(
                                                 &com_clone,
                                                 &bus_info_clone,
-                                            );
+                                            )
+                                            .await;
                                         }
                                         Err(e) => {
                                             warn!(
@@ -259,7 +257,7 @@ impl St3215Driver {
         }
     }
 
-    fn send_bus_connect_signal(comm: &ST3215BusCommunicator, bus_info: &St3215BusProto) {
+    async fn send_bus_connect_signal(comm: &ST3215BusCommunicator, bus_info: &St3215BusProto) {
         let envelope = RxEnvelope {
             monotonic_stamp_ns: systime::get_monotonic_stamp_ns(),
             local_stamp_ns: systime::get_local_stamp_ns(),
@@ -269,12 +267,12 @@ impl St3215Driver {
             ..Default::default()
         };
 
-        if let Err(e) = comm.send_rx(&envelope) {
+        if let Err(e) = comm.send_rx(&envelope).await {
             error!("Failed to send ST3215 bus connect signal: {}", e);
         }
     }
 
-    fn send_bus_disconnect_signal(comm: &ST3215BusCommunicator, bus_info: &St3215BusProto) {
+    async fn send_bus_disconnect_signal(comm: &ST3215BusCommunicator, bus_info: &St3215BusProto) {
         let envelope = RxEnvelope {
             monotonic_stamp_ns: systime::get_monotonic_stamp_ns(),
             local_stamp_ns: systime::get_local_stamp_ns(),
@@ -284,7 +282,7 @@ impl St3215Driver {
             ..Default::default()
         };
 
-        if let Err(e) = comm.send_rx(&envelope) {
+        if let Err(e) = comm.send_rx(&envelope).await {
             error!("Failed to send ST3215 bus disconnect signal: {}", e);
         }
     }

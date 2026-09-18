@@ -2,7 +2,8 @@ use std::{collections::HashMap, sync::{Arc, RwLock}};
 
 use prost::Message;
 use station_iface::{
-    StationEngine, iface_proto::{commands::StationCommandsPack, drivers}
+    Backpressure, StationEngine, try_enqueue_with,
+    iface_proto::{commands::StationCommandsPack, drivers}
 };
 use normfs::NormFS;
 use tokio::sync::mpsc;
@@ -53,18 +54,16 @@ pub async fn start<T: StationEngine>(
         let task_modes = modes.clone();
         let reading_normfs = normfs.clone();
         let task_normfs = normfs.clone();
+        let task_rx_queue_id = rx_queue_id.clone();
 
-        let inf = Arc::new(inference::Inference::new(
-            motor_config,
-            normfs.clone(),
-        ));
+        let inf = Arc::new(inference::Inference::new(motor_config, normfs.clone()).await?);
         let read_inf = inf.clone();
 
         // Clone references for the command handler closure
         let cmd_modes = modes.clone();
         let cmd_inf = inf.clone();
         let cmd_normfs = normfs.clone();
-        let cmd_rx_queue_id = rx_queue_id.clone();
+        let cmd_rx_queue_id = rx_queue_id;
 
         let modes_queue_id_clone = modes_queue_id.clone();
         tokio::spawn(async move {
@@ -104,20 +103,14 @@ pub async fn start<T: StationEngine>(
             log::info!("Restored {} bus modes from normfs", read_modes.len());
 
             let mut current_modes = task_modes.write().unwrap();
-            merge_modes(&mut current_modes, &read_modes, &read_inf, &task_normfs, &rx_queue_id, None);
+            merge_modes(&mut current_modes, &read_modes, &read_inf, &task_normfs, &task_rx_queue_id, None);
         });
 
         let commands_queue_id = normfs.resolve("commands");
         normfs.subscribe(&commands_queue_id, Box::new(move |entries: &[(UintN, bytes::Bytes)]| {
             for (_, data) in entries {
                 if let Ok(pack) = StationCommandsPack::decode(data.as_ref()) {
-                    process_command_pack(
-                        &pack,
-                        &cmd_modes,
-                        &cmd_inf,
-                        &cmd_normfs,
-                        &cmd_rx_queue_id,
-                    );
+                    process_command_pack(&pack, &cmd_modes, &cmd_inf, &cmd_normfs, &cmd_rx_queue_id);
                 }
             }
             true
@@ -130,7 +123,7 @@ fn merge_modes(
         current: &mut HashMap<BusKey, mirroring::BusMode>,
         new_modes: &HashMap<BusKey, mirroring::BusMode>,
         inference: &Inference,
-        normfs: &Arc<NormFS>,
+        normfs: &NormFS,
         rx_queue_id: &normfs::QueueId,
         command: Option<mirroring::Command>,
     ) {
@@ -164,14 +157,17 @@ fn merge_modes(
             command,
         };
 
-        let _ = normfs.enqueue(rx_queue_id, rx_envelope.encode_to_vec().into());
+        // May run inside the commands subscriber callback; must not block.
+        if let Err(e) = try_enqueue_with(normfs, rx_queue_id, rx_envelope.encode_to_vec().into(), Backpressure::Keep) {
+            log::error!("Failed to publish mirroring state: {}", e);
+        }
     }
 
     fn process_command_pack(
         pack: &StationCommandsPack,
         modes: &Arc<RwLock<HashMap<BusKey, mirroring::BusMode>>>,
         inference: &Arc<Inference>,
-        normfs: &Arc<NormFS>,
+        normfs: &NormFS,
         rx_queue_id: &normfs::QueueId,
     ) {
         log::debug!("Received command pack: {:?}", pack.pack_id);
@@ -204,7 +200,7 @@ fn merge_modes(
         command: mirroring::Command,
         modes: &Arc<RwLock<HashMap<BusKey, mirroring::BusMode>>>,
         inference: &Arc<Inference>,
-        normfs: &Arc<NormFS>,
+        normfs: &NormFS,
         rx_queue_id: &normfs::QueueId,
     ) {
         let source_bus = match &command.source {
@@ -245,7 +241,7 @@ fn merge_modes(
         command: mirroring::Command,
         modes: &Arc<RwLock<HashMap<BusKey, mirroring::BusMode>>>,
         inference: &Arc<Inference>,
-        normfs: &Arc<NormFS>,
+        normfs: &NormFS,
         rx_queue_id: &normfs::QueueId,
     ) {
         log::info!("Starting mirroring with command: {:?}", command);

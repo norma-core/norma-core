@@ -4,7 +4,7 @@ use bytes::Bytes;
 
 use super::state::ST3215BusCommunicator;
 use crate::protocol;
-use crate::st3215_proto::{st3215_error, RxEnvelope, St3215Bus, St3215Error, St3215SignalType};
+use crate::st3215_proto::{RxEnvelope, St3215Bus, St3215Error, St3215SignalType, st3215_error};
 
 pub fn convert_error(error: &protocol::Error) -> St3215Error {
     match error {
@@ -114,7 +114,7 @@ pub fn convert_error(error: &protocol::Error) -> St3215Error {
     }
 }
 
-pub fn enqueue_error(
+pub async fn enqueue_error(
     com: &Arc<ST3215BusCommunicator>,
     bus: &St3215Bus,
     servo_id: u16,
@@ -143,7 +143,7 @@ pub fn enqueue_error(
         error: Some(converted_error),
     };
 
-    if let Err(e) = com.send_rx(&err) {
+    if let Err(e) = com.send_rx(&err).await {
         log::error!("Failed to enqueue ST3215 error: {}", e);
     }
 }

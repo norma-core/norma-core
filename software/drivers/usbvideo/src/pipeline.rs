@@ -13,10 +13,12 @@ use normfs::NormFS;
 use parking_lot::Mutex;
 use prost::Message;
 use station_iface::{
-    StationEngine,
+    Backpressure, StationEngine,
     iface_proto::{commands, drivers},
+    try_enqueue_with,
 };
 use tokio::sync::RwLock;
+use tokio::task::JoinSet;
 
 use crate::{
     converters,
@@ -28,6 +30,7 @@ use crate::{
 };
 
 pub const TX_QUEUE_ID: &str = "usbvideo/tx";
+const CAMERA_STOP_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(5);
 
 pub struct CaptureResult {
     pub has_frames: bool,
@@ -58,6 +61,8 @@ pub struct USBVideoManager<K: USBCameraDriver> {
     normfs: Arc<NormFS>,
     command_subscription: Mutex<Option<(normfs::QueueId, usize)>>,
     stopped: Arc<AtomicBool>,
+    /// One task per camera; `stop` waits for them before NormFS closes.
+    cameras: Arc<Mutex<JoinSet<()>>>,
 }
 
 impl<K: USBCameraDriver> USBVideoManager<K> {
@@ -81,15 +86,20 @@ impl<K: USBCameraDriver> USBVideoManager<K> {
         let worker_stopped = stopped.clone();
         let tx_queue_id = normfs.resolve(TX_QUEUE_ID);
 
-        if let Err(e) = normfs.ensure_queue_exists_for_write(&tx_queue_id).await {
-            error!("Failed to start USB video TX queue: {}", e);
-        } else {
-            station_engine.register_queue(
-                &tx_queue_id,
-                drivers::QueueDataType::QdtUsbVideoTx,
-                vec![],
-            );
-        }
+        let tx_queue = match normfs.ensure_queue_exists_for_write(&tx_queue_id).await {
+            Ok(()) => {
+                station_engine.register_queue(
+                    &tx_queue_id,
+                    drivers::QueueDataType::QdtUsbVideoTx,
+                    vec![],
+                );
+                Some(tx_queue_id)
+            }
+            Err(e) => {
+                error!("Failed to start USB video TX queue: {}", e);
+                None
+            }
+        };
 
         if let Err(e) = Self::start_readonly_video_queues(&normfs, &base_path).await {
             error!("Failed to start readonly video queues: {}", e);
@@ -97,7 +107,7 @@ impl<K: USBCameraDriver> USBVideoManager<K> {
 
         let command_subscription = match Self::subscribe_commands(
             normfs.clone(),
-            tx_queue_id,
+            tx_queue,
             state_tracker.clone(),
             driver_arc.clone(),
         ) {
@@ -108,8 +118,10 @@ impl<K: USBCameraDriver> USBVideoManager<K> {
             }
         };
 
+        let cameras = Arc::new(Mutex::new(JoinSet::new()));
+        let watch_cameras = cameras.clone();
         tokio::spawn(async move {
-            Self::watch_cameras(worker_stopped, driver_arc, state4run).await;
+            Self::watch_cameras(worker_stopped, driver_arc, state4run, watch_cameras).await;
         });
 
         Self {
@@ -117,6 +129,7 @@ impl<K: USBCameraDriver> USBVideoManager<K> {
             normfs,
             command_subscription: Mutex::new(command_subscription),
             stopped,
+            cameras,
         }
     }
 
@@ -179,12 +192,12 @@ impl<K: USBCameraDriver> USBVideoManager<K> {
 
     fn subscribe_commands<T: StationEngine + Send + Sync>(
         normfs: Arc<NormFS>,
-        tx_queue_id: normfs::QueueId,
+        tx_queue_id: Option<normfs::QueueId>,
         tracker: Arc<StateTracker<T>>,
         driver: Arc<K>,
     ) -> Result<(normfs::QueueId, usize), normfs::Error> {
         let commands_queue_id = normfs.resolve(station_iface::COMMANDS_QUEUE_ID);
-        let callback_normfs = normfs.clone();
+        let cb_normfs = normfs.clone();
         let subscription_id = normfs.subscribe(
             &commands_queue_id,
             Box::new(move |entries: &[(normfs::UintN, Bytes)]| {
@@ -221,8 +234,8 @@ impl<K: USBCameraDriver> USBVideoManager<K> {
                             command: Some(command),
                         };
 
-                        if let Err(error) = send_tx(&callback_normfs, &tx_queue_id, &envelope) {
-                            error!("Failed to publish USB video TX command: {}", error);
+                        if let Some(tx_queue_id) = &tx_queue_id {
+                            send_tx(&cb_normfs, tx_queue_id, &envelope);
                         }
 
                         tokio::spawn(Self::process_command(
@@ -320,114 +333,123 @@ impl<K: USBCameraDriver> USBVideoManager<K> {
         driver.stop().await;
     }
 
-    fn send_device_connected<T: StationEngine>(
+    async fn send_device_connected<T: StationEngine>(
         queue_id: &normfs::QueueId,
         tracker: &Arc<StateTracker<T>>,
         camera: &usbvideo::Camera,
         formats: &[usbvideo::CameraFormat],
     ) {
-        let _ = tracker.send_envelope(
-            queue_id,
-            RxEnvelope {
-                r#type: RxEnvelopeType::EtDeviceConnected as i32,
-                camera: Some(camera.clone()),
-                formats: formats.to_vec(),
-                error: "".to_string(),
-                frames: None,
-                last_inference_queue_ptr: tracker.get_last_inference_id_bytes(),
-                command: None,
-                stamp: Some(FrameStamp {
-                    monotonic_stamp_ns: systime::get_monotonic_stamp_ns(),
-                    local_stamp_ns: systime::get_local_stamp_ns(),
-                    app_start_id: systime::get_app_start_id(),
-                    index: 0,
-                }),
-            },
-        );
+        let _ = tracker
+            .send_envelope(
+                queue_id,
+                RxEnvelope {
+                    r#type: RxEnvelopeType::EtDeviceConnected as i32,
+                    camera: Some(camera.clone()),
+                    formats: formats.to_vec(),
+                    error: "".to_string(),
+                    frames: None,
+                    last_inference_queue_ptr: tracker.get_last_inference_id_bytes(),
+                    command: None,
+                    stamp: Some(FrameStamp {
+                        monotonic_stamp_ns: systime::get_monotonic_stamp_ns(),
+                        local_stamp_ns: systime::get_local_stamp_ns(),
+                        app_start_id: systime::get_app_start_id(),
+                        index: 0,
+                    }),
+                },
+            )
+            .await;
     }
 
-    fn send_device_disconnected<T: StationEngine>(
+    async fn send_device_disconnected<T: StationEngine>(
         queue_id: &normfs::QueueId,
         tracker: &Arc<StateTracker<T>>,
         camera: &usbvideo::Camera,
     ) {
-        let _ = tracker.send_envelope(
-            queue_id,
-            RxEnvelope {
-                r#type: RxEnvelopeType::EtDeviceDisconnected as i32,
-                camera: Some(camera.clone()),
-                formats: tracker.camera_formats(&camera.unique_id),
-                error: "".to_string(),
-                frames: None,
-                last_inference_queue_ptr: tracker.get_last_inference_id_bytes(),
-                command: None,
-                stamp: Some(FrameStamp {
-                    monotonic_stamp_ns: systime::get_monotonic_stamp_ns(),
-                    local_stamp_ns: systime::get_local_stamp_ns(),
-                    app_start_id: systime::get_app_start_id(),
-                    index: 0,
-                }),
-            },
-        );
+        let _ = tracker
+            .send_envelope(
+                queue_id,
+                RxEnvelope {
+                    r#type: RxEnvelopeType::EtDeviceDisconnected as i32,
+                    camera: Some(camera.clone()),
+                    formats: tracker.camera_formats(&camera.unique_id),
+                    error: "".to_string(),
+                    frames: None,
+                    last_inference_queue_ptr: tracker.get_last_inference_id_bytes(),
+                    command: None,
+                    stamp: Some(FrameStamp {
+                        monotonic_stamp_ns: systime::get_monotonic_stamp_ns(),
+                        local_stamp_ns: systime::get_local_stamp_ns(),
+                        app_start_id: systime::get_app_start_id(),
+                        index: 0,
+                    }),
+                },
+            )
+            .await;
     }
 
-    fn send_session_started<T: StationEngine>(
+    async fn send_session_started<T: StationEngine>(
         queue_id: &normfs::QueueId,
         tracker: &Arc<StateTracker<T>>,
         camera: &usbvideo::Camera,
         format: &usbvideo::CameraFormat,
     ) {
-        let _ = tracker.send_envelope(
-            queue_id,
-            RxEnvelope {
-                r#type: RxEnvelopeType::EtDeviceRecordingStart as i32,
-                camera: Some(camera.clone()),
-                formats: vec![format.clone()],
-                error: "".to_string(),
-                frames: None,
-                last_inference_queue_ptr: tracker.get_last_inference_id_bytes(),
-                command: None,
-                stamp: Some(FrameStamp {
-                    monotonic_stamp_ns: systime::get_monotonic_stamp_ns(),
-                    local_stamp_ns: systime::get_local_stamp_ns(),
-                    app_start_id: systime::get_app_start_id(),
-                    index: 0,
-                }),
-            },
-        );
+        let _ = tracker
+            .send_envelope(
+                queue_id,
+                RxEnvelope {
+                    r#type: RxEnvelopeType::EtDeviceRecordingStart as i32,
+                    camera: Some(camera.clone()),
+                    formats: vec![format.clone()],
+                    error: "".to_string(),
+                    frames: None,
+                    last_inference_queue_ptr: tracker.get_last_inference_id_bytes(),
+                    command: None,
+                    stamp: Some(FrameStamp {
+                        monotonic_stamp_ns: systime::get_monotonic_stamp_ns(),
+                        local_stamp_ns: systime::get_local_stamp_ns(),
+                        app_start_id: systime::get_app_start_id(),
+                        index: 0,
+                    }),
+                },
+            )
+            .await;
     }
 
-    fn send_session_ended<T: StationEngine>(
+    async fn send_session_ended<T: StationEngine>(
         queue_id: &normfs::QueueId,
         tracker: &Arc<StateTracker<T>>,
         camera: &usbvideo::Camera,
         format: &usbvideo::CameraFormat,
         error: String,
     ) {
-        let _ = tracker.send_envelope(
-            queue_id,
-            RxEnvelope {
-                r#type: RxEnvelopeType::EtDeviceRecordingEnd as i32,
-                camera: Some(camera.clone()),
-                formats: vec![format.clone()],
-                error,
-                frames: None,
-                last_inference_queue_ptr: tracker.get_last_inference_id_bytes(),
-                command: None,
-                stamp: Some(FrameStamp {
-                    monotonic_stamp_ns: systime::get_monotonic_stamp_ns(),
-                    local_stamp_ns: systime::get_local_stamp_ns(),
-                    app_start_id: systime::get_app_start_id(),
-                    index: 0,
-                }),
-            },
-        );
+        let _ = tracker
+            .send_envelope(
+                queue_id,
+                RxEnvelope {
+                    r#type: RxEnvelopeType::EtDeviceRecordingEnd as i32,
+                    camera: Some(camera.clone()),
+                    formats: vec![format.clone()],
+                    error,
+                    frames: None,
+                    last_inference_queue_ptr: tracker.get_last_inference_id_bytes(),
+                    command: None,
+                    stamp: Some(FrameStamp {
+                        monotonic_stamp_ns: systime::get_monotonic_stamp_ns(),
+                        local_stamp_ns: systime::get_local_stamp_ns(),
+                        app_start_id: systime::get_app_start_id(),
+                        index: 0,
+                    }),
+                },
+            )
+            .await;
     }
 
     async fn watch_cameras<T: StationEngine + Send + Sync>(
         stopped: Arc<AtomicBool>,
         driver: Arc<K>,
         tracker: Arc<StateTracker<T>>,
+        tasks: Arc<Mutex<JoinSet<()>>>,
     ) {
         let known_cameras = Arc::new(RwLock::new(HashSet::<String>::new()));
 
@@ -457,7 +479,7 @@ impl<K: USBCameraDriver> USBVideoManager<K> {
                 let cam_known = known_cameras.clone();
                 let cam_stopped = stopped.clone();
 
-                tokio::spawn(async move {
+                tasks.lock().spawn(async move {
                     let queue_id_str = USBVideoManager::<K>::generate_queue_id(&camera.unique_id);
                     let queue_id = cam_tracker.resolve_queue_id(&queue_id_str);
                     let mut queue_started = false;
@@ -554,7 +576,8 @@ impl<K: USBCameraDriver> USBVideoManager<K> {
                         cam_tracker.handle_queue_start(&queue_id).await;
                         queue_started = true;
 
-                        Self::send_device_connected(&queue_id, &cam_tracker, &camera, &src_formats);
+                        Self::send_device_connected(&queue_id, &cam_tracker, &camera, &src_formats)
+                            .await;
 
                         for format in formats.iter() {
                             // Check if stopped before starting capture
@@ -585,7 +608,8 @@ impl<K: USBCameraDriver> USBVideoManager<K> {
                                 format.frames_per_second,
                             );
 
-                            Self::send_session_started(&queue_id, &cam_tracker, &camera, format);
+                            Self::send_session_started(&queue_id, &cam_tracker, &camera, format)
+                                .await;
 
                             let result = cam_driver
                                 .run_capture(
@@ -621,7 +645,8 @@ impl<K: USBCameraDriver> USBVideoManager<K> {
                                     &camera,
                                     format,
                                     error_message,
-                                );
+                                )
+                                .await;
                             } else {
                                 Self::send_session_ended(
                                     &queue_id,
@@ -629,7 +654,8 @@ impl<K: USBCameraDriver> USBVideoManager<K> {
                                     &camera,
                                     format,
                                     "".to_string(),
-                                );
+                                )
+                                .await;
                             }
 
                             if result.has_frames {
@@ -643,7 +669,8 @@ impl<K: USBCameraDriver> USBVideoManager<K> {
                     info!("Capture session for {} ended.", camera.unique_id);
 
                     if queue_started {
-                        Self::send_device_disconnected(&queue_id, &cam_tracker, &camera);
+                        Self::send_device_disconnected(&queue_id, &cam_tracker, &camera).await;
+                        cam_tracker.handle_queue_end(&queue_id).await;
                     }
                     cam_known.write().await.remove(&camera.unique_id);
                 });
@@ -657,17 +684,35 @@ impl<K: USBCameraDriver> USBVideoManager<K> {
         if let Some((queue_id, subscription_id)) = self.command_subscription.lock().take() {
             self.normfs.unsubscribe(&queue_id, subscription_id);
         }
-        self.driver.stop().await;
+        if tokio::time::timeout(CAMERA_STOP_TIMEOUT, self.driver.stop())
+            .await
+            .is_err()
+        {
+            warn!(
+                "Camera driver did not stop within {:?}",
+                CAMERA_STOP_TIMEOUT
+            );
+        }
+
+        let mut cameras = std::mem::take(&mut *self.cameras.lock());
+        let drained = tokio::time::timeout(CAMERA_STOP_TIMEOUT, async {
+            while cameras.join_next().await.is_some() {}
+        })
+        .await;
+        if drained.is_err() {
+            warn!(
+                "Camera tasks did not finish within {:?}",
+                CAMERA_STOP_TIMEOUT
+            );
+        }
     }
 }
 
-fn send_tx(
-    normfs: &Arc<NormFS>,
-    tx_queue_id: &normfs::QueueId,
-    envelope: &TxEnvelope,
-) -> Result<(), normfs::Error> {
+/// Called from the commands subscriber callback; must not block.
+fn send_tx(normfs: &NormFS, tx_queue_id: &normfs::QueueId, envelope: &TxEnvelope) {
     let mut buf = BytesMut::new();
     envelope.encode(&mut buf).unwrap();
-    normfs.enqueue(tx_queue_id, buf.freeze())?;
-    Ok(())
+    if let Err(e) = try_enqueue_with(normfs, tx_queue_id, buf.freeze(), Backpressure::Keep) {
+        error!("Failed to publish USB video command echo: {}", e);
+    }
 }

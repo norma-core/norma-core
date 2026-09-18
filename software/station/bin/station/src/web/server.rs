@@ -7,7 +7,6 @@ use hyper_util::server::conn::auto;
 use normfs::NormFS;
 use rust_embed::RustEmbed;
 use std::error::Error;
-use std::net::SocketAddr;
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
@@ -61,7 +60,10 @@ impl WebServer {
     /// rejecting anything that escapes it (e.g. `../../etc/passwd`) since
     /// unlike the old single-file `--elrobot-urdf-path` override, this is a
     /// whole directory tree exposed over HTTP.
-    async fn resolve_static_override(static_dir: &std::path::Path, asset_path: &str) -> Option<PathBuf> {
+    async fn resolve_static_override(
+        static_dir: &std::path::Path,
+        asset_path: &str,
+    ) -> Option<PathBuf> {
         let candidate = static_dir.join(asset_path);
         let canonical_dir = tokio::fs::canonicalize(static_dir).await.ok()?;
         let canonical_candidate = tokio::fs::canonicalize(&candidate).await.ok()?;
@@ -125,7 +127,9 @@ impl WebServer {
                     // is to iterate on files on disk between reloads.
                     response.headers_mut().insert(
                         hyper::header::CACHE_CONTROL,
-                        hyper::header::HeaderValue::from_static("no-store, no-cache, must-revalidate"),
+                        hyper::header::HeaderValue::from_static(
+                            "no-store, no-cache, must-revalidate",
+                        ),
                     );
                     return Ok(response);
                 }
@@ -232,13 +236,12 @@ impl WebServer {
 }
 
 pub async fn start_server(
-    addr: SocketAddr,
+    listener: TcpListener,
     normfs: Arc<NormFS>,
     shutdown: Arc<AtomicBool>,
     static_path_override: Option<PathBuf>,
 ) -> Result<(), Box<dyn Error + Send + Sync>> {
-    let listener = TcpListener::bind(addr).await?;
-    log::info!("WebSocket server listening on {}", addr);
+    log::info!("WebSocket server listening on {}", listener.local_addr()?);
     let server = Arc::new(WebServer {
         normfs,
         static_path_override,

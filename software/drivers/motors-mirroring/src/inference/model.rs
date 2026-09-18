@@ -3,7 +3,9 @@ use std::{collections::HashMap, sync::Arc};
 use bytes::Bytes;
 use log::warn;
 use prost::Message;
-use st3215::protocol::{RamRegister, get_motor_position, get_motor_goal_position, get_motor_current};
+use st3215::protocol::{
+    RamRegister, get_motor_current, get_motor_goal_position, get_motor_position,
+};
 
 use crate::{proto::mirroring, types::BusKey};
 
@@ -37,8 +39,8 @@ pub struct MotorState {
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum MovementDirection {
-    Positive,  // Increasing position values
-    Negative,  // Decreasing position values
+    Positive, // Increasing position values
+    Negative, // Decreasing position values
 }
 
 #[derive(Clone, Debug, Default)]
@@ -66,13 +68,15 @@ impl StationState {
         // Read the last entry using backward read with offset 1, limit 1
         let (tx, mut rx) = tokio::sync::mpsc::channel(1);
         let offset = normfs::UintN::from(1u64);
-        let read_result = normfs.read(
-            &queue_id,
-            normfs::ReadPosition::ShiftFromTail(offset),
-            1,
-            1,
-            tx,
-        ).await;
+        let read_result = normfs
+            .read(
+                &queue_id,
+                normfs::ReadPosition::ShiftFromTail(offset),
+                1,
+                1,
+                tx,
+            )
+            .await;
 
         if let Err(e) = read_result {
             log::error!("Failed to read from st3215/inference queue: {:?}", e);
@@ -82,13 +86,14 @@ impl StationState {
         // Get the data from the channel
         if let Some(entry) = rx.recv().await {
             // Decode as InferenceState directly
-            let inference_state = match st3215::st3215_proto::InferenceState::decode(entry.data.as_ref()) {
-                Ok(state) => state,
-                Err(e) => {
-                    warn!("Failed to decode ST3215 inference state: {}", e);
-                    return;
-                }
-            };
+            let inference_state =
+                match st3215::st3215_proto::InferenceState::decode(entry.data.as_ref()) {
+                    Ok(state) => state,
+                    Err(e) => {
+                        warn!("Failed to decode ST3215 inference state: {}", e);
+                        return;
+                    }
+                };
 
             // Use the entry ID as state_id
             let state_id = entry.id.value_to_bytes();
@@ -96,7 +101,11 @@ impl StationState {
         }
     }
 
-    fn update_from_st3215_inference_state(&mut self, state_id: &Bytes, inference_state: st3215::st3215_proto::InferenceState) {
+    fn update_from_st3215_inference_state(
+        &mut self,
+        state_id: &Bytes,
+        inference_state: st3215::st3215_proto::InferenceState,
+    ) {
         const STATUS_REGISTER: u8 = RamRegister::Status.address();
         const SPEED_REGISTER: u8 = RamRegister::GoalSpeed.address();
         const ACCEL_REGISTER: u8 = RamRegister::Acc.address();
@@ -105,7 +114,11 @@ impl StationState {
         self.id = state_id.clone();
 
         for bus in inference_state.buses {
-            let bus_serial = bus.bus.as_ref().map(|b| b.serial_number.clone()).unwrap_or_default();
+            let bus_serial = bus
+                .bus
+                .as_ref()
+                .map(|b| b.serial_number.clone())
+                .unwrap_or_default();
             if bus_serial.is_empty() {
                 continue;
             }
@@ -136,8 +149,8 @@ impl StationState {
                 // Use helper functions from st3215
                 motor_state.present_position = get_motor_position(state_bytes);
 
-                let torque_enabled = state_bytes.len() > TORQUE_REGISTER as usize &&
-                                     state_bytes[TORQUE_REGISTER as usize] != 0;
+                let torque_enabled = state_bytes.len() > TORQUE_REGISTER as usize
+                    && state_bytes[TORQUE_REGISTER as usize] != 0;
                 if torque_enabled {
                     motor_state.target_position = get_motor_goal_position(state_bytes);
                 } else {

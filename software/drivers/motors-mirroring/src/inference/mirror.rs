@@ -1,7 +1,11 @@
 #![allow(clippy::collapsible_if)]
 
-use crate::{config::MotorConfig, inference::model::{MotorState, MotorProtectionState, MovementDirection, ProtectionKey}, r#types::{Command, MotorCommand}};
 use super::normalize;
+use crate::{
+    config::MotorConfig,
+    inference::model::{MotorProtectionState, MotorState, MovementDirection, ProtectionKey},
+    r#types::{Command, MotorCommand},
+};
 use std::collections::HashMap;
 
 fn calculate_shortest_distance(pos1: u16, pos2: u16, config: &MotorConfig) -> u16 {
@@ -24,10 +28,8 @@ fn get_speed_and_accel_by_distance(
     commands: &mut Vec<Command>,
 ) {
     let share = distance as f64 / (config.max_steps / 2) as f64;
-    let speed =
-        (share * (config.max_speed - config.min_speed) as f64) as u16 + config.min_speed;
-    let accel =
-        (share * (config.max_accel - config.min_accel) as f64) as u16 + config.min_accel;
+    let speed = (share * (config.max_speed - config.min_speed) as f64) as u16 + config.min_speed;
+    let accel = (share * (config.max_accel - config.min_accel) as f64) as u16 + config.min_accel;
 
     if speed == state.goal_speed && (accel as u8) == state.goal_accel {
         return;
@@ -72,30 +74,44 @@ pub fn get_movement_sequence_with_goal(
         let target_errors = st3215::protocol::ServoError::from_bits(target.error_status);
         log::warn!(
             "Skipping mirroring for motor {} on bus {} due to error state [source=0x{:02X} {:?}, target=0x{:02X} {:?}], curr = {}, limit = {}",
-            motor_id, target_bus_id,
-            source.error_status, source_errors,
-            target.error_status, target_errors,
-            source.current, source.current_limit
+            motor_id,
+            target_bus_id,
+            source.error_status,
+            source_errors,
+            target.error_status,
+            target_errors,
+            source.current,
+            source.current_limit
         );
         return;
     }
     if source.present_position == 0 || target.present_position == 0 {
         // just skip for now
-        log::warn!("Skipping mirroring for motor {} on bus {} due to zero position [source={}, target={}]", motor_id, target_bus_id, source.present_position, target.present_position);
+        log::warn!(
+            "Skipping mirroring for motor {} on bus {} due to zero position [source={}, target={}]",
+            motor_id,
+            target_bus_id,
+            source.present_position,
+            target.present_position
+        );
         return;
     }
 
-    let target_range_size =
-        normalize::get_steps_range(target.range_min, target.range_max, config);
+    let target_range_size = normalize::get_steps_range(target.range_min, target.range_max, config);
     if target_range_size < config.safety_margin * 2 {
-        log::warn!("Skipping mirroring for motor {} on bus {} due to insufficient range size", motor_id, target_bus_id);
+        log::warn!(
+            "Skipping mirroring for motor {} on bus {} due to insufficient range size",
+            motor_id,
+            target_bus_id
+        );
         return;
     }
     let target_range_size = target_range_size - config.safety_margin * 2;
 
-    let goal_offset = (source_percent / 100.0 * target_range_size as f64) as u16 + config.safety_margin;
-    let goal_position = ((target.range_min as u32 + goal_offset as u32)
-        & (config.max_steps - 1) as u32) as u16;
+    let goal_offset =
+        (source_percent / 100.0 * target_range_size as f64) as u16 + config.safety_margin;
+    let goal_position =
+        ((target.range_min as u32 + goal_offset as u32) & (config.max_steps - 1) as u32) as u16;
 
     // Get or create protection state for this motor
     let protection_key = (target_bus_id.to_string(), motor_id as u8);
@@ -115,17 +131,24 @@ pub fn get_movement_sequence_with_goal(
     if current_threshold > 0 {
         if target.current >= current_threshold {
             // Current is high - determine which direction caused it if not already known
-            if protection_state.blocked_direction.is_none() && protection_state.previous_position != target.present_position {
-                let movement_direction = if target.present_position > protection_state.previous_position {
-                    MovementDirection::Positive
-                } else {
-                    MovementDirection::Negative
-                };
+            if protection_state.blocked_direction.is_none()
+                && protection_state.previous_position != target.present_position
+            {
+                let movement_direction =
+                    if target.present_position > protection_state.previous_position {
+                        MovementDirection::Positive
+                    } else {
+                        MovementDirection::Negative
+                    };
 
                 protection_state.blocked_direction = Some(movement_direction);
                 log::warn!(
                     "Motor {} on bus {} current {} exceeds threshold {}, blocking {:?} direction",
-                    motor_id, target_bus_id, target.current, current_threshold, movement_direction
+                    motor_id,
+                    target_bus_id,
+                    target.current,
+                    current_threshold,
+                    movement_direction
                 );
             }
 
@@ -147,14 +170,18 @@ pub fn get_movement_sequence_with_goal(
                         // Leader wants to move in opposite direction - safe to clear protection
                         log::info!(
                             "Motor {} on bus {} current {} back to normal and leader commanding opposite direction, clearing protection",
-                            motor_id, target_bus_id, target.current
+                            motor_id,
+                            target_bus_id,
+                            target.current
                         );
                         protection_state.blocked_direction = None;
                     } else {
                         // Leader still wants to move in blocked direction - keep protection active
                         log::warn!(
                             "Motor {} on bus {} current normal but leader still commanding blocked {:?} direction, maintaining protection",
-                            motor_id, target_bus_id, blocked_dir
+                            motor_id,
+                            target_bus_id,
+                            blocked_dir
                         );
                     }
                 }
@@ -168,14 +195,19 @@ pub fn get_movement_sequence_with_goal(
             if intended_direction == blocked_dir {
                 log::warn!(
                     "Motor {} on bus {} blocking {:?} movement (would increase current)",
-                    motor_id, target_bus_id, blocked_dir
+                    motor_id,
+                    target_bus_id,
+                    blocked_dir
                 );
                 protection_state.previous_position = target.present_position;
                 return;
             } else {
                 log::info!(
                     "Motor {} on bus {} allowing {:?} movement (opposite to blocked {:?}, may relieve current)",
-                    motor_id, target_bus_id, intended_direction, blocked_dir
+                    motor_id,
+                    target_bus_id,
+                    intended_direction,
+                    blocked_dir
                 );
             }
         } else {

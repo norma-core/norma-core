@@ -4,10 +4,10 @@ use crate::arduino_nicla_sense_me_proto::{
 };
 use bytes::Bytes;
 use log::{debug, error, info, warn};
-use normfs::{NormFS, QueueId, UintN};
+use normfs::{NormFS, QueueId};
 use prost::Message;
-use station_iface::StationEngine;
 use station_iface::iface_proto::drivers::QueueDataType;
+use station_iface::{Backpressure, StationEngine, enqueue_with};
 use std::collections::HashSet;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
@@ -504,7 +504,8 @@ async fn run_port_worker<T: StationEngine>(
                         ArduinoNiclaSenseMeSignalType::ArduinoNiclaSenseMeConnected,
                         Some(&data),
                         None,
-                    );
+                    )
+                    .await;
                     connected = true;
                 }
                 send_board_signal(
@@ -513,7 +514,8 @@ async fn run_port_worker<T: StationEngine>(
                     ArduinoNiclaSenseMeSignalType::ArduinoNiclaSenseMeRegistersSnapshot,
                     Some(&data),
                     None,
-                );
+                )
+                .await;
                 last_data = Some(data);
                 last_error = None;
             }
@@ -527,7 +529,8 @@ async fn run_port_worker<T: StationEngine>(
                             ArduinoNiclaSenseMeSignalType::ArduinoNiclaSenseMeDisconnected,
                             last_data.as_ref(),
                             Some(poll_error.clone()),
-                        );
+                        )
+                        .await;
                         connected = false;
                     }
                     if port_present && last_error.as_deref() != Some(poll_error.as_str()) {
@@ -537,7 +540,8 @@ async fn run_port_worker<T: StationEngine>(
                             ArduinoNiclaSenseMeSignalType::ArduinoNiclaSenseMeError,
                             last_data.as_ref(),
                             Some(poll_error.clone()),
-                        );
+                        )
+                        .await;
                     }
                 } else if port_present && last_error.as_deref() != Some(poll_error.as_str()) {
                     warn!("Arduino Nicla Sense ME {port}: {poll_error}");
@@ -568,7 +572,7 @@ fn parse_device_info(data: &[u8]) -> Option<ArduinoNiclaSenseMeDeviceInfo> {
     })
 }
 
-fn send_board_signal(
+async fn send_board_signal(
     normfs: &Arc<NormFS>,
     queue: &BoardQueue,
     signal_type: ArduinoNiclaSenseMeSignalType,
@@ -585,7 +589,13 @@ fn send_board_signal(
         error: error_message.unwrap_or_default(),
     };
 
-    if let Err(send_error) = send_proto(normfs, &queue.queue_id, &envelope) {
+    let policy =
+        if signal_type == ArduinoNiclaSenseMeSignalType::ArduinoNiclaSenseMeRegistersSnapshot {
+            Backpressure::Skip
+        } else {
+            Backpressure::Keep
+        };
+    if let Err(send_error) = send_proto(normfs, &queue.queue_id, &envelope, policy).await {
         error!(
             "Failed to send Arduino Nicla Sense ME {:?} signal for {}: {}",
             signal_type, queue.device_id, send_error
@@ -593,14 +603,15 @@ fn send_board_signal(
     }
 }
 
-fn send_proto<M: Message>(
+async fn send_proto<M: Message>(
     normfs: &NormFS,
     queue_id: &QueueId,
     envelope: &M,
-) -> DriverResult<UintN> {
+    policy: Backpressure,
+) -> DriverResult<()> {
     let mut buffer = Vec::new();
     envelope.encode(&mut buffer)?;
-    Ok(normfs.enqueue(queue_id, Bytes::from(buffer))?)
+    Ok(enqueue_with(normfs, queue_id, Bytes::from(buffer), policy).await?)
 }
 
 #[cfg(test)]

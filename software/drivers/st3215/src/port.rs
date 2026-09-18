@@ -12,8 +12,8 @@ use log::{debug, error, info};
 use parking_lot::Mutex;
 use prost::Message;
 use std::collections::{HashMap, HashSet};
-use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{Duration, Instant};
 use tokio::io::AsyncReadExt;
 use tokio::sync::mpsc;
@@ -164,7 +164,7 @@ impl St3215Port {
 
                     let motor_id = command.get_motor_id().unwrap_or(0);
 
-                    if Self::send_command_received_envelope(&com, &bus_info, motor_id, &command).is_err() {
+                    if Self::send_command_received_envelope(&com, &bus_info, motor_id, &command).await.is_err() {
                         break;
                     }
 
@@ -198,13 +198,13 @@ impl St3215Port {
                             } else {
                                 St3215SignalType::St3215CommandRejected
                             };
-                            if Self::send_command_result_envelope(&com, &bus_info, motor_id, &command, signal_type, None).is_err() {
+                            if Self::send_command_result_envelope(&com, &bus_info, motor_id, &command, signal_type, None).await.is_err() {
                                 break;
                             }
                         },
                         Err(e) => {
-                            enqueue_error(&com, &bus_info, motor_id as u16, &e);
-                            if Self::send_command_result_envelope(&com, &bus_info, motor_id, &command, St3215SignalType::St3215CommandFailed, Some(convert_error(&e))).is_err() {
+                            enqueue_error(&com, &bus_info, motor_id as u16, &e).await;
+                            if Self::send_command_result_envelope(&com, &bus_info, motor_id, &command, St3215SignalType::St3215CommandFailed, Some(convert_error(&e))).await.is_err() {
                                 break;
                             }
 
@@ -234,7 +234,7 @@ impl St3215Port {
                     // Now clear the old motor ID state AFTER command result is sent
                     if let Some(old_motor_id) = motor_id_to_clear {
                         info!("Clearing state for old motor ID {}", old_motor_id);
-                        if Self::send_drive_disconnect_envelope(&com, &bus_info, old_motor_id).is_err() {
+                        if Self::send_drive_disconnect_envelope(&com, &bus_info, old_motor_id).await.is_err() {
                             warn!("Failed to send disconnect signal for old motor ID {}", old_motor_id);
                         }
                         eeprom_cache.lock().remove(&old_motor_id);
@@ -319,42 +319,49 @@ impl St3215Port {
                         read_data
                     };
 
-                    if Self::send_drive_state_envelope(com, bus_info, motor_id, final_data).is_err() {
+                    if Self::send_drive_state_envelope(com, bus_info, motor_id, final_data)
+                        .await
+                        .is_err()
+                    {
                         return false;
                     }
                 }
                 Err(ref e) => {
-                    enqueue_error(com, bus_info, motor_id as u16, e);
+                    enqueue_error(com, bus_info, motor_id as u16, e).await;
                     if let protocol::Error::Servo { ref data, .. } = e {
                         currently_seen_motors.insert(motor_id);
                         if !data.is_empty() {
-                            let final_data =
-                                if data.len() >= full_size {
-                                    // Full read (eeprom + ram)
-                                    data.clone()
-                                } else if data.len() >= ram_size {
-                                    if let Some(eeprom) = cached_eeprom {
-                                        // RAM only - prepend cached eeprom
-                                        let mut combined =
-                                            BytesMut::with_capacity(eeprom.len() + data.len());
-                                        combined.extend_from_slice(&eeprom);
-                                        combined.extend_from_slice(data);
-                                        combined.freeze()
-                                    } else {
-                                        error!("Motor {}: servo error with RAM-only data but no EEPROM cache, sending empty. Data: {:02x?}", motor_id, data.as_ref());
-                                        Bytes::new()
-                                    }
+                            let final_data = if data.len() >= full_size {
+                                // Full read (eeprom + ram)
+                                data.clone()
+                            } else if data.len() >= ram_size {
+                                if let Some(eeprom) = cached_eeprom {
+                                    // RAM only - prepend cached eeprom
+                                    let mut combined =
+                                        BytesMut::with_capacity(eeprom.len() + data.len());
+                                    combined.extend_from_slice(&eeprom);
+                                    combined.extend_from_slice(data);
+                                    combined.freeze()
                                 } else {
-                                    error!("Motor {}: servo error with unexpected data size {}, sending empty. Data: {:02x?}", motor_id, data.len(), data.as_ref());
+                                    error!(
+                                        "Motor {}: servo error with RAM-only data but no EEPROM cache, sending empty. Data: {:02x?}",
+                                        motor_id,
+                                        data.as_ref()
+                                    );
                                     Bytes::new()
-                                };
-                            if Self::send_drive_state_envelope(
-                                com,
-                                bus_info,
-                                motor_id,
-                                final_data,
-                            )
-                            .is_err()
+                                }
+                            } else {
+                                error!(
+                                    "Motor {}: servo error with unexpected data size {}, sending empty. Data: {:02x?}",
+                                    motor_id,
+                                    data.len(),
+                                    data.as_ref()
+                                );
+                                Bytes::new()
+                            };
+                            if Self::send_drive_state_envelope(com, bus_info, motor_id, final_data)
+                                .await
+                                .is_err()
                             {
                                 return false;
                             }
@@ -379,7 +386,10 @@ impl St3215Port {
             if now.duration_since(first_missed).as_millis() >= DISCONNECT_GRACE_MS {
                 eeprom_cache.lock().remove(&motor_id);
                 missing_since.remove(&motor_id);
-                if Self::send_drive_disconnect_envelope(com, bus_info, motor_id).is_err() {
+                if Self::send_drive_disconnect_envelope(com, bus_info, motor_id)
+                    .await
+                    .is_err()
+                {
                     return false;
                 }
             } else {
@@ -421,7 +431,10 @@ impl St3215Port {
                         bus_info.port_name,
                         motor_id
                     );
-                    if Self::send_drive_connect_envelope(com, bus_info, motor_id).is_err() {
+                    if Self::send_drive_connect_envelope(com, bus_info, motor_id)
+                        .await
+                        .is_err()
+                    {
                         return false;
                     }
                 }
@@ -475,7 +488,7 @@ impl St3215Port {
                         return Err(e);
                     }
                     _ => {
-                        enqueue_error(com, bus_info, motor_id as u16, &e);
+                        enqueue_error(com, bus_info, motor_id as u16, &e).await;
                         if let protocol::Error::Servo { .. } = &e {
                             found_motors.push(motor_id);
                         } else {
@@ -508,7 +521,10 @@ impl St3215Port {
         let result = read_req.async_readwrite(port, ST3215_TIMEOUT_MS).await;
         let elapsed_ms = started.elapsed().as_millis();
         if elapsed_ms >= ST3215_SLOW_READ_WARN_MS {
-            warn!("ST3215 slow read_motor_config: bus={} motor={} elapsed={}ms", bus_serial, motor_id, elapsed_ms);
+            warn!(
+                "ST3215 slow read_motor_config: bus={} motor={} elapsed={}ms",
+                bus_serial, motor_id, elapsed_ms
+            );
         }
         match result? {
             protocol::ST3215Response::Read { data, .. } => Ok(data),
@@ -533,7 +549,10 @@ impl St3215Port {
         let result = read_req.async_readwrite(port, ST3215_TIMEOUT_MS).await;
         let elapsed_ms = started.elapsed().as_millis();
         if elapsed_ms >= ST3215_SLOW_READ_WARN_MS {
-            warn!("ST3215 slow read_motor_ram: bus={} motor={} elapsed={}ms", bus_serial, motor_id, elapsed_ms);
+            warn!(
+                "ST3215 slow read_motor_ram: bus={} motor={} elapsed={}ms",
+                bus_serial, motor_id, elapsed_ms
+            );
         }
         match result? {
             protocol::ST3215Response::Read { data, .. } => Ok(data),
@@ -541,7 +560,7 @@ impl St3215Port {
         }
     }
 
-    fn send_command_received_envelope(
+    async fn send_command_received_envelope(
         com: &Arc<ST3215BusCommunicator>,
         bus_info: &St3215BusProto,
         motor_id: u32,
@@ -557,14 +576,14 @@ impl St3215Port {
             command: Some(command.clone()),
             ..Default::default()
         };
-        com.send_rx(&envelope).map_err(|e| {
+        com.send_rx(&envelope).await.map_err(|e| {
             let err_msg = format!("Failed to send ST3215 envelope: {}", e);
             error!("{}", err_msg);
             err_msg
         })
     }
 
-    fn send_command_result_envelope(
+    async fn send_command_result_envelope(
         com: &Arc<ST3215BusCommunicator>,
         bus_info: &St3215BusProto,
         motor_id: u32,
@@ -583,14 +602,14 @@ impl St3215Port {
             error,
             ..Default::default()
         };
-        com.send_rx(&envelope).map_err(|e| {
+        com.send_rx(&envelope).await.map_err(|e| {
             let err_msg = format!("Failed to send ST3215 envelope: {}", e);
             error!("{}", err_msg);
             err_msg
         })
     }
 
-    fn send_drive_connect_envelope(
+    async fn send_drive_connect_envelope(
         com: &Arc<ST3215BusCommunicator>,
         bus_info: &St3215BusProto,
         motor_id: u8,
@@ -604,14 +623,14 @@ impl St3215Port {
             motor_id: motor_id as u32,
             ..Default::default()
         };
-        com.send_rx(&envelope).map_err(|e| {
+        com.send_rx(&envelope).await.map_err(|e| {
             let err_msg = format!("Failed to send ST3215 envelope: {}", e);
             error!("{}", err_msg);
             err_msg
         })
     }
 
-    fn send_drive_disconnect_envelope(
+    async fn send_drive_disconnect_envelope(
         com: &Arc<ST3215BusCommunicator>,
         bus_info: &St3215BusProto,
         motor_id: u8,
@@ -625,14 +644,14 @@ impl St3215Port {
             motor_id: motor_id as u32,
             ..Default::default()
         };
-        com.send_rx(&envelope).map_err(|e| {
+        com.send_rx(&envelope).await.map_err(|e| {
             let err_msg = format!("Failed to send ST3215 envelope: {}", e);
             error!("{}", err_msg);
             err_msg
         })
     }
 
-    fn send_drive_state_envelope(
+    async fn send_drive_state_envelope(
         com: &Arc<ST3215BusCommunicator>,
         bus_info: &St3215BusProto,
         motor_id: u8,
@@ -648,7 +667,7 @@ impl St3215Port {
             data,
             ..Default::default()
         };
-        com.send_rx(&envelope).map_err(|e| {
+        com.send_rx(&envelope).await.map_err(|e| {
             let err_msg = format!("Failed to send ST3215 envelope: {}", e);
             error!("{}", err_msg);
             err_msg
@@ -842,12 +861,16 @@ impl St3215Port {
 
             // Extract midpoints from provided arcs if available
             let freeze_cmd = command.freeze_calibration.as_ref().unwrap();
-            let mut midpoints: std::collections::HashMap<u8, u16> = std::collections::HashMap::new();
+            let mut midpoints: std::collections::HashMap<u8, u16> =
+                std::collections::HashMap::new();
 
             for arc in &freeze_cmd.arcs {
                 if arc.midpoint > 0 {
                     midpoints.insert(arc.motor_id as u8, arc.midpoint as u16);
-                    info!("Motor {}: Using provided midpoint from command: {}", arc.motor_id, arc.midpoint);
+                    info!(
+                        "Motor {}: Using provided midpoint from command: {}",
+                        arc.motor_id, arc.midpoint
+                    );
                 }
             }
 
@@ -861,14 +884,29 @@ impl St3215Port {
             for motor_id in 1..=max_motors_cnt {
                 // Send hardware reset without unlocking EEPROM
                 let reset_req = protocol::ST3215Request::Reset { motor: motor_id };
-                if let Err(e) = reset_req.async_readwrite(port, ST3215_COMMAND_TIMEOUT_MS).await {
+                if let Err(e) = reset_req
+                    .async_readwrite(port, ST3215_COMMAND_TIMEOUT_MS)
+                    .await
+                {
                     warn!("Failed to send reset to motor {}: {}", motor_id, e);
                 } else {
-                    info!("FreezeCalibration: Hardware reset completed for motor {}", motor_id);
+                    info!(
+                        "FreezeCalibration: Hardware reset completed for motor {}",
+                        motor_id
+                    );
                 }
-                
+
                 let provided_midpoint = midpoints.get(&motor_id).copied();
-                match Self::freeze_calibration(port, motor_id, meta, bus_info, provided_midpoint, max_motors_cnt).await {
+                match Self::freeze_calibration(
+                    port,
+                    motor_id,
+                    meta,
+                    bus_info,
+                    provided_midpoint,
+                    max_motors_cnt,
+                )
+                .await
+                {
                     Ok(verified) => {
                         if !verified {
                             warn!(
@@ -942,7 +980,11 @@ impl St3215Port {
         for attempt in 1..=MAX_RETRIES {
             info!(
                 "EEPROM write motor {}: 0x{:02X} = {:02x?} (attempt {}/{})",
-                motor_id, register.address(), data.as_ref(), attempt, MAX_RETRIES
+                motor_id,
+                register.address(),
+                data.as_ref(),
+                attempt,
+                MAX_RETRIES
             );
 
             let reg_write_req = protocol::ST3215Request::RegWrite {
@@ -956,7 +998,11 @@ impl St3215Port {
             {
                 warn!(
                     "EEPROM RegWrite failed motor {}: 0x{:02X}: {} (attempt {}/{})",
-                    motor_id, register.address(), e, attempt, MAX_RETRIES
+                    motor_id,
+                    register.address(),
+                    e,
+                    attempt,
+                    MAX_RETRIES
                 );
                 Self::drain_serial(port).await;
                 continue;
@@ -969,7 +1015,11 @@ impl St3215Port {
             {
                 warn!(
                     "EEPROM Action failed motor {}: 0x{:02X}: {} (attempt {}/{})",
-                    motor_id, register.address(), e, attempt, MAX_RETRIES
+                    motor_id,
+                    register.address(),
+                    e,
+                    attempt,
+                    MAX_RETRIES
                 );
                 Self::drain_serial(port).await;
                 continue;
@@ -981,30 +1031,47 @@ impl St3215Port {
                 address: register.address(),
                 length: register.size(),
             };
-            match read_req.async_readwrite(port, ST3215_COMMAND_TIMEOUT_MS).await {
+            match read_req
+                .async_readwrite(port, ST3215_COMMAND_TIMEOUT_MS)
+                .await
+            {
                 Ok(protocol::ST3215Response::Read { data: readback, .. }) => {
                     if readback.as_ref() == data.as_ref() {
                         info!(
                             "EEPROM write verified motor {}: 0x{:02X} = {:02x?}",
-                            motor_id, register.address(), data.as_ref()
+                            motor_id,
+                            register.address(),
+                            data.as_ref()
                         );
                         return Ok(true);
                     }
                     warn!(
                         "EEPROM verify mismatch motor {}: 0x{:02X} expected {:02x?} got {:02x?} (attempt {}/{})",
-                        motor_id, register.address(), data.as_ref(), readback.as_ref(), attempt, MAX_RETRIES
+                        motor_id,
+                        register.address(),
+                        data.as_ref(),
+                        readback.as_ref(),
+                        attempt,
+                        MAX_RETRIES
                     );
                 }
                 Ok(_) => {
                     warn!(
                         "EEPROM verify unexpected response motor {}: 0x{:02X} (attempt {}/{})",
-                        motor_id, register.address(), attempt, MAX_RETRIES
+                        motor_id,
+                        register.address(),
+                        attempt,
+                        MAX_RETRIES
                     );
                 }
                 Err(e) => {
                     warn!(
                         "EEPROM verify read failed motor {}: 0x{:02X}: {} (attempt {}/{})",
-                        motor_id, register.address(), e, attempt, MAX_RETRIES
+                        motor_id,
+                        register.address(),
+                        e,
+                        attempt,
+                        MAX_RETRIES
                     );
                     Self::drain_serial(port).await;
                 }
@@ -1013,7 +1080,10 @@ impl St3215Port {
 
         error!(
             "EEPROM write failed after {} retries motor {}: 0x{:02X} = {:02x?}",
-            MAX_RETRIES, motor_id, register.address(), data.as_ref()
+            MAX_RETRIES,
+            motor_id,
+            register.address(),
+            data.as_ref()
         );
         Ok(false)
     }
@@ -1031,7 +1101,11 @@ impl St3215Port {
         for attempt in 1..=MAX_RETRIES {
             info!(
                 "RAM write motor {}: 0x{:02X} = {:02x?} (attempt {}/{})",
-                motor_id, register.address(), data.as_ref(), attempt, MAX_RETRIES
+                motor_id,
+                register.address(),
+                data.as_ref(),
+                attempt,
+                MAX_RETRIES
             );
 
             let write_req = protocol::ST3215Request::Write {
@@ -1045,7 +1119,11 @@ impl St3215Port {
             {
                 warn!(
                     "RAM Write failed motor {}: 0x{:02X}: {} (attempt {}/{})",
-                    motor_id, register.address(), e, attempt, MAX_RETRIES
+                    motor_id,
+                    register.address(),
+                    e,
+                    attempt,
+                    MAX_RETRIES
                 );
                 Self::drain_serial(port).await;
                 continue;
@@ -1058,7 +1136,11 @@ impl St3215Port {
             {
                 warn!(
                     "RAM Action failed motor {}: 0x{:02X}: {} (attempt {}/{})",
-                    motor_id, register.address(), e, attempt, MAX_RETRIES
+                    motor_id,
+                    register.address(),
+                    e,
+                    attempt,
+                    MAX_RETRIES
                 );
                 Self::drain_serial(port).await;
                 continue;
@@ -1069,30 +1151,47 @@ impl St3215Port {
                 address: register.address(),
                 length: register.size(),
             };
-            match read_req.async_readwrite(port, ST3215_COMMAND_TIMEOUT_MS).await {
+            match read_req
+                .async_readwrite(port, ST3215_COMMAND_TIMEOUT_MS)
+                .await
+            {
                 Ok(protocol::ST3215Response::Read { data: readback, .. }) => {
                     if readback.as_ref() == data.as_ref() {
                         info!(
                             "RAM write verified motor {}: 0x{:02X} = {:02x?}",
-                            motor_id, register.address(), data.as_ref()
+                            motor_id,
+                            register.address(),
+                            data.as_ref()
                         );
                         return Ok(true);
                     }
                     warn!(
                         "RAM verify mismatch motor {}: 0x{:02X} expected {:02x?} got {:02x?} (attempt {}/{})",
-                        motor_id, register.address(), data.as_ref(), readback.as_ref(), attempt, MAX_RETRIES
+                        motor_id,
+                        register.address(),
+                        data.as_ref(),
+                        readback.as_ref(),
+                        attempt,
+                        MAX_RETRIES
                     );
                 }
                 Ok(_) => {
                     warn!(
                         "RAM verify unexpected response motor {}: 0x{:02X} (attempt {}/{})",
-                        motor_id, register.address(), attempt, MAX_RETRIES
+                        motor_id,
+                        register.address(),
+                        attempt,
+                        MAX_RETRIES
                     );
                 }
                 Err(e) => {
                     warn!(
                         "RAM verify read failed motor {}: 0x{:02X}: {} (attempt {}/{})",
-                        motor_id, register.address(), e, attempt, MAX_RETRIES
+                        motor_id,
+                        register.address(),
+                        e,
+                        attempt,
+                        MAX_RETRIES
                     );
                     Self::drain_serial(port).await;
                 }
@@ -1101,7 +1200,10 @@ impl St3215Port {
 
         error!(
             "RAM write failed after {} retries motor {}: 0x{:02X} = {:02x?}",
-            MAX_RETRIES, motor_id, register.address(), data.as_ref()
+            MAX_RETRIES,
+            motor_id,
+            register.address(),
+            data.as_ref()
         );
         Ok(false)
     }
@@ -1189,7 +1291,9 @@ impl St3215Port {
         bus_info: &St3215BusProto,
         meta: &St3215PortMeta,
     ) -> Result<(), protocol::Error> {
-        crate::auto_calibrate::calibrate(port, bus_info, meta).await.map(|_| ())
+        crate::auto_calibrate::calibrate(port, bus_info, meta)
+            .await
+            .map(|_| ())
     }
 
     pub async fn freeze_calibration(

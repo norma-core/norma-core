@@ -5,10 +5,10 @@ use crate::registers;
 use crate::victron_smartsolar_mppt_proto::{RxEnvelope, VictronDevice, VictronSignalType};
 use bytes::Bytes;
 use log::{debug, error, info};
-use normfs::{NormFS, QueueId};
+use normfs::NormFS;
 use prost::Message;
-use station_iface::StationEngine;
 use station_iface::iface_proto::drivers::QueueDataType;
+use station_iface::{Backpressure, StationEngine, enqueue_with};
 use std::collections::BTreeMap;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
@@ -105,20 +105,24 @@ impl<T: StationEngine> VictronPort<T> {
             &rx_queue_id,
             &device,
             VictronSignalType::VictronConnected,
-            Some(&probe_block),
-            None,
-            Vec::new(),
+            Payload {
+                text: Some(&probe_block),
+                ..Payload::default()
+            },
             String::new(),
-        );
+        )
+        .await;
         self.publish(
             &rx_queue_id,
             &device,
             VictronSignalType::VictronTextBlock,
-            Some(&probe_block),
-            None,
-            Vec::new(),
+            Payload {
+                text: Some(&probe_block),
+                ..Payload::default()
+            },
             String::new(),
-        );
+        )
+        .await;
 
         let poller: JoinHandle<()> = tokio::spawn(run_hex_poller(write_half));
 
@@ -142,20 +146,24 @@ impl<T: StationEngine> VictronPort<T> {
             &rx_queue_id,
             &device,
             VictronSignalType::VictronDisconnected,
-            None,
-            None,
-            Vec::new(),
+            Payload::default(),
             reason,
-        );
+        )
+        .await;
+        if let Err(err) = self.normfs.close_queue(&rx_queue_id).await {
+            error!("Failed to close Victron queue {}: {}", rx_queue_id, err);
+        }
         Ok(())
     }
 
     async fn ensure_device_queue(
         &self,
         device: &VictronDevice,
-    ) -> Result<QueueId, Box<dyn std::error::Error + Send + Sync>> {
+    ) -> Result<normfs::QueueId, Box<dyn std::error::Error + Send + Sync>> {
         let rx_queue_id = self.normfs.resolve(&device_rx_queue_path(device));
-        self.normfs.ensure_queue_exists_for_write(&rx_queue_id).await?;
+        self.normfs
+            .ensure_queue_exists_for_write(&rx_queue_id)
+            .await?;
         self.station_engine.register_queue(
             &rx_queue_id,
             QueueDataType::QdtVictronSmartsolarMpptRx,
@@ -183,12 +191,16 @@ impl<T: StationEngine> VictronPort<T> {
 
         loop {
             let wait = match deadline {
-                Some(deadline) => deadline.checked_duration_since(Instant::now()).ok_or_else(|| {
-                    probe_err(
-                        ProbeErrorKind::Silent,
-                        "no valid VE.Direct block within probe timeout",
-                    )
-                })?,
+                Some(deadline) => {
+                    deadline
+                        .checked_duration_since(Instant::now())
+                        .ok_or_else(|| {
+                            probe_err(
+                                ProbeErrorKind::Silent,
+                                "no valid VE.Direct block within probe timeout",
+                            )
+                        })?
+                }
                 None => POLL_SLICE,
             };
 
@@ -238,7 +250,7 @@ impl<T: StationEngine> VictronPort<T> {
         &self,
         reader: &mut Reader,
         demux: &mut VeDirectDemux,
-        rx_queue_id: &QueueId,
+        rx_queue_id: &normfs::QueueId,
         device: &Arc<VictronDevice>,
         leftover: Vec<u8>,
         probe_block: Vec<u8>,
@@ -281,11 +293,14 @@ impl<T: StationEngine> VictronPort<T> {
                             rx_queue_id,
                             device,
                             VictronSignalType::VictronTextBlock,
-                            last_text.as_deref(),
-                            None,
-                            regs.values().cloned().collect(),
+                            Payload {
+                                text: last_text.as_deref(),
+                                hex_frames: regs.values().cloned().collect(),
+                                ..Payload::default()
+                            },
                             String::new(),
-                        );
+                        )
+                        .await;
                     }
                     Some(DemuxEvent::HexFrame(frame)) => {
                         last_valid = Instant::now();
@@ -301,11 +316,14 @@ impl<T: StationEngine> VictronPort<T> {
                             rx_queue_id,
                             device,
                             VictronSignalType::VictronHexFrame,
-                            last_text.as_deref(),
-                            Some(frame),
-                            regs.values().cloned().collect(),
+                            Payload {
+                                text: last_text.as_deref(),
+                                hex_frame: Some(frame),
+                                hex_frames: regs.values().cloned().collect(),
+                            },
                             String::new(),
-                        );
+                        )
+                        .await;
                     }
                     Some(DemuxEvent::TextBlockBad) | Some(DemuxEvent::HexFrameBad) => {
                         note_malformed(&mut malformed_count, &mut last_malformed_log);
@@ -319,24 +337,21 @@ impl<T: StationEngine> VictronPort<T> {
                     rx_queue_id,
                     device,
                     VictronSignalType::VictronError,
-                    None,
-                    None,
-                    Vec::new(),
+                    Payload::default(),
                     format!("no valid VE.Direct frame for {:?}", last_valid.elapsed()),
-                );
+                )
+                .await;
                 fault_reported = true;
             }
         }
     }
 
-    fn publish(
+    async fn publish(
         &self,
-        rx_queue_id: &QueueId,
+        rx_queue_id: &normfs::QueueId,
         device: &VictronDevice,
         signal_type: VictronSignalType,
-        data: Option<&[u8]>,
-        hex_frame: Option<Bytes>,
-        hex_frames: Vec<Bytes>,
+        payload: Payload<'_>,
         error: String,
     ) {
         let envelope = RxEnvelope {
@@ -345,9 +360,9 @@ impl<T: StationEngine> VictronPort<T> {
             app_start_id: systime::get_app_start_id(),
             signal_type: signal_type as i32,
             device: Some(device.clone()),
-            data: data.map(Bytes::copy_from_slice).unwrap_or_default(),
-            hex_frame: hex_frame.unwrap_or_default(),
-            hex_frames,
+            data: payload.text.map(Bytes::copy_from_slice).unwrap_or_default(),
+            hex_frame: payload.hex_frame.unwrap_or_default(),
+            hex_frames: payload.hex_frames,
             error,
         };
 
@@ -356,10 +371,27 @@ impl<T: StationEngine> VictronPort<T> {
             error!("Failed to encode Victron SmartSolar MPPT envelope: {err}");
             return;
         }
-        if let Err(err) = self.normfs.enqueue(rx_queue_id, Bytes::from(buffer)) {
+        let policy = if matches!(
+            signal_type,
+            VictronSignalType::VictronTextBlock | VictronSignalType::VictronHexFrame
+        ) {
+            Backpressure::Skip
+        } else {
+            Backpressure::Keep
+        };
+        if let Err(err) = enqueue_with(&self.normfs, rx_queue_id, Bytes::from(buffer), policy).await
+        {
             error!("Failed to enqueue Victron SmartSolar MPPT envelope: {err}");
         }
     }
+}
+
+/// Optional record contents: the last text block, the hex frame, and the register snapshot.
+#[derive(Default)]
+struct Payload<'a> {
+    text: Option<&'a [u8]>,
+    hex_frame: Option<Bytes>,
+    hex_frames: Vec<Bytes>,
 }
 
 enum ProbeOutcome {
@@ -396,7 +428,10 @@ async fn run_hex_poller(mut writer: Writer) {
 
     loop {
         poll.tick().await;
-        if send_group(&mut writer, registers::CURRENT_GROUP).await.is_err() {
+        if send_group(&mut writer, registers::CURRENT_GROUP)
+            .await
+            .is_err()
+        {
             return;
         }
     }
