@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const from = path.join(root, 'node_modules/@libav.js/variant-webm/dist');
+const notices = path.join(root, 'third-party/libav.js');
 const to = path.join(root, 'public/libav');
 
 mkdirSync(to, { recursive: true });
@@ -14,4 +15,8 @@ for (const name of readdirSync(from)) {
   if (/^libav-[\d.]+-webm\.wasm\.(mjs|wasm)$/.test(name)) {
     copyFileSync(path.join(from, name), path.join(to, name));
   }
+}
+// LGPL-2.1: the license and where the source is travel with the library.
+for (const name of readdirSync(notices)) {
+  copyFileSync(path.join(notices, name), path.join(to, name));
 }
