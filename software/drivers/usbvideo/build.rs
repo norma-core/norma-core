@@ -23,6 +23,19 @@ fn main() -> Result<()> {
     println!("cargo:rerun-if-changed=../../../protobufs/drivers/usbvideo/frame.proto");
     println!("cargo:rerun-if-changed=../../../protobufs/drivers/usbvideo/usbvideo.proto");
 
+    // VP8 goes through a C shim built against the installed libvpx headers;
+    // set PKG_CONFIG_ALL_STATIC=1 to link libvpx statically.
+    let vpx = pkg_config::Config::new()
+        .atleast_version("1.8")
+        .probe("vpx")
+        .map_err(std::io::Error::other)?;
+    cc::Build::new()
+        .file("src/codec/vp8_shim.c")
+        .includes(&vpx.include_paths)
+        .warnings(true)
+        .compile("nc_vp8");
+    println!("cargo:rerun-if-changed=src/codec/vp8_shim.c");
+
     if target.contains("apple") {
         // Get the directory of the Cargo.toml file
         let manifest_dir = env::var("CARGO_MANIFEST_DIR").unwrap();

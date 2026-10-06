@@ -67,6 +67,7 @@ impl<K: StationEngine> StateTracker<K> {
                 linear_data: Bytes::new(),
                 frames_data: vec![jpeg_data],
                 stamps: vec![stamp.clone()],
+                ..Default::default()
             }),
             stamp: Some(stamp),
             formats: vec![],

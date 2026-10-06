@@ -22,6 +22,8 @@ norm-uvc-sys = "0.3.0-nc"
 
 [build-dependencies]
 prost-build = { workspace = true }
+cc = "1"
+pkg-config = "0.3"
 
 [lib]
 path = "src/lib.rs"
