@@ -25,5 +25,9 @@ prost-build = { workspace = true }
 cc = "1"
 pkg-config = "0.3"
 
+[features]
+# Link an installed libvpx found with pkg-config instead of the vendored one.
+system-libvpx = []
+
 [lib]
 path = "src/lib.rs"
