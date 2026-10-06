@@ -386,7 +386,10 @@ impl<T: StationEngine> StateTracker<T> {
             },
             Err(e) => {
                 cam.policy.lost();
-                error!("Failed to enqueue frame for camera {}: {}", camera.unique_id, e);
+                error!(
+                    "Failed to enqueue frame for camera {}: {}",
+                    camera.unique_id, e
+                );
             }
         }
     }

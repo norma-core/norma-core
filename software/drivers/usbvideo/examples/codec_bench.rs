@@ -1,5 +1,5 @@
-use std::time::{Duration, Instant};
 use bytes::Bytes;
+use std::time::{Duration, Instant};
 use usbvideo::codec::{VideoDecoder, VideoEncoder, Vp8Decoder, Vp8Encoder};
 
 fn cpu_s() -> f64 {
@@ -33,7 +33,12 @@ const MIN: Duration = Duration::from_secs(30);
 
 fn main() {
     let args: Vec<String> = std::env::args().collect();
-    let (codec, w, h, round) = (args[1].as_str(), args[2].parse::<usize>().unwrap(), args[3].parse::<usize>().unwrap(), &args[4]);
+    let (codec, w, h, round) = (
+        args[1].as_str(),
+        args[2].parse::<usize>().unwrap(),
+        args[3].parse::<usize>().unwrap(),
+        &args[4],
+    );
     let frames: Vec<Vec<u8>> = (0..300).map(|t| camera_like(w, h, t)).collect();
 
     // Encode for at least MIN, a keyframe every 30 frames as at 30 fps.
@@ -45,7 +50,11 @@ fn main() {
         let f = &frames[n % frames.len()];
         let data = match &mut enc {
             Some(e) => e.encode(f, n % 30 == 0).unwrap().data,
-            None => usbvideo::convert_rgb_to_jpeg(w as u16, h as u16, Bytes::copy_from_slice(f), 90).unwrap().to_vec(),
+            None => {
+                usbvideo::convert_rgb_to_jpeg(w as u16, h as u16, Bytes::copy_from_slice(f), 90)
+                    .unwrap()
+                    .to_vec()
+            }
         };
         bytes += data.len();
         if packets.len() < 300 {
@@ -63,10 +72,19 @@ fn main() {
         let i = m % packets.len();
         match &mut dec {
             Some(d) => {
-                if i == 0 { *d = Vp8Decoder::new().unwrap(); }
+                if i == 0 {
+                    *d = Vp8Decoder::new().unwrap();
+                }
                 d.decode(&packets[i]).unwrap();
             }
-            None => { usbvideo::convert_mjpeg_to_rgb(w as u16, h as u16, &Bytes::copy_from_slice(&packets[i])).unwrap(); }
+            None => {
+                usbvideo::convert_mjpeg_to_rgb(
+                    w as u16,
+                    h as u16,
+                    &Bytes::copy_from_slice(&packets[i]),
+                )
+                .unwrap();
+            }
         }
         m += 1;
     }
@@ -74,6 +92,10 @@ fn main() {
     let dec_wall = start.elapsed().as_secs_f64();
     println!(
         "RESULT codec={codec} size={w}x{h} round={round} frames={n} bytes_per_frame={} enc_cpu_us={:.1} enc_wall_s={:.1} dec_frames={m} dec_cpu_us={:.1} dec_wall_s={:.1}",
-        bytes / n, enc_cpu / n as f64 * 1e6, enc_wall, dec_cpu / m as f64 * 1e6, dec_wall
+        bytes / n,
+        enc_cpu / n as f64 * 1e6,
+        enc_wall,
+        dec_cpu / m as f64 * 1e6,
+        dec_wall
     );
 }

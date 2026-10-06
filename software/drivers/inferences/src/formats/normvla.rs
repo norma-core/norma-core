@@ -442,13 +442,23 @@ async fn vp8_as_jpeg(
     let frame = match reader.frame_at(queue, id, &envelope).await {
         Ok(frame) => frame,
         Err(e) => {
-            log::info!("Skip: video_frame_unavailable (queue={} id={} {})", queue, id, e);
+            log::info!(
+                "Skip: video_frame_unavailable (queue={} id={} {})",
+                queue,
+                id,
+                e
+            );
             return None;
         }
     };
-    let jpeg = usbvideo::convert_rgb_to_jpeg(frame.width as u16, frame.height as u16, Bytes::from(frame.rgb), 90)
-        .map_err(|e| log::warn!("JPEG of a decoded VP8 frame failed: {}", e))
-        .ok()?;
+    let jpeg = usbvideo::convert_rgb_to_jpeg(
+        frame.width as u16,
+        frame.height as u16,
+        Bytes::from(frame.rgb),
+        90,
+    )
+    .map_err(|e| log::warn!("JPEG of a decoded VP8 frame failed: {}", e))
+    .ok()?;
     let pack = envelope.frames.as_mut()?;
     pack.format = Some(usbvideo::usbvideo_proto::frame::FrameFormat {
         width: frame.width,
