@@ -90,7 +90,7 @@ async fn run_manager<T: StationEngine + Send + Sync + 'static>(
     config: HikmicroThermalConfig,
 ) {
     let running = Arc::new(Mutex::new(HashSet::<String>::new()));
-    let mut captures = JoinSet::new();
+    let mut captures: JoinSet<()> = JoinSet::new();
 
     loop {
         while let Some(result) = captures.try_join_next() {
