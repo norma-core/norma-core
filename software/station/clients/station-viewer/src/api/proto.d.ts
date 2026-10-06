@@ -5822,6 +5822,12 @@ export namespace frame {
 
         /** FramesPack framesData */
         framesData?: (Uint8Array[]|null);
+
+        /** FramesPack keyframe */
+        keyframe?: (boolean|null);
+
+        /** FramesPack keyframePtr */
+        keyframePtr?: (Uint8Array|null);
     }
 
     /** Represents a FramesPack. */
@@ -5844,6 +5850,12 @@ export namespace frame {
 
         /** FramesPack framesData. */
         public framesData: Uint8Array[];
+
+        /** FramesPack keyframe. */
+        public keyframe: boolean;
+
+        /** FramesPack keyframePtr. */
+        public keyframePtr: Uint8Array;
 
         /**
          * Creates a new FramesPack instance using the specified properties.
@@ -6041,7 +6053,8 @@ export namespace frame {
     /** FrameFormatKind enum. */
     enum FrameFormatKind {
         FF_NCHW = 0,
-        FF_JPEG = 1
+        FF_JPEG = 1,
+        FF_VP8 = 2
     }
 
     /** Properties of a FrameFormat. */

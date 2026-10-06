@@ -295,6 +295,41 @@ export class NormFsClient extends EventTarget {
         });
     }
 
+    /** Up to `limit` consecutive entries from `entryId`, in order. */
+    public readRange(queueID: string, entryId: Uint8Array, limit: number): Promise<StreamEntry[]> {
+        return new Promise((resolve, reject) => {
+            const stream = this.read(queueID, entryId, normfs.OffsetType.OT_ABSOLUTE, limit);
+            const entries: StreamEntry[] = [];
+
+            const onData = (event: Event) => {
+                const readResponse = (event as CustomEvent).detail as normfs.IReadResponse;
+                if (readResponse.data && readResponse.id?.raw) {
+                    entries.push({ id: readResponse.id.raw as Uint8Array, data: readResponse.data });
+                }
+            };
+
+            const onError = (event: Event) => {
+                reject((event as CustomEvent).detail);
+                cleanup();
+            };
+
+            const onEnd = () => {
+                resolve(entries);
+                cleanup();
+            };
+
+            const cleanup = () => {
+                stream.removeEventListener('data', onData);
+                stream.removeEventListener('error', onError);
+                stream.removeEventListener('end', onEnd);
+            };
+
+            stream.addEventListener('data', onData);
+            stream.addEventListener('error', onError, { once: true });
+            stream.addEventListener('end', onEnd, { once: true });
+        });
+    }
+
     public readLastEntry(queueID: string): Promise<StreamEntry> {
         return new Promise((resolve, reject) => {
             // NormFS computes last_id - offset. Zero reads the actual tail;

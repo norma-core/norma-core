@@ -2,6 +2,7 @@ import Long from 'long';
 import { airgradient_open_air_o_1pst, arduino_nicla_sense_env, dmesg, hikmicro, ina226, yahboom_dogzilla_lite, drivers, inference, motors_mirroring, normvla, pwm_output, st3215, sysinfo, usbvideo, vesc_trampa, victron_smartsolar_mppt, arduino_nicla_sense_me } from '@/api/proto.js';
 import { ErrEntryNotFound, NormFsClient, type StreamEntry } from "./normfs.js";
 import { getGlobalTimeAdjustmentNs, isTimeSyncActive } from '@/api/time-sync.js';
+import { usbVideoEnvelopeAsJpeg } from '@/usbvideo/vp8-frames.js';
 import {
   createLiveCameraMetadataEnvelope,
   publishLiveCameraFrame,
@@ -405,7 +406,12 @@ export async function parseFrame(
               break;
             case drivers.QueueDataType.QDT_USB_VIDEO_FRAMES:
               try {
-                decoded = usbvideo.RxEnvelope.decode(streamEntry.data);
+                decoded = await usbVideoEnvelopeAsJpeg(
+                  normFs,
+                  entry.queue!,
+                  streamEntry.id,
+                  usbvideo.RxEnvelope.decode(streamEntry.data),
+                );
               } catch (error) {
                 console.error("Failed to decode usbvideo.RxEnvelope:", error);
               }

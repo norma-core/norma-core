@@ -16932,6 +16932,8 @@ export const frame = $root.frame = (() => {
          * @property {Array.<frame.IFrameStamp>|null} [stamps] FramesPack stamps
          * @property {Uint8Array|null} [linearData] FramesPack linearData
          * @property {Array.<Uint8Array>|null} [framesData] FramesPack framesData
+         * @property {boolean|null} [keyframe] FramesPack keyframe
+         * @property {Uint8Array|null} [keyframePtr] FramesPack keyframePtr
          */
 
         /**
@@ -16984,6 +16986,22 @@ export const frame = $root.frame = (() => {
         FramesPack.prototype.framesData = $util.emptyArray;
 
         /**
+         * FramesPack keyframe.
+         * @member {boolean} keyframe
+         * @memberof frame.FramesPack
+         * @instance
+         */
+        FramesPack.prototype.keyframe = false;
+
+        /**
+         * FramesPack keyframePtr.
+         * @member {Uint8Array} keyframePtr
+         * @memberof frame.FramesPack
+         * @instance
+         */
+        FramesPack.prototype.keyframePtr = $util.newBuffer([]);
+
+        /**
          * Creates a new FramesPack instance using the specified properties.
          * @function create
          * @memberof frame.FramesPack
@@ -17017,6 +17035,10 @@ export const frame = $root.frame = (() => {
             if (message.framesData != null && message.framesData.length)
                 for (let i = 0; i < message.framesData.length; ++i)
                     writer.uint32(/* id 12, wireType 2 =*/98).bytes(message.framesData[i]);
+            if (message.keyframe != null && Object.hasOwnProperty.call(message, "keyframe"))
+                writer.uint32(/* id 13, wireType 0 =*/104).bool(message.keyframe);
+            if (message.keyframePtr != null && Object.hasOwnProperty.call(message, "keyframePtr"))
+                writer.uint32(/* id 14, wireType 2 =*/114).bytes(message.keyframePtr);
             return writer;
         };
 
@@ -17075,6 +17097,14 @@ export const frame = $root.frame = (() => {
                         if (!(message.framesData && message.framesData.length))
                             message.framesData = [];
                         message.framesData.push(reader.bytes());
+                        break;
+                    }
+                case 13: {
+                        message.keyframe = reader.bool();
+                        break;
+                    }
+                case 14: {
+                        message.keyframePtr = reader.bytes();
                         break;
                     }
                 default:
@@ -17140,6 +17170,12 @@ export const frame = $root.frame = (() => {
                     if (!(message.framesData[i] && typeof message.framesData[i].length === "number" || $util.isString(message.framesData[i])))
                         return "framesData: buffer[] expected";
             }
+            if (message.keyframe != null && message.hasOwnProperty("keyframe"))
+                if (typeof message.keyframe !== "boolean")
+                    return "keyframe: boolean expected";
+            if (message.keyframePtr != null && message.hasOwnProperty("keyframePtr"))
+                if (!(message.keyframePtr && typeof message.keyframePtr.length === "number" || $util.isString(message.keyframePtr)))
+                    return "keyframePtr: buffer expected";
             return null;
         };
 
@@ -17189,6 +17225,13 @@ export const frame = $root.frame = (() => {
                     else if (object.framesData[i].length >= 0)
                         message.framesData[i] = object.framesData[i];
             }
+            if (object.keyframe != null)
+                message.keyframe = Boolean(object.keyframe);
+            if (object.keyframePtr != null)
+                if (typeof object.keyframePtr === "string")
+                    $util.base64.decode(object.keyframePtr, message.keyframePtr = $util.newBuffer($util.base64.length(object.keyframePtr)), 0);
+                else if (object.keyframePtr.length >= 0)
+                    message.keyframePtr = object.keyframePtr;
             return message;
         };
 
@@ -17218,6 +17261,14 @@ export const frame = $root.frame = (() => {
                     if (options.bytes !== Array)
                         object.linearData = $util.newBuffer(object.linearData);
                 }
+                object.keyframe = false;
+                if (options.bytes === String)
+                    object.keyframePtr = "";
+                else {
+                    object.keyframePtr = [];
+                    if (options.bytes !== Array)
+                        object.keyframePtr = $util.newBuffer(object.keyframePtr);
+                }
             }
             if (message.format != null && message.hasOwnProperty("format"))
                 object.format = $root.frame.FrameFormat.toObject(message.format, options);
@@ -17233,6 +17284,10 @@ export const frame = $root.frame = (() => {
                 for (let j = 0; j < message.framesData.length; ++j)
                     object.framesData[j] = options.bytes === String ? $util.base64.encode(message.framesData[j], 0, message.framesData[j].length) : options.bytes === Array ? Array.prototype.slice.call(message.framesData[j]) : message.framesData[j];
             }
+            if (message.keyframe != null && message.hasOwnProperty("keyframe"))
+                object.keyframe = message.keyframe;
+            if (message.keyframePtr != null && message.hasOwnProperty("keyframePtr"))
+                object.keyframePtr = options.bytes === String ? $util.base64.encode(message.keyframePtr, 0, message.keyframePtr.length) : options.bytes === Array ? Array.prototype.slice.call(message.keyframePtr) : message.keyframePtr;
             return object;
         };
 
@@ -17614,11 +17669,13 @@ export const frame = $root.frame = (() => {
      * @enum {number}
      * @property {number} FF_NCHW=0 FF_NCHW value
      * @property {number} FF_JPEG=1 FF_JPEG value
+     * @property {number} FF_VP8=2 FF_VP8 value
      */
     frame.FrameFormatKind = (function() {
         const valuesById = {}, values = Object.create(valuesById);
         values[valuesById[0] = "FF_NCHW"] = 0;
         values[valuesById[1] = "FF_JPEG"] = 1;
+        values[valuesById[2] = "FF_VP8"] = 2;
         return values;
     })();
 
@@ -17805,6 +17862,7 @@ export const frame = $root.frame = (() => {
                     return "kind: enum value expected";
                 case 0:
                 case 1:
+                case 2:
                     break;
                 }
             return null;
@@ -17844,6 +17902,10 @@ export const frame = $root.frame = (() => {
             case "FF_JPEG":
             case 1:
                 message.kind = 1;
+                break;
+            case "FF_VP8":
+            case 2:
+                message.kind = 2;
                 break;
             }
             return message;

@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import webSocketManager from '../api/websocket';
 import Long from 'long';
 import { normfs, usbvideo } from '../api/proto.js';
+import { usbVideoEnvelopeAsJpeg } from './vp8-frames.js';
 
 export interface FrameRange {
   min: number;
@@ -72,22 +73,31 @@ const UsbVideoTimelineTrack: React.FC<UsbVideoTimelineTrackProps> = ({
         const stream = webSocketManager.normFs.read(queueId, queueFirstId, normfs.OffsetType.OT_ABSOLUTE, numFramesToDisplay, step);
         const newImageSrcs: string[] = [];
 
+        let cancelled = false;
+        // VP8 thumbnails decode asynchronously; the chain keeps them in order.
+        let shown: Promise<void> = Promise.resolve();
+
         const onData = (event: any) => {
           const readResponse = event.detail as normfs.IReadResponse;
-          if (readResponse.data) {
-            const envelope = usbvideo.RxEnvelope.decode(readResponse.data);
-            if (envelope.frames && envelope.frames.framesData && envelope.frames.framesData.length > 0) {
+          if (readResponse.data && readResponse.id?.raw) {
+            const entryId = readResponse.id.raw as Uint8Array;
+            const raw = usbvideo.RxEnvelope.decode(readResponse.data);
+            shown = shown.then(async () => {
+              const envelope = await usbVideoEnvelopeAsJpeg(webSocketManager.normFs, queueId, entryId, raw);
+              if (cancelled || !envelope?.frames?.framesData?.length) {
+                return;
+              }
               const frameData = new Uint8Array(envelope.frames.framesData[0]);
               const blob = new Blob([frameData], { type: 'image/jpeg' });
               const url = URL.createObjectURL(blob);
               newImageSrcs.push(url);
               setImageSrcs(prev => [...prev, url]);
-            }
+            });
           }
         };
         
         const onEnd = () => {
-            setIsLoading(false);
+            shown.finally(() => setIsLoading(false));
             cleanup();
         };
 
@@ -108,6 +118,7 @@ const UsbVideoTimelineTrack: React.FC<UsbVideoTimelineTrackProps> = ({
         stream.addEventListener('error', onError);
 
         return () => {
+            cancelled = true;
             cleanup();
             newImageSrcs.forEach(url => URL.revokeObjectURL(url));
         };
