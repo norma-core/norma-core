@@ -10,6 +10,10 @@ use crate::proto::normvla;
 // Skip frame if timestamp diff > 100ms
 const MAX_STAMP_DIFF_NS: u64 = 100_000_000; // 100ms
 
+// One per process: inference reads each camera forward, so its decoder
+// cache decodes about one VP8 frame per inference frame.
+static VIDEO_FRAMES: std::sync::OnceLock<usbvideo::codec::FrameReader> = std::sync::OnceLock::new();
+
 // Statistics tracking for frame skips
 #[derive(Default, Debug)]
 struct FrameSkipStats {
@@ -163,6 +167,10 @@ pub async fn generate_frame(
             station_iface::iface_proto::drivers::QueueDataType::QdtUsbVideoFrames => {
                 // Parse USB video frames
                 if let Ok(rx_envelope) = usbvideo::usbvideo_proto::usbvideo::RxEnvelope::decode(frame_data.as_ref()) {
+                    let rx_envelope = match vp8_as_jpeg(normfs, &entry_queue_id, &ptr, rx_envelope).await {
+                        Some(envelope) => envelope,
+                        None => return Ok(()),
+                    };
                     if let Some(parsed_images) = parse_usb_video_frames(&rx_envelope, inference_rx.monotonic_stamp_ns) {
                         images.extend(parsed_images);
                     } else {
@@ -414,6 +422,41 @@ fn parse_joints(
     }
 
     Some(joints)
+}
+
+/// A VP8 entry as the JPEG entry the rest of this file reads; other entries
+/// pass through. `None` when the frame cannot be decoded exactly.
+async fn vp8_as_jpeg(
+    normfs: &Arc<NormFS>,
+    queue: &normfs::QueueId,
+    ptr: &UintN,
+    mut envelope: usbvideo::usbvideo_proto::usbvideo::RxEnvelope,
+) -> Option<usbvideo::usbvideo_proto::usbvideo::RxEnvelope> {
+    use usbvideo::usbvideo_proto::frame::FrameFormatKind;
+    let pack = envelope.frames.as_mut()?;
+    if pack.format.as_ref().map(|f| f.kind()) != Some(FrameFormatKind::FfVp8) {
+        return Some(envelope);
+    }
+    let id = ptr.to_u64().ok()?;
+    let reader = VIDEO_FRAMES.get_or_init(|| usbvideo::codec::FrameReader::new(normfs.clone()));
+    let frame = match reader.frame_at(queue, id, &envelope).await {
+        Ok(frame) => frame,
+        Err(e) => {
+            log::info!("Skip: video_frame_unavailable (queue={} id={} {})", queue, id, e);
+            return None;
+        }
+    };
+    let jpeg = usbvideo::convert_rgb_to_jpeg(frame.width as u16, frame.height as u16, Bytes::from(frame.rgb), 90)
+        .map_err(|e| log::warn!("JPEG of a decoded VP8 frame failed: {}", e))
+        .ok()?;
+    let pack = envelope.frames.as_mut()?;
+    pack.format = Some(usbvideo::usbvideo_proto::frame::FrameFormat {
+        width: frame.width,
+        height: frame.height,
+        kind: FrameFormatKind::FfJpeg as i32,
+    });
+    pack.frames_data = vec![jpeg];
+    Some(envelope)
 }
 
 fn parse_usb_video_frames(
