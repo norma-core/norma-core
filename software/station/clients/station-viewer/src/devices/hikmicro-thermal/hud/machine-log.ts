@@ -1,16 +1,8 @@
 import type { hikmicro } from '@/api/proto.js';
-import { y16Plane, type ThermalRenderResult } from '../thermal';
+import type { ThermalRenderResult } from '../thermal';
 
-export type MachineLogStats = Pick<ThermalRenderResult, 'usedCalibration' | 'minRaw' | 'maxRaw' | 'centerRaw' | 'centerC'>;
+export type MachineLogStats = Pick<ThermalRenderResult, 'usedCalibration' | 'minRaw' | 'maxRaw' | 'centerRaw' | 'centerC' | 'y16'>;
 export interface MachineLogSnapshot { receivedFrames: number; lines: { id: number; text: string }[]; rawLines: { id: number; text: string }[]; }
-
-function y16Words(frame: hikmicro.IThermalFrame): Uint16Array | null {
-  try {
-    return y16Plane(frame);
-  } catch {
-    return null;
-  }
-}
 
 /** Sample the newest input only; never accumulate a video-sized log backlog. */
 export class ThermalMachineLog {
@@ -34,7 +26,7 @@ export class ThermalMachineLog {
   flush(): MachineLogSnapshot | null {
     if (this.receivedFrames === this.publishedFrame || !this.frame || !this.stats) return null;
     this.publishedFrame = this.receivedFrames;
-    const words = y16Words(this.frame);
+    const words = this.stats.y16.length === 256 * 192 ? this.stats.y16 : null;
     const phase = this.batch++ % 3;
     let messages: string[];
     if (!words) {

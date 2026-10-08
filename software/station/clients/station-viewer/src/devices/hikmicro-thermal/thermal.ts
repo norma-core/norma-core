@@ -35,6 +35,8 @@ export interface ThermalRenderResult {
   centerRaw: number;
   usedCalibration: boolean;
   error: string | null;
+  // The decoded plane, so the HUD does not unpack the frame a second time.
+  y16: Uint16Array;
 }
 
 interface TemperatureState {
@@ -725,6 +727,7 @@ export function renderThermalFrame(
     centerRaw: raw.center,
     usedCalibration,
     error,
+    y16,
   };
 }
 
