@@ -49,6 +49,9 @@ include conf/local-secrets.inc
 # Optional per-build cellular APN overrides.
 include conf/local-cellular.inc
 
+# Optional per-build Wi-Fi credentials (keep outside the layer).
+include conf/local-wifi.inc
+
 PACKAGE_EXCLUDE:pn-x8-normacore += "\
     dropbear \
     docker docker-cli docker-compose docker-compose-plugin docker-moby moby \

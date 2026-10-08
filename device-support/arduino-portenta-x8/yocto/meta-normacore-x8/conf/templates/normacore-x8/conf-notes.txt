@@ -19,6 +19,17 @@ Optional cellular settings:
     X8_CELLULARD_SARA_APN = ""
     X8_CELLULARD_INTERVAL_SEC = "30"
 
+Optional Wi-Fi settings (WPA/WPA2-Personal, DHCP):
+
+  conf/local-wifi.inc
+    X8_WIFI_NETWORKS = '[{"ssid":"Home","password":"home-password","priority":20},{"ssid":"Phone","password":"phone-password","priority":10}]'
+    X8_WIFI_COUNTRY = "ES"
+    X8_WIFI_INTERFACE = "wlan0"
+
+  Keep this file private. An empty list leaves Wi-Fi unconfigured.
+  Passwords are plain text; the image stores derived PSKs.
+  See README.md for build-environment variable passthrough.
+
 Optional private Station identity:
 
   conf/station.crypto_seed

@@ -1,0 +1,23 @@
+#!/bin/sh
+# Start after ifupdown has created udhcpc; stop before ifdown tears it down.
+set -eu
+
+case "${IFACE:-}" in
+    ''|*[!a-zA-Z0-9_-]*) exit 1 ;;
+esac
+pidfile=/var/run/x8-wifi-dhcp.$IFACE.pid
+
+case "${MODE:-}" in
+    start)
+        [ -s "${IF_WPA_CONF:-}" ] || exit 0
+        start-stop-daemon --start --quiet --oknodo --pidfile "$pidfile" \
+            --exec /usr/sbin/wpa_cli -- -B -P "$pidfile" \
+            -p /var/run/wpa_supplicant -i "$IFACE" \
+            -a /usr/sbin/x8-wifi-dhcp-action
+        ;;
+    stop)
+        start-stop-daemon --stop --quiet --oknodo --pidfile "$pidfile" \
+            --exec /usr/sbin/wpa_cli
+        rm -f "$pidfile"
+        ;;
+esac

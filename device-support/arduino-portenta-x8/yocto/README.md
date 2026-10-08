@@ -19,6 +19,7 @@ then adds the Arduino, Tailscale, and NormaCore layers on top.
 - [2. Add Arduino, Tailscale, And NormaCore](#2-add-arduino-tailscale-and-normacore-)
 - [3. Create The Build Directory](#3-create-the-build-directory-)
 - [4. Add Local Access Credentials](#4-add-local-access-credentials-)
+- [Wi-Fi Configuration](#wi-fi-configuration)
 - [5. Build The Image](#5-build-the-image-)
 - [6. Prepare Files For UUU Flashing](#6-prepare-files-for-uuu-flashing-)
 - [7. Flash Explicitly](#7-flash-explicitly-)
@@ -90,6 +91,40 @@ If Tailscale DNS management is enabled, `tailscaled` can replace
 servers. That can break ordinary name resolution and NTP before Tailscale DNS is
 usable. The expected resolver file is managed by `x8-clean` and includes public
 fallback resolvers.
+
+## Clock Bootstrap And First Login
+
+The image seeds `/etc/timestamp` with its build time in UTC so a missing or stale
+RTC does not send the board back to Yocto's generic 2018 date. To reproduce a
+release, pin `X8_INITIAL_TIMESTAMP = "YYYYMMDDHHMMSS"` in `conf/local.conf`.
+This timestamp is only a boot fallback; network time still comes from Chrony.
+
+`x8-timesync` runs in the background after Chrony and cellular startup. Until
+Chrony synchronizes, it waits for a default route, refreshes NTP source DNS,
+brings sources online, and requests a burst of measurements. This recovers from
+DNS failures before a slow cellular connection becomes available. It uses
+Chrony only, without starting another NTP daemon. Once synchronized, it saves
+the UTC time in `/etc/timestamp` hourly and attempts an immediate RTC update.
+The saved timestamp also works on boards without a usable RTC.
+
+First-boot Tailscale registration waits for Chrony synchronization with less
+than one second of remaining correction. Each login attempt has a 30-second
+timeout and failures retry after 30 seconds. These waits run in a background
+worker and do not block the serial console or Station startup. Provisioning
+does not add a tag argument; leave `X8_TAILSCALE_EXTRA_ARGS` empty for untagged
+Headscale registration. An auth key created on the server must also be untagged.
+
+On the board, inspect synchronization and registration with:
+
+```sh
+date -u
+chronyc tracking
+chronyc -n sources
+cat /run/x8-time-sync.status
+tail -n 60 /var/log/x8-timesync.log
+tail -n 60 /var/log/x8-tailscale-autologin.log
+tailscale status
+```
 
 ## Max Carrier Setup 🔌
 
@@ -475,6 +510,83 @@ EOF
 ```
 
 The files above live in the build directory and must not be committed.
+
+## Wi-Fi Configuration
+
+Set `X8_WIFI_NETWORKS` to a JSON list of saved WPA/WPA2-Personal networks. Each
+entry takes an SSID and its plain-text password; the build derives a PSK for
+that SSID. At boot, `wpa_supplicant` selects an available configured network and
+DHCP supplies its address. Higher `priority` values prefer a network when
+several are available. Ethernet remains enabled.
+
+For environment-based configuration, run this **inside Docker, in the same
+shell that runs BitBake** (replace the example credentials):
+
+```bash
+export BB_ENV_PASSTHROUGH_ADDITIONS="${BB_ENV_PASSTHROUGH_ADDITIONS:-} X8_WIFI_NETWORKS X8_WIFI_COUNTRY X8_WIFI_INTERFACE"
+export X8_WIFI_NETWORKS='[{"ssid":"Home","password":"home-password","priority":20},{"ssid":"Phone","password":"phone-password","priority":10}]'
+export X8_WIFI_COUNTRY=ES
+bitbake x8-normacore
+unset X8_WIFI_NETWORKS
+```
+
+For passwords containing shell quotes, or to keep credentials out of shell
+history, save the JSON list in a private file and load it with
+`export X8_WIFI_NETWORKS="$(cat /path/to/private-wifi.json)"` instead.
+
+Alternatively, use `conf/local-wifi.inc`, like the root access credential files:
+
+```bitbake
+X8_WIFI_NETWORKS = '[{"ssid":"Home","password":"home-password","priority":20},{"ssid":"Phone","password":"phone-password","priority":10,"hidden":true}]'
+X8_WIFI_COUNTRY = "ES"
+```
+
+Add as many entries as needed. The updated build template includes this file.
+For an existing build directory, add `include conf/local-wifi.inc` to
+`conf/local.conf`. Keep it outside this repository and restrict it with
+`chmod 600 conf/local-wifi.inc`. Explicit assignments in local configuration
+take precedence over environment values. Credentials in local configuration are
+read without expanding `${...}` variable references. When passing JSON through
+the environment, encode a literal `$` as `\u0024` if it starts a `${...}` sequence,
+to avoid BitBake expanding it while importing environment variables.
+
+| Variable | Default | Meaning |
+| --- | --- | --- |
+| `X8_WIFI_NETWORKS` | empty | JSON list; empty or `[]` leaves Wi-Fi unconfigured |
+| `X8_WIFI_COUNTRY` | empty | Optional uppercase two-letter regulatory country code, e.g. `ES` |
+| `X8_WIFI_INTERFACE` | `wlan0` | Wireless interface name |
+
+Each network accepts these fields:
+
+| Field | Default | Meaning |
+| --- | --- | --- |
+| `ssid` | required | Network name, 1–32 UTF-8 bytes |
+| `password` | required | Plain-text password, 8–63 printable ASCII characters; a 64-digit hexadecimal PSK is also accepted |
+| `hidden` | `false` | Set to `true` to probe for a hidden SSID |
+| `priority` | `0` | Nonnegative integer; higher values are preferred |
+
+Open networks, enterprise authentication, and WPA3-only networks are not
+supported by this provisioning configuration. Malformed settings fail the build
+without printing credentials.
+
+The build installs `/etc/wpa_supplicant/x8.conf` with mode `0600`, containing
+hex-encoded SSIDs and derived PSKs, and adds a DHCP stanza to
+`/etc/network/interfaces` with the `nl80211` driver. The upstream ifupdown hooks
+start and stop the supplicant. Credentials remain sensitive in local config,
+build artifacts, and the resulting image; derived PSKs also grant network access.
+
+An ifupdown hook runs `wpa_cli` as an event listener while Wi-Fi is enabled.
+On disconnect it releases the Wi-Fi DHCP lease and clears Wi-Fi IPv4 routes;
+on connection it releases any previous lease and starts fresh DHCP discovery.
+This also handles switching between saved networks with different subnets.
+The existing ifupdown DHCP client is reused, and cellular stays running.
+
+After flashing and booting, check the connection on the board:
+
+```sh
+ip addr show wlan0
+iw dev wlan0 link
+```
 
 ## 5. Build The Image 🧱
 

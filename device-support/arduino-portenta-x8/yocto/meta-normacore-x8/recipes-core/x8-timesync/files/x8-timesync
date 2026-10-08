@@ -1,47 +1,71 @@
 #!/bin/sh
 
 LOG=/var/log/x8-timesync.log
-STATUS=/etc/x8-time-sync.status
-NTP_SERVERS="${NTP_SERVERS:-pool.ntp.org time.cloudflare.com time.google.com}"
+STATUS=/run/x8-time-sync.status
+TIMESTAMP_FILE=/etc/timestamp
+RTC_SAVED=0
+
+[ -f /etc/default/timestamp ] && . /etc/default/timestamp
 
 log() {
     echo "$(date '+%Y-%m-%d %H:%M:%S') x8-timesync: $*" >> "$LOG"
 }
 
 network_ready() {
-    ip route show default 2>/dev/null | grep -q '^default ' || return 1
-    ping -c 1 -W 3 1.1.1.1 >/dev/null 2>&1 || return 1
-    return 0
+    ip -4 route show default 2>/dev/null | grep -q '^default '
 }
 
-sync_once() {
-    for s in $NTP_SERVERS; do
-        log "trying NTP server $s"
+save_synced_time() {
+    # Match bootmisc.sh's fallback format. Never persist an unsynchronized
+    # clock, and replace atomically so an interrupted write leaves a valid file.
+    if date -u +%Y%m%d%H%M%S > "$TIMESTAMP_FILE.new" &&
+       mv -f "$TIMESTAMP_FILE.new" "$TIMESTAMP_FILE"; then
+        date -u '+%Y-%m-%dT%H:%M:%SZ' > "$STATUS"
+        log "time synchronized; boot timestamp saved"
+    else
+        log "could not save synchronized boot timestamp"
+    fi
 
-        if command -v ntpd >/dev/null 2>&1; then
-            ntpd -n -q -p "$s" >> "$LOG" 2>&1 && return 0
+    # rtcsync also updates the RTC later; save once immediately so a short
+    # first boot can retain the newly synchronized time across a power cut.
+    if [ "$RTC_SAVED" -eq 0 ]; then
+        if hwclock --systohc --utc >> "$LOG" 2>&1; then
+            RTC_SAVED=1
+            log "hardware clock updated"
+        else
+            log "hardware clock unavailable; using saved boot timestamp"
         fi
-
-        busybox ntpd -n -q -p "$s" >> "$LOG" 2>&1 && return 0
-    done
-
-    return 1
+    fi
 }
 
-mkdir -p /var/log
+mkdir -p /var/log /run
 
 while :; do
-    if network_ready; then
-        if sync_once; then
-            date -u '+%Y-%m-%dT%H:%M:%SZ' > "$STATUS"
-            log "time sync OK: $(cat "$STATUS")"
-            sleep 3600
-        else
-            log "time sync failed"
-            sleep 60
-        fi
-    else
-        log "network not ready"
+    if chronyc -n waitsync 1 1 0 1 >> "$LOG" 2>&1; then
+        save_synced_time
+        sleep 3600
+        continue
+    fi
+
+    if ! network_ready; then
+        log "waiting for a default route before NTP discovery"
         sleep 10
+        continue
+    fi
+
+    # chronyd remains the only NTP daemon. In particular, do not start a second
+    # ntpd alongside it. Reset DNS retry backoff after late cellular bring-up.
+    log "clock not synchronized; refreshing Chrony sources"
+    chronyc online >> "$LOG" 2>&1 || true
+    chronyc refresh >> "$LOG" 2>&1 || true
+    chronyc burst 4/4 >> "$LOG" 2>&1 || true
+
+    if chronyc -n waitsync 15 1 0 2 >> "$LOG" 2>&1; then
+        save_synced_time
+        sleep 3600
+    else
+        log "NTP not synchronized yet; retrying in 30s"
+        chronyc -n sources >> "$LOG" 2>&1 || true
+        sleep 30
     fi
 done

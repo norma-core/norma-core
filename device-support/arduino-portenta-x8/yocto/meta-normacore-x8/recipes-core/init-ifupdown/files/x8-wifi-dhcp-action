@@ -1,0 +1,42 @@
+#!/bin/sh
+# wpa_cli action: discard the previous network's lease before acquiring a new one.
+set -eu
+
+iface=${1:-}
+event=${2:-}
+case "$iface" in
+    ''|*[!a-zA-Z0-9_-]*) exit 1 ;;
+esac
+case "$event" in
+    CONNECTED|DISCONNECTED) ;;
+    *) exit 0 ;;
+esac
+
+# ifupdown owns the DHCP process. Never create a second client or signal a
+# stale PID belonging to another interface/process.
+pidfile=/var/run/udhcpc.$iface.pid
+[ -r "$pidfile" ] || exit 0
+read -r dhcp_pid < "$pidfile"
+case "$dhcp_pid" in
+    ''|*[!0-9]*) exit 1 ;;
+esac
+[ "$dhcp_pid" -gt 1 ] || exit 1
+[ -r "/proc/$dhcp_pid/comm" ] || exit 0
+[ "$(cat "/proc/$dhcp_pid/comm")" = udhcpc ] || exit 0
+cmdline=$(tr '\000' ' ' < "/proc/$dhcp_pid/cmdline")
+case " $cmdline " in
+    *" -i $iface "*) ;;
+    *) exit 0 ;;
+esac
+
+# SIGUSR1 alone attempts to renew against the old DHCP server. Release first
+# so udhcpc enters RELEASED, then SIGUSR1 starts a fresh discovery instead.
+kill -USR2 "$dhcp_pid"
+sleep 1
+ip -4 route flush dev "$iface"
+if [ "$event" = CONNECTED ]; then
+    kill -USR1 "$dhcp_pid"
+    logger -t x8-wifi-dhcp "$iface connected: requested a fresh DHCP lease"
+else
+    logger -t x8-wifi-dhcp "$iface disconnected: released DHCP lease"
+fi

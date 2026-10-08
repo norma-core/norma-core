@@ -1,5 +1,7 @@
 drivers:
   system-info: true
+  arduino-nicla-sense-me:
+    enabled: true
   st3215:
     enabled: false
   vesc-trampa:
