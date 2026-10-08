@@ -345,28 +345,85 @@ impl<T: StationEngine> StateTracker<T> {
         };
 
         let now_ns = stamp.monotonic_stamp_ns;
-        let want_keyframe = cam.policy.wants_keyframe(now_ns);
-        let packet = match cam.encoder.encode(&rgb, want_keyframe) {
-            Ok(p) if p.keyframe || cam.policy.keyframe().is_some() => p,
-            Ok(_) => {
-                error!(
-                    "VP8 encoder for camera {} ignored a forced keyframe",
-                    camera.unique_id
-                );
-                *state = None;
-                return;
+        let mut force = cam.policy.wants_keyframe(now_ns);
+        let (keyframe, data, room) = loop {
+            let packet = match cam.encoder.encode(&rgb, force) {
+                Ok(p) if p.keyframe || cam.policy.keyframe().is_some() => p,
+                Ok(_) => {
+                    error!(
+                        "VP8 encoder for camera {} ignored a forced keyframe",
+                        camera.unique_id
+                    );
+                    *state = None;
+                    return;
+                }
+                Err(e) => {
+                    error!("VP8 encode for camera {}: {}", camera.unique_id, e);
+                    *state = None;
+                    return;
+                }
+            };
+            let keyframe = packet.keyframe;
+            let data = self.vp8_envelope(
+                camera,
+                &stamp,
+                width,
+                height,
+                Bytes::from(packet.data),
+                cam.policy.keyframe().filter(|_| !keyframe),
+            );
+            if keyframe || force {
+                break (keyframe, data, None);
             }
-            Err(e) => {
-                error!("VP8 encode for camera {}: {}", camera.unique_id, e);
-                *state = None;
-                return;
+            // A delta that would open a NormFS file is encoded again as a
+            // keyframe, so every file decodes on its own.
+            match self.normfs.file_room(queue_id) {
+                Ok(room) if room.starts_file(data.len()) => force = true,
+                room => break (keyframe, data, room.ok()),
             }
-        };
-        let keyframe_ptr = match (packet.keyframe, cam.policy.keyframe()) {
-            (false, Some(k)) => normfs::UintN::from(k).value_to_bytes(),
-            _ => Bytes::new(),
         };
 
+        // Runs on the capture thread; must not block.
+        match self.normfs.try_enqueue(queue_id, data) {
+            Ok(id) => match id.to_u64() {
+                Ok(id) => {
+                    cam.policy.landed(id, keyframe, now_ns);
+                    // A flush between the look and the write opened a file
+                    // with this delta; the next frame starts the chain over.
+                    if let Some(room) = room
+                        && self
+                            .normfs
+                            .file_room(queue_id)
+                            .is_ok_and(|after| !room.same_file(&after))
+                    {
+                        cam.policy.lost();
+                    }
+                }
+                Err(_) => cam.policy.lost(),
+            },
+            Err(e) => {
+                cam.policy.lost();
+                if !matches!(e, normfs::Error::WouldBlock) {
+                    log::error!("Failed to enqueue frame on {queue_id}: {e}");
+                }
+            }
+        }
+    }
+
+    fn vp8_envelope(
+        &self,
+        camera: &Camera,
+        stamp: &FrameStamp,
+        width: u32,
+        height: u32,
+        frame: Bytes,
+        chain: Option<u64>,
+    ) -> Bytes {
+        // A delta names its chain's keyframe; a keyframe names none.
+        let keyframe = chain.is_none();
+        let keyframe_ptr = chain
+            .map(|k| normfs::UintN::from(k).value_to_bytes())
+            .unwrap_or_default();
         let envelope = RxEnvelope {
             r#type: RxEnvelopeType::EtFrames as i32,
             camera: Some(camera.clone()),
@@ -377,33 +434,20 @@ impl<T: StationEngine> StateTracker<T> {
                     kind: FrameFormatKind::FfVp8 as i32,
                 }),
                 linear_data: Bytes::new(),
-                frames_data: vec![Bytes::from(packet.data)],
+                frames_data: vec![frame],
                 stamps: vec![stamp.clone()],
-                keyframe: packet.keyframe,
+                keyframe,
                 keyframe_ptr,
             }),
-            stamp: Some(stamp),
+            stamp: Some(stamp.clone()),
             formats: self.camera_formats(&camera.unique_id),
             last_inference_queue_ptr: self.get_last_inference_id_bytes(),
             error: String::new(),
             command: None,
         };
-
         let mut buf = BytesMut::new();
         envelope.encode(&mut buf).unwrap();
-        // Runs on the capture thread; must not block.
-        match self.normfs.try_enqueue(queue_id, buf.freeze()) {
-            Ok(id) => match id.to_u64() {
-                Ok(id) => cam.policy.landed(id, packet.keyframe, now_ns),
-                Err(_) => cam.policy.lost(),
-            },
-            Err(e) => {
-                cam.policy.lost();
-                if !matches!(e, normfs::Error::WouldBlock) {
-                    log::error!("Failed to enqueue frame on {queue_id}: {e}");
-                }
-            }
-        }
+        buf.freeze()
     }
 }
 
@@ -623,6 +667,14 @@ mod tests {
         }
     }
 
+    fn store_files(dir: &std::path::Path, queue: &normfs::QueueId) -> usize {
+        std::fs::read_dir(queue.to_store_dir(dir))
+            .unwrap()
+            .flatten()
+            .filter(|e| e.path().extension().is_some_and(|ext| ext == "store"))
+            .count()
+    }
+
     /// Every stored frame by its id, read back from store files after a
     /// restart, against a sequential decode; returns the keyframes' stamps.
     async fn check_by_id_from_store(dir: std::path::PathBuf) -> Vec<u64> {
@@ -655,13 +707,34 @@ mod tests {
         let dir = test_dir("store");
         let (normfs, tracker, queue) = vp8_tracker_in(dir.clone(), store_settings()).await;
         let revision = tracker.format_revision("cam");
+        let mut opened = Vec::new();
         for t in 0..120 {
+            let (before, last) = (
+                normfs.file_room(&queue).unwrap(),
+                normfs.get_last_id(&queue).ok(),
+            );
             feed(&tracker, &queue, t, revision);
+            let id = normfs.get_last_id(&queue).ok();
+            let after = normfs.file_room(&queue).unwrap();
+            if id != last && (before.room().is_none() || !before.same_file(&after)) {
+                opened.push(t);
+            }
         }
         normfs.close().await.unwrap();
         drop(tracker);
-        // frame_skip 2 keeps every third frame, 100 ms apart: a keyframe per 10.
-        assert_eq!(check_by_id_from_store(dir).await, [0, 33, 66, 99]);
+        let keyframes = check_by_id_from_store(dir.clone()).await;
+        assert!(store_files(&dir, &queue) > 1);
+        assert_eq!(opened.len(), store_files(&dir, &queue));
+        for t in opened {
+            assert!(keyframes.contains(&t), "frame {t} opens a file as a delta");
+        }
+        // frame_skip 2 keeps every third frame, 100 ms apart: a keyframe per 10
+        // at most, sooner where a file starts.
+        assert_eq!(keyframes[0], 0);
+        assert!(
+            keyframes.windows(2).all(|k| k[1] - k[0] <= 33),
+            "{keyframes:?}"
+        );
     }
 
     #[tokio::test(flavor = "multi_thread")]
