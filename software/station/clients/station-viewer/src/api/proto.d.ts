@@ -17323,6 +17323,12 @@ export namespace hikmicro {
         public static getTypeUrl(typeUrlPrefix?: string): string;
     }
 
+    /** Y16Encoding enum. */
+    enum Y16Encoding {
+        Y16_RAW = 0,
+        Y16_MED_SPLIT_ZSTD = 1
+    }
+
     /** Properties of a ThermalFrame. */
     interface IThermalFrame {
 
@@ -17340,6 +17346,15 @@ export namespace hikmicro {
 
         /** ThermalFrame payload */
         payload?: (Uint8Array|null);
+
+        /** ThermalFrame y16Encoding */
+        y16Encoding?: (hikmicro.Y16Encoding|null);
+
+        /** ThermalFrame y16 */
+        y16?: (Uint8Array|null);
+
+        /** ThermalFrame runtimeBlock */
+        runtimeBlock?: (Uint8Array|null);
     }
 
     /** Represents a ThermalFrame. */
@@ -17365,6 +17380,15 @@ export namespace hikmicro {
 
         /** ThermalFrame payload. */
         public payload: Uint8Array;
+
+        /** ThermalFrame y16Encoding. */
+        public y16Encoding: hikmicro.Y16Encoding;
+
+        /** ThermalFrame y16. */
+        public y16: Uint8Array;
+
+        /** ThermalFrame runtimeBlock. */
+        public runtimeBlock: Uint8Array;
 
         /**
          * Creates a new ThermalFrame instance using the specified properties.

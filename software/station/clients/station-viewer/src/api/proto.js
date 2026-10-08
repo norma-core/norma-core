@@ -50414,6 +50414,20 @@ export const hikmicro = $root.hikmicro = (() => {
         return DeviceInfo;
     })();
 
+    /**
+     * Y16Encoding enum.
+     * @name hikmicro.Y16Encoding
+     * @enum {number}
+     * @property {number} Y16_RAW=0 Y16_RAW value
+     * @property {number} Y16_MED_SPLIT_ZSTD=1 Y16_MED_SPLIT_ZSTD value
+     */
+    hikmicro.Y16Encoding = (function() {
+        const valuesById = {}, values = Object.create(valuesById);
+        values[valuesById[0] = "Y16_RAW"] = 0;
+        values[valuesById[1] = "Y16_MED_SPLIT_ZSTD"] = 1;
+        return values;
+    })();
+
     hikmicro.ThermalFrame = (function() {
 
         /**
@@ -50425,6 +50439,9 @@ export const hikmicro = $root.hikmicro = (() => {
          * @property {Long|null} [localStampNs] ThermalFrame localStampNs
          * @property {hikmicro.IRuntimeBlockInfo|null} [runtime] ThermalFrame runtime
          * @property {Uint8Array|null} [payload] ThermalFrame payload
+         * @property {hikmicro.Y16Encoding|null} [y16Encoding] ThermalFrame y16Encoding
+         * @property {Uint8Array|null} [y16] ThermalFrame y16
+         * @property {Uint8Array|null} [runtimeBlock] ThermalFrame runtimeBlock
          */
 
         /**
@@ -50483,6 +50500,30 @@ export const hikmicro = $root.hikmicro = (() => {
         ThermalFrame.prototype.payload = $util.newBuffer([]);
 
         /**
+         * ThermalFrame y16Encoding.
+         * @member {hikmicro.Y16Encoding} y16Encoding
+         * @memberof hikmicro.ThermalFrame
+         * @instance
+         */
+        ThermalFrame.prototype.y16Encoding = 0;
+
+        /**
+         * ThermalFrame y16.
+         * @member {Uint8Array} y16
+         * @memberof hikmicro.ThermalFrame
+         * @instance
+         */
+        ThermalFrame.prototype.y16 = $util.newBuffer([]);
+
+        /**
+         * ThermalFrame runtimeBlock.
+         * @member {Uint8Array} runtimeBlock
+         * @memberof hikmicro.ThermalFrame
+         * @instance
+         */
+        ThermalFrame.prototype.runtimeBlock = $util.newBuffer([]);
+
+        /**
          * Creates a new ThermalFrame instance using the specified properties.
          * @function create
          * @memberof hikmicro.ThermalFrame
@@ -50516,6 +50557,12 @@ export const hikmicro = $root.hikmicro = (() => {
                 $root.hikmicro.RuntimeBlockInfo.encode(message.runtime, writer.uint32(/* id 6, wireType 2 =*/50).fork()).ldelim();
             if (message.payload != null && Object.hasOwnProperty.call(message, "payload"))
                 writer.uint32(/* id 10, wireType 2 =*/82).bytes(message.payload);
+            if (message.y16Encoding != null && Object.hasOwnProperty.call(message, "y16Encoding"))
+                writer.uint32(/* id 11, wireType 0 =*/88).int32(message.y16Encoding);
+            if (message.y16 != null && Object.hasOwnProperty.call(message, "y16"))
+                writer.uint32(/* id 12, wireType 2 =*/98).bytes(message.y16);
+            if (message.runtimeBlock != null && Object.hasOwnProperty.call(message, "runtimeBlock"))
+                writer.uint32(/* id 13, wireType 2 =*/106).bytes(message.runtimeBlock);
             return writer;
         };
 
@@ -50576,6 +50623,18 @@ export const hikmicro = $root.hikmicro = (() => {
                         message.payload = reader.bytes();
                         break;
                     }
+                case 11: {
+                        message.y16Encoding = reader.int32();
+                        break;
+                    }
+                case 12: {
+                        message.y16 = reader.bytes();
+                        break;
+                    }
+                case 13: {
+                        message.runtimeBlock = reader.bytes();
+                        break;
+                    }
                 default:
                     reader.skipType(tag & 7, long);
                     break;
@@ -50632,6 +50691,20 @@ export const hikmicro = $root.hikmicro = (() => {
             if (message.payload != null && message.hasOwnProperty("payload"))
                 if (!(message.payload && typeof message.payload.length === "number" || $util.isString(message.payload)))
                     return "payload: buffer expected";
+            if (message.y16Encoding != null && message.hasOwnProperty("y16Encoding"))
+                switch (message.y16Encoding) {
+                default:
+                    return "y16Encoding: enum value expected";
+                case 0:
+                case 1:
+                    break;
+                }
+            if (message.y16 != null && message.hasOwnProperty("y16"))
+                if (!(message.y16 && typeof message.y16.length === "number" || $util.isString(message.y16)))
+                    return "y16: buffer expected";
+            if (message.runtimeBlock != null && message.hasOwnProperty("runtimeBlock"))
+                if (!(message.runtimeBlock && typeof message.runtimeBlock.length === "number" || $util.isString(message.runtimeBlock)))
+                    return "runtimeBlock: buffer expected";
             return null;
         };
 
@@ -50681,6 +50754,32 @@ export const hikmicro = $root.hikmicro = (() => {
                     $util.base64.decode(object.payload, message.payload = $util.newBuffer($util.base64.length(object.payload)), 0);
                 else if (object.payload.length >= 0)
                     message.payload = object.payload;
+            switch (object.y16Encoding) {
+            default:
+                if (typeof object.y16Encoding === "number") {
+                    message.y16Encoding = object.y16Encoding;
+                    break;
+                }
+                break;
+            case "Y16_RAW":
+            case 0:
+                message.y16Encoding = 0;
+                break;
+            case "Y16_MED_SPLIT_ZSTD":
+            case 1:
+                message.y16Encoding = 1;
+                break;
+            }
+            if (object.y16 != null)
+                if (typeof object.y16 === "string")
+                    $util.base64.decode(object.y16, message.y16 = $util.newBuffer($util.base64.length(object.y16)), 0);
+                else if (object.y16.length >= 0)
+                    message.y16 = object.y16;
+            if (object.runtimeBlock != null)
+                if (typeof object.runtimeBlock === "string")
+                    $util.base64.decode(object.runtimeBlock, message.runtimeBlock = $util.newBuffer($util.base64.length(object.runtimeBlock)), 0);
+                else if (object.runtimeBlock.length >= 0)
+                    message.runtimeBlock = object.runtimeBlock;
             return message;
         };
 
@@ -50717,6 +50816,21 @@ export const hikmicro = $root.hikmicro = (() => {
                     if (options.bytes !== Array)
                         object.payload = $util.newBuffer(object.payload);
                 }
+                object.y16Encoding = options.enums === String ? "Y16_RAW" : 0;
+                if (options.bytes === String)
+                    object.y16 = "";
+                else {
+                    object.y16 = [];
+                    if (options.bytes !== Array)
+                        object.y16 = $util.newBuffer(object.y16);
+                }
+                if (options.bytes === String)
+                    object.runtimeBlock = "";
+                else {
+                    object.runtimeBlock = [];
+                    if (options.bytes !== Array)
+                        object.runtimeBlock = $util.newBuffer(object.runtimeBlock);
+                }
             }
             if (message.sequence != null && message.hasOwnProperty("sequence"))
                 object.sequence = message.sequence;
@@ -50734,6 +50848,12 @@ export const hikmicro = $root.hikmicro = (() => {
                 object.runtime = $root.hikmicro.RuntimeBlockInfo.toObject(message.runtime, options);
             if (message.payload != null && message.hasOwnProperty("payload"))
                 object.payload = options.bytes === String ? $util.base64.encode(message.payload, 0, message.payload.length) : options.bytes === Array ? Array.prototype.slice.call(message.payload) : message.payload;
+            if (message.y16Encoding != null && message.hasOwnProperty("y16Encoding"))
+                object.y16Encoding = options.enums === String ? $root.hikmicro.Y16Encoding[message.y16Encoding] === undefined ? message.y16Encoding : $root.hikmicro.Y16Encoding[message.y16Encoding] : message.y16Encoding;
+            if (message.y16 != null && message.hasOwnProperty("y16"))
+                object.y16 = options.bytes === String ? $util.base64.encode(message.y16, 0, message.y16.length) : options.bytes === Array ? Array.prototype.slice.call(message.y16) : message.y16;
+            if (message.runtimeBlock != null && message.hasOwnProperty("runtimeBlock"))
+                object.runtimeBlock = options.bytes === String ? $util.base64.encode(message.runtimeBlock, 0, message.runtimeBlock.length) : options.bytes === Array ? Array.prototype.slice.call(message.runtimeBlock) : message.runtimeBlock;
             return object;
         };
 
