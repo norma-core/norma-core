@@ -1039,6 +1039,7 @@ impl Station {
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info")).init();
     let args = Args::parse();
+    let stop = listen_for_shutdown();
 
     log::info!("Station {}", VERSION);
     log::info!("TCP address: {:?}", args.tcp);
@@ -1078,7 +1079,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     // Runs on main thread - tick the run loop
                     usbvideo::process_main_run_loop();
                 }
-                _ = tokio::signal::ctrl_c() => {
+                _ = stop.notified() => {
                     log::info!("\nShutting down...");
                     break;
                 }
@@ -1088,7 +1089,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     #[cfg(not(target_os = "macos"))]
     {
-        tokio::signal::ctrl_c().await?;
+        stop.notified().await;
         log::info!("\nShutting down...");
     }
 
@@ -1096,6 +1097,50 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     log::info!("Data persisted at: {:?}", args.normfs_base_folder);
 
     Ok(())
+}
+
+/// Registered before startup, so a SIGTERM (the rover's supervisor) or ctrl-c during it
+/// stops station cleanly once startup ends; a second one exits at once.
+fn listen_for_shutdown() -> Arc<tokio::sync::Notify> {
+    let stop = Arc::new(tokio::sync::Notify::new());
+    let notify = stop.clone();
+    #[cfg(unix)]
+    let signals = {
+        use tokio::signal::unix::{SignalKind, signal};
+        signal(SignalKind::interrupt()).and_then(|i| Ok((i, signal(SignalKind::terminate())?)))
+    };
+    tokio::spawn(async move {
+        #[cfg(unix)]
+        let (mut interrupt, mut terminate) = match signals {
+            Ok(signals) => signals,
+            Err(e) => {
+                log::error!("Cannot listen for shutdown signals, shutting down: {e}");
+                notify.notify_one();
+                return;
+            }
+        };
+        let mut received = 0;
+        loop {
+            #[cfg(unix)]
+            tokio::select! {
+                _ = interrupt.recv() => {}
+                _ = terminate.recv() => {}
+            }
+            #[cfg(not(unix))]
+            if let Err(e) = tokio::signal::ctrl_c().await {
+                log::error!("Cannot listen for ctrl-c, shutting down: {e}");
+                notify.notify_one();
+                return;
+            }
+            received += 1;
+            if received > 1 {
+                log::warn!("Second shutdown signal, exiting without waiting for NormFS to close");
+                std::process::exit(1);
+            }
+            notify.notify_one();
+        }
+    });
+    stop
 }
 
 struct Services {
