@@ -128,7 +128,7 @@ while [ ! -f "$STOPFILE" ]; do
         --max-memory-usage "$STATION_MAX_MEMORY_USAGE" \
         --normfs-persistence-mode cloud-only \
         --max-queue-disk-size 64M \
-        --normfs-file-size 16M
+        --normfs-file-size 4M
 
     if [ -n "$STATION_TCP_ADDR" ]; then
         set -- "$@" --tcp "$STATION_TCP_ADDR"
