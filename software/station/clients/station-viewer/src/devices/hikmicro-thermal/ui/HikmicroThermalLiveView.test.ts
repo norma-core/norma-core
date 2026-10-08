@@ -13,7 +13,7 @@ it('keeps a recorded frame visible in red without live freshness, reads or delta
   vi.stubGlobal('Worker', class {
     onmessage: ((event: { data: ThermalRenderResponse }) => void) | null = null;
     postMessage(request: ThermalRenderRequest) {
-      const result = renderThermalFrame({ deviceInfo: request.deviceInfo }, { payload: request.payload }, request.palette);
+      const result = renderThermalFrame({ deviceInfo: request.deviceInfo }, request.frame, request.palette);
       queueMicrotask(() => this.onmessage?.({ data: { result, error: null } }));
     }
     terminate() { this.onmessage = null; }

@@ -1,8 +1,8 @@
 import type { hikmicro } from '@/api/proto.js';
-import type { ThermalPalette, ThermalRenderResult } from './thermal';
+import type { ThermalFrameData, ThermalPalette, ThermalRenderResult } from './thermal';
 
 export interface ThermalRenderRequest {
-  payload: Uint8Array;
+  frame: ThermalFrameData;
   deviceInfo: hikmicro.IDeviceInfo | null;
   palette: ThermalPalette;
 }
