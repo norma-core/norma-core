@@ -23,12 +23,24 @@ export function useThermalPreview(data: hikmicro.IRxEnvelope, frame: hikmicro.IT
     let animation: number | null = null;
     let pending: ThermalRenderResult | null = null;
     let lastStatsAt = -Infinity;
+    let nextStats: ThermalStats | null = null;
+    let statsTimer: ReturnType<typeof setTimeout> | null = null;
+    const publishStats = () => {
+      if (statsTimer !== null) clearTimeout(statsTimer);
+      statsTimer = null;
+      if (nextStats) setStats(nextStats);
+      nextStats = null;
+      lastStatsAt = performance.now();
+    };
     const stop = () => {
       rendererRef.current?.dispose();
       rendererRef.current = null;
       if (animation !== null) cancelAnimationFrame(animation);
       animation = null;
       pending = null;
+      if (statsTimer !== null) clearTimeout(statsTimer);
+      statsTimer = null;
+      nextStats = null;
     };
     const syncVisibility = () => {
       stop();
@@ -53,11 +65,12 @@ export function useThermalPreview(data: hikmicro.IRxEnvelope, frame: hikmicro.IT
           setError(null);
           const now = performance.now();
           setStale(monitorFreshness && now - lastInputAtRef.current > 5000);
-          if (now - lastStatsAt >= 250) {
-            const { rgba: _rgba, ...nextStats } = rendered;
-            setStats(nextStats);
-            lastStatsAt = now;
-          }
+          const { rgba: _rgba, ...rest } = rendered;
+          nextStats = rest;
+          // Trailing update: the last frame of a burst, e.g. a recorded entry
+          // redrawn once its device info arrives, must still reach the readouts.
+          if (now - lastStatsAt >= 250) publishStats();
+          else statsTimer ??= setTimeout(publishStats, 250 - (now - lastStatsAt));
         });
       }, message => {
         if (animation !== null) cancelAnimationFrame(animation);

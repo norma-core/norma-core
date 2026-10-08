@@ -56,3 +56,45 @@ it('keeps a recorded frame visible in red without live freshness, reads or delta
     await act(async () => root.unmount()); rootElement.remove(); vi.useRealTimers(); vi.unstubAllGlobals();
   }
 });
+
+it('shows a recorded frame as calibrated when its device info arrives within the stats interval', async () => {
+  vi.useFakeTimers();
+  vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true);
+  vi.stubGlobal('WebSocket', class { close() {} });
+  vi.stubGlobal('Worker', class {
+    onmessage: ((event: { data: ThermalRenderResponse }) => void) | null = null;
+    postMessage(request: ThermalRenderRequest) {
+      const result = { ...renderThermalFrame({}, request.frame, request.palette), usedCalibration: Boolean(request.deviceInfo?.calibration?.ok) };
+      queueMicrotask(() => this.onmessage?.({ data: { result, error: null } }));
+    }
+    terminate() { this.onmessage = null; }
+  });
+  vi.stubGlobal('ImageData', class {
+    constructor(public data: Uint8ClampedArray, public width: number, public height: number) {}
+  });
+  vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({ putImageData: vi.fn() } as unknown as CanvasRenderingContext2D);
+  vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => setTimeout(() => callback(performance.now()), 16));
+  vi.stubGlobal('cancelAnimationFrame', clearTimeout);
+  const { default: manager } = await import('@/api/websocket');
+  const deviceInfo = hikmicro.RxEnvelope.encode({ deviceInfo: { calibration: { ok: true } } }).finish();
+  vi.spyOn(manager.normFs, 'readSingleEntry').mockImplementation(
+    () => new Promise(resolve => setTimeout(() => resolve({ id: Uint8Array.of(4), data: deviceInfo }), 50)),
+  );
+  const { default: View } = await import('./HikmicroThermalLiveView');
+  const rootElement = document.createElement('div'); document.body.append(rootElement);
+  const root = createRoot(rootElement);
+  const data = hikmicro.RxEnvelope.create({
+    frames: { frames: [{ payload: new Uint8Array(256 * 192 * 2 + 2048) }] },
+    deviceInfoRef: { queue: '/inst/hikmicro-thermal/device-info/EA6469142', id: Uint8Array.of(4) },
+  });
+  try {
+    await act(async () => root.render(createElement(View, { data, mode: 'history' })));
+    // Frame at ~16 ms, device info at 50 ms, the redraw well inside the 250 ms stats interval.
+    await act(async () => vi.advanceTimersByTimeAsync(25));
+    await act(async () => vi.advanceTimersByTimeAsync(50));
+    await act(async () => vi.advanceTimersByTimeAsync(1000));
+    expect(rootElement.textContent).toContain('CALIBRATED');
+  } finally {
+    await act(async () => root.unmount()); rootElement.remove(); vi.useRealTimers(); vi.unstubAllGlobals(); vi.restoreAllMocks();
+  }
+});
