@@ -121,13 +121,25 @@ export function decoderRetryAt(): number | null {
   return decoderApi.retryAt();
 }
 
+/** A read of the entries failed, so the frame may still decode once they can be read. */
+export const READ_FAILED = 'read-failed';
+/** How long to wait before reading a frame's entries again after a failed read. */
+export const READ_RETRY_MS = 5_000;
+
+class FrameReadError extends Error {}
+
 let reader: Vp8ChainReader<Frame> | null = null;
 
 function chainReader(normFs: NormFsClient, decoders: DecoderApi<Frame>): Vp8ChainReader<Frame> {
   reader ??= new Vp8ChainReader<Frame>(
     decoders,
     async (queue, from, count): Promise<ChainEntry[]> => {
-      const entries = await normFs.readRange(queue, idToBytes(from), count);
+      let entries;
+      try {
+        entries = await normFs.readRange(queue, idToBytes(from), count);
+      } catch (error) {
+        throw new FrameReadError(`reading ${count} entries of ${queue}: ${String(error)}`);
+      }
       return entries.map((entry) => ({
         id: idFromBytes(entry.id),
         envelope: usbvideo.RxEnvelope.decode(entry.data),
@@ -147,6 +159,17 @@ export async function decodeUsbVideoPicture(
   entryId: Uint8Array,
   envelope: usbvideo.IRxEnvelope,
 ): Promise<ImageBitmap | null> {
+  const picture = await readUsbVideoPicture(normFs, queue, entryId, envelope);
+  return picture === READ_FAILED ? null : picture;
+}
+
+/** As decodeUsbVideoPicture, but tells a failed read apart from a frame that cannot decode. */
+export async function readUsbVideoPicture(
+  normFs: NormFsClient,
+  queue: string,
+  entryId: Uint8Array,
+  envelope: usbvideo.IRxEnvelope,
+): Promise<ImageBitmap | null | typeof READ_FAILED> {
   try {
     const decoders = await decoderApi();
     if (!decoders) {
@@ -164,7 +187,7 @@ export async function decodeUsbVideoPicture(
     }
   } catch (error) {
     console.error('VP8 frame decode failed:', error);
-    return null;
+    return error instanceof FrameReadError ? READ_FAILED : null;
   }
 }
 

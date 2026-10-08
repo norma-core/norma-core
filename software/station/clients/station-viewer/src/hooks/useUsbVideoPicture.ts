@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { usbvideo } from '@/api/proto.js';
 import webSocketManager from '@/api/websocket';
 import { isVp8 } from '@/usbvideo/vp8-chain';
-import { decodeUsbVideoPicture, decoderRetryAt } from '@/usbvideo/vp8-frames';
+import { READ_FAILED, READ_RETRY_MS, decoderRetryAt, readUsbVideoPicture } from '@/usbvideo/vp8-frames';
 
 export type UsbVideoPicture = ImageBitmap | 'decoding' | 'missing';
 
@@ -50,9 +50,16 @@ export function useUsbVideoPicture(
     if (!shown.current) {
       show('decoding');
     }
-    decodeUsbVideoPicture(webSocketManager.normFs, queueId, entryId, envelope).then((result) => {
+    readUsbVideoPicture(webSocketManager.normFs, queueId, entryId, envelope).then((result) => {
       if (cancelled) {
-        result?.close();
+        if (result instanceof ImageBitmap) {
+          result.close();
+        }
+        return;
+      }
+      if (result === READ_FAILED) {
+        // The entries may be readable once the connection is back.
+        timer = setTimeout(() => setRetry((n) => n + 1), READ_RETRY_MS);
         return;
       }
       const retryAt = result ? null : decoderRetryAt();
