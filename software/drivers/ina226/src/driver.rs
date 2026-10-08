@@ -2,10 +2,11 @@ use crate::ina226_proto::{Ina226Device, Ina226DeviceInfo, Ina226SignalType, RxEn
 use bytes::{Bytes, BytesMut};
 use i2c_async::AsyncI2cDevice;
 use log::{error, info, warn};
-use normfs::{NormFS, QueueId, UintN};
+use normfs::{NormFS, QueueId};
 use prost::Message;
 use station_iface::StationEngine;
 use station_iface::iface_proto::drivers::QueueDataType;
+use station_iface::{Backpressure, enqueue_with};
 use std::collections::BTreeMap;
 use std::sync::Arc;
 use std::time::Duration;
@@ -130,6 +131,7 @@ impl Ina226Driver {
 
             tasks.push(tokio::spawn(run_device_worker(
                 normfs.clone(),
+                station_engine.clone(),
                 rx_queue_id,
                 device.clone(),
                 DEFAULT_POLL_INTERVAL,
@@ -155,14 +157,17 @@ pub async fn start_ina226_driver<T: StationEngine>(
     Ok(Arc::new(driver))
 }
 
-async fn run_device_worker(
+async fn run_device_worker<T: StationEngine>(
     normfs: Arc<NormFS>,
+    station_engine: Arc<T>,
     rx_queue_id: QueueId,
     device: Device,
     poll_interval: Duration,
 ) {
     let i2c = AsyncI2cDevice::new(device.key.i2c_bus, device.key.i2c_address);
     let mut connected = false;
+    // Opened at startup; closed while the device is away.
+    let mut queue_open = true;
     let mut last_dump = None::<RegisterDump>;
     let mut last_error = None::<String>;
     let mut tick = interval(poll_interval);
@@ -174,6 +179,12 @@ async fn run_device_worker(
         match read_register_dump(&i2c).await {
             Ok(dump) => {
                 if !connected {
+                    if let Err(e) = normfs.ensure_queue_exists_for_write(&rx_queue_id).await {
+                        error!("Failed to reopen INA226 queue {}: {}", rx_queue_id, e);
+                        continue;
+                    }
+                    // A close drops the queue's subscriptions with it.
+                    station_engine.register_queue(&rx_queue_id, QueueDataType::QdtIna226Rx, vec![]);
                     send_device_signal(
                         &normfs,
                         &rx_queue_id,
@@ -181,8 +192,10 @@ async fn run_device_worker(
                         Ina226SignalType::Ina226Connected,
                         Some(&dump),
                         None,
-                    );
+                    )
+                    .await;
                     connected = true;
+                    queue_open = true;
                 }
 
                 send_device_signal(
@@ -192,36 +205,57 @@ async fn run_device_worker(
                     Ina226SignalType::Ina226RegistersSnapshot,
                     Some(&dump),
                     None,
-                );
+                )
+                .await;
                 last_dump = Some(dump);
                 last_error = None;
             }
             Err(error) => {
                 if connected {
-                    send_device_signal(
-                        &normfs,
-                        &rx_queue_id,
-                        &device,
+                    for signal_type in [
                         Ina226SignalType::Ina226Disconnected,
-                        last_dump.as_ref(),
-                        Some(error.clone()),
-                    );
+                        Ina226SignalType::Ina226Error,
+                    ] {
+                        send_device_signal(
+                            &normfs,
+                            &rx_queue_id,
+                            &device,
+                            signal_type,
+                            last_dump.as_ref(),
+                            Some(error.clone()),
+                        )
+                        .await;
+                    }
                     connected = false;
-                }
-
-                if last_error.as_deref() != Some(error.as_str()) {
+                    close_queue(&normfs, &rx_queue_id).await;
+                    queue_open = false;
+                } else if queue_open {
+                    // Absent at startup: the error is recorded once, then the
+                    // queue closes as it does after a disconnect.
                     send_device_signal(
                         &normfs,
                         &rx_queue_id,
                         &device,
                         Ina226SignalType::Ina226Error,
-                        last_dump.as_ref(),
+                        None,
                         Some(error.clone()),
-                    );
-                    last_error = Some(error);
+                    )
+                    .await;
+                    close_queue(&normfs, &rx_queue_id).await;
+                    queue_open = false;
+                } else if last_error.as_deref() != Some(error.as_str()) {
+                    // Logged only; the queue is closed while the device is away.
+                    warn!("INA226 {} unreachable: {}", device.id, error);
                 }
+                last_error = Some(error);
             }
         }
+    }
+}
+
+async fn close_queue(normfs: &NormFS, rx_queue_id: &QueueId) {
+    if let Err(e) = normfs.close_queue(rx_queue_id).await {
+        error!("Failed to close INA226 queue {}: {}", rx_queue_id, e);
     }
 }
 
@@ -277,7 +311,7 @@ fn read_u16_be(dump: &RegisterDump, register: u8) -> Option<u16> {
     Some(u16::from_be_bytes([bytes[0], bytes[1]]))
 }
 
-fn send_device_signal(
+async fn send_device_signal(
     normfs: &Arc<NormFS>,
     rx_queue_id: &QueueId,
     device: &Device,
@@ -295,7 +329,12 @@ fn send_device_signal(
         error: error_message.unwrap_or_default(),
     };
 
-    if let Err(error) = send_proto(normfs, rx_queue_id, &envelope) {
+    let policy = if signal_type == Ina226SignalType::Ina226RegistersSnapshot {
+        Backpressure::Skip
+    } else {
+        Backpressure::Keep
+    };
+    if let Err(error) = send_proto(normfs, rx_queue_id, &envelope, policy).await {
         error!(
             "Failed to send INA226 {:?} signal for {}: {}",
             signal_type, device.id, error
@@ -303,12 +342,13 @@ fn send_device_signal(
     }
 }
 
-fn send_proto<M: Message>(
+async fn send_proto<M: Message>(
     normfs: &NormFS,
     queue_id: &QueueId,
     envelope: &M,
-) -> DriverResult<UintN> {
+    policy: Backpressure,
+) -> DriverResult<()> {
     let mut buffer = Vec::new();
     envelope.encode(&mut buffer)?;
-    Ok(normfs.enqueue(queue_id, Bytes::from(buffer))?)
+    Ok(enqueue_with(normfs, queue_id, Bytes::from(buffer), policy).await?)
 }

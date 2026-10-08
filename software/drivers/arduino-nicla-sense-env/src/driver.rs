@@ -5,10 +5,11 @@ use crate::arduino_nicla_sense_env_proto::{
 use bytes::Bytes;
 use i2c_async::AsyncI2cDevice;
 use log::{error, info, warn};
-use normfs::{NormFS, QueueId, UintN};
+use normfs::{NormFS, QueueId};
 use prost::Message;
 use station_iface::StationEngine;
 use station_iface::iface_proto::drivers::QueueDataType;
+use station_iface::{Backpressure, enqueue_with};
 use std::collections::BTreeMap;
 use std::sync::Arc;
 use std::time::Duration;
@@ -170,7 +171,8 @@ async fn run_board_worker(
                         ArduinoNiclaSenseEnvSignalType::ArduinoNiclaSenseEnvConnected,
                         Some(&data),
                         None,
-                    );
+                    )
+                    .await;
                     connected = true;
                 }
 
@@ -181,7 +183,8 @@ async fn run_board_worker(
                     ArduinoNiclaSenseEnvSignalType::ArduinoNiclaSenseEnvRegistersSnapshot,
                     Some(&data),
                     None,
-                );
+                )
+                .await;
                 last_data = Some(data);
                 last_error = None;
             }
@@ -194,7 +197,8 @@ async fn run_board_worker(
                         ArduinoNiclaSenseEnvSignalType::ArduinoNiclaSenseEnvDisconnected,
                         last_data.as_ref(),
                         Some(error.clone()),
-                    );
+                    )
+                    .await;
                     connected = false;
                 }
 
@@ -206,7 +210,8 @@ async fn run_board_worker(
                         ArduinoNiclaSenseEnvSignalType::ArduinoNiclaSenseEnvError,
                         last_data.as_ref(),
                         Some(error.clone()),
-                    );
+                    )
+                    .await;
                     last_error = Some(error);
                 }
             }
@@ -227,7 +232,7 @@ fn parse_device_info(data: &[u8]) -> Option<ArduinoNiclaSenseEnvDeviceInfo> {
     })
 }
 
-fn send_board_signal(
+async fn send_board_signal(
     normfs: &Arc<NormFS>,
     rx_queue_id: &QueueId,
     board: &Board,
@@ -246,7 +251,13 @@ fn send_board_signal(
         error: error_message.unwrap_or_default(),
     };
 
-    if let Err(error) = send_proto(normfs, rx_queue_id, &envelope) {
+    let policy =
+        if signal_type == ArduinoNiclaSenseEnvSignalType::ArduinoNiclaSenseEnvRegistersSnapshot {
+            Backpressure::Skip
+        } else {
+            Backpressure::Keep
+        };
+    if let Err(error) = send_proto(normfs, rx_queue_id, &envelope, policy).await {
         error!(
             "Failed to send Arduino Nicla Sense Env {:?} signal for {}: {}",
             signal_type, board.id, error
@@ -254,12 +265,13 @@ fn send_board_signal(
     }
 }
 
-fn send_proto<M: Message>(
+async fn send_proto<M: Message>(
     normfs: &NormFS,
     queue_id: &QueueId,
     envelope: &M,
-) -> DriverResult<UintN> {
+    policy: Backpressure,
+) -> DriverResult<()> {
     let mut buffer = Vec::new();
     envelope.encode(&mut buffer)?;
-    Ok(normfs.enqueue(queue_id, Bytes::from(buffer))?)
+    Ok(enqueue_with(normfs, queue_id, Bytes::from(buffer), policy).await?)
 }

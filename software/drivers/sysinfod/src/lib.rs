@@ -116,7 +116,11 @@ impl SystemMonitor {
         let mut buf = Vec::new();
         envelope.encode(&mut buf)?;
 
-        self.normfs.enqueue(&self.queue_id, Bytes::from(buf))?;
+        if let Err(e) = self.normfs.try_enqueue(&self.queue_id, Bytes::from(buf))
+            && !matches!(e, normfs::Error::WouldBlock)
+        {
+            eprintln!("Failed to enqueue system info: {e}");
+        }
 
         Ok(())
     }

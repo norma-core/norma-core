@@ -199,7 +199,11 @@ pub async fn generate_frame(
     let encoded_frame = Bytes::from(frame.encode_to_vec());
 
     // Publish frame to the configured queue
-    normfs.enqueue(&output_queue_id, encoded_frame.clone())?;
+    if let Err(e) = normfs.try_enqueue(&output_queue_id, encoded_frame.clone())
+        && !matches!(e, normfs::Error::WouldBlock)
+    {
+        log::error!("Failed to enqueue normvla frame to {output_queue_id}: {e}");
+    }
 
     // Write to shared memory if writer is provided
     if let Some(writer) = shm_writer {

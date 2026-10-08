@@ -4,6 +4,7 @@ use bytes::Bytes;
 use normfs::NormFS;
 use prost::Message;
 use station_iface::iface_proto::{commands::StationCommandsPack, drivers::StationCommandType};
+use station_iface::{Backpressure, try_enqueue_with};
 
 use crate::station_proto::inference_tags::{Command, CommandType, RxEnvelope};
 
@@ -55,6 +56,7 @@ pub async fn start(normfs: Arc<NormFS>) -> Result<(), normfs::Error> {
     Ok(())
 }
 
+/// Called from a subscriber callback; must not block.
 fn publish(
     normfs: &Arc<NormFS>,
     queue_id: &normfs::QueueId,
@@ -70,7 +72,12 @@ fn publish(
         inference_queue_ptr,
         tag,
     };
-    if let Err(e) = normfs.enqueue(queue_id, Bytes::from(envelope.encode_to_vec())) {
+    if let Err(e) = try_enqueue_with(
+        normfs,
+        queue_id,
+        Bytes::from(envelope.encode_to_vec()),
+        Backpressure::Keep,
+    ) {
         log::error!("Failed to publish inference tag: {:?}", e);
     }
 }

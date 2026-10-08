@@ -6,11 +6,11 @@ use std::{
     time::{Duration, Instant},
 };
 
+use crate::Sink;
 use bytes::Bytes;
 use libc::{c_char, c_int, c_uchar};
 use libusb1_sys as usb;
 use norm_uvc_sys::*;
-use normfs::NormFS;
 
 use crate::{
     COMPACT_FPS, COMPACT_PAYLOAD_LEN, COMPACT_UVC_HEIGHT, COMPACT_UVC_WIDTH, CameraIdentity,
@@ -99,8 +99,7 @@ pub fn discover_cameras() -> Result<Vec<CameraIdentity>, String> {
 
 pub fn enqueue_device_info(
     camera: &CameraIdentity,
-    normfs: &NormFS,
-    queue_id: &normfs::QueueId,
+    sink: &Sink,
 ) -> Result<hikmicro::DeviceInfo, String> {
     let calibration = read_calibration_for_camera(camera);
     if !calibration.ok {
@@ -122,8 +121,7 @@ pub fn enqueue_device_info(
         calibration: Some(calibration),
     };
     enqueue_envelope(
-        normfs,
-        queue_id,
+        sink,
         hikmicro::RxEnvelope {
             device_info: Some(device_info.clone()),
             frames: None,
@@ -136,8 +134,7 @@ pub fn enqueue_device_info(
 pub fn capture_continuous(
     camera: &CameraIdentity,
     mut device_info: hikmicro::DeviceInfo,
-    normfs: &NormFS,
-    queue_id: &normfs::QueueId,
+    sink: &Sink,
     stop: &AtomicBool,
     frame_timeout: Duration,
     frame_skip: u32,
@@ -165,13 +162,7 @@ pub fn capture_continuous(
     let mut frames = Vec::with_capacity(FRAMES_PER_RX_ENVELOPE);
     while !stop.load(Ordering::Acquire) {
         if last_valid_frame.elapsed() > frame_timeout {
-            flush_frames_block(
-                normfs,
-                queue_id,
-                &device_info,
-                &mut block_sequence,
-                &mut frames,
-            )?;
+            flush_frames_block(sink, &device_info, &mut block_sequence, &mut frames)?;
             return Err(format!(
                 "no complete HIKMICRO frames for {:.1}s",
                 frame_timeout.as_secs_f32()
@@ -226,43 +217,24 @@ pub fn capture_continuous(
 
                 frames.push(thermal_frame_from_capture(frame));
                 if frames.len() >= FRAMES_PER_RX_ENVELOPE {
-                    flush_frames_block(
-                        normfs,
-                        queue_id,
-                        &device_info,
-                        &mut block_sequence,
-                        &mut frames,
-                    )?;
+                    flush_frames_block(sink, &device_info, &mut block_sequence, &mut frames)?;
                 }
             }
             Err(e) if e == uvc_error_UVC_ERROR_TIMEOUT => {}
             Err(e) => {
-                flush_frames_block(
-                    normfs,
-                    queue_id,
-                    &device_info,
-                    &mut block_sequence,
-                    &mut frames,
-                )?;
+                flush_frames_block(sink, &device_info, &mut block_sequence, &mut frames)?;
                 return Err(format!("uvc_stream_get_frame failed: {}", e));
             }
         }
     }
 
-    flush_frames_block(
-        normfs,
-        queue_id,
-        &device_info,
-        &mut block_sequence,
-        &mut frames,
-    )?;
+    flush_frames_block(sink, &device_info, &mut block_sequence, &mut frames)?;
 
     Ok(())
 }
 
 fn flush_frames_block(
-    normfs: &NormFS,
-    queue_id: &normfs::QueueId,
+    sink: &Sink,
     device_info: &hikmicro::DeviceInfo,
     block_sequence: &mut u32,
     frames: &mut Vec<hikmicro::ThermalFrame>,
@@ -271,21 +243,14 @@ fn flush_frames_block(
         return Ok(());
     }
 
-    enqueue_frames_block(
-        normfs,
-        queue_id,
-        device_info,
-        *block_sequence,
-        std::mem::take(frames),
-    )?;
+    enqueue_frames_block(sink, device_info, *block_sequence, std::mem::take(frames))?;
     *block_sequence = block_sequence.wrapping_add(1);
     frames.reserve(FRAMES_PER_RX_ENVELOPE);
     Ok(())
 }
 
 fn enqueue_frames_block(
-    normfs: &NormFS,
-    queue_id: &normfs::QueueId,
+    sink: &Sink,
     device_info: &hikmicro::DeviceInfo,
     block_sequence: u32,
     frames: Vec<hikmicro::ThermalFrame>,
@@ -305,8 +270,7 @@ fn enqueue_frames_block(
     };
 
     enqueue_envelope(
-        normfs,
-        queue_id,
+        sink,
         hikmicro::RxEnvelope {
             device_info: Some(device_info.clone()),
             frames: Some(block),

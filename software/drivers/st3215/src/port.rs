@@ -164,7 +164,7 @@ impl St3215Port {
 
                     let motor_id = command.get_motor_id().unwrap_or(0);
 
-                    if Self::send_command_received_envelope(&com, &bus_info, motor_id, &command).is_err() {
+                    if Self::send_command_received_envelope(&com, &bus_info, motor_id, &command).await.is_err() {
                         break;
                     }
 
@@ -198,13 +198,13 @@ impl St3215Port {
                             } else {
                                 St3215SignalType::St3215CommandRejected
                             };
-                            if Self::send_command_result_envelope(&com, &bus_info, motor_id, &command, signal_type, None).is_err() {
+                            if Self::send_command_result_envelope(&com, &bus_info, motor_id, &command, signal_type, None).await.is_err() {
                                 break;
                             }
                         },
                         Err(e) => {
-                            enqueue_error(&com, &bus_info, motor_id as u16, &e);
-                            if Self::send_command_result_envelope(&com, &bus_info, motor_id, &command, St3215SignalType::St3215CommandFailed, Some(convert_error(&e))).is_err() {
+                            enqueue_error(&com, &bus_info, motor_id as u16, &e).await;
+                            if Self::send_command_result_envelope(&com, &bus_info, motor_id, &command, St3215SignalType::St3215CommandFailed, Some(convert_error(&e))).await.is_err() {
                                 break;
                             }
 
@@ -234,7 +234,7 @@ impl St3215Port {
                     // Now clear the old motor ID state AFTER command result is sent
                     if let Some(old_motor_id) = motor_id_to_clear {
                         info!("Clearing state for old motor ID {}", old_motor_id);
-                        if Self::send_drive_disconnect_envelope(&com, &bus_info, old_motor_id).is_err() {
+                        if Self::send_drive_disconnect_envelope(&com, &bus_info, old_motor_id).await.is_err() {
                             warn!("Failed to send disconnect signal for old motor ID {}", old_motor_id);
                         }
                         eeprom_cache.lock().remove(&old_motor_id);
@@ -319,12 +319,12 @@ impl St3215Port {
                         read_data
                     };
 
-                    if Self::send_drive_state_envelope(com, bus_info, motor_id, final_data).is_err() {
+                    if Self::send_drive_state_envelope(com, bus_info, motor_id, final_data).await.is_err() {
                         return false;
                     }
                 }
                 Err(ref e) => {
-                    enqueue_error(com, bus_info, motor_id as u16, e);
+                    enqueue_error(com, bus_info, motor_id as u16, e).await;
                     if let protocol::Error::Servo { ref data, .. } = e {
                         currently_seen_motors.insert(motor_id);
                         if !data.is_empty() {
@@ -354,6 +354,7 @@ impl St3215Port {
                                 motor_id,
                                 final_data,
                             )
+                            .await
                             .is_err()
                             {
                                 return false;
@@ -379,7 +380,10 @@ impl St3215Port {
             if now.duration_since(first_missed).as_millis() >= DISCONNECT_GRACE_MS {
                 eeprom_cache.lock().remove(&motor_id);
                 missing_since.remove(&motor_id);
-                if Self::send_drive_disconnect_envelope(com, bus_info, motor_id).is_err() {
+                if Self::send_drive_disconnect_envelope(com, bus_info, motor_id)
+                    .await
+                    .is_err()
+                {
                     return false;
                 }
             } else {
@@ -421,7 +425,10 @@ impl St3215Port {
                         bus_info.port_name,
                         motor_id
                     );
-                    if Self::send_drive_connect_envelope(com, bus_info, motor_id).is_err() {
+                    if Self::send_drive_connect_envelope(com, bus_info, motor_id)
+                        .await
+                        .is_err()
+                    {
                         return false;
                     }
                 }
@@ -475,7 +482,7 @@ impl St3215Port {
                         return Err(e);
                     }
                     _ => {
-                        enqueue_error(com, bus_info, motor_id as u16, &e);
+                        enqueue_error(com, bus_info, motor_id as u16, &e).await;
                         if let protocol::Error::Servo { .. } = &e {
                             found_motors.push(motor_id);
                         } else {
@@ -541,7 +548,7 @@ impl St3215Port {
         }
     }
 
-    fn send_command_received_envelope(
+    async fn send_command_received_envelope(
         com: &Arc<ST3215BusCommunicator>,
         bus_info: &St3215BusProto,
         motor_id: u32,
@@ -557,14 +564,14 @@ impl St3215Port {
             command: Some(command.clone()),
             ..Default::default()
         };
-        com.send_rx(&envelope).map_err(|e| {
+        com.send_rx(&envelope).await.map_err(|e| {
             let err_msg = format!("Failed to send ST3215 envelope: {}", e);
             error!("{}", err_msg);
             err_msg
         })
     }
 
-    fn send_command_result_envelope(
+    async fn send_command_result_envelope(
         com: &Arc<ST3215BusCommunicator>,
         bus_info: &St3215BusProto,
         motor_id: u32,
@@ -583,14 +590,14 @@ impl St3215Port {
             error,
             ..Default::default()
         };
-        com.send_rx(&envelope).map_err(|e| {
+        com.send_rx(&envelope).await.map_err(|e| {
             let err_msg = format!("Failed to send ST3215 envelope: {}", e);
             error!("{}", err_msg);
             err_msg
         })
     }
 
-    fn send_drive_connect_envelope(
+    async fn send_drive_connect_envelope(
         com: &Arc<ST3215BusCommunicator>,
         bus_info: &St3215BusProto,
         motor_id: u8,
@@ -604,14 +611,14 @@ impl St3215Port {
             motor_id: motor_id as u32,
             ..Default::default()
         };
-        com.send_rx(&envelope).map_err(|e| {
+        com.send_rx(&envelope).await.map_err(|e| {
             let err_msg = format!("Failed to send ST3215 envelope: {}", e);
             error!("{}", err_msg);
             err_msg
         })
     }
 
-    fn send_drive_disconnect_envelope(
+    async fn send_drive_disconnect_envelope(
         com: &Arc<ST3215BusCommunicator>,
         bus_info: &St3215BusProto,
         motor_id: u8,
@@ -625,14 +632,14 @@ impl St3215Port {
             motor_id: motor_id as u32,
             ..Default::default()
         };
-        com.send_rx(&envelope).map_err(|e| {
+        com.send_rx(&envelope).await.map_err(|e| {
             let err_msg = format!("Failed to send ST3215 envelope: {}", e);
             error!("{}", err_msg);
             err_msg
         })
     }
 
-    fn send_drive_state_envelope(
+    async fn send_drive_state_envelope(
         com: &Arc<ST3215BusCommunicator>,
         bus_info: &St3215BusProto,
         motor_id: u8,
@@ -648,7 +655,7 @@ impl St3215Port {
             data,
             ..Default::default()
         };
-        com.send_rx(&envelope).map_err(|e| {
+        com.send_rx(&envelope).await.map_err(|e| {
             let err_msg = format!("Failed to send ST3215 envelope: {}", e);
             error!("{}", err_msg);
             err_msg

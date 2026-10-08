@@ -4,6 +4,7 @@ use prost::Message;
 use station_iface::{
     StationEngine, iface_proto::{commands::StationCommandsPack, drivers}
 };
+use station_iface::{Backpressure, try_enqueue_with};
 use normfs::NormFS;
 use tokio::sync::mpsc;
 use normfs::UintN;
@@ -57,7 +58,7 @@ pub async fn start<T: StationEngine>(
         let inf = Arc::new(inference::Inference::new(
             motor_config,
             normfs.clone(),
-        ));
+        ).await?);
         let read_inf = inf.clone();
 
         // Clone references for the command handler closure
@@ -164,7 +165,10 @@ fn merge_modes(
             command,
         };
 
-        let _ = normfs.enqueue(rx_queue_id, rx_envelope.encode_to_vec().into());
+        // May run inside the commands subscriber callback; must not block.
+        if let Err(e) = try_enqueue_with(normfs, rx_queue_id, rx_envelope.encode_to_vec().into(), Backpressure::Keep) {
+            log::error!("Failed to publish mirroring state: {}", e);
+        }
     }
 
     fn process_command_pack(

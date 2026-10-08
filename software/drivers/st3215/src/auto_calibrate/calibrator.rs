@@ -152,7 +152,7 @@ impl ST3215Calibrator {
             }),
             ..Default::default()
         };
-        self.comm.send_tx(&envelope)?;
+        self.comm.send_tx(&envelope);
 
         info!("Calibration freeze command sent with {} motor arcs", arcs_count);
         Ok(())
@@ -188,7 +188,7 @@ impl ST3215Calibrator {
             ..Default::default()
         };
 
-        self.comm.send_tx(&envelope)?;
+        self.comm.send_tx(&envelope);
         self.wait_for_command_result(&command_id).await?;
 
         info!("Torque disabled for all motors");
@@ -261,7 +261,7 @@ impl ST3215Calibrator {
             }),
             ..Default::default()
         };
-        self.comm.send_tx(&envelope)?;
+        self.comm.send_tx(&envelope);
         self.wait_for_command_result(&command_id).await
     }
 
@@ -323,7 +323,7 @@ impl ST3215Calibrator {
             }),
             ..Default::default()
         };
-        self.comm.send_tx(&reg_write_envelope)?;
+        self.comm.send_tx(&reg_write_envelope);
         self.wait_for_command_result(&reg_write_id).await?;
 
         // Send action to execute the reg_write
@@ -339,7 +339,7 @@ impl ST3215Calibrator {
             }),
             ..Default::default()
         };
-        self.comm.send_tx(&action_envelope)?;
+        self.comm.send_tx(&action_envelope);
         self.wait_for_command_result(&action_id).await?;
 
         // Lock EEPROM
@@ -412,7 +412,7 @@ impl ST3215Calibrator {
             }),
             ..Default::default()
         };
-        self.comm.send_tx(&envelope)?;
+        self.comm.send_tx(&envelope);
         self.wait_for_command_result(&command_id).await?;
 
         self.lock_eeprom(motor_id).await?;

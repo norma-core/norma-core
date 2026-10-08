@@ -9,6 +9,7 @@ use normfs::{NormFS, QueueId};
 use prost::Message;
 use station_iface::StationEngine;
 use station_iface::iface_proto::drivers::QueueDataType;
+use station_iface::{Backpressure, enqueue_with};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 use tokio::io::{AsyncBufReadExt, BufReader};
@@ -93,7 +94,8 @@ impl<T: StationEngine> AirGradientPort<T> {
                                 AirGradientSignalType::AirgradientConnected,
                                 Some(payload.clone()),
                                 String::new(),
-                            );
+                            )
+                            .await;
                             session = Some((rx_queue_id, device));
                         }
 
@@ -104,7 +106,8 @@ impl<T: StationEngine> AirGradientPort<T> {
                                 AirGradientSignalType::AirgradientMeasurement,
                                 Some(payload),
                                 String::new(),
-                            );
+                            )
+                            .await;
                         }
                     } else {
                         note_malformed(
@@ -125,7 +128,11 @@ impl<T: StationEngine> AirGradientPort<T> {
                 AirGradientSignalType::AirgradientDisconnected,
                 None,
                 reason,
-            );
+            )
+            .await;
+            if let Err(err) = self.normfs.close_queue(rx_queue_id).await {
+                error!("Failed to close AirGradient queue {}: {}", rx_queue_id, err);
+            }
         }
         Ok(())
     }
@@ -148,7 +155,7 @@ impl<T: StationEngine> AirGradientPort<T> {
         Ok(rx_queue_id)
     }
 
-    fn publish(
+    async fn publish(
         &self,
         rx_queue_id: &QueueId,
         device: &AirGradientDevice,
@@ -171,7 +178,13 @@ impl<T: StationEngine> AirGradientPort<T> {
             error!("Failed to encode AirGradient Open Air O-1PST envelope: {}", err);
             return;
         }
-        if let Err(err) = self.normfs.enqueue(rx_queue_id, Bytes::from(buffer)) {
+        let policy = if signal_type == AirGradientSignalType::AirgradientMeasurement {
+            Backpressure::Skip
+        } else {
+            Backpressure::Keep
+        };
+        if let Err(err) = enqueue_with(&self.normfs, rx_queue_id, Bytes::from(buffer), policy).await
+        {
             error!("Failed to enqueue AirGradient Open Air O-1PST envelope: {}", err);
         }
     }

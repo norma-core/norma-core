@@ -9,6 +9,7 @@ use normfs::{NormFS, QueueId};
 use prost::Message;
 use station_iface::StationEngine;
 use station_iface::iface_proto::drivers::QueueDataType;
+use station_iface::{Backpressure, enqueue_with};
 use std::collections::BTreeMap;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
@@ -109,7 +110,8 @@ impl<T: StationEngine> VictronPort<T> {
             None,
             Vec::new(),
             String::new(),
-        );
+        )
+        .await;
         self.publish(
             &rx_queue_id,
             &device,
@@ -118,7 +120,8 @@ impl<T: StationEngine> VictronPort<T> {
             None,
             Vec::new(),
             String::new(),
-        );
+        )
+        .await;
 
         let poller: JoinHandle<()> = tokio::spawn(run_hex_poller(write_half));
 
@@ -146,7 +149,11 @@ impl<T: StationEngine> VictronPort<T> {
             None,
             Vec::new(),
             reason,
-        );
+        )
+        .await;
+        if let Err(err) = self.normfs.close_queue(&rx_queue_id).await {
+            error!("Failed to close Victron queue {}: {}", rx_queue_id, err);
+        }
         Ok(())
     }
 
@@ -285,7 +292,8 @@ impl<T: StationEngine> VictronPort<T> {
                             None,
                             regs.values().cloned().collect(),
                             String::new(),
-                        );
+                        )
+                        .await;
                     }
                     Some(DemuxEvent::HexFrame(frame)) => {
                         last_valid = Instant::now();
@@ -305,7 +313,8 @@ impl<T: StationEngine> VictronPort<T> {
                             Some(frame),
                             regs.values().cloned().collect(),
                             String::new(),
-                        );
+                        )
+                        .await;
                     }
                     Some(DemuxEvent::TextBlockBad) | Some(DemuxEvent::HexFrameBad) => {
                         note_malformed(&mut malformed_count, &mut last_malformed_log);
@@ -323,13 +332,14 @@ impl<T: StationEngine> VictronPort<T> {
                     None,
                     Vec::new(),
                     format!("no valid VE.Direct frame for {:?}", last_valid.elapsed()),
-                );
+                )
+                .await;
                 fault_reported = true;
             }
         }
     }
 
-    fn publish(
+    async fn publish(
         &self,
         rx_queue_id: &QueueId,
         device: &VictronDevice,
@@ -356,7 +366,16 @@ impl<T: StationEngine> VictronPort<T> {
             error!("Failed to encode Victron SmartSolar MPPT envelope: {err}");
             return;
         }
-        if let Err(err) = self.normfs.enqueue(rx_queue_id, Bytes::from(buffer)) {
+        let policy = if matches!(
+            signal_type,
+            VictronSignalType::VictronTextBlock | VictronSignalType::VictronHexFrame
+        ) {
+            Backpressure::Skip
+        } else {
+            Backpressure::Keep
+        };
+        if let Err(err) = enqueue_with(&self.normfs, rx_queue_id, Bytes::from(buffer), policy).await
+        {
             error!("Failed to enqueue Victron SmartSolar MPPT envelope: {err}");
         }
     }

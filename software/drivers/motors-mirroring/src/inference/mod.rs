@@ -7,6 +7,7 @@ mod normalize;
 use bytes::Bytes;
 use prost::Message;
 use station_iface::iface_proto::commands::{DriverCommand, StationCommandsPack};
+use station_iface::{Backpressure, enqueue_with};
 use normfs::NormFS;
 use std::sync::Arc;
 use parking_lot::RwLock;
@@ -23,10 +24,11 @@ pub struct Inference {
 }
 
 impl Inference {
-    pub fn new(
+    pub async fn new(
         config: config::MotorConfig,
         normfs: Arc<NormFS>,
-    ) -> Self {
+    ) -> Result<Self, normfs::Error> {
+        normfs.ensure_queue_exists_for_write(&normfs.resolve("commands")).await?;
         let res = Self {
             state: Arc::new(RwLock::new(model::State::default())),
             normfs,
@@ -38,7 +40,7 @@ impl Inference {
             Self::mirror(state, &normfs, config).await;
         });
 
-        res
+        Ok(res)
     }
 
     pub fn start(&self, from: BusKey, to: Vec<BusKey>) {
@@ -82,7 +84,7 @@ impl Inference {
                             command: MotorCommand::Torque(1),
                         });
                     }
-                    Self::send_st3215_commands(&normfs, &Bytes::new(), commands);
+                    Self::send_st3215_commands(&normfs, &Bytes::new(), commands, true).await;
                 }
             }
         });
@@ -127,7 +129,8 @@ impl Inference {
                             command: MotorCommand::Torque(0),
                         });
                     }
-                    Self::send_st3215_commands(&normfs, &Bytes::new(), commands);
+                    // Must not be dropped: the bus would stay torqued.
+                    Self::send_st3215_commands(&normfs, &Bytes::new(), commands, true).await;
                 }
             }
         });
@@ -245,7 +248,7 @@ impl Inference {
                     &mut protection_states,
                     normfs,
                     &config,
-                );
+                ).await;
             }
 
             let processing_done = std::time::Instant::now();
@@ -303,7 +306,7 @@ impl Inference {
         }
     }
 
-    fn process_mirroring_for_source(
+    async fn process_mirroring_for_source(
         source_bus_key: &BusKey,
         target_bus_keys: &[BusKey],
         station_state: &model::StationState,
@@ -325,7 +328,7 @@ impl Inference {
                 );
             }
             if !commands.is_empty() {
-                Self::send_st3215_commands(normfs, &station_state.id, commands);
+                Self::send_st3215_commands(normfs, &station_state.id, commands, false).await;
             }
         }
     }
@@ -394,10 +397,11 @@ impl Inference {
         });
     }
 
-    fn send_st3215_commands(
+    async fn send_st3215_commands(
         normfs: &Arc<NormFS>,
         state_id: &Bytes,
         commands: Vec<Command>,
+        keep: bool,
     ) {
         use std::collections::HashMap;
 
@@ -485,6 +489,9 @@ impl Inference {
 
         let encoded = pack.encode_to_vec();
         let commands_queue_id = normfs.resolve("commands");
-        let _ = normfs.enqueue(&commands_queue_id, Bytes::from(encoded));
+        let policy = if keep { Backpressure::Keep } else { Backpressure::Skip };
+        if let Err(e) = enqueue_with(normfs, &commands_queue_id, Bytes::from(encoded), policy).await {
+            log::error!("Failed to publish mirroring commands: {e}");
+        }
     }
 }

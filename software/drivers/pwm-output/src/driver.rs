@@ -9,6 +9,7 @@ use parking_lot::Mutex;
 use prost::Message;
 use station_iface::StationEngine;
 use station_iface::iface_proto::{commands, drivers};
+use station_iface::{Backpressure, STARTUP_WRITE_TIMEOUT, try_enqueue_with};
 use std::collections::BTreeMap;
 use std::fs::OpenOptions;
 use std::io::{self, Write};
@@ -83,15 +84,21 @@ impl PwmOutputDriver {
             }
 
             let runtime = OutputRuntime::new(output_config);
-            send_rx(
-                &normfs,
-                &rx_queue_id,
+            if let Some(data) = rx_envelope(
                 PwmOutputSignalType::PwmOutputConfigured,
                 Some(runtime.device_proto()),
                 Some(runtime.state.clone()),
                 None,
                 None,
-            );
+            ) && let Err(error) = normfs
+                .enqueue_timeout(&rx_queue_id, data, STARTUP_WRITE_TIMEOUT)
+                .await
+            {
+                error!(
+                    "Failed to record PWM output '{}' as configured: {}",
+                    runtime.config.id, error
+                );
+            }
             outputs.insert(runtime.config.id.clone(), runtime);
         }
 
@@ -283,10 +290,11 @@ fn process_command(
     }
 }
 
+// send_tx and send_rx run inside the commands subscriber callback and must not block.
 fn send_tx(normfs: &Arc<NormFS>, queue_id: &QueueId, envelope: &TxEnvelope) -> DriverResult<()> {
     let mut buf = Vec::new();
     envelope.encode(&mut buf)?;
-    normfs.enqueue(queue_id, Bytes::from(buf))?;
+    try_enqueue_with(normfs, queue_id, Bytes::from(buf), Backpressure::Keep)?;
     Ok(())
 }
 
@@ -299,6 +307,20 @@ fn send_rx(
     command: Option<TxEnvelope>,
     error_message: Option<String>,
 ) {
+    if let Some(data) = rx_envelope(signal_type, device, state, command, error_message)
+        && let Err(error) = try_enqueue_with(normfs, queue_id, data, Backpressure::Keep)
+    {
+        error!("Failed to publish PWM output RX envelope: {}", error);
+    }
+}
+
+fn rx_envelope(
+    signal_type: PwmOutputSignalType,
+    device: Option<PwmOutputDevice>,
+    state: Option<OutputState>,
+    command: Option<TxEnvelope>,
+    error_message: Option<String>,
+) -> Option<Bytes> {
     let envelope = RxEnvelope {
         monotonic_stamp_ns: systime::get_monotonic_stamp_ns(),
         local_stamp_ns: systime::get_local_stamp_ns(),
@@ -313,11 +335,9 @@ fn send_rx(
     let mut buf = Vec::new();
     if let Err(error) = envelope.encode(&mut buf) {
         error!("Failed to encode PWM output RX envelope: {}", error);
-        return;
+        return None;
     }
-    if let Err(error) = normfs.enqueue(queue_id, Bytes::from(buf)) {
-        error!("Failed to publish PWM output RX envelope: {}", error);
-    }
+    Some(Bytes::from(buf))
 }
 
 impl OutputRuntime {

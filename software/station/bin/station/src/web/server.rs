@@ -7,7 +7,6 @@ use hyper_util::server::conn::auto;
 use normfs::NormFS;
 use rust_embed::RustEmbed;
 use std::error::Error;
-use std::net::SocketAddr;
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
@@ -232,13 +231,12 @@ impl WebServer {
 }
 
 pub async fn start_server(
-    addr: SocketAddr,
+    listener: TcpListener,
     normfs: Arc<NormFS>,
     shutdown: Arc<AtomicBool>,
     static_path_override: Option<PathBuf>,
 ) -> Result<(), Box<dyn Error + Send + Sync>> {
-    let listener = TcpListener::bind(addr).await?;
-    log::info!("WebSocket server listening on {}", addr);
+    log::info!("WebSocket server listening on {}", listener.local_addr()?);
     let server = Arc::new(WebServer {
         normfs,
         static_path_override,
