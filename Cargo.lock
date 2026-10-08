@@ -3094,6 +3094,7 @@ name = "usbvideo"
 version = "0.1.0-beta.11"
 dependencies = [
  "bytes",
+ "cc",
  "libc",
  "log",
  "md5",
@@ -3101,6 +3102,7 @@ dependencies = [
  "normfs",
  "normfs-time",
  "parking_lot",
+ "pkg-config",
  "prost",
  "prost-build",
  "station_iface",

@@ -11,6 +11,7 @@ pub mod usbvideo_proto {
     }
 }
 
+pub mod codec;
 mod converters;
 mod state;
 
@@ -205,6 +206,9 @@ pub struct USBVideoConfig {
 
     /// Drop this many frames after each frame that is kept. `0` keeps every frame.
     pub frame_skip: u32,
+
+    /// How kept frames are stored.
+    pub codec: codec::VideoCodec,
 }
 
 impl Default for USBVideoConfig {
@@ -213,6 +217,7 @@ impl Default for USBVideoConfig {
             resize_target: 224,
             formats: Vec::new(),
             frame_skip: 0,
+            codec: codec::VideoCodec::Jpeg,
         }
     }
 }

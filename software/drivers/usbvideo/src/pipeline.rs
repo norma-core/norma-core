@@ -612,6 +612,7 @@ impl<K: USBCameraDriver> USBVideoManager<K> {
                                 format.frames_per_second,
                             );
 
+                            cam_tracker.reset_encoder(&camera.unique_id);
                             Self::send_session_started(&queue_id, &cam_tracker, &camera, format)
                                 .await;
 
