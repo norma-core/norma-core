@@ -151,9 +151,9 @@ pub(crate) fn send_status_update(
     status: YahboomDogzillaLiteStatus,
 ) {
     let envelope = RxEnvelope {
-        monotonic_stamp_ns: systime::get_monotonic_stamp_ns(),
-        local_stamp_ns: systime::get_local_stamp_ns(),
-        app_start_id: systime::get_app_start_id(),
+        monotonic_stamp_ns: normfs_time::monotonic_stamp_ns(),
+        local_stamp_ns: normfs_time::local_stamp_ns(),
+        app_start_id: normfs_time::app_start_id(),
         signal_type: YahboomDogzillaLiteSignalType::YahboomDogzillaLiteStatusUpdate as i32,
         device: Some(device_info.clone()),
         status: Some(status),
@@ -173,9 +173,9 @@ pub(crate) fn send_command_result(
     error_message: Option<String>,
 ) {
     let envelope = RxEnvelope {
-        monotonic_stamp_ns: systime::get_monotonic_stamp_ns(),
-        local_stamp_ns: systime::get_local_stamp_ns(),
-        app_start_id: systime::get_app_start_id(),
+        monotonic_stamp_ns: normfs_time::monotonic_stamp_ns(),
+        local_stamp_ns: normfs_time::local_stamp_ns(),
+        app_start_id: normfs_time::app_start_id(),
         signal_type: signal_type as i32,
         device: Some(device_info.clone()),
         command: Some(command.clone()),

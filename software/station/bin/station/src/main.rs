@@ -384,7 +384,7 @@ impl Station {
         std::fs::create_dir_all(&args.normfs_base_folder)?;
 
         // Generate app_start_id based on current timestamp
-        let app_start_id = systime::get_app_start_id();
+        let app_start_id = normfs_time::app_start_id();
 
         log::info!("App Start ID: {}", app_start_id);
 

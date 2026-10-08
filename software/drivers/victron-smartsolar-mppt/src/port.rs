@@ -350,9 +350,9 @@ impl<T: StationEngine> VictronPort<T> {
         error: String,
     ) {
         let envelope = RxEnvelope {
-            monotonic_stamp_ns: systime::get_monotonic_stamp_ns(),
-            local_stamp_ns: systime::get_local_stamp_ns(),
-            app_start_id: systime::get_app_start_id(),
+            monotonic_stamp_ns: normfs_time::monotonic_stamp_ns(),
+            local_stamp_ns: normfs_time::local_stamp_ns(),
+            app_start_id: normfs_time::app_start_id(),
             signal_type: signal_type as i32,
             device: Some(device.clone()),
             data: data.map(Bytes::copy_from_slice).unwrap_or_default(),

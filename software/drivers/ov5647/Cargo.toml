@@ -7,7 +7,7 @@ edition = "2024"
 # Station framework
 station_iface = { path = "../../station/shared/station-iface" }
 normfs = { workspace = true }
-systime = { path = "../../station/shared/systime-rs" }
+normfs-time = { workspace = true }
 usbvideo = { path = "../usbvideo" }
 
 # Async runtime

@@ -652,7 +652,7 @@ impl VescTrampaPort {
     }
 
     fn log_command_received(&self, command: &TxEnvelope) {
-        let now_ns = systime::get_monotonic_stamp_ns();
+        let now_ns = normfs_time::monotonic_stamp_ns();
         let latency_ns = now_ns.saturating_sub(command.monotonic_stamp_ns);
         let latency_ms = latency_ns as f64 / 1_000_000.0;
         let board_commands = command.board_commands.len();
@@ -789,9 +789,9 @@ impl VescTrampaPort {
         signal_type: VescTrampaSignalType,
     ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let envelope = RxEnvelope {
-            monotonic_stamp_ns: systime::get_monotonic_stamp_ns(),
-            local_stamp_ns: systime::get_local_stamp_ns(),
-            app_start_id: systime::get_app_start_id(),
+            monotonic_stamp_ns: normfs_time::monotonic_stamp_ns(),
+            local_stamp_ns: normfs_time::local_stamp_ns(),
+            app_start_id: normfs_time::app_start_id(),
             signal_type: signal_type as i32,
             board: Some(self.board_info.clone()),
             ..Default::default()
@@ -806,9 +806,9 @@ impl VescTrampaPort {
         policy: Backpressure,
     ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let envelope = RxEnvelope {
-            monotonic_stamp_ns: systime::get_monotonic_stamp_ns(),
-            local_stamp_ns: systime::get_local_stamp_ns(),
-            app_start_id: systime::get_app_start_id(),
+            monotonic_stamp_ns: normfs_time::monotonic_stamp_ns(),
+            local_stamp_ns: normfs_time::local_stamp_ns(),
+            app_start_id: normfs_time::app_start_id(),
             signal_type: VescTrampaSignalType::VescTrampaBoardPacket as i32,
             board: Some(self.board_info.clone()),
             board_packet: Some(Self::to_board_packet_proto(packet)),
@@ -848,9 +848,9 @@ impl VescTrampaPort {
         error: Option<String>,
     ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let envelope = RxEnvelope {
-            monotonic_stamp_ns: systime::get_monotonic_stamp_ns(),
-            local_stamp_ns: systime::get_local_stamp_ns(),
-            app_start_id: systime::get_app_start_id(),
+            monotonic_stamp_ns: normfs_time::monotonic_stamp_ns(),
+            local_stamp_ns: normfs_time::local_stamp_ns(),
+            app_start_id: normfs_time::app_start_id(),
             signal_type: signal_type as i32,
             board: Some(self.board_info.clone()),
             command: Some(command.clone()),

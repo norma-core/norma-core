@@ -86,9 +86,9 @@ impl St3215Driver {
 
                             let envelope = TxEnvelope {
                                 command_id: cmd.command_id.clone(),
-                                monotonic_stamp_ns: systime::get_monotonic_stamp_ns(),
-                                local_stamp_ns: systime::get_local_stamp_ns(),
-                                app_start_id: systime::get_app_start_id(),
+                                monotonic_stamp_ns: normfs_time::monotonic_stamp_ns(),
+                                local_stamp_ns: normfs_time::local_stamp_ns(),
+                                app_start_id: normfs_time::app_start_id(),
                                 target_bus_serial: command.target_bus_serial,
                                 action: command.action,
                                 write: command.write,
@@ -259,9 +259,9 @@ impl St3215Driver {
 
     async fn send_bus_connect_signal(comm: &ST3215BusCommunicator, bus_info: &St3215BusProto) {
         let envelope = RxEnvelope {
-            monotonic_stamp_ns: systime::get_monotonic_stamp_ns(),
-            local_stamp_ns: systime::get_local_stamp_ns(),
-            app_start_id: systime::get_app_start_id(),
+            monotonic_stamp_ns: normfs_time::monotonic_stamp_ns(),
+            local_stamp_ns: normfs_time::local_stamp_ns(),
+            app_start_id: normfs_time::app_start_id(),
             signal_type: St3215SignalType::St3215BusConnect as i32,
             bus: Some(bus_info.clone()),
             ..Default::default()
@@ -274,9 +274,9 @@ impl St3215Driver {
 
     async fn send_bus_disconnect_signal(comm: &ST3215BusCommunicator, bus_info: &St3215BusProto) {
         let envelope = RxEnvelope {
-            monotonic_stamp_ns: systime::get_monotonic_stamp_ns(),
-            local_stamp_ns: systime::get_local_stamp_ns(),
-            app_start_id: systime::get_app_start_id(),
+            monotonic_stamp_ns: normfs_time::monotonic_stamp_ns(),
+            local_stamp_ns: normfs_time::local_stamp_ns(),
+            app_start_id: normfs_time::app_start_id(),
             signal_type: St3215SignalType::St3215BusDisconnect as i32,
             bus: Some(bus_info.clone()),
             ..Default::default()

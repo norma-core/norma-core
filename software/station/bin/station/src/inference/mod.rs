@@ -61,9 +61,9 @@ impl Inference {
         };
 
         let startup = StationStartup {
-            monotonic_stamp_ns: systime::get_monotonic_stamp_ns(),
-            local_stamp_ns: systime::get_local_stamp_ns(),
-            app_start_id: systime::get_app_start_id(),
+            monotonic_stamp_ns: normfs_time::monotonic_stamp_ns(),
+            local_stamp_ns: normfs_time::local_stamp_ns(),
+            app_start_id: normfs_time::app_start_id(),
             station_uuid: normfs.get_instance_id_bytes(),
             version: env!("CARGO_PKG_VERSION").to_string(),
             git_hash: env!("GIT_HASH").to_string(),
@@ -139,9 +139,9 @@ impl Inference {
                     // Publish complete snapshot to inference-states
                     let rx = InferenceRx {
                         entries,
-                        local_stamp_ns: systime::get_local_stamp_ns(),
-                        monotonic_stamp_ns: systime::get_monotonic_stamp_ns(),
-                        app_start_id: systime::get_app_start_id(),
+                        local_stamp_ns: normfs_time::local_stamp_ns(),
+                        monotonic_stamp_ns: normfs_time::monotonic_stamp_ns(),
+                        app_start_id: normfs_time::app_start_id(),
                     };
 
                     if let Err(e) =

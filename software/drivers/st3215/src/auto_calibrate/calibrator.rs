@@ -141,9 +141,9 @@ impl ST3215Calibrator {
         let arcs_count = motor_arcs.len();
         let command_id = self.next_command_id();
         let envelope = TxEnvelope {
-            monotonic_stamp_ns: systime::get_monotonic_stamp_ns(),
-            local_stamp_ns: systime::get_local_stamp_ns(),
-            app_start_id: systime::get_app_start_id(),
+            monotonic_stamp_ns: normfs_time::monotonic_stamp_ns(),
+            local_stamp_ns: normfs_time::local_stamp_ns(),
+            app_start_id: normfs_time::app_start_id(),
             target_bus_serial: self.target_bus_serial.clone(),
             command_id,
             freeze_calibration: Some(FreezeCalibrationCommand {
@@ -176,9 +176,9 @@ impl ST3215Calibrator {
             .collect();
 
         let envelope = TxEnvelope {
-            monotonic_stamp_ns: systime::get_monotonic_stamp_ns(),
-            local_stamp_ns: systime::get_local_stamp_ns(),
-            app_start_id: systime::get_app_start_id(),
+            monotonic_stamp_ns: normfs_time::monotonic_stamp_ns(),
+            local_stamp_ns: normfs_time::local_stamp_ns(),
+            app_start_id: normfs_time::app_start_id(),
             target_bus_serial: self.target_bus_serial.clone(),
             command_id: command_id.clone(),
             sync_write: Some(crate::st3215_proto::St3215SyncWriteCommand {
@@ -249,9 +249,9 @@ impl ST3215Calibrator {
     async fn send_write(&mut self, motor_id: u8, address: u8, value: Vec<u8>) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let command_id = self.next_command_id();
         let envelope = TxEnvelope {
-            monotonic_stamp_ns: systime::get_monotonic_stamp_ns(),
-            local_stamp_ns: systime::get_local_stamp_ns(),
-            app_start_id: systime::get_app_start_id(),
+            monotonic_stamp_ns: normfs_time::monotonic_stamp_ns(),
+            local_stamp_ns: normfs_time::local_stamp_ns(),
+            app_start_id: normfs_time::app_start_id(),
             target_bus_serial: self.target_bus_serial.clone(),
             command_id: command_id.clone(),
             write: Some(crate::st3215_proto::St3215WriteCommand {
@@ -311,9 +311,9 @@ impl ST3215Calibrator {
         // Send reg_write
         let reg_write_id = self.next_command_id();
         let reg_write_envelope = TxEnvelope {
-            monotonic_stamp_ns: systime::get_monotonic_stamp_ns(),
-            local_stamp_ns: systime::get_local_stamp_ns(),
-            app_start_id: systime::get_app_start_id(),
+            monotonic_stamp_ns: normfs_time::monotonic_stamp_ns(),
+            local_stamp_ns: normfs_time::local_stamp_ns(),
+            app_start_id: normfs_time::app_start_id(),
             target_bus_serial: self.target_bus_serial.clone(),
             command_id: reg_write_id.clone(),
             reg_write: Some(crate::st3215_proto::St3215RegWriteCommand {
@@ -329,9 +329,9 @@ impl ST3215Calibrator {
         // Send action to execute the reg_write
         let action_id = self.next_command_id();
         let action_envelope = TxEnvelope {
-            monotonic_stamp_ns: systime::get_monotonic_stamp_ns(),
-            local_stamp_ns: systime::get_local_stamp_ns(),
-            app_start_id: systime::get_app_start_id(),
+            monotonic_stamp_ns: normfs_time::monotonic_stamp_ns(),
+            local_stamp_ns: normfs_time::local_stamp_ns(),
+            app_start_id: normfs_time::app_start_id(),
             target_bus_serial: self.target_bus_serial.clone(),
             command_id: action_id.clone(),
             action: Some(crate::st3215_proto::St3215ActionCommand {
@@ -401,9 +401,9 @@ impl ST3215Calibrator {
 
         let command_id = self.next_command_id();
         let envelope = TxEnvelope {
-            monotonic_stamp_ns: systime::get_monotonic_stamp_ns(),
-            local_stamp_ns: systime::get_local_stamp_ns(),
-            app_start_id: systime::get_app_start_id(),
+            monotonic_stamp_ns: normfs_time::monotonic_stamp_ns(),
+            local_stamp_ns: normfs_time::local_stamp_ns(),
+            app_start_id: normfs_time::app_start_id(),
             target_bus_serial: self.target_bus_serial.clone(),
             command_id: command_id.clone(),
             reset: Some(crate::st3215_proto::St3215ResetCommand {
@@ -539,7 +539,7 @@ impl ST3215Calibrator {
     pub async fn wait_for_stall(&mut self, motor_id: u8) -> Result<u16, Box<dyn std::error::Error + Send + Sync>> {
         info!("Motor {} - Waiting for stall", motor_id);
 
-        let start_stamp = systime::get_monotonic_stamp_ns();
+        let start_stamp = normfs_time::monotonic_stamp_ns();
         let mut last_stamp = start_stamp;
         let mut startup_steps = 0u32;
         let mut stable_count = 0u32;

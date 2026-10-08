@@ -163,9 +163,9 @@ impl SystemMonitor {
         };
 
         Ok(Envelope {
-            monotonic_stamp_ns: systime::get_monotonic_stamp_ns(),
-            local_stamp_ns: systime::get_local_stamp_ns(),
-            app_start_id: systime::get_app_start_id(),
+            monotonic_stamp_ns: normfs_time::monotonic_stamp_ns(),
+            local_stamp_ns: normfs_time::local_stamp_ns(),
+            app_start_id: normfs_time::app_start_id(),
             data: Some(data),
         })
     }
@@ -285,7 +285,7 @@ impl SystemMonitor {
 
     async fn collect_cellular_modems(&self) -> Vec<CellularModem> {
         let mut cache = self.cellular_cache.write().await;
-        let now_ns = systime::get_monotonic_stamp_ns();
+        let now_ns = normfs_time::monotonic_stamp_ns();
         if now_ns < cache.next_refresh_monotonic_stamp_ns {
             return cache.modems.clone();
         }
@@ -295,7 +295,7 @@ impl SystemMonitor {
             .unwrap_or_default();
 
         cache.next_refresh_monotonic_stamp_ns =
-            systime::get_monotonic_stamp_ns().saturating_add(CELLULAR_REFRESH_INTERVAL_NS);
+            normfs_time::monotonic_stamp_ns().saturating_add(CELLULAR_REFRESH_INTERVAL_NS);
         cache.modems = modems;
         cache.modems.clone()
     }

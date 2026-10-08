@@ -53,10 +53,10 @@ dependencies = [
  "bytes",
  "log",
  "normfs",
+ "normfs-time",
  "prost",
  "prost-build",
  "station_iface",
- "systime",
  "tokio",
  "tokio-serial",
 ]
@@ -134,10 +134,10 @@ dependencies = [
  "i2c-async",
  "log",
  "normfs",
+ "normfs-time",
  "prost",
  "prost-build",
  "station_iface",
- "systime",
  "tokio",
 ]
 
@@ -148,10 +148,10 @@ dependencies = [
  "bytes",
  "log",
  "normfs",
+ "normfs-time",
  "prost",
  "prost-build",
  "station_iface",
- "systime",
  "tokio",
  "tokio-serial",
 ]
@@ -540,10 +540,10 @@ dependencies = [
  "libc",
  "log",
  "normfs",
+ "normfs-time",
  "prost",
  "prost-build",
  "station_iface",
- "systime",
  "tokio",
 ]
 
@@ -890,7 +890,6 @@ dependencies = [
  "prost",
  "prost-build",
  "station_iface",
- "systime",
  "tokio",
 ]
 
@@ -1177,10 +1176,10 @@ dependencies = [
  "i2c-async",
  "log",
  "normfs",
+ "normfs-time",
  "prost",
  "prost-build",
  "station_iface",
- "systime",
  "tokio",
 ]
 
@@ -1480,12 +1479,12 @@ dependencies = [
  "bytes",
  "log",
  "normfs",
+ "normfs-time",
  "parking_lot",
  "prost",
  "prost-build",
  "st3215",
  "station_iface",
- "systime",
  "tokio",
 ]
 
@@ -1764,10 +1763,10 @@ dependencies = [
  "libcamera-sys-static",
  "log",
  "normfs",
+ "normfs-time",
  "parking_lot",
  "prost",
  "station_iface",
- "systime",
  "thiserror 2.0.16",
  "tokio",
  "tracing",
@@ -1977,11 +1976,11 @@ dependencies = [
  "bytes",
  "log",
  "normfs",
+ "normfs-time",
  "parking_lot",
  "prost",
  "prost-build",
  "station_iface",
- "systime",
 ]
 
 [[package]]
@@ -2552,11 +2551,11 @@ dependencies = [
  "bytes",
  "log",
  "normfs",
+ "normfs-time",
  "parking_lot",
  "prost",
  "prost-build",
  "station_iface",
- "systime",
  "tokio",
  "tokio-serial",
 ]
@@ -2597,6 +2596,7 @@ dependencies = [
  "mime_guess",
  "motors-mirroring",
  "normfs",
+ "normfs-time",
  "normfs-types",
  "ov5647",
  "parking_lot",
@@ -2607,7 +2607,6 @@ dependencies = [
  "st3215",
  "station_iface",
  "sysinfod",
- "systime",
  "tokio",
  "usbvideo",
  "vesc-trampa",
@@ -2693,11 +2692,11 @@ dependencies = [
  "i2c-async",
  "libc",
  "normfs",
+ "normfs-time",
  "prost",
  "prost-build",
  "station_iface",
  "sysinfo",
- "systime",
  "tokio",
 ]
 
@@ -2720,15 +2719,6 @@ checksum = "8e1d1b10ced5ca923a1fcb8d03e96b8d3268065d724548c0211415ff6ac6bac4"
 dependencies = [
  "core-foundation-sys",
  "libc",
-]
-
-[[package]]
-name = "systime"
-version = "0.1.0-beta.11"
-dependencies = [
- "libc",
- "log",
- "once_cell",
 ]
 
 [[package]]
@@ -3109,11 +3099,11 @@ dependencies = [
  "md5",
  "norm-uvc-sys",
  "normfs",
+ "normfs-time",
  "parking_lot",
  "prost",
  "prost-build",
  "station_iface",
- "systime",
  "tokio",
  "turbojpeg",
  "zune-jpeg",
@@ -3156,11 +3146,11 @@ dependencies = [
  "bytes",
  "log",
  "normfs",
+ "normfs-time",
  "parking_lot",
  "prost",
  "prost-build",
  "station_iface",
- "systime",
  "tokio",
  "tokio-serial",
 ]
@@ -3172,10 +3162,10 @@ dependencies = [
  "bytes",
  "log",
  "normfs",
+ "normfs-time",
  "prost",
  "prost-build",
  "station_iface",
- "systime",
  "tokio",
  "tokio-serial",
 ]
@@ -3686,11 +3676,11 @@ dependencies = [
  "bytes",
  "log",
  "normfs",
+ "normfs-time",
  "parking_lot",
  "prost",
  "prost-build",
  "station_iface",
- "systime",
  "tokio",
  "tokio-serial",
 ]

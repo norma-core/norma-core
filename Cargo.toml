@@ -20,7 +20,6 @@ members = [
   "software/drivers/pwm-output",
   "software/station/bin/station",
   "software/station/shared/station-iface",
-  "software/station/shared/systime-rs",
 ]
 
 [workspace.package]
@@ -29,6 +28,7 @@ version = "0.1.0-beta.11"
 [workspace.dependencies]
 normfs = "0.4.1"
 normfs-types = "0.4.1"
+normfs-time = "0.4.1"
 tokio = { version = "1.49", features = ["full"] }
 prost = "0.12"
 prost-build = "0.12"

@@ -10,7 +10,7 @@ default = []
 [dependencies]
 tokio = { workspace = true }
 normfs = { workspace = true }
-systime = { path = "../../station/shared/systime-rs" }
+normfs-time = { workspace = true }
 station_iface = { path = "../../station/shared/station-iface" }
 st3215 = { path = "../st3215" }
 prost = { workspace = true }

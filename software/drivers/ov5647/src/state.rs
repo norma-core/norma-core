@@ -120,9 +120,9 @@ impl<K: StationEngine> StateTracker<K> {
             camera: Some(camera.clone()),
             formats,
             stamp: Some(FrameStamp {
-                monotonic_stamp_ns: systime::get_monotonic_stamp_ns(),
-                local_stamp_ns: systime::get_local_stamp_ns(),
-                app_start_id: systime::get_app_start_id(),
+                monotonic_stamp_ns: normfs_time::monotonic_stamp_ns(),
+                local_stamp_ns: normfs_time::local_stamp_ns(),
+                app_start_id: normfs_time::app_start_id(),
                 index: 0,
             }),
             ..Default::default()
@@ -141,9 +141,9 @@ impl<K: StationEngine> StateTracker<K> {
             r#type: RxEnvelopeType::EtDeviceDisconnected as i32,
             camera: Some(camera.clone()),
             stamp: Some(FrameStamp {
-                monotonic_stamp_ns: systime::get_monotonic_stamp_ns(),
-                local_stamp_ns: systime::get_local_stamp_ns(),
-                app_start_id: systime::get_app_start_id(),
+                monotonic_stamp_ns: normfs_time::monotonic_stamp_ns(),
+                local_stamp_ns: normfs_time::local_stamp_ns(),
+                app_start_id: normfs_time::app_start_id(),
                 index: 0,
             }),
             ..Default::default()
@@ -162,9 +162,9 @@ impl<K: StationEngine> StateTracker<K> {
             camera: Some(camera.clone()),
             formats: vec![format.clone()],
             stamp: Some(FrameStamp {
-                monotonic_stamp_ns: systime::get_monotonic_stamp_ns(),
-                local_stamp_ns: systime::get_local_stamp_ns(),
-                app_start_id: systime::get_app_start_id(),
+                monotonic_stamp_ns: normfs_time::monotonic_stamp_ns(),
+                local_stamp_ns: normfs_time::local_stamp_ns(),
+                app_start_id: normfs_time::app_start_id(),
                 index: 0,
             }),
             ..Default::default()
@@ -181,9 +181,9 @@ impl<K: StationEngine> StateTracker<K> {
             r#type: RxEnvelopeType::EtDeviceRecordingEnd as i32,
             camera: Some(camera.clone()),
             stamp: Some(FrameStamp {
-                monotonic_stamp_ns: systime::get_monotonic_stamp_ns(),
-                local_stamp_ns: systime::get_local_stamp_ns(),
-                app_start_id: systime::get_app_start_id(),
+                monotonic_stamp_ns: normfs_time::monotonic_stamp_ns(),
+                local_stamp_ns: normfs_time::local_stamp_ns(),
+                app_start_id: normfs_time::app_start_id(),
                 index: 0,
             }),
             ..Default::default()
@@ -198,9 +198,9 @@ impl<K: StationEngine> StateTracker<K> {
             camera: Some(camera.clone()),
             error,
             stamp: Some(FrameStamp {
-                monotonic_stamp_ns: systime::get_monotonic_stamp_ns(),
-                local_stamp_ns: systime::get_local_stamp_ns(),
-                app_start_id: systime::get_app_start_id(),
+                monotonic_stamp_ns: normfs_time::monotonic_stamp_ns(),
+                local_stamp_ns: normfs_time::local_stamp_ns(),
+                app_start_id: normfs_time::app_start_id(),
                 index: 0,
             }),
             ..Default::default()

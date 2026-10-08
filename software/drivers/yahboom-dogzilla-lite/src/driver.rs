@@ -89,9 +89,9 @@ impl YahboomDogzillaLiteDriver {
 
                         let envelope = TxEnvelope {
                             command_id: cmd.command_id.to_vec(),
-                            monotonic_stamp_ns: systime::get_monotonic_stamp_ns(),
-                            local_stamp_ns: systime::get_local_stamp_ns(),
-                            app_start_id: systime::get_app_start_id(),
+                            monotonic_stamp_ns: normfs_time::monotonic_stamp_ns(),
+                            local_stamp_ns: normfs_time::local_stamp_ns(),
+                            app_start_id: normfs_time::app_start_id(),
                             target_device_serial: command.target_device_serial.clone(),
                             command: Some(command),
                         };
@@ -284,9 +284,9 @@ impl YahboomDogzillaLiteDriver {
 
     fn send_device_connect_signal(comm: &YahboomDogzillaLiteCommunicator, device_info: &YahboomDogzillaLiteDevice) {
         let envelope = RxEnvelope {
-            monotonic_stamp_ns: systime::get_monotonic_stamp_ns(),
-            local_stamp_ns: systime::get_local_stamp_ns(),
-            app_start_id: systime::get_app_start_id(),
+            monotonic_stamp_ns: normfs_time::monotonic_stamp_ns(),
+            local_stamp_ns: normfs_time::local_stamp_ns(),
+            app_start_id: normfs_time::app_start_id(),
             signal_type: YahboomDogzillaLiteSignalType::YahboomDogzillaLiteConnected as i32,
             device: Some(device_info.clone()),
             ..Default::default()
@@ -299,9 +299,9 @@ impl YahboomDogzillaLiteDriver {
 
     fn send_device_disconnect_signal(comm: &YahboomDogzillaLiteCommunicator, device_info: &YahboomDogzillaLiteDevice) {
         let envelope = RxEnvelope {
-            monotonic_stamp_ns: systime::get_monotonic_stamp_ns(),
-            local_stamp_ns: systime::get_local_stamp_ns(),
-            app_start_id: systime::get_app_start_id(),
+            monotonic_stamp_ns: normfs_time::monotonic_stamp_ns(),
+            local_stamp_ns: normfs_time::local_stamp_ns(),
+            app_start_id: normfs_time::app_start_id(),
             signal_type: YahboomDogzillaLiteSignalType::YahboomDogzillaLiteDisconnected as i32,
             device: Some(device_info.clone()),
             ..Default::default()

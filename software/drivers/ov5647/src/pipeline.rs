@@ -260,9 +260,9 @@ async fn run_capture_session<K: StationEngine + Send + Sync + 'static>(
                 match frame2tensor::convert_frame(&frame_data, Quality::HIGH) {
                     Ok(converted) => {
                         let stamp = FrameStamp {
-                            monotonic_stamp_ns: systime::get_monotonic_stamp_ns(),
-                            local_stamp_ns: systime::get_local_stamp_ns(),
-                            app_start_id: systime::get_app_start_id(),
+                            monotonic_stamp_ns: normfs_time::monotonic_stamp_ns(),
+                            local_stamp_ns: normfs_time::local_stamp_ns(),
+                            app_start_id: normfs_time::app_start_id(),
                             index: frame_index,
                         };
 

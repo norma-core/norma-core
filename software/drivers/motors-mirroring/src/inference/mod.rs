@@ -207,7 +207,7 @@ impl Inference {
             let from_to = state.read().from_to.clone();
 
             // Get monotonic timestamp for staleness checking
-            let now_ns = systime::get_monotonic_stamp_ns();
+            let now_ns = normfs_time::monotonic_stamp_ns();
 
             for (source_bus_key, target_bus_keys) in &from_to {
                 // Check if source has fresh data

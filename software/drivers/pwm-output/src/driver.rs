@@ -167,9 +167,9 @@ fn subscribe_commands(
                     };
 
                     let envelope = TxEnvelope {
-                        monotonic_stamp_ns: systime::get_monotonic_stamp_ns(),
-                        local_stamp_ns: systime::get_local_stamp_ns(),
-                        app_start_id: systime::get_app_start_id(),
+                        monotonic_stamp_ns: normfs_time::monotonic_stamp_ns(),
+                        local_stamp_ns: normfs_time::local_stamp_ns(),
+                        app_start_id: normfs_time::app_start_id(),
                         command_id: command.command_id.clone(),
                         target_output_id: decoded.target_output_id.clone(),
                         command: Some(decoded),
@@ -322,9 +322,9 @@ fn rx_envelope(
     error_message: Option<String>,
 ) -> Option<Bytes> {
     let envelope = RxEnvelope {
-        monotonic_stamp_ns: systime::get_monotonic_stamp_ns(),
-        local_stamp_ns: systime::get_local_stamp_ns(),
-        app_start_id: systime::get_app_start_id(),
+        monotonic_stamp_ns: normfs_time::monotonic_stamp_ns(),
+        local_stamp_ns: normfs_time::local_stamp_ns(),
+        app_start_id: normfs_time::app_start_id(),
         signal_type: signal_type as i32,
         device,
         state,

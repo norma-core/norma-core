@@ -290,7 +290,7 @@ impl USBCameraDriver for CameraMacDriver {
                     FrameStamp {
                         monotonic_stamp_ns: frame_info.monotonic_timestamp_ns,
                         local_stamp_ns: frame_info.local_timestamp_ns,
-                        app_start_id: systime::get_app_start_id(),
+                        app_start_id: normfs_time::app_start_id(),
                         index: frame_index,
                     },
                     format_revision,

@@ -581,9 +581,9 @@ async fn send_board_signal(
     error_message: Option<String>,
 ) {
     let envelope = RxEnvelope {
-        monotonic_stamp_ns: systime::get_monotonic_stamp_ns(),
-        local_stamp_ns: systime::get_local_stamp_ns(),
-        app_start_id: systime::get_app_start_id(),
+        monotonic_stamp_ns: normfs_time::monotonic_stamp_ns(),
+        local_stamp_ns: normfs_time::local_stamp_ns(),
+        app_start_id: normfs_time::app_start_id(),
         signal_type: signal_type as i32,
         device: Some(queue.proto(data.map(|data| data.as_ref()))),
         data: data.cloned().unwrap_or_default(),

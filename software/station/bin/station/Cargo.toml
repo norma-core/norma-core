@@ -26,7 +26,7 @@ pwm-output = { path = "../../../drivers/pwm-output" }
 dmesg = { path = "../../../drivers/dmesg" }
 yahboom-dogzilla-lite = { path = "../../../drivers/yahboom-dogzilla-lite", optional = true }
 ov5647 = { path = "../../../drivers/ov5647", optional = true }
-systime = { path = "../../shared/systime-rs" }
+normfs-time = { workspace = true }
 usbvideo = { path = "../../../drivers/usbvideo" }
 sysinfod = { path = "../../../drivers/sysinfod" }
 motors-mirroring = { path = "../../../drivers/motors-mirroring" }

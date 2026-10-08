@@ -13,7 +13,7 @@ categories = ["hardware-support"]
 [dependencies]
 normfs = { workspace = true }
 station_iface = { path = "../../station/shared/station-iface" }
-systime = { path = "../../station/shared/systime-rs" }
+normfs-time = { workspace = true }
 prost = { workspace = true }
 bytes = { workspace = true }
 log = { workspace = true }

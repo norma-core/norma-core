@@ -9,7 +9,7 @@ bytes = { workspace = true }
 log = { workspace = true }
 normfs = { workspace = true }
 station_iface = { path = "../../station/shared/station-iface" }
-systime = { path = "../../station/shared/systime-rs" }
+normfs-time = { workspace = true }
 tokio = { workspace = true }
 tokio-serial = { workspace = true }
 

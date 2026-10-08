@@ -158,9 +158,9 @@ fn merge_modes(
 
         // Create RxEnvelope and write to RX queue
         let rx_envelope = mirroring::RxEnvelope {
-            monotonic_stamp_ns: systime::get_monotonic_stamp_ns(),
-            local_stamp_ns: systime::get_local_stamp_ns(),
-            app_start_id: systime::get_app_start_id(),
+            monotonic_stamp_ns: normfs_time::monotonic_stamp_ns(),
+            local_stamp_ns: normfs_time::local_stamp_ns(),
+            app_start_id: normfs_time::app_start_id(),
             state: Some(inference_state.clone()),
             command,
         };

@@ -155,7 +155,7 @@ impl St3215Port {
                     last_command_time = Instant::now();
 
                     // Calculate command receive latency
-                    let now_ns = systime::get_monotonic_stamp_ns();
+                    let now_ns = normfs_time::monotonic_stamp_ns();
                     let latency_ns = now_ns.saturating_sub(command.monotonic_stamp_ns);
                     let latency_ms = latency_ns as f64 / 1_000_000.0;
 
@@ -555,9 +555,9 @@ impl St3215Port {
         command: &TxEnvelope,
     ) -> Result<(), String> {
         let envelope = RxEnvelope {
-            monotonic_stamp_ns: systime::get_monotonic_stamp_ns(),
-            local_stamp_ns: systime::get_local_stamp_ns(),
-            app_start_id: systime::get_app_start_id(),
+            monotonic_stamp_ns: normfs_time::monotonic_stamp_ns(),
+            local_stamp_ns: normfs_time::local_stamp_ns(),
+            app_start_id: normfs_time::app_start_id(),
             signal_type: St3215SignalType::St3215Command as i32,
             bus: Some(bus_info.clone()),
             motor_id,
@@ -580,9 +580,9 @@ impl St3215Port {
         error: Option<St3215Error>,
     ) -> Result<(), String> {
         let envelope = RxEnvelope {
-            monotonic_stamp_ns: systime::get_monotonic_stamp_ns(),
-            local_stamp_ns: systime::get_local_stamp_ns(),
-            app_start_id: systime::get_app_start_id(),
+            monotonic_stamp_ns: normfs_time::monotonic_stamp_ns(),
+            local_stamp_ns: normfs_time::local_stamp_ns(),
+            app_start_id: normfs_time::app_start_id(),
             signal_type: result as i32,
             bus: Some(bus_info.clone()),
             motor_id,
@@ -603,9 +603,9 @@ impl St3215Port {
         motor_id: u8,
     ) -> Result<(), String> {
         let envelope = RxEnvelope {
-            monotonic_stamp_ns: systime::get_monotonic_stamp_ns(),
-            local_stamp_ns: systime::get_local_stamp_ns(),
-            app_start_id: systime::get_app_start_id(),
+            monotonic_stamp_ns: normfs_time::monotonic_stamp_ns(),
+            local_stamp_ns: normfs_time::local_stamp_ns(),
+            app_start_id: normfs_time::app_start_id(),
             signal_type: St3215SignalType::St3215DriveConnect as i32,
             bus: Some(bus_info.clone()),
             motor_id: motor_id as u32,
@@ -624,9 +624,9 @@ impl St3215Port {
         motor_id: u8,
     ) -> Result<(), String> {
         let envelope = RxEnvelope {
-            monotonic_stamp_ns: systime::get_monotonic_stamp_ns(),
-            local_stamp_ns: systime::get_local_stamp_ns(),
-            app_start_id: systime::get_app_start_id(),
+            monotonic_stamp_ns: normfs_time::monotonic_stamp_ns(),
+            local_stamp_ns: normfs_time::local_stamp_ns(),
+            app_start_id: normfs_time::app_start_id(),
             signal_type: St3215SignalType::St3215DriveDisconnect as i32,
             bus: Some(bus_info.clone()),
             motor_id: motor_id as u32,
@@ -646,9 +646,9 @@ impl St3215Port {
         data: Bytes,
     ) -> Result<(), String> {
         let envelope = RxEnvelope {
-            monotonic_stamp_ns: systime::get_monotonic_stamp_ns(),
-            local_stamp_ns: systime::get_local_stamp_ns(),
-            app_start_id: systime::get_app_start_id(),
+            monotonic_stamp_ns: normfs_time::monotonic_stamp_ns(),
+            local_stamp_ns: normfs_time::local_stamp_ns(),
+            app_start_id: normfs_time::app_start_id(),
             signal_type: St3215SignalType::St3215DriveState as i32,
             bus: Some(bus_info.clone()),
             motor_id: motor_id as u32,
