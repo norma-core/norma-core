@@ -10,6 +10,7 @@ import {
   READ_RETRY_MS,
   decoderRetryAt,
   readUsbVideoPicture,
+  subscribeReconnect,
 } from '@/usbvideo/vp8-frames';
 
 // The station answered and the entries are gone; reading again cannot help.
@@ -59,6 +60,7 @@ export function useUsbVideoPicture(
     }
     let cancelled = false;
     let timer: ReturnType<typeof setTimeout> | undefined;
+    let unsubscribe: (() => void) | undefined;
     if (!shown.current) {
       show('decoding');
     }
@@ -80,7 +82,16 @@ export function useUsbVideoPicture(
         if (late || (result instanceof FrameReadError && !final)) {
           // The entries may be readable once the connection is back.
           const delay = Math.min(READ_RETRY_MS * 2 ** failures, READ_RETRY_MAX_MS);
-          timer = setTimeout(() => load(failures + 1, late ? lateTries + 1 : lateTries), delay);
+          const again = () => {
+            clearTimeout(timer);
+            unsubscribe?.();
+            load(failures + 1, late ? lateTries + 1 : lateTries);
+          };
+          timer = setTimeout(again, delay);
+          if (!late) {
+            // A failed read is most likely the lost connection, so it goes again as soon as that is back.
+            unsubscribe = subscribeReconnect(again);
+          }
           return;
         }
         const retryAt = decoderRetryAt();
@@ -99,6 +110,7 @@ export function useUsbVideoPicture(
     return () => {
       cancelled = true;
       clearTimeout(timer);
+      unsubscribe?.();
     };
   }, [vp8, queueId, entryId, envelope, retry]);
 

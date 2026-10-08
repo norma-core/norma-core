@@ -161,12 +161,22 @@ export class FrameMissing {
 
 let reader: Vp8ChainReader<Frame> | null = null;
 let watched: NormFsClient | null = null;
+const reconnectListeners = new Set<() => void>();
+
+/** Calls `listener` each time the station connection is set up again; returns the unsubscribe. */
+export function subscribeReconnect(listener: () => void): () => void {
+  reconnectListeners.add(listener);
+  return () => reconnectListeners.delete(listener);
+}
 
 // A load cut off with the connection can hang until LOAD_TIMEOUT_MS, so a reconnect starts it over.
 function restartDecoderLoadOnReconnect(normFs: NormFsClient): void {
   if (watched !== normFs) {
     watched = normFs;
-    normFs.addEventListener('__setup_response', () => decoderApi.restart());
+    normFs.addEventListener('__setup_response', () => {
+      decoderApi.restart();
+      reconnectListeners.forEach((listener) => listener());
+    });
   }
 }
 
