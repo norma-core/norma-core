@@ -1,7 +1,7 @@
 import { afterEach, expect, it, vi } from 'vitest';
 import { hikmicro } from '@/api/proto.js';
 import type { StreamEntry } from '@/api/normfs';
-import { ThermalLiveStream } from './live-stream';
+import { ThermalDeviceInfoCache, ThermalLiveStream } from './live-stream';
 
 afterEach(() => vi.useRealTimers());
 
@@ -60,4 +60,38 @@ it('paces reads for older stations that still publish one-second batches', async
   await vi.advanceTimersByTimeAsync(1001);
   expect(client.readLastEntry).toHaveBeenCalledTimes(3);
   stream.dispose();
+});
+
+it('reads a session\'s device info once and retries after a failed read', async () => {
+  const deviceInfo = { usb: { serialNumber: 'EA6343104' }, calibration: { ok: true } };
+  const client = { readSingleEntry: vi.fn()
+    .mockRejectedValueOnce(new Error('request timed out'))
+    .mockResolvedValue({ id: Uint8Array.of(1, 2), data: hikmicro.RxEnvelope.encode({ deviceInfo }).finish() }) };
+  const cache = new ThermalDeviceInfoCache();
+  const queue = 'thermal/device-info/camera';
+  await expect(cache.load(client, queue, Uint8Array.of(1, 2))).rejects.toThrow('request timed out');
+  expect(cache.get(queue, Uint8Array.of(1, 2))).toBeUndefined();
+  const [first, second] = await Promise.all([
+    cache.load(client, queue, Uint8Array.of(1, 2)),
+    cache.load(client, queue, Uint8Array.of(1, 2)),
+  ]);
+  expect(first?.usb?.serialNumber).toBe('EA6343104');
+  expect(second).toBe(first);
+  await cache.load(client, queue, Uint8Array.of(1, 2));
+  expect(client.readSingleEntry).toHaveBeenCalledTimes(2);
+  expect(client.readSingleEntry).toHaveBeenLastCalledWith(queue, Uint8Array.of(1, 2));
+  expect(cache.get(queue, Uint8Array.of(1, 2))).toBe(first);
+});
+
+it('evicts the least recently read session and keeps the last one per queue', async () => {
+  const client = { readSingleEntry: vi.fn((queue: string, id: Uint8Array) => Promise.resolve({ id,
+    data: hikmicro.RxEnvelope.encode({ deviceInfo: { driver: `${queue}#${id[0]}` } }).finish() })) };
+  const cache = new ThermalDeviceInfoCache(2);
+  await cache.load(client, 'a', Uint8Array.of(1));
+  await cache.load(client, 'b', Uint8Array.of(1));
+  cache.get('a', Uint8Array.of(1));
+  await cache.load(client, 'b', Uint8Array.of(2));
+  expect(cache.get('a', Uint8Array.of(1))?.driver).toBe('a#1');
+  expect(cache.get('b', Uint8Array.of(1))).toBeUndefined();
+  expect(cache.latestFor('b')?.driver).toBe('b#2');
 });

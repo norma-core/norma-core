@@ -51376,6 +51376,256 @@ export const hikmicro = $root.hikmicro = (() => {
         return ThermalFramesBlock;
     })();
 
+    hikmicro.DeviceInfoRef = (function() {
+
+        /**
+         * Properties of a DeviceInfoRef.
+         * @memberof hikmicro
+         * @interface IDeviceInfoRef
+         * @property {string|null} [queue] DeviceInfoRef queue
+         * @property {Uint8Array|null} [id] DeviceInfoRef id
+         */
+
+        /**
+         * Constructs a new DeviceInfoRef.
+         * @memberof hikmicro
+         * @classdesc Represents a DeviceInfoRef.
+         * @implements IDeviceInfoRef
+         * @constructor
+         * @param {hikmicro.IDeviceInfoRef=} [properties] Properties to set
+         */
+        function DeviceInfoRef(properties) {
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null && keys[i] !== "__proto__")
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * DeviceInfoRef queue.
+         * @member {string} queue
+         * @memberof hikmicro.DeviceInfoRef
+         * @instance
+         */
+        DeviceInfoRef.prototype.queue = "";
+
+        /**
+         * DeviceInfoRef id.
+         * @member {Uint8Array} id
+         * @memberof hikmicro.DeviceInfoRef
+         * @instance
+         */
+        DeviceInfoRef.prototype.id = $util.newBuffer([]);
+
+        /**
+         * Creates a new DeviceInfoRef instance using the specified properties.
+         * @function create
+         * @memberof hikmicro.DeviceInfoRef
+         * @static
+         * @param {hikmicro.IDeviceInfoRef=} [properties] Properties to set
+         * @returns {hikmicro.DeviceInfoRef} DeviceInfoRef instance
+         */
+        DeviceInfoRef.create = function create(properties) {
+            return new DeviceInfoRef(properties);
+        };
+
+        /**
+         * Encodes the specified DeviceInfoRef message. Does not implicitly {@link hikmicro.DeviceInfoRef.verify|verify} messages.
+         * @function encode
+         * @memberof hikmicro.DeviceInfoRef
+         * @static
+         * @param {hikmicro.IDeviceInfoRef} message DeviceInfoRef message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        DeviceInfoRef.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.queue != null && Object.hasOwnProperty.call(message, "queue"))
+                writer.uint32(/* id 1, wireType 2 =*/10).string(message.queue);
+            if (message.id != null && Object.hasOwnProperty.call(message, "id"))
+                writer.uint32(/* id 2, wireType 2 =*/18).bytes(message.id);
+            return writer;
+        };
+
+        /**
+         * Encodes the specified DeviceInfoRef message, length delimited. Does not implicitly {@link hikmicro.DeviceInfoRef.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof hikmicro.DeviceInfoRef
+         * @static
+         * @param {hikmicro.IDeviceInfoRef} message DeviceInfoRef message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        DeviceInfoRef.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes a DeviceInfoRef message from the specified reader or buffer.
+         * @function decode
+         * @memberof hikmicro.DeviceInfoRef
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {hikmicro.DeviceInfoRef} DeviceInfoRef
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        DeviceInfoRef.decode = function decode(reader, length, error, long) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            if (long === undefined)
+                long = 0;
+            if (long > $Reader.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.hikmicro.DeviceInfoRef();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                if (tag === error)
+                    break;
+                switch (tag >>> 3) {
+                case 1: {
+                        message.queue = reader.string();
+                        break;
+                    }
+                case 2: {
+                        message.id = reader.bytes();
+                        break;
+                    }
+                default:
+                    reader.skipType(tag & 7, long);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes a DeviceInfoRef message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof hikmicro.DeviceInfoRef
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {hikmicro.DeviceInfoRef} DeviceInfoRef
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        DeviceInfoRef.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies a DeviceInfoRef message.
+         * @function verify
+         * @memberof hikmicro.DeviceInfoRef
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        DeviceInfoRef.verify = function verify(message, long) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                return "maximum nesting depth exceeded";
+            if (message.queue != null && message.hasOwnProperty("queue"))
+                if (!$util.isString(message.queue))
+                    return "queue: string expected";
+            if (message.id != null && message.hasOwnProperty("id"))
+                if (!(message.id && typeof message.id.length === "number" || $util.isString(message.id)))
+                    return "id: buffer expected";
+            return null;
+        };
+
+        /**
+         * Creates a DeviceInfoRef message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof hikmicro.DeviceInfoRef
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {hikmicro.DeviceInfoRef} DeviceInfoRef
+         */
+        DeviceInfoRef.fromObject = function fromObject(object, long) {
+            if (object instanceof $root.hikmicro.DeviceInfoRef)
+                return object;
+            if (long === undefined)
+                long = 0;
+            if (long > $util.recursionLimit)
+                throw Error("maximum nesting depth exceeded");
+            let message = new $root.hikmicro.DeviceInfoRef();
+            if (object.queue != null)
+                message.queue = String(object.queue);
+            if (object.id != null)
+                if (typeof object.id === "string")
+                    $util.base64.decode(object.id, message.id = $util.newBuffer($util.base64.length(object.id)), 0);
+                else if (object.id.length >= 0)
+                    message.id = object.id;
+            return message;
+        };
+
+        /**
+         * Creates a plain object from a DeviceInfoRef message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof hikmicro.DeviceInfoRef
+         * @static
+         * @param {hikmicro.DeviceInfoRef} message DeviceInfoRef
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        DeviceInfoRef.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.defaults) {
+                object.queue = "";
+                if (options.bytes === String)
+                    object.id = "";
+                else {
+                    object.id = [];
+                    if (options.bytes !== Array)
+                        object.id = $util.newBuffer(object.id);
+                }
+            }
+            if (message.queue != null && message.hasOwnProperty("queue"))
+                object.queue = message.queue;
+            if (message.id != null && message.hasOwnProperty("id"))
+                object.id = options.bytes === String ? $util.base64.encode(message.id, 0, message.id.length) : options.bytes === Array ? Array.prototype.slice.call(message.id) : message.id;
+            return object;
+        };
+
+        /**
+         * Converts this DeviceInfoRef to JSON.
+         * @function toJSON
+         * @memberof hikmicro.DeviceInfoRef
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        DeviceInfoRef.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for DeviceInfoRef
+         * @function getTypeUrl
+         * @memberof hikmicro.DeviceInfoRef
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        DeviceInfoRef.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+            if (typeUrlPrefix === undefined) {
+                typeUrlPrefix = "type.googleapis.com";
+            }
+            return typeUrlPrefix + "/hikmicro.DeviceInfoRef";
+        };
+
+        return DeviceInfoRef;
+    })();
+
     hikmicro.RxEnvelope = (function() {
 
         /**
@@ -51384,6 +51634,7 @@ export const hikmicro = $root.hikmicro = (() => {
          * @interface IRxEnvelope
          * @property {hikmicro.IDeviceInfo|null} [deviceInfo] RxEnvelope deviceInfo
          * @property {hikmicro.IThermalFramesBlock|null} [frames] RxEnvelope frames
+         * @property {hikmicro.IDeviceInfoRef|null} [deviceInfoRef] RxEnvelope deviceInfoRef
          */
 
         /**
@@ -51418,6 +51669,14 @@ export const hikmicro = $root.hikmicro = (() => {
         RxEnvelope.prototype.frames = null;
 
         /**
+         * RxEnvelope deviceInfoRef.
+         * @member {hikmicro.IDeviceInfoRef|null|undefined} deviceInfoRef
+         * @memberof hikmicro.RxEnvelope
+         * @instance
+         */
+        RxEnvelope.prototype.deviceInfoRef = null;
+
+        /**
          * Creates a new RxEnvelope instance using the specified properties.
          * @function create
          * @memberof hikmicro.RxEnvelope
@@ -51445,6 +51704,8 @@ export const hikmicro = $root.hikmicro = (() => {
                 $root.hikmicro.DeviceInfo.encode(message.deviceInfo, writer.uint32(/* id 1, wireType 2 =*/10).fork()).ldelim();
             if (message.frames != null && Object.hasOwnProperty.call(message, "frames"))
                 $root.hikmicro.ThermalFramesBlock.encode(message.frames, writer.uint32(/* id 2, wireType 2 =*/18).fork()).ldelim();
+            if (message.deviceInfoRef != null && Object.hasOwnProperty.call(message, "deviceInfoRef"))
+                $root.hikmicro.DeviceInfoRef.encode(message.deviceInfoRef, writer.uint32(/* id 3, wireType 2 =*/26).fork()).ldelim();
             return writer;
         };
 
@@ -51491,6 +51752,10 @@ export const hikmicro = $root.hikmicro = (() => {
                     }
                 case 2: {
                         message.frames = $root.hikmicro.ThermalFramesBlock.decode(reader, reader.uint32(), undefined, long + 1);
+                        break;
+                    }
+                case 3: {
+                        message.deviceInfoRef = $root.hikmicro.DeviceInfoRef.decode(reader, reader.uint32(), undefined, long + 1);
                         break;
                     }
                 default:
@@ -51542,6 +51807,11 @@ export const hikmicro = $root.hikmicro = (() => {
                 if (error)
                     return "frames." + error;
             }
+            if (message.deviceInfoRef != null && message.hasOwnProperty("deviceInfoRef")) {
+                let error = $root.hikmicro.DeviceInfoRef.verify(message.deviceInfoRef, long + 1);
+                if (error)
+                    return "deviceInfoRef." + error;
+            }
             return null;
         };
 
@@ -51571,6 +51841,11 @@ export const hikmicro = $root.hikmicro = (() => {
                     throw TypeError(".hikmicro.RxEnvelope.frames: object expected");
                 message.frames = $root.hikmicro.ThermalFramesBlock.fromObject(object.frames, long + 1);
             }
+            if (object.deviceInfoRef != null) {
+                if (typeof object.deviceInfoRef !== "object")
+                    throw TypeError(".hikmicro.RxEnvelope.deviceInfoRef: object expected");
+                message.deviceInfoRef = $root.hikmicro.DeviceInfoRef.fromObject(object.deviceInfoRef, long + 1);
+            }
             return message;
         };
 
@@ -51590,11 +51865,14 @@ export const hikmicro = $root.hikmicro = (() => {
             if (options.defaults) {
                 object.deviceInfo = null;
                 object.frames = null;
+                object.deviceInfoRef = null;
             }
             if (message.deviceInfo != null && message.hasOwnProperty("deviceInfo"))
                 object.deviceInfo = $root.hikmicro.DeviceInfo.toObject(message.deviceInfo, options);
             if (message.frames != null && message.hasOwnProperty("frames"))
                 object.frames = $root.hikmicro.ThermalFramesBlock.toObject(message.frames, options);
+            if (message.deviceInfoRef != null && message.hasOwnProperty("deviceInfoRef"))
+                object.deviceInfoRef = $root.hikmicro.DeviceInfoRef.toObject(message.deviceInfoRef, options);
             return object;
         };
 
