@@ -344,8 +344,9 @@ export { useKeyboardNavigation } from "./useKeyboardNavigation";
 export { useWakeLock } from "./useWakeLock";
 export { useBusMonitor } from "./useBusMonitor";
 export { useElementFullscreen } from "./useElementFullscreen";
+export { useUsbVideoPicture } from "./useUsbVideoPicture";
 export { ThemeProvider, useTheme } from "./useTheme";
-// Plus hook-owned type exports: Theme, TimelineControlsRef, UseWakeLockReturn, BusStatus, ErrorPacketDump
+// Plus hook-owned type exports: Theme, TimelineControlsRef, UseWakeLockReturn, BusStatus, ErrorPacketDump, UsbVideoPicture
 ```
 
 Modules outside `src/hooks/` import hooks through `@/hooks`. Hook implementations import sibling hooks directly rather than through the barrel, which avoids a cycle from `index.ts` back into the implementation being exported.

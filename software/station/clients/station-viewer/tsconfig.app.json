@@ -18,7 +18,8 @@
 
     /* Path Aliases */
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "libavjs-webcodecs-polyfill": ["./src/usbvideo/libavjs-webcodecs-polyfill.d.ts"]
     },
 
     /* Linting */

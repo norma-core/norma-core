@@ -193,7 +193,12 @@ impl WebServer {
                 || asset_path.ends_with(".urdf.gz")
                 || asset_path == "logo.svg";
 
-            let cache_header = if has_js_hash || is_static_asset {
+            // libav.js files carry their version in the name; its loader does not.
+            let is_versioned_libav = asset_path
+                .strip_prefix("libav/libav-")
+                .is_some_and(|rest| rest.starts_with(|c: char| c.is_ascii_digit()));
+
+            let cache_header = if has_js_hash || is_static_asset || is_versioned_libav {
                 "public, max-age=31536000, immutable"
             } else {
                 "no-store, no-cache, must-revalidate"

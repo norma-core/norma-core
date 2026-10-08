@@ -2,9 +2,12 @@ import Long from 'long';
 import { airgradient_open_air_o_1pst, arduino_nicla_sense_env, dmesg, hikmicro, ina226, yahboom_dogzilla_lite, drivers, inference, motors_mirroring, normvla, pwm_output, st3215, sysinfo, usbvideo, vesc_trampa, victron_smartsolar_mppt, arduino_nicla_sense_me } from '@/api/proto.js';
 import { ErrEntryNotFound, NormFsClient, type StreamEntry } from "./normfs.js";
 import { getGlobalTimeAdjustmentNs, isTimeSyncActive } from '@/api/time-sync.js';
+import { decodeUsbVideoPicture } from '@/usbvideo/vp8-frames.js';
+import { isVp8 } from '@/usbvideo/vp8-chain.js';
 import {
   createLiveCameraMetadataEnvelope,
   publishLiveCameraFrame,
+  publishLiveCameraPicture,
 } from '@/usbvideo/live-camera-store';
 
 export interface FrameEntry<T> {
@@ -596,7 +599,14 @@ export async function parseFrame(
           case drivers.QueueDataType.QDT_USB_VIDEO_FRAMES: {
             const publishCurrentVideoFrame = options.shouldPublishVideoFrames?.() ?? false;
             if (publishCurrentVideoFrame) {
-              publishLiveCameraFrame(result.queue, result.decoded as usbvideo.IRxEnvelope);
+              const { queue, id } = result;
+              const envelope = result.decoded as usbvideo.IRxEnvelope;
+              if (isVp8(envelope) && id) {
+                // Decoded off the snapshot, so a slow decode holds back no other device.
+                publishLiveCameraPicture(queue, envelope, () => decodeUsbVideoPicture(normFs, queue, id, envelope));
+              } else {
+                publishLiveCameraFrame(queue, envelope);
+              }
             }
             frame.videoQueues!.push({
               queueId: result.queue,
