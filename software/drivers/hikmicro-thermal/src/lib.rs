@@ -23,6 +23,7 @@ pub mod hikmicro_proto {
 
 #[cfg(target_os = "linux")]
 mod linux;
+pub mod y16;
 
 pub const DEFAULT_QUEUE_PREFIX: &str = "hikmicro-thermal";
 pub const SENSOR_WIDTH: u32 = 256;

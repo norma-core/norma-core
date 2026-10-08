@@ -14,8 +14,8 @@ use norm_uvc_sys::*;
 
 use crate::{
     COMPACT_FPS, COMPACT_PAYLOAD_LEN, COMPACT_UVC_HEIGHT, COMPACT_UVC_WIDTH, CameraIdentity,
-    FOURCC_YUY2, RUNTIME_BLOCK_LEN, THERMAL_Y16_LEN, compact_layout, enqueue_envelope,
-    hikmicro_proto::hikmicro, parse_runtime_block,
+    FOURCC_YUY2, RUNTIME_BLOCK_LEN, SENSOR_WIDTH, THERMAL_Y16_LEN, compact_layout,
+    enqueue_envelope, hikmicro_proto::hikmicro, parse_runtime_block, y16::Y16Encoder,
 };
 
 const HIK_VENDOR_ID: u16 = 0x2bdf;
@@ -139,6 +139,7 @@ pub fn capture_continuous(
     frame_timeout: Duration,
     frame_skip: u32,
 ) -> Result<(), String> {
+    let mut y16 = Y16Encoder::new().map_err(|e| format!("Y16 encoder: {}", e))?;
     let ctx = UvcContext::new()?;
     let mut stream = open_compact_stream(&ctx, camera)?;
     stream.start()?;
@@ -215,7 +216,7 @@ pub fn capture_continuous(
                     continue;
                 }
 
-                frames.push(thermal_frame_from_capture(frame));
+                frames.push(thermal_frame_from_capture(frame, &mut y16));
                 if frames.len() >= FRAMES_PER_RX_ENVELOPE {
                     flush_frames_block(sink, &device_info, &mut block_sequence, &mut frames)?;
                 }
@@ -278,20 +279,37 @@ fn enqueue_frames_block(
     )
 }
 
-fn thermal_frame_from_capture(frame: CapturedFrame) -> hikmicro::ThermalFrame {
+fn thermal_frame_from_capture(
+    frame: CapturedFrame,
+    y16: &mut Y16Encoder,
+) -> hikmicro::ThermalFrame {
     let runtime = frame
         .data
         .get(THERMAL_Y16_LEN..THERMAL_Y16_LEN + RUNTIME_BLOCK_LEN)
         .map(parse_runtime_block)
         .unwrap_or_default();
 
-    hikmicro::ThermalFrame {
+    let mut thermal = hikmicro::ThermalFrame {
         sequence: frame.sequence,
         monotonic_stamp_ns: frame.monotonic_stamp_ns,
         local_stamp_ns: frame.local_stamp_ns,
         runtime: Some(runtime),
-        payload: frame.data,
+        ..Default::default()
+    };
+    // Any other length is kept whole, so no captured byte is dropped.
+    if frame.data.len() == COMPACT_PAYLOAD_LEN {
+        match y16.encode(&frame.data[..THERMAL_Y16_LEN], SENSOR_WIDTH as usize) {
+            Ok(encoded) => {
+                thermal.set_y16_encoding(hikmicro::Y16Encoding::Y16MedSplitZstd);
+                thermal.y16 = Bytes::from(encoded);
+                thermal.runtime_block = frame.data.slice(THERMAL_Y16_LEN..);
+                return thermal;
+            }
+            Err(e) => log::warn!("HIKMICRO Y16 encoding failed, storing raw: {}", e),
+        }
     }
+    thermal.payload = frame.data;
+    thermal
 }
 
 fn compact_stream_format(ctrl: &uvc_stream_ctrl_t) -> hikmicro::CompactStreamFormat {
@@ -733,6 +751,43 @@ mod tests {
             assert_eq!(format.format_index, 1);
             assert_eq!(format.frames_per_second, 25.0);
         }
+    }
+
+    #[test]
+    fn compact_frames_are_stored_encoded_and_lossless() {
+        let mut y16 = Y16Encoder::new().unwrap();
+        let mut seed = 1u32;
+        let data: Vec<u8> = (0..COMPACT_PAYLOAD_LEN)
+            .map(|_| {
+                seed = seed.wrapping_mul(1_103_515_245).wrapping_add(12_345);
+                (seed >> 16) as u8
+            })
+            .collect();
+        let capture = |data: Vec<u8>| CapturedFrame {
+            sequence: 7,
+            monotonic_stamp_ns: 1,
+            local_stamp_ns: 2,
+            data: Bytes::from(data),
+        };
+
+        let frame = thermal_frame_from_capture(capture(data.clone()), &mut y16);
+        assert_eq!(frame.y16_encoding(), hikmicro::Y16Encoding::Y16MedSplitZstd);
+        assert!(frame.payload.is_empty());
+        let mut restored = crate::y16::decode(
+            &frame.y16,
+            SENSOR_WIDTH as usize,
+            crate::SENSOR_HEIGHT as usize,
+        )
+        .unwrap();
+        restored.extend_from_slice(&frame.runtime_block);
+        assert_eq!(restored, data);
+
+        let mut long = data;
+        long.push(0xab);
+        let frame = thermal_frame_from_capture(capture(long.clone()), &mut y16);
+        assert_eq!(frame.y16_encoding(), hikmicro::Y16Encoding::Y16Raw);
+        assert!(frame.y16.is_empty() && frame.runtime_block.is_empty());
+        assert_eq!(frame.payload, long);
     }
 
     #[test]

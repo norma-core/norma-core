@@ -19,9 +19,21 @@ station. The Linux driver discovers USB `2bdf:0102` and publishes
    indices in frame envelopes; these indices differ between camera models.
 6. Poll at 200 ms intervals. Wait up to `frame-timeout` (default 5 seconds) for
    complete payloads. Publish the retained frames with their calibration data.
-7. The viewer reads the first 98304 bytes as 256×192 little-endian detector
-   counts and the following 2048 bytes as runtime calibration state. It combines
-   these with the 14336-byte factory blob to calculate per-pixel Celsius values.
+   The first 98304 bytes, 256×192 little-endian detector counts, are packed
+   losslessly into `y16`, each frame on its own; the following 2048 bytes go
+   to `runtime_block` unchanged. A payload of any other length is kept whole in
+   `payload`, as in entries written before. Packing, in row-major order:
+   - prediction: 0 for the first pixel, the left neighbour in the first row,
+     the one above in the first column; elsewhere MED of a = left, b = above,
+     c = above-left: min(a, b) if c >= max(a, b), max(a, b) if c <= min(a, b),
+     else a + b - c;
+   - residual: pixel − prediction mod 2^16, read as int16 and zigzagged
+     ((r << 1) ^ (r >> 15));
+   - the low bytes of all residuals, then the high bytes, compressed as one
+     zstd frame (level 1) with its content size set.
+7. The viewer unpacks the counts and reads the runtime block as calibration
+   state. It combines these with the 14336-byte factory blob to calculate
+   per-pixel Celsius values.
 
 This is not the TC001 `raw / 64 - 273.15` wire format.
 
