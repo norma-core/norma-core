@@ -616,7 +616,7 @@ mod tests {
             let own = psnr(&camera_like(W as usize, H as usize, t), &fresh.rgb);
             let next = psnr(&camera_like(W as usize, H as usize, t + 3), &fresh.rgb);
             assert!(
-                own > 33.0 && own > next + 3.0,
+                own > 25.0 && own > next + 1.0,
                 "entry {id}: {own} vs {next}"
             );
             assert!(keyframe_of(id, envelope).is_ok());

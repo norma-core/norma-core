@@ -42,8 +42,8 @@ struct nc_vp8_enc *nc_vp8_enc_new(unsigned w, unsigned h, int cq_level, int cpu_
 	cfg.g_w = w;
 	cfg.g_h = h;
 	cfg.g_threads = 1;
-	/* Frames are counted at 30 per second; with CQ the rate only caps the
-	 * worst case, so the guess does not need to match the camera. */
+	/* Frames are counted at 30 per second whatever the camera runs at, so the
+	 * target is a per-frame budget of 0.1 bit a pixel: 3.8 KB at 640x480. */
 	cfg.g_timebase.num = 1;
 	cfg.g_timebase.den = 30;
 	/* No lookahead: each frame's packet comes out of its own encode call. */
@@ -52,10 +52,16 @@ struct nc_vp8_enc *nc_vp8_enc_new(unsigned w, unsigned h, int cq_level, int cpu_
 	cfg.rc_dropframe_thresh = 0;
 	cfg.rc_resize_allowed = 0;
 	cfg.rc_end_usage = VPX_CQ;
-	/* kbit/s: about 4 bits a pixel at 30 fps, well above what CQ asks for. */
-	cfg.rc_target_bitrate = w * h * 30 * 4 / 1000;
+	cfg.rc_target_bitrate = w * h * 30 / 10 / 1000;
 	cfg.rc_min_quantizer = 4;
-	cfg.rc_max_quantizer = 48;
+	cfg.rc_max_quantizer = 56;
+	/* libvpx's realtime buffer, in ms: a short one keeps frame sizes even
+	 * enough for a mobile link. */
+	cfg.rc_undershoot_pct = 50;
+	cfg.rc_overshoot_pct = 50;
+	cfg.rc_buf_sz = 1000;
+	cfg.rc_buf_initial_sz = 500;
+	cfg.rc_buf_optimal_sz = 600;
 	/* Keyframes are placed by the caller. */
 	cfg.kf_mode = VPX_KF_DISABLED;
 
@@ -76,7 +82,9 @@ struct nc_vp8_enc *nc_vp8_enc_new(unsigned w, unsigned h, int cq_level, int cpu_
 	 * per packet keeps entry N = frame N. */
 	if ((err = vpx_codec_control(&e->ctx, VP8E_SET_ENABLEAUTOALTREF, 0)) != VPX_CODEC_OK ||
 	    (err = vpx_codec_control(&e->ctx, VP8E_SET_CPUUSED, cpu_used)) != VPX_CODEC_OK ||
-	    (err = vpx_codec_control(&e->ctx, VP8E_SET_CQ_LEVEL, cq_level)) != VPX_CODEC_OK) {
+	    (err = vpx_codec_control(&e->ctx, VP8E_SET_CQ_LEVEL, cq_level)) != VPX_CODEC_OK ||
+	    /* A keyframe aims at nine frames' budget, about 35 KB at 640x480. */
+	    (err = vpx_codec_control(&e->ctx, VP8E_SET_MAX_INTRA_BITRATE_PCT, 900)) != VPX_CODEC_OK) {
 		fail(&e->ctx, err, "encoder control", msg, msg_len);
 		vpx_codec_destroy(&e->ctx);
 		free(e);

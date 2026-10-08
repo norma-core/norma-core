@@ -3,11 +3,12 @@ use std::ptr;
 
 use super::{DecodedFrame, EncodedFrame, VideoDecoder, VideoEncoder, i420_to_rgb, rgb_to_i420};
 
-/// Lower is better; 63 is the worst. At 8, recorded 224p camera-like frames
-/// took 3.1 KB each against 12.1 KB as JPEG q90.
-const CQ_LEVEL: c_int = 8;
-/// libvpx's realtime speed for VP8, -16..16; higher is faster.
-const CPU_USED: c_int = 8;
+/// Lower is better; 63 is the worst. The bitrate cap binds first on busy
+/// scenes, so this only decides how little a still scene costs.
+const CQ_LEVEL: c_int = 24;
+/// Negative is a fixed realtime speed; a positive value makes libvpx pick one
+/// from encode times against the 30 fps the shim assumes.
+const CPU_USED: c_int = -12;
 
 #[repr(C)]
 struct RawEncoder {
@@ -236,7 +237,7 @@ mod tests {
             let out = dec.decode(&packet.data).unwrap();
             assert_eq!((out.width, out.height), (w, h));
             assert!(
-                psnr(&src, &out.rgb) > 36.0,
+                psnr(&src, &out.rgb) > 30.0,
                 "frame {t}: {}",
                 psnr(&src, &out.rgb)
             );
