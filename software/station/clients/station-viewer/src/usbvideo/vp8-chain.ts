@@ -10,6 +10,12 @@ const MAX_CHAIN = 1024n;
 /** How long a decoder may hold a frame before the chain is flushed out of it. */
 const OUTPUT_TIMEOUT_MS = 2000;
 
+/** The same before any decoder has output: libav.js may still be starting its worker. */
+const FIRST_OUTPUT_TIMEOUT_MS = 10_000;
+
+/** The decoder did not output the frame in time, which says nothing about the chain. */
+export class DecoderLateError extends Error {}
+
 /** How long that flush may take before the decoder is given up on. */
 const FLUSH_TIMEOUT_MS = 2000;
 
@@ -113,13 +119,18 @@ function within<T>(promise: Promise<T>, ms: number): Promise<T | 'late'> {
 export class Vp8ChainReader<F extends Picture> {
   private readonly cursors = new Map<string, Cursor<F>>();
   private readonly busy = new Map<string, Promise<unknown>>();
+  /** A decoder has output a picture, so the decoding library is up. */
+  private started = false;
 
   constructor(
     private readonly api: DecoderApi<F>,
     private readonly readRange: (queue: string, from: bigint, count: number) => Promise<ChainEntry[]>,
   ) {}
 
-  /** The frame at `id`, which the caller owns and closes; null when the chain is broken. */
+  /**
+   * The frame at `id`, which the caller owns and closes; null when the chain
+   * is broken. Rejects with DecoderLateError when the decoder was too slow.
+   */
   frameAt(queue: string, id: bigint, envelope: usbvideo.IRxEnvelope): Promise<F | null> {
     // One reader per queue at a time: a decoder's outputs follow its inputs.
     const previous = this.busy.get(queue) ?? Promise.resolve();
@@ -195,14 +206,18 @@ export class Vp8ChainReader<F extends Picture> {
       return this.drop(queue, cursor);
     }
 
-    const result = await within(target, OUTPUT_TIMEOUT_MS);
+    const result = await within(target, this.started ? OUTPUT_TIMEOUT_MS : FIRST_OUTPUT_TIMEOUT_MS);
     if (result === 'late') {
       // Flush releases a buffering decoder's frames but leaves it wanting a
       // keyframe; a target it still has not output was never produced. A
       // flush that hangs too is cut short, so the queue's next read can run.
       await within(cursor.decoder.flush().catch(() => undefined), FLUSH_TIMEOUT_MS);
       this.drop(queue, cursor);
-      return target;
+      const picture = await target;
+      if (!picture) {
+        throw new DecoderLateError(`no picture for entry ${id} in time`);
+      }
+      return picture;
     }
     if (result === null) {
       return this.drop(queue, cursor);
@@ -215,6 +230,7 @@ export class Vp8ChainReader<F extends Picture> {
     const cursor = { keyframe, last: keyframe - 1n, waiting, failed: false } as Cursor<F>;
     cursor.decoder = this.api.createDecoder({
       output: (picture) => {
+        this.started = true;
         // Outputs come in decode order; one past a request means the decoder
         // dropped that frame, and a picture nobody asked for is closed.
         while (waiting.length > 0 && waiting[0].timestamp < picture.timestamp) {

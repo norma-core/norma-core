@@ -4,7 +4,7 @@ import { beforeAll, describe, expect, it, vi } from 'vitest';
 import LibAV from '@libav.js/variant-webm';
 import * as polyfill from 'libavjs-webcodecs-polyfill';
 import { frame, usbvideo } from '@/api/proto.js';
-import { type ChainDecoder, type ChainEntry, type DecoderApi, Vp8ChainReader, idToBytes } from './vp8-chain.js';
+import { DecoderLateError, type ChainDecoder, type ChainEntry, type DecoderApi, Vp8ChainReader, idToBytes } from './vp8-chain.js';
 
 type Picture = VideoFrame;
 
@@ -263,7 +263,7 @@ describe('Vp8ChainReader', () => {
     reader.close();
   }, 120_000);
 
-  it('gives no frame when the decoder never outputs it, and keeps reading', async () => {
+  it('reports a frame the decoder never outputs as late, and keeps reading', async () => {
     const entries = await recordQueue(10, 10);
     const frames = entries.filter((e) => e.envelope.type === usbvideo.RxEnvelopeType.ET_FRAMES);
     const lost = frames[5];
@@ -283,7 +283,7 @@ describe('Vp8ChainReader', () => {
       }),
     };
     const reader = new Vp8ChainReader(dropping, rangeOf(entries));
-    expect(await reader.frameAt('cam', lost.id, lost.envelope)).toBeNull();
+    await expect(reader.frameAt('cam', lost.id, lost.envelope)).rejects.toBeInstanceOf(DecoderLateError);
     const next = await reader.frameAt('cam', frames[7].id, frames[7].envelope);
     expect(next).not.toBeNull();
     next!.close();
@@ -334,11 +334,13 @@ describe('Vp8ChainReader', () => {
       const reader = new Vp8ChainReader(fake, rangeOf(entries));
       const stuck = reader.frameAt('cam', entries[2].id, entries[2].envelope);
       const next = reader.frameAt('cam', entries[3].id, entries[3].envelope);
-      await vi.advanceTimersByTimeAsync(4_000);
-      expect(await stuck).toBeNull();
+      const stuckLate = expect(stuck).rejects.toBeInstanceOf(DecoderLateError);
+      const nextLate = expect(next).rejects.toBeInstanceOf(DecoderLateError);
+      await vi.advanceTimersByTimeAsync(12_000);
+      await stuckLate;
       expect(decoders[0].closed).toBe(true);
-      await vi.advanceTimersByTimeAsync(4_000);
-      expect(await next).toBeNull();
+      await vi.advanceTimersByTimeAsync(12_000);
+      await nextLate;
       expect(decoders).toHaveLength(2);
       reader.close();
     } finally {

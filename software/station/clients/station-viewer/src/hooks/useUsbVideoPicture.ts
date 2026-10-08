@@ -2,9 +2,10 @@ import { useEffect, useRef, useState } from 'react';
 import type { usbvideo } from '@/api/proto.js';
 import { ErrEntryNotFound, ErrQueueNotFound } from '@/api/normfs';
 import webSocketManager from '@/api/websocket';
-import { isVp8 } from '@/usbvideo/vp8-chain';
+import { idFromBytes, isVp8 } from '@/usbvideo/vp8-chain';
 import {
   FrameReadError,
+  FrameRetryError,
   READ_RETRY_MAX_MS,
   READ_RETRY_MS,
   decoderRetryAt,
@@ -13,6 +14,7 @@ import {
 
 // The station answered and the entries are gone; reading again cannot help.
 const FINAL_READ_ERRORS: unknown[] = [ErrEntryNotFound, ErrQueueNotFound];
+const DECODER_RETRIES = 3;
 
 export type UsbVideoPicture = ImageBitmap | 'decoding' | 'missing';
 
@@ -68,19 +70,25 @@ export function useUsbVideoPicture(
           }
           return;
         }
-        if (result instanceof FrameReadError) {
-          if (FINAL_READ_ERRORS.includes(result.reason)) {
-            show('missing');
-            return;
-          }
-          // The entries may be readable once the connection is back.
+        if (result instanceof ImageBitmap) {
+          show(result);
+          return;
+        }
+        const final = result instanceof FrameReadError && FINAL_READ_ERRORS.includes(result.reason);
+        // A decoder that stays late is more likely choking on the chain than slow, so it gets a few tries.
+        const late = result instanceof FrameRetryError && failures < DECODER_RETRIES;
+        if (late || (result instanceof FrameReadError && !final)) {
+          // The entries may be readable once the connection is back, and a slow decoder may catch up.
           const delay = Math.min(READ_RETRY_MS * 2 ** failures, READ_RETRY_MAX_MS);
           timer = setTimeout(() => load(failures + 1), delay);
           return;
         }
-        const retryAt = result ? null : decoderRetryAt();
+        const retryAt = decoderRetryAt();
         if (retryAt === null) {
-          show(result ?? 'missing');
+          console.warn(`VP8 frame ${idFromBytes(entryId)} of ${queueId} is not available:`,
+            result instanceof FrameReadError ? `entries are gone (${String(result.reason)})`
+              : result instanceof FrameRetryError ? result.message : result.reason);
+          show('missing');
           return;
         }
         // No decoder yet, so not this frame's fault: try again once one may load.

@@ -1,6 +1,6 @@
 import { usbvideo } from '@/api/proto.js';
 import type { NormFsClient } from '@/api/normfs.js';
-import { type ChainEntry, type DecoderApi, Vp8ChainReader, idFromBytes, idToBytes } from './vp8-chain.js';
+import { DecoderLateError, type ChainEntry, type DecoderApi, Vp8ChainReader, idFromBytes, idToBytes } from './vp8-chain.js';
 
 type Frame = VideoFrame;
 
@@ -134,6 +134,18 @@ export class FrameReadError extends Error {
   }
 }
 
+/** The frame was not drawn for a reason that may pass, such as a slow decoder. */
+export class FrameRetryError extends Error {}
+
+/** The frame cannot be shown; `reason` says why, for the console. */
+export class FrameMissing {
+  readonly reason: string;
+
+  constructor(reason: string) {
+    this.reason = reason;
+  }
+}
+
 let reader: Vp8ChainReader<Frame> | null = null;
 
 function chainReader(normFs: NormFsClient, decoders: DecoderApi<Frame>): Vp8ChainReader<Frame> {
@@ -166,27 +178,30 @@ export async function decodeUsbVideoPicture(
   envelope: usbvideo.IRxEnvelope,
 ): Promise<ImageBitmap | null> {
   const picture = await readUsbVideoPicture(normFs, queue, entryId, envelope);
-  return picture instanceof FrameReadError ? null : picture;
+  return picture instanceof ImageBitmap ? picture : null;
 }
 
-/** As decodeUsbVideoPicture, but hands back a failed read instead of null. */
+/** As decodeUsbVideoPicture, but says why there is no picture and whether trying again may help. */
 export async function readUsbVideoPicture(
   normFs: NormFsClient,
   queue: string,
   entryId: Uint8Array,
   envelope: usbvideo.IRxEnvelope,
-): Promise<ImageBitmap | null | FrameReadError> {
+): Promise<ImageBitmap | FrameMissing | FrameReadError | FrameRetryError> {
   try {
     const decoders = await decoderApi();
     if (!decoders) {
-      return null;
+      return new FrameMissing('VP8 decoder did not load');
     }
     const picture = await chainReader(normFs, decoders).frameAt(queue, idFromBytes(entryId), envelope);
     if (!picture) {
-      return null;
+      return new FrameMissing('the chain back to its keyframe is broken or does not decode');
     }
     try {
       return await decoders.toBitmap(picture);
+    } catch (error) {
+      console.debug('VP8 frame draw failed:', error);
+      return new FrameRetryError(`drawing the decoded frame failed: ${String(error)}`);
     } finally {
       // Decoders hand out a few frames at a time; holding one stalls them.
       picture.close();
@@ -196,8 +211,11 @@ export async function readUsbVideoPicture(
       console.debug('VP8 frame read failed:', error.message);
       return error;
     }
+    if (error instanceof DecoderLateError) {
+      return new FrameRetryError(error.message);
+    }
     console.error('VP8 frame decode failed:', error);
-    return null;
+    return new FrameMissing(`decode failed: ${String(error)}`);
   }
 }
 
