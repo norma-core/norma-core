@@ -186,7 +186,7 @@ jobs:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup Rust
-        uses: dtolnay/rust-toolchain@1.97.1
+        uses: dtolnay/rust-toolchain@1.99.0
         with:
           targets: x86_64-unknown-linux-gnu,aarch64-unknown-linux-gnu
 
@@ -270,7 +270,7 @@ jobs:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup Rust
-        uses: dtolnay/rust-toolchain@1.97.1
+        uses: dtolnay/rust-toolchain@1.99.0
 
       - name: Install nasm (required by turbojpeg-sys)
         run: brew install nasm
