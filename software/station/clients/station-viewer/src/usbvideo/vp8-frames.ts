@@ -10,12 +10,17 @@ type Frame = VideoFrame;
 export const RETRY_AFTER_MS = 10_000;
 /** A load still pending after this counts as failed; the wasm is 2.3 MB. */
 export const LOAD_TIMEOUT_MS = 60_000;
+/** A reconnect leaves a younger load alone: it may be loading fine, e.g. from the cache. */
+export const RESTART_AFTER_MS = 5_000;
 
 export interface RetryingLoader<T> {
   (): Promise<T | null>;
   /** When a failed load may be tried again; null when none is waiting. */
   retryAt(): number | null;
-  /** Gives up on a pending load so the next call starts a fresh one at once. */
+  /**
+   * After a reconnect: gives up on a load running for RESTART_AFTER_MS or
+   * more, or lets a failed one be tried again, so the next call starts at once.
+   */
   restart(): void;
 }
 
@@ -27,13 +32,15 @@ const RESTARTED = new Error('restarted');
  * RETRY_AFTER_MS have passed.
  */
 export function retryingLoader<T>(
-  load: (attempt: number) => Promise<T>,
+  load: (attempt: number, signal: AbortSignal) => Promise<T>,
   now: () => number = () => Date.now(),
 ): RetryingLoader<T> {
   let pending: Promise<T | null> | null = null;
   let failedAt: number | null = null;
   let attempt = 0;
-  let abort: ((error: Error) => void) | null = null;
+  let current: { startedAt: number; reject: (error: Error) => void; run: Promise<unknown> } | null = null;
+  // An attempt given up on after a reconnect; the next waits for it, so two never initialise the decoder at once.
+  let abandoned: Promise<unknown> | null = null;
   const get = () => {
     if (pending) {
       return pending;
@@ -42,16 +49,29 @@ export function retryingLoader<T>(
       return Promise.resolve(null);
     }
     let timer: ReturnType<typeof setTimeout> | undefined;
+    const self = { startedAt: now(), reject: (_: Error) => {}, run: Promise.resolve() as Promise<unknown> };
     const timeout = new Promise<never>((_, reject) => {
       timer = setTimeout(() => reject(new Error(`no answer in ${LOAD_TIMEOUT_MS / 1000} s`)), LOAD_TIMEOUT_MS);
-      abort = reject;
+      self.reject = reject;
     });
-    pending = Promise.race([load(attempt++), timeout])
+    current = self;
+    const controller = new AbortController();
+    const n = attempt++;
+    // An abandoned attempt stops its instances when aborted, but one stuck starting its worker
+    // cannot be stopped, so it is waited for only so long.
+    const run = abandoned
+      ? Promise.race([abandoned, new Promise((resolve) => setTimeout(resolve, RESTART_AFTER_MS))])
+        .then(() => load(n, controller.signal))
+      : load(n, controller.signal);
+    abandoned = null;
+    self.run = run.catch(() => undefined);
+    pending = Promise.race([run, timeout])
       .then((loaded) => {
         failedAt = null;
         return loaded;
       })
       .catch((error: unknown) => {
+        controller.abort();
         if (error === RESTARTED) {
           failedAt = now() - RETRY_AFTER_MS;
         } else {
@@ -63,13 +83,24 @@ export function retryingLoader<T>(
       })
       .finally(() => {
         clearTimeout(timer);
-        abort = null;
+        if (current === self) {
+          current = null;
+        }
       });
     return pending;
   };
   return Object.assign(get, {
     retryAt: () => (pending || failedAt === null ? null : failedAt + RETRY_AFTER_MS),
-    restart: () => abort?.(RESTARTED),
+    restart: () => {
+      if (current) {
+        if (now() - current.startedAt >= RESTART_AFTER_MS) {
+          abandoned = current.run;
+          current.reject(RESTARTED);
+        }
+      } else if (failedAt !== null) {
+        failedAt = now() - RETRY_AFTER_MS;
+      }
+    },
   });
 }
 
@@ -94,7 +125,7 @@ type LibAVInstance = Awaited<ReturnType<LibAVWrapper['LibAV']>>;
  * runtime, not bundled, so the whole LGPL library can be swapped by
  * replacing the files there (scripts/copy-libav.mjs puts them in place).
  */
-async function loadDecoderApi(attempt: number): Promise<DecoderApi<Frame>> {
+async function loadDecoderApi(attempt: number, signal: AbortSignal): Promise<DecoderApi<Frame>> {
   if (await webCodecsDecodesVp8()) {
     return {
       createDecoder: (init) => new VideoDecoder(init),
@@ -114,11 +145,20 @@ async function loadDecoderApi(attempt: number): Promise<DecoderApi<Frame>> {
       // The polyfill passes the options through, worker or not.
       value: async (options?: Record<string, unknown>) => {
         const libav = await (LibAV.LibAV as (options?: Record<string, unknown>) => Promise<LibAVInstance>)(options);
+        // A load given up on stops the workers it started.
+        if (signal.aborted) {
+          libav.terminate();
+          throw new Error('decoder load abandoned');
+        }
+        signal.addEventListener('abort', () => libav.terminate(), { once: true });
         await libav.av_log_set_level(libav.AV_LOG_ERROR);
         return libav;
       },
     },
   });
+  if (signal.aborted) {
+    throw new Error('decoder load abandoned');
+  }
   await polyfill.load({ polyfill: false, LibAV: quiet, libavOptions: { base } });
   return {
     createDecoder: (init) => new polyfill.VideoDecoder(init),

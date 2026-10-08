@@ -34,7 +34,7 @@ describe('retryingLoader', () => {
     now = RETRY_AFTER_MS;
     expect(await get()).toBe('decoder');
     expect(load).toHaveBeenCalledTimes(2);
-    expect(load).toHaveBeenLastCalledWith(1);
+    expect(load).toHaveBeenLastCalledWith(1, expect.any(AbortSignal));
   });
 
   it('treats a load that never ends as failed, then retries it', async () => {

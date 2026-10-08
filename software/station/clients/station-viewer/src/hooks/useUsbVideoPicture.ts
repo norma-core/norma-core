@@ -17,6 +17,8 @@ import {
 const FINAL_READ_ERRORS: unknown[] = [ErrEntryNotFound, ErrQueueNotFound];
 const DECODER_RETRIES = 3;
 
+const RECONNECT_SPREAD_MS = 1_000;
+
 export type UsbVideoPicture = ImageBitmap | 'decoding' | 'missing';
 
 /**
@@ -61,6 +63,11 @@ export function useUsbVideoPicture(
     let cancelled = false;
     let timer: ReturnType<typeof setTimeout> | undefined;
     let unsubscribe: (() => void) | undefined;
+    // Spread over a second, so a reconnect does not send every waiting frame's read at once.
+    const soon = (run: () => void) => {
+      clearTimeout(timer);
+      timer = setTimeout(run, Math.random() * RECONNECT_SPREAD_MS);
+    };
     if (!shown.current) {
       show('decoding');
     }
@@ -89,8 +96,8 @@ export function useUsbVideoPicture(
           };
           timer = setTimeout(again, delay);
           if (!late) {
-            // A failed read is most likely the lost connection, so it goes again as soon as that is back.
-            unsubscribe = subscribeReconnect(again);
+            // A failed read is most likely the lost connection, so it goes again once that is back.
+            unsubscribe = subscribeReconnect(() => soon(again));
           }
           return;
         }
@@ -103,7 +110,13 @@ export function useUsbVideoPicture(
           return;
         }
         // No decoder yet, so not this frame's fault: try again once one may load.
-        timer = setTimeout(() => setRetry((n) => n + 1), Math.max(0, retryAt - Date.now()));
+        const reload = () => {
+          clearTimeout(timer);
+          unsubscribe?.();
+          setRetry((n) => n + 1);
+        };
+        timer = setTimeout(reload, Math.max(0, retryAt - Date.now()));
+        unsubscribe = subscribeReconnect(() => soon(reload));
       });
     };
     load(0, 0);
