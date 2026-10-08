@@ -1,3 +1,5 @@
+// Bundled rather than imported on demand: a failed chunk import stays failed until the page reloads.
+import * as polyfill from 'libavjs-webcodecs-polyfill';
 import { usbvideo } from '@/api/proto.js';
 import type { NormFsClient } from '@/api/normfs.js';
 import { DecoderLateError, type ChainEntry, type DecoderApi, Vp8ChainReader, idFromBytes, idToBytes } from './vp8-chain.js';
@@ -13,7 +15,11 @@ export interface RetryingLoader<T> {
   (): Promise<T | null>;
   /** When a failed load may be tried again; null when none is waiting. */
   retryAt(): number | null;
+  /** Gives up on a pending load so the next call starts a fresh one at once. */
+  restart(): void;
 }
+
+const RESTARTED = new Error('restarted');
 
 /**
  * Runs `load` once and keeps its result. A load that fails or takes longer
@@ -27,6 +33,7 @@ export function retryingLoader<T>(
   let pending: Promise<T | null> | null = null;
   let failedAt: number | null = null;
   let attempt = 0;
+  let abort: ((error: Error) => void) | null = null;
   const get = () => {
     if (pending) {
       return pending;
@@ -37,6 +44,7 @@ export function retryingLoader<T>(
     let timer: ReturnType<typeof setTimeout> | undefined;
     const timeout = new Promise<never>((_, reject) => {
       timer = setTimeout(() => reject(new Error(`no answer in ${LOAD_TIMEOUT_MS / 1000} s`)), LOAD_TIMEOUT_MS);
+      abort = reject;
     });
     pending = Promise.race([load(attempt++), timeout])
       .then((loaded) => {
@@ -44,16 +52,24 @@ export function retryingLoader<T>(
         return loaded;
       })
       .catch((error: unknown) => {
-        console.error(`VP8 decoder did not load; trying again in ${RETRY_AFTER_MS / 1000} s:`, error);
-        failedAt = now();
+        if (error === RESTARTED) {
+          failedAt = now() - RETRY_AFTER_MS;
+        } else {
+          console.error(`VP8 decoder did not load; trying again in ${RETRY_AFTER_MS / 1000} s:`, error);
+          failedAt = now();
+        }
         pending = null;
         return null;
       })
-      .finally(() => clearTimeout(timer));
+      .finally(() => {
+        clearTimeout(timer);
+        abort = null;
+      });
     return pending;
   };
   return Object.assign(get, {
     retryAt: () => (pending || failedAt === null ? null : failedAt + RETRY_AFTER_MS),
+    restart: () => abort?.(RESTARTED),
   });
 }
 
@@ -90,10 +106,7 @@ async function loadDecoderApi(attempt: number): Promise<DecoderApi<Frame>> {
   const base = new URL('libav', document.baseURI).href;
   // A failed module import stays cached under its URL; a retry asks for a new one.
   const loader = `${base}/libav-webm.mjs${attempt > 0 ? `?attempt=${attempt}` : ''}`;
-  const [{ default: LibAV }, polyfill] = await Promise.all([
-    import(/* @vite-ignore */ loader) as Promise<{ default: LibAVWrapper }>,
-    import('libavjs-webcodecs-polyfill'),
-  ]);
+  const { default: LibAV } = await (import(/* @vite-ignore */ loader) as Promise<{ default: LibAVWrapper }>);
   // Every instance the polyfill makes passes through here, so its log level
   // goes down to errors; libav.js prints the rest to the console.
   const quiet: LibAVWrapper = Object.create(LibAV, {
@@ -147,6 +160,15 @@ export class FrameMissing {
 }
 
 let reader: Vp8ChainReader<Frame> | null = null;
+let watched: NormFsClient | null = null;
+
+// A load cut off with the connection can hang until LOAD_TIMEOUT_MS, so a reconnect starts it over.
+function restartDecoderLoadOnReconnect(normFs: NormFsClient): void {
+  if (watched !== normFs) {
+    watched = normFs;
+    normFs.addEventListener('__setup_response', () => decoderApi.restart());
+  }
+}
 
 function chainReader(normFs: NormFsClient, decoders: DecoderApi<Frame>): Vp8ChainReader<Frame> {
   reader ??= new Vp8ChainReader<Frame>(
@@ -188,6 +210,7 @@ export async function readUsbVideoPicture(
   entryId: Uint8Array,
   envelope: usbvideo.IRxEnvelope,
 ): Promise<ImageBitmap | FrameMissing | FrameReadError | FrameRetryError> {
+  restartDecoderLoadOnReconnect(normFs);
   try {
     const decoders = await decoderApi();
     if (!decoders) {
