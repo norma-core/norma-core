@@ -287,9 +287,13 @@ fn offload_settings(
     Ok((cloud, warning))
 }
 
+/// Queues of the rules named in `exclude` stay off the bucket: stored locally in durable,
+/// kept in memory only in cloud-only. Only whole rules can be named: NormFS takes the
+/// first matching pattern, so any other glob would split a rule.
 fn queue_settings(
     persist: Persist,
     frames_persist: Persist,
+    exclude: &[String],
 ) -> Result<QueueSettings, Box<dyn std::error::Error>> {
     use CompressionType::{None as Raw, Zstd};
     use PoolKind::{Active, Passive};
@@ -337,26 +341,41 @@ fn queue_settings(
         ("*/motors_mirroring/modes", Passive, Zstd, true, false),
     ];
 
-    QueueSettings::new(
-        rules
-            .iter()
-            .map(|&(pattern, pool, compression_type, enable_fsync, frames)| {
-                let config = QueueConfig {
-                    compression_type,
-                    enable_fsync,
-                    encryption_type: EncryptionType::Aes,
-                    pool,
-                    persist: if frames { frames_persist } else { persist },
-                };
-                (pattern.to_string(), config)
-            })
-            .collect(),
-        QueueConfig {
-            persist,
-            ..QueueConfig::active() // 4 MiB pages for queues not listed above
-        },
-    )
-    .map_err(Into::into)
+    if let Some(glob) = exclude
+        .iter()
+        .find(|glob| !rules.iter().any(|rule| rule.0 == glob.as_str()))
+    {
+        let patterns: Vec<_> = rules.iter().map(|rule| rule.0).collect();
+        return Err(format!(
+            "cloud-offload.exclude: '{glob}' is not one of station's queue patterns: {}",
+            patterns.join(", ")
+        )
+        .into());
+    }
+
+    let patterns = rules
+        .iter()
+        .map(|&(pattern, pool, compression_type, enable_fsync, frames)| {
+            let mut persist = if frames { frames_persist } else { persist };
+            if exclude.iter().any(|glob| glob == pattern) {
+                persist.cloud = false;
+            }
+            let config = QueueConfig {
+                compression_type,
+                enable_fsync,
+                encryption_type: EncryptionType::Aes,
+                pool,
+                persist,
+            };
+            (pattern.to_string(), config)
+        })
+        .collect();
+    let default = QueueConfig {
+        persist,
+        ..QueueConfig::active() // 4 MiB pages for queues not listed above
+    };
+
+    QueueSettings::new(patterns, default).map_err(Into::into)
 }
 
 impl station_iface::StationEngine for Engine {
@@ -443,9 +462,13 @@ impl Station {
             log::warn!("{warning}");
         }
         settings.cloud_settings = cloud_settings;
+        let exclude = config
+            .cloud_offload
+            .as_ref()
+            .map_or(&[][..], |cloud| &cloud.exclude);
         let cloud = settings.cloud_settings.is_some();
         let (persist, frames_persist) = args.normfs_persistence_mode.persist(cloud);
-        settings.queue_settings = queue_settings(persist, frames_persist)?;
+        settings.queue_settings = queue_settings(persist, frames_persist, exclude)?;
 
         let normfs = NormFS::new(args.normfs_base_folder.clone(), settings).await?;
 
@@ -1258,7 +1281,7 @@ mod tests {
 
     fn pool_for(queue_path: &str) -> PoolKind {
         let (persist, frames) = NormFsPersistenceMode::Durable.persist(false);
-        queue_settings(persist, frames)
+        queue_settings(persist, frames, &[])
             .unwrap()
             .get_config(queue_path)
             .pool
@@ -1266,7 +1289,7 @@ mod tests {
 
     fn persist_for(mode: NormFsPersistenceMode, cloud: bool, queue_path: &str) -> Persist {
         let (persist, frames) = mode.persist(cloud);
-        queue_settings(persist, frames)
+        queue_settings(persist, frames, &[])
             .unwrap()
             .get_config(queue_path)
             .persist
@@ -1330,6 +1353,7 @@ mod tests {
             access_key_id: String::new(),
             secret_access_key: String::new(),
             endpoint: None,
+            exclude: Vec::new(),
         };
         for (config, expected) in [
             (
@@ -1401,6 +1425,59 @@ mod tests {
             "/inst123/usbvideo/tx",
         ] {
             assert_eq!(pool_for(queue), PoolKind::Passive, "{queue}");
+        }
+    }
+
+    #[test]
+    fn excluded_rules_stay_off_the_bucket() {
+        let exclude = ["*video/*".to_string(), "*/hikmicro-thermal/*".to_string()];
+        let excluded = [
+            "/inst123/usbvideo/9f86d081884c7d65",
+            "/inst123/video/ov5647",
+            "/inst123/hikmicro-thermal/E12345",
+        ];
+        let uploaded = [
+            "/inst123/usbvideo/tx",
+            "/inst123/vesc-trampa/rx",
+            "/inst123/main",
+            "/inst123/new-driver/rx",
+        ];
+        for (mode, kept) in [
+            (NormFsPersistenceMode::Durable, Persist::STORE),
+            (NormFsPersistenceMode::CloudOnly, Persist::MEMORY),
+        ] {
+            let (persist, frames) = mode.persist(true);
+            let settings = queue_settings(persist, frames, &exclude).unwrap();
+            let unlisted = queue_settings(persist, frames, &[]).unwrap();
+            for queue in excluded {
+                let config = settings.get_config(queue);
+                assert_eq!(config.persist, kept, "{mode:?} {queue}");
+                assert_eq!(config.pool, unlisted.get_config(queue).pool, "{queue}");
+            }
+            for queue in uploaded {
+                let config = settings.get_config(queue);
+                assert_eq!(
+                    config.persist,
+                    unlisted.get_config(queue).persist,
+                    "{queue}"
+                );
+                assert!(config.persist.cloud, "{mode:?} {queue}");
+            }
+        }
+    }
+
+    #[test]
+    fn exclude_rejects_anything_but_a_rule_pattern() {
+        let (persist, frames) = NormFsPersistenceMode::Durable.persist(true);
+        for glob in ["*/rx", "?/main", "*/usbvideo/*", "[video", ""] {
+            let Err(err) = queue_settings(persist, frames, &[glob.to_string()]) else {
+                panic!("{glob:?} accepted");
+            };
+            assert!(
+                err.to_string()
+                    .starts_with(&format!("cloud-offload.exclude: '{glob}' ")),
+                "{err}"
+            );
         }
     }
 

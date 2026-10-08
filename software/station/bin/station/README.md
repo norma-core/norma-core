@@ -288,7 +288,21 @@ cloud-offload:
   access_key_id: "YOUR_KEY"  # leave empty to use env: AWS_ACCESS_KEY_ID
   secret_access_key: "YOUR_SECRET"  # leave empty to use env: AWS_SECRET_ACCESS_KEY
   endpoint: "https://s3.amazonaws.com"  # Required (also for AWS), leave empty to use env: AWS_ENDPOINT_URL
+  exclude:  # Optional: queues kept off the bucket
+    - "*video/*"
+    - "*/hikmicro-thermal/*"
 ```
+
+`exclude` lists queues that are not uploaded. Each entry must be one of the
+patterns in station's queue rules (`queue_settings` in `src/main.rs`), such as
+`*video/*` (camera frames, but not `usbvideo/tx`) or `*/hikmicro-thermal/*`; any
+other entry stops station with an error naming it. The queues of a listed
+pattern keep their page settings. In durable mode they stay on the local disk,
+capped by `--max-queue-disk-size` like queues without a bucket, so their oldest
+files are deleted. In cloud-only mode they are kept in memory only: the live
+view works, nothing is stored or uploaded. Use it for queues too large for the
+uplink, such as camera and thermal frames on LTE, and for the commands and tx
+queues, so that driving never waits for the bucket.
 
 ## 🌐 Web Interface
 

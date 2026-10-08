@@ -9,27 +9,43 @@ STATION_DATA_DIR="/opt/station/station_data"
 STATION_TCP_ADDR="0.0.0.0:8888"
 STATION_WEB_ADDR="0.0.0.0:8889"
 STATION_MAX_MEMORY_USAGE="128M"
-STATION_NORMFS_PERSISTENCE_MODE="durable"
 STATION_EXTRA_ARGS=""
 STATION_RESTART_DELAY_SEC="5"
 STATION_LOG="/var/log/station.log"
+# /var/log is a tmpfs; the log and its one old copy each stay under this.
+STATION_LOG_MAX_KB="10240"
 
 STOPFILE=/run/station.stop
 CHILD_PIDFILE=/run/station.pid
+SUPERVISOR_PIDFILE=/run/station-supervisor.pid
+# Caps how long station's close may hold a reboot.
+STOP_TIMEOUT_SEC=90
 
-[ -f "$CONFIG" ] && . "$CONFIG"
+if [ -f "$CONFIG" ]; then
+    # station reads the AWS_* keys from its environment.
+    set -a
+    . "$CONFIG"
+    set +a
+fi
 
 log() {
     mkdir -p /var/log
     echo "$(date '+%Y-%m-%d %H:%M:%S') station-supervisor: $*" >> "$STATION_LOG"
 }
 
+# Copy, then truncate: station appends, so it carries on at the new end.
+# A copy that fails, say on a full tmpfs, still leaves the log emptied.
+cap_log() {
+    size_kb="$(du -k "$STATION_LOG" 2>/dev/null | cut -f1)"
+    if [ "${size_kb:-0}" -gt "$STATION_LOG_MAX_KB" ]; then
+        cp "$STATION_LOG" "$STATION_LOG.1" 2>/dev/null
+        : > "$STATION_LOG"
+    fi
+}
+
 stop_child() {
-    if [ -f "$CHILD_PIDFILE" ]; then
-        child_pid="$(cat "$CHILD_PIDFILE" 2>/dev/null || true)"
-        if [ -n "$child_pid" ]; then
-            kill "$child_pid" 2>/dev/null || true
-        fi
+    if [ -n "$child_pid" ]; then
+        kill "$child_pid" 2>/dev/null || true
     fi
 }
 
@@ -38,13 +54,60 @@ handle_stop() {
     stop_child
 }
 
+wait_for_close() {
+    (
+        # Killed once station is gone; the sleep goes with it.
+        sleep_pid=""
+        trap 'kill $sleep_pid 2>/dev/null; exit 0' TERM
+        sleep "$STOP_TIMEOUT_SEC" &
+        sleep_pid="$!"
+        wait "$sleep_pid"
+        if kill -0 "$child_pid" 2>/dev/null; then
+            log "station did not close in ${STOP_TIMEOUT_SEC}s; killing it"
+            kill -KILL "$child_pid" 2>/dev/null
+        fi
+    ) &
+    killer_pid="$!"
+    # Another TERM cuts a wait short too; station has closed only once it is gone.
+    while kill -0 "$child_pid" 2>/dev/null; do
+        wait "$child_pid"
+    done
+    kill "$killer_pid" 2>/dev/null
+}
+
+# A supervisor started after this one owns the files from then on.
+remove_own_files() {
+    if [ "$(cat "$CHILD_PIDFILE" 2>/dev/null)" = "$child_pid" ]; then
+        rm -f "$CHILD_PIDFILE"
+    fi
+    supervisor_pid="$(cat "$SUPERVISOR_PIDFILE" 2>/dev/null)"
+    if [ -z "$supervisor_pid" ] || [ "$supervisor_pid" = "$$" ]; then
+        rm -f "$STOPFILE"
+    fi
+}
+
+child_pid=""
 trap handle_stop TERM INT
 
 mkdir -p /run "$STATION_WORKDIR" "$STATION_DATA_DIR" /var/log
 rm -f "$STOPFILE"
 
+(
+    sleep_pid=""
+    trap 'kill $sleep_pid 2>/dev/null; exit 0' TERM
+    while kill -0 "$$" 2>/dev/null; do
+        cap_log
+        sleep 60 &
+        sleep_pid="$!"
+        wait "$sleep_pid"
+        sleep_pid=""
+    done
+) &
+log_cap_pid="$!"
+
 if ! cd "$STATION_WORKDIR"; then
     log "failed to enter station workdir: $STATION_WORKDIR"
+    kill "$log_cap_pid" 2>/dev/null
     exit 1
 fi
 
@@ -55,11 +118,17 @@ while [ ! -f "$STOPFILE" ]; do
         continue
     fi
 
+    # normfs/system is the one queue cloud-only keeps on the eMMC; past the
+    # cap its oldest files already in the bucket are deleted. NormFS wants the
+    # cap at least 3x the WAL file size; cloud-only writes no WAL, and the
+    # smaller size also shrinks its packer buffers.
     set -- \
         --config "$STATION_CONFIG" \
         --normfs-base-folder "$STATION_DATA_DIR" \
         --max-memory-usage "$STATION_MAX_MEMORY_USAGE" \
-        --normfs-persistence-mode "$STATION_NORMFS_PERSISTENCE_MODE"
+        --normfs-persistence-mode cloud-only \
+        --max-queue-disk-size 64M \
+        --normfs-file-size 16M
 
     if [ -n "$STATION_TCP_ADDR" ]; then
         set -- "$@" --tcp "$STATION_TCP_ADDR"
@@ -81,17 +150,25 @@ while [ ! -f "$STOPFILE" ]; do
 
     child_pid="$!"
     echo "$child_pid" > "$CHILD_PIDFILE"
+    # A stop that came after the loop's check found no child to signal.
+    [ -f "$STOPFILE" ] && stop_child
     wait "$child_pid"
     status="$?"
-    rm -f "$CHILD_PIDFILE"
 
     if [ -f "$STOPFILE" ]; then
+        # The trap cuts the wait short; station still has to close its queues.
+        wait_for_close
         break
     fi
+    if [ "$(cat "$CHILD_PIDFILE" 2>/dev/null)" = "$child_pid" ]; then
+        rm -f "$CHILD_PIDFILE"
+    fi
+    child_pid=""
 
     log "station exited with status $status; restarting in ${STATION_RESTART_DELAY_SEC:-5}s"
     sleep "${STATION_RESTART_DELAY_SEC:-5}"
 done
 
-rm -f "$CHILD_PIDFILE" "$STOPFILE"
+remove_own_files
 log "station supervisor stopped"
+kill "$log_cap_pid" 2>/dev/null

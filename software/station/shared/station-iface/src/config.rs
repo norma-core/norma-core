@@ -37,6 +37,7 @@ impl Default for Config {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(deny_unknown_fields)]
 pub struct CloudOffloadConfig {
     /// Cloud storage bucket name
     pub bucket: String,
@@ -52,6 +53,10 @@ pub struct CloudOffloadConfig {
 
     /// Optional endpoint URL for S3-compatible services (e.g., MinIO)
     pub endpoint: Option<String>,
+
+    /// Station queue rule patterns whose queues are not uploaded
+    #[serde(default)]
+    pub exclude: Vec<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -709,6 +714,24 @@ mod config_tests {
         let steering = &pwm_output.outputs[0];
         assert_eq!(steering.id, "steering");
         assert_eq!(cfg.inference.as_ref().map(Vec::len), Some(0));
+    }
+
+    #[test]
+    fn parses_cloud_offload_exclude() {
+        let parse = |yaml: &str| {
+            serde_yaml::from_str::<Config>(&format!(
+                "drivers:\n  system-info: true\ncloud-offload:\n  bucket: \"\"\n  region: \"\"\n  access_key_id: \"\"\n  secret_access_key: \"\"\n{yaml}"
+            ))
+        };
+        let cloud = |yaml: &str| parse(yaml).unwrap().cloud_offload.unwrap();
+        assert!(cloud("").exclude.is_empty());
+        for typo in ["  exlude: []\n", "  local-only: []\n"] {
+            assert!(parse(typo).is_err(), "{typo}");
+        }
+        assert_eq!(
+            cloud("  exclude:\n    - \"*video/*\"\n    - \"*/hikmicro-thermal/*\"\n").exclude,
+            ["*video/*", "*/hikmicro-thermal/*"]
+        );
     }
 }
 

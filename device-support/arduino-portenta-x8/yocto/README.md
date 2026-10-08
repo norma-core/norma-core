@@ -184,9 +184,42 @@ cd software/station/bin/station
 make build-arm64
 ```
 
-Station is installed at `/opt/station/station` and managed by a SysV supervisor
-that starts it with TCP/Web enabled, `--max-memory-usage=128M`, and
-`--normfs-persistence-mode=durable`. The default config and data paths are:
+Station is installed at `/opt/station/station` and run by a SysV supervisor with
+TCP/Web, `--max-memory-usage=128M` and `--normfs-persistence-mode=cloud-only`:
+queues go from memory to the bucket in the config's `cloud-offload` section, and
+the eMMC holds only NormFS's own `normfs/system` queue, capped by
+`--max-queue-disk-size=64M` (`--normfs-file-size=16M` meets NormFS's 3x rule).
+
+`exclude` keeps camera and thermal frames (`*video/*`, `*/hikmicro-thermal/*`),
+more than LTE carries, and the commands and tx queues (`*/commands`,
+`*/vesc-trampa/tx`, `*/pwm-output/tx`, `*/usbvideo/tx`) in memory only, so
+driving never waits for the bucket and command logs are not uploaded. Uploaded
+are the rx telemetry, `vesc-trampa/inference`, `inference-states`,
+`inference-tags/rx`, `main`, `startups` and `normfs/system`, at least once a
+minute.
+
+In an outage an uploaded queue holds its pages in RAM; once they are all
+waiting, new records are dropped (periodic ones at once, others after at most 5
+s) until the link is back, while driving goes on. Until NormFS 0.4.2, with a
+bucket set, station starts only with the bucket reachable and accepting its
+keys, and a device queue reopened in an outage (an AirGradient or Victron
+reconnect) waits for the link; an endpoint that drops packets holds a start for
+the TCP connect timeout (about 2 minutes) and an upload for 300 s, and a stop
+without network takes the supervisor's 90 s and loses the open pages.
+
+`pwm-output` logs an error per command while its rx queue is full, and
+vesc-trampa logs dropped records, so once a minute the supervisor copies a
+`/var/log/station.log` (tmpfs) over 10 MB to `station.log.1` and empties it.
+
+The image ships `/etc/default/station` (mode 0600) with empty `AWS_S3_BUCKET`,
+`AWS_REGION`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` and
+`AWS_ENDPOINT_URL` (required, also for AWS); until they are set station keeps
+queues in memory and records nothing. It and `station.yaml` are conffiles: an
+upgraded rover keeps edited copies, ignores an old
+`STATION_NORMFS_PERSISTENCE_MODE`, and needs the `AWS_*` entries, `chmod 600`
+and the new `cloud-offload` section added by hand.
+
+The default config and data paths are:
 
 ```text
 /opt/station/station.yaml

@@ -13,6 +13,9 @@ CONFIG=/etc/default/station
 SUPERVISOR=/opt/station/station-supervisor
 PIDFILE=/run/station-supervisor.pid
 STOPFILE=/run/station.stop
+CHILD_PIDFILE=/run/station.pid
+# Above the supervisor's 90s bound on station's close.
+STOP_TIMEOUT_SEC=100
 
 STATION_ENABLED="1"
 STATION_BINARY="/opt/station/station"
@@ -50,7 +53,23 @@ case "$1" in
         echo "Stopping station"
         mkdir -p /run
         touch "$STOPFILE"
-        start-stop-daemon -K -p "$PIDFILE" 2>/dev/null || true
+        supervisor_pid="$(cat "$PIDFILE" 2>/dev/null)"
+        if [ -n "$supervisor_pid" ] && kill "$supervisor_pid" 2>/dev/null; then
+            # Return only once station has closed, so a reboot does not cut
+            # its uploads and a restart does not run two on one data folder.
+            waited=0
+            while kill -0 "$supervisor_pid" 2>/dev/null && [ "$waited" -lt "$STOP_TIMEOUT_SEC" ]; do
+                sleep 1
+                waited=$((waited + 1))
+            done
+            if kill -0 "$supervisor_pid" 2>/dev/null; then
+                echo "station did not stop in ${STOP_TIMEOUT_SEC}s; killing it"
+                child_pid="$(cat "$CHILD_PIDFILE" 2>/dev/null)"
+                [ -n "$child_pid" ] && kill -KILL "$child_pid" 2>/dev/null
+                kill -KILL "$supervisor_pid" 2>/dev/null
+                rm -f "$CHILD_PIDFILE" "$STOPFILE"
+            fi
+        fi
         rm -f "$PIDFILE"
         ;;
 

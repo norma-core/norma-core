@@ -27,3 +27,22 @@ drivers:
     enabled: true
     read-timeout: 10s
 inference: []
+# Station runs cloud-only: queues go from memory to this bucket, not to the
+# eMMC. Empty fields are read from AWS_S3_BUCKET, AWS_REGION,
+# AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY and AWS_ENDPOINT_URL, set in
+# /etc/default/station, so no keys are built into the image. Excluded
+# queues are kept in memory only, never stored or uploaded: camera and
+# thermal frames are more than an LTE uplink carries, and the commands and
+# tx queues must not wait for the bucket, or driving stalls in an outage.
+cloud-offload:
+  bucket: ""
+  region: ""
+  access_key_id: ""
+  secret_access_key: ""
+  exclude:
+    - "*video/*"
+    - "*/hikmicro-thermal/*"
+    - "*/commands"
+    - "*/vesc-trampa/tx"
+    - "*/pwm-output/tx"
+    - "*/usbvideo/tx"
