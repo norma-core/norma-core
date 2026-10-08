@@ -10,17 +10,16 @@ type Frame = VideoFrame;
 export const RETRY_AFTER_MS = 10_000;
 /** A load still pending after this counts as failed; the wasm is 2.3 MB. */
 export const LOAD_TIMEOUT_MS = 60_000;
-/** A reconnect leaves a younger load alone: it may be loading fine, e.g. from the cache. */
+/** How long a load runs before a reconnect gives up on it; a younger one may be loading fine. */
 export const RESTART_AFTER_MS = 5_000;
+/** Frames woken by a reconnect read again spread over this long, not all at once. */
+export const RECONNECT_SPREAD_MS = 1_000;
 
 export interface RetryingLoader<T> {
   (): Promise<T | null>;
   /** When a failed load may be tried again; null when none is waiting. */
   retryAt(): number | null;
-  /**
-   * After a reconnect: gives up on a load running for RESTART_AFTER_MS or
-   * more, or lets a failed one be tried again, so the next call starts at once.
-   */
+  /** After a reconnect: gives up on a load once it has run RESTART_AFTER_MS, or lets a failed one go again. */
   restart(): void;
 }
 
@@ -39,6 +38,7 @@ export function retryingLoader<T>(
   let failedAt: number | null = null;
   let attempt = 0;
   let current: { startedAt: number; reject: (error: Error) => void; run: Promise<unknown> } | null = null;
+  let restartTimer: ReturnType<typeof setTimeout> | undefined;
   // An attempt given up on after a reconnect; the next waits for it, so two never initialise the decoder at once.
   let abandoned: Promise<unknown> | null = null;
   const get = () => {
@@ -49,22 +49,22 @@ export function retryingLoader<T>(
       return Promise.resolve(null);
     }
     let timer: ReturnType<typeof setTimeout> | undefined;
-    const self = { startedAt: now(), reject: (_: Error) => {}, run: Promise.resolve() as Promise<unknown> };
-    const timeout = new Promise<never>((_, reject) => {
-      timer = setTimeout(() => reject(new Error(`no answer in ${LOAD_TIMEOUT_MS / 1000} s`)), LOAD_TIMEOUT_MS);
-      self.reject = reject;
+    let reject: (error: Error) => void = () => undefined;
+    const timeout = new Promise<never>((_, rejectLoad) => {
+      timer = setTimeout(() => rejectLoad(new Error(`no answer in ${LOAD_TIMEOUT_MS / 1000} s`)), LOAD_TIMEOUT_MS);
+      reject = rejectLoad;
     });
-    current = self;
+    const startedAt = now();
     const controller = new AbortController();
     const n = attempt++;
-    // An abandoned attempt stops its instances when aborted, but one stuck starting its worker
-    // cannot be stopped, so it is waited for only so long.
+    // An abandoned attempt may be stuck starting a worker, which nothing can stop, so it is waited for only so long.
     const run = abandoned
       ? Promise.race([abandoned, new Promise((resolve) => setTimeout(resolve, RESTART_AFTER_MS))])
         .then(() => load(n, controller.signal))
       : load(n, controller.signal);
     abandoned = null;
-    self.run = run.catch(() => undefined);
+    const self = { startedAt, reject, run: run.catch(() => undefined) };
+    current = self;
     pending = Promise.race([run, timeout])
       .then((loaded) => {
         failedAt = null;
@@ -85,6 +85,7 @@ export function retryingLoader<T>(
         clearTimeout(timer);
         if (current === self) {
           current = null;
+          clearTimeout(restartTimer);
         }
       });
     return pending;
@@ -92,13 +93,25 @@ export function retryingLoader<T>(
   return Object.assign(get, {
     retryAt: () => (pending || failedAt === null ? null : failedAt + RETRY_AFTER_MS),
     restart: () => {
-      if (current) {
-        if (now() - current.startedAt >= RESTART_AFTER_MS) {
-          abandoned = current.run;
-          current.reject(RESTARTED);
+      const running = current;
+      if (!running) {
+        if (failedAt !== null) {
+          failedAt = now() - RETRY_AFTER_MS;
         }
-      } else if (failedAt !== null) {
-        failedAt = now() - RETRY_AFTER_MS;
+        return;
+      }
+      clearTimeout(restartTimer);
+      const giveUp = () => {
+        if (current === running) {
+          abandoned = running.run;
+          running.reject(RESTARTED);
+        }
+      };
+      const left = running.startedAt + RESTART_AFTER_MS - now();
+      if (left <= 0) {
+        giveUp();
+      } else {
+        restartTimer = setTimeout(giveUp, left);
       }
     },
   });
@@ -117,6 +130,27 @@ async function webCodecsDecodesVp8(): Promise<boolean> {
 
 type LibAVWrapper = typeof import('@libav.js/variant-webm');
 type LibAVInstance = Awaited<ReturnType<LibAVWrapper['LibAV']>>;
+
+/**
+ * libav.js as the polyfill sees it: instances log errors only, and one finished after `signal`
+ * aborted is stopped. Earlier ones are left alone, as they may sit in the polyfill's shared pool.
+ */
+export function quietLibAV(LibAV: LibAVWrapper, signal: AbortSignal): LibAVWrapper {
+  return Object.create(LibAV, {
+    LibAV: {
+      // The polyfill passes the options through, worker or not.
+      value: async (options?: Record<string, unknown>) => {
+        const libav = await (LibAV.LibAV as (options?: Record<string, unknown>) => Promise<LibAVInstance>)(options);
+        if (signal.aborted) {
+          libav.terminate();
+          throw new Error('decoder load abandoned');
+        }
+        await libav.av_log_set_level(libav.AV_LOG_ERROR);
+        return libav;
+      },
+    },
+  });
+}
 
 /**
  * WebCodecs where the browser has it and it decodes VP8; it is missing
@@ -138,24 +172,7 @@ async function loadDecoderApi(attempt: number, signal: AbortSignal): Promise<Dec
   // A failed module import stays cached under its URL; a retry asks for a new one.
   const loader = `${base}/libav-webm.mjs${attempt > 0 ? `?attempt=${attempt}` : ''}`;
   const { default: LibAV } = await (import(/* @vite-ignore */ loader) as Promise<{ default: LibAVWrapper }>);
-  // Every instance the polyfill makes passes through here, so its log level
-  // goes down to errors; libav.js prints the rest to the console.
-  const quiet: LibAVWrapper = Object.create(LibAV, {
-    LibAV: {
-      // The polyfill passes the options through, worker or not.
-      value: async (options?: Record<string, unknown>) => {
-        const libav = await (LibAV.LibAV as (options?: Record<string, unknown>) => Promise<LibAVInstance>)(options);
-        // A load given up on stops the workers it started.
-        if (signal.aborted) {
-          libav.terminate();
-          throw new Error('decoder load abandoned');
-        }
-        signal.addEventListener('abort', () => libav.terminate(), { once: true });
-        await libav.av_log_set_level(libav.AV_LOG_ERROR);
-        return libav;
-      },
-    },
-  });
+  const quiet = quietLibAV(LibAV, signal);
   if (signal.aborted) {
     throw new Error('decoder load abandoned');
   }

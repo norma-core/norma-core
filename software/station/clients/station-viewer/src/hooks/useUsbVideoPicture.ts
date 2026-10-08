@@ -8,6 +8,7 @@ import {
   FrameRetryError,
   READ_RETRY_MAX_MS,
   READ_RETRY_MS,
+  RECONNECT_SPREAD_MS,
   decoderRetryAt,
   readUsbVideoPicture,
   subscribeReconnect,
@@ -16,8 +17,6 @@ import {
 // The station answered and the entries are gone; reading again cannot help.
 const FINAL_READ_ERRORS: unknown[] = [ErrEntryNotFound, ErrQueueNotFound];
 const DECODER_RETRIES = 3;
-
-const RECONNECT_SPREAD_MS = 1_000;
 
 export type UsbVideoPicture = ImageBitmap | 'decoding' | 'missing';
 
@@ -63,7 +62,6 @@ export function useUsbVideoPicture(
     let cancelled = false;
     let timer: ReturnType<typeof setTimeout> | undefined;
     let unsubscribe: (() => void) | undefined;
-    // Spread over a second, so a reconnect does not send every waiting frame's read at once.
     const soon = (run: () => void) => {
       clearTimeout(timer);
       timer = setTimeout(run, Math.random() * RECONNECT_SPREAD_MS);
