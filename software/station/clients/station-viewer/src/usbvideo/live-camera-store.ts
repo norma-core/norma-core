@@ -43,6 +43,17 @@ function setFrame(sourceId: string, frame: LiveCameraFrame | null): void {
 }
 const listenersBySourceId = new Map<string, Set<LiveCameraListener>>();
 const suppressedSourceIds = new Set<string>();
+const watcherListeners = new Set<() => void>();
+
+function notifyWatchers(): void {
+  watcherListeners.forEach((listener) => listener());
+}
+
+/** Called whenever a camera gains or loses its last viewer, or is hidden or shown. */
+export function subscribeLiveCameraWatchers(listener: () => void): () => void {
+  watcherListeners.add(listener);
+  return () => watcherListeners.delete(listener);
+}
 
 interface PendingPicture {
   queueId: string;
@@ -177,6 +188,7 @@ export function clearLiveCameraFrame(sourceId: string): void {
 export function suppressLiveCameraFrame(sourceId: string): void {
   suppressedSourceIds.add(sourceId);
   clearLiveCameraFrame(sourceId);
+  notifyWatchers();
 }
 
 export function isLiveCameraSuppressed(sourceId: string): boolean {
@@ -185,6 +197,7 @@ export function isLiveCameraSuppressed(sourceId: string): boolean {
 
 export function resumeLiveCameraFrame(sourceId: string): void {
   suppressedSourceIds.delete(sourceId);
+  notifyWatchers();
 }
 
 export function shouldLoadLiveCameraFrame(
@@ -192,7 +205,7 @@ export function shouldLoadLiveCameraFrame(
   previousEnvelope?: usbvideo.IRxEnvelope,
 ): boolean {
   // The first frame supplies the metadata needed to identify and select the
-  // camera. After discovery, only fetch fresh image data for mounted viewers.
+  // camera. After discovery, only mounted viewers need fresh frames.
   if (!previousEnvelope) {
     return true;
   }
@@ -212,6 +225,9 @@ export function subscribeLiveCameraFrame(
   const listeners = listenersBySourceId.get(sourceId) ?? new Set<LiveCameraListener>();
   listeners.add(listener);
   listenersBySourceId.set(sourceId, listeners);
+  if (listeners.size === 1) {
+    notifyWatchers();
+  }
 
   const currentFrame = getLiveCameraFrame(sourceId);
   if (currentFrame) {
@@ -222,6 +238,7 @@ export function subscribeLiveCameraFrame(
     listeners.delete(listener);
     if (listeners.size === 0) {
       listenersBySourceId.delete(sourceId);
+      notifyWatchers();
     }
   };
 }

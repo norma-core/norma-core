@@ -114,7 +114,7 @@ async function loadDecoderApi(attempt: number): Promise<DecoderApi<Frame>> {
   };
 }
 
-const decoderApi = retryingLoader(loadDecoderApi);
+export const decoderApi = retryingLoader(loadDecoderApi);
 
 /** When the wasm decoder may be loaded again after a failure; null if not waiting. */
 export function decoderRetryAt(): number | null {
