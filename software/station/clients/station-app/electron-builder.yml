@@ -8,6 +8,7 @@ files:
   - dist/**/*
 mac:
   category: public.app-category.developer-tools
+  minimumSystemVersion: "13.0"
   icon: build/icon.icns
   entitlements: build/entitlements.mac.plist
   entitlementsInherit: build/entitlements.mac.inherit.plist
@@ -21,6 +22,7 @@ mac:
   target:
     - dmg
     - zip
+  artifactName: ${productName}-${version}-${arch}.${ext}
 linux:
   icon: build/icon.png
   category: Development
@@ -42,7 +44,5 @@ linux:
 extraResources:
   - from: ../station-viewer/dist
     to: station-viewer-dist
-  - from: ../../../../target/release
+  - from: build/station/${arch}
     to: bin
-    filter:
-      - station

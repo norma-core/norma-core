@@ -2,7 +2,8 @@
 
 CC = clang
 LIBTOOL = libtool
-CFLAGS = -c
+MIN_MACOS = 13.0
+CFLAGS = -c -mmacosx-version-min=$(MIN_MACOS) -Wunguarded-availability -Werror=unguarded-availability
 FRAMEWORKS = -framework Foundation -framework AVFoundation -framework CoreMedia -framework CoreVideo
 ARCH = -arch x86_64 -arch arm64
 
@@ -27,13 +28,13 @@ $(LIBDIR)/$(LIBNAME): $(SOURCES) $(HEADERS)
 
 test: test_notifications.m
 	@echo "Building notification test binary..."
-	$(CC) $(FRAMEWORKS) -o test_notifications test_notifications.m
+	$(CC) -mmacosx-version-min=$(MIN_MACOS) $(FRAMEWORKS) -o test_notifications test_notifications.m
 	@echo "Built: ./test_notifications"
 	@echo "Run with: ./test_notifications"
 
 test-lib: $(LIBDIR)/$(LIBNAME) test_library.m
 	@echo "Building library test binary..."
-	$(CC) $(FRAMEWORKS) -o test_library test_library.m -L$(LIBDIR) -lavf
+	$(CC) -mmacosx-version-min=$(MIN_MACOS) $(FRAMEWORKS) -o test_library test_library.m -L$(LIBDIR) -lavf
 	@echo "Built: ./test_library"
 	@echo "Run with: ./test_library"
 

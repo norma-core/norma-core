@@ -155,6 +155,8 @@ function startStationBackend(): void {
   const stationDataPath = path.join(userDataPath, 'station_data');
   const stationConfigPath = path.join(userDataPath, 'station.yaml');
   fs.mkdirSync(stationDataPath, { recursive: true });
+  const stationLog = fs.createWriteStream(path.join(userDataPath, 'station.log'));
+  stationLog.write(`${new Date().toISOString()} starting ${stationPath}\n`);
 
   stationProcess = spawn(
     stationPath,
@@ -176,20 +178,24 @@ function startStationBackend(): void {
 
   stationProcess.stdout?.on('data', (data) => {
     console.log(`[station] ${data.toString().trimEnd()}`);
+    stationLog.write(data);
   });
 
   stationProcess.stderr?.on('data', (data) => {
     console.error(`[station] ${data.toString().trimEnd()}`);
+    stationLog.write(data);
   });
 
   stationProcess.on('error', (err) => {
     console.error('Failed to start station backend:', err);
+    stationLog.write(`${new Date().toISOString()} failed to start: ${err}\n`);
   });
 
   stationProcess.on('exit', (code, signal) => {
     if (!isQuitting) {
       console.error(`station backend exited unexpectedly (code=${code}, signal=${signal})`);
     }
+    stationLog.end(`${new Date().toISOString()} exited (code=${code}, signal=${signal})\n`);
     stationProcess = null;
   });
 }

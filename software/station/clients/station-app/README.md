@@ -27,8 +27,8 @@ npm run start
 ```bash
 npm run build          # generate station version + tsc → dist/
 npm run build:viewer   # builds ../station-viewer → ../station-viewer/dist
-npm run build:station  # cargo build --release --package=station → ../../../../target/release/station
-npm run package:mac    # builds viewer + station + app, then electron-builder → release/
+npm run build:station  # cargo build --release --package=station → build/station/<arch>/station
+npm run package:mac    # builds viewer + station (arm64 and x64) + app, then electron-builder → release/
 npm run package        # same, all configured platforms
 ```
 
