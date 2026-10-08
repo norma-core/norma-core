@@ -1,10 +1,12 @@
 use crate::queues::MainQueue;
 use clap::{Parser, ValueEnum};
-use normfs::{CloudSettings, NormFS, NormFsSettings, PersistenceMode, QueueConfig, QueueSettings};
-use normfs::PoolKind;
+use normfs::{
+    CloudSettings, NormFS, NormFsSettings, Persist, PoolKind, QueueConfig, QueueSettings,
+};
 use normfs_types::{CompressionType, EncryptionType};
 use parking_lot::Mutex;
 use station_iface::StationEngine;
+use std::collections::BTreeSet;
 use std::io;
 use std::net::SocketAddr;
 use std::path::PathBuf;
@@ -44,14 +46,28 @@ const VERSION: &str = concat!(env!("CARGO_PKG_VERSION"), " (", env!("GIT_HASH"),
 #[clap(rename_all = "kebab-case")]
 enum NormFsPersistenceMode {
     Durable,
-    MemoryOnly,
+    CloudOnly,
 }
 
-impl From<NormFsPersistenceMode> for PersistenceMode {
-    fn from(mode: NormFsPersistenceMode) -> Self {
-        match mode {
-            NormFsPersistenceMode::Durable => Self::Durable,
-            NormFsPersistenceMode::MemoryOnly => Self::MemoryOnly,
+impl NormFsPersistenceMode {
+    /// Persistence for most queues, then for the video and thermal ones.
+    /// Video and thermal frames skip the WAL: a crash loses at most the open
+    /// page of frames, and the WAL would double their disk writes. cloud-only
+    /// without a bucket keeps every queue in memory.
+    fn persist(self, cloud: bool) -> (Persist, Persist) {
+        match self {
+            Self::Durable => (
+                Persist {
+                    cloud,
+                    ..Persist::WAL_STORE
+                },
+                Persist {
+                    cloud,
+                    ..Persist::STORE
+                },
+            ),
+            Self::CloudOnly if cloud => (Persist::CLOUD, Persist::CLOUD),
+            Self::CloudOnly => (Persist::MEMORY, Persist::MEMORY),
         }
     }
 }
@@ -61,6 +77,7 @@ const ACTIVE_PAGE_SIZE: usize = 4 * 1024 * 1024;
 /// How long a record can sit in memory before the WAL writes it. A full page
 /// and the close write at once.
 const WAL_WRITE_INTERVAL: std::time::Duration = std::time::Duration::from_secs(2);
+const CLOUD_FLUSH_INTERVAL: std::time::Duration = std::time::Duration::from_secs(60);
 
 /// NormaCore.Dev station: physical operations platform
 #[derive(Parser, Debug)]
@@ -82,7 +99,7 @@ struct Args {
     #[arg(long, default_value = "./station_data")]
     normfs_base_folder: PathBuf,
 
-    /// NormFS persistence mode: durable writes WAL/store files; memory-only keeps queue data in RAM and periodically checkpoints queue pointers
+    /// NormFS persistence mode: durable writes WAL/store files (video and thermal store only); cloud-only sends every queue's pages straight to the configured bucket, or keeps them in memory without one
     #[arg(long, value_enum, default_value = "durable")]
     normfs_persistence_mode: NormFsPersistenceMode,
 
@@ -179,6 +196,8 @@ struct Station {
     base_path: PathBuf,
 
     engine: Arc<Engine>,
+    flush_to_cloud: bool,
+    cloud_flush: parking_lot::Mutex<Option<tokio::task::JoinHandle<()>>>,
 
     #[cfg(target_os = "macos")]
     usbvideo_instances: parking_lot::Mutex<
@@ -199,63 +218,143 @@ struct Station {
 struct Engine {
     main_queue: Option<MainQueue>,
     inference: Mutex<Option<inference::Inference>>,
+    queues: parking_lot::Mutex<BTreeSet<normfs::QueueId>>,
 }
 
-fn queue_settings() -> Result<QueueSettings, Box<dyn std::error::Error>> {
+/// A cloud-offload section with a bucket turns uploads on; its empty fields
+/// fall back to the AWS_* variables. None without a bucket, so an image that
+/// ships an empty section still starts; a bucket without an endpoint is an
+/// error, not uploads that can never land.
+fn cloud_settings(
+    config: &station_iface::config::CloudOffloadConfig,
+) -> Result<Option<CloudSettings>, String> {
+    let get_or_env = |config_val: &str, env_var: &str| -> String {
+        if config_val.is_empty() {
+            std::env::var(env_var).unwrap_or_default()
+        } else {
+            config_val.to_string()
+        }
+    };
+
+    let bucket = get_or_env(&config.bucket, "AWS_S3_BUCKET");
+    if bucket.is_empty() {
+        return Ok(None);
+    }
+    let endpoint = get_or_env(
+        config.endpoint.as_deref().unwrap_or_default(),
+        "AWS_ENDPOINT_URL",
+    );
+    if endpoint.is_empty() {
+        return Err(
+            "cloud-offload needs an endpoint: set cloud-offload.endpoint or AWS_ENDPOINT_URL"
+                .into(),
+        );
+    }
+
+    log::info!("Cloud offload enabled for bucket: {}", bucket);
+    Ok(Some(CloudSettings {
+        endpoint,
+        bucket,
+        region: get_or_env(&config.region, "AWS_REGION"),
+        access_key: get_or_env(&config.access_key_id, "AWS_ACCESS_KEY_ID"),
+        secret_key: get_or_env(&config.secret_access_key, "AWS_SECRET_ACCESS_KEY"),
+        prefix: String::new(), // NormFS will use instance_id as prefix automatically
+    }))
+}
+
+/// The bucket settings, and a warning to log once when there is no bucket, so an
+/// image that ships without keys still starts.
+fn offload_settings(
+    mode: NormFsPersistenceMode,
+    config: Option<&station_iface::config::CloudOffloadConfig>,
+) -> Result<(Option<CloudSettings>, Option<&'static str>), String> {
+    let cloud = match config {
+        Some(config) => cloud_settings(config)?,
+        None => None,
+    };
+    let warning = match (mode, &cloud, config) {
+        (_, Some(_), _) | (NormFsPersistenceMode::Durable, None, None) => None,
+        (NormFsPersistenceMode::Durable, None, Some(_)) => {
+            Some("cloud-offload has no bucket; queues stay on disk only")
+        }
+        (NormFsPersistenceMode::CloudOnly, None, Some(_)) => {
+            Some("cloud-offload has no bucket; queues stay in memory only")
+        }
+        (NormFsPersistenceMode::CloudOnly, None, None) => {
+            Some("no cloud-offload section; queues stay in memory only")
+        }
+    };
+    Ok((cloud, warning))
+}
+
+fn queue_settings(
+    persist: Persist,
+    frames_persist: Persist,
+) -> Result<QueueSettings, Box<dyn std::error::Error>> {
     use CompressionType::{None as Raw, Zstd};
     use PoolKind::{Active, Passive};
 
     // Matched against the absolute id `/<instance_id>/<path>`, first match wins, so every
     // pattern starts with `*`. Active pages are `ACTIVE_PAGE_SIZE`, passive 32 KiB.
     let rules = [
-        // (pattern, pool, compression, fsync)
+        // (pattern, pool, compression, fsync, frames)
         // Before `*video/*`, which would match it.
-        ("*/usbvideo/tx", Passive, Zstd, true),
+        ("*/usbvideo/tx", Passive, Zstd, true, false),
         // Wide records.
-        ("*video/*", Active, Raw, false),
-        ("*/hikmicro-thermal/*", Active, Zstd, false),
-        ("*dmesg/*", Active, Zstd, false),
-        ("*/inference-states", Active, Zstd, false),
-        ("*/inference/*", Active, Raw, false),
-        ("*/*/inference", Active, Raw, false),
-        ("*/system/rx", Active, Zstd, true),
-        ("*/st3215/meta", Active, Zstd, true),
+        ("*video/*", Active, Raw, false, true),
+        ("*/hikmicro-thermal/*", Active, Zstd, false, true),
+        ("*dmesg/*", Active, Zstd, false, false),
+        ("*/inference-states", Active, Zstd, false, false),
+        ("*/inference/*", Active, Raw, false, false),
+        ("*/*/inference", Active, Raw, false, false),
+        ("*/system/rx", Active, Zstd, true, false),
+        ("*/st3215/meta", Active, Zstd, true, false),
         // Streams.
-        ("*/st3215/rx", Active, Zstd, true),
-        ("*/st3215/tx", Active, Zstd, true),
-        ("*/vesc-trampa/rx", Active, Zstd, true),
-        ("*/vesc-trampa/tx", Active, Zstd, true),
-        ("*/yahboom-dogzilla-lite/rx", Active, Zstd, true),
-        ("*/yahboom-dogzilla-lite/tx", Active, Zstd, true),
-        ("*/pwm-output/rx", Active, Zstd, true),
-        ("*/pwm-output/tx", Active, Zstd, true),
-        ("*/commands", Active, Zstd, true),
+        ("*/st3215/rx", Active, Zstd, true, false),
+        ("*/st3215/tx", Active, Zstd, true, false),
+        ("*/vesc-trampa/rx", Active, Zstd, true, false),
+        ("*/vesc-trampa/tx", Active, Zstd, true, false),
+        ("*/yahboom-dogzilla-lite/rx", Active, Zstd, true, false),
+        ("*/yahboom-dogzilla-lite/tx", Active, Zstd, true, false),
+        ("*/pwm-output/rx", Active, Zstd, true, false),
+        ("*/pwm-output/tx", Active, Zstd, true, false),
+        ("*/commands", Active, Zstd, true, false),
         // 1 Hz sensors.
-        ("*/arduino-nicla-sense-env/rx", Active, Zstd, true),
-        ("*/ina226/*/rx", Active, Zstd, true),
-        ("*/airgradient-open-air-o-1pst/*/rx", Active, Zstd, true),
-        ("*/victron-smartsolar-mppt/*/rx", Active, Zstd, true),
+        ("*/arduino-nicla-sense-env/rx", Active, Zstd, true, false),
+        ("*/ina226/*/rx", Active, Zstd, true, false),
+        (
+            "*/airgradient-open-air-o-1pst/*/rx",
+            Active,
+            Zstd,
+            true,
+            false,
+        ),
+        ("*/victron-smartsolar-mppt/*/rx", Active, Zstd, true, false),
         // Rare records.
-        ("*/main", Passive, Zstd, true),
-        ("*/startups", Passive, Zstd, true),
-        ("*/inference-tags/rx", Passive, Zstd, true),
-        ("*/motors_mirroring/modes", Passive, Zstd, true),
+        ("*/main", Passive, Zstd, true, false),
+        ("*/startups", Passive, Zstd, true, false),
+        ("*/inference-tags/rx", Passive, Zstd, true, false),
+        ("*/motors_mirroring/modes", Passive, Zstd, true, false),
     ];
 
     QueueSettings::new(
         rules
             .iter()
-            .map(|&(pattern, pool, compression_type, enable_fsync)| {
+            .map(|&(pattern, pool, compression_type, enable_fsync, frames)| {
                 let config = QueueConfig {
                     compression_type,
                     enable_fsync,
                     encryption_type: EncryptionType::Aes,
                     pool,
+                    persist: if frames { frames_persist } else { persist },
                 };
                 (pattern.to_string(), config)
             })
             .collect(),
-        QueueConfig::active(), // 4 MiB pages for queues not listed above
+        QueueConfig {
+            persist,
+            ..QueueConfig::active() // 4 MiB pages for queues not listed above
+        },
     )
     .map_err(Into::into)
 }
@@ -267,6 +366,7 @@ impl station_iface::StationEngine for Engine {
         queue_data_type: station_iface::iface_proto::drivers::QueueDataType,
         opts: Vec<station_iface::iface_proto::envelope::QueueOpt>,
     ) {
+        self.queues.lock().insert(queue_id.clone());
         if let Some(main_queue) = &self.main_queue {
             let _ = main_queue.send_queue_start(queue_id, queue_data_type, opts);
         }
@@ -292,7 +392,7 @@ impl Station {
         let config = station_iface::config::Config::load_or_default(&args.config)?;
         log::info!("Loaded configuration from: {:?}", args.config);
 
-        let normfs = Self::initialize_normfs(args, &config).await?;
+        let (normfs, flush_to_cloud) = Self::initialize_normfs(args, &config).await?;
 
         log::info!("Station ID: {}", normfs.get_instance_id());
 
@@ -303,7 +403,10 @@ impl Station {
             engine: Arc::new(Engine {
                 main_queue: None,
                 inference: Mutex::new(None),
+                queues: parking_lot::Mutex::new(BTreeSet::new()),
             }),
+            flush_to_cloud,
+            cloud_flush: parking_lot::Mutex::new(None),
             usbvideo_instances: parking_lot::Mutex::new(Vec::new()),
             #[cfg(target_os = "linux")]
             hikmicro_thermal_handle: Mutex::new(None),
@@ -315,19 +418,16 @@ impl Station {
     async fn initialize_normfs(
         args: &Args,
         config: &station_iface::config::Config,
-    ) -> Result<Arc<NormFS>, Box<dyn std::error::Error>> {
+    ) -> Result<(Arc<NormFS>, bool), Box<dyn std::error::Error>> {
         if matches!(args.normfs_persistence_mode, NormFsPersistenceMode::Durable) {
             validate_normfs_file_size(args)?;
         }
 
         let mut settings = NormFsSettings {
-            max_disk_usage_per_queue: match args.normfs_persistence_mode {
-                NormFsPersistenceMode::Durable => Some(args.max_queue_disk_size),
-                NormFsPersistenceMode::MemoryOnly => None,
-            },
+            // cloud-only keeps one queue on disk: NormFS's own normfs/system.
+            max_disk_usage_per_queue: Some(args.max_queue_disk_size),
             max_memory_usage: args.max_memory_usage,
             mem_page_size: ACTIVE_PAGE_SIZE,
-            persistence_mode: args.normfs_persistence_mode.into(),
             ..Default::default()
         };
         settings.wal_settings.max_file_size = args.normfs_file_size;
@@ -337,51 +437,24 @@ impl Station {
             .write_buffer_size
             .min(args.normfs_file_size);
 
-        settings.queue_settings = queue_settings()?;
-
-        // Configure Cloud settings if provided
-        if matches!(
-            args.normfs_persistence_mode,
-            NormFsPersistenceMode::MemoryOnly
-        ) && config.cloud_offload.is_some()
-        {
-            log::warn!(
-                "Cloud offload config ignored because NormFS persistence mode is memory-only"
-            );
-        } else if let Some(cloud_config) = &config.cloud_offload {
-            let get_or_env = |config_val: &str, env_var: &str| -> String {
-                if config_val.is_empty() {
-                    std::env::var(env_var).unwrap_or_default()
-                } else {
-                    config_val.to_string()
-                }
-            };
-
-            let bucket = get_or_env(&cloud_config.bucket, "AWS_S3_BUCKET");
-            let region = get_or_env(&cloud_config.region, "AWS_REGION");
-            let access_key = get_or_env(&cloud_config.access_key_id, "AWS_ACCESS_KEY_ID");
-            let secret_key = get_or_env(&cloud_config.secret_access_key, "AWS_SECRET_ACCESS_KEY");
-            let endpoint = cloud_config
-                .endpoint
-                .clone()
-                .or_else(|| std::env::var("AWS_ENDPOINT_URL").ok())
-                .unwrap_or_default();
-
-            settings.cloud_settings = Some(CloudSettings {
-                endpoint,
-                bucket: bucket.clone(),
-                region,
-                access_key,
-                secret_key,
-                prefix: String::new(), // NormFS will use instance_id as prefix automatically
-            });
-
-            log::info!("Cloud offload enabled for bucket: {}", bucket);
+        let (cloud_settings, warning) =
+            offload_settings(args.normfs_persistence_mode, config.cloud_offload.as_ref())?;
+        if let Some(warning) = warning {
+            log::warn!("{warning}");
         }
+        settings.cloud_settings = cloud_settings;
+        let cloud = settings.cloud_settings.is_some();
+        let (persist, frames_persist) = args.normfs_persistence_mode.persist(cloud);
+        settings.queue_settings = queue_settings(persist, frames_persist)?;
 
         let normfs = NormFS::new(args.normfs_base_folder.clone(), settings).await?;
 
-        Ok(Arc::new(normfs))
+        let flush = cloud
+            && matches!(
+                args.normfs_persistence_mode,
+                NormFsPersistenceMode::CloudOnly
+            );
+        Ok((Arc::new(normfs), flush))
     }
 
     async fn start_main_queue(&mut self) -> Result<(), Box<dyn std::error::Error>> {
@@ -903,12 +976,51 @@ impl Station {
             log::info!("OV5647 driver stopped");
         }
 
+        if let Some(flush) = self.cloud_flush.lock().take() {
+            flush.abort();
+        }
+
         log::info!("Closing NormFS...");
 
         self.normfs.close().await?;
         log::info!("NormFS closed successfully");
 
         Ok(())
+    }
+
+    /// A page goes to the bucket once it is full, which takes a slow queue hours, all of it
+    /// lost on a power cut. Every CLOUD_FLUSH_INTERVAL the open pages go up as they are;
+    /// a queue with nothing new since sends nothing. One at a time: in an outage a flush
+    /// waits for the bucket, and the next round could not land anyway.
+    fn start_cloud_flush(&self) {
+        if !self.flush_to_cloud {
+            return;
+        }
+        let normfs = self.normfs.clone();
+        let engine = self.engine.clone();
+        let own = [
+            queues::MAIN_QUEUE_ID,
+            inference::QUEUE_ID,
+            inference::STARTUPS_QUEUE_ID,
+            tags::QUEUE_ID,
+        ]
+        .map(|queue| normfs.resolve(queue));
+        *self.cloud_flush.lock() = Some(tokio::spawn(async move {
+            let mut interval = tokio::time::interval(CLOUD_FLUSH_INTERVAL);
+            // A round held up by an outage is not followed by a burst of rounds.
+            interval.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Delay);
+            interval.tick().await;
+            loop {
+                interval.tick().await;
+                let mut queues = engine.queues.lock().clone();
+                queues.extend(own.iter().cloned());
+                for queue in queues {
+                    if let Err(e) = normfs.flush_queue(&queue).await {
+                        log::debug!("Flushing {queue} to the bucket: {e}");
+                    }
+                }
+            }
+        }));
     }
 
     async fn start_commands_queue(&self) -> Result<(), Box<dyn std::error::Error>> {
@@ -1010,6 +1122,8 @@ async fn start_station(
     let inference = inference::Inference::start(station.normfs.clone()).await;
     *station.engine.inference.lock() = Some(inference);
 
+    station.start_cloud_flush();
+
     start_services(station, args).await
 }
 
@@ -1098,7 +1212,105 @@ mod tests {
     use super::*;
 
     fn pool_for(queue_path: &str) -> PoolKind {
-        queue_settings().unwrap().get_config(queue_path).pool
+        let (persist, frames) = NormFsPersistenceMode::Durable.persist(false);
+        queue_settings(persist, frames)
+            .unwrap()
+            .get_config(queue_path)
+            .pool
+    }
+
+    fn persist_for(mode: NormFsPersistenceMode, cloud: bool, queue_path: &str) -> Persist {
+        let (persist, frames) = mode.persist(cloud);
+        queue_settings(persist, frames)
+            .unwrap()
+            .get_config(queue_path)
+            .persist
+    }
+
+    #[test]
+    fn durable_video_and_thermal_skip_the_wal() {
+        for queue in [
+            "/inst123/usbvideo/9f86d081884c7d65",
+            "/inst123/video/ov5647",
+            "/inst123/hikmicro-thermal/E12345",
+        ] {
+            let persist = persist_for(NormFsPersistenceMode::Durable, true, queue);
+            assert_eq!(
+                persist,
+                Persist {
+                    cloud: true,
+                    ..Persist::STORE
+                },
+                "{queue}"
+            );
+        }
+        for queue in [
+            "/inst123/usbvideo/tx",
+            "/inst123/st3215/rx",
+            "/inst123/new-driver/rx",
+        ] {
+            let persist = persist_for(NormFsPersistenceMode::Durable, true, queue);
+            assert_eq!(
+                persist,
+                Persist {
+                    cloud: true,
+                    ..Persist::WAL_STORE
+                },
+                "{queue}"
+            );
+        }
+    }
+
+    #[test]
+    fn cloud_only_applies_to_every_queue() {
+        for queue in [
+            "/inst123/usbvideo/9f86d081884c7d65",
+            "/inst123/hikmicro-thermal/E12345",
+            "/inst123/main",
+            "/inst123/new-driver/rx",
+        ] {
+            assert_eq!(
+                persist_for(NormFsPersistenceMode::CloudOnly, true, queue),
+                Persist::CLOUD,
+                "{queue}"
+            );
+        }
+    }
+
+    #[test]
+    fn cloud_only_without_a_bucket_keeps_queues_in_memory() {
+        let empty = station_iface::config::CloudOffloadConfig {
+            bucket: String::new(),
+            region: String::new(),
+            access_key_id: String::new(),
+            secret_access_key: String::new(),
+            endpoint: None,
+        };
+        for (config, expected) in [
+            (
+                Some(&empty),
+                "cloud-offload has no bucket; queues stay in memory only",
+            ),
+            (None, "no cloud-offload section; queues stay in memory only"),
+        ] {
+            let (cloud, warning) =
+                offload_settings(NormFsPersistenceMode::CloudOnly, config).unwrap();
+            assert!(cloud.is_none());
+            assert_eq!(warning, Some(expected));
+        }
+        let (_, warning) = offload_settings(NormFsPersistenceMode::Durable, None).unwrap();
+        assert_eq!(warning, None);
+        for queue in [
+            "/inst123/usbvideo/9f86d081884c7d65",
+            "/inst123/main",
+            "/inst123/new-driver/rx",
+        ] {
+            assert_eq!(
+                persist_for(NormFsPersistenceMode::CloudOnly, false, queue),
+                Persist::MEMORY,
+                "{queue}"
+            );
+        }
     }
 
     #[test]
@@ -1154,19 +1366,5 @@ mod tests {
         for queue in ["/inst123/datasets/normvla", "/inst123/new-driver/rx"] {
             assert_eq!(pool_for(queue), PoolKind::Active, "{queue}");
         }
-    }
-
-    /// A rule without a leading `*` never matches an absolute id.
-    #[test]
-    fn a_rule_without_a_leading_star_matches_no_absolute_id() {
-        let settings = QueueSettings::new(
-            vec![("hikmicro-thermal/*".to_string(), QueueConfig::active())],
-            QueueConfig::default(),
-        )
-        .unwrap();
-        assert_eq!(
-            settings.get_config("/inst123/hikmicro-thermal/E12345").pool,
-            PoolKind::Passive
-        );
     }
 }

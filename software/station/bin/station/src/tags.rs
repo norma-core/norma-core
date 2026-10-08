@@ -8,7 +8,7 @@ use station_iface::{Backpressure, try_enqueue_with};
 
 use crate::station_proto::inference_tags::{Command, CommandType, RxEnvelope};
 
-const QUEUE_ID: &str = "inference-tags/rx";
+pub(crate) const QUEUE_ID: &str = "inference-tags/rx";
 
 pub async fn start(normfs: Arc<NormFS>) -> Result<(), normfs::Error> {
     let tags_queue_id = normfs.resolve(QUEUE_ID);

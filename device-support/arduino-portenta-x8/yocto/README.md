@@ -186,7 +186,7 @@ make build-arm64
 
 Station is installed at `/opt/station/station` and managed by a SysV supervisor
 that starts it with TCP/Web enabled, `--max-memory-usage=128M`, and
-`--normfs-persistence-mode=memory-only`. The default config and data paths are:
+`--normfs-persistence-mode=durable`. The default config and data paths are:
 
 ```text
 /opt/station/station.yaml

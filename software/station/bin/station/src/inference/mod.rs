@@ -10,8 +10,8 @@ use station_iface::STARTUP_WRITE_TIMEOUT;
 use std::sync::Arc;
 use tokio::sync::mpsc;
 
-const QUEUE_ID: &str = "inference-states";
-const STARTUPS_QUEUE_ID: &str = "startups";
+pub(crate) const QUEUE_ID: &str = "inference-states";
+pub(crate) const STARTUPS_QUEUE_ID: &str = "startups";
 
 pub type InferenceSignal = Arc<(Mutex<bool>, Condvar)>;
 

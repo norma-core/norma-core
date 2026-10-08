@@ -337,7 +337,7 @@ pub fn process_main_run_loop() {
 mod tests {
     use super::*;
     use crate::pipeline::USBCameraDriver;
-    use normfs::{NormFS, NormFsSettings, PersistenceMode};
+    use normfs::{NormFS, NormFsSettings, Persist, QueueSettings};
 
     struct NoopEngine;
 
@@ -358,7 +358,7 @@ mod tests {
         let dir = std::env::temp_dir().join(format!("usbvideo-stop-{}", std::process::id()));
         std::fs::create_dir_all(&dir).unwrap();
         let settings = NormFsSettings {
-            persistence_mode: PersistenceMode::MemoryOnly,
+            queue_settings: QueueSettings::default().with_default_persist(Persist::MEMORY),
             ..Default::default()
         };
         let normfs = Arc::new(NormFS::new(dir.clone(), settings).await.unwrap());

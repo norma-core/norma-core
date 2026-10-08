@@ -388,7 +388,7 @@ impl RateLimiter {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use normfs::{NormFsSettings, PersistenceMode};
+    use normfs::{NormFsSettings, Persist, QueueSettings};
 
     /// `publish` runs on a plain thread.
     #[tokio::test(flavor = "multi_thread")]
@@ -396,7 +396,7 @@ mod tests {
         let dir = std::env::temp_dir().join(format!("dmesg-publish-{}", std::process::id()));
         std::fs::create_dir_all(&dir).unwrap();
         let settings = NormFsSettings {
-            persistence_mode: PersistenceMode::MemoryOnly,
+            queue_settings: QueueSettings::default().with_default_persist(Persist::MEMORY),
             ..Default::default()
         };
         let normfs = Arc::new(NormFS::new(dir.clone(), settings).await.unwrap());

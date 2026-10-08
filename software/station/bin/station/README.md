@@ -273,13 +273,21 @@ inference:
     st3215-bus: "auto"  # Auto-detect or specify bus ID
     update-interval: "100ms"
 
-# Optional: S3-compatible cloud offload
+# Optional: S3-compatible cloud offload, on once a bucket is set here or in the
+# environment. Without a bucket station warns once and keeps queues on disk
+# (durable) or in memory only (cloud-only); a bucket without an endpoint is an
+# error. Durable mode starts without a network and uploads once the link is up;
+# cloud-only with a bucket also needs it reachable and accepting its keys at
+# startup, as opening a queue lists it (until NormFS 0.4.2). cloud-only uploads
+# the open pages every minute, so a slow queue lands within a minute rather than
+# once a 4 MiB page fills; there --max-queue-disk-size bounds NormFS's own
+# normfs/system, the one queue it keeps on disk.
 cloud-offload:
   bucket: "my-robot-data"  # leave empty to use env: AWS_S3_BUCKET
   region: "us-east-1"  # leave empty to use env: AWS_REGION
   access_key_id: "YOUR_KEY"  # leave empty to use env: AWS_ACCESS_KEY_ID
   secret_access_key: "YOUR_SECRET"  # leave empty to use env: AWS_SECRET_ACCESS_KEY
-  endpoint: "https://s3.amazonaws.com"  # Optional for MinIO/R2, leave empty to use env: AWS_ENDPOINT_URL
+  endpoint: "https://s3.amazonaws.com"  # Required (also for AWS), leave empty to use env: AWS_ENDPOINT_URL
 ```
 
 ## 🌐 Web Interface

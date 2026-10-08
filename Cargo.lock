@@ -1550,11 +1550,12 @@ dependencies = [
 
 [[package]]
 name = "normfs"
-version = "0.3.3"
+version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6b228eab00f9bd74f19e3fec3a1a35241c071779fe695d00cc7243e300e027a7"
+checksum = "b62a25c2774a0714bdcc6f93c6fdff89bf3397559c01ebd0af191eb6fcc1e7b9"
 dependencies = [
  "bytes",
+ "cc",
  "fastwebsockets",
  "globset",
  "http-body-util",
@@ -1564,7 +1565,9 @@ dependencies = [
  "log",
  "normfs-cloud",
  "normfs-crypto",
+ "normfs-fs",
  "normfs-store",
+ "normfs-time",
  "normfs-types",
  "normfs-wal",
  "prost",
@@ -1576,20 +1579,19 @@ dependencies = [
 
 [[package]]
 name = "normfs-cloud"
-version = "0.3.3"
+version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1c8a314f2a7d66a13564ff238064948148f5024ce87fe4778a83be80961b3d40"
+checksum = "bf79a77d0c1f4603cf7d60a20082070abf3414e627e4c9a0e5e054433c8d7577"
 dependencies = [
  "bytes",
- "log",
  "normfs-store",
  "normfs-types",
- "normfs-wal",
  "quick-xml 0.37.5",
  "reqwest",
  "rusty-s3",
  "serde",
  "tokio",
+ "tokio-util",
  "uintn",
  "url",
  "urlencoding",
@@ -1597,9 +1599,9 @@ dependencies = [
 
 [[package]]
 name = "normfs-crypto"
-version = "0.3.3"
+version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c6084c2899cf9de13044589dfc33d076bd84de9a5caca0a87a9e10e1a7113a21"
+checksum = "a811d5bfe0391c368a46540abb72b03878e66f7df781161518fdca9807202a43"
 dependencies = [
  "aes-gcm",
  "bytes",
@@ -1615,29 +1617,54 @@ dependencies = [
 ]
 
 [[package]]
-name = "normfs-store"
-version = "0.3.3"
+name = "normfs-fs"
+version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "08bb82a65ff23eb012c4ed7fd71dc61c82cfc1899bf498a5b29a58e1fd90ec86"
+checksum = "7ee8df7a12452e48b234fc451c03ed031362e3daff624dfc17409fc64f9e1af8"
+dependencies = [
+ "bytes",
+ "cc",
+ "libc",
+ "log",
+ "tokio",
+ "uintn",
+ "walkdir",
+]
+
+[[package]]
+name = "normfs-store"
+version = "0.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9c10da7624579d595068cc1494306947dfbdb1c3dfde351e7c23f7cc0e620997"
 dependencies = [
  "bytes",
  "cc",
  "log",
  "lzma-rust2",
  "normfs-crypto",
+ "normfs-fs",
  "normfs-types",
  "normfs-wal",
  "tokio",
  "uintn",
- "uuid",
  "zstd",
+ "zstd-sys",
+]
+
+[[package]]
+name = "normfs-time"
+version = "0.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "34ae1fc301a7c879bf36159250c2d4c9ee7c33e2bd4fcdd46c13618d5bb2ae13"
+dependencies = [
+ "libc",
 ]
 
 [[package]]
 name = "normfs-types"
-version = "0.3.3"
+version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5ddbfca71133f64c946acfc6fa18038c34c862baeaacbd324dab11ed0029322b"
+checksum = "c6d501e14080a54fdea3a8f25a0d2bc1980b33ef9ac5c011cd584cc734c33928"
 dependencies = [
  "bytes",
  "uintn",
@@ -1645,13 +1672,14 @@ dependencies = [
 
 [[package]]
 name = "normfs-wal"
-version = "0.3.3"
+version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ae69ad26d685d57e164a12c84c14d69d01614ec853a01909143a1d01e9a40e04"
+checksum = "b886d5c0a4ade01996047953b5ec82a15281fd1058be77346a19106c31db4d4b"
 dependencies = [
  "bytes",
  "cc",
  "log",
+ "normfs-fs",
  "normfs-types",
  "tokio",
  "uintn",
@@ -2152,6 +2180,7 @@ dependencies = [
  "base64 0.22.1",
  "bytes",
  "futures-core",
+ "futures-util",
  "http",
  "http-body",
  "http-body-util",
@@ -2171,12 +2200,14 @@ dependencies = [
  "sync_wrapper",
  "tokio",
  "tokio-rustls",
+ "tokio-util",
  "tower",
  "tower-http",
  "tower-service",
  "url",
  "wasm-bindgen",
  "wasm-bindgen-futures",
+ "wasm-streams",
  "web-sys",
  "webpki-roots",
 ]
@@ -2997,15 +3028,14 @@ checksum = "1dccffe3ce07af9386bfd29e80c0ab1a8205a2fc34e4bcd40364df902cfa8f3f"
 
 [[package]]
 name = "uintn"
-version = "0.3.3"
+version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2fca9d602d9b955f38f86c287584f2379da96fc8b76b6df8bd9bea743bd399fb"
+checksum = "58360d746a9eb280f15d6ed2a2bea6d36b6172f3b41eb8bca09073b42163e901"
 dependencies = [
  "bytes",
  "cc",
  "dashu-int",
  "hex",
- "walkdir",
 ]
 
 [[package]]
@@ -3106,18 +3136,6 @@ name = "utf8parse"
 version = "0.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "06abde3611657adf66d383f00b093d7faecc7fa57071cce2578660c9f1010821"
-
-[[package]]
-name = "uuid"
-version = "1.18.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2f87b8aa10b915a06587d0dec516c282ff295b475d94abf425d62b57710070a2"
-dependencies = [
- "getrandom 0.3.3",
- "js-sys",
- "rand 0.9.2",
- "wasm-bindgen",
-]
 
 [[package]]
 name = "vcpkg"
@@ -3275,6 +3293,19 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bad67dc8b2a1a6e5448428adec4c3e84c43e561d8c9ee8a9e5aabeb193ec41d1"
 dependencies = [
  "unicode-ident",
+]
+
+[[package]]
+name = "wasm-streams"
+version = "0.4.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "15053d8d85c7eccdbefef60f06769760a563c7f0a9d6902a13d35c7800b0ad65"
+dependencies = [
+ "futures-util",
+ "js-sys",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
+ "web-sys",
 ]
 
 [[package]]
