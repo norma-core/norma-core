@@ -304,6 +304,15 @@ fn queue_settings(
         // (pattern, pool, compression, fsync, frames)
         // Before `*video/*`, which would match it.
         ("*/usbvideo/tx", Passive, Zstd, true, false),
+        // Before `*/hikmicro-thermal/*`. Frames refer to these per-session records, so they
+        // keep their own pages and are still uploaded when the frames rule is excluded.
+        (
+            "*/hikmicro-thermal/device-info/*",
+            Passive,
+            Zstd,
+            true,
+            false,
+        ),
         // Wide records.
         ("*video/*", Active, Raw, false, true),
         ("*/hikmicro-thermal/*", Active, Zstd, false, true),
@@ -1314,6 +1323,7 @@ mod tests {
         }
         for queue in [
             "/inst123/usbvideo/tx",
+            "/inst123/hikmicro-thermal/device-info/E12345",
             "/inst123/st3215/rx",
             "/inst123/new-driver/rx",
         ] {
@@ -1423,6 +1433,7 @@ mod tests {
             "/inst123/inference-tags/rx",
             "/inst123/motors_mirroring/modes",
             "/inst123/usbvideo/tx",
+            "/inst123/hikmicro-thermal/device-info/E12345",
         ] {
             assert_eq!(pool_for(queue), PoolKind::Passive, "{queue}");
         }
@@ -1438,6 +1449,7 @@ mod tests {
         ];
         let uploaded = [
             "/inst123/usbvideo/tx",
+            "/inst123/hikmicro-thermal/device-info/E12345",
             "/inst123/vesc-trampa/rx",
             "/inst123/main",
             "/inst123/new-driver/rx",

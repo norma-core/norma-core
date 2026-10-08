@@ -2,7 +2,8 @@
 
 Enable `drivers.hikmicro-thermal.enabled: true` in the configuration passed to
 station. The Linux driver discovers USB `2bdf:0102` and publishes
-`hikmicro-thermal/<serial>`. The generic USB video driver excludes vendor `2bdf`.
+`hikmicro-thermal/<serial>`, with device information in
+`hikmicro-thermal/device-info/<serial>`. The generic USB video driver excludes vendor `2bdf`.
 
 ## Production flow
 
@@ -12,13 +13,15 @@ station. The Linux driver discovers USB `2bdf:0102` and publishes
 3. Write `03 0e` to selector 5. Read selector 3's length header, then its chunks
    using GET_LEN/GET_CUR. Extract the factory blob from the returned container.
 4. Release the control interface and reattach its kernel driver. Publish device
-   information with calibration status. Failed calibration permits raw imagery;
-   it cannot produce calibrated Celsius readings.
+   information with calibration status to the device-info queue, once per
+   capture session. Failed calibration permits raw imagery; it cannot produce
+   calibrated Celsius readings.
 5. Open through libuvc, select YUYV 256×196 at 25 FPS by descriptor dimensions,
    then probe, commit and start the stream. Publish the negotiated format/frame
    indices in frame envelopes; these indices differ between camera models.
 6. Poll at 200 ms intervals. Wait up to `frame-timeout` (default 5 seconds) for
-   complete payloads. Publish the retained frames with their calibration data.
+   complete payloads. Publish the retained frames with a reference to the
+   session's device information record; records written before carry it inline.
    The first 98304 bytes, 256×192 little-endian detector counts, are packed
    losslessly into `y16`, each frame on its own; the following 2048 bytes go
    to `runtime_block` unchanged. A payload of any other length is kept whole in

@@ -7,10 +7,12 @@ use std::{
 };
 
 use crate::Sink;
-use bytes::Bytes;
+use bytes::{Bytes, BytesMut};
 use libc::{c_char, c_int, c_uchar};
 use libusb1_sys as usb;
 use norm_uvc_sys::*;
+use prost::Message;
+use station_iface::WRITE_TIMEOUT;
 
 use crate::{
     COMPACT_FPS, COMPACT_PAYLOAD_LEN, COMPACT_UVC_HEIGHT, COMPACT_UVC_WIDTH, CameraIdentity,
@@ -100,7 +102,7 @@ pub fn discover_cameras() -> Result<Vec<CameraIdentity>, String> {
 pub fn enqueue_device_info(
     camera: &CameraIdentity,
     sink: &Sink,
-) -> Result<hikmicro::DeviceInfo, String> {
+) -> Result<(hikmicro::DeviceInfo, Option<hikmicro::DeviceInfoRef>), String> {
     let calibration = read_calibration_for_camera(camera);
     if !calibration.ok {
         log::warn!(
@@ -120,20 +122,43 @@ pub fn enqueue_device_info(
         layout: Some(compact_layout()),
         calibration: Some(calibration),
     };
-    enqueue_envelope(
-        sink,
-        hikmicro::RxEnvelope {
-            device_info: Some(device_info.clone()),
-            frames: None,
-        },
-    )?;
+    let envelope = hikmicro::RxEnvelope {
+        device_info: Some(device_info.clone()),
+        ..Default::default()
+    };
+    let mut buf = BytesMut::new();
+    envelope.encode(&mut buf).map_err(|e| e.to_string())?;
+    // Bounded so shutdown can join this thread.
+    let written = sink.runtime.block_on(sink.normfs.enqueue_timeout(
+        &sink.device_info_queue_id,
+        buf.freeze(),
+        WRITE_TIMEOUT,
+    ));
+    let id = match written {
+        Ok(id) => id,
+        Err(normfs::Error::RecordTooLarge(len)) => {
+            log::warn!(
+                "HIKMICRO {} device info is {} bytes, too large for {}; frames will carry it inline",
+                camera.unique_id,
+                len,
+                sink.device_info_queue_id
+            );
+            return Ok((device_info, None));
+        }
+        Err(e) => return Err(e.to_string()),
+    };
+    let device_info_ref = hikmicro::DeviceInfoRef {
+        queue: sink.device_info_queue_id.as_str().to_string(),
+        id: id.value_to_bytes(),
+    };
 
-    Ok(device_info)
+    Ok((device_info, Some(device_info_ref)))
 }
 
 pub fn capture_continuous(
     camera: &CameraIdentity,
     mut device_info: hikmicro::DeviceInfo,
+    device_info_ref: Option<hikmicro::DeviceInfoRef>,
     sink: &Sink,
     stop: &AtomicBool,
     frame_timeout: Duration,
@@ -144,6 +169,11 @@ pub fn capture_continuous(
     let mut stream = open_compact_stream(&ctx, camera)?;
     stream.start()?;
     device_info.stream_format = Some(compact_stream_format(&stream.ctrl));
+    let session = Session {
+        stream_format: device_info.stream_format.clone(),
+        inline_device_info: device_info_ref.is_none().then(|| device_info.clone()),
+        device_info_ref,
+    };
     log::info!(
         "HIKMICRO {} stream started: format_index={}, frame_index={}, interval_100ns={}, max_frame_bytes={}, max_transfer_bytes={}, calibration_ok={}",
         camera.unique_id,
@@ -163,7 +193,7 @@ pub fn capture_continuous(
     let mut frames = Vec::with_capacity(FRAMES_PER_RX_ENVELOPE);
     while !stop.load(Ordering::Acquire) {
         if last_valid_frame.elapsed() > frame_timeout {
-            flush_frames_block(sink, &device_info, &mut block_sequence, &mut frames)?;
+            flush_frames_block(sink, &session, &mut block_sequence, &mut frames)?;
             return Err(format!(
                 "no complete HIKMICRO frames for {:.1}s",
                 frame_timeout.as_secs_f32()
@@ -218,25 +248,33 @@ pub fn capture_continuous(
 
                 frames.push(thermal_frame_from_capture(frame, &mut y16));
                 if frames.len() >= FRAMES_PER_RX_ENVELOPE {
-                    flush_frames_block(sink, &device_info, &mut block_sequence, &mut frames)?;
+                    flush_frames_block(sink, &session, &mut block_sequence, &mut frames)?;
                 }
             }
             Err(e) if e == uvc_error_UVC_ERROR_TIMEOUT => {}
             Err(e) => {
-                flush_frames_block(sink, &device_info, &mut block_sequence, &mut frames)?;
+                flush_frames_block(sink, &session, &mut block_sequence, &mut frames)?;
                 return Err(format!("uvc_stream_get_frame failed: {}", e));
             }
         }
     }
 
-    flush_frames_block(sink, &device_info, &mut block_sequence, &mut frames)?;
+    flush_frames_block(sink, &session, &mut block_sequence, &mut frames)?;
 
     Ok(())
 }
 
+/// What every frames record of one capture session repeats.
+struct Session {
+    stream_format: Option<hikmicro::CompactStreamFormat>,
+    device_info_ref: Option<hikmicro::DeviceInfoRef>,
+    // Set only when the device-info queue refused the record.
+    inline_device_info: Option<hikmicro::DeviceInfo>,
+}
+
 fn flush_frames_block(
     sink: &Sink,
-    device_info: &hikmicro::DeviceInfo,
+    session: &Session,
     block_sequence: &mut u32,
     frames: &mut Vec<hikmicro::ThermalFrame>,
 ) -> Result<(), String> {
@@ -244,7 +282,7 @@ fn flush_frames_block(
         return Ok(());
     }
 
-    enqueue_frames_block(sink, device_info, *block_sequence, std::mem::take(frames))?;
+    enqueue_frames_block(sink, session, *block_sequence, std::mem::take(frames))?;
     *block_sequence = block_sequence.wrapping_add(1);
     frames.reserve(FRAMES_PER_RX_ENVELOPE);
     Ok(())
@@ -252,7 +290,7 @@ fn flush_frames_block(
 
 fn enqueue_frames_block(
     sink: &Sink,
-    device_info: &hikmicro::DeviceInfo,
+    session: &Session,
     block_sequence: u32,
     frames: Vec<hikmicro::ThermalFrame>,
 ) -> Result<(), String> {
@@ -265,7 +303,7 @@ fn enqueue_frames_block(
         monotonic_end_ns: last.monotonic_stamp_ns,
         local_start_ns: first.local_stamp_ns,
         local_end_ns: last.local_stamp_ns,
-        stream_format: device_info.stream_format.clone(),
+        stream_format: session.stream_format.clone(),
         layout: Some(compact_layout()),
         frames,
     };
@@ -273,8 +311,9 @@ fn enqueue_frames_block(
     enqueue_envelope(
         sink,
         hikmicro::RxEnvelope {
-            device_info: Some(device_info.clone()),
+            device_info: session.inline_device_info.clone(),
             frames: Some(block),
+            device_info_ref: session.device_info_ref.clone(),
         },
     )
 }

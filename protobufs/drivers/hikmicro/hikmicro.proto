@@ -129,7 +129,13 @@ message ThermalFramesBlock {
     repeated ThermalFrame frames = 10;
 }
 
+message DeviceInfoRef {
+    string queue = 1; // Absolute queue id, e.g. /<instance>/hikmicro-thermal/device-info/<serial>.
+    bytes id = 2; // Entry id in that queue, little-endian.
+}
+
 message RxEnvelope {
-    DeviceInfo device_info = 1;
+    DeviceInfo device_info = 1; // Inline in frame records written before device_info_ref.
     ThermalFramesBlock frames = 2;
+    DeviceInfoRef device_info_ref = 3; // The capture session's device_info record.
 }
