@@ -121,12 +121,18 @@ export function decoderRetryAt(): number | null {
   return decoderApi.retryAt();
 }
 
-/** A read of the entries failed, so the frame may still decode once they can be read. */
-export const READ_FAILED = 'read-failed';
-/** How long to wait before reading a frame's entries again after a failed read. */
 export const READ_RETRY_MS = 5_000;
+export const READ_RETRY_MAX_MS = 60_000;
 
-class FrameReadError extends Error {}
+/** A read of a frame's entries failed; `reason` is what the read was rejected with. */
+export class FrameReadError extends Error {
+  readonly reason: unknown;
+
+  constructor(message: string, reason: unknown) {
+    super(message);
+    this.reason = reason;
+  }
+}
 
 let reader: Vp8ChainReader<Frame> | null = null;
 
@@ -138,7 +144,7 @@ function chainReader(normFs: NormFsClient, decoders: DecoderApi<Frame>): Vp8Chai
       try {
         entries = await normFs.readRange(queue, idToBytes(from), count);
       } catch (error) {
-        throw new FrameReadError(`reading ${count} entries of ${queue}: ${String(error)}`);
+        throw new FrameReadError(`reading ${count} entries of ${queue}: ${String(error)}`, error);
       }
       return entries.map((entry) => ({
         id: idFromBytes(entry.id),
@@ -160,16 +166,16 @@ export async function decodeUsbVideoPicture(
   envelope: usbvideo.IRxEnvelope,
 ): Promise<ImageBitmap | null> {
   const picture = await readUsbVideoPicture(normFs, queue, entryId, envelope);
-  return picture === READ_FAILED ? null : picture;
+  return picture instanceof FrameReadError ? null : picture;
 }
 
-/** As decodeUsbVideoPicture, but tells a failed read apart from a frame that cannot decode. */
+/** As decodeUsbVideoPicture, but hands back a failed read instead of null. */
 export async function readUsbVideoPicture(
   normFs: NormFsClient,
   queue: string,
   entryId: Uint8Array,
   envelope: usbvideo.IRxEnvelope,
-): Promise<ImageBitmap | null | typeof READ_FAILED> {
+): Promise<ImageBitmap | null | FrameReadError> {
   try {
     const decoders = await decoderApi();
     if (!decoders) {
@@ -186,8 +192,12 @@ export async function readUsbVideoPicture(
       picture.close();
     }
   } catch (error) {
+    if (error instanceof FrameReadError) {
+      console.debug('VP8 frame read failed:', error.message);
+      return error;
+    }
     console.error('VP8 frame decode failed:', error);
-    return error instanceof FrameReadError ? READ_FAILED : null;
+    return null;
   }
 }
 

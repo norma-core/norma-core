@@ -1,8 +1,18 @@
 import { useEffect, useRef, useState } from 'react';
 import type { usbvideo } from '@/api/proto.js';
+import { ErrEntryNotFound, ErrQueueNotFound } from '@/api/normfs';
 import webSocketManager from '@/api/websocket';
 import { isVp8 } from '@/usbvideo/vp8-chain';
-import { READ_FAILED, READ_RETRY_MS, decoderRetryAt, readUsbVideoPicture } from '@/usbvideo/vp8-frames';
+import {
+  FrameReadError,
+  READ_RETRY_MAX_MS,
+  READ_RETRY_MS,
+  decoderRetryAt,
+  readUsbVideoPicture,
+} from '@/usbvideo/vp8-frames';
+
+// The station answered and the entries are gone; reading again cannot help.
+const FINAL_READ_ERRORS: unknown[] = [ErrEntryNotFound, ErrQueueNotFound];
 
 export type UsbVideoPicture = ImageBitmap | 'decoding' | 'missing';
 
@@ -50,26 +60,34 @@ export function useUsbVideoPicture(
     if (!shown.current) {
       show('decoding');
     }
-    readUsbVideoPicture(webSocketManager.normFs, queueId, entryId, envelope).then((result) => {
-      if (cancelled) {
-        if (result instanceof ImageBitmap) {
-          result.close();
+    const load = (failures: number) => {
+      readUsbVideoPicture(webSocketManager.normFs, queueId, entryId, envelope).then((result) => {
+        if (cancelled) {
+          if (result instanceof ImageBitmap) {
+            result.close();
+          }
+          return;
         }
-        return;
-      }
-      if (result === READ_FAILED) {
-        // The entries may be readable once the connection is back.
-        timer = setTimeout(() => setRetry((n) => n + 1), READ_RETRY_MS);
-        return;
-      }
-      const retryAt = result ? null : decoderRetryAt();
-      if (retryAt === null) {
-        show(result ?? 'missing');
-        return;
-      }
-      // No decoder yet, so not this frame's fault: try again once one may load.
-      timer = setTimeout(() => setRetry((n) => n + 1), Math.max(0, retryAt - Date.now()));
-    });
+        if (result instanceof FrameReadError) {
+          if (FINAL_READ_ERRORS.includes(result.reason)) {
+            show('missing');
+            return;
+          }
+          // The entries may be readable once the connection is back.
+          const delay = Math.min(READ_RETRY_MS * 2 ** failures, READ_RETRY_MAX_MS);
+          timer = setTimeout(() => load(failures + 1), delay);
+          return;
+        }
+        const retryAt = result ? null : decoderRetryAt();
+        if (retryAt === null) {
+          show(result ?? 'missing');
+          return;
+        }
+        // No decoder yet, so not this frame's fault: try again once one may load.
+        timer = setTimeout(() => setRetry((n) => n + 1), Math.max(0, retryAt - Date.now()));
+      });
+    };
+    load(0);
     return () => {
       cancelled = true;
       clearTimeout(timer);
