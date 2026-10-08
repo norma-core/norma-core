@@ -62,7 +62,7 @@ export function useUsbVideoPicture(
     if (!shown.current) {
       show('decoding');
     }
-    const load = (failures: number) => {
+    const load = (failures: number, lateTries: number) => {
       readUsbVideoPicture(webSocketManager.normFs, queueId, entryId, envelope).then((result) => {
         if (cancelled) {
           if (result instanceof ImageBitmap) {
@@ -76,11 +76,11 @@ export function useUsbVideoPicture(
         }
         const final = result instanceof FrameReadError && FINAL_READ_ERRORS.includes(result.reason);
         // A decoder that stays late is more likely choking on the chain than slow, so it gets a few tries.
-        const late = result instanceof FrameRetryError && failures < DECODER_RETRIES;
+        const late = result instanceof FrameRetryError && lateTries < DECODER_RETRIES;
         if (late || (result instanceof FrameReadError && !final)) {
-          // The entries may be readable once the connection is back, and a slow decoder may catch up.
+          // The entries may be readable once the connection is back.
           const delay = Math.min(READ_RETRY_MS * 2 ** failures, READ_RETRY_MAX_MS);
-          timer = setTimeout(() => load(failures + 1), delay);
+          timer = setTimeout(() => load(failures + 1, late ? lateTries + 1 : lateTries), delay);
           return;
         }
         const retryAt = decoderRetryAt();
@@ -95,7 +95,7 @@ export function useUsbVideoPicture(
         timer = setTimeout(() => setRetry((n) => n + 1), Math.max(0, retryAt - Date.now()));
       });
     };
-    load(0);
+    load(0, 0);
     return () => {
       cancelled = true;
       clearTimeout(timer);
