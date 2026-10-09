@@ -92,7 +92,7 @@ struct Args {
     max_memory_usage: usize,
 
     /// Maximum NormFS WAL file size before rotation, e.g. `128M`, `1G`, or a plain byte count
-    #[arg(long, default_value = "128M", value_parser = size::parse_size::<usize>)]
+    #[arg(long, default_value = "4M", value_parser = size::parse_size::<usize>)]
     normfs_file_size: usize,
 
     /// Base folder for normfs storage
