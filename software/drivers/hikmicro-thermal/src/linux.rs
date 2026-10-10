@@ -99,10 +99,8 @@ pub fn discover_cameras() -> Result<Vec<CameraIdentity>, String> {
     Ok(cameras)
 }
 
-pub fn enqueue_device_info(
-    camera: &CameraIdentity,
-    sink: &Sink,
-) -> Result<(hikmicro::DeviceInfo, Option<hikmicro::DeviceInfoRef>), String> {
+/// Read before the stream opens; the negotiated format is filled in after.
+pub fn read_device_info(camera: &CameraIdentity) -> hikmicro::DeviceInfo {
     let calibration = read_calibration_for_camera(camera);
     if !calibration.ok {
         log::warn!(
@@ -111,7 +109,7 @@ pub fn enqueue_device_info(
             calibration.error
         );
     }
-    let device_info = hikmicro::DeviceInfo {
+    hikmicro::DeviceInfo {
         driver: "hikmicro-thermal/linux/libuvc+libusb".to_string(),
         usb: Some(usb_device_info(camera).unwrap_or_else(|e| {
             log::warn!("Failed to read HIKMICRO USB descriptors: {}", e);
@@ -121,7 +119,17 @@ pub fn enqueue_device_info(
         stream_format: None,
         layout: Some(compact_layout()),
         calibration: Some(calibration),
-    };
+    }
+}
+
+/// Writes the capture session's record once the format is negotiated and starts
+/// landing it at once: it is a single small record, so its page would otherwise
+/// stay open until the capture ends.
+fn write_session_record(
+    camera: &CameraIdentity,
+    device_info: &hikmicro::DeviceInfo,
+    sink: &Sink,
+) -> Result<Option<hikmicro::DeviceInfoRef>, String> {
     let envelope = hikmicro::RxEnvelope {
         device_info: Some(device_info.clone()),
         ..Default::default()
@@ -143,22 +151,28 @@ pub fn enqueue_device_info(
                 len,
                 sink.device_info_queue_id
             );
-            return Ok((device_info, None));
+            return Ok(None);
         }
         Err(e) => return Err(e.to_string()),
     };
-    let device_info_ref = hikmicro::DeviceInfoRef {
+    let normfs = sink.normfs.clone();
+    let queue = sink.device_info_queue_id.clone();
+    let unique_id = camera.unique_id.clone();
+    sink.runtime.spawn(async move {
+        if let Err(e) = normfs.flush_queue(&queue).await {
+            log::warn!("HIKMICRO {} device info not flushed: {}", unique_id, e);
+        }
+    });
+
+    Ok(Some(hikmicro::DeviceInfoRef {
         queue: sink.device_info_queue_id.as_str().to_string(),
         id: id.value_to_bytes(),
-    };
-
-    Ok((device_info, Some(device_info_ref)))
+    }))
 }
 
 pub fn capture_continuous(
     camera: &CameraIdentity,
     mut device_info: hikmicro::DeviceInfo,
-    device_info_ref: Option<hikmicro::DeviceInfoRef>,
     sink: &Sink,
     stop: &AtomicBool,
     frame_timeout: Duration,
@@ -169,10 +183,21 @@ pub fn capture_continuous(
     let mut stream = open_compact_stream(&ctx, camera)?;
     stream.start()?;
     device_info.stream_format = Some(compact_stream_format(&stream.ctrl));
-    let session = Session {
-        stream_format: device_info.stream_format.clone(),
-        inline_device_info: device_info_ref.is_none().then(|| device_info.clone()),
-        device_info_ref,
+    let device_info_ref = write_session_record(camera, &device_info, sink)?;
+    // Frames that reference the session record do not repeat what it holds.
+    let session = match device_info_ref {
+        Some(device_info_ref) => Session {
+            stream_format: None,
+            layout: None,
+            device_info_ref: Some(device_info_ref),
+            inline_device_info: None,
+        },
+        None => Session {
+            stream_format: device_info.stream_format.clone(),
+            layout: Some(compact_layout()),
+            device_info_ref: None,
+            inline_device_info: Some(device_info.clone()),
+        },
     };
     log::info!(
         "HIKMICRO {} stream started: format_index={}, frame_index={}, interval_100ns={}, max_frame_bytes={}, max_transfer_bytes={}, calibration_ok={}",
@@ -267,6 +292,7 @@ pub fn capture_continuous(
 /// What every frames record of one capture session repeats.
 struct Session {
     stream_format: Option<hikmicro::CompactStreamFormat>,
+    layout: Option<hikmicro::CompactPayloadLayout>,
     device_info_ref: Option<hikmicro::DeviceInfoRef>,
     // Set only when the device-info queue refused the record.
     inline_device_info: Option<hikmicro::DeviceInfo>,
@@ -304,7 +330,7 @@ fn enqueue_frames_block(
         local_start_ns: first.local_stamp_ns,
         local_end_ns: last.local_stamp_ns,
         stream_format: session.stream_format.clone(),
-        layout: Some(compact_layout()),
+        layout: session.layout.clone(),
         frames,
     };
 

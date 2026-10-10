@@ -219,12 +219,10 @@ async fn run_camera_capture(
     frame_skip: u32,
 ) -> Result<(), String> {
     let device_info_camera = camera.clone();
-    let device_info_sink = sink.clone();
-    let (device_info, device_info_ref) = tokio::task::spawn_blocking(move || {
-        linux::enqueue_device_info(&device_info_camera, &device_info_sink)
-    })
-    .await
-    .map_err(|e| format!("HIKMICRO device-info task failed: {}", e))??;
+    let device_info =
+        tokio::task::spawn_blocking(move || linux::read_device_info(&device_info_camera))
+            .await
+            .map_err(|e| format!("HIKMICRO device-info task failed: {}", e))?;
 
     let capture_camera = camera.clone();
     let capture_stop = stop.clone();
@@ -232,7 +230,6 @@ async fn run_camera_capture(
         linux::capture_continuous(
             &capture_camera,
             device_info,
-            device_info_ref,
             &sink,
             capture_stop.as_ref(),
             frame_timeout,

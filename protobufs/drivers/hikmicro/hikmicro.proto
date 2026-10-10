@@ -123,6 +123,7 @@ message ThermalFramesBlock {
     uint64 monotonic_end_ns = 4;
     uint64 local_start_ns = 5;
     uint64 local_end_ns = 6;
+    // Unset when the envelope has device_info_ref: the session record holds them.
     CompactStreamFormat stream_format = 7;
     CompactPayloadLayout layout = 8;
 
