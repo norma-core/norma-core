@@ -197,7 +197,13 @@ class LiveVideoStream {
   private async follow(id: bigint, envelope: usbvideo.IRxEnvelope): Promise<void> {
     const ws = this.ws;
     let from = id;
-    if (isVp8(envelope)) {
+    // A session record goes in ahead of a keyframe, so a tail that is one is
+    // followed by VP8 frames too.
+    const record = envelope.type !== usbvideo.RxEnvelopeType.ET_FRAMES;
+    if (record) {
+      rememberCaptureSession(this.queueId, id, envelope);
+    }
+    if (isVp8(envelope) || record) {
       this.api = await decoderApi();
       if (ws !== this.ws) {
         return;
@@ -207,7 +213,7 @@ class LiveVideoStream {
         return;
       }
       // Without its keyframe the tail cannot be shown; the next keyframe can.
-      from = keyframeOf(id, envelope) ?? id + 1n;
+      from = record ? id + 1n : keyframeOf(id, envelope) ?? id + 1n;
     }
     this.showFrom = id;
     this.last = from - 1n;

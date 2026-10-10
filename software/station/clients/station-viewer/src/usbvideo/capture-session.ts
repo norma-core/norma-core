@@ -22,7 +22,12 @@ function sessionOf(envelope: usbvideo.IRxEnvelope): bigint | null {
 }
 
 function fill(envelope: usbvideo.IRxEnvelope, session: Session): usbvideo.IRxEnvelope {
-  return { ...envelope, camera: envelope.camera ?? session.camera, formats: session.formats };
+  // A decoded message keeps defaults such as `type` on its prototype, which a
+  // spread drops.
+  return Object.assign(Object.create(Object.getPrototypeOf(envelope)), envelope, {
+    camera: envelope.camera ?? session.camera,
+    formats: session.formats,
+  });
 }
 
 export function rememberCaptureSession(queueId: string, id: bigint, envelope: usbvideo.IRxEnvelope): void {
