@@ -346,7 +346,8 @@ impl<T: StationEngine> StateTracker<T> {
 
         let now_ns = stamp.monotonic_stamp_ns;
         let mut force = cam.policy.wants_keyframe(now_ns);
-        let (keyframe, data, room) = loop {
+        // Runs on the capture thread; must not block.
+        let (keyframe, appended) = loop {
             let packet = match cam.encoder.encode(&rgb, force) {
                 Ok(p) if p.keyframe || cam.policy.keyframe().is_some() => p,
                 Ok(_) => {
@@ -373,34 +374,29 @@ impl<T: StationEngine> StateTracker<T> {
                 cam.policy.keyframe().filter(|_| !keyframe),
             );
             if keyframe || force {
-                break (keyframe, data, None);
+                break (keyframe, self.normfs.try_enqueue(queue_id, data));
             }
-            // A delta that would open a NormFS file is encoded again as a
-            // keyframe, so every file decodes on its own.
-            match self.normfs.file_room(queue_id) {
-                Ok(room) if room.starts_file(data.len()) => force = true,
-                room => break (keyframe, data, room.ok()),
+            // A delta goes only into the file its keyframe is in, checked and
+            // appended in one step so a flush cannot seal the file between
+            // them. One that would open a file is encoded again as a keyframe,
+            // so every file decodes on its own.
+            let room = match self.normfs.file_room(queue_id) {
+                Ok(room) if room.starts_file(data.len()) => {
+                    force = true;
+                    continue;
+                }
+                Ok(room) => room,
+                Err(e) => break (keyframe, Err(e)),
+            };
+            match self.normfs.try_enqueue_in(queue_id, &room, data) {
+                Err(normfs::Error::NotInFile) => force = true,
+                appended => break (keyframe, appended),
             }
         };
 
-        // Runs on the capture thread; must not block.
-        match self.normfs.try_enqueue(queue_id, data) {
-            Ok(id) => match id.to_u64() {
-                Ok(id) => {
-                    cam.policy.landed(id, keyframe, now_ns);
-                    // A flush between the look and the write opened a file
-                    // with this delta; the next frame starts the chain over.
-                    if let Some(room) = room
-                        && self
-                            .normfs
-                            .file_room(queue_id)
-                            .is_ok_and(|after| !room.same_file(&after))
-                    {
-                        cam.policy.lost();
-                    }
-                }
-                Err(_) => cam.policy.lost(),
-            },
+        match appended.map(|id| id.to_u64()) {
+            Ok(Ok(id)) => cam.policy.landed(id, keyframe, now_ns),
+            Ok(Err(_)) => cam.policy.lost(),
             Err(e) => {
                 cam.policy.lost();
                 if !matches!(e, normfs::Error::WouldBlock) {
