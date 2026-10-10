@@ -17,8 +17,10 @@ History continues to read the exact recorded entry. Its preview uses the red pal
 The station driver publishes one frame per envelope. Rebuild and restart the
 station to enable this behavior; no new configuration is needed. Old binaries
 still produce 25-frame batches and roughly one displayed frame per second.
-Single-frame entries also change recording granularity and repeat calibration
-metadata more frequently. Raw image traffic alone is about 2.5 MB/s at 25 FPS.
+Single-frame entries also change recording granularity. Calibration is not
+repeated in them: each entry refers to the capture session's device-info record,
+which the viewer reads once and caches; older entries carry it inline. Raw image
+traffic alone is about 2.5 MB/s at 25 FPS.
 
 The FPS label describes the configured sensor rate, not measured display FPS.
 

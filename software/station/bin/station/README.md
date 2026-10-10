@@ -288,7 +288,10 @@ inference:
 # startup, as opening a queue lists it (until NormFS 0.4.2). cloud-only uploads
 # the open pages every minute, so a slow queue lands within a minute rather than
 # once a 4 MiB page fills; there --max-queue-disk-size bounds NormFS's own
-# normfs/system, the one queue it keeps on disk.
+# normfs/system, the one queue it keeps on disk. --normfs-persistence-mode
+# memory-only keeps every queue but normfs/system in memory and ignores this
+# section, exclude included, so the bucket can be turned off for a run without
+# editing it.
 cloud-offload:
   bucket: "my-robot-data"  # leave empty to use env: AWS_S3_BUCKET
   region: "us-east-1"  # leave empty to use env: AWS_REGION

@@ -47,13 +47,14 @@ const VERSION: &str = concat!(env!("CARGO_PKG_VERSION"), " (", env!("GIT_HASH"),
 enum NormFsPersistenceMode {
     Durable,
     CloudOnly,
+    MemoryOnly,
 }
 
 impl NormFsPersistenceMode {
     /// Persistence for most queues, then for the video and thermal ones.
     /// Video and thermal frames skip the WAL: a crash loses at most the open
     /// page of frames, and the WAL would double their disk writes. cloud-only
-    /// without a bucket keeps every queue in memory.
+    /// without a bucket, and memory-only always, keep every queue in memory.
     fn persist(self, cloud: bool) -> (Persist, Persist) {
         match self {
             Self::Durable => (
@@ -67,7 +68,7 @@ impl NormFsPersistenceMode {
                 },
             ),
             Self::CloudOnly if cloud => (Persist::CLOUD, Persist::CLOUD),
-            Self::CloudOnly => (Persist::MEMORY, Persist::MEMORY),
+            Self::CloudOnly | Self::MemoryOnly => (Persist::MEMORY, Persist::MEMORY),
         }
     }
 }
@@ -92,14 +93,14 @@ struct Args {
     max_memory_usage: usize,
 
     /// Maximum NormFS WAL file size before rotation, e.g. `128M`, `1G`, or a plain byte count
-    #[arg(long, default_value = "128M", value_parser = size::parse_size::<usize>)]
+    #[arg(long, default_value = "4M", value_parser = size::parse_size::<usize>)]
     normfs_file_size: usize,
 
     /// Base folder for normfs storage
     #[arg(long, default_value = "./station_data")]
     normfs_base_folder: PathBuf,
 
-    /// NormFS persistence mode: durable writes WAL/store files (video and thermal store only); cloud-only sends every queue's pages straight to the configured bucket, or keeps them in memory without one
+    /// NormFS persistence mode: durable writes WAL/store files (video and thermal store only); cloud-only sends every queue's pages straight to the configured bucket, or keeps them in memory without one; memory-only keeps every queue in memory (NormFS's own normfs/system aside) and ignores cloud-offload
     #[arg(long, value_enum, default_value = "durable")]
     normfs_persistence_mode: NormFsPersistenceMode,
 
@@ -268,6 +269,9 @@ fn offload_settings(
     mode: NormFsPersistenceMode,
     config: Option<&station_iface::config::CloudOffloadConfig>,
 ) -> Result<(Option<CloudSettings>, Option<&'static str>), String> {
+    if let NormFsPersistenceMode::MemoryOnly = mode {
+        return Ok((None, config.map(|_| "memory-only; cloud-offload is ignored")));
+    }
     let cloud = match config {
         Some(config) => cloud_settings(config)?,
         None => None,
@@ -283,6 +287,7 @@ fn offload_settings(
         (NormFsPersistenceMode::CloudOnly, None, None) => {
             Some("no cloud-offload section; queues stay in memory only")
         }
+        (NormFsPersistenceMode::MemoryOnly, ..) => None,
     };
     Ok((cloud, warning))
 }
@@ -304,6 +309,15 @@ fn queue_settings(
         // (pattern, pool, compression, fsync, frames)
         // Before `*video/*`, which would match it.
         ("*/usbvideo/tx", Passive, Zstd, true, false),
+        // Before `*/hikmicro-thermal/*`. Frames refer to these per-session records, so they
+        // keep their own pages and are still uploaded when the frames rule is excluded.
+        (
+            "*/hikmicro-thermal/device-info/*",
+            Passive,
+            Zstd,
+            true,
+            false,
+        ),
         // Wide records.
         ("*video/*", Active, Raw, false, true),
         ("*/hikmicro-thermal/*", Active, Zstd, false, true),
@@ -462,10 +476,10 @@ impl Station {
             log::warn!("{warning}");
         }
         settings.cloud_settings = cloud_settings;
-        let exclude = config
-            .cloud_offload
-            .as_ref()
-            .map_or(&[][..], |cloud| &cloud.exclude);
+        let exclude = match (args.normfs_persistence_mode, &config.cloud_offload) {
+            (NormFsPersistenceMode::MemoryOnly, _) | (_, None) => &[][..],
+            (_, Some(cloud)) => &cloud.exclude[..],
+        };
         let cloud = settings.cloud_settings.is_some();
         let (persist, frames_persist) = args.normfs_persistence_mode.persist(cloud);
         settings.queue_settings = queue_settings(persist, frames_persist, exclude)?;
@@ -1322,6 +1336,7 @@ mod tests {
         }
         for queue in [
             "/inst123/usbvideo/tx",
+            "/inst123/hikmicro-thermal/device-info/E12345",
             "/inst123/st3215/rx",
             "/inst123/new-driver/rx",
         ] {
@@ -1391,6 +1406,36 @@ mod tests {
     }
 
     #[test]
+    fn memory_only_keeps_every_queue_in_memory_and_ignores_the_bucket() {
+        let config = station_iface::config::CloudOffloadConfig {
+            bucket: "rovers".into(),
+            region: "eu-west1".into(),
+            access_key_id: String::new(),
+            secret_access_key: String::new(),
+            endpoint: None,
+            exclude: Vec::new(),
+        };
+        let (cloud, warning) =
+            offload_settings(NormFsPersistenceMode::MemoryOnly, Some(&config)).unwrap();
+        assert!(cloud.is_none());
+        assert_eq!(warning, Some("memory-only; cloud-offload is ignored"));
+        let (_, warning) = offload_settings(NormFsPersistenceMode::MemoryOnly, None).unwrap();
+        assert_eq!(warning, None);
+        for queue in [
+            "/inst123/usbvideo/9f86d081884c7d65",
+            "/inst123/hikmicro-thermal/E12345",
+            "/inst123/main",
+            "/inst123/new-driver/rx",
+        ] {
+            assert_eq!(
+                persist_for(NormFsPersistenceMode::MemoryOnly, false, queue),
+                Persist::MEMORY,
+                "{queue}"
+            );
+        }
+    }
+
+    #[test]
     fn wide_records_and_streams_draw_from_the_active_arena() {
         for queue in [
             "/inst123/usbvideo/9f86d081884c7d65",
@@ -1431,6 +1476,7 @@ mod tests {
             "/inst123/inference-tags/rx",
             "/inst123/motors_mirroring/modes",
             "/inst123/usbvideo/tx",
+            "/inst123/hikmicro-thermal/device-info/E12345",
         ] {
             assert_eq!(pool_for(queue), PoolKind::Passive, "{queue}");
         }
@@ -1446,6 +1492,7 @@ mod tests {
         ];
         let uploaded = [
             "/inst123/usbvideo/tx",
+            "/inst123/hikmicro-thermal/device-info/E12345",
             "/inst123/vesc-trampa/rx",
             "/inst123/main",
             "/inst123/new-driver/rx",

@@ -260,6 +260,11 @@ pub async fn start_server(
             }
             res = listener.accept() => {
                 if let Ok((stream, _)) = res {
+                    // Replies are small and back to back; Nagle would hold each one
+                    // until the previous one is ACKed.
+                    if let Err(e) = stream.set_nodelay(true) {
+                        log::warn!("failed to set TCP_NODELAY: {e}");
+                    }
                     let server = server.clone();
                     let hyper_service =
                         hyper::service::service_fn(move |req: Request<Incoming>| server.clone().handle_client(req));

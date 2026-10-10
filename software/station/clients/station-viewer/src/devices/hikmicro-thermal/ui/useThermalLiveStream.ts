@@ -2,12 +2,14 @@ import { useEffect, useState } from 'react';
 import type { hikmicro } from '@/api/proto.js';
 import webSocketManager from '@/api/websocket';
 import { ThermalLiveStream } from '../live-stream';
+import { latestDeviceInfo } from './useThermalDeviceInfo';
 
 export function useThermalLiveStream(queueId?: string): hikmicro.IRxEnvelope | null {
   const [snapshot, setSnapshot] = useState<{ queueId: string; data: hikmicro.IRxEnvelope } | null>(null);
   useEffect(() => {
     if (!queueId) return;
-    const stream = new ThermalLiveStream(webSocketManager.normFs, queueId, data => setSnapshot({ queueId, data }));
+    const stream = new ThermalLiveStream(webSocketManager.normFs, queueId, data => setSnapshot({ queueId, data }),
+      latestDeviceInfo);
     const sync = () => {
       const connection = webSocketManager.getConnectionStats();
       stream.setEnabled(document.visibilityState !== 'hidden'

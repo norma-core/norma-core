@@ -4,6 +4,7 @@ import type { hikmicro } from '@/api/proto.js';
 import DeviceStatusBadge from '@/components/DeviceStatusBadge';
 import { useElementFullscreen } from '@/hooks';
 import { formatTemperatureDelta, hikmicroDeviceLabel, latestThermalFrame, type ThermalPalette } from '../thermal';
+import { useThermalDeviceInfo } from './useThermalDeviceInfo';
 import { useThermalLiveStream } from './useThermalLiveStream';
 import { useThermalPreview } from './useThermalPreview';
 import ThermalHudLog from '../hud/ThermalHudLog';
@@ -23,7 +24,7 @@ function Metric({ label, value, tone }: { label: string; value: string; tone?: s
 function HikmicroThermalLiveView({ data: recordedData, queueId, demo = false, mode = 'live' }: HikmicroThermalLiveViewProps) {
   const isHistory = mode === 'history';
   const liveData = useThermalLiveStream(isHistory ? undefined : queueId);
-  const data = liveData ?? recordedData;
+  const data = useThermalDeviceInfo(liveData ?? recordedData);
   const surfaceRef = useRef<HTMLElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const { isFullscreen, toggleFullscreen } = useElementFullscreen(surfaceRef);
@@ -61,7 +62,7 @@ function HikmicroThermalLiveView({ data: recordedData, queueId, demo = false, mo
             <div className="truncate text-sm font-semibold text-text-primary" title={label}>{label}</div>
             <div className="truncate font-mono text-[11px] text-text-muted">
               {stats?.width ?? 256}x{stats?.height ?? 192}
-              {' / '}{data.deviceInfo?.streamFormat?.framesPerSecond?.toFixed(1) ?? '25.0'} FPS
+              {' / '}{(data.frames?.streamFormat ?? data.deviceInfo?.streamFormat)?.framesPerSecond?.toFixed(1) ?? '25.0'} FPS
             </div>
           </div>
           <DeviceStatusBadge tone={stats?.usedCalibration ? 'success' : 'warning'}>

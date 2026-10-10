@@ -223,7 +223,7 @@ Station is installed at `/opt/station/station` and run by a SysV supervisor with
 TCP/Web, `--max-memory-usage=128M` and `--normfs-persistence-mode=cloud-only`:
 queues go from memory to the bucket in the config's `cloud-offload` section, and
 the eMMC holds only NormFS's own `normfs/system` queue, capped by
-`--max-queue-disk-size=64M` (`--normfs-file-size=16M` meets NormFS's 3x rule).
+`--max-queue-disk-size=64M` (`--normfs-file-size=4M` meets NormFS's 3x rule).
 
 `exclude` keeps camera and thermal frames (`*video/*`, `*/hikmicro-thermal/*`),
 more than LTE carries, and the commands and tx queues (`*/commands`,

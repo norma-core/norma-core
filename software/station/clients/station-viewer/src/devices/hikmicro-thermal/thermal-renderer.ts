@@ -1,5 +1,5 @@
 import type { hikmicro } from '@/api/proto.js';
-import type { ThermalPalette, ThermalRenderResult } from './thermal';
+import type { ThermalFrameData, ThermalPalette, ThermalRenderResult } from './thermal';
 import type { ThermalRenderRequest, ThermalRenderResponse } from './thermal-worker-protocol';
 
 /** One in flight + one replaceable pending frame, regardless of stream duration. */
@@ -22,7 +22,7 @@ export class ThermalFrameRenderer {
     // by the shared frame parser; structured clone must not detach them.
     const calibration = envelope.deviceInfo?.calibration;
     this.pending = {
-      payload: frame.payload ?? new Uint8Array(),
+      frame: { payload: frame.payload, y16Encoding: frame.y16Encoding, y16: frame.y16, runtimeBlock: frame.runtimeBlock },
       deviceInfo: { usb: { serialNumber: envelope.deviceInfo?.usb?.serialNumber }, calibration: calibration ? {
         ok: calibration.ok,
         error: calibration.error,
@@ -91,13 +91,23 @@ export class ThermalFrameRenderer {
       // Protobuf byte views often share the entire 25-frame envelope buffer.
       // Compact only at dispatch (not for skipped pending frames), then transfer
       // these owned copies without detaching the parser's original buffers.
-      const payload = Uint8Array.from(request.payload);
+      const transfer: Transferable[] = [];
+      const owned = (bytes: Uint8Array | null | undefined) => {
+        if (!bytes) return bytes;
+        const copy = Uint8Array.from(bytes);
+        transfer.push(copy.buffer);
+        return copy;
+      };
+      const frame: ThermalFrameData = {
+        payload: owned(request.frame.payload),
+        y16Encoding: request.frame.y16Encoding,
+        y16: owned(request.frame.y16),
+        runtimeBlock: owned(request.frame.runtimeBlock),
+      };
       const calibration = request.deviceInfo?.calibration;
-      const container = calibration?.container ? Uint8Array.from(calibration.container) : null;
+      const container = owned(calibration?.container) ?? null;
       const deviceInfo = { ...request.deviceInfo, calibration: calibration ? { ...calibration, container } : null };
-      const transfer: Transferable[] = [payload.buffer];
-      if (container) transfer.push(container.buffer);
-      worker.postMessage({ ...request, payload, deviceInfo }, transfer);
+      worker.postMessage({ ...request, frame, deviceInfo }, transfer);
     } catch (error) {
       this.pending = null;
       this.stopWorker();
