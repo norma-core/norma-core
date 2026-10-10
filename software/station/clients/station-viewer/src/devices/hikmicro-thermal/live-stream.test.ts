@@ -1,7 +1,7 @@
 import { afterEach, expect, it, vi } from 'vitest';
 import { hikmicro } from '@/api/proto.js';
 import type { StreamEntry } from '@/api/normfs';
-import { ThermalDeviceInfoCache, ThermalLiveStream } from './live-stream';
+import { DeviceInfoLoader, ThermalDeviceInfoCache, ThermalLiveStream } from './live-stream';
 
 afterEach(() => vi.useRealTimers());
 
@@ -94,4 +94,31 @@ it('evicts the least recently read session and keeps the last one per queue', as
   expect(cache.get('a', Uint8Array.of(1))?.driver).toBe('a#1');
   expect(cache.get('b', Uint8Array.of(1))).toBeUndefined();
   expect(cache.latestFor('b')?.driver).toBe('b#2');
+});
+
+it('keeps retrying device info that is not found yet, backing off, and at once on retryNow', async () => {
+  vi.useFakeTimers();
+  const notFound = new Error('Entry not found');
+  const deviceInfo = { usb: { serialNumber: 'EA2976465' } };
+  const client = { readSingleEntry: vi.fn()
+    .mockRejectedValueOnce(notFound)
+    .mockRejectedValueOnce(notFound)
+    .mockRejectedValueOnce(notFound)
+    .mockResolvedValue({ id: Uint8Array.of(7), data: hikmicro.RxEnvelope.encode({ deviceInfo }).finish() }) };
+  const loaded = vi.fn();
+  const loader = new DeviceInfoLoader(new ThermalDeviceInfoCache(), client, 'thermal/device-info/camera', Uint8Array.of(7), loaded,
+    error => error === notFound);
+  await vi.advanceTimersByTimeAsync(0);
+  expect(client.readSingleEntry).toHaveBeenCalledTimes(1);
+  await vi.advanceTimersByTimeAsync(1000);
+  expect(client.readSingleEntry).toHaveBeenCalledTimes(2);
+  await vi.advanceTimersByTimeAsync(1999);
+  expect(client.readSingleEntry).toHaveBeenCalledTimes(2);
+  await vi.advanceTimersByTimeAsync(1);
+  expect(client.readSingleEntry).toHaveBeenCalledTimes(3);
+  loader.retryNow();
+  await vi.advanceTimersByTimeAsync(0);
+  expect(client.readSingleEntry).toHaveBeenCalledTimes(4);
+  expect(loaded).toHaveBeenCalledWith(expect.objectContaining({ usb: expect.objectContaining({ serialNumber: 'EA2976465' }) }));
+  loader.dispose();
 });

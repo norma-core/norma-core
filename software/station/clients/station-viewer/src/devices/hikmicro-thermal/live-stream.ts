@@ -47,6 +47,68 @@ export class ThermalDeviceInfoCache {
   }
 }
 
+const DEVICE_INFO_RETRY_MS = 1000;
+const DEVICE_INFO_MISSING_MAX_MS = 30_000;
+
+/**
+ * Loads a session's device info until it arrives. A record that is not found yet
+ * may still be on its way to the bucket, so that is retried too, backing off.
+ */
+export class DeviceInfoLoader {
+  private disposed = false;
+  private timer: ReturnType<typeof setTimeout> | null = null;
+  private missingDelay = DEVICE_INFO_RETRY_MS;
+
+  constructor(
+    private readonly cache: ThermalDeviceInfoCache,
+    private readonly client: Pick<NormFsClient, 'readSingleEntry'>,
+    private readonly queue: string,
+    private readonly id: Uint8Array,
+    private readonly onLoaded: (info: hikmicro.IDeviceInfo) => void,
+    private readonly isMissing: (error: unknown) => boolean,
+  ) {
+    this.attempt();
+  }
+
+  /** Tries at once if a retry is waiting, as after a reconnect. */
+  retryNow() {
+    if (this.disposed || this.timer === null) return;
+    clearTimeout(this.timer);
+    this.timer = null;
+    this.missingDelay = DEVICE_INFO_RETRY_MS;
+    this.attempt();
+  }
+
+  dispose() {
+    this.disposed = true;
+    if (this.timer !== null) clearTimeout(this.timer);
+    this.timer = null;
+  }
+
+  private attempt() {
+    this.cache.load(this.client, this.queue, this.id).then(info => {
+      if (this.disposed) return;
+      if (info) this.onLoaded(info);
+      else this.schedule(DEVICE_INFO_RETRY_MS);
+    }, (error: unknown) => {
+      if (this.disposed) return;
+      if (this.isMissing(error)) {
+        this.schedule(this.missingDelay);
+        this.missingDelay = Math.min(this.missingDelay * 2, DEVICE_INFO_MISSING_MAX_MS);
+      } else {
+        this.schedule(DEVICE_INFO_RETRY_MS);
+      }
+    });
+  }
+
+  private schedule(delay: number) {
+    this.timer = setTimeout(() => {
+      this.timer = null;
+      this.attempt();
+    }, delay);
+  }
+}
+
 /** Poll the current tail, never a backlog. At most one read is outstanding. */
 export class ThermalLiveStream {
   private enabled = false;

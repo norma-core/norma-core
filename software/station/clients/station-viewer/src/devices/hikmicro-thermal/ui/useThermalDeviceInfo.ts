@@ -2,10 +2,10 @@ import { useEffect, useMemo, useState } from 'react';
 import type { hikmicro } from '@/api/proto.js';
 import { ErrEntryNotFound, ErrQueueNotFound } from '@/api/normfs';
 import webSocketManager from '@/api/websocket';
-import { ThermalDeviceInfoCache } from '../live-stream';
+import { DeviceInfoLoader, ThermalDeviceInfoCache } from '../live-stream';
 
 const cache = new ThermalDeviceInfoCache();
-const RETRY_MS = 1000;
+const isMissing = (error: unknown) => error === ErrEntryNotFound || error === ErrQueueNotFound;
 
 /** Fills in the session's device info for records that carry only a reference to it. */
 export function useThermalDeviceInfo<T extends hikmicro.IRxEnvelope | null>(envelope: T): T {
@@ -19,20 +19,16 @@ export function useThermalDeviceInfo<T extends hikmicro.IRxEnvelope | null>(enve
 
   useEffect(() => {
     if (!missing || !id) return;
-    let cancelled = false;
-    let timer: ReturnType<typeof setTimeout> | null = null;
-    const attempt = () => {
-      cache.load(webSocketManager.normFs, queue, id).then(info => {
-        if (!cancelled && info) setLoaded(n => n + 1);
-      }, (error: unknown) => {
-        if (cancelled || error === ErrEntryNotFound || error === ErrQueueNotFound) return;
-        timer = setTimeout(attempt, RETRY_MS);
-      });
-    };
-    attempt();
+    const loader = new DeviceInfoLoader(cache, webSocketManager.normFs, queue, id, () => setLoaded(n => n + 1), isMissing);
+    let connected = webSocketManager.getConnectionStats().status === 'connected';
+    const unsubscribe = webSocketManager.subscribeConnectionStats(() => {
+      const now = webSocketManager.getConnectionStats().status === 'connected';
+      if (now && !connected) loader.retryNow();
+      connected = now;
+    });
     return () => {
-      cancelled = true;
-      if (timer !== null) clearTimeout(timer);
+      loader.dispose();
+      unsubscribe();
     };
   // oxlint-disable-next-line react/exhaustive-deps -- `id` is a new array every frame; idKey is its value.
   }, [queue, idKey, missing]);
