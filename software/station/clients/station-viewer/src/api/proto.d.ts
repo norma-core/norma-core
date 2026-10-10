@@ -17323,6 +17323,12 @@ export namespace hikmicro {
         public static getTypeUrl(typeUrlPrefix?: string): string;
     }
 
+    /** Y16Encoding enum. */
+    enum Y16Encoding {
+        Y16_RAW = 0,
+        Y16_MED_SPLIT_ZSTD = 1
+    }
+
     /** Properties of a ThermalFrame. */
     interface IThermalFrame {
 
@@ -17340,6 +17346,15 @@ export namespace hikmicro {
 
         /** ThermalFrame payload */
         payload?: (Uint8Array|null);
+
+        /** ThermalFrame y16Encoding */
+        y16Encoding?: (hikmicro.Y16Encoding|null);
+
+        /** ThermalFrame y16 */
+        y16?: (Uint8Array|null);
+
+        /** ThermalFrame runtimeBlock */
+        runtimeBlock?: (Uint8Array|null);
     }
 
     /** Represents a ThermalFrame. */
@@ -17365,6 +17380,15 @@ export namespace hikmicro {
 
         /** ThermalFrame payload. */
         public payload: Uint8Array;
+
+        /** ThermalFrame y16Encoding. */
+        public y16Encoding: hikmicro.Y16Encoding;
+
+        /** ThermalFrame y16. */
+        public y16: Uint8Array;
+
+        /** ThermalFrame runtimeBlock. */
+        public runtimeBlock: Uint8Array;
 
         /**
          * Creates a new ThermalFrame instance using the specified properties.
@@ -17589,6 +17613,109 @@ export namespace hikmicro {
         public static getTypeUrl(typeUrlPrefix?: string): string;
     }
 
+    /** Properties of a DeviceInfoRef. */
+    interface IDeviceInfoRef {
+
+        /** DeviceInfoRef queue */
+        queue?: (string|null);
+
+        /** DeviceInfoRef id */
+        id?: (Uint8Array|null);
+    }
+
+    /** Represents a DeviceInfoRef. */
+    class DeviceInfoRef implements IDeviceInfoRef {
+
+        /**
+         * Constructs a new DeviceInfoRef.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: hikmicro.IDeviceInfoRef);
+
+        /** DeviceInfoRef queue. */
+        public queue: string;
+
+        /** DeviceInfoRef id. */
+        public id: Uint8Array;
+
+        /**
+         * Creates a new DeviceInfoRef instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns DeviceInfoRef instance
+         */
+        public static create(properties?: hikmicro.IDeviceInfoRef): hikmicro.DeviceInfoRef;
+
+        /**
+         * Encodes the specified DeviceInfoRef message. Does not implicitly {@link hikmicro.DeviceInfoRef.verify|verify} messages.
+         * @param message DeviceInfoRef message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: hikmicro.IDeviceInfoRef, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified DeviceInfoRef message, length delimited. Does not implicitly {@link hikmicro.DeviceInfoRef.verify|verify} messages.
+         * @param message DeviceInfoRef message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: hikmicro.IDeviceInfoRef, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes a DeviceInfoRef message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns DeviceInfoRef
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): hikmicro.DeviceInfoRef;
+
+        /**
+         * Decodes a DeviceInfoRef message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns DeviceInfoRef
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): hikmicro.DeviceInfoRef;
+
+        /**
+         * Verifies a DeviceInfoRef message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates a DeviceInfoRef message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns DeviceInfoRef
+         */
+        public static fromObject(object: { [k: string]: any }): hikmicro.DeviceInfoRef;
+
+        /**
+         * Creates a plain object from a DeviceInfoRef message. Also converts values to other types if specified.
+         * @param message DeviceInfoRef
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: hikmicro.DeviceInfoRef, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this DeviceInfoRef to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for DeviceInfoRef
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
     /** Properties of a RxEnvelope. */
     interface IRxEnvelope {
 
@@ -17597,6 +17724,9 @@ export namespace hikmicro {
 
         /** RxEnvelope frames */
         frames?: (hikmicro.IThermalFramesBlock|null);
+
+        /** RxEnvelope deviceInfoRef */
+        deviceInfoRef?: (hikmicro.IDeviceInfoRef|null);
     }
 
     /** Represents a RxEnvelope. */
@@ -17613,6 +17743,9 @@ export namespace hikmicro {
 
         /** RxEnvelope frames. */
         public frames?: (hikmicro.IThermalFramesBlock|null);
+
+        /** RxEnvelope deviceInfoRef. */
+        public deviceInfoRef?: (hikmicro.IDeviceInfoRef|null);
 
         /**
          * Creates a new RxEnvelope instance using the specified properties.

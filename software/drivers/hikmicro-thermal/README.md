@@ -2,7 +2,8 @@
 
 Enable `drivers.hikmicro-thermal.enabled: true` in the configuration passed to
 station. The Linux driver discovers USB `2bdf:0102` and publishes
-`hikmicro-thermal/<serial>`. The generic USB video driver excludes vendor `2bdf`.
+`hikmicro-thermal/<serial>`, with device information in
+`hikmicro-thermal/device-info/<serial>`. The generic USB video driver excludes vendor `2bdf`.
 
 ## Production flow
 
@@ -11,17 +12,32 @@ station. The Linux driver discovers USB `2bdf:0102` and publishes
    needed), and prime extension-unit 10 selectors 1–6.
 3. Write `03 0e` to selector 5. Read selector 3's length header, then its chunks
    using GET_LEN/GET_CUR. Extract the factory blob from the returned container.
-4. Release the control interface and reattach its kernel driver. Publish device
-   information with calibration status. Failed calibration permits raw imagery;
-   it cannot produce calibrated Celsius readings.
+4. Release the control interface and reattach its kernel driver. Failed
+   calibration permits raw imagery; it cannot produce calibrated Celsius readings.
 5. Open through libuvc, select YUYV 256×196 at 25 FPS by descriptor dimensions,
-   then probe, commit and start the stream. Publish the negotiated format/frame
-   indices in frame envelopes; these indices differ between camera models.
-6. Poll at 200 ms intervals. Wait up to `frame-timeout` (default 5 seconds) for
-   complete payloads. Publish the retained frames with their calibration data.
-7. The viewer reads the first 98304 bytes as 256×192 little-endian detector
-   counts and the following 2048 bytes as runtime calibration state. It combines
-   these with the 14336-byte factory blob to calculate per-pixel Celsius values.
+   then probe, commit and start the stream. The negotiated format/frame indices
+   differ between camera models.
+6. Publish the capture session's record to the device-info queue and flush it
+   at once: USB descriptors, negotiated format, payload layout and calibration.
+7. Poll at 200 ms intervals. Wait up to `frame-timeout` (default 5 seconds) for
+   complete payloads. Publish the retained frames with a reference to the
+   session record and without its format and layout. Records written before
+   carry the device information inline and the format and layout per block.
+   The first 98304 bytes, 256×192 little-endian detector counts, are packed
+   losslessly into `y16`, each frame on its own; the following 2048 bytes go
+   to `runtime_block` unchanged. A payload of any other length is kept whole in
+   `payload`, as in entries written before. Packing, in row-major order:
+   - prediction: 0 for the first pixel, the left neighbour in the first row,
+     the one above in the first column; elsewhere MED of a = left, b = above,
+     c = above-left: min(a, b) if c >= max(a, b), max(a, b) if c <= min(a, b),
+     else a + b - c;
+   - residual: pixel − prediction mod 2^16, read as int16 and zigzagged
+     ((r << 1) ^ (r >> 15));
+   - the low bytes of all residuals, then the high bytes, compressed as one
+     zstd frame (level 1) with its content size set.
+8. The viewer unpacks the counts and reads the runtime block as calibration
+   state. It combines these with the 14336-byte factory blob to calculate
+   per-pixel Celsius values.
 
 This is not the TC001 `raw / 64 - 273.15` wire format.
 

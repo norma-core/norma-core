@@ -9,8 +9,8 @@ const worker = self as unknown as {
 
 worker.onmessage = ({ data }) => {
   try {
-    const result = renderThermalFrame({ deviceInfo: data.deviceInfo }, { payload: data.payload }, data.palette);
-    const transfer: Transferable[] = [result.rgba.buffer];
+    const result = renderThermalFrame({ deviceInfo: data.deviceInfo }, data.frame, data.palette);
+    const transfer: Transferable[] = [result.rgba.buffer, result.y16.buffer];
     if (result.spectrum) transfer.push(result.spectrum.bins.buffer);
     worker.postMessage({ result, error: null }, transfer);
   } catch (error) {

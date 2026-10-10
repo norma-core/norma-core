@@ -12,6 +12,7 @@ normfs = { workspace = true }
 prost = { workspace = true }
 station_iface = { path = "../../station/shared/station-iface" }
 tokio = { workspace = true }
+zstd = { version = "0.13", default-features = false }
 
 [target.'cfg(target_os = "linux")'.dependencies]
 libusb1-sys = "0.7.0"

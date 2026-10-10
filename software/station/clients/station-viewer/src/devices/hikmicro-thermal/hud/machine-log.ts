@@ -1,7 +1,7 @@
 import type { hikmicro } from '@/api/proto.js';
 import type { ThermalRenderResult } from '../thermal';
 
-export type MachineLogStats = Pick<ThermalRenderResult, 'usedCalibration' | 'minRaw' | 'maxRaw' | 'centerRaw' | 'centerC'>;
+export type MachineLogStats = Pick<ThermalRenderResult, 'usedCalibration' | 'minRaw' | 'maxRaw' | 'centerRaw' | 'centerC' | 'y16'>;
 export interface MachineLogSnapshot { receivedFrames: number; lines: { id: number; text: string }[]; rawLines: { id: number; text: string }[]; }
 
 /** Sample the newest input only; never accumulate a video-sized log backlog. */
@@ -26,22 +26,22 @@ export class ThermalMachineLog {
   flush(): MachineLogSnapshot | null {
     if (this.receivedFrames === this.publishedFrame || !this.frame || !this.stats) return null;
     this.publishedFrame = this.receivedFrames;
-    const payload = this.frame.payload;
+    const words = this.stats.y16.length === 256 * 192 ? this.stats.y16 : null;
     const phase = this.batch++ % 3;
     let messages: string[];
-    if (!payload || payload.length < 256 * 192 * 2) {
+    if (!words) {
       messages = ['Y16 / INCOMPLETE INPUT'];
       this.rawLines = [];
     } else {
       // Addresses are byte offsets into the native Y16 plane.
       const offset = ((this.receivedFrames * 3) % (256 * 192 - 3)) * 2;
-      const view = new DataView(payload.buffer, payload.byteOffset, payload.byteLength);
       const hex = (value: number, digits = 4) => value.toString(16).toUpperCase().padStart(digits, '0');
-      const dump = `@${hex(offset, 5)} ${[0, 2, 4].map(step => hex(view.getUint16(offset + step, true))).join(' ')}`;
+      const word = (address: number) => hex(words[address >> 1]);
+      const dump = `@${hex(offset, 5)} ${[0, 2, 4].map(step => word(offset + step)).join(' ')}`;
       const rawRows = [0, 1].map(row => {
         const address = (offset + row * 256 * 2) % (256 * 192 * 2 - 8);
-        const words = [0, 2, 4, 6].map(step => hex(view.getUint16(address + step, true)));
-        return { id: ++this.rawRow, text: `@${hex(address, 5)} ${words.join(' ')}` };
+        const cells = [0, 2, 4, 6].map(step => word(address + step));
+        return { id: ++this.rawRow, text: `@${hex(address, 5)} ${cells.join(' ')}` };
       });
       this.rawLines = [...this.rawLines, ...rawRows].slice(-16);
       if (phase === 0) messages = [`FRAME ${String(this.receivedFrames).padStart(6, '0')} / RX`, dump];

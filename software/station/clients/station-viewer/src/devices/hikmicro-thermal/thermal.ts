@@ -1,5 +1,6 @@
 import type { hikmicro } from '@/api/proto.js';
 import { buildThermalSpectrum, type ThermalSpectrum } from './hud/spectrum';
+import { decodeY16 } from './y16';
 
 const SENSOR_WIDTH = 256;
 const SENSOR_HEIGHT = 192;
@@ -7,6 +8,9 @@ const PIXEL_COUNT = SENSOR_WIDTH * SENSOR_HEIGHT;
 const Y16_BYTES = PIXEL_COUNT * 2;
 const APPEND_BYTES = 2048;
 const FACTORY_BLOB_BYTES = 0x3800;
+// hikmicro.Y16Encoding; the worker does not load the protobuf runtime.
+const Y16_RAW = 0;
+const Y16_MED_SPLIT_ZSTD = 1;
 const RESP_INV_NUMERATOR = 70368744177664;
 const KELVIN_OFFSET_Q8 = 0x11126;
 const KELVIN_OFFSET_Q12 = 0x111266;
@@ -15,6 +19,7 @@ const KELVIN_OFFSET_Q12 = 0x111266;
 const TEMPERATURE_CACHE = new Float32Array(0x10000);
 
 export type ThermalPalette = 'arctic' | 'iron' | 'silver' | 'terminator';
+export type ThermalFrameData = Pick<hikmicro.IThermalFrame, 'payload' | 'y16Encoding' | 'y16' | 'runtimeBlock'>;
 
 export interface ThermalRenderResult {
   width: number;
@@ -30,6 +35,8 @@ export interface ThermalRenderResult {
   centerRaw: number;
   usedCalibration: boolean;
   error: string | null;
+  // The decoded plane, so the HUD does not unpack the frame a second time.
+  y16: Uint16Array;
 }
 
 interface TemperatureState {
@@ -514,7 +521,19 @@ function calibrationBlob(deviceInfo: hikmicro.IDeviceInfo | null | undefined): U
   return null;
 }
 
-function y16Plane(payload: Uint8Array): Uint16Array {
+function isEncoded(frame: ThermalFrameData): boolean {
+  const encoding = frame.y16Encoding ?? Y16_RAW;
+  if (encoding !== Y16_RAW && encoding !== Y16_MED_SPLIT_ZSTD) {
+    throw new Error(`unsupported Y16 encoding ${encoding}`);
+  }
+  return encoding === Y16_MED_SPLIT_ZSTD;
+}
+
+export function y16Plane(frame: ThermalFrameData): Uint16Array {
+  if (isEncoded(frame)) {
+    return decodeY16(frame.y16 ?? new Uint8Array(), SENSOR_WIDTH, SENSOR_HEIGHT);
+  }
+  const payload = frame.payload ?? new Uint8Array();
   if (payload.length < Y16_BYTES) {
     throw new Error(`short HIKMICRO payload: ${payload.length} bytes`);
   }
@@ -526,7 +545,15 @@ function y16Plane(payload: Uint8Array): Uint16Array {
   return values;
 }
 
-function runtimeBlock(payload: Uint8Array): Uint8Array {
+function runtimeBlock(frame: ThermalFrameData): Uint8Array {
+  if (isEncoded(frame)) {
+    const block = frame.runtimeBlock ?? new Uint8Array();
+    if (block.length < APPEND_BYTES) {
+      throw new Error(`short HIKMICRO runtime block: ${block.length} bytes`);
+    }
+    return block.subarray(0, APPEND_BYTES);
+  }
+  const payload = frame.payload ?? new Uint8Array();
   if (payload.length < Y16_BYTES + APPEND_BYTES) {
     throw new Error(`short HIKMICRO runtime block: ${payload.length} bytes`);
   }
@@ -658,12 +685,11 @@ function toRgba(values: Float32Array, lo: number, hi: number, paletteName: Therm
 
 export function renderThermalFrame(
   envelope: hikmicro.IRxEnvelope,
-  frame: hikmicro.IThermalFrame,
+  frame: ThermalFrameData,
   paletteName: ThermalPalette = 'iron',
 ): ThermalRenderResult {
   let error: string | null = null;
-  const payload = frame.payload ?? new Uint8Array();
-  const y16 = y16Plane(payload);
+  const y16 = y16Plane(frame);
   const raw = rawStats(y16);
 
   let map: Float32Array;
@@ -671,7 +697,7 @@ export function renderThermalFrame(
   const blob = calibrationBlob(envelope.deviceInfo);
   if (blob) {
     try {
-      const state = buildState(blob, runtimeBlock(payload));
+      const state = buildState(blob, runtimeBlock(frame));
       map = temperatureMap(y16, state);
       usedCalibration = true;
     } catch (err) {
@@ -701,6 +727,7 @@ export function renderThermalFrame(
     centerRaw: raw.center,
     usedCalibration,
     error,
+    y16,
   };
 }
 

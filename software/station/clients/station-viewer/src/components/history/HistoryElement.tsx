@@ -7,6 +7,7 @@ import { cardinalName, readArduinoNiclaSenseMeMainValues, vecMagnitude } from '@
 import { formatIna226Current, readIna226CurrentAmps, readIna226ShuntMillivolts } from '@/devices/ina226/values';
 import { airGradientDeviceLabel, readAirGradientValues } from '@/devices/airgradient-open-air-o-1pst/values';
 import { latestThermalFrame, renderThermalFrame } from '@/devices/hikmicro-thermal/thermal';
+import { useThermalDeviceInfo } from '@/devices/hikmicro-thermal/ui/useThermalDeviceInfo';
 import {
   describeRegisterValue,
   formatRegisterHex,
@@ -63,7 +64,7 @@ function HistoryElement({ element, index, dataQueueType, dataQueueId }: HistoryE
   const displayQueueId = formatQueueIdForDisplay(element.queueId);
 
   const usbVideoData = element.type === 'usbvideo' && element.data ? parseUsbVideoData(element.data) : null;
-  const hikmicroThermalData = element.type === 'hikmicro-thermal' && element.data ? parseHikmicroThermalData(element.data) : null;
+  const hikmicroThermalData = useThermalDeviceInfo(element.type === 'hikmicro-thermal' && element.data ? parseHikmicroThermalData(element.data) : null);
   const hikmicroFrame = hikmicroThermalData ? latestThermalFrame(hikmicroThermalData) : null;
   const hikmicroRendered = hikmicroThermalData && hikmicroFrame ? renderThermalFrame(hikmicroThermalData, hikmicroFrame) : null;
   const mirroringData = element.type === 'mirroring' && element.data ? parseMirroringData(element.data) : null;

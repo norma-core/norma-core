@@ -140,6 +140,8 @@ export function createCroppedHikmicroJson(data: hikmicro.RxEnvelope): string {
         }
         const cropped = { ...(frameData as Record<string, unknown>) };
         cropped.payload = cropString(cropped.payload, `thermal frame ${idx + 1}`);
+        cropped.y16 = cropString(cropped.y16, `thermal frame ${idx + 1} Y16`);
+        cropped.runtimeBlock = cropString(cropped.runtimeBlock, `thermal frame ${idx + 1} runtime block`);
         return cropped;
       });
     }

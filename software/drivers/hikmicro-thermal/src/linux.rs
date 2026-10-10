@@ -7,15 +7,17 @@ use std::{
 };
 
 use crate::Sink;
-use bytes::Bytes;
+use bytes::{Bytes, BytesMut};
 use libc::{c_char, c_int, c_uchar};
 use libusb1_sys as usb;
 use norm_uvc_sys::*;
+use prost::Message;
+use station_iface::WRITE_TIMEOUT;
 
 use crate::{
     COMPACT_FPS, COMPACT_PAYLOAD_LEN, COMPACT_UVC_HEIGHT, COMPACT_UVC_WIDTH, CameraIdentity,
-    FOURCC_YUY2, RUNTIME_BLOCK_LEN, THERMAL_Y16_LEN, compact_layout, enqueue_envelope,
-    hikmicro_proto::hikmicro, parse_runtime_block,
+    FOURCC_YUY2, RUNTIME_BLOCK_LEN, SENSOR_WIDTH, THERMAL_Y16_LEN, compact_layout,
+    enqueue_envelope, hikmicro_proto::hikmicro, parse_runtime_block, y16::Y16Encoder,
 };
 
 const HIK_VENDOR_ID: u16 = 0x2bdf;
@@ -97,10 +99,8 @@ pub fn discover_cameras() -> Result<Vec<CameraIdentity>, String> {
     Ok(cameras)
 }
 
-pub fn enqueue_device_info(
-    camera: &CameraIdentity,
-    sink: &Sink,
-) -> Result<hikmicro::DeviceInfo, String> {
+/// Read before the stream opens; the negotiated format is filled in after.
+pub fn read_device_info(camera: &CameraIdentity) -> hikmicro::DeviceInfo {
     let calibration = read_calibration_for_camera(camera);
     if !calibration.ok {
         log::warn!(
@@ -109,7 +109,7 @@ pub fn enqueue_device_info(
             calibration.error
         );
     }
-    let device_info = hikmicro::DeviceInfo {
+    hikmicro::DeviceInfo {
         driver: "hikmicro-thermal/linux/libuvc+libusb".to_string(),
         usb: Some(usb_device_info(camera).unwrap_or_else(|e| {
             log::warn!("Failed to read HIKMICRO USB descriptors: {}", e);
@@ -119,16 +119,55 @@ pub fn enqueue_device_info(
         stream_format: None,
         layout: Some(compact_layout()),
         calibration: Some(calibration),
-    };
-    enqueue_envelope(
-        sink,
-        hikmicro::RxEnvelope {
-            device_info: Some(device_info.clone()),
-            frames: None,
-        },
-    )?;
+    }
+}
 
-    Ok(device_info)
+/// Writes the capture session's record once the format is negotiated and starts
+/// landing it at once: it is a single small record, so its page would otherwise
+/// stay open until the capture ends.
+fn write_session_record(
+    camera: &CameraIdentity,
+    device_info: &hikmicro::DeviceInfo,
+    sink: &Sink,
+) -> Result<Option<hikmicro::DeviceInfoRef>, String> {
+    let envelope = hikmicro::RxEnvelope {
+        device_info: Some(device_info.clone()),
+        ..Default::default()
+    };
+    let mut buf = BytesMut::new();
+    envelope.encode(&mut buf).map_err(|e| e.to_string())?;
+    // Bounded so shutdown can join this thread.
+    let written = sink.runtime.block_on(sink.normfs.enqueue_timeout(
+        &sink.device_info_queue_id,
+        buf.freeze(),
+        WRITE_TIMEOUT,
+    ));
+    let id = match written {
+        Ok(id) => id,
+        Err(normfs::Error::RecordTooLarge(len)) => {
+            log::warn!(
+                "HIKMICRO {} device info is {} bytes, too large for {}; frames will carry it inline",
+                camera.unique_id,
+                len,
+                sink.device_info_queue_id
+            );
+            return Ok(None);
+        }
+        Err(e) => return Err(e.to_string()),
+    };
+    let normfs = sink.normfs.clone();
+    let queue = sink.device_info_queue_id.clone();
+    let unique_id = camera.unique_id.clone();
+    sink.runtime.spawn(async move {
+        if let Err(e) = normfs.flush_queue(&queue).await {
+            log::warn!("HIKMICRO {} device info not flushed: {}", unique_id, e);
+        }
+    });
+
+    Ok(Some(hikmicro::DeviceInfoRef {
+        queue: sink.device_info_queue_id.as_str().to_string(),
+        id: id.value_to_bytes(),
+    }))
 }
 
 pub fn capture_continuous(
@@ -139,10 +178,27 @@ pub fn capture_continuous(
     frame_timeout: Duration,
     frame_skip: u32,
 ) -> Result<(), String> {
+    let mut y16 = Y16Encoder::new().map_err(|e| format!("Y16 encoder: {}", e))?;
     let ctx = UvcContext::new()?;
     let mut stream = open_compact_stream(&ctx, camera)?;
     stream.start()?;
     device_info.stream_format = Some(compact_stream_format(&stream.ctrl));
+    let device_info_ref = write_session_record(camera, &device_info, sink)?;
+    // Frames that reference the session record do not repeat what it holds.
+    let session = match device_info_ref {
+        Some(device_info_ref) => Session {
+            stream_format: None,
+            layout: None,
+            device_info_ref: Some(device_info_ref),
+            inline_device_info: None,
+        },
+        None => Session {
+            stream_format: device_info.stream_format.clone(),
+            layout: Some(compact_layout()),
+            device_info_ref: None,
+            inline_device_info: Some(device_info.clone()),
+        },
+    };
     log::info!(
         "HIKMICRO {} stream started: format_index={}, frame_index={}, interval_100ns={}, max_frame_bytes={}, max_transfer_bytes={}, calibration_ok={}",
         camera.unique_id,
@@ -162,7 +218,7 @@ pub fn capture_continuous(
     let mut frames = Vec::with_capacity(FRAMES_PER_RX_ENVELOPE);
     while !stop.load(Ordering::Acquire) {
         if last_valid_frame.elapsed() > frame_timeout {
-            flush_frames_block(sink, &device_info, &mut block_sequence, &mut frames)?;
+            flush_frames_block(sink, &session, &mut block_sequence, &mut frames)?;
             return Err(format!(
                 "no complete HIKMICRO frames for {:.1}s",
                 frame_timeout.as_secs_f32()
@@ -215,27 +271,36 @@ pub fn capture_continuous(
                     continue;
                 }
 
-                frames.push(thermal_frame_from_capture(frame));
+                frames.push(thermal_frame_from_capture(frame, &mut y16));
                 if frames.len() >= FRAMES_PER_RX_ENVELOPE {
-                    flush_frames_block(sink, &device_info, &mut block_sequence, &mut frames)?;
+                    flush_frames_block(sink, &session, &mut block_sequence, &mut frames)?;
                 }
             }
             Err(e) if e == uvc_error_UVC_ERROR_TIMEOUT => {}
             Err(e) => {
-                flush_frames_block(sink, &device_info, &mut block_sequence, &mut frames)?;
+                flush_frames_block(sink, &session, &mut block_sequence, &mut frames)?;
                 return Err(format!("uvc_stream_get_frame failed: {}", e));
             }
         }
     }
 
-    flush_frames_block(sink, &device_info, &mut block_sequence, &mut frames)?;
+    flush_frames_block(sink, &session, &mut block_sequence, &mut frames)?;
 
     Ok(())
 }
 
+/// What every frames record of one capture session repeats.
+struct Session {
+    stream_format: Option<hikmicro::CompactStreamFormat>,
+    layout: Option<hikmicro::CompactPayloadLayout>,
+    device_info_ref: Option<hikmicro::DeviceInfoRef>,
+    // Set only when the device-info queue refused the record.
+    inline_device_info: Option<hikmicro::DeviceInfo>,
+}
+
 fn flush_frames_block(
     sink: &Sink,
-    device_info: &hikmicro::DeviceInfo,
+    session: &Session,
     block_sequence: &mut u32,
     frames: &mut Vec<hikmicro::ThermalFrame>,
 ) -> Result<(), String> {
@@ -243,7 +308,7 @@ fn flush_frames_block(
         return Ok(());
     }
 
-    enqueue_frames_block(sink, device_info, *block_sequence, std::mem::take(frames))?;
+    enqueue_frames_block(sink, session, *block_sequence, std::mem::take(frames))?;
     *block_sequence = block_sequence.wrapping_add(1);
     frames.reserve(FRAMES_PER_RX_ENVELOPE);
     Ok(())
@@ -251,7 +316,7 @@ fn flush_frames_block(
 
 fn enqueue_frames_block(
     sink: &Sink,
-    device_info: &hikmicro::DeviceInfo,
+    session: &Session,
     block_sequence: u32,
     frames: Vec<hikmicro::ThermalFrame>,
 ) -> Result<(), String> {
@@ -264,34 +329,52 @@ fn enqueue_frames_block(
         monotonic_end_ns: last.monotonic_stamp_ns,
         local_start_ns: first.local_stamp_ns,
         local_end_ns: last.local_stamp_ns,
-        stream_format: device_info.stream_format.clone(),
-        layout: Some(compact_layout()),
+        stream_format: session.stream_format.clone(),
+        layout: session.layout.clone(),
         frames,
     };
 
     enqueue_envelope(
         sink,
         hikmicro::RxEnvelope {
-            device_info: Some(device_info.clone()),
+            device_info: session.inline_device_info.clone(),
             frames: Some(block),
+            device_info_ref: session.device_info_ref.clone(),
         },
     )
 }
 
-fn thermal_frame_from_capture(frame: CapturedFrame) -> hikmicro::ThermalFrame {
+fn thermal_frame_from_capture(
+    frame: CapturedFrame,
+    y16: &mut Y16Encoder,
+) -> hikmicro::ThermalFrame {
     let runtime = frame
         .data
         .get(THERMAL_Y16_LEN..THERMAL_Y16_LEN + RUNTIME_BLOCK_LEN)
         .map(parse_runtime_block)
         .unwrap_or_default();
 
-    hikmicro::ThermalFrame {
+    let mut thermal = hikmicro::ThermalFrame {
         sequence: frame.sequence,
         monotonic_stamp_ns: frame.monotonic_stamp_ns,
         local_stamp_ns: frame.local_stamp_ns,
         runtime: Some(runtime),
-        payload: frame.data,
+        ..Default::default()
+    };
+    // Any other length is kept whole, so no captured byte is dropped.
+    if frame.data.len() == COMPACT_PAYLOAD_LEN {
+        match y16.encode(&frame.data[..THERMAL_Y16_LEN], SENSOR_WIDTH as usize) {
+            Ok(encoded) => {
+                thermal.set_y16_encoding(hikmicro::Y16Encoding::Y16MedSplitZstd);
+                thermal.y16 = Bytes::from(encoded);
+                thermal.runtime_block = frame.data.slice(THERMAL_Y16_LEN..);
+                return thermal;
+            }
+            Err(e) => log::warn!("HIKMICRO Y16 encoding failed, storing raw: {}", e),
+        }
     }
+    thermal.payload = frame.data;
+    thermal
 }
 
 fn compact_stream_format(ctrl: &uvc_stream_ctrl_t) -> hikmicro::CompactStreamFormat {
@@ -733,6 +816,43 @@ mod tests {
             assert_eq!(format.format_index, 1);
             assert_eq!(format.frames_per_second, 25.0);
         }
+    }
+
+    #[test]
+    fn compact_frames_are_stored_encoded_and_lossless() {
+        let mut y16 = Y16Encoder::new().unwrap();
+        let mut seed = 1u32;
+        let data: Vec<u8> = (0..COMPACT_PAYLOAD_LEN)
+            .map(|_| {
+                seed = seed.wrapping_mul(1_103_515_245).wrapping_add(12_345);
+                (seed >> 16) as u8
+            })
+            .collect();
+        let capture = |data: Vec<u8>| CapturedFrame {
+            sequence: 7,
+            monotonic_stamp_ns: 1,
+            local_stamp_ns: 2,
+            data: Bytes::from(data),
+        };
+
+        let frame = thermal_frame_from_capture(capture(data.clone()), &mut y16);
+        assert_eq!(frame.y16_encoding(), hikmicro::Y16Encoding::Y16MedSplitZstd);
+        assert!(frame.payload.is_empty());
+        let mut restored = crate::y16::decode(
+            &frame.y16,
+            SENSOR_WIDTH as usize,
+            crate::SENSOR_HEIGHT as usize,
+        )
+        .unwrap();
+        restored.extend_from_slice(&frame.runtime_block);
+        assert_eq!(restored, data);
+
+        let mut long = data;
+        long.push(0xab);
+        let frame = thermal_frame_from_capture(capture(long.clone()), &mut y16);
+        assert_eq!(frame.y16_encoding(), hikmicro::Y16Encoding::Y16Raw);
+        assert!(frame.y16.is_empty() && frame.runtime_block.is_empty());
+        assert_eq!(frame.payload, long);
     }
 
     #[test]

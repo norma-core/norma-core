@@ -11,7 +11,6 @@ use bytes::BytesMut;
 use log::{info, warn};
 use normfs::NormFS;
 use prost::Message;
-use station_iface::WRITE_TIMEOUT;
 use station_iface::{StationEngine, iface_proto::drivers::QueueDataType};
 use tokio::task::{JoinHandle, JoinSet};
 
@@ -23,6 +22,7 @@ pub mod hikmicro_proto {
 
 #[cfg(target_os = "linux")]
 mod linux;
+pub mod y16;
 
 pub const DEFAULT_QUEUE_PREFIX: &str = "hikmicro-thermal";
 pub const SENSOR_WIDTH: u32 = 256;
@@ -116,16 +116,26 @@ async fn run_manager<T: StationEngine + Send + Sync + 'static>(
                         }
                     }
 
-                    let queue_id_str = queue_id_for_camera(DEFAULT_QUEUE_PREFIX, &camera);
-                    let queue_id = normfs.resolve(&queue_id_str);
-                    if let Err(e) = normfs.ensure_queue_exists_for_write(&queue_id).await {
-                        warn!("Failed to create HIKMICRO queue {}: {}", queue_id, e);
+                    let (frames_path, device_info_path) =
+                        queue_ids_for_camera(DEFAULT_QUEUE_PREFIX, &camera);
+                    let queue_id = normfs.resolve(&frames_path);
+                    let device_info_queue_id = normfs.resolve(&device_info_path);
+                    let mut created = Ok(());
+                    for id in [&queue_id, &device_info_queue_id] {
+                        if let Err(e) = normfs.ensure_queue_exists_for_write(id).await {
+                            created = Err(format!("{}: {}", id, e));
+                            break;
+                        }
+                    }
+                    if let Err(e) = created {
+                        warn!("Failed to create HIKMICRO queue {}", e);
                         running.lock().unwrap().remove(&camera.unique_id);
                         continue;
                     }
                     let sink = Sink {
                         normfs: normfs.clone(),
                         queue_id: queue_id.clone(),
+                        device_info_queue_id: device_info_queue_id.clone(),
                         runtime: tokio::runtime::Handle::current(),
                     };
                     station_engine.register_queue(
@@ -138,7 +148,7 @@ async fn run_manager<T: StationEngine + Send + Sync + 'static>(
                     let stop_capture = stop.clone();
                     let running_capture = running.clone();
                     let close_normfs = normfs.clone();
-                    let close_queue_id = queue_id.clone();
+                    let close_queue_ids = [queue_id.clone(), device_info_queue_id];
                     let unique_id = camera.unique_id.clone();
                     let timeout = config.frame_timeout;
                     let frame_skip = config.frame_skip;
@@ -160,8 +170,10 @@ async fn run_manager<T: StationEngine + Send + Sync + 'static>(
                         } else {
                             info!("HIKMICRO capture {} stopped", unique_id);
                         }
-                        if let Err(e) = close_normfs.close_queue(&close_queue_id).await {
-                            warn!("Failed to close HIKMICRO queue {}: {}", close_queue_id, e);
+                        for id in &close_queue_ids {
+                            if let Err(e) = close_normfs.close_queue(id).await {
+                                warn!("Failed to close HIKMICRO queue {}: {}", id, e);
+                            }
                         }
                         running_capture.lock().unwrap().remove(&unique_id);
                     });
@@ -207,12 +219,10 @@ async fn run_camera_capture(
     frame_skip: u32,
 ) -> Result<(), String> {
     let device_info_camera = camera.clone();
-    let device_info_sink = sink.clone();
-    let device_info = tokio::task::spawn_blocking(move || {
-        linux::enqueue_device_info(&device_info_camera, &device_info_sink)
-    })
-    .await
-    .map_err(|e| format!("HIKMICRO device-info task failed: {}", e))??;
+    let device_info =
+        tokio::task::spawn_blocking(move || linux::read_device_info(&device_info_camera))
+            .await
+            .map_err(|e| format!("HIKMICRO device-info task failed: {}", e))?;
 
     let capture_camera = camera.clone();
     let capture_stop = stop.clone();
@@ -230,7 +240,7 @@ async fn run_camera_capture(
     .map_err(|e| format!("HIKMICRO continuous-capture task failed: {}", e))?
 }
 
-fn queue_id_for_camera(prefix: &str, camera: &CameraIdentity) -> String {
+fn queue_ids_for_camera(prefix: &str, camera: &CameraIdentity) -> (String, String) {
     let leaf = if !camera.serial_number.trim().is_empty() {
         sanitize_queue_component(&camera.serial_number)
     } else {
@@ -239,7 +249,11 @@ fn queue_id_for_camera(prefix: &str, camera: &CameraIdentity) -> String {
             camera.vendor_id, camera.product_id, camera.bus_number, camera.device_number
         )
     };
-    format!("{}/{}", prefix.trim_matches('/'), leaf)
+    let prefix = prefix.trim_matches('/');
+    (
+        format!("{}/{}", prefix, leaf),
+        format!("{}/device-info/{}", prefix, leaf),
+    )
 }
 
 fn sanitize_queue_component(value: &str) -> String {
@@ -276,6 +290,7 @@ pub struct CameraIdentity {
 pub(crate) struct Sink {
     pub(crate) normfs: Arc<NormFS>,
     pub(crate) queue_id: normfs::QueueId,
+    pub(crate) device_info_queue_id: normfs::QueueId,
     pub(crate) runtime: tokio::runtime::Handle,
 }
 
@@ -283,25 +298,12 @@ fn enqueue_envelope(
     sink: &Sink,
     envelope: hikmicro_proto::hikmicro::RxEnvelope,
 ) -> Result<(), String> {
-    let frames = envelope.frames.is_some();
     let mut buf = BytesMut::new();
     envelope.encode(&mut buf).map_err(|e| e.to_string())?;
-    let data = buf.freeze();
 
-    if frames {
-        match sink.normfs.try_enqueue(&sink.queue_id, data) {
-            Ok(_) | Err(normfs::Error::WouldBlock) => Ok(()),
-            Err(e) => Err(e.to_string()),
-        }
-    } else {
-        // Bounded so shutdown can join this thread.
-        sink.runtime
-            .block_on(
-                sink.normfs
-                    .enqueue_timeout(&sink.queue_id, data, WRITE_TIMEOUT),
-            )
-            .map(|_| ())
-            .map_err(|e| e.to_string())
+    match sink.normfs.try_enqueue(&sink.queue_id, buf.freeze()) {
+        Ok(_) | Err(normfs::Error::WouldBlock) => Ok(()),
+        Err(e) => Err(e.to_string()),
     }
 }
 
