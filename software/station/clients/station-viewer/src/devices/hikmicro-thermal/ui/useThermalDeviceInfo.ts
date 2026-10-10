@@ -5,6 +5,8 @@ import webSocketManager from '@/api/websocket';
 import { DeviceInfoLoader, ThermalDeviceInfoCache } from '../live-stream';
 
 const cache = new ThermalDeviceInfoCache();
+/** The last session record loaded from a device-info queue. */
+export const latestDeviceInfo = (queue: string) => cache.latestFor(queue);
 const isMissing = (error: unknown) => error === ErrEntryNotFound || error === ErrQueueNotFound;
 
 /** Fills in the session's device info for records that carry only a reference to it. */

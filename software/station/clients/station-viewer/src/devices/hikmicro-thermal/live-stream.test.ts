@@ -62,6 +62,23 @@ it('paces reads for older stations that still publish one-second batches', async
   stream.dispose();
 });
 
+it('paces reads by the session record\'s frame rate when frames only reference it', async () => {
+  vi.useFakeTimers();
+  const frame = { id: Uint8Array.of(1), data: hikmicro.RxEnvelope.encode({
+    frames: { frames: [{ payload: Uint8Array.of(1) }] },
+    deviceInfoRef: { queue: 'thermal/device-info/camera', id: Uint8Array.of(1) },
+  }).finish() };
+  const client = { readLastEntry: vi.fn().mockResolvedValue(frame) };
+  const stream = new ThermalLiveStream(client, 'thermal/camera', () => {},
+    queue => (queue === 'thermal/device-info/camera' ? { streamFormat: { framesPerSecond: 10 } } : undefined));
+  stream.setEnabled(true);
+  await vi.advanceTimersByTimeAsync(99);
+  expect(client.readLastEntry).toHaveBeenCalledTimes(1);
+  await vi.advanceTimersByTimeAsync(1);
+  expect(client.readLastEntry).toHaveBeenCalledTimes(2);
+  stream.dispose();
+});
+
 it('reads a session\'s device info once and retries after a failed read', async () => {
   const deviceInfo = { usb: { serialNumber: 'EA6343104' }, calibration: { ok: true } };
   const client = { readSingleEntry: vi.fn()

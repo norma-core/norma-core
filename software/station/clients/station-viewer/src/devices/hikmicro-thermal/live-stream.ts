@@ -123,6 +123,7 @@ export class ThermalLiveStream {
     private readonly client: Pick<NormFsClient, 'readLastEntry'>,
     private readonly queueId: string,
     private readonly onFrame: (data: hikmicro.IRxEnvelope) => void,
+    private readonly sessionFor: (queue: string) => hikmicro.IDeviceInfo | undefined = () => undefined,
   ) {}
 
   setEnabled(enabled: boolean): void {
@@ -150,7 +151,8 @@ export class ThermalLiveStream {
         // Older stations still batch 25 frames: do not repeatedly download
         // the same 2.5 MB block at 25 Hz while waiting for their next batch.
         const count = data.frames?.frames?.length ?? 1;
-        const fps = data.frames?.streamFormat?.framesPerSecond || data.deviceInfo?.streamFormat?.framesPerSecond || 25;
+        const session = data.deviceInfo ?? (data.deviceInfoRef?.queue ? this.sessionFor(data.deviceInfoRef.queue) : undefined);
+        const fps = data.frames?.streamFormat?.framesPerSecond || session?.streamFormat?.framesPerSecond || 25;
         this.intervalMs = Math.max(40, Math.min(1000, count * 1000 / fps));
         retryMs = this.intervalMs;
         this.lastId = id;
