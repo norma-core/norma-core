@@ -40,6 +40,7 @@
 .rover-compass-tape>span:after{content:'';display:block;margin:2px auto 0;width:1px;height:4px;background:currentColor}.rover-compass-tape .cardinal{font-weight:bold;color:#fff}
 .rover-compass-pointer{position:absolute;top:0;left:50%;transform:translateX(-50%);border-left:4px solid transparent;border-right:4px solid transparent;border-top:5px solid #22d3ee}
 .rover-compass output{font:12px ui-monospace,monospace;color:#67e8f9;background:#07111caa;border-radius:3px;padding:0 4px}
+.rover-compass-accuracy{margin-left:4px;font:11px ui-monospace,monospace;border-radius:3px;padding:0 4px;background:#07111caa;color:#e2e8f0}.rover-compass-accuracy[data-level="good"]{color:#4ade80}.rover-compass-accuracy[data-level="fair"]{color:#fbbf24}.rover-compass-accuracy[data-level="poor"]{color:#f87171}
 .rover-motion-model{pointer-events:none;position:absolute;top:62px;left:12px;width:190px;padding:4px;background:radial-gradient(ellipse at 50% 58%,#07111cb3 15%,#07111c66 60%,#07111c00 75%)}
 .rover-motion-model svg{display:block;width:100%;height:98px;filter:drop-shadow(0 2px 2px #0009)}
 .rover-motion-readings{padding:4px 6px;background:#07111cef;border-radius:5px;font:12px/1.5 system-ui,sans-serif;color:#e2e8f0}.rover-motion-readings>div{display:flex;align-items:center;justify-content:space-between;gap:8px;white-space:nowrap}.rover-motion-readings output{font-size:14px;font-weight:650;font-variant-numeric:tabular-nums}.rover-motion-readings .accel{color:#67e8f9}.rover-motion-readings .gyro{color:#d8b4fe}

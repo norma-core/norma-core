@@ -5,7 +5,7 @@ import { renderRoverModel } from './rover-model';
 
 function arrow(field: 'accel' | 'gyro', magnitude: number) {
   const motion: RoverMotion = {
-    heading: 0, pitch: 0, roll: 0,
+    heading: 0, headingAccuracyDeg: null, headingUncalibrated: false, pitch: 0, roll: 0,
     accel: { x: 0, y: 0, z: 0 }, gyro: { x: 0, y: 0, z: 0 },
   };
   motion[field].x = magnitude;
