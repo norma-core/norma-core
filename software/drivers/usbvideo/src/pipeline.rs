@@ -352,6 +352,7 @@ impl<K: USBCameraDriver> USBVideoManager<K> {
                     frames: None,
                     last_inference_queue_ptr: tracker.get_last_inference_id_bytes(),
                     command: None,
+                    session_ptr: Bytes::new(),
                     stamp: Some(FrameStamp {
                         monotonic_stamp_ns: normfs_time::monotonic_stamp_ns(),
                         local_stamp_ns: normfs_time::local_stamp_ns(),
@@ -379,6 +380,7 @@ impl<K: USBCameraDriver> USBVideoManager<K> {
                     frames: None,
                     last_inference_queue_ptr: tracker.get_last_inference_id_bytes(),
                     command: None,
+                    session_ptr: Bytes::new(),
                     stamp: Some(FrameStamp {
                         monotonic_stamp_ns: normfs_time::monotonic_stamp_ns(),
                         local_stamp_ns: normfs_time::local_stamp_ns(),
@@ -407,6 +409,7 @@ impl<K: USBCameraDriver> USBVideoManager<K> {
                     frames: None,
                     last_inference_queue_ptr: tracker.get_last_inference_id_bytes(),
                     command: None,
+                    session_ptr: Bytes::new(),
                     stamp: Some(FrameStamp {
                         monotonic_stamp_ns: normfs_time::monotonic_stamp_ns(),
                         local_stamp_ns: normfs_time::local_stamp_ns(),
@@ -436,6 +439,7 @@ impl<K: USBCameraDriver> USBVideoManager<K> {
                     frames: None,
                     last_inference_queue_ptr: tracker.get_last_inference_id_bytes(),
                     command: None,
+                    session_ptr: Bytes::new(),
                     stamp: Some(FrameStamp {
                         monotonic_stamp_ns: normfs_time::monotonic_stamp_ns(),
                         local_stamp_ns: normfs_time::local_stamp_ns(),
@@ -612,6 +616,7 @@ impl<K: USBCameraDriver> USBVideoManager<K> {
                                 format.frames_per_second,
                             );
 
+                            cam_tracker.reset_encoder(&camera.unique_id);
                             Self::send_session_started(&queue_id, &cam_tracker, &camera, format)
                                 .await;
 

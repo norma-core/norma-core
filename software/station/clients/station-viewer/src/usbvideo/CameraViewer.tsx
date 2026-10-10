@@ -1,6 +1,7 @@
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import type { LiveCameraFrame } from './live-camera-store';
 import { subscribeLiveCameraFrame } from './live-camera-store';
+import { drawPicture } from './VideoPictureCanvas';
 
 interface CameraViewerProps {
   sourceId: string | null | undefined;
@@ -31,6 +32,8 @@ const CameraViewer = memo(function CameraViewer({
 }: CameraViewerProps) {
   const [fps, setFps] = useState<number>(0);
   const [hasImage, setHasImage] = useState(false);
+  const [showCanvas, setShowCanvas] = useState(false);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   const hasImageRef = useRef(false);
   const imageRef = useRef<HTMLImageElement>(null);
   const displayedUrlRef = useRef<string | null>(null);
@@ -68,6 +71,7 @@ const CameraViewer = memo(function CameraViewer({
     if (updateState) {
       setFps(0);
       setHasImage(false);
+      setShowCanvas(false);
     }
   }, []);
 
@@ -77,7 +81,7 @@ const CameraViewer = memo(function CameraViewer({
       return;
     }
 
-    if (!frame.data || frame.data.length === 0) {
+    if (!frame.picture && (!frame.data || frame.data.length === 0)) {
       return;
     }
     if (frame.index && frame.index === lastFrameIndexRef.current) {
@@ -99,6 +103,22 @@ const CameraViewer = memo(function CameraViewer({
       frameCount.current = 0;
       lastFpsTime.current = nowFps;
     }
+
+    if (frame.picture) {
+      // The store closes the bitmap with the next frame, so draw it now.
+      drawPicture(canvasRef.current, frame.picture);
+      generationRef.current++;
+      revokeUrl(pendingUrlRef.current);
+      pendingUrlRef.current = null;
+      lastFrameIndexRef.current = frame.index;
+      setShowCanvas(true);
+      if (!hasImageRef.current) {
+        hasImageRef.current = true;
+        setHasImage(true);
+      }
+      return;
+    }
+    setShowCanvas(false);
 
     const url = URL.createObjectURL(new Blob([toBlobPart(frame.data)], { type: 'image/jpeg' }));
     const previousPendingUrl = pendingUrlRef.current;
@@ -164,7 +184,12 @@ const CameraViewer = memo(function CameraViewer({
         <img
           ref={imageRef}
           alt="USB Camera Feed"
-          className={`h-full w-full ${fitClassName} ${imageClassName} ${hasImage ? '' : 'hidden'}`}
+          className={`h-full w-full ${fitClassName} ${imageClassName} ${hasImage && !showCanvas ? '' : 'hidden'}`}
+        />
+        <canvas
+          ref={canvasRef}
+          aria-label="USB Camera Feed"
+          className={`h-full w-full ${fitClassName} ${imageClassName} ${hasImage && showCanvas ? '' : 'hidden'}`}
         />
         {!hasImage && (
           <div className="p-4 text-white/70">Waiting for USB Video data...</div>

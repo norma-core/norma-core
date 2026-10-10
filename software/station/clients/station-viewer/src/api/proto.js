@@ -14740,6 +14740,7 @@ export const usbvideo = $root.usbvideo = (() => {
      * @property {number} ET_COMMAND_SUCCESS=8 ET_COMMAND_SUCCESS value
      * @property {number} ET_COMMAND_REJECTED=9 ET_COMMAND_REJECTED value
      * @property {number} ET_COMMAND_FAILED=10 ET_COMMAND_FAILED value
+     * @property {number} ET_CAPTURE_SESSION=11 ET_CAPTURE_SESSION value
      */
     usbvideo.RxEnvelopeType = (function() {
         const valuesById = {}, values = Object.create(valuesById);
@@ -14753,6 +14754,7 @@ export const usbvideo = $root.usbvideo = (() => {
         values[valuesById[8] = "ET_COMMAND_SUCCESS"] = 8;
         values[valuesById[9] = "ET_COMMAND_REJECTED"] = 9;
         values[valuesById[10] = "ET_COMMAND_FAILED"] = 10;
+        values[valuesById[11] = "ET_CAPTURE_SESSION"] = 11;
         return values;
     })();
 
@@ -14768,6 +14770,7 @@ export const usbvideo = $root.usbvideo = (() => {
          * @property {Array.<usbvideo.ICameraFormat>|null} [formats] RxEnvelope formats
          * @property {string|null} [error] RxEnvelope error
          * @property {Uint8Array|null} [lastInferenceQueuePtr] RxEnvelope lastInferenceQueuePtr
+         * @property {Uint8Array|null} [sessionPtr] RxEnvelope sessionPtr
          * @property {frame.IFramesPack|null} [frames] RxEnvelope frames
          * @property {usbvideo.ITxEnvelope|null} [command] RxEnvelope command
          */
@@ -14837,6 +14840,14 @@ export const usbvideo = $root.usbvideo = (() => {
         RxEnvelope.prototype.lastInferenceQueuePtr = $util.newBuffer([]);
 
         /**
+         * RxEnvelope sessionPtr.
+         * @member {Uint8Array} sessionPtr
+         * @memberof usbvideo.RxEnvelope
+         * @instance
+         */
+        RxEnvelope.prototype.sessionPtr = $util.newBuffer([]);
+
+        /**
          * RxEnvelope frames.
          * @member {frame.IFramesPack|null|undefined} frames
          * @memberof usbvideo.RxEnvelope
@@ -14889,6 +14900,8 @@ export const usbvideo = $root.usbvideo = (() => {
                 writer.uint32(/* id 7, wireType 2 =*/58).string(message.error);
             if (message.lastInferenceQueuePtr != null && Object.hasOwnProperty.call(message, "lastInferenceQueuePtr"))
                 writer.uint32(/* id 8, wireType 2 =*/66).bytes(message.lastInferenceQueuePtr);
+            if (message.sessionPtr != null && Object.hasOwnProperty.call(message, "sessionPtr"))
+                writer.uint32(/* id 9, wireType 2 =*/74).bytes(message.sessionPtr);
             if (message.frames != null && Object.hasOwnProperty.call(message, "frames"))
                 $root.frame.FramesPack.encode(message.frames, writer.uint32(/* id 10, wireType 2 =*/82).fork()).ldelim();
             if (message.command != null && Object.hasOwnProperty.call(message, "command"))
@@ -14959,6 +14972,10 @@ export const usbvideo = $root.usbvideo = (() => {
                         message.lastInferenceQueuePtr = reader.bytes();
                         break;
                     }
+                case 9: {
+                        message.sessionPtr = reader.bytes();
+                        break;
+                    }
                 case 10: {
                         message.frames = $root.frame.FramesPack.decode(reader, reader.uint32(), undefined, long + 1);
                         break;
@@ -15020,6 +15037,7 @@ export const usbvideo = $root.usbvideo = (() => {
                 case 8:
                 case 9:
                 case 10:
+                case 11:
                     break;
                 }
             if (message.stamp != null && message.hasOwnProperty("stamp")) {
@@ -15047,6 +15065,9 @@ export const usbvideo = $root.usbvideo = (() => {
             if (message.lastInferenceQueuePtr != null && message.hasOwnProperty("lastInferenceQueuePtr"))
                 if (!(message.lastInferenceQueuePtr && typeof message.lastInferenceQueuePtr.length === "number" || $util.isString(message.lastInferenceQueuePtr)))
                     return "lastInferenceQueuePtr: buffer expected";
+            if (message.sessionPtr != null && message.hasOwnProperty("sessionPtr"))
+                if (!(message.sessionPtr && typeof message.sessionPtr.length === "number" || $util.isString(message.sessionPtr)))
+                    return "sessionPtr: buffer expected";
             if (message.frames != null && message.hasOwnProperty("frames")) {
                 let error = $root.frame.FramesPack.verify(message.frames, long + 1);
                 if (error)
@@ -15123,6 +15144,10 @@ export const usbvideo = $root.usbvideo = (() => {
             case 10:
                 message.type = 10;
                 break;
+            case "ET_CAPTURE_SESSION":
+            case 11:
+                message.type = 11;
+                break;
             }
             if (object.stamp != null) {
                 if (typeof object.stamp !== "object")
@@ -15151,6 +15176,11 @@ export const usbvideo = $root.usbvideo = (() => {
                     $util.base64.decode(object.lastInferenceQueuePtr, message.lastInferenceQueuePtr = $util.newBuffer($util.base64.length(object.lastInferenceQueuePtr)), 0);
                 else if (object.lastInferenceQueuePtr.length >= 0)
                     message.lastInferenceQueuePtr = object.lastInferenceQueuePtr;
+            if (object.sessionPtr != null)
+                if (typeof object.sessionPtr === "string")
+                    $util.base64.decode(object.sessionPtr, message.sessionPtr = $util.newBuffer($util.base64.length(object.sessionPtr)), 0);
+                else if (object.sessionPtr.length >= 0)
+                    message.sessionPtr = object.sessionPtr;
             if (object.frames != null) {
                 if (typeof object.frames !== "object")
                     throw TypeError(".usbvideo.RxEnvelope.frames: object expected");
@@ -15191,6 +15221,13 @@ export const usbvideo = $root.usbvideo = (() => {
                     if (options.bytes !== Array)
                         object.lastInferenceQueuePtr = $util.newBuffer(object.lastInferenceQueuePtr);
                 }
+                if (options.bytes === String)
+                    object.sessionPtr = "";
+                else {
+                    object.sessionPtr = [];
+                    if (options.bytes !== Array)
+                        object.sessionPtr = $util.newBuffer(object.sessionPtr);
+                }
                 object.frames = null;
                 object.command = null;
             }
@@ -15209,6 +15246,8 @@ export const usbvideo = $root.usbvideo = (() => {
                 object.error = message.error;
             if (message.lastInferenceQueuePtr != null && message.hasOwnProperty("lastInferenceQueuePtr"))
                 object.lastInferenceQueuePtr = options.bytes === String ? $util.base64.encode(message.lastInferenceQueuePtr, 0, message.lastInferenceQueuePtr.length) : options.bytes === Array ? Array.prototype.slice.call(message.lastInferenceQueuePtr) : message.lastInferenceQueuePtr;
+            if (message.sessionPtr != null && message.hasOwnProperty("sessionPtr"))
+                object.sessionPtr = options.bytes === String ? $util.base64.encode(message.sessionPtr, 0, message.sessionPtr.length) : options.bytes === Array ? Array.prototype.slice.call(message.sessionPtr) : message.sessionPtr;
             if (message.frames != null && message.hasOwnProperty("frames"))
                 object.frames = $root.frame.FramesPack.toObject(message.frames, options);
             if (message.command != null && message.hasOwnProperty("command"))
@@ -16932,6 +16971,8 @@ export const frame = $root.frame = (() => {
          * @property {Array.<frame.IFrameStamp>|null} [stamps] FramesPack stamps
          * @property {Uint8Array|null} [linearData] FramesPack linearData
          * @property {Array.<Uint8Array>|null} [framesData] FramesPack framesData
+         * @property {boolean|null} [keyframe] FramesPack keyframe
+         * @property {Uint8Array|null} [keyframePtr] FramesPack keyframePtr
          */
 
         /**
@@ -16984,6 +17025,22 @@ export const frame = $root.frame = (() => {
         FramesPack.prototype.framesData = $util.emptyArray;
 
         /**
+         * FramesPack keyframe.
+         * @member {boolean} keyframe
+         * @memberof frame.FramesPack
+         * @instance
+         */
+        FramesPack.prototype.keyframe = false;
+
+        /**
+         * FramesPack keyframePtr.
+         * @member {Uint8Array} keyframePtr
+         * @memberof frame.FramesPack
+         * @instance
+         */
+        FramesPack.prototype.keyframePtr = $util.newBuffer([]);
+
+        /**
          * Creates a new FramesPack instance using the specified properties.
          * @function create
          * @memberof frame.FramesPack
@@ -17017,6 +17074,10 @@ export const frame = $root.frame = (() => {
             if (message.framesData != null && message.framesData.length)
                 for (let i = 0; i < message.framesData.length; ++i)
                     writer.uint32(/* id 12, wireType 2 =*/98).bytes(message.framesData[i]);
+            if (message.keyframe != null && Object.hasOwnProperty.call(message, "keyframe"))
+                writer.uint32(/* id 13, wireType 0 =*/104).bool(message.keyframe);
+            if (message.keyframePtr != null && Object.hasOwnProperty.call(message, "keyframePtr"))
+                writer.uint32(/* id 14, wireType 2 =*/114).bytes(message.keyframePtr);
             return writer;
         };
 
@@ -17075,6 +17136,14 @@ export const frame = $root.frame = (() => {
                         if (!(message.framesData && message.framesData.length))
                             message.framesData = [];
                         message.framesData.push(reader.bytes());
+                        break;
+                    }
+                case 13: {
+                        message.keyframe = reader.bool();
+                        break;
+                    }
+                case 14: {
+                        message.keyframePtr = reader.bytes();
                         break;
                     }
                 default:
@@ -17140,6 +17209,12 @@ export const frame = $root.frame = (() => {
                     if (!(message.framesData[i] && typeof message.framesData[i].length === "number" || $util.isString(message.framesData[i])))
                         return "framesData: buffer[] expected";
             }
+            if (message.keyframe != null && message.hasOwnProperty("keyframe"))
+                if (typeof message.keyframe !== "boolean")
+                    return "keyframe: boolean expected";
+            if (message.keyframePtr != null && message.hasOwnProperty("keyframePtr"))
+                if (!(message.keyframePtr && typeof message.keyframePtr.length === "number" || $util.isString(message.keyframePtr)))
+                    return "keyframePtr: buffer expected";
             return null;
         };
 
@@ -17189,6 +17264,13 @@ export const frame = $root.frame = (() => {
                     else if (object.framesData[i].length >= 0)
                         message.framesData[i] = object.framesData[i];
             }
+            if (object.keyframe != null)
+                message.keyframe = Boolean(object.keyframe);
+            if (object.keyframePtr != null)
+                if (typeof object.keyframePtr === "string")
+                    $util.base64.decode(object.keyframePtr, message.keyframePtr = $util.newBuffer($util.base64.length(object.keyframePtr)), 0);
+                else if (object.keyframePtr.length >= 0)
+                    message.keyframePtr = object.keyframePtr;
             return message;
         };
 
@@ -17218,6 +17300,14 @@ export const frame = $root.frame = (() => {
                     if (options.bytes !== Array)
                         object.linearData = $util.newBuffer(object.linearData);
                 }
+                object.keyframe = false;
+                if (options.bytes === String)
+                    object.keyframePtr = "";
+                else {
+                    object.keyframePtr = [];
+                    if (options.bytes !== Array)
+                        object.keyframePtr = $util.newBuffer(object.keyframePtr);
+                }
             }
             if (message.format != null && message.hasOwnProperty("format"))
                 object.format = $root.frame.FrameFormat.toObject(message.format, options);
@@ -17233,6 +17323,10 @@ export const frame = $root.frame = (() => {
                 for (let j = 0; j < message.framesData.length; ++j)
                     object.framesData[j] = options.bytes === String ? $util.base64.encode(message.framesData[j], 0, message.framesData[j].length) : options.bytes === Array ? Array.prototype.slice.call(message.framesData[j]) : message.framesData[j];
             }
+            if (message.keyframe != null && message.hasOwnProperty("keyframe"))
+                object.keyframe = message.keyframe;
+            if (message.keyframePtr != null && message.hasOwnProperty("keyframePtr"))
+                object.keyframePtr = options.bytes === String ? $util.base64.encode(message.keyframePtr, 0, message.keyframePtr.length) : options.bytes === Array ? Array.prototype.slice.call(message.keyframePtr) : message.keyframePtr;
             return object;
         };
 
@@ -17614,11 +17708,13 @@ export const frame = $root.frame = (() => {
      * @enum {number}
      * @property {number} FF_NCHW=0 FF_NCHW value
      * @property {number} FF_JPEG=1 FF_JPEG value
+     * @property {number} FF_VP8=2 FF_VP8 value
      */
     frame.FrameFormatKind = (function() {
         const valuesById = {}, values = Object.create(valuesById);
         values[valuesById[0] = "FF_NCHW"] = 0;
         values[valuesById[1] = "FF_JPEG"] = 1;
+        values[valuesById[2] = "FF_VP8"] = 2;
         return values;
     })();
 
@@ -17805,6 +17901,7 @@ export const frame = $root.frame = (() => {
                     return "kind: enum value expected";
                 case 0:
                 case 1:
+                case 2:
                     break;
                 }
             return null;
@@ -17844,6 +17941,10 @@ export const frame = $root.frame = (() => {
             case "FF_JPEG":
             case 1:
                 message.kind = 1;
+                break;
+            case "FF_VP8":
+            case 2:
+                message.kind = 2;
                 break;
             }
             return message;

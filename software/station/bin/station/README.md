@@ -248,6 +248,7 @@ drivers:
     resolution: auto      # Capture format: "auto" or "<width>x<height>", e.g. "1280x720"
     resize_target: 224    # Resize shortest dimension of stored frames to 224px
     frame-skip: 0         # Drop N frames after each kept frame; 0 records every frame
+    codec: jpeg           # How kept frames are stored: "jpeg" or "vp8"
 ```
 
 `resolution` chooses which camera format to open. With `auto` the best available
@@ -262,6 +263,12 @@ each frame it keeps, recording one of every three. Skipped frames are discarded
 before any image conversion, so this reduces CPU load. Note that the live camera
 view in `station-viewer` reads the same queue as the recorder, so `frame-skip`
 also thins the live preview by the same factor.
+
+`codec` picks how each kept frame is stored. `jpeg` (the default) writes one
+JPEG per entry. `vp8` writes one VP8 frame per entry with a keyframe about every
+second; each entry points at its keyframe, so a frame is read by id from that
+keyframe forward. VP8 entries take about a quarter of the space; normvla still
+gets JPEG, and station-viewer decodes them in the browser.
 
 ```yaml
 # ML inference integration

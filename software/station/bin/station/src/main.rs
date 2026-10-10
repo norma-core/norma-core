@@ -789,6 +789,14 @@ impl Station {
                                 resize_target: usb_video.resize_target,
                                 formats,
                                 frame_skip: usb_video.frame_skip,
+                                codec: match usb_video.codec {
+                                    station_iface::config::UsbVideoCodec::Jpeg => {
+                                        usbvideo::codec::VideoCodec::Jpeg
+                                    }
+                                    station_iface::config::UsbVideoCodec::Vp8 => {
+                                        usbvideo::codec::VideoCodec::Vp8
+                                    }
+                                },
                             },
                         )
                         .await;

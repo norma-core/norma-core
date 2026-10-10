@@ -5050,7 +5050,8 @@ export namespace usbvideo {
         ET_COMMAND = 7,
         ET_COMMAND_SUCCESS = 8,
         ET_COMMAND_REJECTED = 9,
-        ET_COMMAND_FAILED = 10
+        ET_COMMAND_FAILED = 10,
+        ET_CAPTURE_SESSION = 11
     }
 
     /** Properties of a RxEnvelope. */
@@ -5073,6 +5074,9 @@ export namespace usbvideo {
 
         /** RxEnvelope lastInferenceQueuePtr */
         lastInferenceQueuePtr?: (Uint8Array|null);
+
+        /** RxEnvelope sessionPtr */
+        sessionPtr?: (Uint8Array|null);
 
         /** RxEnvelope frames */
         frames?: (frame.IFramesPack|null);
@@ -5107,6 +5111,9 @@ export namespace usbvideo {
 
         /** RxEnvelope lastInferenceQueuePtr. */
         public lastInferenceQueuePtr: Uint8Array;
+
+        /** RxEnvelope sessionPtr. */
+        public sessionPtr: Uint8Array;
 
         /** RxEnvelope frames. */
         public frames?: (frame.IFramesPack|null);
@@ -5822,6 +5829,12 @@ export namespace frame {
 
         /** FramesPack framesData */
         framesData?: (Uint8Array[]|null);
+
+        /** FramesPack keyframe */
+        keyframe?: (boolean|null);
+
+        /** FramesPack keyframePtr */
+        keyframePtr?: (Uint8Array|null);
     }
 
     /** Represents a FramesPack. */
@@ -5844,6 +5857,12 @@ export namespace frame {
 
         /** FramesPack framesData. */
         public framesData: Uint8Array[];
+
+        /** FramesPack keyframe. */
+        public keyframe: boolean;
+
+        /** FramesPack keyframePtr. */
+        public keyframePtr: Uint8Array;
 
         /**
          * Creates a new FramesPack instance using the specified properties.
@@ -6041,7 +6060,8 @@ export namespace frame {
     /** FrameFormatKind enum. */
     enum FrameFormatKind {
         FF_NCHW = 0,
-        FF_JPEG = 1
+        FF_JPEG = 1,
+        FF_VP8 = 2
     }
 
     /** Properties of a FrameFormat. */

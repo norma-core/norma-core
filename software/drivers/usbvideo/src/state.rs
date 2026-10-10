@@ -10,6 +10,7 @@ use station_iface::{Backpressure, enqueue_with};
 use station_iface::{StationEngine, iface_proto::drivers::QueueDataType};
 
 use crate::{
+    codec::{KeyframePolicy, VideoCodec, VideoEncoder, Vp8Encoder},
     converters::{self, FourCCFormat},
     usbvideo_proto::{
         frame::{self, FrameFormatKind, FrameStamp, FramesPack},
@@ -34,6 +35,19 @@ pub struct StateTracker<T: StationEngine> {
     frame_counters: Mutex<HashMap<String, u64>>,
     format_control: Mutex<FormatControlState>,
     camera_formats: Mutex<HashMap<String, Vec<CameraFormat>>>,
+    /// Per camera, so cameras encode in parallel; the inner lock also keeps
+    /// each camera's encode and enqueue order the same.
+    encoders: Mutex<HashMap<String, Arc<Mutex<Option<CameraEncoder>>>>>,
+}
+
+struct CameraEncoder {
+    encoder: Box<dyn VideoEncoder>,
+    format_revision: u64,
+    policy: KeyframePolicy,
+    // The ET_CAPTURE_SESSION entry this session's frames name, and its file.
+    session: Option<(u64, normfs::FileRoom)>,
+    // The file the chain's keyframe is in, which its deltas have to join.
+    chain_file: Option<normfs::FileRoom>,
 }
 
 #[derive(Default)]
@@ -60,6 +74,7 @@ impl<T: StationEngine> StateTracker<T> {
             frame_counters: Mutex::new(HashMap::new()),
             format_control: Mutex::new(FormatControlState::default()),
             camera_formats: Mutex::new(HashMap::new()),
+            encoders: Mutex::new(HashMap::new()),
         }
     }
 
@@ -161,6 +176,21 @@ impl<T: StationEngine> StateTracker<T> {
         }
     }
 
+    /// A new capture session starts a new chain with its first frame.
+    pub fn reset_encoder(&self, camera_unique_id: &str) {
+        if let Some(state) = self.encoders.lock().get(camera_unique_id) {
+            *state.lock() = None;
+        }
+    }
+
+    fn encoder_for(&self, camera_unique_id: &str) -> Arc<Mutex<Option<CameraEncoder>>> {
+        self.encoders
+            .lock()
+            .entry(camera_unique_id.to_string())
+            .or_default()
+            .clone()
+    }
+
     #[allow(clippy::too_many_arguments)]
     pub fn enqueue_frame(
         &self,
@@ -196,6 +226,20 @@ impl<T: StationEngine> StateTracker<T> {
             return;
         }
 
+        if self.config.codec == VideoCodec::Vp8 {
+            self.enqueue_vp8_frame(
+                queue_id,
+                format,
+                camera,
+                stamp,
+                format_revision,
+                width,
+                height,
+                frame_data,
+            );
+            return;
+        }
+
         let converted = converters::convert_frame(
             width as u16,
             height as u16,
@@ -227,12 +271,14 @@ impl<T: StationEngine> StateTracker<T> {
                 linear_data: Bytes::new(),
                 frames_data: vec![converted.jpeg.clone()],
                 stamps: vec![stamp.clone()],
+                ..Default::default()
             }),
             stamp: Some(stamp.clone()),
             formats: self.camera_formats(&camera.unique_id),
             last_inference_queue_ptr: self.get_last_inference_id_bytes(),
             error: String::new(),
             command: None,
+            session_ptr: Bytes::new(),
         };
 
         let mut buf = BytesMut::new();
@@ -247,6 +293,261 @@ impl<T: StationEngine> StateTracker<T> {
             );
         }
     }
+
+    #[allow(clippy::too_many_arguments)]
+    fn enqueue_vp8_frame(
+        &self,
+        queue_id: &normfs::QueueId,
+        format: FourCCFormat,
+        camera: &Camera,
+        stamp: FrameStamp,
+        format_revision: u64,
+        width: u32,
+        height: u32,
+        frame_data: Bytes,
+    ) {
+        let frame = match converters::convert_frame_to_rgb(
+            width as u16,
+            height as u16,
+            format,
+            frame_data,
+            self.config.resize_target,
+        ) {
+            Ok(frame) => frame,
+            Err(e) => {
+                // Nothing reached the encoder, so its chain is intact.
+                warn!(
+                    "Failed to convert frame for camera {}: {}",
+                    camera.unique_id, e
+                );
+                return;
+            }
+        };
+        let (width, height, rgb) = even_crop(frame.width, frame.height, &frame.rgb);
+
+        let state = self.encoder_for(&camera.unique_id);
+        let mut state = state.lock();
+        let stale = state.as_ref().is_none_or(|s| {
+            s.format_revision != format_revision
+                || s.encoder.width() != width
+                || s.encoder.height() != height
+        });
+        if stale {
+            *state = match Vp8Encoder::new(width, height) {
+                Ok(encoder) => Some(CameraEncoder {
+                    encoder: Box::new(encoder),
+                    format_revision,
+                    policy: KeyframePolicy::default(),
+                    session: None,
+                    chain_file: None,
+                }),
+                Err(e) => {
+                    error!("VP8 encoder for camera {}: {}", camera.unique_id, e);
+                    return;
+                }
+            };
+        }
+        let Some(cam) = state.as_mut() else {
+            return;
+        };
+
+        let now_ns = stamp.monotonic_stamp_ns;
+        let mut force = cam.policy.wants_keyframe(now_ns);
+        let mut packet = None;
+        let mut record_tried = false;
+        let mut tries = 0;
+        // Runs on the capture thread; must not block.
+        let (keyframe, appended) = loop {
+            tries += 1;
+            if tries > 6 {
+                break (false, Err(normfs::Error::NotInFile));
+            }
+            let (keyframe, frame) = match packet.take() {
+                Some(encoded) => encoded,
+                None => match cam.encoder.encode(&rgb, force) {
+                    Ok(p) if p.keyframe || (!force && cam.policy.keyframe().is_some()) => {
+                        (p.keyframe, Bytes::from(p.data))
+                    }
+                    Ok(_) => {
+                        error!(
+                            "VP8 encoder for camera {} ignored a forced keyframe",
+                            camera.unique_id
+                        );
+                        *state = None;
+                        return;
+                    }
+                    Err(e) => {
+                        error!("VP8 encode for camera {}: {}", camera.unique_id, e);
+                        *state = None;
+                        return;
+                    }
+                },
+            };
+            let room = match self.normfs.file_room(queue_id) {
+                Ok(room) => room,
+                Err(e) => break (keyframe, Err(e)),
+            };
+            // A delta goes only into the file its keyframe is in; otherwise
+            // it is encoded again as a keyframe.
+            if !keyframe && !cam.chain_file.is_some_and(|f| f.same_file(&room)) {
+                force = true;
+                continue;
+            }
+            let session = cam
+                .session
+                .filter(|(_, at)| at.same_file(&room))
+                .map(|(id, _)| id);
+            if session.is_none() && !record_tried {
+                // The session record goes into the frame's file just ahead of
+                // it, so a file reads on its own and the record is the queue's
+                // last entry only for as long as the append takes.
+                record_tried = true;
+                let record = self.session_envelope(camera, &stamp);
+                let written = if room.room().is_none() {
+                    Some(self.normfs.try_enqueue(queue_id, record))
+                } else if !room.starts_file(record.len() + frame.len() + FRAME_OVERHEAD) {
+                    Some(self.normfs.try_enqueue_in(queue_id, &room, record))
+                } else {
+                    None
+                };
+                if let Some(written) = written {
+                    // The record is in the file `room` names: one it opened
+                    // keeps that mark, and other writers on the queue may
+                    // have moved on by the time of a second look.
+                    if let Ok(id) = written {
+                        cam.session = id.to_u64().ok().map(|id| (id, room));
+                    }
+                    packet = Some((keyframe, frame));
+                    continue;
+                }
+            }
+            // Without a record in its file, a frame carries the formats itself.
+            let data = self.vp8_envelope(
+                camera,
+                &stamp,
+                width,
+                height,
+                frame.clone(),
+                cam.policy.keyframe().filter(|_| !keyframe),
+                session,
+            );
+            if room.starts_file(data.len()) {
+                if keyframe {
+                    let data = self.vp8_envelope(camera, &stamp, width, height, frame, None, None);
+                    // Which file it opened cannot be told for sure, so the
+                    // next frame starts a chain again rather than guess.
+                    cam.chain_file = None;
+                    break (keyframe, self.normfs.try_enqueue(queue_id, data));
+                }
+                force = true;
+                continue;
+            }
+            // Checked and appended in one step, so a flush cannot seal the
+            // file between the look and the write.
+            match self.normfs.try_enqueue_in(queue_id, &room, data) {
+                Err(normfs::Error::NotInFile) if keyframe => {
+                    record_tried = false;
+                    packet = Some((keyframe, frame));
+                }
+                Err(normfs::Error::NotInFile) => force = true,
+                appended => {
+                    if keyframe && appended.is_ok() {
+                        cam.chain_file = Some(room);
+                    }
+                    break (keyframe, appended);
+                }
+            }
+        };
+
+        match appended.map(|id| id.to_u64()) {
+            Ok(Ok(id)) => cam.policy.landed(id, keyframe, now_ns),
+            Ok(Err(_)) => cam.policy.lost(),
+            Err(e) => {
+                cam.policy.lost();
+                if !matches!(e, normfs::Error::WouldBlock) {
+                    log::error!("Failed to enqueue frame on {queue_id}: {e}");
+                }
+            }
+        }
+    }
+
+    fn session_envelope(&self, camera: &Camera, stamp: &FrameStamp) -> Bytes {
+        let envelope = RxEnvelope {
+            r#type: RxEnvelopeType::EtCaptureSession as i32,
+            camera: Some(camera.clone()),
+            formats: self.camera_formats(&camera.unique_id),
+            stamp: Some(stamp.clone()),
+            last_inference_queue_ptr: self.get_last_inference_id_bytes(),
+            ..Default::default()
+        };
+        let mut buf = BytesMut::new();
+        envelope.encode(&mut buf).unwrap();
+        buf.freeze()
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    fn vp8_envelope(
+        &self,
+        camera: &Camera,
+        stamp: &FrameStamp,
+        width: u32,
+        height: u32,
+        frame: Bytes,
+        chain: Option<u64>,
+        session: Option<u64>,
+    ) -> Bytes {
+        // A delta names its chain's keyframe; a keyframe names none.
+        let keyframe = chain.is_none();
+        let keyframe_ptr = chain
+            .map(|k| normfs::UintN::from(k).value_to_bytes())
+            .unwrap_or_default();
+        let envelope = RxEnvelope {
+            r#type: RxEnvelopeType::EtFrames as i32,
+            camera: Some(camera.clone()),
+            frames: Some(FramesPack {
+                format: Some(frame::FrameFormat {
+                    width,
+                    height,
+                    kind: FrameFormatKind::FfVp8 as i32,
+                }),
+                linear_data: Bytes::new(),
+                frames_data: vec![frame],
+                stamps: vec![stamp.clone()],
+                keyframe,
+                keyframe_ptr,
+            }),
+            stamp: Some(stamp.clone()),
+            last_inference_queue_ptr: self.get_last_inference_id_bytes(),
+            formats: match session {
+                Some(_) => Vec::new(),
+                None => self.camera_formats(&camera.unique_id),
+            },
+            session_ptr: session
+                .map(|id| normfs::UintN::from(id).value_to_bytes())
+                .unwrap_or_default(),
+            ..Default::default()
+        };
+        let mut buf = BytesMut::new();
+        envelope.encode(&mut buf).unwrap();
+        buf.freeze()
+    }
+}
+
+/// What an envelope adds to a frame's bytes, generously.
+const FRAME_OVERHEAD: usize = 256;
+
+/// VP8 halves chroma both ways, so an odd edge loses its last row or column.
+fn even_crop(width: u32, height: u32, rgb: &Bytes) -> (u32, u32, Bytes) {
+    let (w, h) = (width & !1, height & !1);
+    if (w, h) == (width, height) {
+        return (width, height, rgb.clone());
+    }
+    let mut out = Vec::with_capacity((w * h * 3) as usize);
+    for row in 0..h as usize {
+        let start = row * width as usize * 3;
+        out.extend_from_slice(&rgb[start..start + w as usize * 3]);
+    }
+    (w, h, Bytes::from(out))
 }
 
 fn bump_format_revision(state: &mut FormatControlState, camera_unique_id: &str) -> u64 {
@@ -260,7 +561,361 @@ fn bump_format_revision(state: &mut FormatControlState, camera_unique_id: &str) 
 
 #[cfg(test)]
 mod tests {
-    use super::should_keep;
+    use super::*;
+    use crate::codec::test_frames::{camera_like, psnr};
+    use crate::codec::{FrameReader, VideoDecoder, Vp8Decoder, keyframe_of};
+    use normfs::{NormFsSettings, Persist, QueueSettings, ReadPosition, UintN};
+
+    struct NoopEngine;
+
+    impl StationEngine for NoopEngine {
+        fn register_queue(
+            &self,
+            _: &normfs::QueueId,
+            _: QueueDataType,
+            _: Vec<station_iface::iface_proto::envelope::QueueOpt>,
+        ) {
+        }
+    }
+
+    const W: u32 = 96;
+    const H: u32 = 64;
+
+    fn test_dir(name: &str) -> std::path::PathBuf {
+        let dir = std::env::temp_dir().join(format!("usbvideo-{name}-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+        dir
+    }
+
+    /// Frames as station keeps them: store files, no WAL. Small pages make a
+    /// chain span several files.
+    fn store_settings() -> NormFsSettings {
+        NormFsSettings {
+            queue_settings: QueueSettings::default().with_default_persist(Persist::STORE),
+            mem_page_size: 4 * 1024,
+            mem_passive_page_size: 4 * 1024,
+            ..Default::default()
+        }
+    }
+
+    async fn vp8_tracker(name: &str) -> (Arc<NormFS>, StateTracker<NoopEngine>, normfs::QueueId) {
+        let settings = NormFsSettings {
+            queue_settings: QueueSettings::default().with_default_persist(Persist::MEMORY),
+            ..Default::default()
+        };
+        vp8_tracker_in(test_dir(name), settings).await
+    }
+
+    async fn vp8_tracker_in(
+        dir: std::path::PathBuf,
+        settings: NormFsSettings,
+    ) -> (Arc<NormFS>, StateTracker<NoopEngine>, normfs::QueueId) {
+        let normfs = Arc::new(NormFS::new(dir, settings).await.unwrap());
+        let queue = normfs.resolve("usbvideo/test");
+        normfs.ensure_queue_exists_for_write(&queue).await.unwrap();
+        let tracker = StateTracker::new(
+            normfs.clone(),
+            Arc::new(NoopEngine),
+            crate::USBVideoConfig {
+                resize_target: 0,
+                frame_skip: 2,
+                codec: VideoCodec::Vp8,
+                ..Default::default()
+            },
+        );
+        (normfs, tracker, queue)
+    }
+
+    fn camera() -> Camera {
+        Camera {
+            unique_id: "cam".into(),
+            ..Default::default()
+        }
+    }
+
+    /// Frame `t` of a 30 fps camera.
+    fn feed(tracker: &StateTracker<NoopEngine>, queue: &normfs::QueueId, t: u64, revision: u64) {
+        tracker.enqueue_frame(
+            queue,
+            FourCCFormat::Rgb,
+            &camera(),
+            FrameStamp {
+                monotonic_stamp_ns: 1_000_000_000 + t * 33_333_333,
+                index: t,
+                ..Default::default()
+            },
+            revision,
+            W,
+            H,
+            Bytes::from(camera_like(W as usize, H as usize, t as usize)),
+        );
+    }
+
+    async fn read_all(normfs: &NormFS, queue: &normfs::QueueId) -> Vec<(u64, RxEnvelope)> {
+        let last = normfs.get_last_id(queue).unwrap().to_u64().unwrap();
+        let (tx, mut rx) = tokio::sync::mpsc::channel(last as usize + 2);
+        normfs
+            .read(
+                queue,
+                ReadPosition::Absolute(UintN::from(0u64)),
+                last + 1,
+                1,
+                tx,
+            )
+            .await
+            .unwrap();
+        let mut out = Vec::new();
+        while let Some(e) = rx.recv().await {
+            out.push((e.id.to_u64().unwrap(), RxEnvelope::decode(e.data).unwrap()));
+        }
+        out
+    }
+
+    fn is_vp8(envelope: &RxEnvelope) -> bool {
+        envelope
+            .frames
+            .as_ref()
+            .and_then(|p| p.format.as_ref())
+            .map(|f| f.kind())
+            == Some(FrameFormatKind::FfVp8)
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn every_frame_by_its_entry_id_is_that_frame() {
+        let (normfs, tracker, queue) = vp8_tracker("random-access").await;
+        let mut revision = tracker.format_revision("cam");
+        for t in 0..240u64 {
+            // Session events land between frames of one chain.
+            if t % 50 == 7 {
+                tracker
+                    .send_envelope(
+                        &queue,
+                        RxEnvelope {
+                            r#type: RxEnvelopeType::EtDeviceRecordingStart as i32,
+                            ..Default::default()
+                        },
+                    )
+                    .await
+                    .unwrap();
+            }
+            // A format change mid-stream starts a new chain.
+            if t == 120 {
+                revision = tracker.set_auto_format("cam");
+            }
+            feed(&tracker, &queue, t, revision);
+        }
+        let entries = read_all(&normfs, &queue).await;
+        let frames: Vec<&(u64, RxEnvelope)> = entries.iter().filter(|(_, e)| is_vp8(e)).collect();
+        assert_eq!(frames.len(), 80, "frame_skip 2 keeps 1 of 3");
+
+        // Sequential decode of the whole queue, as a player would.
+        let mut sequential = HashMap::new();
+        let mut decoder = Vp8Decoder::new().unwrap();
+        for (id, envelope) in &frames {
+            let pack = envelope.frames.as_ref().unwrap();
+            let out = decoder.decode(&pack.frames_data[0]).unwrap();
+            sequential.insert(*id, out);
+        }
+        // Kept frames are 100 ms apart, so a chain is 11 of them; the format
+        // change at frame 120 starts one early.
+        let keyframes: Vec<u64> = frames
+            .iter()
+            .filter(|(_, e)| e.frames.as_ref().unwrap().keyframe)
+            .map(|(_, e)| e.stamp.as_ref().unwrap().index)
+            .collect();
+        assert_eq!(keyframes, [0, 33, 66, 99, 120, 153, 186, 219]);
+
+        let reader = FrameReader::new(normfs.clone());
+        let mut order: Vec<_> = frames.iter().map(|(id, _)| *id).collect();
+        // A fixed shuffle: jumps back, forward and across chains.
+        order.sort_by_key(|id| (id * 7919) % 101);
+        for id in order {
+            let (_, envelope) = frames.iter().find(|(i, _)| *i == id).unwrap();
+            let fresh = FrameReader::new(normfs.clone())
+                .frame_at(&queue, id, envelope)
+                .await
+                .unwrap();
+            let cached = reader.frame_at(&queue, id, envelope).await.unwrap();
+            assert_eq!(fresh, sequential[&id], "entry {id} by pointer");
+            assert_eq!(cached, sequential[&id], "entry {id} through the cache");
+
+            // And it is the frame whose stamp the entry carries, not a neighbour.
+            let t = envelope.stamp.as_ref().unwrap().index as usize;
+            let own = psnr(&camera_like(W as usize, H as usize, t), &fresh.rgb);
+            let next = psnr(&camera_like(W as usize, H as usize, t + 3), &fresh.rgb);
+            assert!(
+                own > 25.0 && own > next + 1.0,
+                "entry {id}: {own} vs {next}"
+            );
+            assert!(keyframe_of(id, envelope).is_ok());
+        }
+    }
+
+    fn store_files(dir: &std::path::Path, queue: &normfs::QueueId) -> usize {
+        std::fs::read_dir(queue.to_store_dir(dir))
+            .unwrap()
+            .flatten()
+            .filter(|e| e.path().extension().is_some_and(|ext| ext == "store"))
+            .count()
+    }
+
+    /// Every stored frame by its id, read back from store files after a
+    /// restart, against a sequential decode; returns the keyframes' stamps.
+    async fn check_by_id_from_store(dir: std::path::PathBuf) -> Vec<u64> {
+        let normfs = Arc::new(NormFS::new(dir, store_settings()).await.unwrap());
+        let queue = normfs.resolve("usbvideo/test");
+        normfs.ensure_queue_exists_for_read(&queue).await.unwrap();
+        let entries = read_all(&normfs, &queue).await;
+        let frames: Vec<&(u64, RxEnvelope)> = entries.iter().filter(|(_, e)| is_vp8(e)).collect();
+        let mut decoder = Vp8Decoder::new().unwrap();
+        let mut keyframes = Vec::new();
+        for (id, envelope) in &frames {
+            let pack = envelope.frames.as_ref().unwrap();
+            if pack.keyframe {
+                decoder = Vp8Decoder::new().unwrap();
+                keyframes.push(envelope.stamp.as_ref().unwrap().index);
+            }
+            let sequential = decoder.decode(&pack.frames_data[0]).unwrap();
+            let by_id = FrameReader::new(normfs.clone())
+                .frame_at(&queue, *id, envelope)
+                .await
+                .unwrap();
+            assert_eq!(by_id, sequential, "entry {id}");
+        }
+        normfs.close().await.unwrap();
+        keyframes
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn frames_in_store_files_decode_by_id_after_a_restart() {
+        let dir = test_dir("store");
+        let (normfs, tracker, queue) = vp8_tracker_in(dir.clone(), store_settings()).await;
+        let revision = tracker.format_revision("cam");
+        let mut opened = Vec::new();
+        for t in 0..120 {
+            let (before, last) = (
+                normfs.file_room(&queue).unwrap(),
+                normfs.get_last_id(&queue).ok(),
+            );
+            feed(&tracker, &queue, t, revision);
+            let id = normfs.get_last_id(&queue).ok();
+            let after = normfs.file_room(&queue).unwrap();
+            if id != last && (before.room().is_none() || !before.same_file(&after)) {
+                opened.push(t);
+            }
+        }
+        normfs.close().await.unwrap();
+        drop(tracker);
+        let keyframes = check_by_id_from_store(dir.clone()).await;
+        assert!(store_files(&dir, &queue) > 1);
+        assert_eq!(opened.len(), store_files(&dir, &queue));
+        for t in opened {
+            assert!(keyframes.contains(&t), "frame {t} opens a file as a delta");
+        }
+        // frame_skip 2 keeps every third frame, 100 ms apart: a keyframe per 10
+        // at most, sooner where a file starts.
+        assert_eq!(keyframes[0], 0);
+        assert!(
+            keyframes.windows(2).all(|k| k[1] - k[0] <= 33),
+            "{keyframes:?}"
+        );
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn frames_name_a_session_record_instead_of_carrying_the_formats() {
+        let dir = test_dir("session-record");
+        let (normfs, tracker, queue) = vp8_tracker_in(dir, store_settings()).await;
+        tracker.set_camera_formats(
+            "cam".into(),
+            vec![CameraFormat {
+                width: W,
+                height: H,
+                ..Default::default()
+            }],
+        );
+        let revision = tracker.format_revision("cam");
+        for t in 0..120 {
+            feed(&tracker, &queue, t, revision);
+        }
+        let entries: HashMap<u64, RxEnvelope> =
+            read_all(&normfs, &queue).await.into_iter().collect();
+        let mut sessions = std::collections::HashSet::new();
+        for (id, envelope) in entries.iter().filter(|(_, e)| is_vp8(e)) {
+            assert_eq!(envelope.camera.as_ref().unwrap().unique_id, "cam");
+            if envelope.session_ptr.is_empty() {
+                assert_eq!(envelope.formats.len(), 1, "entry {id} carries no formats");
+                continue;
+            }
+            assert!(envelope.formats.is_empty());
+            let session =
+                UintN::read_value_from_slice(&envelope.session_ptr, envelope.session_ptr.len())
+                    .unwrap()
+                    .to_u64()
+                    .unwrap();
+            assert!(session < *id, "entry {id} names {session}");
+            let record = &entries[&session];
+            assert_eq!(record.r#type(), RxEnvelopeType::EtCaptureSession);
+            assert_eq!(record.camera.as_ref().unwrap().unique_id, "cam");
+            assert_eq!(record.formats.len(), 1);
+            sessions.insert(session);
+        }
+        assert!(
+            sessions.len() > 1,
+            "written once per file, not once per session"
+        );
+        normfs.close().await.unwrap();
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn a_refused_frame_starts_a_new_chain() {
+        let dir = test_dir("refused");
+        let (normfs, tracker, queue) = vp8_tracker_in(dir.clone(), store_settings()).await;
+        let revision = tracker.format_revision("cam");
+        for t in 0..15 {
+            feed(&tracker, &queue, t, revision);
+        }
+        // A closed queue refuses the next frame, as a full one skips it.
+        normfs.close_queue(&queue).await.unwrap();
+        feed(&tracker, &queue, 15, revision);
+        normfs.ensure_queue_exists_for_write(&queue).await.unwrap();
+        for t in 16..30 {
+            feed(&tracker, &queue, t, revision);
+        }
+        normfs.close().await.unwrap();
+        drop(tracker);
+        // Frame 15 is lost; the next kept one, 18, has to be a keyframe.
+        assert_eq!(check_by_id_from_store(dir).await, [0, 18]);
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn a_new_session_starts_a_new_chain() {
+        let (normfs, tracker, queue) = vp8_tracker("session").await;
+        let revision = tracker.format_revision("cam");
+        for t in 0..9 {
+            feed(&tracker, &queue, t, revision);
+        }
+        tracker.reset_encoder("cam");
+        for t in 9..12 {
+            feed(&tracker, &queue, t, revision);
+        }
+        let keyframes: Vec<bool> = read_all(&normfs, &queue)
+            .await
+            .iter()
+            .filter(|(_, e)| is_vp8(e))
+            .map(|(_, e)| e.frames.as_ref().unwrap().keyframe)
+            .collect();
+        assert_eq!(keyframes, [true, false, false, true]);
+    }
+
+    #[test]
+    fn odd_sizes_are_cropped_to_even() {
+        let rgb = Bytes::from((0..5 * 3 * 3).map(|v| v as u8).collect::<Vec<_>>());
+        let (w, h, out) = even_crop(5, 3, &rgb);
+        assert_eq!((w, h), (4, 2));
+        assert_eq!(&out[..12], &rgb[..12]);
+        assert_eq!(&out[12..], &rgb[15..27]);
+    }
 
     #[test]
     fn test_should_keep_zero_skip_keeps_every_frame() {

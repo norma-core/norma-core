@@ -328,6 +328,19 @@ pub struct UsbVideoConfig {
     /// `frame_skip + 1` frames is recorded. Default 0 keeps every frame.
     #[serde(rename = "frame-skip", default)]
     pub frame_skip: u32,
+
+    /// How kept frames are stored: `jpeg` (default), one JPEG per entry, or
+    /// `vp8`, one VP8 frame per entry with a keyframe about every second.
+    #[serde(default)]
+    pub codec: UsbVideoCodec,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone, Copy, Default, PartialEq, Eq)]
+#[serde(rename_all = "lowercase")]
+pub enum UsbVideoCodec {
+    #[default]
+    Jpeg,
+    Vp8,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, Default, PartialEq, Eq)]
@@ -349,6 +362,7 @@ impl Default for UsbVideoConfig {
             resize_target: 224,
             formats: Vec::new(),
             frame_skip: 0,
+            codec: UsbVideoCodec::Jpeg,
         }
     }
 }
@@ -737,7 +751,7 @@ mod config_tests {
 
 #[cfg(test)]
 mod usb_video_config_tests {
-    use super::{UsbVideoConfig, UsbVideoFormatConfig};
+    use super::{UsbVideoCodec, UsbVideoConfig, UsbVideoFormatConfig};
 
     #[test]
     fn test_defaults_when_only_enabled_is_given() {
@@ -759,6 +773,15 @@ mod usb_video_config_tests {
             }]
         );
         assert_eq!(cfg.frame_skip, 2);
+    }
+
+    #[test]
+    fn test_codec_defaults_to_jpeg_and_parses_vp8() {
+        let cfg: UsbVideoConfig = serde_yaml::from_str("enabled: true\n").unwrap();
+        assert_eq!(cfg.codec, UsbVideoCodec::Jpeg);
+        let cfg: UsbVideoConfig = serde_yaml::from_str("enabled: true\ncodec: vp8\n").unwrap();
+        assert_eq!(cfg.codec, UsbVideoCodec::Vp8);
+        assert!(serde_yaml::from_str::<UsbVideoConfig>("enabled: true\ncodec: h264\n").is_err());
     }
 
     #[test]

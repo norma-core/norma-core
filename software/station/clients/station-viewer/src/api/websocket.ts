@@ -6,7 +6,9 @@ import { NormFsClient } from "@/api/normfs.js";
 import { normfs, inference } from "@/api/proto.js";
 import { timeSyncManager } from "@/api/time-sync.js";
 import { WS_EVENTS } from "@/api/websocket-events.js";
-import { shouldLoadLiveCameraFrame } from "@/usbvideo/live-camera-store.js";
+import { createLiveCameraMetadataEnvelope, shouldLoadLiveCameraFrame } from "@/usbvideo/live-camera-store.js";
+import { resolveCaptureSession } from "@/usbvideo/capture-session.js";
+import { getLiveVideoEnvelope, isLiveVideoFollowing, syncLiveVideoStreams } from "@/usbvideo/live-video-stream.js";
 
 export const ErrConnectionNotOpen = new Error("WebSocket: Connection not open.");
 
@@ -130,11 +132,26 @@ class WebSocketManager extends EventTarget {
           shouldReadQueue: selection.shouldRead,
           retainRawData: false,
           thermalDiscoveryOnly: true,
-          shouldLoadVideoFrame: shouldLoadLiveCameraFrame,
+          shouldLoadVideoFrame: (queueId, previousEnvelope) =>
+            !isLiveVideoFollowing(queueId) && shouldLoadLiveCameraFrame(queueId, previousEnvelope),
           shouldPublishVideoFrames: () =>
             this.isLiveMode() && acquisitionGeneration === this.acquisitionGeneration,
         });
 
+        if (!this.isLiveMode() || acquisitionGeneration !== this.acquisitionGeneration) {
+          return;
+        }
+
+        // A followed camera's frames are not read here, so its metadata comes from its stream.
+        // A stream resumed past its session record has not seen it, so that is read here.
+        await Promise.all((frame.videoQueues ?? []).map(async (video) => {
+          const envelope = getLiveVideoEnvelope(video.queueId);
+          if (envelope) {
+            video.data = createLiveCameraMetadataEnvelope(
+              await resolveCaptureSession(this.normFs, video.queueId, envelope),
+            );
+          }
+        }));
         if (!this.isLiveMode() || acquisitionGeneration !== this.acquisitionGeneration) {
           return;
         }
@@ -149,6 +166,9 @@ class WebSocketManager extends EventTarget {
       // Silently ignore if queue is empty (not yet populated)
     } finally {
       this.isPolling = false;
+      if (this.isLiveMode() && acquisitionGeneration === this.acquisitionGeneration) {
+        syncLiveVideoStreams(this.url, this.liveSnapshot.frame?.videoQueues ?? []);
+      }
     }
   }
 
@@ -215,6 +235,7 @@ class WebSocketManager extends EventTarget {
       this.acquisitionGeneration += 1;
       this.cancelScheduledPollingResume();
       this.stopPolling();
+      syncLiveVideoStreams(this.url, []);
       this.emitStats();
     }
 
@@ -342,6 +363,7 @@ class WebSocketManager extends EventTarget {
       // Stop polling
       this.cancelScheduledPollingResume();
       this.stopPolling();
+      syncLiveVideoStreams(this.url, []);
 
       this.emitStats({ status: 'disconnected', connectedAt: null });
       this.reconnect();

@@ -20,6 +20,12 @@ pub struct ConvertResult {
     pub height: u32,
 }
 
+pub struct RgbFrame {
+    pub rgb: Bytes,
+    pub width: u32,
+    pub height: u32,
+}
+
 /// Process frame conversion based on format with optional resizing
 /// resize_target: Target size for shortest dimension (e.g., 224). Set to 0 to disable resizing.
 pub fn convert_frame(
@@ -29,6 +35,24 @@ pub fn convert_frame(
     data: Bytes,
     resize_target: u32,
 ) -> Result<ConvertResult, String> {
+    let frame = convert_frame_to_rgb(width, height, format, data, resize_target)?;
+    let jpeg_data = convert_rgb_to_jpeg(frame.width as u16, frame.height as u16, frame.rgb, 90)?;
+
+    Ok(ConvertResult {
+        jpeg: jpeg_data,
+        width: frame.width,
+        height: frame.height,
+    })
+}
+
+/// Steps 1 and 2 of [`convert_frame`]: the frame as RGB at its stored size.
+pub fn convert_frame_to_rgb(
+    width: u16,
+    height: u16,
+    format: FourCCFormat,
+    data: Bytes,
+    resize_target: u32,
+) -> Result<RgbFrame, String> {
     let stamp = std::time::Instant::now();
 
     // Step 1: Convert to RGB
@@ -79,11 +103,8 @@ pub fn convert_frame(
         (width as u32, height as u32, rgb_data)
     };
 
-    // Step 3: Convert to JPEG and tensor
-    let jpeg_data = convert_rgb_to_jpeg(final_width as u16, final_height as u16, final_rgb, 90)?;
-
-    Ok(ConvertResult {
-        jpeg: jpeg_data,
+    Ok(RgbFrame {
+        rgb: final_rgb,
         width: final_width,
         height: final_height,
     })

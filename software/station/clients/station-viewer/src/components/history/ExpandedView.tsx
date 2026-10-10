@@ -162,7 +162,7 @@ export default function ExpandedView({ data, type, rawData, queueId, entryId }: 
       return <VescTrampaExpanded data={data} />;
     }
     if (type === 'usbvideo' && data instanceof usbvideo.RxEnvelope) {
-      return <UsbVideoExpanded data={data} onImageClick={(src, alt) => setFullscreenImage({ src, alt })} />;
+      return <UsbVideoExpanded data={data} queueId={queueId} entryId={entryId} onImageClick={(src, alt) => setFullscreenImage({ src, alt })} />;
     }
     if (type === 'usbvideo-tx' && data instanceof usbvideo.TxEnvelope) {
       const setFormat = data.command?.setFormat;

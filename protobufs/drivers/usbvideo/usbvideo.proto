@@ -16,6 +16,10 @@ enum RxEnvelopeType {
     ET_COMMAND_SUCCESS        = 8;
     ET_COMMAND_REJECTED       = 9;
     ET_COMMAND_FAILED         = 10;
+    // The camera and its formats, for the VP8 frames that name it in
+    // session_ptr. Written into each NormFS file just ahead of its first
+    // frame that names it, so a file reads on its own.
+    ET_CAPTURE_SESSION        = 11;
 }
 
 message RxEnvelope {
@@ -27,6 +31,10 @@ message RxEnvelope {
     string                error   = 7;
 
     bytes last_inference_queue_ptr = 8;
+
+    // ET_FRAMES: the ET_CAPTURE_SESSION entry holding the formats, which the
+    // frame then leaves out. Empty on frames that carry them.
+    bytes session_ptr = 9;
     
     frame.FramesPack frames = 10;
 

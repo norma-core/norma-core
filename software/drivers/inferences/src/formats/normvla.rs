@@ -10,6 +10,10 @@ use crate::proto::normvla;
 // Skip frame if timestamp diff > 100ms
 const MAX_STAMP_DIFF_NS: u64 = 100_000_000; // 100ms
 
+// One per process: inference reads each camera forward, so its decoder
+// cache decodes only the frames since the previous inference frame.
+static VIDEO_FRAMES: std::sync::OnceLock<usbvideo::codec::FrameReader> = std::sync::OnceLock::new();
+
 // Statistics tracking for frame skips
 #[derive(Default, Debug)]
 struct FrameSkipStats {
@@ -19,6 +23,7 @@ struct FrameSkipStats {
     skipped_motor_error: u64,
     skipped_video_ahead: u64,
     skipped_video_large_diff: u64,
+    skipped_video_unavailable: u64,
     skipped_no_images: u64,
     skipped_no_torque: u64,
     skipped_invalid_range: u64,
@@ -49,7 +54,7 @@ impl FrameSkipStats {
         let skip_rate = ((self.total_frames - self.processed_frames) as f64 / self.total_frames as f64) * 100.0;
 
         log::info!(
-            "Frame stats (last {} frames): processed={}, skipped={} ({:.1}%), reasons: bus_ahead={}, bus_diff={}, motor_error={}, video_ahead={}, video_diff={}, no_images={}, no_torque={}, invalid_range={}, no_bus={}; max_diffs: bus={}ms, video={}ms",
+            "Frame stats (last {} frames): processed={}, skipped={} ({:.1}%), reasons: bus_ahead={}, bus_diff={}, motor_error={}, video_ahead={}, video_diff={}, video_unavailable={}, no_images={}, no_torque={}, invalid_range={}, no_bus={}; max_diffs: bus={}ms, video={}ms",
             self.total_frames,
             self.processed_frames,
             self.total_frames - self.processed_frames,
@@ -59,6 +64,7 @@ impl FrameSkipStats {
             self.skipped_motor_error,
             self.skipped_video_ahead,
             self.skipped_video_large_diff,
+            self.skipped_video_unavailable,
             self.skipped_no_images,
             self.skipped_no_torque,
             self.skipped_invalid_range,
@@ -163,7 +169,18 @@ pub async fn generate_frame(
             station_iface::iface_proto::drivers::QueueDataType::QdtUsbVideoFrames => {
                 // Parse USB video frames
                 if let Ok(rx_envelope) = usbvideo::usbvideo_proto::usbvideo::RxEnvelope::decode(frame_data.as_ref()) {
-                    if let Some(parsed_images) = parse_usb_video_frames(&rx_envelope, inference_rx.monotonic_stamp_ns) {
+                    // Before the VP8 decode, so a frame skipped for its stamp is not decoded.
+                    if !video_stamp_in_sync(&rx_envelope, inference_rx.monotonic_stamp_ns) {
+                        return Ok(());
+                    }
+                    let rx_envelope = match vp8_as_jpeg(normfs, &entry_queue_id, &ptr, rx_envelope).await {
+                        Some(envelope) => envelope,
+                        None => {
+                            FRAME_STATS.lock().unwrap().skipped_video_unavailable += 1;
+                            return Ok(());
+                        }
+                    };
+                    if let Some(parsed_images) = parse_usb_video_frames(&rx_envelope) {
                         images.extend(parsed_images);
                     } else {
                         return Ok(());
@@ -420,32 +437,64 @@ fn parse_joints(
     Some(joints)
 }
 
-fn parse_usb_video_frames(
+/// A VP8 entry as the JPEG entry the rest of this file reads; other entries
+/// pass through. `None` when the frame cannot be decoded exactly.
+async fn vp8_as_jpeg(
+    normfs: &Arc<NormFS>,
+    queue: &normfs::QueueId,
+    ptr: &UintN,
+    mut envelope: usbvideo::usbvideo_proto::usbvideo::RxEnvelope,
+) -> Option<usbvideo::usbvideo_proto::usbvideo::RxEnvelope> {
+    use usbvideo::usbvideo_proto::frame::FrameFormatKind;
+    let pack = envelope.frames.as_mut()?;
+    if pack.format.as_ref().map(|f| f.kind()) != Some(FrameFormatKind::FfVp8) {
+        return Some(envelope);
+    }
+    let id = ptr.to_u64().ok()?;
+    let reader = VIDEO_FRAMES.get_or_init(|| usbvideo::codec::FrameReader::new(normfs.clone()));
+    let frame = match reader.frame_at(queue, id, &envelope).await {
+        Ok(frame) => frame,
+        Err(e) => {
+            log::info!(
+                "Skip: video_frame_unavailable (queue={} id={} {})",
+                queue,
+                id,
+                e
+            );
+            return None;
+        }
+    };
+    let jpeg = usbvideo::convert_rgb_to_jpeg(
+        frame.width as u16,
+        frame.height as u16,
+        Bytes::from(frame.rgb),
+        90,
+    )
+    .map_err(|e| log::warn!("JPEG of a decoded VP8 frame failed: {}", e))
+    .ok()?;
+    let pack = envelope.frames.as_mut()?;
+    pack.format = Some(usbvideo::usbvideo_proto::frame::FrameFormat {
+        width: frame.width,
+        height: frame.height,
+        kind: FrameFormatKind::FfJpeg as i32,
+    });
+    pack.frames_data = vec![jpeg];
+    Some(envelope)
+}
+
+fn video_stamp_in_sync(
     rx_envelope: &usbvideo::usbvideo_proto::usbvideo::RxEnvelope,
     inference_stamp_ns: u64,
-) -> Option<Vec<normvla::Image>> {
-    let frames_pack = rx_envelope.frames.as_ref()?;
-
-    // Check if we have frame data
-    if frames_pack.frames_data.is_empty() {
-        log::debug!("USB video RxEnvelope has no frame data");
-        return None;
-    }
+) -> bool {
+    let Some(frames_pack) = rx_envelope.frames.as_ref() else {
+        return false;
+    };
 
     // Check if we have stamps
-    if frames_pack.stamps.is_empty() {
+    let Some(stamp) = frames_pack.stamps.last() else {
         log::warn!("USB video RxEnvelope has frames but no stamps");
-        return None;
-    }
-
-    // Get the last (latest) frame
-    let frame_data = frames_pack.frames_data.last()?;
-    if frame_data.is_empty() {
-        log::debug!("USB video frame data is empty");
-        return None;
-    }
-
-    let stamp = frames_pack.stamps.last()?;
+        return false;
+    };
     let frame_stamp_ns = stamp.monotonic_stamp_ns;
 
     // Frame timestamp must not be ahead of inference timestamp
@@ -456,7 +505,7 @@ fn parse_usb_video_frames(
             (frame_stamp_ns - inference_stamp_ns) / 1_000_000
         );
         FRAME_STATS.lock().unwrap().skipped_video_ahead += 1;
-        return None;
+        return false;
     }
 
     // Check timestamp synchronization
@@ -478,8 +527,31 @@ fn parse_usb_video_frames(
             frame_stamp_ns, inference_stamp_ns
         );
         FRAME_STATS.lock().unwrap().skipped_video_large_diff += 1;
+        return false;
+    }
+
+    true
+}
+
+fn parse_usb_video_frames(
+    rx_envelope: &usbvideo::usbvideo_proto::usbvideo::RxEnvelope,
+) -> Option<Vec<normvla::Image>> {
+    let frames_pack = rx_envelope.frames.as_ref()?;
+
+    // Check if we have frame data
+    if frames_pack.frames_data.is_empty() {
+        log::debug!("USB video RxEnvelope has no frame data");
         return None;
     }
+
+    // Get the last (latest) frame
+    let frame_data = frames_pack.frames_data.last()?;
+    if frame_data.is_empty() {
+        log::debug!("USB video frame data is empty");
+        return None;
+    }
+
+    let frame_stamp_ns = frames_pack.stamps.last()?.monotonic_stamp_ns;
 
     // Check frame dimensions and resize if needed
     let format = frames_pack.format.as_ref()?;

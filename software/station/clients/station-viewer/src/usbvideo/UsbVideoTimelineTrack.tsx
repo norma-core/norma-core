@@ -2,6 +2,15 @@ import React, { useEffect, useRef } from 'react';
 import webSocketManager from '../api/websocket';
 import Long from 'long';
 import { normfs, usbvideo } from '../api/proto.js';
+import { isVp8 } from './vp8-chain.js';
+import { decodeUsbVideoPicture, decoderRetryAt } from './vp8-frames.js';
+import VideoPictureCanvas from './VideoPictureCanvas';
+
+/**
+ * A JPEG thumbnail by URL, a decoded VP8 frame drawn as is, or null for a VP8
+ * frame that could not be decoded, which keeps its slot so later ones stay in place.
+ */
+type Thumbnail = string | ImageBitmap | null;
 
 export interface FrameRange {
   min: number;
@@ -34,7 +43,7 @@ const UsbVideoTimelineTrack: React.FC<UsbVideoTimelineTrackProps> = ({
 }) => {
   const trackRef = useRef<HTMLDivElement>(null);
   const totalFrames = maxFrame - minFrame + 1;
-  const [imageSrcs, setImageSrcs] = React.useState<string[]>([]);
+  const [imageSrcs, setImageSrcs] = React.useState<Thumbnail[]>([]);
   const [frameHeight, setFrameHeight] = React.useState(0);
   const [isLoading, setIsLoading] = React.useState(false);
 
@@ -46,7 +55,7 @@ const UsbVideoTimelineTrack: React.FC<UsbVideoTimelineTrackProps> = ({
 
   useEffect(() => {
     // Clean up old blob URLs
-    imageSrcs.forEach(url => URL.revokeObjectURL(url));
+    imageSrcs.forEach(releaseThumbnail);
     setImageSrcs([]);
 
     if (!queueFirstId) {
@@ -70,24 +79,80 @@ const UsbVideoTimelineTrack: React.FC<UsbVideoTimelineTrackProps> = ({
         const step = Math.max(1, Math.floor(totalQueueFrames / numFramesToDisplay));
 
         const stream = webSocketManager.normFs.read(queueId, queueFirstId, normfs.OffsetType.OT_ABSOLUTE, numFramesToDisplay, step);
-        const newImageSrcs: string[] = [];
+        const newImageSrcs: Thumbnail[] = [];
+
+        let cancelled = false;
+        // VP8 thumbnails decode asynchronously; the chain keeps them in order.
+        let shown: Promise<void> = Promise.resolve();
+        const failed: Array<{ slot: number; entryId: Uint8Array; raw: usbvideo.RxEnvelope }> = [];
+        let retryTimer: ReturnType<typeof setTimeout> | undefined;
+
+        // Empty slots left while the decoder could not load are decoded once
+        // more when it may load again.
+        const retryFailed = () => {
+          const retryAt = decoderRetryAt();
+          if (failed.length === 0 || retryAt === null) {
+            return;
+          }
+          retryTimer = setTimeout(() => {
+            for (const { slot, entryId, raw } of failed.splice(0)) {
+              shown = shown.then(async () => {
+                if (cancelled) {
+                  return;
+                }
+                const picture = await decodeUsbVideoPicture(webSocketManager.normFs, queueId, entryId, raw);
+                if (!picture) {
+                  return;
+                }
+                if (cancelled) {
+                  picture.close();
+                  return;
+                }
+                newImageSrcs[slot] = picture;
+                setImageSrcs(prev => prev.map((thumbnail, i) => (i === slot ? picture : thumbnail)));
+              });
+            }
+          }, Math.max(0, retryAt - Date.now()));
+        };
 
         const onData = (event: any) => {
           const readResponse = event.detail as normfs.IReadResponse;
-          if (readResponse.data) {
-            const envelope = usbvideo.RxEnvelope.decode(readResponse.data);
-            if (envelope.frames && envelope.frames.framesData && envelope.frames.framesData.length > 0) {
-              const frameData = new Uint8Array(envelope.frames.framesData[0]);
-              const blob = new Blob([frameData], { type: 'image/jpeg' });
-              const url = URL.createObjectURL(blob);
-              newImageSrcs.push(url);
-              setImageSrcs(prev => [...prev, url]);
-            }
+          if (readResponse.data && readResponse.id?.raw) {
+            const entryId = readResponse.id.raw as Uint8Array;
+            const raw = usbvideo.RxEnvelope.decode(readResponse.data);
+            shown = shown.then(async () => {
+              // An unmounted timeline stops decoding, freeing the queue's reader.
+              if (cancelled) {
+                return;
+              }
+              let thumbnail: Thumbnail;
+              if (isVp8(raw)) {
+                thumbnail = await decodeUsbVideoPicture(webSocketManager.normFs, queueId, entryId, raw);
+                if (!thumbnail) {
+                  failed.push({ slot: newImageSrcs.length, entryId, raw });
+                }
+              } else {
+                if (!raw.frames?.framesData?.length) {
+                  return;
+                }
+                const frameData = new Uint8Array(raw.frames.framesData[0]);
+                thumbnail = URL.createObjectURL(new Blob([frameData], { type: 'image/jpeg' }));
+              }
+              newImageSrcs.push(thumbnail);
+              if (cancelled) {
+                releaseThumbnail(thumbnail);
+                return;
+              }
+              setImageSrcs(prev => [...prev, thumbnail]);
+            });
           }
         };
         
         const onEnd = () => {
-            setIsLoading(false);
+            shown.finally(() => {
+              setIsLoading(false);
+              retryFailed();
+            });
             cleanup();
         };
 
@@ -108,8 +173,11 @@ const UsbVideoTimelineTrack: React.FC<UsbVideoTimelineTrackProps> = ({
         stream.addEventListener('error', onError);
 
         return () => {
+            cancelled = true;
+            clearTimeout(retryTimer);
             cleanup();
-            newImageSrcs.forEach(url => URL.revokeObjectURL(url));
+            // Thumbnails still decoding are released when they land.
+            newImageSrcs.forEach(releaseThumbnail);
         };
       }
     }
@@ -129,7 +197,7 @@ const UsbVideoTimelineTrack: React.FC<UsbVideoTimelineTrackProps> = ({
       </div>
       <div className="absolute top-0 h-full flex overflow-hidden pointer-events-none" style={{ left: `${disabledWidth}%`, right: '0' }}>
           {imageSrcs.map((src, index) => (
-              <img key={index} src={src} className="object-cover" style={{ height: `${frameHeight}px`, width: `${frameHeight}px` }} />
+              <ThumbnailImage key={index} thumbnail={src} size={frameHeight} />
           ))}
       </div>
       {disabledWidth > 0 && (
@@ -143,3 +211,24 @@ const UsbVideoTimelineTrack: React.FC<UsbVideoTimelineTrackProps> = ({
 };
 
 export default UsbVideoTimelineTrack;
+
+function ThumbnailImage({ thumbnail, size }: { thumbnail: Thumbnail; size: number }) {
+  const style = { height: `${size}px`, width: `${size}px` };
+  if (thumbnail === null) {
+    return <div className="bg-surface-primary" style={style} title="Frame not available" />;
+  }
+  return typeof thumbnail === 'string'
+    ? <img src={thumbnail} className="object-cover" style={style} />
+    : <VideoPictureCanvas picture={thumbnail} className="object-cover" style={style} />;
+}
+
+function releaseThumbnail(thumbnail: Thumbnail): void {
+  if (thumbnail === null) {
+    return;
+  }
+  if (typeof thumbnail === 'string') {
+    URL.revokeObjectURL(thumbnail);
+  } else {
+    thumbnail.close();
+  }
+}

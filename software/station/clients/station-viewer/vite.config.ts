@@ -90,7 +90,7 @@ export default defineConfig({
       algorithm: 'gzip',
       ext: '.gz',
       threshold: 1024,
-      filter: /\.(js|mjs|json|css|html|urdf|stl)$/i,
+      filter: /\.(js|mjs|json|css|html|urdf|stl|wasm)$/i,
     }),
     react(),
     tailwindcss(),
