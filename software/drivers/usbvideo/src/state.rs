@@ -44,6 +44,10 @@ struct CameraEncoder {
     encoder: Box<dyn VideoEncoder>,
     format_revision: u64,
     policy: KeyframePolicy,
+    // The ET_CAPTURE_SESSION entry this session's frames name, and its file.
+    session: Option<(u64, normfs::FileRoom)>,
+    // The file the chain's keyframe is in, which its deltas have to join.
+    chain_file: Option<normfs::FileRoom>,
 }
 
 #[derive(Default)]
@@ -274,6 +278,7 @@ impl<T: StationEngine> StateTracker<T> {
             last_inference_queue_ptr: self.get_last_inference_id_bytes(),
             error: String::new(),
             command: None,
+            session_ptr: Bytes::new(),
         };
 
         let mut buf = BytesMut::new();
@@ -333,6 +338,8 @@ impl<T: StationEngine> StateTracker<T> {
                     encoder: Box::new(encoder),
                     format_revision,
                     policy: KeyframePolicy::default(),
+                    session: None,
+                    chain_file: None,
                 }),
                 Err(e) => {
                     error!("VP8 encoder for camera {}: {}", camera.unique_id, e);
@@ -346,51 +353,109 @@ impl<T: StationEngine> StateTracker<T> {
 
         let now_ns = stamp.monotonic_stamp_ns;
         let mut force = cam.policy.wants_keyframe(now_ns);
+        let mut packet = None;
+        let mut record_tried = false;
+        let mut tries = 0;
         // Runs on the capture thread; must not block.
         let (keyframe, appended) = loop {
-            let packet = match cam.encoder.encode(&rgb, force) {
-                Ok(p) if p.keyframe || cam.policy.keyframe().is_some() => p,
-                Ok(_) => {
-                    error!(
-                        "VP8 encoder for camera {} ignored a forced keyframe",
-                        camera.unique_id
-                    );
-                    *state = None;
-                    return;
-                }
-                Err(e) => {
-                    error!("VP8 encode for camera {}: {}", camera.unique_id, e);
-                    *state = None;
-                    return;
-                }
+            tries += 1;
+            if tries > 6 {
+                break (false, Err(normfs::Error::NotInFile));
+            }
+            let (keyframe, frame) = match packet.take() {
+                Some(encoded) => encoded,
+                None => match cam.encoder.encode(&rgb, force) {
+                    Ok(p) if p.keyframe || (!force && cam.policy.keyframe().is_some()) => {
+                        (p.keyframe, Bytes::from(p.data))
+                    }
+                    Ok(_) => {
+                        error!(
+                            "VP8 encoder for camera {} ignored a forced keyframe",
+                            camera.unique_id
+                        );
+                        *state = None;
+                        return;
+                    }
+                    Err(e) => {
+                        error!("VP8 encode for camera {}: {}", camera.unique_id, e);
+                        *state = None;
+                        return;
+                    }
+                },
             };
-            let keyframe = packet.keyframe;
+            let room = match self.normfs.file_room(queue_id) {
+                Ok(room) => room,
+                Err(e) => break (keyframe, Err(e)),
+            };
+            // A delta goes only into the file its keyframe is in; otherwise
+            // it is encoded again as a keyframe.
+            if !keyframe && !cam.chain_file.is_some_and(|f| f.same_file(&room)) {
+                force = true;
+                continue;
+            }
+            let session = cam
+                .session
+                .filter(|(_, at)| at.same_file(&room))
+                .map(|(id, _)| id);
+            if session.is_none() && !record_tried {
+                // The session record goes into the frame's file just ahead of
+                // it, so a file reads on its own and the record is the queue's
+                // last entry only for as long as the append takes.
+                record_tried = true;
+                let record = self.session_envelope(camera, &stamp);
+                let written = if room.room().is_none() {
+                    Some(self.normfs.try_enqueue(queue_id, record))
+                } else if !room.starts_file(record.len() + frame.len() + FRAME_OVERHEAD) {
+                    Some(self.normfs.try_enqueue_in(queue_id, &room, record))
+                } else {
+                    None
+                };
+                if let Some(written) = written {
+                    // The record is in the file `room` names: one it opened
+                    // keeps that mark, and other writers on the queue may
+                    // have moved on by the time of a second look.
+                    if let Ok(id) = written {
+                        cam.session = id.to_u64().ok().map(|id| (id, room));
+                    }
+                    packet = Some((keyframe, frame));
+                    continue;
+                }
+            }
+            // Without a record in its file, a frame carries the formats itself.
             let data = self.vp8_envelope(
                 camera,
                 &stamp,
                 width,
                 height,
-                Bytes::from(packet.data),
+                frame.clone(),
                 cam.policy.keyframe().filter(|_| !keyframe),
+                session,
             );
-            if keyframe || force {
-                break (keyframe, self.normfs.try_enqueue(queue_id, data));
-            }
-            // A delta goes only into the file its keyframe is in, checked and
-            // appended in one step so a flush cannot seal the file between
-            // them. One that would open a file is encoded again as a keyframe,
-            // so every file decodes on its own.
-            let room = match self.normfs.file_room(queue_id) {
-                Ok(room) if room.starts_file(data.len()) => {
-                    force = true;
-                    continue;
+            if room.starts_file(data.len()) {
+                if keyframe {
+                    let data = self.vp8_envelope(camera, &stamp, width, height, frame, None, None);
+                    // Which file it opened cannot be told for sure, so the
+                    // next frame starts a chain again rather than guess.
+                    cam.chain_file = None;
+                    break (keyframe, self.normfs.try_enqueue(queue_id, data));
                 }
-                Ok(room) => room,
-                Err(e) => break (keyframe, Err(e)),
-            };
+                force = true;
+                continue;
+            }
+            // Checked and appended in one step, so a flush cannot seal the
+            // file between the look and the write.
             match self.normfs.try_enqueue_in(queue_id, &room, data) {
+                Err(normfs::Error::NotInFile) if keyframe => {
+                    record_tried = false;
+                    packet = Some((keyframe, frame));
+                }
                 Err(normfs::Error::NotInFile) => force = true,
-                appended => break (keyframe, appended),
+                appended => {
+                    if keyframe && appended.is_ok() {
+                        cam.chain_file = Some(room);
+                    }
+                    break (keyframe, appended);
+                }
             }
         };
 
@@ -406,6 +471,21 @@ impl<T: StationEngine> StateTracker<T> {
         }
     }
 
+    fn session_envelope(&self, camera: &Camera, stamp: &FrameStamp) -> Bytes {
+        let envelope = RxEnvelope {
+            r#type: RxEnvelopeType::EtCaptureSession as i32,
+            camera: Some(camera.clone()),
+            formats: self.camera_formats(&camera.unique_id),
+            stamp: Some(stamp.clone()),
+            last_inference_queue_ptr: self.get_last_inference_id_bytes(),
+            ..Default::default()
+        };
+        let mut buf = BytesMut::new();
+        envelope.encode(&mut buf).unwrap();
+        buf.freeze()
+    }
+
+    #[allow(clippy::too_many_arguments)]
     fn vp8_envelope(
         &self,
         camera: &Camera,
@@ -414,6 +494,7 @@ impl<T: StationEngine> StateTracker<T> {
         height: u32,
         frame: Bytes,
         chain: Option<u64>,
+        session: Option<u64>,
     ) -> Bytes {
         // A delta names its chain's keyframe; a keyframe names none.
         let keyframe = chain.is_none();
@@ -436,16 +517,24 @@ impl<T: StationEngine> StateTracker<T> {
                 keyframe_ptr,
             }),
             stamp: Some(stamp.clone()),
-            formats: self.camera_formats(&camera.unique_id),
             last_inference_queue_ptr: self.get_last_inference_id_bytes(),
-            error: String::new(),
-            command: None,
+            formats: match session {
+                Some(_) => Vec::new(),
+                None => self.camera_formats(&camera.unique_id),
+            },
+            session_ptr: session
+                .map(|id| normfs::UintN::from(id).value_to_bytes())
+                .unwrap_or_default(),
+            ..Default::default()
         };
         let mut buf = BytesMut::new();
         envelope.encode(&mut buf).unwrap();
         buf.freeze()
     }
 }
+
+/// What an envelope adds to a frame's bytes, generously.
+const FRAME_OVERHEAD: usize = 256;
 
 /// VP8 halves chroma both ways, so an odd edge loses its last row or column.
 fn even_crop(width: u32, height: u32, rgb: &Bytes) -> (u32, u32, Bytes) {
@@ -731,6 +820,51 @@ mod tests {
             keyframes.windows(2).all(|k| k[1] - k[0] <= 33),
             "{keyframes:?}"
         );
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn frames_name_a_session_record_instead_of_carrying_the_formats() {
+        let dir = test_dir("session-record");
+        let (normfs, tracker, queue) = vp8_tracker_in(dir, store_settings()).await;
+        tracker.set_camera_formats(
+            "cam".into(),
+            vec![CameraFormat {
+                width: W,
+                height: H,
+                ..Default::default()
+            }],
+        );
+        let revision = tracker.format_revision("cam");
+        for t in 0..120 {
+            feed(&tracker, &queue, t, revision);
+        }
+        let entries: HashMap<u64, RxEnvelope> =
+            read_all(&normfs, &queue).await.into_iter().collect();
+        let mut sessions = std::collections::HashSet::new();
+        for (id, envelope) in entries.iter().filter(|(_, e)| is_vp8(e)) {
+            assert_eq!(envelope.camera.as_ref().unwrap().unique_id, "cam");
+            if envelope.session_ptr.is_empty() {
+                assert_eq!(envelope.formats.len(), 1, "entry {id} carries no formats");
+                continue;
+            }
+            assert!(envelope.formats.is_empty());
+            let session =
+                UintN::read_value_from_slice(&envelope.session_ptr, envelope.session_ptr.len())
+                    .unwrap()
+                    .to_u64()
+                    .unwrap();
+            assert!(session < *id, "entry {id} names {session}");
+            let record = &entries[&session];
+            assert_eq!(record.r#type(), RxEnvelopeType::EtCaptureSession);
+            assert_eq!(record.camera.as_ref().unwrap().unique_id, "cam");
+            assert_eq!(record.formats.len(), 1);
+            sessions.insert(session);
+        }
+        assert!(
+            sessions.len() > 1,
+            "written once per file, not once per session"
+        );
+        normfs.close().await.unwrap();
     }
 
     #[tokio::test(flavor = "multi_thread")]

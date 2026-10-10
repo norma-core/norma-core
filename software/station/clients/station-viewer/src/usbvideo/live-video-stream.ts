@@ -7,6 +7,7 @@ import {
 } from './live-camera-store.js';
 import { type ChainDecoder, type DecoderApi, idFromBytes, idToBytes, isVp8, keyframeOf } from './vp8-chain.js';
 import { decoderApi } from './vp8-frames.js';
+import { rememberCaptureSession, withCaptureSession } from './capture-session.js';
 
 /** Behind this, a caught-up stream starts over from the latest keyframe. */
 const MAX_LAG_NS = 4_000_000_000;
@@ -220,9 +221,11 @@ class LiveVideoStream {
     const now = Date.now();
     this.lastEntryAt = now;
     if (envelope.type !== usbvideo.RxEnvelopeType.ET_FRAMES) {
+      rememberCaptureSession(this.queueId, id, envelope);
       this.last = id;
       return;
     }
+    envelope = withCaptureSession(this.queueId, envelope);
     if (isVp8(envelope)) {
       if (!this.api || !this.decode(id, envelope)) {
         this.restart();

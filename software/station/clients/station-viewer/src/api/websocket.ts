@@ -7,6 +7,7 @@ import { normfs, inference } from "@/api/proto.js";
 import { timeSyncManager } from "@/api/time-sync.js";
 import { WS_EVENTS } from "@/api/websocket-events.js";
 import { createLiveCameraMetadataEnvelope, shouldLoadLiveCameraFrame } from "@/usbvideo/live-camera-store.js";
+import { resolveCaptureSession } from "@/usbvideo/capture-session.js";
 import { getLiveVideoEnvelope, isLiveVideoFollowing, syncLiveVideoStreams } from "@/usbvideo/live-video-stream.js";
 
 export const ErrConnectionNotOpen = new Error("WebSocket: Connection not open.");
@@ -142,11 +143,17 @@ class WebSocketManager extends EventTarget {
         }
 
         // A followed camera's frames are not read here, so its metadata comes from its stream.
-        for (const video of frame.videoQueues ?? []) {
+        // A stream resumed past its session record has not seen it, so that is read here.
+        await Promise.all((frame.videoQueues ?? []).map(async (video) => {
           const envelope = getLiveVideoEnvelope(video.queueId);
           if (envelope) {
-            video.data = createLiveCameraMetadataEnvelope(envelope);
+            video.data = createLiveCameraMetadataEnvelope(
+              await resolveCaptureSession(this.normFs, video.queueId, envelope),
+            );
           }
+        }));
+        if (!this.isLiveMode() || acquisitionGeneration !== this.acquisitionGeneration) {
+          return;
         }
 
         // Update and dispatch

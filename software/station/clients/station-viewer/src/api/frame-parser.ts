@@ -4,6 +4,7 @@ import { ErrEntryNotFound, NormFsClient, type StreamEntry } from "./normfs.js";
 import { getGlobalTimeAdjustmentNs, isTimeSyncActive } from '@/api/time-sync.js';
 import { decodeUsbVideoPicture } from '@/usbvideo/vp8-frames.js';
 import { isVp8 } from '@/usbvideo/vp8-chain.js';
+import { resolveCaptureSession } from '@/usbvideo/capture-session.js';
 import {
   createLiveCameraMetadataEnvelope,
   publishLiveCameraFrame,
@@ -408,7 +409,7 @@ export async function parseFrame(
               break;
             case drivers.QueueDataType.QDT_USB_VIDEO_FRAMES:
               try {
-                decoded = usbvideo.RxEnvelope.decode(streamEntry.data);
+                decoded = await resolveCaptureSession(normFs, entry.queue!, usbvideo.RxEnvelope.decode(streamEntry.data));
               } catch (error) {
                 console.error("Failed to decode usbvideo.RxEnvelope:", error);
               }

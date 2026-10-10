@@ -5050,7 +5050,8 @@ export namespace usbvideo {
         ET_COMMAND = 7,
         ET_COMMAND_SUCCESS = 8,
         ET_COMMAND_REJECTED = 9,
-        ET_COMMAND_FAILED = 10
+        ET_COMMAND_FAILED = 10,
+        ET_CAPTURE_SESSION = 11
     }
 
     /** Properties of a RxEnvelope. */
@@ -5073,6 +5074,9 @@ export namespace usbvideo {
 
         /** RxEnvelope lastInferenceQueuePtr */
         lastInferenceQueuePtr?: (Uint8Array|null);
+
+        /** RxEnvelope sessionPtr */
+        sessionPtr?: (Uint8Array|null);
 
         /** RxEnvelope frames */
         frames?: (frame.IFramesPack|null);
@@ -5107,6 +5111,9 @@ export namespace usbvideo {
 
         /** RxEnvelope lastInferenceQueuePtr. */
         public lastInferenceQueuePtr: Uint8Array;
+
+        /** RxEnvelope sessionPtr. */
+        public sessionPtr: Uint8Array;
 
         /** RxEnvelope frames. */
         public frames?: (frame.IFramesPack|null);
