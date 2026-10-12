@@ -54852,6 +54852,20 @@ export const normfs = $root.normfs = (() => {
         return WriteResponse;
     })();
 
+    /**
+     * Encoding enum.
+     * @name normfs.Encoding
+     * @enum {number}
+     * @property {number} ENC_NONE=0 ENC_NONE value
+     * @property {number} ENC_ZSTD=1 ENC_ZSTD value
+     */
+    normfs.Encoding = (function() {
+        const valuesById = {}, values = Object.create(valuesById);
+        values[valuesById[0] = "ENC_NONE"] = 0;
+        values[valuesById[1] = "ENC_ZSTD"] = 1;
+        return values;
+    })();
+
     normfs.ReadRequest = (function() {
 
         /**
@@ -54861,6 +54875,7 @@ export const normfs = $root.normfs = (() => {
          * @property {Long|null} [readId] ReadRequest readId
          * @property {string|null} [queueId] ReadRequest queueId
          * @property {Long|null} [step] ReadRequest step
+         * @property {Array.<normfs.Encoding>|null} [acceptEncodings] ReadRequest acceptEncodings
          * @property {normfs.IOffset|null} [offset] ReadRequest offset
          * @property {Long|null} [limit] ReadRequest limit
          */
@@ -54874,6 +54889,7 @@ export const normfs = $root.normfs = (() => {
          * @param {normfs.IReadRequest=} [properties] Properties to set
          */
         function ReadRequest(properties) {
+            this.acceptEncodings = [];
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
                     if (properties[keys[i]] != null && keys[i] !== "__proto__")
@@ -54903,6 +54919,14 @@ export const normfs = $root.normfs = (() => {
          * @instance
          */
         ReadRequest.prototype.step = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+
+        /**
+         * ReadRequest acceptEncodings.
+         * @member {Array.<normfs.Encoding>} acceptEncodings
+         * @memberof normfs.ReadRequest
+         * @instance
+         */
+        ReadRequest.prototype.acceptEncodings = $util.emptyArray;
 
         /**
          * ReadRequest offset.
@@ -54950,6 +54974,12 @@ export const normfs = $root.normfs = (() => {
                 writer.uint32(/* id 2, wireType 2 =*/18).string(message.queueId);
             if (message.step != null && Object.hasOwnProperty.call(message, "step"))
                 writer.uint32(/* id 3, wireType 0 =*/24).uint64(message.step);
+            if (message.acceptEncodings != null && message.acceptEncodings.length) {
+                writer.uint32(/* id 4, wireType 2 =*/34).fork();
+                for (let i = 0; i < message.acceptEncodings.length; ++i)
+                    writer.int32(message.acceptEncodings[i]);
+                writer.ldelim();
+            }
             if (message.offset != null && Object.hasOwnProperty.call(message, "offset"))
                 $root.normfs.Offset.encode(message.offset, writer.uint32(/* id 10, wireType 2 =*/82).fork()).ldelim();
             if (message.limit != null && Object.hasOwnProperty.call(message, "limit"))
@@ -55004,6 +55034,17 @@ export const normfs = $root.normfs = (() => {
                     }
                 case 3: {
                         message.step = reader.uint64();
+                        break;
+                    }
+                case 4: {
+                        if (!(message.acceptEncodings && message.acceptEncodings.length))
+                            message.acceptEncodings = [];
+                        if ((tag & 7) === 2) {
+                            let end2 = reader.uint32() + reader.pos;
+                            while (reader.pos < end2)
+                                message.acceptEncodings.push(reader.int32());
+                        } else
+                            message.acceptEncodings.push(reader.int32());
                         break;
                     }
                 case 10: {
@@ -55062,6 +55103,18 @@ export const normfs = $root.normfs = (() => {
             if (message.step != null && message.hasOwnProperty("step"))
                 if (!$util.isInteger(message.step) && !(message.step && $util.isInteger(message.step.low) && $util.isInteger(message.step.high)))
                     return "step: integer|Long expected";
+            if (message.acceptEncodings != null && message.hasOwnProperty("acceptEncodings")) {
+                if (!Array.isArray(message.acceptEncodings))
+                    return "acceptEncodings: array expected";
+                for (let i = 0; i < message.acceptEncodings.length; ++i)
+                    switch (message.acceptEncodings[i]) {
+                    default:
+                        return "acceptEncodings: enum value[] expected";
+                    case 0:
+                    case 1:
+                        break;
+                    }
+            }
             if (message.offset != null && message.hasOwnProperty("offset")) {
                 let error = $root.normfs.Offset.verify(message.offset, long + 1);
                 if (error)
@@ -55109,6 +55162,27 @@ export const normfs = $root.normfs = (() => {
                     message.step = object.step;
                 else if (typeof object.step === "object")
                     message.step = new $util.LongBits(object.step.low >>> 0, object.step.high >>> 0).toNumber(true);
+            if (object.acceptEncodings) {
+                if (!Array.isArray(object.acceptEncodings))
+                    throw TypeError(".normfs.ReadRequest.acceptEncodings: array expected");
+                message.acceptEncodings = [];
+                for (let i = 0; i < object.acceptEncodings.length; ++i)
+                    switch (object.acceptEncodings[i]) {
+                    default:
+                        if (typeof object.acceptEncodings[i] === "number") {
+                            message.acceptEncodings[i] = object.acceptEncodings[i];
+                            break;
+                        }
+                    case "ENC_NONE":
+                    case 0:
+                        message.acceptEncodings[i] = 0;
+                        break;
+                    case "ENC_ZSTD":
+                    case 1:
+                        message.acceptEncodings[i] = 1;
+                        break;
+                    }
+            }
             if (object.offset != null) {
                 if (typeof object.offset !== "object")
                     throw TypeError(".normfs.ReadRequest.offset: object expected");
@@ -55139,6 +55213,8 @@ export const normfs = $root.normfs = (() => {
             if (!options)
                 options = {};
             let object = {};
+            if (options.arrays || options.defaults)
+                object.acceptEncodings = [];
             if (options.defaults) {
                 if ($util.Long) {
                     let long = new $util.Long(0, 0, true);
@@ -55170,6 +55246,11 @@ export const normfs = $root.normfs = (() => {
                     object.step = options.longs === String ? String(message.step) : message.step;
                 else
                     object.step = options.longs === String ? $util.Long.prototype.toString.call(message.step) : options.longs === Number ? new $util.LongBits(message.step.low >>> 0, message.step.high >>> 0).toNumber(true) : message.step;
+            if (message.acceptEncodings && message.acceptEncodings.length) {
+                object.acceptEncodings = [];
+                for (let j = 0; j < message.acceptEncodings.length; ++j)
+                    object.acceptEncodings[j] = options.enums === String ? $root.normfs.Encoding[message.acceptEncodings[j]] === undefined ? message.acceptEncodings[j] : $root.normfs.Encoding[message.acceptEncodings[j]] : message.acceptEncodings[j];
+            }
             if (message.offset != null && message.hasOwnProperty("offset"))
                 object.offset = $root.normfs.Offset.toObject(message.offset, options);
             if (message.limit != null && message.hasOwnProperty("limit"))
@@ -55220,6 +55301,7 @@ export const normfs = $root.normfs = (() => {
          * @property {normfs.IId|null} [id] ReadResponse id
          * @property {Uint8Array|null} [data] ReadResponse data
          * @property {normfs.ReadResponse.DataSource|null} [dataSource] ReadResponse dataSource
+         * @property {normfs.Encoding|null} [encoding] ReadResponse encoding
          */
 
         /**
@@ -55278,6 +55360,14 @@ export const normfs = $root.normfs = (() => {
         ReadResponse.prototype.dataSource = 0;
 
         /**
+         * ReadResponse encoding.
+         * @member {normfs.Encoding} encoding
+         * @memberof normfs.ReadResponse
+         * @instance
+         */
+        ReadResponse.prototype.encoding = 0;
+
+        /**
          * Creates a new ReadResponse instance using the specified properties.
          * @function create
          * @memberof normfs.ReadResponse
@@ -55311,6 +55401,8 @@ export const normfs = $root.normfs = (() => {
                 writer.uint32(/* id 11, wireType 2 =*/90).bytes(message.data);
             if (message.dataSource != null && Object.hasOwnProperty.call(message, "dataSource"))
                 writer.uint32(/* id 12, wireType 0 =*/96).int32(message.dataSource);
+            if (message.encoding != null && Object.hasOwnProperty.call(message, "encoding"))
+                writer.uint32(/* id 13, wireType 0 =*/104).int32(message.encoding);
             return writer;
         };
 
@@ -55369,6 +55461,10 @@ export const normfs = $root.normfs = (() => {
                     }
                 case 12: {
                         message.dataSource = reader.int32();
+                        break;
+                    }
+                case 13: {
+                        message.encoding = reader.int32();
                         break;
                     }
                 default:
@@ -55442,6 +55538,14 @@ export const normfs = $root.normfs = (() => {
                 case 2:
                 case 3:
                 case 4:
+                    break;
+                }
+            if (message.encoding != null && message.hasOwnProperty("encoding"))
+                switch (message.encoding) {
+                default:
+                    return "encoding: enum value expected";
+                case 0:
+                case 1:
                     break;
                 }
             return null;
@@ -55542,6 +55646,22 @@ export const normfs = $root.normfs = (() => {
                 message.dataSource = 4;
                 break;
             }
+            switch (object.encoding) {
+            default:
+                if (typeof object.encoding === "number") {
+                    message.encoding = object.encoding;
+                    break;
+                }
+                break;
+            case "ENC_NONE":
+            case 0:
+                message.encoding = 0;
+                break;
+            case "ENC_ZSTD":
+            case 1:
+                message.encoding = 1;
+                break;
+            }
             return message;
         };
 
@@ -55574,6 +55694,7 @@ export const normfs = $root.normfs = (() => {
                         object.data = $util.newBuffer(object.data);
                 }
                 object.dataSource = options.enums === String ? "DS_NONE" : 0;
+                object.encoding = options.enums === String ? "ENC_NONE" : 0;
             }
             if (message.readId != null && message.hasOwnProperty("readId"))
                 if (typeof message.readId === "number")
@@ -55588,6 +55709,8 @@ export const normfs = $root.normfs = (() => {
                 object.data = options.bytes === String ? $util.base64.encode(message.data, 0, message.data.length) : options.bytes === Array ? Array.prototype.slice.call(message.data) : message.data;
             if (message.dataSource != null && message.hasOwnProperty("dataSource"))
                 object.dataSource = options.enums === String ? $root.normfs.ReadResponse.DataSource[message.dataSource] === undefined ? message.dataSource : $root.normfs.ReadResponse.DataSource[message.dataSource] : message.dataSource;
+            if (message.encoding != null && message.hasOwnProperty("encoding"))
+                object.encoding = options.enums === String ? $root.normfs.Encoding[message.encoding] === undefined ? message.encoding : $root.normfs.Encoding[message.encoding] : message.encoding;
             return object;
         };
 

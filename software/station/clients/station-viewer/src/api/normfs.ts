@@ -16,6 +16,7 @@
 
 import { normfs } from "./proto.js";
 import webSocketManager from "./websocket.js";
+import { ACCEPT_ENCODINGS, decodeEntryData } from "./wire-encoding.js";
 import Long from "long";
 
 function longToNumber(val: number | Long | null | undefined): number {
@@ -138,10 +139,22 @@ export class NormFsClient extends EventTarget {
                         stream.emitter.dispatchEvent(new CustomEvent('error', { detail: ErrServerSide }));
                         this.pendingReads.delete(readId);
                         break;
-                    default:
+                    default: {
                         // This is a data packet
+                        let data: Uint8Array;
+                        try {
+                            data = decodeEntryData(response.read);
+                        } catch (e) {
+                            clearTimeout(stream.timeout);
+                            stream.emitter.dispatchEvent(new CustomEvent('error', { detail: e }));
+                            this.pendingReads.delete(readId);
+                            break;
+                        }
+                        response.read.data = data;
+                        response.read.encoding = normfs.Encoding.ENC_NONE;
                         stream.emitter.dispatchEvent(new CustomEvent('data', { detail: response.read }));
                         break;
+                    }
                 }
             }
         }
@@ -237,6 +250,7 @@ export class NormFsClient extends EventTarget {
                 offset: { id: { raw: offset }, type: offsetType },
                 limit: Long.fromNumber(limit),
                 step: Long.fromNumber(step),
+                acceptEncodings: ACCEPT_ENCODINGS,
             },
         };
 

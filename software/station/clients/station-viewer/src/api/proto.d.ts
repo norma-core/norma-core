@@ -18930,6 +18930,12 @@ export namespace normfs {
         }
     }
 
+    /** Encoding enum. */
+    enum Encoding {
+        ENC_NONE = 0,
+        ENC_ZSTD = 1
+    }
+
     /** Properties of a ReadRequest. */
     interface IReadRequest {
 
@@ -18941,6 +18947,9 @@ export namespace normfs {
 
         /** ReadRequest step */
         step?: (Long|null);
+
+        /** ReadRequest acceptEncodings */
+        acceptEncodings?: (normfs.Encoding[]|null);
 
         /** ReadRequest offset */
         offset?: (normfs.IOffset|null);
@@ -18966,6 +18975,9 @@ export namespace normfs {
 
         /** ReadRequest step. */
         public step: Long;
+
+        /** ReadRequest acceptEncodings. */
+        public acceptEncodings: normfs.Encoding[];
 
         /** ReadRequest offset. */
         public offset?: (normfs.IOffset|null);
@@ -19068,6 +19080,9 @@ export namespace normfs {
 
         /** ReadResponse dataSource */
         dataSource?: (normfs.ReadResponse.DataSource|null);
+
+        /** ReadResponse encoding */
+        encoding?: (normfs.Encoding|null);
     }
 
     /** Represents a ReadResponse. */
@@ -19093,6 +19108,9 @@ export namespace normfs {
 
         /** ReadResponse dataSource. */
         public dataSource: normfs.ReadResponse.DataSource;
+
+        /** ReadResponse encoding. */
+        public encoding: normfs.Encoding;
 
         /**
          * Creates a new ReadResponse instance using the specified properties.

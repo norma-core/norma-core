@@ -14,6 +14,10 @@ class OffsetType(enum.IntEnum):
     OT_ABSOLUTE = 0
     OT_SHIFT_FROM_TAIL = 1
 
+class Encoding(enum.IntEnum):
+    ENC_NONE = 0
+    ENC_ZSTD = 1
+
 class WriteResponse_Result(enum.IntEnum):
     WR_DONE = 0
     WR_SERVER_ERROR = 1
@@ -841,6 +845,7 @@ class ReadRequest:
     read_id: int = 0
     queue_id: typing.Optional[bytes] = None
     step: int = 0
+    accept_encodings: list[Encoding] | None = None
     offset: typing.Optional[Offset] = None
     limit: int = 0
 
@@ -854,6 +859,15 @@ class ReadRequest:
             res += 1 + bytes_len_size + bytes_len
         if self.step != 0:
             res += 1 + gremlin.sizes.size_varint(self.step)
+        if self.accept_encodings:
+            arr = self.accept_encodings
+            if len(arr) == 1:
+                res += 1 + (((arr[0].value | 1).bit_length() + 6) // 7)
+            elif len(arr) > 1:
+                packed_size = 0
+                for v in arr:
+                    packed_size += ((v.value | 1).bit_length() + 6) // 7
+                res += 1 + (((packed_size | 1).bit_length() + 6) // 7) + packed_size
         if self.offset is not None:
             size = self.offset.calc_protobuf_size()
             if size > 0:
@@ -878,6 +892,17 @@ class ReadRequest:
             target.append_bytes(b'\x12', self.queue_id.encode('utf-8'))
         if self.step != 0:
             target.append_uint64(b'\x18', self.step)
+        if self.accept_encodings:
+            arr = self.accept_encodings
+            if len(arr) == 1:
+                target.append_int32(b' ', arr[0].value)
+            elif len(arr) > 1:
+                packed_size = 0
+                for v in arr:
+                    packed_size += gremlin.sizes.size_i32(v.value)
+                target.append_bytes_size_with_tag(b'"', packed_size)
+                for v in arr:
+                    target.append_int32_without_tag(v.value)
         if self.offset is not None:
             size = self.offset.calc_protobuf_size()
             if size > 0:
@@ -892,6 +917,8 @@ class ReadRequestReader:
         self._read_id: int = 0
         self._queue_id: typing.Optional[str] = None
         self._step: int = 0
+        self._accept_encodings_offsets: list[int] | None = None
+        self._accept_encodings_wires: list[gremlin.ProtoWireType] | None = None
         self._offset_buf: typing.Optional[memoryview] = None
         self._limit: int = 0
 
@@ -915,6 +942,18 @@ class ReadRequestReader:
                     result = self._buf.read_uint64(offset)
                     offset += result.size
                     self._step = result.value
+                case 4:
+                    if self._accept_encodings_offsets is None:
+                        self._accept_encodings_offsets = []
+                        self._accept_encodings_wires = []
+                    self._accept_encodings_offsets.append(offset)
+                    self._accept_encodings_wires.append(tag.wire)
+                    if tag.wire == gremlin.ProtoWireType.BYTES:
+                        length_result = self._buf.read_varint(offset)
+                        offset += length_result.size + length_result.value
+                    else:
+                        result = self._buf.read_int32(offset)
+                        offset += result.size
                 case 10:
                     result = self._buf.read_bytes_view(offset)
                     offset += result.size
@@ -935,6 +974,24 @@ class ReadRequestReader:
     def get_step(self) -> int:
         return self._step
 
+    def get_accept_encodings(self) -> list[Encoding]:
+        if self._accept_encodings_offsets:
+            result = []
+            for start_offset, wire_type in zip(self._accept_encodings_offsets, self._accept_encodings_wires):
+                if wire_type == gremlin.ProtoWireType.BYTES:
+                    length_result = self._buf.read_varint(start_offset)
+                    offset = start_offset + length_result.size
+                    end_offset = offset + length_result.value
+                    while offset < end_offset:
+                        value_result = self._buf.read_int32(offset)
+                        result.append(Encoding(value_result.value))
+                        offset += value_result.size
+                else:
+                    value_result = self._buf.read_int32(start_offset)
+                    result.append(Encoding(value_result.value))
+            return result
+        return []
+
     def get_offset(self) -> OffsetReader:
         if self._offset_buf is not None:
             return OffsetReader(self._offset_buf)
@@ -952,6 +1009,7 @@ class ReadResponse:
     id: typing.Optional[Id] = None
     data: typing.Optional[bytes] = None
     data_source: ReadResponse_DataSource = ReadResponse_DataSource(0)
+    encoding: Encoding = Encoding(0)
 
     def calc_protobuf_size(self) -> int:
         res = 0
@@ -969,6 +1027,8 @@ class ReadResponse:
             res += 1 + bytes_len_size + bytes_len
         if self.data_source != ReadResponse_DataSource(0):
             res += 1 + (((self.data_source.value | 1).bit_length() + 6) // 7)
+        if self.encoding != Encoding(0):
+            res += 1 + (((self.encoding.value | 1).bit_length() + 6) // 7)
         return res
 
     def encode(self) -> bytes:
@@ -994,6 +1054,8 @@ class ReadResponse:
             target.append_bytes(b'Z', self.data)
         if self.data_source != ReadResponse_DataSource(0):
             target.append_int32(b'`', self.data_source.value)
+        if self.encoding != Encoding(0):
+            target.append_int32(b'h', self.encoding.value)
 
 
 class ReadResponseReader:
@@ -1003,6 +1065,7 @@ class ReadResponseReader:
         self._id_buf: typing.Optional[memoryview] = None
         self._data: typing.Optional[memoryview] = None
         self._data_source: ReadResponse_DataSource = ReadResponse_DataSource(0)
+        self._encoding: Encoding = Encoding(0)
 
         if not src:
             return
@@ -1032,6 +1095,10 @@ class ReadResponseReader:
                     result = self._buf.read_int32(offset)
                     offset += result.size
                     self._data_source = ReadResponse_DataSource(result.value)
+                case 13:
+                    result = self._buf.read_int32(offset)
+                    offset += result.size
+                    self._encoding = Encoding(result.value)
                 case _:
                     offset = self._buf.skip_data(offset, tag.wire)
 
@@ -1051,5 +1118,8 @@ class ReadResponseReader:
 
     def get_data_source(self) -> ReadResponse_DataSource:
         return self._data_source
+
+    def get_encoding(self) -> Encoding:
+        return self._encoding
 
 
