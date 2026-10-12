@@ -320,7 +320,7 @@ fn queue_settings(
         ),
         // Wide records.
         ("*video/*", Active, Raw, false, true),
-        ("*/hikmicro-thermal/*", Active, Zstd, false, true),
+        ("*/hikmicro-thermal/*", Active, Raw, false, true),
         ("*dmesg/*", Active, Zstd, false, false),
         ("*/inference-states", Active, Zstd, false, false),
         ("*/inference/*", Active, Raw, false, false),
