@@ -6,7 +6,7 @@ mod vp8;
 mod yuv;
 
 pub use chain::{ChainError, FrameReader, decode_chain, keyframe_of};
-pub use keyframes::{KEYFRAME_INTERVAL_NS, KeyframePolicy};
+pub use keyframes::{KEYFRAME_INTERVAL, KEYFRAME_INTERVAL_MAX, KeyframePolicy};
 pub use vp8::{Vp8Decoder, Vp8Encoder};
 pub use yuv::{i420_to_rgb, rgb_to_i420};
 

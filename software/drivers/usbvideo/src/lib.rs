@@ -209,6 +209,9 @@ pub struct USBVideoConfig {
 
     /// How kept frames are stored.
     pub codec: codec::VideoCodec,
+
+    /// How far apart VP8 keyframes are, at most.
+    pub keyframe_interval: std::time::Duration,
 }
 
 impl Default for USBVideoConfig {
@@ -218,6 +221,7 @@ impl Default for USBVideoConfig {
             formats: Vec::new(),
             frame_skip: 0,
             codec: codec::VideoCodec::Jpeg,
+            keyframe_interval: codec::KEYFRAME_INTERVAL,
         }
     }
 }

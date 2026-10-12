@@ -337,7 +337,7 @@ impl<T: StationEngine> StateTracker<T> {
                 Ok(encoder) => Some(CameraEncoder {
                     encoder: Box::new(encoder),
                     format_revision,
-                    policy: KeyframePolicy::default(),
+                    policy: KeyframePolicy::new(self.config.keyframe_interval),
                     session: None,
                     chain_file: None,
                 }),

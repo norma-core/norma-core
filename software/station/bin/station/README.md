@@ -249,6 +249,7 @@ drivers:
     resize_target: 224    # Resize shortest dimension of stored frames to 224px
     frame-skip: 0         # Drop N frames after each kept frame; 0 records every frame
     codec: jpeg           # How kept frames are stored: "jpeg" or "vp8"
+    keyframe-interval: 1s # vp8 only: longest gap between keyframes, up to 5s
 ```
 
 `resolution` chooses which camera format to open. With `auto` the best available
@@ -265,10 +266,14 @@ view in `station-viewer` reads the same queue as the recorder, so `frame-skip`
 also thins the live preview by the same factor.
 
 `codec` picks how each kept frame is stored. `jpeg` (the default) writes one
-JPEG per entry. `vp8` writes one VP8 frame per entry with a keyframe about every
-second; each entry points at its keyframe, so a frame is read by id from that
-keyframe forward. VP8 entries take about a quarter of the space; normvla still
-gets JPEG, and station-viewer decodes them in the browser.
+JPEG per entry. `vp8` writes one VP8 frame per entry with a keyframe every
+`keyframe-interval` (default `1s`); each entry points at its keyframe, so a frame
+is read by id from that keyframe forward. VP8 entries take about a quarter of the
+space; normvla still gets JPEG, and station-viewer decodes them in the browser.
+A longer `keyframe-interval` stores less, since a keyframe is several times the
+size of the frames after it, but a jump to a frame decodes more of its chain.
+Values above `5s` are taken as `5s`, so the viewer can still decode a chain in
+time. Each file still opens on a keyframe.
 
 ```yaml
 # ML inference integration

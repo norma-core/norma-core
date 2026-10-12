@@ -330,9 +330,23 @@ pub struct UsbVideoConfig {
     pub frame_skip: u32,
 
     /// How kept frames are stored: `jpeg` (default), one JPEG per entry, or
-    /// `vp8`, one VP8 frame per entry with a keyframe about every second.
+    /// `vp8`, one VP8 frame per entry with a keyframe every `keyframe-interval`.
     #[serde(default)]
     pub codec: UsbVideoCodec,
+
+    /// Longest gap between VP8 keyframes, e.g. `5s`. Default `1s`, at most
+    /// `5s`. A longer one stores less but makes a jump to a frame decode more
+    /// of its chain.
+    #[serde(
+        rename = "keyframe-interval",
+        with = "humantime_serde",
+        default = "default_usb_video_keyframe_interval"
+    )]
+    pub keyframe_interval: std::time::Duration,
+}
+
+fn default_usb_video_keyframe_interval() -> std::time::Duration {
+    std::time::Duration::from_secs(1)
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, Copy, Default, PartialEq, Eq)]
@@ -363,6 +377,7 @@ impl Default for UsbVideoConfig {
             formats: Vec::new(),
             frame_skip: 0,
             codec: UsbVideoCodec::Jpeg,
+            keyframe_interval: default_usb_video_keyframe_interval(),
         }
     }
 }

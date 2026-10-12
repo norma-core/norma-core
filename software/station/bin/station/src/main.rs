@@ -270,7 +270,10 @@ fn offload_settings(
     config: Option<&station_iface::config::CloudOffloadConfig>,
 ) -> Result<(Option<CloudSettings>, Option<&'static str>), String> {
     if let NormFsPersistenceMode::MemoryOnly = mode {
-        return Ok((None, config.map(|_| "memory-only; cloud-offload is ignored")));
+        return Ok((
+            None,
+            config.map(|_| "memory-only; cloud-offload is ignored"),
+        ));
     }
     let cloud = match config {
         Some(config) => cloud_settings(config)?,
@@ -781,6 +784,18 @@ impl Station {
                         .map(|format| format.format.as_str()),
                 ) {
                     Ok(formats) => {
+                        if usb_video.keyframe_interval.is_zero() {
+                            log::warn!("usb-video keyframe-interval 0s; using the default");
+                        } else if usb_video.keyframe_interval
+                            > usbvideo::codec::KEYFRAME_INTERVAL_MAX
+                        {
+                            log::warn!(
+                                "usb-video keyframe-interval {:?} is above {:?}; using {:?}",
+                                usb_video.keyframe_interval,
+                                usbvideo::codec::KEYFRAME_INTERVAL_MAX,
+                                usbvideo::codec::KEYFRAME_INTERVAL_MAX
+                            );
+                        }
                         let usb_instance = usbvideo::start_usbvideo(
                             self.normfs.clone(),
                             self.engine.clone(),
@@ -797,6 +812,7 @@ impl Station {
                                         usbvideo::codec::VideoCodec::Vp8
                                     }
                                 },
+                                keyframe_interval: usb_video.keyframe_interval,
                             },
                         )
                         .await;
