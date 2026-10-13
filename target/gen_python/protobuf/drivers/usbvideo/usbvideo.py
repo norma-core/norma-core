@@ -22,6 +22,7 @@ class RxEnvelopeType(enum.IntEnum):
     ET_COMMAND_SUCCESS = 8
     ET_COMMAND_REJECTED = 9
     ET_COMMAND_FAILED = 10
+    ET_CAPTURE_SESSION = 11
 
 class SetFormatMode(enum.IntEnum):
     SET_FORMAT_MODE_AUTO = 0
@@ -39,6 +40,7 @@ class RxEnvelope:
     formats: list[CameraFormat | None] | None = None
     error: typing.Optional[bytes] = None
     last_inference_queue_ptr: typing.Optional[bytes] = None
+    session_ptr: typing.Optional[bytes] = None
     frames: typing.Optional[frame.FramesPack] = None
     command: typing.Optional[TxEnvelope] = None
 
@@ -69,6 +71,10 @@ class RxEnvelope:
             res += 1 + bytes_len_size + bytes_len
         if self.last_inference_queue_ptr is not None and len(self.last_inference_queue_ptr) > 0:
             bytes_len = len(self.last_inference_queue_ptr)
+            bytes_len_size = ((bytes_len | 1).bit_length() + 6) // 7
+            res += 1 + bytes_len_size + bytes_len
+        if self.session_ptr is not None and len(self.session_ptr) > 0:
+            bytes_len = len(self.session_ptr)
             bytes_len_size = ((bytes_len | 1).bit_length() + 6) // 7
             res += 1 + bytes_len_size + bytes_len
         if self.frames is not None:
@@ -116,6 +122,8 @@ class RxEnvelope:
             target.append_bytes(b':', self.error.encode('utf-8'))
         if self.last_inference_queue_ptr is not None and len(self.last_inference_queue_ptr) > 0:
             target.append_bytes(b'B', self.last_inference_queue_ptr)
+        if self.session_ptr is not None and len(self.session_ptr) > 0:
+            target.append_bytes(b'J', self.session_ptr)
         if self.frames is not None:
             size = self.frames.calc_protobuf_size()
             if size > 0:
@@ -136,6 +144,7 @@ class RxEnvelopeReader:
         self._formats_bufs: list[memoryview] | None = None
         self._error: typing.Optional[str] = None
         self._last_inference_queue_ptr: typing.Optional[memoryview] = None
+        self._session_ptr: typing.Optional[memoryview] = None
         self._frames_buf: typing.Optional[memoryview] = None
         self._command_buf: typing.Optional[memoryview] = None
 
@@ -174,6 +183,10 @@ class RxEnvelopeReader:
                     result = self._buf.read_bytes_view(offset)
                     offset += result.size
                     self._last_inference_queue_ptr = result.value
+                case 9:
+                    result = self._buf.read_bytes_view(offset)
+                    offset += result.size
+                    self._session_ptr = result.value
                 case 10:
                     result = self._buf.read_bytes_view(offset)
                     offset += result.size
@@ -212,6 +225,9 @@ class RxEnvelopeReader:
 
     def get_last_inference_queue_ptr(self) -> memoryview:
         return self._last_inference_queue_ptr if self._last_inference_queue_ptr is not None else memoryview(b'')
+
+    def get_session_ptr(self) -> memoryview:
+        return self._session_ptr if self._session_ptr is not None else memoryview(b'')
 
     def get_frames(self) -> frame.FramesPackReader:
         if self._frames_buf is not None:
