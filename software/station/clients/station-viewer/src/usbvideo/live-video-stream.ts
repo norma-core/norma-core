@@ -238,7 +238,8 @@ class LiveVideoStream {
         return;
       }
     }
-    const previousNs = id === this.last + 1n ? this.receivedNs : 0;
+    const priorNs = this.receivedNs;
+    const previousNs = id === this.last + 1n ? priorNs : 0;
     this.last = id;
     this.receivedNs = stampNs(envelope);
     this.trackArrival(previousNs);
@@ -259,7 +260,8 @@ class LiveVideoStream {
       publishLiveCameraFrame(this.queueId, envelope);
       this.drawnNs = this.receivedNs;
     }
-    const lagNs = Math.max(this.receivedNs - this.drawnNs, this.arrivalLagNs);
+    // The frame just received is still decoding: the one before it is what should be drawn by now.
+    const lagNs = Math.max(priorNs - this.drawnNs, this.arrivalLagNs);
     if (lagNs > MAX_LAG_NS) {
       const behind = `${(lagNs / 1e9).toFixed(1)} s behind`;
       if (now - this.caughtUpAt < HEALTHY_MS) {
