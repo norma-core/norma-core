@@ -24,6 +24,14 @@ fn main() -> Result<()> {
     println!("cargo:rerun-if-changed=../../../protobufs/drivers/usbvideo/usbvideo.proto");
 
     build_vp8()?;
+    if target.contains("linux") {
+        cc::Build::new()
+            .file("src/codec/h1_shim.c")
+            .warnings(true)
+            .compile("nc_h1");
+        println!("cargo:rerun-if-changed=src/codec/h1_shim.c");
+        println!("cargo:rustc-link-lib=dylib=dl");
+    }
 
     if target.contains("apple") {
         // Get the directory of the Cargo.toml file

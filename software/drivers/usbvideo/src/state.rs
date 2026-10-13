@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 use bytes::{Bytes, BytesMut};
-use log::{error, warn};
+use log::{error, info, warn};
 use normfs::NormFS;
 use parking_lot::Mutex;
 use prost::Message;
@@ -10,7 +10,7 @@ use station_iface::{Backpressure, enqueue_with};
 use station_iface::{StationEngine, iface_proto::drivers::QueueDataType};
 
 use crate::{
-    codec::{KeyframePolicy, VideoCodec, VideoEncoder, Vp8Encoder},
+    codec::{self, KeyframePolicy, VideoCodec, VideoEncoder},
     converters::{self, FourCCFormat},
     usbvideo_proto::{
         frame::{self, FrameFormatKind, FrameStamp, FramesPack},
@@ -333,14 +333,20 @@ impl<T: StationEngine> StateTracker<T> {
                 || s.encoder.height() != height
         });
         if stale {
-            *state = match Vp8Encoder::new(width, height) {
-                Ok(encoder) => Some(CameraEncoder {
-                    encoder: Box::new(encoder),
-                    format_revision,
-                    policy: KeyframePolicy::new(self.config.keyframe_interval),
-                    session: None,
-                    chain_file: None,
-                }),
+            *state = match codec::vp8_encoder(width, height) {
+                Ok((encoder, kind)) => {
+                    info!(
+                        "VP8 encoder for camera {} at {width}x{height}: {kind}",
+                        camera.unique_id
+                    );
+                    Some(CameraEncoder {
+                        encoder,
+                        format_revision,
+                        policy: KeyframePolicy::new(self.config.keyframe_interval),
+                        session: None,
+                        chain_file: None,
+                    })
+                }
                 Err(e) => {
                     error!("VP8 encoder for camera {}: {}", camera.unique_id, e);
                     return;

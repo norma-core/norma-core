@@ -4,9 +4,25 @@ use turbojpeg::{Compressor, Image, PixelFormat};
 use zune_jpeg::JpegDecoder;
 
 pub fn convert_mjpeg_to_rgb(width: u16, height: u16, data: &Bytes) -> Result<BytesMut, String> {
-    let width = width as usize;
-    let height = height as usize;
+    let (width, height) = (width as usize, height as usize);
+    // libjpeg-turbo takes about half zune-jpeg's time on the rover; zune-jpeg
+    // stays for streams it refuses.
+    let pixels = match turbojpeg::decompress(data, PixelFormat::RGB) {
+        Ok(image) => {
+            if image.width != width || image.height != height {
+                return Err(format!(
+                    "JPEG dimensions mismatch: expected {}x{}, got {}x{}",
+                    width, height, image.width, image.height
+                ));
+            }
+            image.pixels
+        }
+        Err(_) => return decode_with_zune(width, height, data),
+    };
+    Ok(BytesMut::from(pixels.as_slice()))
+}
 
+fn decode_with_zune(width: usize, height: usize, data: &Bytes) -> Result<BytesMut, String> {
     // Create JPEG decoder with a cursor for the Seek trait
     let cursor = Cursor::new(data.as_ref());
     let mut decoder = JpegDecoder::new(cursor);
