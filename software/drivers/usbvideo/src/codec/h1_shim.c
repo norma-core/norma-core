@@ -216,6 +216,9 @@ struct nc_h1_enc *nc_h1_enc_new(unsigned w, unsigned h, char *msg, size_t msg_le
 	rc.intra_rate = 0;
 	rc.golden_rate = 0;
 	rc.altref_rate = 0;
+	/* A keyframe at the default delta is 7-10 times a delta frame and stalls
+	 * the frames behind it on a slow uplink; 30 halves it at the same bitrate. */
+	rc.intra_qp_delta = 30;
 	if ((ret = h1.set_rate(e->enc, &rc)) != 0)
 		return fail(e, ret, "VP8EncSetRateCtrl", msg, msg_len);
 
