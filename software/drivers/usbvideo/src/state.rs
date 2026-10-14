@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 
 use bytes::{Bytes, BytesMut};
@@ -38,10 +38,13 @@ pub struct StateTracker<T: StationEngine> {
     /// Per camera, so cameras encode in parallel; the inner lock also keeps
     /// each camera's encode and enqueue order the same.
     encoders: Mutex<HashMap<String, Arc<Mutex<Option<CameraEncoder>>>>>,
+    /// Cameras whose H1 encoder started but then failed; they stay on libvpx.
+    h1_failed: Mutex<HashSet<String>>,
 }
 
 struct CameraEncoder {
     encoder: Box<dyn VideoEncoder>,
+    kind: &'static str,
     format_revision: u64,
     policy: KeyframePolicy,
     // The ET_CAPTURE_SESSION entry this session's frames name, and its file.
@@ -75,6 +78,7 @@ impl<T: StationEngine> StateTracker<T> {
             format_control: Mutex::new(FormatControlState::default()),
             camera_formats: Mutex::new(HashMap::new()),
             encoders: Mutex::new(HashMap::new()),
+            h1_failed: Mutex::new(HashSet::new()),
         }
     }
 
@@ -333,7 +337,8 @@ impl<T: StationEngine> StateTracker<T> {
                 || s.encoder.height() != height
         });
         if stale {
-            *state = match codec::vp8_encoder(width, height) {
+            let hardware = !self.h1_failed.lock().contains(&camera.unique_id);
+            *state = match codec::vp8_encoder(width, height, hardware) {
                 Ok((encoder, kind)) => {
                     info!(
                         "VP8 encoder for camera {} at {width}x{height}: {kind}",
@@ -341,6 +346,7 @@ impl<T: StationEngine> StateTracker<T> {
                     );
                     Some(CameraEncoder {
                         encoder,
+                        kind,
                         format_revision,
                         policy: KeyframePolicy::new(self.config.keyframe_interval),
                         session: None,
@@ -384,6 +390,9 @@ impl<T: StationEngine> StateTracker<T> {
                     }
                     Err(e) => {
                         error!("VP8 encode for camera {}: {}", camera.unique_id, e);
+                        if cam.kind == codec::H1 {
+                            self.h1_failed.lock().insert(camera.unique_id.clone());
+                        }
                         *state = None;
                         return;
                     }
