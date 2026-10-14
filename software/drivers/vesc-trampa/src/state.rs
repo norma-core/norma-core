@@ -5,7 +5,7 @@ use normfs::NormFS;
 use normfs::UintN;
 use parking_lot::RwLock;
 use prost::Message;
-use station_iface::{Backpressure, WRITE_TIMEOUT, enqueue_with, try_enqueue_with};
+use station_iface::{Backpressure, SnapshotGate, WRITE_TIMEOUT, enqueue_with, try_enqueue_with};
 use std::sync::Arc;
 
 #[derive(Default)]
@@ -20,6 +20,7 @@ pub struct VescTrampaCommunicator {
     inference_queue_id: normfs::QueueId,
     inference_states_queue_id: normfs::QueueId,
     state: Arc<RwLock<VescInferenceState>>,
+    snapshot_gate: SnapshotGate,
 }
 
 impl VescTrampaCommunicator {
@@ -28,6 +29,7 @@ impl VescTrampaCommunicator {
         rx_queue_id: normfs::QueueId,
         tx_queue_id: normfs::QueueId,
         inference_queue_id: normfs::QueueId,
+        snapshot_gate: SnapshotGate,
     ) -> Result<Self, normfs::Error> {
         let inference_states_queue_id = normfs.resolve("inference-states");
         normfs.ensure_queue_exists_for_write(&rx_queue_id).await?;
@@ -42,6 +44,7 @@ impl VescTrampaCommunicator {
             inference_queue_id,
             inference_states_queue_id,
             state: Arc::new(RwLock::new(VescInferenceState::default())),
+            snapshot_gate,
         })
     }
 
@@ -58,6 +61,8 @@ impl VescTrampaCommunicator {
         policy: Backpressure,
     ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let data = Self::encode(envelope);
+        // The record and the inference state it produces go out as one snapshot.
+        let _hold = self.snapshot_gate.hold();
         let ptr = match policy {
             Backpressure::Skip => match self.normfs.try_enqueue(&self.rx_queue_id, data) {
                 Ok(id) => id,

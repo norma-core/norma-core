@@ -220,6 +220,7 @@ struct Engine {
     main_queue: Option<MainQueue>,
     inference: Mutex<Option<inference::Inference>>,
     queues: parking_lot::Mutex<BTreeSet<normfs::QueueId>>,
+    snapshot_gate: station_iface::SnapshotGate,
 }
 
 /// A cloud-offload section with a bucket turns uploads on; its empty fields
@@ -412,6 +413,10 @@ impl station_iface::StationEngine for Engine {
             inference.register_queue(queue_id, queue_data_type as i32);
         }
     }
+
+    fn snapshot_gate(&self) -> station_iface::SnapshotGate {
+        self.snapshot_gate.clone()
+    }
 }
 
 impl Station {
@@ -440,6 +445,7 @@ impl Station {
                 main_queue: None,
                 inference: Mutex::new(None),
                 queues: parking_lot::Mutex::new(BTreeSet::new()),
+                snapshot_gate: station_iface::SnapshotGate::default(),
             }),
             flush_to_cloud,
             cloud_flush: parking_lot::Mutex::new(None),
@@ -1225,7 +1231,9 @@ async fn start_station(
 
     tags::start(station.normfs.clone()).await?;
 
-    let inference = inference::Inference::start(station.normfs.clone()).await;
+    let inference =
+        inference::Inference::start(station.normfs.clone(), station.engine.snapshot_gate.clone())
+            .await;
     *station.engine.inference.lock() = Some(inference);
 
     station.start_cloud_flush();

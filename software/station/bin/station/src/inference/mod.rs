@@ -4,23 +4,18 @@ use bytes::Bytes;
 use dashmap::DashMap;
 use normfs::NormFS;
 use normfs::UintN;
-use parking_lot::{Condvar, Mutex};
 use prost::Message;
-use station_iface::STARTUP_WRITE_TIMEOUT;
+use station_iface::{STARTUP_WRITE_TIMEOUT, SnapshotGate};
 use std::sync::Arc;
-use tokio::sync::mpsc;
 
 pub(crate) const QUEUE_ID: &str = "inference-states";
 pub(crate) const STARTUPS_QUEUE_ID: &str = "startups";
 
-pub type InferenceSignal = Arc<(Mutex<bool>, Condvar)>;
-
 pub struct Inference {
-    shutdown_tx: mpsc::UnboundedSender<()>,
     normfs: Arc<NormFS>,
     // Track latest pointer per queue (queue_id -> (pointer, data_type))
     latest_pointers: Arc<DashMap<String, (UintN, i32)>>,
-    signal: InferenceSignal,
+    gate: SnapshotGate,
 }
 
 /// Stops the worker on drop; otherwise a failed startup hangs on the runtime drop.
@@ -32,13 +27,7 @@ impl Drop for Inference {
 
 impl Inference {
     pub fn shutdown(&self) {
-        let _ = self.shutdown_tx.send(());
-
-        // Signal worker thread to wake up and exit
-        let (lock, cvar) = &*self.signal;
-        let mut signaled = lock.lock();
-        *signaled = true;
-        cvar.notify_one();
+        self.gate.close();
     }
 
     pub async fn start_queue(normfs: &Arc<NormFS>) -> Result<(), normfs::Error> {
@@ -84,47 +73,22 @@ impl Inference {
             .map(|_| ())
     }
 
-    pub async fn start(normfs: Arc<NormFS>) -> Self {
+    pub async fn start(normfs: Arc<NormFS>, gate: SnapshotGate) -> Self {
         if let Err(e) = Self::notify_startup(&normfs).await {
             log::error!("Failed to publish station startup: {:?}", e);
         }
-
-        let (shutdown_tx, mut shutdown_rx) = mpsc::unbounded_channel();
-        let signal = Arc::new((Mutex::new(false), Condvar::new()));
 
         let latest_pointers: Arc<DashMap<String, (UintN, i32)>> = Arc::new(DashMap::new());
 
         let queue_id = normfs.resolve(QUEUE_ID);
 
-        let worker_signal = signal.clone();
+        let worker_gate = gate.clone();
         let worker_normfs = normfs.clone();
         let worker_pointers = latest_pointers.clone();
         let worker_queue_id = queue_id.clone();
 
         tokio::task::spawn_blocking(move || {
-            let (lock, cvar) = &*worker_signal;
-            let mut signaled = lock.lock();
-
-            loop {
-                // Wait for signal
-                while !*signaled {
-                    cvar.wait(&mut signaled);
-                }
-
-                // Check if shutdown requested
-                if !matches!(
-                    shutdown_rx.try_recv(),
-                    Err(mpsc::error::TryRecvError::Empty)
-                ) {
-                    break;
-                }
-
-                // Clear signal flag (new updates during rebuild will set it again)
-                *signaled = false;
-
-                // Release lock while we work
-                drop(signaled);
-
+            while worker_gate.wait() {
                 // Snapshot all latest pointers
                 let entries: Vec<inference_rx::Entry> = worker_pointers
                     .iter()
@@ -151,26 +115,22 @@ impl Inference {
                         log::error!("Failed to enqueue inference state to NormFS: {:?}", e);
                     }
                 }
-
-                // Re-acquire lock for next iteration
-                signaled = lock.lock();
             }
 
             log::info!("Inference worker thread exiting");
         });
 
         Self {
-            shutdown_tx,
             normfs,
             latest_pointers,
-            signal,
+            gate,
         }
     }
 
     pub fn register_queue(&self, queue_id: &normfs::QueueId, queue_data_type: i32) {
         let queue_path = queue_id.as_str().to_string();
         let latest_pointers = self.latest_pointers.clone();
-        let signal = self.signal.clone();
+        let gate = self.gate.clone();
 
         log::info!(
             "Inference: registering queue '{}' with type {}",
@@ -181,12 +141,7 @@ impl Inference {
         let callback = Box::new(move |entries: &[(UintN, Bytes)]| {
             if let Some((id, _bytes)) = entries.last() {
                 latest_pointers.insert(queue_path.clone(), (id.clone(), queue_data_type));
-
-                // Signal worker thread to rebuild and publish
-                let (lock, cvar) = &*signal;
-                let mut signaled = lock.lock();
-                *signaled = true;
-                cvar.notify_one();
+                gate.changed();
             }
             true // Continue subscription
         });
