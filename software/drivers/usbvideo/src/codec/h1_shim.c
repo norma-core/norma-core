@@ -2,6 +2,7 @@
  * run time: the library is proprietary, so it is never linked or shipped,
  * and only the declarations below are ours. */
 #include <dlfcn.h>
+#include <pthread.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -117,9 +118,10 @@ struct nc_h1_enc {
 	size_t frame_cap;
 };
 
-static int load(char *msg, size_t msg_len)
+static void *lib;
+
+static int load_locked(char *msg, size_t msg_len)
 {
-	static void *lib;
 	if (lib)
 		return 0;
 	void *l = dlopen("libhantro_h1.so.1", RTLD_NOW);
@@ -157,6 +159,17 @@ static int load(char *msg, size_t msg_len)
 	}
 	lib = l;
 	return 0;
+}
+
+/* Cameras open encoders on their own threads; the lock also publishes the
+ * function table to the thread that did not load it. */
+static int load(char *msg, size_t msg_len)
+{
+	static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
+	pthread_mutex_lock(&lock);
+	int ret = load_locked(msg, msg_len);
+	pthread_mutex_unlock(&lock);
+	return ret;
 }
 
 void nc_h1_enc_free(struct nc_h1_enc *e)
