@@ -88,7 +88,7 @@ impl Inference {
         let worker_queue_id = queue_id.clone();
 
         tokio::task::spawn_blocking(move || {
-            while worker_gate.wait() {
+            while let Some(turn) = worker_gate.wait() {
                 // Snapshot all latest pointers
                 let entries: Vec<inference_rx::Entry> = worker_pointers
                     .iter()
@@ -98,6 +98,7 @@ impl Inference {
                         ptr: entry.value().0.value_to_bytes(),
                     })
                     .collect();
+                drop(turn);
 
                 if !entries.is_empty() {
                     // Publish complete snapshot to inference-states

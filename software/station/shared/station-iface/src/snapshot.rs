@@ -1,4 +1,4 @@
-use std::sync::{Arc, Condvar, Mutex};
+use std::sync::{Arc, Condvar, Mutex, MutexGuard};
 
 /// Wakes the `inference-states` writer. Writes made while a [`SnapshotHold`] is alive
 /// reach it as one snapshot.
@@ -20,6 +20,11 @@ struct State {
 
 pub struct SnapshotHold(SnapshotGate);
 
+/// While it lives no hold can open, so the snapshot read under it is not split.
+pub struct SnapshotTurn<'a> {
+    _state: MutexGuard<'a, State>,
+}
+
 impl SnapshotGate {
     pub fn hold(&self) -> SnapshotHold {
         self.0.state.lock().unwrap().held += 1;
@@ -39,14 +44,14 @@ impl SnapshotGate {
         self.0.cvar.notify_one();
     }
 
-    /// Blocks until something changed and no hold is open; false once closed.
-    pub fn wait(&self) -> bool {
+    /// Blocks until something changed and no hold is open; None once closed.
+    pub fn wait(&self) -> Option<SnapshotTurn<'_>> {
         let mut state = self.0.state.lock().unwrap();
         while !state.closed && (!state.changed || state.held > 0) {
             state = self.0.cvar.wait(state).unwrap();
         }
         state.changed = false;
-        !state.closed
+        (!state.closed).then_some(SnapshotTurn { _state: state })
     }
 }
 

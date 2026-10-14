@@ -61,8 +61,9 @@ impl VescTrampaCommunicator {
         policy: Backpressure,
     ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let data = Self::encode(envelope);
-        // The record and the inference state it produces go out as one snapshot.
-        let _hold = self.snapshot_gate.hold();
+        // The record and the inference state it produces go out as one snapshot. Only on
+        // Skip, where neither write waits, so a full queue cannot stall other snapshots.
+        let _hold = (policy == Backpressure::Skip).then(|| self.snapshot_gate.hold());
         let ptr = match policy {
             Backpressure::Skip => match self.normfs.try_enqueue(&self.rx_queue_id, data) {
                 Ok(id) => id,
