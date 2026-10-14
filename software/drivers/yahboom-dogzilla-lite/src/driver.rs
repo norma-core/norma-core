@@ -52,6 +52,7 @@ impl YahboomDogzillaLiteDriver {
                 rx_queue_id.clone(),
                 tx_queue_id.clone(),
                 inference_queue_id.clone(),
+                station_engine.snapshot_gate(),
             )
             .await?,
         );

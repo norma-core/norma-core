@@ -5,7 +5,7 @@ use bytes::{Bytes, BytesMut};
 use log::warn;
 use normfs::NormFS;
 use prost::Message;
-use station_iface::{Backpressure, try_enqueue_with};
+use station_iface::{Backpressure, SnapshotGate, try_enqueue_with};
 use std::sync::Arc;
 
 type SendResult<T> = Result<T, Box<dyn std::error::Error + Send + Sync>>;
@@ -17,6 +17,7 @@ pub(crate) struct YahboomDogzillaLiteCommunicator {
     pub(crate) inference_queue_id: normfs::QueueId,
     inference_states_queue_id: normfs::QueueId,
     state: Arc<parking_lot::RwLock<InferenceState>>,
+    snapshot_gate: SnapshotGate,
 }
 
 impl YahboomDogzillaLiteCommunicator {
@@ -25,6 +26,7 @@ impl YahboomDogzillaLiteCommunicator {
         rx_queue_id: normfs::QueueId,
         tx_queue_id: normfs::QueueId,
         inference_queue_id: normfs::QueueId,
+        snapshot_gate: SnapshotGate,
     ) -> Result<Self, normfs::Error> {
         let inference_states_queue_id = normfs.resolve("inference-states");
         normfs.ensure_queue_exists_for_write(&rx_queue_id).await?;
@@ -39,6 +41,7 @@ impl YahboomDogzillaLiteCommunicator {
             inference_queue_id,
             inference_states_queue_id,
             state: Arc::new(parking_lot::RwLock::new(InferenceState::default())),
+            snapshot_gate,
         })
     }
 
@@ -55,6 +58,9 @@ impl YahboomDogzillaLiteCommunicator {
     /// A skipped record does not update the inference state.
     pub(crate) fn send_rx(&self, envelope: &RxEnvelope) -> SendResult<()> {
         let policy = Self::rx_policy(envelope.signal_type);
+        // Neither write waits, so the record and its inference state always go out as one
+        // snapshot.
+        let _hold = self.snapshot_gate.hold();
         match self.normfs.try_enqueue(&self.rx_queue_id, Self::encode(envelope)?) {
             Ok(_) => {}
             Err(normfs::Error::WouldBlock) if policy == Backpressure::Skip => return Ok(()),
