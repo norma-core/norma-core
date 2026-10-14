@@ -65,6 +65,7 @@ IMAGE_INSTALL = "\
     \
     v4l-utils \
     alsa-utils \
+    imx-vpu-hantro \
     \
     wpa-supplicant \
     iw \
