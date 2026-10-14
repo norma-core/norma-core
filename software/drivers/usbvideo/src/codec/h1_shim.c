@@ -303,9 +303,12 @@ int nc_h1_enc_encode(struct nc_h1_enc *e, const uint8_t *i420, int force_keyfram
 	};
 	enc_out o;
 	int ret, tries = 0;
-	do
+	do {
 		ret = h1.encode(e->enc, &in, &o);
-	while (ret == HW_TIMEOUT && ++tries < 4);
+		/* A timed-out pass may have taken or overwritten the reference, so a
+		 * retry starts a new chain. */
+		in.coding_type = INTRA_FRAME;
+	} while (ret == HW_TIMEOUT && ++tries < 4);
 	if (ret != FRAME_READY) {
 		snprintf(msg, msg_len, "VP8EncStrmEncode failed (%d)", ret);
 		return -1;

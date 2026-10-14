@@ -1,4 +1,4 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::sync::Arc;
 
 use bytes::{Bytes, BytesMut};
@@ -38,8 +38,8 @@ pub struct StateTracker<T: StationEngine> {
     /// Per camera, so cameras encode in parallel; the inner lock also keeps
     /// each camera's encode and enqueue order the same.
     encoders: Mutex<HashMap<String, Arc<Mutex<Option<CameraEncoder>>>>>,
-    /// Cameras whose H1 encoder started but then failed; they stay on libvpx.
-    h1_failed: Mutex<HashSet<String>>,
+    /// H1 encode failures in a row per camera; at `H1_MAX_FAILURES` it stays on libvpx.
+    h1_failures: Mutex<HashMap<String, u32>>,
 }
 
 struct CameraEncoder {
@@ -78,7 +78,7 @@ impl<T: StationEngine> StateTracker<T> {
             format_control: Mutex::new(FormatControlState::default()),
             camera_formats: Mutex::new(HashMap::new()),
             encoders: Mutex::new(HashMap::new()),
-            h1_failed: Mutex::new(HashSet::new()),
+            h1_failures: Mutex::new(HashMap::new()),
         }
     }
 
@@ -337,7 +337,11 @@ impl<T: StationEngine> StateTracker<T> {
                 || s.encoder.height() != height
         });
         if stale {
-            let hardware = !self.h1_failed.lock().contains(&camera.unique_id);
+            let hardware = self
+                .h1_failures
+                .lock()
+                .get(&camera.unique_id)
+                .is_none_or(|n| *n < H1_MAX_FAILURES);
             *state = match codec::vp8_encoder(width, height, hardware) {
                 Ok((encoder, kind)) => {
                     info!(
@@ -378,6 +382,9 @@ impl<T: StationEngine> StateTracker<T> {
                 Some(encoded) => encoded,
                 None => match cam.encoder.encode(&rgb, force) {
                     Ok(p) if p.keyframe || (!force && cam.policy.keyframe().is_some()) => {
+                        if cam.kind == codec::H1 {
+                            self.h1_failures.lock().remove(&camera.unique_id);
+                        }
                         (p.keyframe, Bytes::from(p.data))
                     }
                     Ok(_) => {
@@ -391,7 +398,11 @@ impl<T: StationEngine> StateTracker<T> {
                     Err(e) => {
                         error!("VP8 encode for camera {}: {}", camera.unique_id, e);
                         if cam.kind == codec::H1 {
-                            self.h1_failed.lock().insert(camera.unique_id.clone());
+                            *self
+                                .h1_failures
+                                .lock()
+                                .entry(camera.unique_id.clone())
+                                .or_default() += 1;
                         }
                         *state = None;
                         return;
@@ -550,6 +561,9 @@ impl<T: StationEngine> StateTracker<T> {
 
 /// What an envelope adds to a frame's bytes, generously.
 const FRAME_OVERHEAD: usize = 256;
+
+/// A one-off fault does not cost a camera the hardware encoder for the rest of the run.
+const H1_MAX_FAILURES: u32 = 3;
 
 /// VP8 halves chroma both ways, so an odd edge loses its last row or column.
 fn even_crop(width: u32, height: u32, rgb: &Bytes) -> (u32, u32, Bytes) {
