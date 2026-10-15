@@ -46,6 +46,7 @@ impl St3215Driver {
                 tx_queue_id.clone(),
                 meta_queue_id.clone(),
                 inference_queue_id.clone(),
+                station_engine.snapshot_gate(),
             )
             .await?,
         );

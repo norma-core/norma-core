@@ -6,7 +6,7 @@ use normfs::UintN;
 use prost::Message;
 use std::{collections::HashMap, sync::Arc};
 use std::sync::atomic::AtomicBool;
-use station_iface::{Backpressure, WRITE_TIMEOUT, enqueue_with, try_enqueue_with};
+use station_iface::{Backpressure, SnapshotGate, WRITE_TIMEOUT, enqueue_with, try_enqueue_with};
 
 type MotorBounds = HashMap<String, HashMap<u32, (u32, u32, bool)>>;
 type CalibrationStops = HashMap<String, Arc<AtomicBool>>;
@@ -34,6 +34,7 @@ pub struct ST3215BusCommunicator {
     state: Arc<parking_lot::RwLock<InferenceState>>,
     bounds: Arc<parking_lot::RwLock<MotorBounds>>,
     calibration_stops: Arc<parking_lot::RwLock<CalibrationStops>>,
+    snapshot_gate: SnapshotGate,
 }
 
 impl ST3215BusCommunicator {
@@ -43,6 +44,7 @@ impl ST3215BusCommunicator {
         tx_queue_id: normfs::QueueId,
         meta_queue_id: normfs::QueueId,
         inference_queue_id: normfs::QueueId,
+        snapshot_gate: SnapshotGate,
     ) -> Result<Self, normfs::Error> {
         let inference_states_queue_id = normfs.resolve("inference-states");
         normfs.ensure_queue_exists_for_write(&rx_queue_id).await?;
@@ -61,6 +63,7 @@ impl ST3215BusCommunicator {
             state: Arc::new(parking_lot::RwLock::new(InferenceState::default())),
             bounds: Arc::new(parking_lot::RwLock::new(HashMap::new())),
             calibration_stops: Arc::new(parking_lot::RwLock::new(HashMap::new())),
+            snapshot_gate,
         })
     }
 
@@ -155,6 +158,8 @@ impl ST3215BusCommunicator {
     ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let data = Self::encode(envelope);
         let policy = Self::rx_policy(envelope.signal_type);
+        // Same as vesc-trampa: only on Skip, where neither write waits.
+        let _hold = (policy == Backpressure::Skip).then(|| self.snapshot_gate.hold());
         let id = match policy {
             Backpressure::Skip => match self.normfs.try_enqueue(&self.rx_queue_id, data) {
                 Ok(id) => id,
