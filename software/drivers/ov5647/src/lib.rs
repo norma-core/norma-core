@@ -27,8 +27,11 @@ pub use pipeline::Ov5647Handle;
 use normfs::NormFS;
 use station_iface::StationEngine;
 use std::sync::Arc;
+use std::time::Duration;
+use usbvideo::codec::VideoCodec;
 
 #[cfg(target_os = "linux")]
+#[allow(clippy::too_many_arguments)]
 pub async fn start_ov5647<K: StationEngine + Send + Sync + 'static>(
     normfs: Arc<NormFS>,
     engine: Arc<K>,
@@ -36,13 +39,16 @@ pub async fn start_ov5647<K: StationEngine + Send + Sync + 'static>(
     height: u32,
     frames_per_second: u32,
     queue_id: &str,
+    codec: VideoCodec,
+    keyframe_interval: Duration,
 ) -> Result<Ov5647Handle> {
     log::info!(
-        "OV5647 driver enabled (width={} height={} fps={}, queue={})",
+        "OV5647 driver enabled (width={} height={} fps={}, queue={}, codec={:?})",
         width,
         height,
         frames_per_second,
-        queue_id
+        queue_id,
+        codec
     );
 
     let handle = pipeline::Ov5647Manager::new(
@@ -52,6 +58,8 @@ pub async fn start_ov5647<K: StationEngine + Send + Sync + 'static>(
         height,
         frames_per_second,
         queue_id.to_string(),
+        codec,
+        keyframe_interval,
     )
     .await?;
 
@@ -67,6 +75,7 @@ impl Ov5647Handle {
 }
 
 #[cfg(not(target_os = "linux"))]
+#[allow(clippy::too_many_arguments)]
 pub async fn start_ov5647<K: StationEngine + Send + Sync + 'static>(
     _normfs: Arc<NormFS>,
     _engine: Arc<K>,
@@ -74,6 +83,8 @@ pub async fn start_ov5647<K: StationEngine + Send + Sync + 'static>(
     _height: u32,
     _frames_per_second: u32,
     _queue_id: &str,
+    _codec: VideoCodec,
+    _keyframe_interval: Duration,
 ) -> Result<Ov5647Handle> {
     Err(Ov5647Error::NotSupported(
         "OV5647 driver requires Linux with libcamera".to_string(),

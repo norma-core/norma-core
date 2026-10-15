@@ -122,30 +122,7 @@ impl CaptureSession {
     }
 
     pub async fn capture_with_timeout(&mut self, timeout: Duration) -> Result<CapturedImage> {
-        self.ensure_started().await?;
-
-        let frame = loop {
-            let completed = tokio::time::timeout(timeout, self.request_rx.recv())
-                .await
-                .map_err(|_| Ov5647Error::CaptureTimeout(timeout.as_millis() as u64))?
-                .ok_or(Ov5647Error::SessionClosed)?;
-
-            match self.map_frame(&completed) {
-                Ok(frame) => {
-                    self.requeue_request(completed.request_ptr).await?;
-                    break frame;
-                }
-                Err(Ov5647Error::FrameInvalid(_)) => {
-                    self.requeue_request(completed.request_ptr).await?;
-                    continue;
-                }
-                Err(err) => {
-                    self.requeue_request(completed.request_ptr).await?;
-                    return Err(err);
-                }
-            }
-        };
-
+        let frame = self.next_frame(timeout).await?;
         let encoder = JpegEncoder::new(self.config.quality);
         let jpeg_data = encoder.encode(&frame)?;
         let reclaim_buffer = Some(frame.buffer);
@@ -163,6 +140,46 @@ impl CaptureSession {
             timestamp_ns: frame.timestamp_ns,
             sequence: frame.sequence,
         })
+    }
+
+    /// The frame as the camera delivered it, with no JPEG step.
+    pub async fn capture_raw_with_timeout(&mut self, timeout: Duration) -> Result<CapturedImage> {
+        let frame = self.next_frame(timeout).await?;
+        Ok(CapturedImage {
+            data: frame.buffer,
+            width: frame.width,
+            height: frame.height,
+            format: frame.format,
+            stride: frame.stride,
+            timestamp_ns: frame.timestamp_ns,
+            sequence: frame.sequence,
+        })
+    }
+
+    async fn next_frame(&mut self, timeout: Duration) -> Result<FrameData> {
+        self.ensure_started().await?;
+
+        loop {
+            let completed = tokio::time::timeout(timeout, self.request_rx.recv())
+                .await
+                .map_err(|_| Ov5647Error::CaptureTimeout(timeout.as_millis() as u64))?
+                .ok_or(Ov5647Error::SessionClosed)?;
+
+            match self.map_frame(&completed) {
+                Ok(frame) => {
+                    self.requeue_request(completed.request_ptr).await?;
+                    return Ok(frame);
+                }
+                Err(Ov5647Error::FrameInvalid(_)) => {
+                    self.requeue_request(completed.request_ptr).await?;
+                    continue;
+                }
+                Err(err) => {
+                    self.requeue_request(completed.request_ptr).await?;
+                    return Err(err);
+                }
+            }
+        }
     }
 
     #[inline]

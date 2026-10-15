@@ -450,6 +450,17 @@ pub struct Ov5647Config {
 
     #[serde(default = "default_ov5647_fps", rename = "frames-per-second")]
     pub frames_per_second: u16,
+
+    /// Same as `usb-video`: `jpeg` (default) or `vp8`.
+    #[serde(default)]
+    pub codec: UsbVideoCodec,
+
+    #[serde(
+        rename = "keyframe-interval",
+        with = "humantime_serde",
+        default = "default_usb_video_keyframe_interval"
+    )]
+    pub keyframe_interval: std::time::Duration,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

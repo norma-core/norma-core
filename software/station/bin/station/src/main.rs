@@ -947,6 +947,15 @@ impl Station {
                     height,
                     ov5647_config.frames_per_second as u32,
                     "video/ov5647",
+                    match ov5647_config.codec {
+                        station_iface::config::UsbVideoCodec::Jpeg => {
+                            usbvideo::codec::VideoCodec::Jpeg
+                        }
+                        station_iface::config::UsbVideoCodec::Vp8 => {
+                            usbvideo::codec::VideoCodec::Vp8
+                        }
+                    },
+                    ov5647_config.keyframe_interval,
                 )
                 .await
                 {

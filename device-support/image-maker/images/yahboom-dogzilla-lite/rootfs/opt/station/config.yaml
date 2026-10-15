@@ -8,6 +8,7 @@ drivers:
     enabled: true
   ov5647:
     enabled: true
+    codec: vp8
   system-info: true
   usb-video:
     enabled: true

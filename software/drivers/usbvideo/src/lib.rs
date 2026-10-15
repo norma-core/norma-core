@@ -15,6 +15,8 @@ pub mod codec;
 mod converters;
 mod state;
 
+pub use state::StateTracker;
+
 pub mod pipeline;
 
 // Re-export resize and jpeg conversion functions

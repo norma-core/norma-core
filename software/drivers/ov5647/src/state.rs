@@ -39,6 +39,10 @@ impl<K: StationEngine> StateTracker<K> {
         }
     }
 
+    pub(crate) fn queue_id(&self) -> &normfs::QueueId {
+        &self.queue_id
+    }
+
     pub(crate) async fn start_queue(&self) {
         if let Err(e) = self
             .normfs
@@ -79,6 +83,7 @@ impl<K: StationEngine> StateTracker<K> {
             last_inference_queue_ptr: self.get_last_inference_id_bytes(),
             error: String::new(),
             command: None,
+            session_ptr: Bytes::new(),
         };
 
         let mut buf = BytesMut::new();
