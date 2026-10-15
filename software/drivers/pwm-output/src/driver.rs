@@ -9,7 +9,9 @@ use parking_lot::Mutex;
 use prost::Message;
 use station_iface::StationEngine;
 use station_iface::iface_proto::{commands, drivers};
-use station_iface::{Backpressure, STARTUP_WRITE_TIMEOUT, try_enqueue_with};
+use station_iface::{
+    Backpressure, STARTUP_WRITE_TIMEOUT, SnapshotGate, SnapshotHold, try_enqueue_with,
+};
 use std::collections::BTreeMap;
 use std::fs::OpenOptions;
 use std::io::{self, Write};
@@ -110,6 +112,7 @@ impl PwmOutputDriver {
             tx_queue_id,
             outputs.clone(),
             transport.clone(),
+            station_engine.snapshot_gate(),
         )?;
 
         info!(
@@ -138,6 +141,7 @@ fn subscribe_commands(
     tx_queue_id: QueueId,
     outputs: Arc<Mutex<BTreeMap<String, OutputRuntime>>>,
     transport: Arc<H7WaveTransport>,
+    snapshot_gate: SnapshotGate,
 ) -> Result<(), normfs::Error> {
     let commands_queue_id = normfs.resolve(station_iface::COMMANDS_QUEUE_ID);
     let callback_normfs = normfs.clone();
@@ -166,6 +170,7 @@ fn subscribe_commands(
                         }
                     };
 
+                    let hold = snapshot_gate.hold();
                     let envelope = TxEnvelope {
                         monotonic_stamp_ns: normfs_time::monotonic_stamp_ns(),
                         local_stamp_ns: normfs_time::local_stamp_ns(),
@@ -184,6 +189,7 @@ fn subscribe_commands(
                         &outputs,
                         &transport,
                         envelope,
+                        hold,
                     );
                 }
             }
@@ -200,6 +206,7 @@ fn process_command(
     outputs: &Arc<Mutex<BTreeMap<String, OutputRuntime>>>,
     transport: &Arc<H7WaveTransport>,
     envelope: TxEnvelope,
+    hold: SnapshotHold,
 ) {
     send_rx(
         normfs,
@@ -252,6 +259,8 @@ fn process_command(
         return;
     };
 
+    // The echo and the records before it go out as one snapshot; the device write may wait.
+    drop(hold);
     let device = output.device_proto();
     match output.apply_command(&command, &envelope, transport) {
         Ok(()) => {
