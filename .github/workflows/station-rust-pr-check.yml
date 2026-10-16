@@ -1,0 +1,191 @@
+name: Station Rust PR Check
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/station-rust-pr-check.yml"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - ".cargo/**"
+      - "shared/**"
+      - "software/drivers/**"
+      - "software/station/bin/**"
+      - "software/station/shared/**"
+      - "protobufs/**"
+  # Pushes to the base branches seed the caches that fork PRs can read.
+  push:
+    branches: [dev, main]
+    paths:
+      - ".github/workflows/station-rust-pr-check.yml"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - ".cargo/**"
+      - "shared/**"
+      - "software/drivers/**"
+      - "software/station/bin/**"
+      - "software/station/shared/**"
+      - "protobufs/**"
+  workflow_dispatch:
+
+concurrency:
+  group: rust-pr-check-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+  LIBCAMERA_VARIANT: bookworm
+
+jobs:
+  linux-amd64:
+    name: Linux amd64 (workspace check + tests)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # The viewer has its own PR check; RustEmbed only needs the folder.
+      - name: Stub station-viewer dist
+        run: |
+          mkdir -p software/station/clients/station-viewer/dist
+          echo '<!doctype html>' > software/station/clients/station-viewer/dist/index.html
+
+      - name: Setup protoc
+        uses: arduino/setup-protoc@v3
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@1.99.0
+
+      - name: Install nasm (required by turbojpeg-sys)
+        run: sudo apt-get update && sudo apt-get install -y nasm
+
+      - name: Cache cargo
+        uses: Swatinem/rust-cache@v2
+        with:
+          key: linux-amd64
+
+      # These need libcamera; the dogzilla-arm64 job covers them.
+      - name: Check workspace
+        run: cargo check --workspace --exclude ov5647 --exclude libcamera-sys-static --all-targets
+
+      - name: Test
+        run: cargo test -p station_iface -p usbvideo
+
+  build-libcamera:
+    name: Build libcamera (bookworm)
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # Same key as station-release.yml so both workflows share the entry.
+      - name: Cache built libcamera
+        id: cache
+        uses: actions/cache@v4
+        with:
+          path: shared/libcamera/library/0.7.0-${{ env.LIBCAMERA_VARIANT }}
+          key: libcamera-0.7.0-${{ env.LIBCAMERA_VARIANT }}-${{ hashFiles('shared/libcamera/Dockerfile', 'shared/libcamera/build.sh', 'shared/libcamera/Makefile', 'shared/libcamera-sys-static/wrapper.cpp', 'shared/libcamera-sys-static/wrapper.hpp') }}
+
+      - name: Build libcamera
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: make -C shared/libcamera build-libcamera LIBCAMERA_VARIANT=${{ env.LIBCAMERA_VARIANT }}
+
+      - name: Upload libcamera artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: libcamera-${{ env.LIBCAMERA_VARIANT }}
+          path: shared/libcamera/library/0.7.0-${{ env.LIBCAMERA_VARIANT }}
+          retention-days: 1
+
+  dogzilla-arm64:
+    name: Linux arm64 (yahboom-dogzilla-lite + ov5647)
+    needs: build-libcamera
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Stub station-viewer dist
+        run: |
+          mkdir -p software/station/clients/station-viewer/dist
+          echo '<!doctype html>' > software/station/clients/station-viewer/dist/index.html
+
+      - name: Download built libcamera
+        uses: actions/download-artifact@v4
+        with:
+          name: libcamera-${{ env.LIBCAMERA_VARIANT }}
+          path: shared/libcamera/library/0.7.0-${{ env.LIBCAMERA_VARIANT }}
+
+      - name: Setup protoc
+        uses: arduino/setup-protoc@v3
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@1.99.0
+        with:
+          targets: aarch64-unknown-linux-gnu
+
+      - name: Setup zig (for cargo-zigbuild cross-compilation)
+        env:
+          ZIG_VERSION: "0.15.1"
+          ZIG_SHA256: "c61c5da6edeea14ca51ecd5e4520c6f4189ef5250383db33d01848293bfafe05"
+        run: |
+          curl -sL "https://ziglang.org/download/${ZIG_VERSION}/zig-x86_64-linux-${ZIG_VERSION}.tar.xz" -o /tmp/zig.tar.xz
+          echo "${ZIG_SHA256}  /tmp/zig.tar.xz" | sha256sum -c -
+          tar xf /tmp/zig.tar.xz -C /tmp
+          echo "/tmp/zig-x86_64-linux-${ZIG_VERSION}" >> "$GITHUB_PATH"
+
+      - name: Install nasm (required by turbojpeg-sys)
+        run: sudo apt-get update && sudo apt-get install -y nasm
+
+      - name: Cache cargo
+        uses: Swatinem/rust-cache@v2
+        with:
+          key: dogzilla-arm64
+
+      - name: Install cargo-zigbuild
+        run: cargo install cargo-zigbuild@0.23.0 --locked
+
+      - name: Build station
+        run: |
+          libcamera_dir="$PWD/shared/libcamera/library/0.7.0-$LIBCAMERA_VARIANT"
+          export PKG_CONFIG_PATH="$libcamera_dir/usr/lib/aarch64-linux-gnu/pkgconfig"
+          export PKG_CONFIG_ALLOW_CROSS=1
+          export LIBCAMERA_LIB_DIR="$libcamera_dir/usr/lib/aarch64-linux-gnu"
+          cargo zigbuild --package=station --features yahboom-dogzilla-lite,ov5647 --target=aarch64-unknown-linux-gnu.2.36
+
+  macos:
+    name: macOS (station check)
+    runs-on: macos-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Stub station-viewer dist
+        run: |
+          mkdir -p software/station/clients/station-viewer/dist
+          echo '<!doctype html>' > software/station/clients/station-viewer/dist/index.html
+
+      - name: Setup protoc
+        uses: arduino/setup-protoc@v3
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@1.99.0
+
+      - name: Install nasm (required by turbojpeg-sys)
+        run: brew install nasm
+
+      - name: Cache cargo
+        uses: Swatinem/rust-cache@v2
+        with:
+          key: macos
+
+      - name: Check station
+        run: cargo check -p station
