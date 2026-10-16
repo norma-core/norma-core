@@ -6,7 +6,7 @@ import { yahboom_dogzilla_lite, usbvideo } from '@/api/proto.js';
 import YahboomDogzillaLiteDesktopDashboard from '@/devices/yahboom-dogzilla-lite/ui/YahboomDogzillaLiteDesktopDashboard';
 import YahboomDogzillaLiteViewModeSwitch, { type YahboomDogzillaLiteViewMode } from '@/devices/yahboom-dogzilla-lite/ui/YahboomDogzillaLiteViewModeSwitch';
 import type { CameraLayoutMode } from '@/usbvideo/CameraLayoutControls';
-import { getVideoSourceId, getVideoSourceLabel } from '@/usbvideo/camera-source';
+import { getVideoSourceId, getVideoSourceLabel, isVideoSourceFresh } from '@/usbvideo/camera-source';
 import { getLatencyBgColor, getLatencyTextColor } from '@/utils/color-utils';
 
 interface LatencyReading {
@@ -19,8 +19,6 @@ interface LatencyStats {
   min: number;
   max: number;
 }
-
-const STALE_CAMERA_MAX_AGE_MS = 60_000;
 
 type CameraFitMode = 'contain' | 'cover';
 
@@ -66,20 +64,8 @@ const YahboomDogzillaLiteDesktopCard = memo(function YahboomDogzillaLiteDesktopC
   const activeVideoSources = useMemo(() => {
     const nowMs = Date.now();
 
-    const isFresh = (entry: FrameEntry<usbvideo.IRxEnvelope>) => {
-      const monotonicStampNs = entry.data.stamp?.monotonicStampNs;
-      if (!monotonicStampNs) {
-        return true;
-      }
-
-      const localStampNs = serverToLocal(Long.fromValue(monotonicStampNs));
-      const ageMs = nowMs - localStampNs.toNumber() / 1e6;
-
-      return ageMs <= STALE_CAMERA_MAX_AGE_MS;
-    };
-
     return (videoSources ?? [])
-      .filter(isFresh)
+      .filter((entry) => isVideoSourceFresh(entry, nowMs))
       .map((entry): ActiveVideoSource | null => {
         const cameraKey = entry.data.camera?.uniqueId ?? entry.queueId;
         if (!cameraKey) {

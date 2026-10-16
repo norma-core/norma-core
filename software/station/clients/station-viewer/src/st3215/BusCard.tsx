@@ -10,6 +10,7 @@ import { motors_mirroring, st3215, usbvideo } from '@/api/proto.js';
 import { serverToLocal } from '@/api/timestamp-utils';
 import { getLatencyBgColor, getLatencyTextColor } from '@/utils/color-utils';
 import CameraViewer from '@/usbvideo/CameraViewer';
+import { isVideoSourceFresh } from '@/usbvideo/camera-source';
 import RobotCameraView from '@/usbvideo/RobotCameraView';
 import BusWebGLRenderer from '@/st3215/BusWebGLRenderer';
 import CameraHudControls, { type CameraLayoutMode } from '@/usbvideo/CameraHudControls';
@@ -27,7 +28,6 @@ interface LatencyStats {
   max: number;
 }
 
-const STALE_CAMERA_MAX_AGE_MS = 60_000;
 const MIN_CALIBRATED_RANGE = 100;
 const WEB_CONTROL_STORAGE_TTL_MS = 60_000;
 const WEB_CONTROL_MIRROR_IGNORE_AFTER_LOCAL_REQUEST_MS = 5_000;
@@ -85,20 +85,8 @@ const BusCard: React.FC<BusCardProps> = ({
   const activeVideoSources = useMemo(() => {
     const nowMs = Date.now();
 
-    const isFresh = (entry: FrameEntry<usbvideo.IRxEnvelope>) => {
-      const monotonicStampNs = entry.data.stamp?.monotonicStampNs;
-      if (!monotonicStampNs) {
-        return true;
-      }
-
-      const localStampNs = serverToLocal(Long.fromValue(monotonicStampNs));
-      const ageMs = nowMs - localStampNs.toNumber() / 1e6;
-
-      return ageMs <= STALE_CAMERA_MAX_AGE_MS;
-    };
-
     const sources: ActiveVideoSource[] = [
-      ...(videoSources ?? []).filter(isFresh).map((entry) => ({
+      ...(videoSources ?? []).filter((entry) => isVideoSourceFresh(entry, nowMs)).map((entry) => ({
         id: entry.data.camera?.uniqueId || entry.queueId,
         label: `${entry.data.camera?.deviceNumber ?? 'USB'} (${entry.data.camera?.uniqueId ?? 'unknown'})`,
         shortLabel: entry.data.camera?.deviceNumber !== undefined

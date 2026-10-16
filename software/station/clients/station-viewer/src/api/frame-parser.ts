@@ -17,6 +17,7 @@ export interface FrameEntry<T> {
   data: T;
   rawData?: Uint8Array | null;
   queueType: drivers.QueueDataType;
+  advancedStampNs?: Long;
 }
 
 export interface Frame {
@@ -269,6 +270,25 @@ function findPreviousEntry(
   }
 
   return null;
+}
+
+function videoAdvancedStampNs(
+  previousFrame: Frame | undefined,
+  queue: string,
+  ptr: Uint8Array,
+  readEnvelope: usbvideo.IRxEnvelope | undefined,
+  snapshotStampNs: Long | undefined,
+): Long | undefined {
+  if (readEnvelope) {
+    const stamp = readEnvelope.stamp?.monotonicStampNs;
+    return stamp ? Long.fromValue(stamp) : snapshotStampNs;
+  }
+  const previous = previousFrame?.videoQueues?.find((entry) => entry.queueId === queue);
+  if (previous && previous.ptr.length === ptr.length && previous.ptr.every((b, i) => b === ptr[i])) {
+    const stamp = previous.data.stamp?.monotonicStampNs;
+    return previous.advancedStampNs ?? (stamp ? Long.fromValue(stamp) : undefined);
+  }
+  return snapshotStampNs;
 }
 
 export async function parseFrame(
@@ -612,6 +632,13 @@ export async function parseFrame(
             frame.videoQueues!.push({
               queueId: result.queue,
               ptr: result.ptr,
+              advancedStampNs: videoAdvancedStampNs(
+                previousFrame,
+                result.queue,
+                result.ptr,
+                result.reused ? undefined : result.decoded as usbvideo.IRxEnvelope,
+                frame.monotonicStampNs,
+              ),
               data: publishCurrentVideoFrame
                 ? createLiveCameraMetadataEnvelope(result.decoded as usbvideo.IRxEnvelope)
                 : result.decoded as usbvideo.IRxEnvelope,
