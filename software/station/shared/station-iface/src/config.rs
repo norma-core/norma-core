@@ -329,8 +329,8 @@ pub struct UsbVideoConfig {
     #[serde(rename = "frame-skip", default)]
     pub frame_skip: u32,
 
-    /// How kept frames are stored: `jpeg` (default), one JPEG per entry, or
-    /// `vp8`, one VP8 frame per entry with a keyframe every `keyframe-interval`.
+    /// How kept frames are stored: `vp8` (default), one VP8 frame per entry
+    /// with a keyframe every `keyframe-interval`, or `jpeg`, one JPEG per entry.
     #[serde(default)]
     pub codec: UsbVideoCodec,
 
@@ -352,8 +352,8 @@ fn default_usb_video_keyframe_interval() -> std::time::Duration {
 #[derive(Debug, Serialize, Deserialize, Clone, Copy, Default, PartialEq, Eq)]
 #[serde(rename_all = "lowercase")]
 pub enum UsbVideoCodec {
-    #[default]
     Jpeg,
+    #[default]
     Vp8,
 }
 
@@ -376,7 +376,7 @@ impl Default for UsbVideoConfig {
             resize_target: 224,
             formats: Vec::new(),
             frame_skip: 0,
-            codec: UsbVideoCodec::Jpeg,
+            codec: UsbVideoCodec::Vp8,
             keyframe_interval: default_usb_video_keyframe_interval(),
         }
     }
@@ -451,7 +451,7 @@ pub struct Ov5647Config {
     #[serde(default = "default_ov5647_fps", rename = "frames-per-second")]
     pub frames_per_second: u16,
 
-    /// Same as `usb-video`: `jpeg` (default) or `vp8`.
+    /// Same as `usb-video`: `vp8` (default) or `jpeg`.
     #[serde(default)]
     pub codec: UsbVideoCodec,
 
@@ -802,11 +802,11 @@ mod usb_video_config_tests {
     }
 
     #[test]
-    fn test_codec_defaults_to_jpeg_and_parses_vp8() {
+    fn test_codec_defaults_to_vp8_and_parses_jpeg() {
         let cfg: UsbVideoConfig = serde_yaml::from_str("enabled: true\n").unwrap();
-        assert_eq!(cfg.codec, UsbVideoCodec::Jpeg);
-        let cfg: UsbVideoConfig = serde_yaml::from_str("enabled: true\ncodec: vp8\n").unwrap();
         assert_eq!(cfg.codec, UsbVideoCodec::Vp8);
+        let cfg: UsbVideoConfig = serde_yaml::from_str("enabled: true\ncodec: jpeg\n").unwrap();
+        assert_eq!(cfg.codec, UsbVideoCodec::Jpeg);
         assert!(serde_yaml::from_str::<UsbVideoConfig>("enabled: true\ncodec: h264\n").is_err());
     }
 

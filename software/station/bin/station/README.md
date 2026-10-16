@@ -248,7 +248,7 @@ drivers:
     resolution: auto      # Capture format: "auto" or "<width>x<height>", e.g. "1280x720"
     resize_target: 224    # Resize shortest dimension of stored frames to 224px
     frame-skip: 0         # Drop N frames after each kept frame; 0 records every frame
-    codec: jpeg           # How kept frames are stored: "jpeg" or "vp8"
+    codec: vp8            # How kept frames are stored: "vp8" or "jpeg"
     keyframe-interval: 1s # vp8 only: longest gap between keyframes, up to 5s
 ```
 
