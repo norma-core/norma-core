@@ -830,6 +830,7 @@ impl St3215Port {
                     }
                     Err(e) => {
                         warn!("Failed to reset calibration for motor {}: {}", motor_id, e);
+                        Self::drain_serial(port).await;
                         if motor_id <= 6 {
                             all_ok = false;
                         }
@@ -870,6 +871,7 @@ impl St3215Port {
                 let reset_req = protocol::ST3215Request::Reset { motor: motor_id };
                 if let Err(e) = reset_req.async_readwrite(port, ST3215_COMMAND_TIMEOUT_MS).await {
                     warn!("Failed to send reset to motor {}: {}", motor_id, e);
+                    Self::drain_serial(port).await;
                 } else {
                     info!("FreezeCalibration: Hardware reset completed for motor {}", motor_id);
                 }
@@ -887,6 +889,7 @@ impl St3215Port {
                     }
                     Err(e) => {
                         warn!("Failed to freeze calibration for motor {}: {}", motor_id, e);
+                        Self::drain_serial(port).await;
                         all_ok = false;
                     }
                 }
