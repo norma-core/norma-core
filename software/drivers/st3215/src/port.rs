@@ -20,8 +20,16 @@ use tokio::sync::mpsc;
 use tokio_serial::SerialPortBuilderExt;
 use tokio_serial::SerialPortInfo;
 
+// A motor answers in under 2 ms over USB serial on Linux and in 21-23 ms on macOS.
+#[cfg(not(target_os = "macos"))]
 pub const ST3215_TIMEOUT_MS: u64 = 20;
-pub const ST3215_COMMAND_TIMEOUT_MS: u64 = 20;
+#[cfg(target_os = "macos")]
+pub const ST3215_TIMEOUT_MS: u64 = 50;
+pub const ST3215_COMMAND_TIMEOUT_MS: u64 = ST3215_TIMEOUT_MS;
+#[cfg(not(target_os = "macos"))]
+const ST3215_PING_TIMEOUT_MS: u64 = 10;
+#[cfg(target_os = "macos")]
+const ST3215_PING_TIMEOUT_MS: u64 = 50;
 pub const ST3215_SLOW_READ_WARN_MS: u128 = 10;
 
 const NO_COMMAND_SEARCH_DELAY_MS: u64 = 500;
@@ -472,7 +480,7 @@ impl St3215Port {
             }
 
             let ping_req = protocol::ST3215Request::Ping { motor: motor_id };
-            match ping_req.async_readwrite(port, 10).await {
+            match ping_req.async_readwrite(port, ST3215_PING_TIMEOUT_MS).await {
                 Ok(_) => {
                     found_motors.push(motor_id);
                 }
