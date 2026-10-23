@@ -4,7 +4,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from elrobot_ik.api.app import create_app
-from tests.helpers import camera_queues, make_elrobot_bus, make_frame, make_service
+from tests.helpers import camera_queues, make_elrobot_bus, make_frame, make_service, mirroring_queues
 
 
 def make_client(model, solver, frame, **kw):
@@ -100,11 +100,20 @@ def test_move_to_not_calibrated_execute_is_409(model, solver):
 
 def test_move_to_execute_stops_mirroring_then_drives(model, solver):
     c, station = make_client(model, solver, FRAME)
+    station.queues.update(mirroring_queues("F1"))
     r = c.post(MOVE, json=down(0.21, 0.0, execute=True, speed=300))
     assert r.status_code == 200, r.text
     assert r.json()["executed"] is True and r.json()["motion"]["status"] == "stalled"  # fake arm never moves
     assert station.driver_types[0] == 1
     assert [c.sync_write.address for c in station.st3215_commands] == [0x28, 0x2E, 0x29, 0x2A, 0x2A, 0x2A]
+
+
+def test_move_to_execute_on_unmirrored_arm_sends_no_stop(model, solver):
+    c, station = make_client(model, solver, FRAME)
+    r = c.post(MOVE, json=down(0.21, 0.0, execute=True, speed=300))
+    assert r.status_code == 200, r.text
+    assert 1 not in station.driver_types
+    assert [c.sync_write.address for c in station.st3215_commands][:4] == [0x28, 0x2E, 0x29, 0x2A]
 
 
 def test_move_to_with_rpy_and_with_quaternion(model, solver):

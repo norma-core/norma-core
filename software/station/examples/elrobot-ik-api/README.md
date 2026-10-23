@@ -56,7 +56,7 @@ The tool point is the center of the closed jaws' tip edge, 0.104 beyond the wris
 | GET | `/cameras/{id}/image` | Newest frame as JPEG (decoded from the station's VP8 chain, or stored JPEG) |
 | GET | `/urdf` | The robot's URDF XML (`?variant=model` adds the tool frame and table box); meshes under `/urdf/assets/` |
 
-Executing a move first releases the arm from the station's leader→follower mirroring, so the leader stops overriding it.
+If the station is mirroring a leader onto the arm, executing a move first stops that mirroring, so the leader stops overriding it; an arm that is not mirrored is left alone (the mirroring driver answers every stop by switching the bus's torque off).
 
 `gripper` is 0 (closed) to 1 (open); omitted keeps the current opening. A close that returns `stalled` has met an object and leaves the servo straining against it: re-send the gripper about 0.05 wider than the opening it stopped at to hold without overloading. A close to 0 that returns `reached` gripped nothing. Orientation in `move-to` is the tcp frame in world coordinates; the gripper approach axis is the frame's +Y, so `rpy: {roll: -1.5708, pitch: 0, yaw: 0}` points it down, and `yaw` turns the jaws about the vertical.
 

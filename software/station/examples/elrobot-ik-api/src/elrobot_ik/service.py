@@ -33,6 +33,7 @@ from elrobot_ik.station.cameras import (
 )
 from elrobot_ik.station.client import StationError
 from elrobot_ik.station.commands import drive_commands, goal_command, mirroring_stop_command, torque_command
+from elrobot_ik.station.mirroring import MIRRORING_QUEUE, mirroring_targets
 
 log = logging.getLogger(__name__)
 
@@ -340,7 +341,7 @@ class ArmService:
         bus = self.resolve(arm_id)
         async with self._exclusive(bus.serial):
             if enabled:
-                await self._send([mirroring_stop_command(bus.serial)])  # the leader must not fight the hold
+                await self._release_from_mirroring(bus.serial)  # the leader must not fight the hold
             await self._send([torque_command(bus.serial, ELROBOT_MOTOR_IDS, enabled)])
         return {"id": bus.serial, "torque_enabled": enabled}
 
@@ -435,6 +436,23 @@ class ArmService:
                 found[kind].extend(p for p in pairs if frozenset(p) not in known and p not in found[kind])
         return found["self"], found["table"]
 
+    async def _is_mirroring_target(self, serial: str) -> bool:
+        """Whether the station currently mirrors a leader onto this bus, per the newest mirroring state."""
+        try:
+            entries = await self.client.read_tail(MIRRORING_QUEUE, 1)
+        except StationError as e:
+            if e.code == "not_found":  # the mirroring driver never published: nothing is mirrored
+                return False
+            raise self._station_error(e) from e
+        return bool(entries) and serial in mirroring_targets(entries[-1][1])
+
+    async def _release_from_mirroring(self, serial: str) -> None:
+        """Stop the station's leader->follower mirroring onto this bus, if there is one, or the leader's
+        goals would override ours. Only when the bus really is a target: the mirroring driver answers
+        every stop by switching the whole bus's torque off, which would drop an unmirrored arm."""
+        if await self._is_mirroring_target(serial):
+            await self._send([mirroring_stop_command(serial)])
+
     async def _send(self, commands) -> None:
         try:
             await self.client.send_commands(commands)
@@ -448,9 +466,8 @@ class ArmService:
         speed = clamp(self.settings.motion_speed if speed is None else int(speed), *SPEED_RANGE)
         accel = clamp(self.settings.motion_accel if accel is None else int(accel), *ACCEL_RANGE)
         t0 = time.monotonic()
-        # Release the bus from the station's leader->follower mirroring, or the leader's goals
-        # would override ours while we move; then torque, speed and accel in one write.
-        await self._send([mirroring_stop_command(bus.serial)])
+        await self._release_from_mirroring(bus.serial)
+        # Torque, speed and accel in one write, then the goals.
         *setup, goal = drive_commands(bus.serial, goals, speed, accel)
         await self._send(setup)
 

@@ -18,6 +18,7 @@ from tests.helpers import (
     CAM_QUEUE,
     FAST,
     INSTANCE,
+    MIRRORING_QUEUE,
     camera_queues,
     goal_steps,
     is_goal_write,
@@ -26,8 +27,10 @@ from tests.helpers import (
     make_elrobot_bus,
     make_frame,
     make_inference_states,
+    make_mirroring_state,
     make_motor_state,
     make_service,
+    mirroring_queues,
     vp8_camera_queues,
     vp8_packets,
 )
@@ -220,7 +223,7 @@ async def test_execute_refuses_station_reported_motor_error(model, solver):
 
 
 async def test_execute_stops_mirroring_then_sends_torque_speed_accel_goal(model, solver):
-    svc, client = make_service(model, solver, calibrated_frame())
+    svc, client = make_service(model, solver, calibrated_frame(), queues=mirroring_queues("F1"))
     client.arrive_at_goals()
     out = await point(svc, 0.21, 0.05, 0.05, execute=True, speed=800, accel=40)
     assert out.executed and out.motion.status == "reached"
@@ -233,6 +236,32 @@ async def test_execute_stops_mirroring_then_sends_torque_speed_accel_goal(model,
     assert int.from_bytes(speed.sync_write.motors[0].value, "little") == 800
     assert accel.sync_write.motors[0].value == bytes([40])
     assert list(goal_steps([goal]).values()) == out.motor_steps[:7]  # gripper omitted: motor 8 is not written
+
+
+async def test_execute_does_not_stop_mirroring_when_bus_is_not_a_target(model, solver):
+    """No mirroring state published at all: the arm is not mirrored, so no stop (the driver would torque the whole bus off)."""
+    svc, client = make_service(model, solver, calibrated_frame())
+    client.arrive_at_goals()
+    out = await point(svc, 0.21, 0.05, 0.05, execute=True)
+    assert out.motion.status == "reached"
+    assert 1 not in client.driver_types
+    assert addresses(client) == DRIVE_ADDRESSES
+
+
+async def test_execute_does_not_stop_mirroring_when_bus_is_only_a_source(model, solver):
+    svc, client = make_service(model, solver, calibrated_frame(), queues=mirroring_queues("X1", source="F1"))
+    client.arrive_at_goals()
+    await point(svc, 0.21, 0.05, 0.05, execute=True)
+    assert 1 not in client.driver_types
+
+
+async def test_execute_uses_the_newest_mirroring_state(model, solver):
+    """F1 was a target once; the newest entry says nothing is mirrored any more."""
+    queues = {MIRRORING_QUEUE: [make_mirroring_state(["F1"]), make_mirroring_state()]}
+    svc, client = make_service(model, solver, calibrated_frame(), queues=queues)
+    client.arrive_at_goals()
+    await point(svc, 0.21, 0.05, 0.05, execute=True)
+    assert 1 not in client.driver_types
 
 
 async def test_execute_reports_stalled_when_arm_does_not_move(model, solver):
@@ -266,7 +295,11 @@ async def test_set_torque(model, solver):
     assert client.driver_types == [0]  # releasing does not touch mirroring
     client.sent.clear()
     await svc.set_torque("F1", True)
-    assert client.driver_types == [1, 0]  # holding the arm first releases it from leader mirroring
+    assert client.driver_types == [0]  # not mirrored: nothing to release
+    client.sent.clear()
+    client.queues.update(mirroring_queues("F1"))
+    await svc.set_torque("F1", True)
+    assert client.driver_types == [1, 0]  # holding a mirrored arm first releases it from leader mirroring
 
 
 async def test_station_error_becomes_503(model, solver):

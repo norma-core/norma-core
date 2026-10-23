@@ -13,10 +13,11 @@ from elrobot_ik.station import registers as R
 from elrobot_ik.station.arms import parse_frame
 from elrobot_ik.station.cameras import FF_JPEG, FF_VP8
 from elrobot_ik.station.client import StationError
-from elrobot_ik.station.proto import commands_pb2, drivers_pb2, inference_pb2, st3215_pb2
+from elrobot_ik.station.proto import commands_pb2, drivers_pb2, inference_pb2, mirroring_pb2, st3215_pb2
 from elrobot_ik.station.proto.usbvideo import usbvideo_pb2
 
 CAL_MIN, CAL_MAX = 1024, 3072
+MIRRORING_QUEUE = "inference/mirroring"  # the station's mirroring state; the service must read exactly this queue
 INSTANCE = "/155b778e7f8b0d414166c9669fd609d5c12e10d48a82916554077bb4e62817eb"
 CAM_ID = "7bd21f18e39708492c1deee9e2a86aa7"
 CAM_QUEUE = f"{INSTANCE}/usbvideo/{CAM_ID}"
@@ -138,6 +139,23 @@ def vp8_camera_queues(n: int = 4, *, first_id: int = 1) -> dict[str, list[bytes]
         "inference-states": [make_inference_states({f"{INSTANCE}/st3215/inference": "st", CAM_QUEUE: "video"})],
         CAM_QUEUE: entries,
     }
+
+
+def make_mirroring_state(targets: tuple[str, ...] | list[str] = (), source: str = "L1") -> bytes:
+    """An inference/mirroring entry: the station's current mirroring, `source` driving `targets` (none = nothing mirrored)."""
+    env = mirroring_pb2.RxEnvelope()
+    env.state.SetInParent()
+    if targets:
+        m = env.state.mirroring.add()
+        m.source.id.unique_id = source
+        for t in targets:
+            m.targets.add().id.unique_id = t
+    return env.SerializeToString()
+
+
+def mirroring_queues(*targets: str, source: str = "L1") -> dict[str, list[bytes]]:
+    """Fake station queues where `source` currently mirrors onto `targets`."""
+    return {MIRRORING_QUEUE: [make_mirroring_state(targets, source=source)]}
 
 
 def camera_queues(latest_jpeg: bytes = b"\xff\xd8\xffjpeg") -> dict[str, list[bytes]]:

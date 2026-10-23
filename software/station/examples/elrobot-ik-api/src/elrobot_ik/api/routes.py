@@ -80,7 +80,7 @@ async def move_to(arm_id: str, body: MoveToRequest, request: Request) -> SolveRe
     0..1 also opens/closes (omit = keep).
 
     `execute: false` (default) only solves; `motor_steps` is what an execute would write.
-    `execute: true` releases the arm from leader mirroring, drives it and waits.
+    `execute: true` releases the arm from leader mirroring if it is being mirrored, drives it and waits.
     `motion.status`: `reached`, `stalled` (servos stopped short, or the jaws met something),
     `timeout` (still moving after 8 s), `unknown` (station data lost, or a newer command for
     this arm took over), `not_executed`. Errors: 422 `unreachable` / `collision`,
@@ -104,7 +104,7 @@ async def gripper(arm_id: str, body: GripperRequest, request: Request) -> dict:
 @router.post("/arms/{arm_id}/torque", tags=["motion"], summary="Hold or release all motors", response_model=TorqueResponse)
 async def torque(arm_id: str, body: TorqueRequest, request: Request) -> dict:
     """`enabled: false` releases every motor so the arm can be moved by hand (it sags under
-    gravity). `enabled: true` holds the arm where it is and releases it from leader mirroring.
+    gravity). `enabled: true` holds the arm where it is, releasing it from leader mirroring if it is being mirrored.
     """
     return await get_service(request).set_torque(arm_id, body.enabled)
 
