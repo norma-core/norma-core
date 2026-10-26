@@ -1,5 +1,8 @@
+#[cfg(any(target_os = "macos", target_os = "linux"))]
 use normfs::NormFS;
+#[cfg(any(target_os = "macos", target_os = "linux"))]
 use station_iface::StationEngine;
+#[cfg(any(target_os = "macos", target_os = "linux"))]
 use std::{path::PathBuf, sync::Arc};
 
 pub mod usbvideo_proto {

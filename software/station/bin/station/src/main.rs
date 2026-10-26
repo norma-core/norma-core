@@ -449,6 +449,7 @@ impl Station {
             }),
             flush_to_cloud,
             cloud_flush: parking_lot::Mutex::new(None),
+            #[cfg(any(target_os = "macos", target_os = "linux"))]
             usbvideo_instances: parking_lot::Mutex::new(Vec::new()),
             #[cfg(target_os = "linux")]
             hikmicro_thermal_handle: Mutex::new(None),
@@ -802,27 +803,35 @@ impl Station {
                                 usbvideo::codec::KEYFRAME_INTERVAL_MAX
                             );
                         }
-                        let usb_instance = usbvideo::start_usbvideo(
-                            self.normfs.clone(),
-                            self.engine.clone(),
-                            self.base_path.clone(),
-                            usbvideo::USBVideoConfig {
-                                resize_target: usb_video.resize_target,
-                                formats,
-                                frame_skip: usb_video.frame_skip,
-                                codec: match usb_video.codec {
-                                    station_iface::config::UsbVideoCodec::Jpeg => {
-                                        usbvideo::codec::VideoCodec::Jpeg
-                                    }
-                                    station_iface::config::UsbVideoCodec::Vp8 => {
-                                        usbvideo::codec::VideoCodec::Vp8
-                                    }
+                        #[cfg(any(target_os = "macos", target_os = "linux"))]
+                        {
+                            let usb_instance = usbvideo::start_usbvideo(
+                                self.normfs.clone(),
+                                self.engine.clone(),
+                                self.base_path.clone(),
+                                usbvideo::USBVideoConfig {
+                                    resize_target: usb_video.resize_target,
+                                    formats,
+                                    frame_skip: usb_video.frame_skip,
+                                    codec: match usb_video.codec {
+                                        station_iface::config::UsbVideoCodec::Jpeg => {
+                                            usbvideo::codec::VideoCodec::Jpeg
+                                        }
+                                        station_iface::config::UsbVideoCodec::Vp8 => {
+                                            usbvideo::codec::VideoCodec::Vp8
+                                        }
+                                    },
+                                    keyframe_interval: usb_video.keyframe_interval,
                                 },
-                                keyframe_interval: usb_video.keyframe_interval,
-                            },
-                        )
-                        .await;
-                        self.usbvideo_instances.lock().push(usb_instance);
+                            )
+                            .await;
+                            self.usbvideo_instances.lock().push(usb_instance);
+                        }
+                        #[cfg(not(any(target_os = "macos", target_os = "linux")))]
+                        {
+                            let _ = formats;
+                            log::warn!("usb-video has no camera driver for this platform");
+                        }
                     }
                     Err(e) => {
                         // Do not silently fall back to automatic format selection:
@@ -1028,15 +1037,18 @@ impl Station {
     }
 
     async fn shutdown(&self) -> Result<(), Box<dyn std::error::Error>> {
-        log::info!("Stopping USB video instances...");
-        let instances_to_stop = {
-            let instances = self.usbvideo_instances.lock();
-            instances.iter().cloned().collect::<Vec<_>>()
-        };
-        for instance in instances_to_stop.iter() {
-            instance.stop().await;
+        #[cfg(any(target_os = "macos", target_os = "linux"))]
+        {
+            log::info!("Stopping USB video instances...");
+            let instances_to_stop = {
+                let instances = self.usbvideo_instances.lock();
+                instances.iter().cloned().collect::<Vec<_>>()
+            };
+            for instance in instances_to_stop.iter() {
+                instance.stop().await;
+            }
+            log::info!("USB video instances stopped");
         }
-        log::info!("USB video instances stopped");
 
         #[cfg(target_os = "linux")]
         if let Some(handle) = self.hikmicro_thermal_handle.lock().take() {
