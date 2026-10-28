@@ -80,7 +80,9 @@ async def move_to(arm_id: str, body: MoveToRequest, request: Request) -> SolveRe
     0..1 also opens/closes (omit = keep).
 
     `execute: false` (default) only solves; `motor_steps` is what an execute would write.
-    `execute: true` releases the arm from leader mirroring, drives it and waits.
+    `execute: true` stops active mirroring, restores prior torque after the station's temporary
+    whole-bus release, enables the commanded motors, drives them and waits. Untouched motors
+    retain their prior torque state and goals. A failed handoff sends no new movement goal.
     `motion.status`: `reached`, `stalled` (servos stopped short, or the jaws met something),
     `timeout` (still moving after 8 s), `unknown` (station data lost, or a newer command for
     this arm took over), `not_executed`. Errors: 422 `unreachable` / `collision`,
@@ -95,7 +97,8 @@ async def move_to(arm_id: str, body: MoveToRequest, request: Request) -> SolveRe
 
 @router.post("/arms/{arm_id}/gripper", tags=["motion"], summary="Open or close the jaws", response_model=GripperResponse)
 async def gripper(arm_id: str, body: GripperRequest, request: Request) -> dict:
-    """Moves the gripper motor only; the arm stays where it is. `open` 0 = closed, 1 = fully
+    """Commands the gripper motor only; the arm motors retain their torque state and goals.
+    Stopping active mirroring temporarily releases the whole follower before torque is restored. `open` 0 = closed, 1 = fully
     open. `motion.status` `stalled` on closing means the jaws met an object (or the stop).
     """
     return await get_service(request).set_gripper(arm_id, body.open, speed=body.speed, accel=body.accel)
@@ -104,7 +107,8 @@ async def gripper(arm_id: str, body: GripperRequest, request: Request) -> dict:
 @router.post("/arms/{arm_id}/torque", tags=["motion"], summary="Hold or release all motors", response_model=TorqueResponse)
 async def torque(arm_id: str, body: TorqueRequest, request: Request) -> dict:
     """`enabled: false` releases every motor so the arm can be moved by hand (it sags under
-    gravity). `enabled: true` holds the arm where it is and releases it from leader mirroring.
+    gravity). Both requests detach active mirroring first. `enabled: true` enables all motors,
+    preloading current positions for those that were disabled. Returns after torque confirmation.
     """
     return await get_service(request).set_torque(arm_id, body.enabled)
 

@@ -123,7 +123,10 @@ class StationClient:
 
     async def read_tail(self, queue_id: str, n: int, timeout_s: float = 5.0) -> list[tuple[bytes, bytes]]:
         """The last `n` entries of a queue as (entry id, data), oldest first. Empty when the queue is empty."""
-        return await self._read(queue_id, normfs_pb2.OT_SHIFT_FROM_TAIL, n.to_bytes(8, "little"), n, timeout_s)
+        if n < 1:
+            raise ValueError("read_tail requires a positive entry count")
+        # The tail is the newest entry itself: shift 0 reads it, shift 1 its predecessor.
+        return await self._read(queue_id, normfs_pb2.OT_SHIFT_FROM_TAIL, (n - 1).to_bytes(8, "little"), n, timeout_s)
 
     async def read_from(self, queue_id: str, first_id: bytes, n: int, timeout_s: float = 5.0) -> list[tuple[bytes, bytes]]:
         """Up to `n` entries starting at entry id `first_id` (8 bytes, little-endian), oldest first."""

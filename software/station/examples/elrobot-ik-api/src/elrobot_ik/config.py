@@ -25,6 +25,7 @@ class Settings:
     motion_timeout_s: float = 8.0  # per attempt: give up waiting if the arm is still moving after this
     settle_window_s: float = 0.4  # positions unchanged this long = the servos have stopped
     settle_jitter_steps: int = 2
+    handoff_timeout_s: float = 2.0  # wait this long for the mirroring stop's torque-off, and for a torque write to read back
     max_nudges: int = 2  # re-command by the residual this many times when servos stop short
 
     @classmethod
