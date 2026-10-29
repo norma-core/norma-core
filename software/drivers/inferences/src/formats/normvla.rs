@@ -486,7 +486,9 @@ fn video_stamp_in_sync(
     rx_envelope: &usbvideo::usbvideo_proto::usbvideo::RxEnvelope,
     inference_stamp_ns: u64,
 ) -> bool {
+    // A session or device event, not a frame: the camera is between captures.
     let Some(frames_pack) = rx_envelope.frames.as_ref() else {
+        FRAME_STATS.lock().unwrap().skipped_video_unavailable += 1;
         return false;
     };
 

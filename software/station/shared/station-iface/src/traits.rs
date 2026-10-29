@@ -10,6 +10,9 @@ pub trait StationEngine: Send + Sync + 'static {
         opts: Vec<QueueOpt>,
     );
 
+    /// A queue that will not be written again, such as a disconnected camera's.
+    fn unregister_queue(&self, _queue_id: &normfs::QueueId) {}
+
     fn snapshot_gate(&self) -> SnapshotGate {
         SnapshotGate::default()
     }
