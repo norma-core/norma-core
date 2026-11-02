@@ -1,5 +1,6 @@
 use std::fs::{File, OpenOptions};
 use std::io::{ErrorKind, Read, Seek, SeekFrom};
+#[cfg(unix)]
 use std::os::unix::fs::OpenOptionsExt;
 
 pub const KMSG_PATH: &str = "/dev/kmsg";
@@ -20,10 +21,11 @@ pub struct KmsgSource {
 
 impl KmsgSource {
     pub fn open(replay_backlog: bool) -> std::io::Result<Self> {
-        let mut file = OpenOptions::new()
-            .read(true)
-            .custom_flags(libc::O_NONBLOCK)
-            .open(KMSG_PATH)?;
+        let mut options = OpenOptions::new();
+        options.read(true);
+        #[cfg(unix)]
+        options.custom_flags(libc::O_NONBLOCK);
+        let mut file = options.open(KMSG_PATH)?;
 
         if !replay_backlog {
             file.seek(SeekFrom::End(0))?;

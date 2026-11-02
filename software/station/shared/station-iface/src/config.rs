@@ -291,9 +291,12 @@ fn default_st3215_bus() -> String {
 impl Inference {
     /// Create a default normvla inference configuration
     pub fn default_normvla() -> Self {
-        // Use OS-appropriate path: /dev/shm for Linux (tmpfs, world-writable), /tmp for macOS
+        // Use OS-appropriate path: /dev/shm for Linux (tmpfs, world-writable), /tmp for macOS,
+        // the user's temp folder on Windows, which has no /tmp
         let shm_path = if cfg!(target_os = "linux") {
             PathBuf::from("/dev/shm/normvla")
+        } else if cfg!(target_os = "windows") {
+            std::env::temp_dir().join("normvla")
         } else {
             PathBuf::from("/tmp/normvla")
         };

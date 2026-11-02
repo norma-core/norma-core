@@ -5,10 +5,12 @@ use station_iface::StationEngine;
 use station_iface::iface_proto::drivers::QueueDataType;
 #[cfg(target_os = "linux")]
 use std::fs;
-#[cfg(target_os = "macos")]
+#[cfg(any(target_os = "macos", target_os = "windows"))]
 use std::process::Command;
 use std::sync::Arc;
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use std::time::Duration;
+#[cfg(unix)]
+use std::time::{SystemTime, UNIX_EPOCH};
 use sysinfo::{Components, Disks, Networks, System, ThreadKind, Users};
 use tokio::sync::RwLock;
 use tokio::time;
@@ -341,7 +343,7 @@ impl SystemMonitor {
                         .and_then(|uid| users.get_user_by_id(uid))
                         .map(|user| user.name().to_string())
                         .unwrap_or_default(),
-                    uid: process.user_id().map(|uid| **uid as i64).unwrap_or(-1),
+                    uid: uid_of(process),
                     gid: process.group_id().map(|gid| *gid as i64).unwrap_or(-1),
                     session_id: process
                         .session_id()
@@ -438,8 +440,46 @@ pub fn fetch_hardware_id() -> Option<String> {
     #[cfg(target_os = "macos")]
     return fetch_macos_hardware_id();
 
+    #[cfg(target_os = "windows")]
+    return fetch_windows_hardware_id();
+
     #[cfg(not(any(target_os = "linux", target_os = "windows", target_os = "macos")))]
     None
+}
+
+/// Windows keeps a per-install id in the registry. reg.exe is named by its
+/// full path so one next to station.exe is not run instead.
+#[cfg(target_os = "windows")]
+fn fetch_windows_hardware_id() -> Option<String> {
+    let root = std::env::var_os("SystemRoot")?;
+    let reg = std::path::Path::new(&root).join("System32").join("reg.exe");
+    let output = Command::new(reg)
+        .args([
+            "query",
+            r"HKLM\SOFTWARE\Microsoft\Cryptography",
+            "/v",
+            "MachineGuid",
+        ])
+        .output()
+        .ok()?;
+    let stdout = String::from_utf8(output.stdout).ok()?;
+    stdout
+        .lines()
+        .find(|line| line.contains("MachineGuid"))
+        .and_then(|line| line.split_whitespace().last())
+        .map(str::to_string)
+        .filter(|s| !s.is_empty())
+}
+
+/// A Windows owner is a SID, not a number.
+fn uid_of(process: &sysinfo::Process) -> i64 {
+    #[cfg(unix)]
+    return process.user_id().map(|uid| **uid as i64).unwrap_or(-1);
+    #[cfg(not(unix))]
+    {
+        let _ = process;
+        -1
+    }
 }
 
 #[cfg(target_os = "linux")]
