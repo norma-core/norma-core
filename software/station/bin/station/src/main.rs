@@ -208,6 +208,10 @@ struct Station {
     usbvideo_instances: parking_lot::Mutex<
         Vec<Arc<usbvideo::pipeline::USBVideoManager<usbvideo::linux::CameraLinuxDriver>>>,
     >,
+    #[cfg(target_os = "windows")]
+    usbvideo_instances: parking_lot::Mutex<
+        Vec<Arc<usbvideo::pipeline::USBVideoManager<usbvideo::windows::CameraWindowsDriver>>>,
+    >,
 
     #[cfg(target_os = "linux")]
     hikmicro_thermal_handle: Mutex<Option<hikmicro_thermal::HikmicroThermalHandle>>,
@@ -449,7 +453,6 @@ impl Station {
             }),
             flush_to_cloud,
             cloud_flush: parking_lot::Mutex::new(None),
-            #[cfg(any(target_os = "macos", target_os = "linux"))]
             usbvideo_instances: parking_lot::Mutex::new(Vec::new()),
             #[cfg(target_os = "linux")]
             hikmicro_thermal_handle: Mutex::new(None),
@@ -803,35 +806,27 @@ impl Station {
                                 usbvideo::codec::KEYFRAME_INTERVAL_MAX
                             );
                         }
-                        #[cfg(any(target_os = "macos", target_os = "linux"))]
-                        {
-                            let usb_instance = usbvideo::start_usbvideo(
-                                self.normfs.clone(),
-                                self.engine.clone(),
-                                self.base_path.clone(),
-                                usbvideo::USBVideoConfig {
-                                    resize_target: usb_video.resize_target,
-                                    formats,
-                                    frame_skip: usb_video.frame_skip,
-                                    codec: match usb_video.codec {
-                                        station_iface::config::UsbVideoCodec::Jpeg => {
-                                            usbvideo::codec::VideoCodec::Jpeg
-                                        }
-                                        station_iface::config::UsbVideoCodec::Vp8 => {
-                                            usbvideo::codec::VideoCodec::Vp8
-                                        }
-                                    },
-                                    keyframe_interval: usb_video.keyframe_interval,
+                        let usb_instance = usbvideo::start_usbvideo(
+                            self.normfs.clone(),
+                            self.engine.clone(),
+                            self.base_path.clone(),
+                            usbvideo::USBVideoConfig {
+                                resize_target: usb_video.resize_target,
+                                formats,
+                                frame_skip: usb_video.frame_skip,
+                                codec: match usb_video.codec {
+                                    station_iface::config::UsbVideoCodec::Jpeg => {
+                                        usbvideo::codec::VideoCodec::Jpeg
+                                    }
+                                    station_iface::config::UsbVideoCodec::Vp8 => {
+                                        usbvideo::codec::VideoCodec::Vp8
+                                    }
                                 },
-                            )
-                            .await;
-                            self.usbvideo_instances.lock().push(usb_instance);
-                        }
-                        #[cfg(not(any(target_os = "macos", target_os = "linux")))]
-                        {
-                            let _ = formats;
-                            log::warn!("usb-video has no camera driver for this platform");
-                        }
+                                keyframe_interval: usb_video.keyframe_interval,
+                            },
+                        )
+                        .await;
+                        self.usbvideo_instances.lock().push(usb_instance);
                     }
                     Err(e) => {
                         // Do not silently fall back to automatic format selection:
@@ -1037,18 +1032,15 @@ impl Station {
     }
 
     async fn shutdown(&self) -> Result<(), Box<dyn std::error::Error>> {
-        #[cfg(any(target_os = "macos", target_os = "linux"))]
-        {
-            log::info!("Stopping USB video instances...");
-            let instances_to_stop = {
-                let instances = self.usbvideo_instances.lock();
-                instances.iter().cloned().collect::<Vec<_>>()
-            };
-            for instance in instances_to_stop.iter() {
-                instance.stop().await;
-            }
-            log::info!("USB video instances stopped");
+        log::info!("Stopping USB video instances...");
+        let instances_to_stop = {
+            let instances = self.usbvideo_instances.lock();
+            instances.iter().cloned().collect::<Vec<_>>()
+        };
+        for instance in instances_to_stop.iter() {
+            instance.stop().await;
         }
+        log::info!("USB video instances stopped");
 
         #[cfg(target_os = "linux")]
         if let Some(handle) = self.hikmicro_thermal_handle.lock().take() {
@@ -1197,7 +1189,23 @@ fn listen_for_shutdown() -> Arc<tokio::sync::Notify> {
         use tokio::signal::unix::{SignalKind, signal};
         signal(SignalKind::interrupt()).and_then(|i| Ok((i, signal(SignalKind::terminate())?)))
     };
+    // Closing the console window or shutting Windows down ends the process a few seconds
+    // later, so those stop station as ctrl-c does.
+    #[cfg(windows)]
+    let signals = {
+        use tokio::signal::windows::{ctrl_break, ctrl_c, ctrl_close, ctrl_shutdown};
+        ctrl_c().and_then(|c| Ok((c, ctrl_break()?, ctrl_close()?, ctrl_shutdown()?)))
+    };
     tokio::spawn(async move {
+        #[cfg(windows)]
+        let (mut ctrl_c, mut ctrl_break, mut ctrl_close, mut ctrl_shutdown) = match signals {
+            Ok(signals) => signals,
+            Err(e) => {
+                log::error!("Cannot listen for shutdown signals, shutting down: {e}");
+                notify.notify_one();
+                return;
+            }
+        };
         #[cfg(unix)]
         let (mut interrupt, mut terminate) = match signals {
             Ok(signals) => signals,
@@ -1214,7 +1222,14 @@ fn listen_for_shutdown() -> Arc<tokio::sync::Notify> {
                 _ = interrupt.recv() => {}
                 _ = terminate.recv() => {}
             }
-            #[cfg(not(unix))]
+            #[cfg(windows)]
+            tokio::select! {
+                _ = ctrl_c.recv() => {}
+                _ = ctrl_break.recv() => {}
+                _ = ctrl_close.recv() => {}
+                _ = ctrl_shutdown.recv() => {}
+            }
+            #[cfg(not(any(unix, windows)))]
             if let Err(e) = tokio::signal::ctrl_c().await {
                 log::error!("Cannot listen for ctrl-c, shutting down: {e}");
                 notify.notify_one();
