@@ -82,3 +82,6 @@ Where:
 | joints                           | list<struct{<br/>range_min: u32, <br/>range_max: u32, <br/>position: u32, <br/>position_norm: f32, <br/>goal: u32, <br/>goal_norm: f32, <br/>current_ma: u32, <br/>velocity: u32<br/>}> | per-servo telemetry, raw + normalized           |
 | images                           | list<struct{jpeg:binary}>                                                                                                                                                               | one JPEG blob per camera, embedded              |
 | task                             | string                                                                                                                                                                                  | natural-language task                           |
+The images are 224x224, the size normvla records. To export the camera's full
+resolution, or to convert the dataset to LeRobot format, see
+[`lerobot-export-py`](../../../software/station/examples/lerobot-export-py/).

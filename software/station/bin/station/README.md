@@ -123,6 +123,7 @@ asyncio.run(main())
 - **[SO101/ElRobot Remote Teleop (Python)](../../examples/st3215-remote-teleop-py/)** - Mirror motor positions from leader arm to follower arm across stations
 - **[SmolVLA Fine-tune (Python)](../../../ai/smolvla_py/)** - Train and deploy vision-language-action policy on SO101 arm
 - **[Dataset Export Guide](../../../../docs/datasets/export-parquet/)** - Export Parquet datasets from station history for ML training
+- **[Full-resolution and LeRobot export (Python)](../../examples/lerobot-export-py/)** - Export tagged episodes at the camera's full resolution and convert them to LeRobot datasets
 
 ## ✨ Features
 
