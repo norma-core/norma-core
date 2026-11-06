@@ -6,6 +6,7 @@ import webSocketManager from '../api/websocket';
 import { useInferenceState, useWakeLock } from '../hooks';
 import { useLocation, Link, useNavigate } from 'react-router-dom';
 import { getMotorVoltage } from '../st3215/motor-parser';
+import { isLeaderBus } from '../st3215/bus-role';
 import { supportsSt3215Bus } from '@/devices/st3215-models';
 
 const MIN_CALIBRATED_RANGE = 100;
@@ -354,6 +355,7 @@ const St3215BusCalibrationPage: React.FC = () => {
                 busSerialNumber={currentBusState.bus?.serialNumber}
                 bus={currentBusState}
                 busIndex={0}
+                isLeader={isLeaderBus(currentBusState.motors)}
                 showMotorData={true}
                 inCalibrationView={true}
               />

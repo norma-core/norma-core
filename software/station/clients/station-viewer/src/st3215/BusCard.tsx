@@ -13,6 +13,7 @@ import CameraViewer from '@/usbvideo/CameraViewer';
 import { isVideoSourceFresh } from '@/usbvideo/camera-source';
 import RobotCameraView from '@/usbvideo/RobotCameraView';
 import BusWebGLRenderer from '@/st3215/BusWebGLRenderer';
+import { isLeaderBus } from '@/st3215/bus-role';
 import CameraHudControls, { type CameraLayoutMode } from '@/usbvideo/CameraHudControls';
 import MotorDataTable from '@/st3215/MotorDataTable';
 import { ADDR_GOAL_POSITION, getMotorPosition } from '@/st3215/motor-parser';
@@ -109,6 +110,9 @@ const BusCard: React.FC<BusCardProps> = ({
   const currentMirror = mirroringState?.mirroring?.find((m) =>
     m.targets?.some((t) => t.id?.uniqueId === busSerialNumber),
   );
+  // Leader arms render their own URDF (handle and trigger instead of a gripper).
+  // A leader is recognised by its supply voltage (5 V vs 12 V for followers).
+  const isLeader = isLeaderBus(bus.motors);
 
   const setWebControlledState = useCallback((nextState: boolean) => {
     setIsWebControlled(nextState);
@@ -606,6 +610,7 @@ const BusCard: React.FC<BusCardProps> = ({
             showCalibrateButton={true}
             needsCalibration={needsCalibration}
             isWebControlled={isWebControlled}
+            isLeader={isLeader}
           />
         ) : (
           <>
