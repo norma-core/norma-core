@@ -32,10 +32,16 @@ export function getBusVoltage(
  * Whether the bus is powered as a leader arm. Decided by the supply voltage
  * the servos report, so it works before any mirroring has been configured and
  * regardless of which bus the mirroring driver last used as a source.
+ *
+ * A frame in which no motor reports a voltage (state not yet received, or a
+ * failed read cycle) says nothing about the role, so `previous` is kept
+ * rather than flipping the bus to a follower and back.
  */
 export function isLeaderBus(
   motors: st3215.InferenceState.IMotorState[] | null | undefined,
+  previous = false,
 ): boolean {
   const voltage = getBusVoltage(motors);
-  return voltage !== null && voltage < LEADER_MAX_VOLTAGE_DECIVOLTS;
+  if (voltage === null) return previous;
+  return voltage < LEADER_MAX_VOLTAGE_DECIVOLTS;
 }

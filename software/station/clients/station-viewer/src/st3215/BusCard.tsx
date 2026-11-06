@@ -6,6 +6,7 @@ import { commandManager } from '@/api/commands';
 import { supportsSt3215Bus } from '@/devices/st3215-models';
 import { FrameEntry } from '@/api/frame-parser';
 import { useElementFullscreen } from '@/hooks/useElementFullscreen';
+import { useIsLeaderBus } from '@/hooks/useIsLeaderBus';
 import { motors_mirroring, st3215, usbvideo } from '@/api/proto.js';
 import { serverToLocal } from '@/api/timestamp-utils';
 import { getLatencyBgColor, getLatencyTextColor } from '@/utils/color-utils';
@@ -13,7 +14,6 @@ import CameraViewer from '@/usbvideo/CameraViewer';
 import { isVideoSourceFresh } from '@/usbvideo/camera-source';
 import RobotCameraView from '@/usbvideo/RobotCameraView';
 import BusWebGLRenderer from '@/st3215/BusWebGLRenderer';
-import { isLeaderBus } from '@/st3215/bus-role';
 import CameraHudControls, { type CameraLayoutMode } from '@/usbvideo/CameraHudControls';
 import MotorDataTable from '@/st3215/MotorDataTable';
 import { ADDR_GOAL_POSITION, getMotorPosition } from '@/st3215/motor-parser';
@@ -112,7 +112,7 @@ const BusCard: React.FC<BusCardProps> = ({
   );
   // Leader arms render their own URDF (handle and trigger instead of a gripper).
   // A leader is recognised by its supply voltage (5 V vs 12 V for followers).
-  const isLeader = isLeaderBus(bus.motors);
+  const isLeader = useIsLeaderBus(bus.motors);
 
   const setWebControlledState = useCallback((nextState: boolean) => {
     setIsWebControlled(nextState);

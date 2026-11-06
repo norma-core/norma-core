@@ -12,6 +12,7 @@ import {
 } from '../utils';
 import { appendHash } from '@/utils/asset-hashes';
 import { getRendererThemeColors } from '@/utils/theme-colors';
+import { LoadTracker } from './load-tracker';
 import type { BaseRobotRendererProps, BaseRobotRendererRef } from './types';
 
 const BaseRobotRenderer = forwardRef<BaseRobotRendererRef, BaseRobotRendererProps>((props, ref) => {
@@ -57,7 +58,10 @@ const BaseRobotRenderer = forwardRef<BaseRobotRendererRef, BaseRobotRendererProp
   };
 
   const cleanupRobot = () => {
-    if (!sceneRef.current || !sceneRef.current.robot) return;
+    if (!sceneRef.current) return;
+    // A load still in flight belongs to the previous URDF: drop its result.
+    sceneRef.current.load.cancel();
+    if (!sceneRef.current.robot) return;
     sceneRef.current.scene.remove(sceneRef.current.robot);
     disposeObject3D(sceneRef.current.robot);
     sceneRef.current.robot = null;
@@ -86,10 +90,10 @@ const BaseRobotRenderer = forwardRef<BaseRobotRendererRef, BaseRobotRendererProp
   };
 
   const loadRobot = () => {
-    if (!sceneRef.current || sceneRef.current.isLoading) {
+    if (!sceneRef.current || sceneRef.current.load.isPending) {
       return;
     }
-    sceneRef.current.isLoading = true;
+    const loadToken = sceneRef.current.load.begin();
     const loader = new URDFLoader();
     loader.loadMeshCb = function(path: string, manager: THREE.LoadingManager, onComplete: (mesh: THREE.Mesh) => void) {
       const stlLoader = new STLLoader(manager);
@@ -118,14 +122,13 @@ const BaseRobotRenderer = forwardRef<BaseRobotRendererRef, BaseRobotRendererProp
     loader.load(
       appendHash(urdfPath),
       (result: any) => {
-        if (!sceneRef.current) {
+        if (!sceneRef.current || !sceneRef.current.load.settle(loadToken)) {
           disposeObject3D(result as THREE.Object3D);
           return;
         }
         const robot = result;
         sceneRef.current.scene.add(robot);
         sceneRef.current.robot = robot;
-        sceneRef.current.isLoading = false;
 
         const R_base = rpyToMatrix(baseRpy[0], baseRpy[1], baseRpy[2]);
         sceneRef.current.baseTransform = mat4FromRotationTranslation(R_base, basePos as [number, number, number]);
@@ -205,9 +208,7 @@ const BaseRobotRenderer = forwardRef<BaseRobotRendererRef, BaseRobotRendererProp
       () => {},
       (error: any) => {
         console.error('An error occurred loading the URDF:', error);
-        if (sceneRef.current) {
-          sceneRef.current.isLoading = false;
-        }
+        sceneRef.current?.load.settle(loadToken);
       }
     );
   };
@@ -261,7 +262,7 @@ const BaseRobotRenderer = forwardRef<BaseRobotRendererRef, BaseRobotRendererProp
       model: null,
       arm: null,
       animationId: 0,
-      isLoading: false,
+      load: new LoadTracker(),
       gridHelper: null,
       jointSpheres: [],
       endEffectorSphere: null,

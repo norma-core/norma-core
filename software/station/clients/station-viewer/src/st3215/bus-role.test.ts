@@ -48,4 +48,16 @@ describe('isLeaderBus', () => {
     expect(isLeaderBus([])).toBe(false);
     expect(isLeaderBus(null)).toBe(false);
   });
+
+  it('keeps the previous role when no motor reports a voltage', () => {
+    expect(isLeaderBus([{ id: 1 }], true)).toBe(true);
+    expect(isLeaderBus([motor(0)], true)).toBe(true);
+    expect(isLeaderBus([], true)).toBe(true);
+    expect(isLeaderBus(undefined, false)).toBe(false);
+  });
+
+  it('lets a reported voltage override the previous role', () => {
+    expect(isLeaderBus([motor(120)], true)).toBe(false);
+    expect(isLeaderBus([motor(50)], false)).toBe(true);
+  });
 });
