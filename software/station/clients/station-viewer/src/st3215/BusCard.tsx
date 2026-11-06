@@ -6,7 +6,6 @@ import { commandManager } from '@/api/commands';
 import { supportsSt3215Bus } from '@/devices/st3215-models';
 import { FrameEntry } from '@/api/frame-parser';
 import { useElementFullscreen } from '@/hooks/useElementFullscreen';
-import { useIsLeaderBus } from '@/hooks/useIsLeaderBus';
 import { motors_mirroring, st3215, usbvideo } from '@/api/proto.js';
 import { serverToLocal } from '@/api/timestamp-utils';
 import { getLatencyBgColor, getLatencyTextColor } from '@/utils/color-utils';
@@ -110,9 +109,6 @@ const BusCard: React.FC<BusCardProps> = ({
   const currentMirror = mirroringState?.mirroring?.find((m) =>
     m.targets?.some((t) => t.id?.uniqueId === busSerialNumber),
   );
-  // Leader arms render their own URDF (handle and trigger instead of a gripper).
-  // A leader is recognised by its supply voltage (5 V vs 12 V for followers).
-  const isLeader = useIsLeaderBus(bus.motors);
 
   const setWebControlledState = useCallback((nextState: boolean) => {
     setIsWebControlled(nextState);
@@ -610,7 +606,6 @@ const BusCard: React.FC<BusCardProps> = ({
             showCalibrateButton={true}
             needsCalibration={needsCalibration}
             isWebControlled={isWebControlled}
-            isLeader={isLeader}
           />
         ) : (
           <>

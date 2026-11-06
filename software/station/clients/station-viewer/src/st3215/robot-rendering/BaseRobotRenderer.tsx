@@ -143,7 +143,8 @@ const BaseRobotRenderer = forwardRef<BaseRobotRendererRef, BaseRobotRendererProp
         fetch(appendHash(urdfPath))
               .then(response => response.text())
               .then(urdfText => {
-                  if (!sceneRef.current) return;
+                  // The robot may have been swapped while this fetch was in flight.
+                  if (!sceneRef.current || !sceneRef.current.load.isCurrent(loadToken)) return;
                   sceneRef.current.model = parseUrdf(urdfText);
               })
               .catch(error => {
@@ -270,7 +271,7 @@ const BaseRobotRenderer = forwardRef<BaseRobotRendererRef, BaseRobotRendererProp
     };
 
     applySceneTheme();
-    loadRobot();
+    // The URDF effect below runs on mount as well and starts the first load.
 
     const animate = () => {
       if (!sceneRef.current) return;

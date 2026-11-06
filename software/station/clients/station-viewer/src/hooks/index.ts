@@ -12,6 +12,7 @@ export { useKeyboardNavigation } from "./useKeyboardNavigation";
 export { useWakeLock } from "./useWakeLock";
 export { useBusMonitor } from "./useBusMonitor";
 export { useElementFullscreen } from "./useElementFullscreen";
+export { useIsLeaderBus } from "./useIsLeaderBus";
 export { useUsbVideoPicture } from "./useUsbVideoPicture";
 export { ThemeProvider, useTheme } from "./useTheme";
 export type { Theme } from "./useTheme";

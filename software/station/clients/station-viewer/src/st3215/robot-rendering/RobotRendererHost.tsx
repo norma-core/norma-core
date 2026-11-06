@@ -1,5 +1,6 @@
 import { forwardRef, lazy, memo, Suspense, useImperativeHandle, useMemo, useRef } from 'react';
 import { resolveSt3215Model } from '@/devices/st3215-models';
+import { useIsLeaderBus } from '@/hooks';
 import type {
   BaseRobotRendererRef,
   St3215RobotRendererProps,
@@ -10,6 +11,10 @@ const RobotRendererHostComponent = forwardRef<BaseRobotRendererRef, St3215RobotR
     const childRef = useRef<BaseRobotRendererRef>(null);
     const motorCount = props.bus.motors?.length ?? 0;
     const model = resolveSt3215Model(props.bus);
+    // Leader arms render their own URDF (handle and trigger instead of a
+    // gripper). The role is read from the motors' supply voltage here so every
+    // caller (live card, calibration, history) gets it without passing it.
+    const isLeader = useIsLeaderBus(props.bus.motors);
     // Registry entries are module-scope objects, so this identity is stable
     // while the matched device stays the same.
     const LazyRenderer = useMemo(
@@ -35,7 +40,7 @@ const RobotRendererHostComponent = forwardRef<BaseRobotRendererRef, St3215RobotR
 
     return (
       <Suspense fallback={<div className="flex h-full w-full items-center justify-center bg-surface-primary/20 text-accent-data">Loading device...</div>}>
-        <LazyRenderer {...props} ref={childRef} />
+        <LazyRenderer {...props} isLeader={isLeader} ref={childRef} />
       </Suspense>
     );
   },

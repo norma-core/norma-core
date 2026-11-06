@@ -23,6 +23,11 @@ export class LoadTracker {
     this.generation += 1;
   }
 
+  /** Whether `token` belongs to the most recent load (pending or settled). */
+  isCurrent(token: number): boolean {
+    return token === this.generation;
+  }
+
   settle(token: number): boolean {
     if (token !== this.generation) return false;
     this.pending = false;

@@ -10,6 +10,18 @@ describe('LoadTracker', () => {
     expect(tracker.isPending).toBe(false);
   });
 
+  it('keeps a settled load current until the next load or cancel', () => {
+    const tracker = new LoadTracker();
+    const token = tracker.begin();
+    tracker.settle(token);
+    expect(tracker.isCurrent(token)).toBe(true);
+    tracker.cancel();
+    expect(tracker.isCurrent(token)).toBe(false);
+    const next = tracker.begin();
+    expect(tracker.isCurrent(token)).toBe(false);
+    expect(tracker.isCurrent(next)).toBe(true);
+  });
+
   it('rejects a load that was cancelled while in flight', () => {
     const tracker = new LoadTracker();
     const stale = tracker.begin();

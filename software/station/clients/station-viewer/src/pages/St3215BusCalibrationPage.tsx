@@ -6,7 +6,6 @@ import webSocketManager from '../api/websocket';
 import { useInferenceState, useWakeLock } from '../hooks';
 import { useLocation, Link, useNavigate } from 'react-router-dom';
 import { getMotorVoltage } from '../st3215/motor-parser';
-import { useIsLeaderBus } from '../hooks/useIsLeaderBus';
 import { supportsSt3215Bus } from '@/devices/st3215-models';
 
 const MIN_CALIBRATED_RANGE = 100;
@@ -71,7 +70,6 @@ const St3215BusCalibrationPage: React.FC = () => {
   const isCalibrating = calibrationState?.status === st3215.AutoCalibrationState.Status.IN_PROGRESS;
   const hasValidMotors = currentBusState ? supportsSt3215Bus(currentBusState) : false;
   const isSupportedRobot = hasValidMotors;
-  const isLeader = useIsLeaderBus(currentBusState?.motors);
 
   // Check voltage across all motors (voltage is in 0.1V units, so 70 = 7.0V)
   const minVoltage = currentBusState?.motors?.reduce((min, motor) => {
@@ -356,7 +354,6 @@ const St3215BusCalibrationPage: React.FC = () => {
                 busSerialNumber={currentBusState.bus?.serialNumber}
                 bus={currentBusState}
                 busIndex={0}
-                isLeader={isLeader}
                 showMotorData={true}
                 inCalibrationView={true}
               />
