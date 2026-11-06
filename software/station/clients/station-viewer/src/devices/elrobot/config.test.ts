@@ -51,10 +51,19 @@ describe('ElRobot leader URDF', () => {
     expect([...leaderLinks.keys()].filter((name) => !followerLinks.has(name))).toEqual(['Wrist_Roll_SO101_1', 'Trigger_SO101_1']);
   });
 
-  it('only re-parents motor 7 and replaces motor 8 with the trigger', () => {
+  it('keeps motor 7 in place but gives it the leader wrist-roll travel and child', () => {
     const followerJoint7 = byName(follower, 'joint').get('rev_motor_07')!;
     const leaderJoint7 = byName(leader, 'joint').get('rev_motor_07')!;
-    expect(leaderJoint7.replace('Wrist_Roll_SO101_1', 'Gripper_Base_v1_1')).toBe(followerJoint7);
+    const part = (joint: string, tag: string): string => joint.match(new RegExp(`<${tag} [^>]*/>`))![0];
+    expect(part(leaderJoint7, 'origin')).toBe(part(followerJoint7, 'origin'));
+    expect(part(leaderJoint7, 'axis')).toBe(part(followerJoint7, 'axis'));
+    expect(part(leaderJoint7, 'parent')).toBe(part(followerJoint7, 'parent'));
+    expect(part(leaderJoint7, 'child')).toBe('<child link="Wrist_Roll_SO101_1"/>');
+    // The leader wrist roll sweeps 3352 encoder steps (294.6 deg) between its stops; the viewer maps the
+    // calibrated range onto these limits, so their span must match that travel, not the follower's 340 deg.
+    const limits = part(leaderJoint7, 'limit').match(/upper="([^"]+)" lower="([^"]+)"/)!;
+    const spanDeg = ((Number(limits[1]) - Number(limits[2])) * 180) / Math.PI;
+    expect(spanDeg).toBeCloseTo((3352 / 4096) * 360, 1);
     expect(byName(leader, 'joint').has('trigger')).toBe(true);
     expect(byName(leader, 'joint').has('rev_motor_08')).toBe(false);
   });

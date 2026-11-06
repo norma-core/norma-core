@@ -2,6 +2,7 @@
 <!-- ElRobot leader arm (https://normacore.dev/, hardware/elrobot in this repository) -->
 <!-- Built from elrobot_follower.urdf: joints 1-7 and their meshes are the follower's; the gripper (Gripper_Base, ST3215_8, gear, jaws) is replaced by the leader parts mounted on the motor 7 horn: Wrist_Roll_SO101, Handle_SO101 and Trigger_SO101 (hardware/elrobot/STL/elrobot_individual_parts/elrobot_leader_parts, mm) with the trigger servo mesh from the SO101 leader (sts3215_03a_v1.stl, metres, TheRobotStudio SO-ARM100, Apache-2.0). -->
 <!-- The leader parts, servo and trigger joint keep their relative placement from the SO101 leader URDF (link "gripper", joint "6"); that frame is rotated into the motor 7 frame so the horn faces coincide. The roll about the motor 7 axis was fitted to the bench pose in which the handle hangs straight down (base -Z): motors 1-8 at 51/0/48/98/45/51/13/0 % of their calibrated ranges (motor 7 at 13 % of its range). Trigger limits are the SO101 leader's: lower = trigger against the grip, upper = released. -->
+<!-- rev_motor_07 keeps the follower's origin and axis but its limits span 294.6 deg (lower -3.08669, upper 2.05521): the leader wrist roll sweeps 3352 encoder steps between its mechanical stops, and the viewer maps the calibrated range onto the joint limits, so the span must match the real travel for the handle to render at the right angle across the range. -->
 <robot name="Elrobot_leader">
   <material name="silver">
     <color rgba="0.700 0.700 0.700 1.000" />
@@ -434,7 +435,7 @@
     <parent link="ST3215_7_v1_1" />
     <child link="Wrist_Roll_SO101_1" />
     <axis xyz="-0.017144 -0.999812 0.009029" />
-    <limit upper="2.7336" lower="-3.2014" effort="2.94" velocity="4.71" />
+    <limit upper="2.05521" lower="-3.08669" effort="2.94" velocity="4.71" />
   </joint>
   <joint name="trigger" type="revolute">
     <origin xyz="-0.013733 0.0235074 -0.0146644" rpy="0.0134696 0.836122 3.13444" />
