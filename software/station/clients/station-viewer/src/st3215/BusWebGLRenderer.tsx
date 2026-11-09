@@ -14,7 +14,6 @@ interface BusWebGLRendererProps {
   showCalibrateButton?: boolean;
   needsCalibration?: boolean;
   selectedVideoSourceId?: string | null;
-  isLeader?: boolean;
   inCalibrationView?: boolean;
   isWebControlled?: boolean;
 }

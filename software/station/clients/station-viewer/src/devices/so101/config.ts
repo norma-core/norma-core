@@ -1,10 +1,11 @@
+import type { BusRole } from '@/st3215/bus-role';
 import type { MotorMaterialContext } from '@/st3215/robot-rendering/types';
 
 export const SO101_DEVICE_ID = 'so101';
 export const SO101_MOTOR_COUNT = 6;
 
-export function resolveSo101UrdfPath(isLeader?: boolean): string {
-  return isLeader
+export function resolveSo101UrdfPath(role: BusRole): string {
+  return role === 'leader'
     ? 'devices/so101/so101_robot_leader.urdf'
     : 'devices/so101/so101_robot_follower.urdf';
 }

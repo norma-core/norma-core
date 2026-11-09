@@ -12,14 +12,13 @@ import {
 } from './config';
 
 const SO101DeviceRenderer = forwardRef<BaseRobotRendererRef, St3215RobotRendererProps>(
-  function SO101DeviceRenderer({ busSerialNumber, bus, isLeader }, ref) {
+  function SO101DeviceRenderer({ busSerialNumber, bus, role }, ref) {
     return (
       <BaseRobotRenderer
         ref={ref}
         busSerialNumber={busSerialNumber}
         bus={bus}
-        isLeader={isLeader}
-        urdfPath={resolveSo101UrdfPath(isLeader)}
+        urdfPath={resolveSo101UrdfPath(role)}
         basePos={so101BasePos}
         baseRpy={so101BaseRpy}
         resolveMotorMaterialIndex={resolveSo101MotorMaterialIndex}

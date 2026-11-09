@@ -4,20 +4,21 @@ import {
   ELROBOT_MOTOR_COUNT,
   elrobotBasePos,
   elrobotBaseRpy,
-  elrobotJointNames,
-  elrobotUrdfPath,
+  elrobotFollowerJointNames,
   resolveElrobotJointValue,
+  resolveElrobotUrdfPath,
 } from './config';
 
 export default st3215Model({
   id: ELROBOT_DEVICE_ID,
   label: 'ElRobot',
   motorCount: ELROBOT_MOTOR_COUNT,
+  // Joint-count lookups (NormVLA) carry no role; a policy acts on the follower.
   kinematics: {
-    urdfPath: elrobotUrdfPath,
+    urdfPath: resolveElrobotUrdfPath('follower'),
     basePos: elrobotBasePos,
     baseRpy: elrobotBaseRpy,
-    jointNames: elrobotJointNames,
+    jointNames: elrobotFollowerJointNames,
     resolveJointValue: resolveElrobotJointValue,
   },
   loadRenderer: () => import('./Renderer'),
