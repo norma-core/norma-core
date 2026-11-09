@@ -1,5 +1,5 @@
 import type { st3215 } from '@/api/proto.js';
-import { getMotorPosition } from '../motor-parser';
+import { getEffectiveMotorRange, getMotorPosition, MAX_ANGLE_STEP } from '../motor-parser';
 
 export type MotorStatus = 'ok' | 'error';
 
@@ -9,18 +9,14 @@ export interface ArmState {
   statuses: MotorStatus[];
 }
 
-const MAX_ANGLE_STEP = 4095;
-
-/** Where `position` sits in the calibrated range, which may wrap past the encoder end. */
+/** Where `position` sits in a range with `rangeMin !== rangeMax`, which may wrap past the encoder end. */
 function normalisePosition(position: number, rangeMin: number, rangeMax: number): number {
   if (rangeMin > rangeMax) {
     const totalRange = MAX_ANGLE_STEP - rangeMin + rangeMax;
-    if (totalRange === 0) return 0;
     return position >= rangeMin
       ? (position - rangeMin) / totalRange
       : (MAX_ANGLE_STEP - rangeMin + position) / totalRange;
   }
-  if (rangeMax === rangeMin) return 0;
   return (position - rangeMin) / (rangeMax - rangeMin);
 }
 
@@ -33,7 +29,9 @@ export function motorsToArmState(
   for (const motor of motors ?? []) {
     if (motor.id == null) continue;
     const position = motor.state ? getMotorPosition(motor.state) : 0;
-    positions[motor.id - 1] = normalisePosition(position, motor.rangeMin || 0, motor.rangeMax || MAX_ANGLE_STEP);
+    // Collapsed or missing ranges fall back to the full encoder, as the motor table does.
+    const { min, max } = getEffectiveMotorRange(motor);
+    positions[motor.id - 1] = normalisePosition(position, min, max);
     statuses[motor.id - 1] = motor.error ? 'error' : 'ok';
   }
   return { positions, statuses };

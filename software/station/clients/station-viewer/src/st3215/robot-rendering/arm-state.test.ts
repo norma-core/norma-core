@@ -35,6 +35,16 @@ describe('motorsToArmState', () => {
     expect(positions[1]).toBeCloseTo(95 / 190);
   });
 
+  it('handles a wrapped range whose upper stop is the encoder zero', () => {
+    // rangeMin 4000 → 0 (= rangeMax): total travel 95 steps, ending exactly at 0.
+    const { positions } = motorsToArmState([
+      motor(1, 4000, { rangeMin: 4000, rangeMax: 0 }),
+      motor(2, 0, { rangeMin: 4000, rangeMax: 0 }),
+    ]);
+    expect(positions[0]).toBe(0);
+    expect(positions[1]).toBe(1);
+  });
+
   it('defaults an uncalibrated motor to the full encoder range and flags errors', () => {
     const { positions, statuses } = motorsToArmState([motor(1, 4095, { error: {} })]);
     expect(positions).toEqual([1]);

@@ -1,36 +1,39 @@
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
+import type { BusRole } from '@/st3215/bus-role';
 import { resolveElrobotJointNames, resolveElrobotUrdfPath } from './config';
 
-describe('ElRobot config', () => {
-  it('picks the URDF and joint names by role, sharing the seven arm joints', () => {
-    expect(resolveElrobotUrdfPath('leader')).toBe('devices/elrobot/elrobot_leader.urdf');
-    expect(resolveElrobotUrdfPath('follower')).toBe('devices/elrobot/elrobot_follower.urdf');
+const publicDir = path.resolve(__dirname, '../../../public');
+const urdfDir = path.join(publicDir, 'devices/elrobot');
 
-    const leader = resolveElrobotJointNames('leader');
-    const follower = resolveElrobotJointNames('follower');
-    expect(leader).toHaveLength(8);
-    expect(follower).toHaveLength(8);
-    expect(leader.slice(0, 7)).toEqual(follower.slice(0, 7));
-    expect(leader[7]).toBe('trigger');
-    expect(follower[7]).toEqual(['rev_motor_08', 'rev_motor_08_1', 'rev_motor_08_2']);
+const byName = (xml: string, tag: 'joint' | 'link'): Map<string, string> => {
+  const out = new Map<string, string>();
+  const re = new RegExp(`<${tag} name="([^"]+)"[^>]*>[\\s\\S]*?</${tag}>`, 'g');
+  for (const match of xml.matchAll(re)) {
+    out.set(match[1], match[0].replace(/\s+/g, ' ').replace(/ \/>/g, '/>'));
+  }
+  return out;
+};
+
+const follower = readFileSync(path.join(urdfDir, 'elrobot_follower.urdf'), 'utf8');
+const leader = readFileSync(path.join(urdfDir, 'elrobot_leader.urdf'), 'utf8');
+
+describe('ElRobot config', () => {
+  // A joint renamed in a URDF, or a URDF moved, would silently leave motors
+  // unrendered: the renderer looks joints up by name and ignores misses.
+  it.each<BusRole>(['leader', 'follower'])('names only joints that exist in the %s URDF', (role) => {
+    const urdf = readFileSync(path.join(publicDir, resolveElrobotUrdfPath(role)), 'utf8');
+    const joints = byName(urdf, 'joint');
+    const configured = resolveElrobotJointNames(role).flat();
+    expect(configured.length).toBeGreaterThan(0);
+    for (const name of configured) {
+      expect(joints.has(name), `${role} URDF has no joint "${name}"`).toBe(true);
+    }
   });
 });
 
 describe('ElRobot leader URDF', () => {
-  const urdfDir = path.resolve(__dirname, '../../../public/devices/elrobot');
-  const byName = (xml: string, tag: 'joint' | 'link'): Map<string, string> => {
-    const out = new Map<string, string>();
-    const re = new RegExp(`<${tag} name="([^"]+)"[^>]*>[\\s\\S]*?</${tag}>`, 'g');
-    for (const match of xml.matchAll(re)) {
-      out.set(match[1], match[0].replace(/\s+/g, ' ').replace(/ \/>/g, '/>'));
-    }
-    return out;
-  };
-  const follower = readFileSync(path.join(urdfDir, 'elrobot_follower.urdf'), 'utf8');
-  const leader = readFileSync(path.join(urdfDir, 'elrobot_leader.urdf'), 'utf8');
-
   it('keeps motors 1-6, their rigid joints and links identical to the follower', () => {
     const followerJoints = byName(follower, 'joint');
     const leaderJoints = byName(leader, 'joint');

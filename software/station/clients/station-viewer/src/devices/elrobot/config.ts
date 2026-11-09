@@ -35,7 +35,7 @@ export const elrobotFollowerJointNames: RobotJointNames = [
 ];
 
 // Calibrated minimum = trigger against the grip (lower limit), maximum = released.
-export const elrobotLeaderJointNames: RobotJointNames = [...ELROBOT_ARM_JOINT_NAMES, 'trigger'];
+const elrobotLeaderJointNames: RobotJointNames = [...ELROBOT_ARM_JOINT_NAMES, 'trigger'];
 
 export function resolveElrobotJointNames(role: BusRole): RobotJointNames {
   return role === 'leader' ? elrobotLeaderJointNames : elrobotFollowerJointNames;
