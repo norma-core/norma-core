@@ -14,8 +14,8 @@ import {
 } from './config';
 
 const ElRobotDeviceRenderer = forwardRef<BaseRobotRendererRef, St3215RobotRendererProps>(
-  function ElRobotDeviceRenderer({ busSerialNumber, bus, isLeader }, ref) {
-    const jointNames = resolveElrobotJointNames(isLeader);
+  function ElRobotDeviceRenderer({ busSerialNumber, bus, role }, ref) {
+    const jointNames = resolveElrobotJointNames(role);
     const motorCount = bus.motors?.length ?? jointNames.length;
 
     return (
@@ -23,8 +23,7 @@ const ElRobotDeviceRenderer = forwardRef<BaseRobotRendererRef, St3215RobotRender
         ref={ref}
         busSerialNumber={busSerialNumber}
         bus={bus}
-        isLeader={isLeader}
-        urdfPath={resolveElrobotUrdfPath(isLeader)}
+        urdfPath={resolveElrobotUrdfPath(role)}
         jointNames={jointNames.slice(0, motorCount)}
         basePos={elrobotBasePos}
         baseRpy={elrobotBaseRpy}

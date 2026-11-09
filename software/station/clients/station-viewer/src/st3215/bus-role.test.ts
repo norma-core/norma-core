@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { st3215 } from '@/api/proto.js';
-import { getBusVoltage, isLeaderBus, LEADER_MAX_VOLTAGE_DECIVOLTS } from './bus-role';
+import { getBusVoltage, resolveBusRole, LEADER_MAX_VOLTAGE_DECIVOLTS } from './bus-role';
 
 const ADDR_PRESENT_VOLTAGE = 0x3e;
 
@@ -27,37 +27,38 @@ describe('getBusVoltage', () => {
   });
 });
 
-describe('isLeaderBus', () => {
-  it('is true for a 5 V or 7.4 V supply and false for 12 V', () => {
-    expect(isLeaderBus([motor(50), motor(49)])).toBe(true);
-    expect(isLeaderBus([motor(74)])).toBe(true);
-    expect(isLeaderBus([motor(120), motor(118)])).toBe(false);
+describe('resolveBusRole', () => {
+  it('is leader for a 5 V or 7.4 V supply and follower for 12 V', () => {
+    expect(resolveBusRole([motor(50), motor(49)])).toBe('leader');
+    expect(resolveBusRole([motor(74)])).toBe('leader');
+    expect(resolveBusRole([motor(120), motor(118)])).toBe('follower');
   });
 
   it('treats one loaded motor dipping low as still a follower', () => {
-    expect(isLeaderBus([motor(85), motor(119)])).toBe(false);
+    expect(resolveBusRole([motor(85), motor(119)])).toBe('follower');
   });
 
   it('is exclusive at the threshold', () => {
-    expect(isLeaderBus([motor(LEADER_MAX_VOLTAGE_DECIVOLTS - 1)])).toBe(true);
-    expect(isLeaderBus([motor(LEADER_MAX_VOLTAGE_DECIVOLTS)])).toBe(false);
+    expect(resolveBusRole([motor(LEADER_MAX_VOLTAGE_DECIVOLTS - 1)])).toBe('leader');
+    expect(resolveBusRole([motor(LEADER_MAX_VOLTAGE_DECIVOLTS)])).toBe('follower');
   });
 
-  it('is false when no motor has reported a voltage', () => {
-    expect(isLeaderBus([{ id: 1 }])).toBe(false);
-    expect(isLeaderBus([])).toBe(false);
-    expect(isLeaderBus(null)).toBe(false);
+  it('is unresolved until a motor reports a voltage', () => {
+    expect(resolveBusRole([{ id: 1 }])).toBeNull();
+    expect(resolveBusRole([motor(0)])).toBeNull();
+    expect(resolveBusRole([])).toBeNull();
+    expect(resolveBusRole(null)).toBeNull();
+    expect(resolveBusRole(undefined)).toBeNull();
   });
 
   it('keeps the previous role when no motor reports a voltage', () => {
-    expect(isLeaderBus([{ id: 1 }], true)).toBe(true);
-    expect(isLeaderBus([motor(0)], true)).toBe(true);
-    expect(isLeaderBus([], true)).toBe(true);
-    expect(isLeaderBus(undefined, false)).toBe(false);
+    expect(resolveBusRole([{ id: 1 }], 'leader')).toBe('leader');
+    expect(resolveBusRole([motor(0)], 'leader')).toBe('leader');
+    expect(resolveBusRole([], 'follower')).toBe('follower');
   });
 
   it('lets a reported voltage override the previous role', () => {
-    expect(isLeaderBus([motor(120)], true)).toBe(false);
-    expect(isLeaderBus([motor(50)], false)).toBe(true);
+    expect(resolveBusRole([motor(120)], 'leader')).toBe('follower');
+    expect(resolveBusRole([motor(50)], 'follower')).toBe('leader');
   });
 });

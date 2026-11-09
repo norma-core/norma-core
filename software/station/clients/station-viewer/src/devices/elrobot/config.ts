@@ -1,3 +1,4 @@
+import type { BusRole } from '@/st3215/bus-role';
 import type {
   JointValueContext,
   MotorMaterialContext,
@@ -7,11 +8,10 @@ import type {
 export const ELROBOT_DEVICE_ID = 'elrobot';
 export const ELROBOT_MOTOR_COUNT = 8;
 
-// The follower is the upstream URDF (hardware/elrobot/simulation). The leader
-// keeps joints 1-7 and swaps the gripper for the SO101 wrist roll, handle and
-// trigger mounted on the motor 7 horn, with motor 8 driving the trigger.
-export function resolveElrobotUrdfPath(isLeader?: boolean): string {
-  return isLeader
+// The leader keeps joints 1-7 and swaps the gripper for the SO101 wrist roll,
+// handle and trigger, with motor 8 driving the trigger.
+export function resolveElrobotUrdfPath(role: BusRole): string {
+  return role === 'leader'
     ? 'devices/elrobot/elrobot_leader.urdf'
     : 'devices/elrobot/elrobot_follower.urdf';
 }
@@ -34,13 +34,11 @@ export const elrobotFollowerJointNames: RobotJointNames = [
   ['rev_motor_08', 'rev_motor_08_1', 'rev_motor_08_2'],
 ];
 
-// The trigger is a plain joint: the calibrated minimum maps to the lower limit
-// (trigger against the grip) and the maximum to the upper (released), as the
-// SO101 leader's trigger does.
+// Calibrated minimum = trigger against the grip (lower limit), maximum = released.
 export const elrobotLeaderJointNames: RobotJointNames = [...ELROBOT_ARM_JOINT_NAMES, 'trigger'];
 
-export function resolveElrobotJointNames(isLeader?: boolean): RobotJointNames {
-  return isLeader ? elrobotLeaderJointNames : elrobotFollowerJointNames;
+export function resolveElrobotJointNames(role: BusRole): RobotJointNames {
+  return role === 'leader' ? elrobotLeaderJointNames : elrobotFollowerJointNames;
 }
 
 export function resolveElrobotMotorMaterialIndex({

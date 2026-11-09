@@ -1,7 +1,6 @@
 import { forwardRef, useEffect, useImperativeHandle, useLayoutEffect, useRef } from 'react';
 import * as THREE from 'three';
 import { useTheme } from '@/hooks/useTheme';
-import { getMotorPosition } from '../motor-parser';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { STLLoader } from 'three/examples/jsm/loaders/STLLoader.js';
 import URDFLoader from 'urdf-loader';
@@ -12,14 +11,22 @@ import {
 } from '../utils';
 import { appendHash } from '@/utils/asset-hashes';
 import { getRendererThemeColors } from '@/utils/theme-colors';
-import { LoadTracker } from './load-tracker';
+import { motorsToArmState, type MotorStatus } from './arm-state';
 import type { BaseRobotRendererProps, BaseRobotRendererRef } from './types';
 
-const BaseRobotRenderer = forwardRef<BaseRobotRendererRef, BaseRobotRendererProps>((props, ref) => {
+/**
+ * A scene lives exactly as long as its URDF: changing `urdfPath` remounts
+ * RobotScene, so there is never more than one robot load per scene and a
+ * result arriving after unmount is simply disposed.
+ */
+const BaseRobotRenderer = forwardRef<BaseRobotRendererRef, BaseRobotRendererProps>((props, ref) => (
+  <RobotScene key={props.urdfPath} {...props} ref={ref} />
+));
+
+const RobotScene = forwardRef<BaseRobotRendererRef, BaseRobotRendererProps>((props, ref) => {
   const {
     busSerialNumber,
     bus,
-    isLeader,
     urdfPath,
     jointNames,
     basePos = [0,0,0],
@@ -30,7 +37,6 @@ const BaseRobotRenderer = forwardRef<BaseRobotRendererRef, BaseRobotRendererProp
   const { theme } = useTheme();
   const mountRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<any>(null);
-  const isInitializedRef = useRef(false);
 
   const disposeMaterial = (material: THREE.Material) => {
     Object.values(material).forEach((value) => {
@@ -57,18 +63,6 @@ const BaseRobotRenderer = forwardRef<BaseRobotRendererRef, BaseRobotRendererProp
     });
   };
 
-  const cleanupRobot = () => {
-    if (!sceneRef.current) return;
-    // A load still in flight belongs to the previous URDF: drop its result.
-    sceneRef.current.load.cancel();
-    if (!sceneRef.current.robot) return;
-    sceneRef.current.scene.remove(sceneRef.current.robot);
-    disposeObject3D(sceneRef.current.robot);
-    sceneRef.current.robot = null;
-    sceneRef.current.model = null;
-    sceneRef.current.arm = null;
-  };
-
   const createGridHelper = () => {
     const colors = getRendererThemeColors(theme);
     return new THREE.GridHelper(2, 20, colors.gridPrimary, colors.gridSecondary);
@@ -89,11 +83,17 @@ const BaseRobotRenderer = forwardRef<BaseRobotRendererRef, BaseRobotRendererProp
     sceneRef.current.scene.add(sceneRef.current.gridHelper);
   };
 
+  const applyMotorStates = () => {
+    const arm = sceneRef.current?.arm;
+    if (!arm || !bus?.motors?.length) return;
+    const { positions, statuses } = motorsToArmState(bus.motors);
+    arm.setMotorPositions(positions);
+    arm.setMotorStatuses(statuses);
+  };
+
   const loadRobot = () => {
-    if (!sceneRef.current || sceneRef.current.load.isPending) {
-      return;
-    }
-    const loadToken = sceneRef.current.load.begin();
+    // The scene this load was started for; a result landing in another mount's scene is dropped.
+    const target = sceneRef.current;
     const loader = new URDFLoader();
     loader.loadMeshCb = function(path: string, manager: THREE.LoadingManager, onComplete: (mesh: THREE.Mesh) => void) {
       const stlLoader = new STLLoader(manager);
@@ -121,40 +121,30 @@ const BaseRobotRenderer = forwardRef<BaseRobotRendererRef, BaseRobotRendererProp
 
     loader.load(
       appendHash(urdfPath),
-      (result: any) => {
-        if (!sceneRef.current || !sceneRef.current.load.settle(loadToken)) {
-          disposeObject3D(result as THREE.Object3D);
+      (robot: any) => {
+        if (sceneRef.current !== target) {
+          disposeObject3D(robot as THREE.Object3D);
           return;
         }
-        const robot = result;
         sceneRef.current.scene.add(robot);
         sceneRef.current.robot = robot;
 
         const R_base = rpyToMatrix(baseRpy[0], baseRpy[1], baseRpy[2]);
         sceneRef.current.baseTransform = mat4FromRotationTranslation(R_base, basePos as [number, number, number]);
 
-        robot.position.x = basePos[0];
-        robot.position.y = basePos[1];
-        robot.position.z = basePos[2];
-        robot.rotation.x = baseRpy[0];
-        robot.rotation.y = baseRpy[1];
-        robot.rotation.z = baseRpy[2];
+        robot.position.set(basePos[0], basePos[1], basePos[2]);
+        robot.rotation.set(baseRpy[0], baseRpy[1], baseRpy[2]);
 
         fetch(appendHash(urdfPath))
-              .then(response => response.text())
-              .then(urdfText => {
-                  // The robot may have been swapped while this fetch was in flight.
-                  if (!sceneRef.current || !sceneRef.current.load.isCurrent(loadToken)) return;
-                  sceneRef.current.model = parseUrdf(urdfText);
-              })
-              .catch(error => {
-                  console.error('Error loading URDF file:', error);
-                  if (sceneRef.current) {
-                    sceneRef.current.model = null;
-                  }
-              });
+          .then(response => response.text())
+          .then(urdfText => {
+            if (sceneRef.current !== target) return;
+            sceneRef.current.model = parseUrdf(urdfText);
+          })
+          .catch(error => {
+            console.error('Error loading URDF file:', error);
+          });
 
-        if (!sceneRef.current) return;
         sceneRef.current.arm = new Arm(
           busSerialNumber || "default",
           robot,
@@ -163,61 +153,18 @@ const BaseRobotRenderer = forwardRef<BaseRobotRendererRef, BaseRobotRendererProp
           resolveMotorMaterialIndex,
           resolveJointValue,
         );
-        
-        // Apply initial motor positions if available
-        if (bus?.motors && bus.motors.length > 0) {
-          const positions: number[] = [];
-          const statuses: ('ok' | 'error')[] = [];
-
-          for (let i = 0; i < bus.motors.length; i++) {
-            if (bus.motors[i]) {
-              if (bus.motors[i].id === null) {
-                continue;
-              }
-              const motor = bus.motors[i];
-              const position = motor.state ? getMotorPosition(motor.state) : 0;
-              const rangeMin = motor.rangeMin || 0;
-              const rangeMax = motor.rangeMax || 4095;
-
-              const MAX_ANGLE_STEP = 4095;
-              let normalizedPosition = 0;
-
-              if (rangeMin > rangeMax) {
-                const totalRange = (MAX_ANGLE_STEP - rangeMin) + rangeMax;
-                if (totalRange !== 0) {
-                  if (position >= rangeMin) {
-                    normalizedPosition = (position - rangeMin) / totalRange;
-                  } else {
-                    normalizedPosition = (MAX_ANGLE_STEP - rangeMin + position) / totalRange;
-                  }
-                }
-              } else if (rangeMax !== rangeMin) {
-                normalizedPosition = (position - rangeMin) / (rangeMax - rangeMin);
-              }
-
-              // @ts-expect-error - motor.id could be null but we check for it above
-              positions[motor.id - 1] = normalizedPosition;
-              // @ts-expect-error - motor.id could be null but we check for it above
-              statuses[motor.id - 1] = motor.error ? 'error' : 'ok';
-            }
-          }
-
-          sceneRef.current.arm.setMotorPositions(positions);
-          sceneRef.current.arm.setMotorStatuses(statuses);
-        }
+        applyMotorStates();
       },
       () => {},
       (error: any) => {
         console.error('An error occurred loading the URDF:', error);
-        sceneRef.current?.load.settle(loadToken);
       }
     );
   };
 
   useEffect(() => {
-    if (!mountRef.current || isInitializedRef.current) return;
+    if (!mountRef.current) return;
     const mountNode = mountRef.current;
-    isInitializedRef.current = true;
 
     const scene = new THREE.Scene();
 
@@ -263,7 +210,6 @@ const BaseRobotRenderer = forwardRef<BaseRobotRendererRef, BaseRobotRendererProp
       model: null,
       arm: null,
       animationId: 0,
-      load: new LoadTracker(),
       gridHelper: null,
       jointSpheres: [],
       endEffectorSphere: null,
@@ -271,7 +217,7 @@ const BaseRobotRenderer = forwardRef<BaseRobotRendererRef, BaseRobotRendererProp
     };
 
     applySceneTheme();
-    // The URDF effect below runs on mount as well and starts the first load.
+    loadRobot();
 
     const animate = () => {
       if (!sceneRef.current) return;
@@ -294,38 +240,25 @@ const BaseRobotRenderer = forwardRef<BaseRobotRendererRef, BaseRobotRendererProp
 
     return () => {
       resizeObserver.disconnect();
-      if (sceneRef.current) {
-        const currentScene = sceneRef.current;
-        cancelAnimationFrame(currentScene.animationId);
-        if (currentScene.robot) {
-          cleanupRobot();
-        }
-        disposeObject3D(currentScene.scene);
-        currentScene.scene.clear();
-        currentScene.controls.dispose();
-        currentScene.renderer.renderLists.dispose();
-        currentScene.renderer.dispose();
-        currentScene.renderer.forceContextLoss();
-        if (currentScene.renderer.domElement.parentNode) {
-          currentScene.renderer.domElement.remove();
-        }
-        sceneRef.current = null;
-        isInitializedRef.current = false;
-      }
+      const current = sceneRef.current;
+      if (!current) return;
+      cancelAnimationFrame(current.animationId);
+      disposeObject3D(current.scene);
+      current.scene.clear();
+      current.controls.dispose();
+      current.renderer.renderLists.dispose();
+      current.renderer.dispose();
+      current.renderer.forceContextLoss();
+      current.renderer.domElement.remove();
+      sceneRef.current = null;
     };
   }, []);
 
   useLayoutEffect(() => {
-    if (!sceneRef.current || !isInitializedRef.current) return;
+    if (!sceneRef.current) return;
     applySceneTheme();
     sceneRef.current.renderer.render(sceneRef.current.scene, sceneRef.current.camera);
   }, [theme]);
-
-  useEffect(() => {
-    if (!sceneRef.current || !isInitializedRef.current) return;
-    cleanupRobot();
-    loadRobot();
-  }, [isLeader, urdfPath]);
 
   useImperativeHandle(ref, () => ({
     toggleRangeSpheres: () => {
@@ -333,48 +266,7 @@ const BaseRobotRenderer = forwardRef<BaseRobotRendererRef, BaseRobotRendererProp
     },
   }));
 
-  useEffect(() => {
-    if (!sceneRef.current || !sceneRef.current.arm || !bus?.motors) return;
-
-    const positions: number[] = [];
-    const statuses: ('ok' | 'error')[] = [];
-
-    for (let i = 0; i < bus.motors.length; i++) {
-      if (bus.motors[i]) {
-        if (bus.motors[i].id === null) {
-            continue;
-        }
-        const motor = bus.motors[i];
-        const position = motor.state ? getMotorPosition(motor.state) : 0;
-        const rangeMin = motor.rangeMin || 0;
-        const rangeMax = motor.rangeMax || 4095;
-        
-        const MAX_ANGLE_STEP = 4095;
-        let normalizedPosition = 0;
-        
-        if (rangeMin > rangeMax) {
-          const totalRange = (MAX_ANGLE_STEP - rangeMin) + rangeMax;
-          if (totalRange !== 0) {
-            if (position >= rangeMin) {
-              normalizedPosition = (position - rangeMin) / totalRange;
-            } else {
-              normalizedPosition = (MAX_ANGLE_STEP - rangeMin + position) / totalRange;
-            }
-          }
-        } else if (rangeMax !== rangeMin) {
-          normalizedPosition = (position - rangeMin) / (rangeMax - rangeMin);
-        }
-        
-        // @ts-expect-error - motor.id could be null but we check for it above
-        positions[motor.id-1] = normalizedPosition;
-        // @ts-expect-error - motor.id could be null but we check for it above
-        statuses[motor.id-1] = motor.error ? 'error' : 'ok';
-      }
-    }
-
-    sceneRef.current.arm.setMotorPositions(positions);
-    sceneRef.current.arm.setMotorStatuses(statuses);
-  }, [bus?.motors]);
+  useEffect(applyMotorStates, [bus?.motors]);
 
   return (
     <div ref={mountRef} className="w-full h-full" />
@@ -388,7 +280,7 @@ class Arm {
   motors: Array<{
     angle: number;
     position: number;
-    status: 'ok' | 'error';
+    status: MotorStatus;
     minLimit: number;
     maxLimit: number;
   }>;
@@ -474,7 +366,7 @@ class Arm {
     }
   }
 
-  setMotorStatuses(statuses: ('ok' | 'error')[]) {
+  setMotorStatuses(statuses: MotorStatus[]) {
     if (Array.isArray(statuses) && statuses.length === this.motorCount) {
       statuses.forEach((status, index) => {
         if (['ok', 'error'].includes(status)) {

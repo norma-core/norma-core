@@ -5,12 +5,11 @@ import { resolveElrobotJointNames, resolveElrobotUrdfPath } from './config';
 
 describe('ElRobot config', () => {
   it('picks the URDF and joint names by role, sharing the seven arm joints', () => {
-    expect(resolveElrobotUrdfPath(true)).toBe('devices/elrobot/elrobot_leader.urdf');
-    expect(resolveElrobotUrdfPath(false)).toBe('devices/elrobot/elrobot_follower.urdf');
-    expect(resolveElrobotUrdfPath(undefined)).toBe('devices/elrobot/elrobot_follower.urdf');
+    expect(resolveElrobotUrdfPath('leader')).toBe('devices/elrobot/elrobot_leader.urdf');
+    expect(resolveElrobotUrdfPath('follower')).toBe('devices/elrobot/elrobot_follower.urdf');
 
-    const leader = resolveElrobotJointNames(true);
-    const follower = resolveElrobotJointNames(false);
+    const leader = resolveElrobotJointNames('leader');
+    const follower = resolveElrobotJointNames('follower');
     expect(leader).toHaveLength(8);
     expect(follower).toHaveLength(8);
     expect(leader.slice(0, 7)).toEqual(follower.slice(0, 7));
@@ -59,8 +58,8 @@ describe('ElRobot leader URDF', () => {
     expect(part(leaderJoint7, 'axis')).toBe(part(followerJoint7, 'axis'));
     expect(part(leaderJoint7, 'parent')).toBe(part(followerJoint7, 'parent'));
     expect(part(leaderJoint7, 'child')).toBe('<child link="Wrist_Roll_SO101_1"/>');
-    // The leader wrist roll sweeps 3352 encoder steps (294.6 deg) between its stops; the viewer maps the
-    // calibrated range onto these limits, so their span must match that travel, not the follower's 340 deg.
+    // The viewer maps the calibrated range onto these limits, so their span must
+    // match the wrist roll's real travel: 3352 encoder steps between its stops.
     const limits = part(leaderJoint7, 'limit').match(/upper="([^"]+)" lower="([^"]+)"/)!;
     const spanDeg = ((Number(limits[1]) - Number(limits[2])) * 180) / Math.PI;
     expect(spanDeg).toBeCloseTo((3352 / 4096) * 360, 1);

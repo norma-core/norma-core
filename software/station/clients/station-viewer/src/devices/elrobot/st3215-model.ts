@@ -13,10 +13,9 @@ export default st3215Model({
   id: ELROBOT_DEVICE_ID,
   label: 'ElRobot',
   motorCount: ELROBOT_MOTOR_COUNT,
-  // Joint-count lookups (NormVLA) have no role information; they get the
-  // follower, whose gripper is what a policy acts on.
+  // Joint-count lookups (NormVLA) carry no role; a policy acts on the follower.
   kinematics: {
-    urdfPath: resolveElrobotUrdfPath(false),
+    urdfPath: resolveElrobotUrdfPath('follower'),
     basePos: elrobotBasePos,
     baseRpy: elrobotBaseRpy,
     jointNames: elrobotFollowerJointNames,

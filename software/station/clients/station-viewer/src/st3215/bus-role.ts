@@ -2,18 +2,12 @@ import { st3215 } from '@/api/proto.js';
 import { getMotorVoltage } from './motor-parser';
 
 /**
- * Supply voltage, in the servo's 0.1 V units, that separates a leader bus from
- * a follower bus. Follower arms (SO101, SO102, ElRobot) run their 12 V servos
- * from a 12 V supply; leader arms run 7.4 V servos from a 5 V supply (lerobot
- * and the ElRobot BOM), so anything under 9 V is a leader.
+ * In 0.1 V units. Followers run 12 V servos from 12 V; leaders run 7.4 V servos
+ * from 5 V (lerobot and the ElRobot BOM), so anything under 9 V is a leader.
  */
 export const LEADER_MAX_VOLTAGE_DECIVOLTS = 90;
 
-/**
- * Highest present voltage reported by any motor on the bus, in 0.1 V units,
- * or null when no motor has reported one. The maximum is used because a
- * loaded 12 V servo may dip, while a 5 V leader never reads above the limit.
- */
+/** Highest voltage on the bus (a loaded 12 V servo may dip), or null without a reading. */
 export function getBusVoltage(
   motors: st3215.InferenceState.IMotorState[] | null | undefined,
 ): number | null {
@@ -28,20 +22,18 @@ export function getBusVoltage(
   return max;
 }
 
+export type BusRole = 'leader' | 'follower';
+
 /**
- * Whether the bus is powered as a leader arm. Decided by the supply voltage
- * the servos report, so it works before any mirroring has been configured and
- * regardless of which bus the mirroring driver last used as a source.
- *
- * A frame in which no motor reports a voltage (state not yet received, or a
- * failed read cycle) says nothing about the role, so `previous` is kept
- * rather than flipping the bus to a follower and back.
+ * Voltage-based, so it works before any mirroring is configured. A frame
+ * without a reading says nothing about the role, so `previous` is kept; with
+ * no previous role the bus stays unresolved (null) until a motor reports one.
  */
-export function isLeaderBus(
+export function resolveBusRole(
   motors: st3215.InferenceState.IMotorState[] | null | undefined,
-  previous = false,
-): boolean {
+  previous: BusRole | null = null,
+): BusRole | null {
   const voltage = getBusVoltage(motors);
   if (voltage === null) return previous;
-  return voltage < LEADER_MAX_VOLTAGE_DECIVOLTS;
+  return voltage < LEADER_MAX_VOLTAGE_DECIVOLTS ? 'leader' : 'follower';
 }
