@@ -100,7 +100,7 @@ Simply download the pre-configured .3mf file and start printing:
 | AMS Dual Nozzle (PLA + PETG supports)      | [.3mf](print/ams/elrobot_full_ams_dual.3mf) | 32h on H2D                     |
 
 **Before printing:**
-- **Camera mount:** The .3mf files include 3 different camera mounts. Choose the one that fits your camera and delete the others before slicing.
+- **Camera mount:** The .3mf files include 4 different camera mounts. Choose the one that fits your camera and delete the others before slicing.
 - **Driver enclosure:** Optional. Choose the enclosure that fits your servo driver board (Waveshare or SeeedStudio) or remove if not needed.
 - **PETG supports:** Using PETG supports (AMS profiles) improves surfaces finish but doesn't affect performance.
 
@@ -150,6 +150,7 @@ Modular camera mounts snap onto the gripper — pick the one that fits your came
 | Camera | Mount                                                | Photo                                                  |
 |--------|------------------------------------------------------|--------------------------------------------------------|
 | Innomaker U20CAM-1080P (27mm holes) | [STL](STL/gripper_camera_mounts/CameraMount_square_27mm.stl) | <img src="images/cameras/u20.png" height="100px">      |
+| Square camera board (28mm holes) | [STL](STL/gripper_camera_mounts/CameraMount_square_28mm.stl) | <img src="images/cameras/square_28mm.png" height="100px"> |
 | Innomaker Day&Night Vision (34mm holes) | [STL](STL/gripper_camera_mounts/CameraMount_square_34mm.stl) | <img src="images/cameras/nv.png" height="100px">       |
 | Generic webcam | [STL](STL/gripper_camera_mounts/CameraMount_regular.stl)     | <img src="images/cameras/generic.png" height="100px">  |
 
