@@ -28,10 +28,11 @@ A parallel jaw gripper for robot arms. Parallel jaws = predictable gripping = le
 | Bambulab AMS (PLA + PETG supports)   | [.3mf](STL/print/ams.3mf)                          | 9.5 on A1/P2S, 6 on H2D |
 | Standard STL (no camera mount)       | [.stl](STL/print/gripper_no_camera_mount.stl)      | -                       |
 | Standard STL (27mm holes camera mount) | [.stl](STL/print/gripper_27mm_camera_mount.stl)    | -                       |
+| Standard STL (28mm holes camera mount) | [.stl](STL/print/gripper_28mm_camera_mount.stl)    | -                       |
 | Standard STL (34mm holes camera mount) | [.stl](STL/print/gripper_34mm_camera_mount.stl)    | -                       |
 | Standard STL (generic webcamera mount) | [.stl](STL/print/gripper_generic_camera_mount.stl) | -                       |
 
-Inside bambulab print files there are 3 different cameras mounts. Choose the one that fits your camera and remove the others.
+Inside bambulab print files there are 4 different cameras mounts. Choose the one that fits your camera and remove the others.
 PETG support improves the gripper appearance. It doesn't affect the gripper performance.
 For standard stl choose 4 perimeters for the best results.
 
@@ -50,6 +51,7 @@ Modular camera mounts snap onto the gripper — pick the one that fits your came
 | Camera | Mount                                                | Photo                                                  |
 |--------|------------------------------------------------------|--------------------------------------------------------|
 | Innomaker U20CAM-1080P (27mm holes) | [STL](STL/camera_mounts/CameraMount_square_27mm.stl) | <img src="images/cameras/u20.png" height="300px">      |
+| Square camera board (28mm holes) | [STL](STL/camera_mounts/CameraMount_square_28mm.stl) | <img src="images/cameras/square_28mm.png" height="300px"> |
 | Innomaker Day&Night Vision (34mm holes) | [STL](STL/camera_mounts/CameraMount_square_34mm.stl) | <img src="images/cameras/nv.png" height="300px">       |
 | Generic webcam | [STL](STL/camera_mounts/CameraMount_regular.stl)     | <img src="images/cameras/generic.png" height="300px">  |
 
