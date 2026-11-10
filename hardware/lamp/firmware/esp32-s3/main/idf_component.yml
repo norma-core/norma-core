@@ -1,0 +1,7 @@
+## IDF Component Manager manifest: fetched into managed_components/ on the first build
+dependencies:
+  idf: ">=5.3"
+  espressif/esp32-camera: "^2.1.8"
+  espressif/coco_detect: "^0.4.2"
+  espressif/mdns: "^1.8"
+  espressif/led_strip: "^3.0.0"
