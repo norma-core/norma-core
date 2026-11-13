@@ -16,7 +16,6 @@
 #define BHY2_BSX_STATE_TRANSFER_COMPLETE UINT8_C(128)
 #define BHY2_BSX_STATE_BLOCK_LEN UINT8_C(64)
 #define BHY2_BSX_STATE_STRUCT_LEN UINT8_C(68)
-#define BHY2_LE2U16(x) ((uint16_t)((x)[0] | (x)[1] << 8))
 
 struct bhy2_hif_dev { int opaque; };
 struct bhy2_dev { struct bhy2_hif_dev hif; };

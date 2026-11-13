@@ -4,6 +4,7 @@
 #include <string.h>
 
 #include "bosch/bhy2_hif.h"
+#include "nicla_bytes.h"
 
 #define STATUS_READY_POLLS 200u /* x 1 ms: how long an answer may take */
 #define STATUS_HEADER_LEN 4u    /* [code u16][payload length u16] */
@@ -100,8 +101,8 @@ int8_t nicla_hub_read_parameter(uint16_t param, uint8_t *buffer, uint32_t length
       if (rslt != BHY2_OK) {
         return rslt;
       }
-      code = BHY2_LE2U16(&header[0]);
-      payload_len = BHY2_LE2U16(&header[2]);
+      code = nicla_le16(&header[0]);
+      payload_len = nicla_le16(&header[2]);
       if (code != 0 || payload_len != 0) {
         break;
       }
@@ -153,7 +154,7 @@ int8_t nicla_hub_read_bsx_state(uint16_t param, uint8_t *out, uint32_t cap, uint
     }
     const uint32_t section = block[0] & 0x7Fu;
     const uint32_t block_len = block[1];
-    const uint32_t total_len = BHY2_LE2U16(&block[2]);
+    const uint32_t total_len = nicla_le16(&block[2]);
     *total = total_len;
     if (total_len == 0 || total_len > cap) {
       return BHY2_E_BUFFER;
@@ -186,7 +187,7 @@ bool nicla_hub_read_sensor_range(uint8_t sensor_id, uint16_t *range) {
   if (len != SENSOR_CONF_LEN) {
     return false;
   }
-  *range = BHY2_LE2U16(&conf[SENSOR_CONF_RANGE_OFFSET]);
+  *range = nicla_le16(&conf[SENSOR_CONF_RANGE_OFFSET]);
   return true;
 }
 

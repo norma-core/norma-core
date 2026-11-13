@@ -119,27 +119,39 @@ objects, `Serial`, the LED). All logic is plain C under `src/`:
 | `src/nicla_protocol.[ch]` | register map layout and writers, validated range publishing, CRC8 frame, streaming keepalive state |
 | `src/nicla_hub.[ch]` | hub parameter reads (ranges, calibration state) that cannot return another request's answer |
 | `src/bhy2_calibration.[ch]` | calibration persistence |
+| `src/nicla_bytes.h` | little-endian 16-bit read shared by the modules |
 | `src/nicla_hub_dev.cpp` | hands the library's private hub handle to the C code; the only other C++ |
 
 ### Formal verification
 
 The C modules carry ACSL contracts (the comments starting with `/*@`) and are
-proved with [Frama-C](https://frama-c.com)/WP: no out-of-bounds access,
-overflow or invalid shift, and the stated behaviour (for example: a range
-register is only ever written with a valid range; a calibration blob from the
-hub or from flash can never overrun its buffer; the save policy's timing
-rules), for **any** data the hub, the flash store or the host may deliver. The
-hardware interfaces are replaced by contract-only stand-ins in `verify/stubs`.
+verified with [Frama-C](https://frama-c.com), for **any** data the hub, the
+flash store or the host may deliver. The hardware interfaces are replaced by
+contract-only stand-ins in `verify/stubs`.
 
 ```bash
 ./verify/run.sh            # needs Docker; builds the Frama-C image on first use
 ```
 
-Every goal should come back proved. Two textbook facts about bit operations
-are admitted rather than proved (`verify/lemmas.c`), and `nicla_put_f32` is
-skipped (its float-to-bytes copy is outside the memory model). The proof
-covers the code's logic, not the hub's real behaviour: that was established
-on the bench and is written down in `src/nicla_hub.h`.
+The script runs two analyses and fails unless both pass:
+
+1. **WP** proves every contract and the absence of runtime errors: no
+   out-of-bounds access, overflow, invalid shift or division by zero, plus the
+   stated behaviour (for example: a range register is only ever written with a
+   valid range; a calibration blob from the hub or from flash can never
+   overrun its buffer; the save policy's timing rules). Every goal must come
+   back proved, and no lemma is assumed.
+2. **Eva** covers what WP cannot express. It must reach every statement of
+   every function and raise no alarm for a misaligned pointer or an invalid
+   function-pointer call. It also checks `nicla_f32_bits`, the five-line
+   function that reinterprets a float as bytes, which WP's typed memory model
+   rejects.
+
+What the result still rests on: the stand-ins in `verify/stubs` describe the
+Bosch and Mbed functions faithfully, Frama-C models the target as 32-bit x86
+(same integer sizes, byte order and alignment as the Cortex-M4 for every type
+this code uses), and the hub behaves as measured on the bench and written
+down in `src/nicla_hub.h`. The proof covers the code's logic, not the hub.
 
 ## USB serial transport
 

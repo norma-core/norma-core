@@ -20,11 +20,20 @@ void nicla_put_u32(uint8_t *map, size_t offset, uint32_t value) {
   map[offset + 3] = (uint8_t)(value >> 24);
 }
 
-void nicla_put_f32(uint8_t *map, size_t offset, float value) {
+/* IEEE-754 single as its 32-bit pattern, the form the consumers expect. The
+   copy reinterprets a float as bytes, which WP's typed memory model cannot
+   express, so this one function is checked by Frama-C's Eva analysis instead
+   (see ../verify/run.sh); WP uses only the contract below. */
+/*@ assigns \nothing; */
+static uint32_t nicla_f32_bits(float value) {
   uint32_t bits;
 
-  memcpy(&bits, &value, sizeof(bits)); /* IEEE-754 single, as the consumers expect */
-  nicla_put_u32(map, offset, bits);
+  memcpy(&bits, &value, sizeof(bits));
+  return bits;
+}
+
+void nicla_put_f32(uint8_t *map, size_t offset, float value) {
+  nicla_put_u32(map, offset, nicla_f32_bits(value));
 }
 
 bool nicla_publish_accel_range(uint8_t *map, uint8_t sensor_id) {
