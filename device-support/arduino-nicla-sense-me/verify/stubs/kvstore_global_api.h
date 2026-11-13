@@ -7,10 +7,11 @@
 #include <stdint.h>
 
 /*@ requires \valid_read(buffer + (0 .. size - 1));
-    assigns \nothing; */
+    assigns \result \from \nothing; */
 int kv_set(const char *full_name_key, const uint8_t *buffer, size_t size, uint32_t create_flags);
 
 /*@ requires \valid(buffer + (0 .. buffer_size - 1)) && \valid(actual_size);
-    assigns buffer[0 .. buffer_size - 1], *actual_size; */
+    assigns buffer[0 .. buffer_size - 1], *actual_size \from \nothing;
+    assigns \result \from \nothing; */
 int kv_get(const char *full_name_key, uint8_t *buffer, size_t buffer_size, size_t *actual_size);
 #endif

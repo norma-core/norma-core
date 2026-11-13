@@ -7,6 +7,7 @@
 #include "kvstore_global_api.h"
 #include "platform/mbed_error.h"
 
+#include "nicla_bytes.h"
 #include "nicla_hub.h"
 
 /* --- Policy -----------------------------------------------------------------
@@ -126,8 +127,8 @@ void bhy2calib_restore_profiles(void) {
       flags |= BHY2CALIB_FLAG_RECORD_IGNORED;
       continue;
     }
-    const uint16_t stored_kernel = (uint16_t)(record[0] | (record[1] << 8));
-    const uint16_t length = (uint16_t)(record[2] | (record[3] << 8));
+    const uint16_t stored_kernel = nicla_le16(&record[0]);
+    const uint16_t length = nicla_le16(&record[2]);
     if (stored_kernel != kernel || length == 0 || length > PROFILE_CAP || actual != RECORD_HEADER_LEN + (size_t)length) {
       flags |= BHY2CALIB_FLAG_RECORD_IGNORED;
       continue;
