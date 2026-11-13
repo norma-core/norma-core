@@ -4,7 +4,9 @@ Station driver for the [Arduino Nicla Sense ME](https://docs.arduino.cc/hardware
 (BHI260AP IMU, BMM150 magnetometer, BMP390 barometer, BME688 gas sensor) running the
 [norma-core firmware](../../../device-support/arduino-nicla-sense-me). Boards are
 attached over USB; the driver discovers every one automatically and streams each
-board's full 168-byte register snapshot into its own queue at ~100 Hz.
+board's full 124-byte register snapshot (firmware revision 6) into its own queue
+at ~100 Hz. Frames of any other length are discarded as malformed, so a board
+on older firmware never produces data until it is reflashed.
 
 The register map, wire protocol and flashing instructions live in the
 [firmware README](../../../device-support/arduino-nicla-sense-me/README.md).
@@ -35,3 +37,45 @@ That is the entire configuration. There is no port, baud or board list:
   UART rate between the bridge and the nRF52, so it bounds throughput; it is a
   constant in the driver, not a config key.
 - **Multiple boards** work out of the box; each gets its own worker and queue.
+
+## Reading the data
+
+The driver forwards the firmware's register image untouched in
+`RxEnvelope.data`; decoding lives in the consumer
+(`station-viewer/src/devices/arduino-nicla-sense-me/values.ts`). The register
+map is documented in the firmware README. One field deserves a note because it
+is easy to misread.
+
+### Quaternion accuracy (register 0x3C)
+
+The fifth float of the quaternion block (0x2C w, 0x30 x, 0x34 y, 0x38 z,
+**0x3C accuracy**) is the sensor hub's own estimate of the rotation vector's
+**heading error, in radians**. It comes from the 16-bit accuracy field of the
+BHY2 rotation-vector FIFO packet; the Arduino_BHY2 library scales that field by
+the same 1/16384 factor it applies to w/x/y/z
+(`Arduino_BHY2/src/sensors/DataParser.cpp`, `parseQuaternion`), and the
+firmware writes the result as-is.
+
+How to read it:
+
+- **≈ 3.142 (π):** the magnetometer is not calibrated yet. The fusion has no
+  usable heading reference, the quaternion sits near identity for a level
+  board, and any heading derived from it is meaningless. Tilt (pitch/roll,
+  gravity, linear acceleration) is still usable because it comes from the
+  accelerometer and gyroscope; on the bench the gravity vector derived from the
+  quaternion matched the accelerometer to a few thousandths of a g while the
+  accuracy still read π.
+- **Dropping well below π:** the hub has locked onto the earth field and the
+  heading can be trusted to roughly that many radians. Calibrate by moving the
+  board through a figure-eight for a few seconds; the value falls as the
+  calibration converges. Once a good heading has been held for 30 s the
+  firmware stores the hub's calibration profiles in flash and restores them at
+  the next boot (see the firmware README, "Calibration persistence"), so this
+  state normally lasts only for the first session.
+
+The viewer shows the value in the history detail panel. The rover HUD shows it
+next to the compass as `±N°` and withholds the heading entirely while it reads
+≈ π (see `vesc-pwm-output-control/rover-motion.ts`); attitude is still shown,
+since only a quaternion whose norm is far from 1 (unpopulated registers) is
+rejected. Any other consumer should pick its own threshold; the raw value is
+recorded in every frame so that decision can be made, or changed, later.
