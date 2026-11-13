@@ -30,8 +30,8 @@ be recomputed on recorded data.
 | 0x14 | 3×i16 | accelerometer x, y, z, raw counts |
 | 0x1A | 3×i16 | gyroscope x, y, z, raw counts |
 | 0x20 | 3×i16 | magnetometer x, y, z, raw counts |
-| 0x26 | u16 | accelerometer full scale in g, as read back from the hub (16 requested; refreshed every second, see below) |
-| 0x28 | u16 | gyroscope full scale in dps, as read back from the hub (2000 requested; refreshed every second) |
+| 0x26 | u16 | accelerometer full scale in g, as read back from the hub (16 requested; refreshed every second; 0 = not read yet, see below) |
+| 0x28 | u16 | gyroscope full scale in dps, as read back from the hub (2000 requested; refreshed every second; 0 = not read yet) |
 | 0x2A | u16 | magnetometer LSB per µT (16) |
 | 0x2C | 5×f32 | rotation vector quaternion w, x, y, z, accuracy (estimated heading error in rad; reads π while the magnetometer is uncalibrated, see the driver README) |
 | 0x40 | f32 | temperature (°C) |
@@ -55,11 +55,25 @@ be recomputed on recorded data.
 | 0x7A–0x7B | — | reserved (zero) |
 | — | — | total length 0x7C (124 bytes) |
 
-The range registers are re-read from the hub once a second, not only at
-start-up: on hardware the configuration read 100 ms after `setRange` still
-returned a stale value (accel reported 7 while 16 g was already in effect),
-so a one-shot read-back would have frozen a wrong scale into every frame.
-Always scale with the range register of the frame being decoded.
+The range registers hold what the hub reports as in effect, re-read once a
+second. A register is written only when the hub's answer for exactly that
+sensor arrived complete and holds a range the sensor can have (2/4/8/16 g;
+125/250/500/1000/2000 dps); otherwise it keeps its previous value. It reads 0
+until the first good read, and consumers must not scale while it is 0 (the
+viewer shows no value). Always scale with the range register of the frame
+being decoded.
+
+This matters because the stock `getConfiguration()` of Arduino_BHY2 cannot be
+trusted on this hub: whenever a status entry is pending it returns another
+request's answer without reporting an error. Measured on the bench with the
+previous firmware, 2 % of all frames carried a swapped scale (16 dps for the
+gyroscope, then 2000 g for the accelerometer, a second each) in normal
+operation; the "accel reported 7" seen at the first rev-6 flash was the same
+fault. The firmware now reads hub parameters only through `src/nicla_hub.c`,
+which empties the hub's status channel before every request and accepts only
+the awaited answer (the header of that file describes the hub behaviour this
+is built on). Bench result with the fix: 0 wrong frames, including with stale
+entries injected on purpose.
 
 Scaling, done by the consumer: `g = counts / 32768 × range_g`,
 `dps = counts / 32768 × range_dps`, `µT = counts / lsb_per_µT`. The quaternion
@@ -76,7 +90,7 @@ The BHI260AP learns accelerometer, gyroscope and magnetometer calibration at
 run time and keeps it in its own RAM, so a bare board starts every power cycle
 uncalibrated: the rotation-vector accuracy (0x3C) reads π and the heading is
 meaningless until the board has been moved through enough orientations. The
-firmware (`src/bhy2_calibration.cpp`) removes that cost:
+firmware (`src/bhy2_calibration.c`) removes that cost:
 
 - **Restore:** right after the hub boots and before any sensor is enabled, the
   three BSX calibration profiles (hub parameters 0x201 accel, 0x203 gyro,
@@ -90,6 +104,38 @@ firmware (`src/bhy2_calibration.cpp`) removes that cost:
   at most once per 10 minutes. Power loss before the first good window simply
   leaves flash untouched.
 - **Status:** register 0x69 flags and 0x6A minutes since the last save.
+
+## Source layout
+
+The sketch is only the glue that has to be C++ (the Arduino_BHY2 sensor
+objects, `Serial`, the LED). All logic is plain C under `src/`:
+
+| File | Contents |
+|---|---|
+| `src/nicla_protocol.[ch]` | register map layout and writers, validated range publishing, CRC8 frame, streaming keepalive state |
+| `src/nicla_hub.[ch]` | hub parameter reads (ranges, calibration state) that cannot return another request's answer |
+| `src/bhy2_calibration.[ch]` | calibration persistence |
+| `src/nicla_hub_dev.cpp` | hands the library's private hub handle to the C code; the only other C++ |
+
+### Formal verification
+
+The C modules carry ACSL contracts (the comments starting with `/*@`) and are
+proved with [Frama-C](https://frama-c.com)/WP: no out-of-bounds access,
+overflow or invalid shift, and the stated behaviour (for example: a range
+register is only ever written with a valid range; a calibration blob from the
+hub or from flash can never overrun its buffer; the save policy's timing
+rules), for **any** data the hub, the flash store or the host may deliver. The
+hardware interfaces are replaced by contract-only stand-ins in `verify/stubs`.
+
+```bash
+./verify/run.sh            # needs Docker; builds the Frama-C image on first use
+```
+
+Every goal should come back proved. Two textbook facts about bit operations
+are admitted rather than proved (`verify/lemmas.c`), and `nicla_put_f32` is
+skipped (its float-to-bytes copy is outside the memory model). The proof
+covers the code's logic, not the hub's real behaviour: that was established
+on the bench and is written down in `src/nicla_hub.h`.
 
 ## USB serial transport
 
