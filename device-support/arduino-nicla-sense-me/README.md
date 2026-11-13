@@ -103,6 +103,10 @@ firmware (`src/bhy2_calibration.c`) removes that cost:
   back from the hub and written to flash if they changed since the last write,
   at most once per 10 minutes. Power loss before the first good window simply
   leaves flash untouched.
+  A failed flash write is retried once: Mbed's TDBStore rejects a record that
+  ends exactly on the last byte of its 4 KB area (it writes the record, fails
+  its own read-back check, compacts the store and returns an error), so the
+  second write lands elsewhere. A 2-hour soak hit this once in 12 saves.
 - **Status:** register 0x69 flags and 0x6A minutes since the last save.
 
 ## Source layout
