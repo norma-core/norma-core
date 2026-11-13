@@ -76,7 +76,16 @@ static void attempt_save(uint32_t now_ms) {
     record[1] = (uint8_t)(kernel >> 8);
     record[2] = (uint8_t)(total & 0xFFu);
     record[3] = (uint8_t)(total >> 8);
-    if (kv_set(PROFILE_KEYS[i], record, RECORD_HEADER_LEN + total, 0) != 0) {
+    /* Mbed's TDBStore (6.17) accepts a record that ends exactly on the last
+       byte of its 4 KB flash area, then rejects it in its own read-back check
+       and returns an error. That failed call compacts the store, so a second
+       write lands at a different offset. Without the retry this hits about
+       once in a dozen saves and skips the profile until the next attempt. */
+    int stored = kv_set(PROFILE_KEYS[i], record, RECORD_HEADER_LEN + total, 0);
+    if (stored != 0) {
+      stored = kv_set(PROFILE_KEYS[i], record, RECORD_HEADER_LEN + total, 0);
+    }
+    if (stored != 0) {
       flags |= BHY2CALIB_FLAG_STORE_ERROR;
       continue;
     }
