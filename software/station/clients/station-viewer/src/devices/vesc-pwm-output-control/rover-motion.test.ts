@@ -83,16 +83,16 @@ describe('rover attitude', () => {
 describe('rover vectors', () => {
   it('maps gyro from sensor right/forward/up to rover forward/left/up', () => {
     const motion = readRoverMotion(sample(), 1100)!;
-    expect(motion.gyro.x).toBeCloseTo(500);
-    expect(motion.gyro.y).toBeCloseTo(-1000);
-    expect(motion.gyro.z).toBeCloseTo(-250);
+    expect(motion.gyro!.x).toBeCloseTo(500);
+    expect(motion.gyro!.y).toBeCloseTo(-1000);
+    expect(motion.gyro!.z).toBeCloseTo(-250);
   });
 
   it.each([[0, 0, 0], [35, 25, -30], [280, 50, 45]])(
     'shows zero acceleration at rest for heading %s, pitch %s, roll %s',
     (heading, noseUp, rightDown) => {
       const motion = readRoverMotion(orientedSample(heading, noseUp, rightDown), 1100)!;
-      expect(Math.hypot(motion.accel.x, motion.accel.y, motion.accel.z)).toBeCloseTo(0, 2);
+      expect(Math.hypot(motion.accel!.x, motion.accel!.y, motion.accel!.z)).toBeCloseTo(0, 2);
     },
   );
 
@@ -102,9 +102,9 @@ describe('rover vectors', () => {
     // Level board: gravity on hub +Z, push of 0.25 g along hub +Y (forward).
     writeVec3i16(view, ME_OFFSETS.accelRaw, 0, 0.25 * ACCEL_COUNTS_PER_G, ACCEL_COUNTS_PER_G);
     const motion = readRoverMotion(s, 1100)!;
-    expect(motion.accel.x).toBeCloseTo(0.25);
-    expect(motion.accel.y).toBeCloseTo(0);
-    expect(motion.accel.z).toBeCloseTo(0);
+    expect(motion.accel!.x).toBeCloseTo(0.25);
+    expect(motion.accel!.y).toBeCloseTo(0);
+    expect(motion.accel!.z).toBeCloseTo(0);
   });
 });
 
@@ -134,10 +134,17 @@ describe('rover motion validity', () => {
     expect(readRoverMotion(s, 1100)).toBeNull();
   });
 
-  it('rejects images whose range registers are unusable', () => {
-    const s = sample();
-    new DataView(s.data!.buffer).setUint16(ME_OFFSETS.accelRangeG, 0, true);
-    expect(readRoverMotion(s, 1100)).toBeNull();
+  it('keeps attitude and heading when a range register is still unread, dropping only the unscalable reading', () => {
+    // The firmware publishes range 0 until the hub answers the range read.
+    const s = orientedSample(90, 10, 0);
+    const view = new DataView(s.data!.buffer);
+    view.setFloat32(ME_OFFSETS.quat + 16, 0.44, true);
+    view.setUint16(ME_OFFSETS.accelRangeG, 0, true);
+    const motion = readRoverMotion(s, 1100)!;
+    expect(motion.pitch).toBeCloseTo(10);
+    expect(motion.heading).toBeCloseTo(90);
+    expect(motion.accel).toBeNull();
+    expect(motion.gyro).not.toBeNull();
   });
 });
 
@@ -148,6 +155,7 @@ describe('rover heading accuracy', () => {
     const motion = readRoverMotion(s, 1100)!;
     expect(motion.heading).toBeCloseTo(0);
     expect(motion.headingAccuracyDeg).toBeCloseTo(11.46, 1);
+    expect(motion.headingAccuracyLevel).toBe('good');
   });
 
   it('hides the heading but keeps attitude while the magnetometer is uncalibrated (accuracy ≈ π)', () => {

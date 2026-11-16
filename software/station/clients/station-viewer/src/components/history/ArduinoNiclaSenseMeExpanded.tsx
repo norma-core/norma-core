@@ -1,7 +1,6 @@
 import { arduino_nicla_sense_me } from '@/api/proto.js';
 import {
   HUB_TO_ROVER,
-  compassHeadingDeg,
   displayAttitude,
   gravityBody,
   linearAccelG,
@@ -16,6 +15,8 @@ import {
   ME_REVISION,
   ME_STATUS,
   decodeArduinoNiclaSenseMe,
+  forwardHeadingDeg,
+  headingAccuracy,
   isFresh,
 } from '@/devices/arduino-nicla-sense-me/values';
 import type { ArduinoNiclaSenseMeSample, Vec3 } from '@/devices/arduino-nicla-sense-me/values';
@@ -128,7 +129,8 @@ function parsedGroups(sample: ArduinoNiclaSenseMeSample, bytes: Uint8Array): Val
   const forward = q ? withMount(q, HUB_TO_ROVER) : null;
   const rpy = forward ? rpyRep103(forward) : null;
   const attitude = rpy ? displayAttitude(rpy) : null;
-  const heading = forward ? compassHeadingDeg(forward) : null;
+  const heading = forwardHeadingDeg(sample);
+  const headingText = headingAccuracy(sample.quatAccuracyRad)?.uncalibrated ? 'withheld (magnetometer uncalibrated)' : measured(heading, '°', 1);
   const gravity = q ? gravityBody(q) : null;
   const linear = q && sample.accelG ? linearAccelG(sample.accelG, q) : null;
   return [
@@ -171,7 +173,7 @@ function parsedGroups(sample: ArduinoNiclaSenseMeSample, bytes: Uint8Array): Val
         },
         { label: 'Quaternion accuracy', value: quatAccuracy(sample.quatAccuracyRad), tone: Number.isFinite(sample.quatAccuracyRad) && sample.quatAccuracyRad >= ME_HEADING_UNCALIBRATED_RAD ? 'text-accent-critical' : 'text-accent-info' },
         { label: 'Rotation vector usable', value: q ? 'yes' : 'no (unpopulated or off-scale)', tone: q ? 'text-accent-success' : 'text-accent-critical' },
-        { label: 'Heading (fwd = sensor +Y)', value: measured(heading, '°', 1), tone: 'text-accent-warning' },
+        { label: 'Heading (fwd = sensor +Y)', value: headingText, tone: 'text-accent-warning' },
         { label: 'Pitch (nose up +)', value: measured(attitude?.pitchNoseUpDeg ?? null, '°', 1), tone: 'text-accent-warning' },
         { label: 'Roll (right down +)', value: measured(attitude?.rollRightDownDeg ?? null, '°', 1), tone: 'text-accent-warning' },
         { label: 'REP-103 yaw (CCW from east)', value: measured(rpy?.yawDeg ?? null, '°', 1), tone: 'text-accent-secondary' },

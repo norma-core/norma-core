@@ -3,10 +3,10 @@ import { arduino_nicla_sense_me } from '@/api/proto.js';
 import DeviceMetricPill from '@/components/DeviceMetricPill';
 import DeviceWidgetShell from '@/components/DeviceWidgetShell';
 import NiclaBoardScene from './NiclaBoardScene';
-import { HUB_TO_ROVER, compassHeadingDeg, displayAttitude, rpyRep103, withMount } from '../attitude';
+import { HUB_TO_ROVER, displayAttitude, rpyRep103, withMount } from '../attitude';
 import { buildDecimatedAxisPolylines, historyFor } from '../sparkline';
 import type { AxisPolylines } from '../sparkline';
-import { ME_OFFSETS, ME_REVISION, cardinalName, decodeArduinoNiclaSenseMe, headingAccuracy, vecMagnitude } from '../values';
+import { ME_OFFSETS, ME_REVISION, cardinalName, decodeArduinoNiclaSenseMe, forwardHeadingDeg, headingAccuracy, vecMagnitude } from '../values';
 import type { HeadingAccuracyLevel } from '../values';
 
 const ACCURACY_TONE: Record<HeadingAccuracyLevel, string> = {
@@ -126,7 +126,7 @@ function ArduinoNiclaSenseMeLiveView({ data }: ArduinoNiclaSenseMeLiveViewProps)
   // The hub's own heading-error estimate. While the magnetometer is
   // uncalibrated it reads ~180° and the heading is withheld, as on the rover HUD.
   const accuracy = sample ? headingAccuracy(sample.quatAccuracyRad) : null;
-  const heading = forward && !accuracy?.uncalibrated ? compassHeadingDeg(forward) : null;
+  const heading = sample ? forwardHeadingDeg(sample) : null;
 
   const accelMagnitude = vecMagnitude(accelG);
   const gyroMagnitude = vecMagnitude(gyroDps);

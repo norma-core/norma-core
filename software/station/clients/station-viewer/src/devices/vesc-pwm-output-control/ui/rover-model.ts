@@ -44,7 +44,9 @@ export function renderRoverModel(motion: RoverMotion, index: string): string {
     const forwardCue = `<polyline data-forward-cue="true" points="${point([17,0,24.8])} ${point([27,0,24.8])}" fill="none" stroke="#d5e7ef" stroke-width="1.2"/>`
       +polygon([[30,0,24.8],[23,-3,24.8],[23,3,24.8]],'#d5e7ef');
     const mast = frame+camera;
-    const linearAccel: Vector = [motion.accel.x, motion.accel.y, motion.accel.z];
+    // A reading the firmware could not scale yet (null) draws no arrow.
+    const linearAccel: Vector = motion.accel ? [motion.accel.x, motion.accel.y, motion.accel.z] : [0, 0, 0];
+    const angularRate: Vector = motion.gyro ? [motion.gyro.x, motion.gyro.y, motion.gyro.z] : [0, 0, 0];
     const vectorAnchor = rotate([0,0,25]);
     const vectorOrigin = project(vectorAnchor);
 
@@ -52,7 +54,7 @@ export function renderRoverModel(motion: RoverMotion, index: string): string {
       // Full length represents 1 g or 90 degrees/s; larger values are capped.
       const vectors = [
         {id:'a',color:'#22d3ee',v:rotate(linearAccel),fullScale:1,maxLength:48},
-        {id:'w',color:'#c084fc',v:rotate([motion.gyro.x,motion.gyro.y,motion.gyro.z]),fullScale:90,maxLength:42},
+        {id:'w',color:'#c084fc',v:rotate(angularRate),fullScale:90,maxLength:42},
       ].map(vector => {
         const magnitude = Math.hypot(...vector.v);
         const length = vector.maxLength * Math.min(1, Math.log1p(9 * magnitude / vector.fullScale) / Math.LN10);

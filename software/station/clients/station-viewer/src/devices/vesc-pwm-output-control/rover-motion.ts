@@ -3,7 +3,6 @@ import { arduino_nicla_sense_me as me } from '@/api/proto.js';
 import { serverToLocal } from '@/api/timestamp-utils';
 import {
   HUB_TO_ROVER,
-  compassHeadingDeg,
   displayAttitude,
   linearAccelG,
   rpyRep103,
@@ -13,7 +12,9 @@ import {
 import {
   ME_STATUS,
   decodeArduinoNiclaSenseMe,
+  forwardHeadingDeg,
   headingAccuracy,
+  type HeadingAccuracyLevel,
   type Vec3,
 } from '@/devices/arduino-nicla-sense-me/values';
 
@@ -28,6 +29,8 @@ export interface RoverMotion {
    * null when the hub has not reported one yet (register still 0).
    */
   headingAccuracyDeg: number | null;
+  /** Display tier of that estimate; null together with headingAccuracyDeg. */
+  headingAccuracyLevel: HeadingAccuracyLevel | null;
   /**
    * True while the magnetometer is uncalibrated (accuracy ≈ π): the heading
    * is withheld for that reason rather than because the forward axis is
@@ -38,10 +41,14 @@ export interface RoverMotion {
   pitch: number;
   /** Degrees, positive = right side lowered. */
   roll: number;
-  /** Rover-frame (forward, left, up) linear acceleration in g, gravity removed here. */
-  accel: Vec3;
-  /** Rover-frame angular velocity in dps. */
-  gyro: Vec3;
+  /**
+   * Rover-frame (forward, left, up) linear acceleration in g, gravity removed
+   * here; null while the firmware has not read the accelerometer's range from
+   * the hub (range register 0), because the counts cannot be scaled then.
+   */
+  accel: Vec3 | null;
+  /** Rover-frame angular velocity in dps; null while the gyroscope's range is unknown. */
+  gyro: Vec3 | null;
 }
 
 /**
@@ -56,18 +63,21 @@ export function readRoverMotion(envelope: me.IRxEnvelope | undefined, now: numbe
   if (!Number.isFinite(age) || age < -1000 || age > 1500) return null;
   const sample = decodeArduinoNiclaSenseMe(envelope.data);
   if (!sample || (sample.statusByte & ME_STATUS.bhy2Running) === 0) return null;
-  if (!sample.quat || !sample.accelG || !sample.gyroDps) return null;
+  // Attitude and heading need only the rotation vector. A range register the
+  // firmware could not read yet costs the accel/gyro readings, not the HUD.
+  if (!sample.quat) return null;
   const rover = withMount(sample.quat, HUB_TO_ROVER);
   const { pitchNoseUpDeg: pitch, rollRightDownDeg: roll } = displayAttitude(rpyRep103(rover));
   const accuracy = headingAccuracy(sample.quatAccuracyRad);
   const uncalibrated = accuracy?.uncalibrated ?? false;
   return {
-    heading: uncalibrated ? null : compassHeadingDeg(rover),
+    heading: forwardHeadingDeg(sample),
     headingAccuracyDeg: accuracy?.deg ?? null,
+    headingAccuracyLevel: accuracy?.level ?? null,
     headingUncalibrated: uncalibrated,
     pitch,
     roll,
-    accel: toRoverFrame(linearAccelG(sample.accelG, sample.quat)),
-    gyro: toRoverFrame(sample.gyroDps),
+    accel: sample.accelG ? toRoverFrame(linearAccelG(sample.accelG, sample.quat)) : null,
+    gyro: sample.gyroDps ? toRoverFrame(sample.gyroDps) : null,
   };
 }

@@ -1,10 +1,10 @@
 import { memo, useId, useMemo } from 'react';
-import { headingAccuracy } from '@/devices/arduino-nicla-sense-me/values';
 import type { RoverMotion } from '../rover-motion';
 import { renderRoverModel } from './rover-model';
 interface RoverMotionHudProps { motion: RoverMotion | null }
 const cardinals = ['N','NE','E','SE','S','SW','W','NW'];
 const signed = (value: number) => `${value > 0 ? '+' : ''}${Math.round(value)}°`;
+const magnitude = (v: { x: number; y: number; z: number } | null, decimals: number, unit: string) => v ? `${Math.hypot(v.x, v.y, v.z).toFixed(decimals)}${unit}` : 'N/A';
 const RoverMotionHud = memo(function RoverMotionHud({ motion }: RoverMotionHudProps) {
   const id = useId().replace(/[^a-zA-Z0-9_-]/g, '');
   const svg = useMemo(() => motion ? renderRoverModel(motion, id) : '', [motion, id]);
@@ -13,7 +13,7 @@ const RoverMotionHud = memo(function RoverMotionHud({ motion }: RoverMotionHudPr
   // hub reports ~180° and readRoverMotion withholds the heading entirely.
   const accuracy = motion?.headingAccuracyDeg ?? null;
   const uncalibrated = motion?.headingUncalibrated ?? false;
-  const accuracyLevel = accuracy === null ? null : headingAccuracy(accuracy * Math.PI / 180)?.level ?? null;
+  const accuracyLevel = motion?.headingAccuracyLevel ?? null;
   const accuracyLabel = uncalibrated ? 'CALIBRATING' : accuracy === null || heading === null ? null : `±${Math.round(accuracy)}°`;
   const ticks = [];
   if (heading !== null) for (let bearing = Math.floor((heading - 75) / 15) * 15; bearing <= heading + 75; bearing += 15) {
@@ -34,7 +34,7 @@ const RoverMotionHud = memo(function RoverMotionHud({ motion }: RoverMotionHudPr
         <svg viewBox="24 -4 186 126" role="img" aria-label={`Rear view of rover: pitch ${signed(motion.pitch)}, roll ${signed(motion.roll)}; linear acceleration without gravity and gyro vectors`} dangerouslySetInnerHTML={{ __html: svg }} />
         <div className="rover-motion-readings">
           <div><span>Pitch <output>{signed(motion.pitch)}</output></span><span>Roll <output>{signed(motion.roll)}</output></span></div>
-          <div><span className="accel" title="Linear acceleration · gravity removed">Acc <output>{Math.hypot(motion.accel.x,motion.accel.y,motion.accel.z).toFixed(2)} g</output></span><span className="gyro">Gyro <output>{Math.hypot(motion.gyro.x,motion.gyro.y,motion.gyro.z).toFixed(1)}°/s</output></span></div>
+          <div><span className="accel" title="Linear acceleration · gravity removed">Acc <output>{magnitude(motion.accel, 2, ' g')}</output></span><span className="gyro">Gyro <output>{magnitude(motion.gyro, 1, '°/s')}</output></span></div>
         </div>
       </> : <span className="rover-no-motion">Motion unavailable</span>}
     </div>

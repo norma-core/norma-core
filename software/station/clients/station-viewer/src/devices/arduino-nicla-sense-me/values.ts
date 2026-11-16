@@ -1,4 +1,4 @@
-import { normalizeQuat } from './attitude';
+import { HUB_TO_ROVER, compassHeadingDeg, normalizeQuat, withMount } from './attitude';
 
 /**
  * Register image published by firmware revision 6 (see
@@ -275,6 +275,20 @@ export function decodeArduinoNiclaSenseMe(
     calibFlags: data[ME_OFFSETS.calibFlags],
     calibMinutesSinceSave: data[ME_OFFSETS.calibMinutesSinceSave] === 255 ? null : data[ME_OFFSETS.calibMinutesSinceSave],
   };
+}
+
+/**
+ * Compass heading of the hub's +Y axis (the mounted rover's forward), the one
+ * heading every view shows. Null when there is none to show: the rotation
+ * vector is unusable, the forward axis is vertical, or the magnetometer is
+ * uncalibrated, in which case the quaternion carries no heading information
+ * and a number computed from it would be meaningless.
+ */
+export function forwardHeadingDeg(sample: ArduinoNiclaSenseMeSample): number | null {
+  if (!sample.quat || headingAccuracy(sample.quatAccuracyRad)?.uncalibrated) {
+    return null;
+  }
+  return compassHeadingDeg(withMount(sample.quat, HUB_TO_ROVER));
 }
 
 export function isFresh(sample: ArduinoNiclaSenseMeSample, flag: number): boolean {

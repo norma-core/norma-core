@@ -7,6 +7,7 @@ import {
   ME_REVISION,
   cardinalName,
   decodeArduinoNiclaSenseMe,
+  forwardHeadingDeg,
   headingAccuracy,
   isFresh,
   vecMagnitude,
@@ -197,5 +198,24 @@ describe('headingAccuracy', () => {
     expect(headingAccuracy(1.03)).toMatchObject({ level: 'fair', uncalibrated: false });
     expect(headingAccuracy(Math.PI)).toMatchObject({ level: 'poor', uncalibrated: true });
     expect(headingAccuracy(0.2)?.deg).toBeCloseTo(11.46, 1);
+  });
+});
+
+describe('forwardHeadingDeg', () => {
+  it('gives the heading of hub +Y for a calibrated rotation vector', () => {
+    // buildImage(): identity rotation, so hub +Y points north.
+    expect(forwardHeadingDeg(decodeArduinoNiclaSenseMe(buildImage())!)).toBeCloseTo(0);
+  });
+
+  it('withholds the heading while the magnetometer is uncalibrated, in every view that shows one', () => {
+    const image = buildImage();
+    new DataView(image.buffer).setFloat32(ME_OFFSETS.quat + 16, Math.PI, true);
+    expect(forwardHeadingDeg(decodeArduinoNiclaSenseMe(image)!)).toBeNull();
+  });
+
+  it('has no heading without a usable rotation vector', () => {
+    const image = buildImage();
+    new DataView(image.buffer).setFloat32(ME_OFFSETS.quat, 0, true);
+    expect(forwardHeadingDeg(decodeArduinoNiclaSenseMe(image)!)).toBeNull();
   });
 });

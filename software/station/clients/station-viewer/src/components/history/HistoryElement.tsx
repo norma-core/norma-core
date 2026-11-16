@@ -3,8 +3,7 @@ import { airgradient_open_air_o_1pst, arduino_nicla_sense_env, arduino_nicla_sen
 import { formatBytes, parseUsbVideoData, parseHikmicroThermalData, parseMirroringData, parseSysinfoData, parseArduinoNiclaSenseEnvData, parseArduinoNiclaSenseMeData, parseIna226Data, parseAirGradientData, parseVictronSmartSolarData, parseYahboomDogzillaLiteData, parseNormvlaData } from '@/components/history/history-utils';
 import ExpandedView from '@/components/history/ExpandedView';
 import { readArduinoNiclaSenseEnvMainValues } from '@/devices/arduino-nicla-sense-env/values';
-import { HUB_TO_ROVER, compassHeadingDeg, withMount } from '@/devices/arduino-nicla-sense-me/attitude';
-import { cardinalName, decodeArduinoNiclaSenseMe, vecMagnitude } from '@/devices/arduino-nicla-sense-me/values';
+import { cardinalName, decodeArduinoNiclaSenseMe, forwardHeadingDeg, vecMagnitude } from '@/devices/arduino-nicla-sense-me/values';
 import { formatIna226Current, readIna226CurrentAmps, readIna226ShuntMillivolts } from '@/devices/ina226/values';
 import { airGradientDeviceLabel, readAirGradientValues } from '@/devices/airgradient-open-air-o-1pst/values';
 import { latestThermalFrame, renderThermalFrame } from '@/devices/hikmicro-thermal/thermal';
@@ -84,10 +83,9 @@ function HistoryElement({ element, index, dataQueueType, dataQueueId }: HistoryE
   const arduinoNiclaSenseMeHumidity = formatSensorValue(arduinoNiclaSenseMeSample?.humidityPercent ?? null, '%', 0);
   const arduinoNiclaSenseMeIaq = formatSensorValue(arduinoNiclaSenseMeSample?.iaq ?? null, '', 0);
   const arduinoNiclaSenseMeAccel = formatSensorValue(vecMagnitude(arduinoNiclaSenseMeSample?.accelG ?? null), 'g');
-  // Heading computed from the raw rotation vector; forward = hub +Y, as on the rover HUD.
-  const arduinoNiclaSenseMeHeadingDeg = arduinoNiclaSenseMeSample?.quat
-    ? compassHeadingDeg(withMount(arduinoNiclaSenseMeSample.quat, HUB_TO_ROVER))
-    : null;
+  // Heading computed from the raw rotation vector; forward = hub +Y, and
+  // withheld while the magnetometer is uncalibrated, as on the rover HUD.
+  const arduinoNiclaSenseMeHeadingDeg = arduinoNiclaSenseMeSample ? forwardHeadingDeg(arduinoNiclaSenseMeSample) : null;
   const arduinoNiclaSenseMeHeading = arduinoNiclaSenseMeHeadingDeg !== null && Number.isFinite(arduinoNiclaSenseMeHeadingDeg)
     ? `${arduinoNiclaSenseMeHeadingDeg.toFixed(0)}° ${cardinalName(arduinoNiclaSenseMeHeadingDeg)}`
     : null;
