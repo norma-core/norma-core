@@ -12,6 +12,7 @@
 #define DRAIN_CHUNK_LIMIT 16u   /* give up after 512 unexpected bytes */
 #define READ_ATTEMPTS 3u
 #define EMPTY_HEADER_LIMIT 8u
+#define BSX_SECTION_LIMIT 16u   /* 1024 bytes; the largest profile is 408 */
 #define SENSOR_CONF_LEN 12u     /* [rate f32][latency u32][sensitivity u16][range u16] */
 #define SENSOR_CONF_RANGE_OFFSET 10u
 
@@ -135,15 +136,29 @@ int8_t nicla_hub_read_parameter(uint16_t param, uint8_t *buffer, uint32_t length
 
 /* BSX state block protocol: repeated reads of the same parameter return
    successive 68-byte sections: [0] section index | 0x80 when last, [1] bytes
-   in this section, [2..3] total length, [4..67] data. */
+   in this section, [2..3] total length, [4..67] data.
+
+   A state is accepted only when every section arrived, in order, and the
+   sections add up to the announced length. A lost or repeated section (for
+   example when nicla_hub_read_parameter had to repeat a request, which makes
+   the hub move on to the next section) would otherwise leave a hole of stale
+   bytes in a profile that is then stored in flash. After a fault nothing more
+   is copied, but the remaining sections are still read and discarded, so that
+   the next call starts at section 0 again. */
 int8_t nicla_hub_read_bsx_state(uint16_t param, uint8_t *out, uint32_t cap, uint32_t *total) {
   uint8_t block[BHY2_BSX_STATE_STRUCT_LEN];
+  uint32_t received = 0;
+  uint32_t announced = 0;
+  int8_t fault = BHY2_OK;
 
   *total = 0;
-  /*@ loop invariant 0 <= i <= 16;
-      loop assigns i, block[0 .. BHY2_BSX_STATE_STRUCT_LEN - 1], out[0 .. cap - 1], *total;
-      loop variant 16 - i; */
-  for (uint32_t i = 0; i < 16; i++) {
+  /*@ loop invariant 0 <= i <= BSX_SECTION_LIMIT;
+      loop invariant *total == 0;
+      loop invariant received <= i * BHY2_BSX_STATE_BLOCK_LEN;
+      loop invariant received <= announced <= cap;
+      loop assigns i, block[0 .. BHY2_BSX_STATE_STRUCT_LEN - 1], out[0 .. cap - 1], received, announced, fault;
+      loop variant BSX_SECTION_LIMIT - i; */
+  for (uint32_t i = 0; i < BSX_SECTION_LIMIT; i++) {
     uint32_t len = 0;
     const int8_t rslt = nicla_hub_read_parameter(param, block, sizeof(block), &len);
     if (rslt != BHY2_OK) {
@@ -155,18 +170,27 @@ int8_t nicla_hub_read_bsx_state(uint16_t param, uint8_t *out, uint32_t cap, uint
     const uint32_t section = block[0] & 0x7Fu;
     const uint32_t block_len = block[1];
     const uint32_t total_len = nicla_le16(&block[2]);
-    *total = total_len;
-    if (total_len == 0 || total_len > cap) {
-      return BHY2_E_BUFFER;
-    }
-    if (block_len > BHY2_BSX_STATE_BLOCK_LEN) {
-      return BHY2_E_INVALID_PARAM; /* corrupt header: never read past the 68-byte block */
-    }
-    const uint32_t offset = section * BHY2_BSX_STATE_BLOCK_LEN;
-    if (offset + block_len <= cap) {
-      memcpy(&out[offset], &block[4], block_len);
+    const uint32_t offset = i * BHY2_BSX_STATE_BLOCK_LEN;
+    if (fault == BHY2_OK) {
+      if (total_len == 0 || total_len > cap) {
+        fault = BHY2_E_BUFFER; /* nothing to read, or larger than the caller's buffer */
+      } else if (section != i || block_len == 0 || block_len > BHY2_BSX_STATE_BLOCK_LEN ||
+                 (i > 0 && total_len != announced) || offset + block_len > total_len) {
+        fault = BHY2_E_INVALID_PARAM; /* out of order, repeated or corrupt */
+      } else {
+        memcpy(&out[offset], &block[4], block_len);
+        received += block_len;
+        announced = total_len;
+      }
     }
     if (block[0] & BHY2_BSX_STATE_TRANSFER_COMPLETE) {
+      if (fault != BHY2_OK) {
+        return fault;
+      }
+      if (received != announced) {
+        return BHY2_E_INVALID_PARAM;
+      }
+      *total = received;
       return BHY2_OK;
     }
   }

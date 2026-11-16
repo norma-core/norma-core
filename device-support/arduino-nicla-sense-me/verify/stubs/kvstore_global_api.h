@@ -14,4 +14,7 @@ int kv_set(const char *full_name_key, const uint8_t *buffer, size_t size, uint32
     assigns buffer[0 .. buffer_size - 1], *actual_size \from \nothing;
     assigns \result \from \nothing; */
 int kv_get(const char *full_name_key, uint8_t *buffer, size_t buffer_size, size_t *actual_size);
+
+/*@ assigns \result \from \nothing; */
+int kv_remove(const char *full_name_key);
 #endif

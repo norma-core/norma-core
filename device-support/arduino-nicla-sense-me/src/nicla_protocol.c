@@ -62,6 +62,21 @@ bool nicla_publish_gyro_range(uint8_t *map, uint8_t sensor_id) {
   return true;
 }
 
+bool nicla_range_gyro_next = false;
+uint8_t nicla_range_holdoff = 0;
+
+void nicla_refresh_one_range(uint8_t *map, uint8_t accel_id, uint8_t gyro_id) {
+  if (nicla_range_holdoff > 0) {
+    nicla_range_holdoff--;
+    return;
+  }
+  const bool refreshed = nicla_range_gyro_next ? nicla_publish_gyro_range(map, gyro_id) : nicla_publish_accel_range(map, accel_id);
+  nicla_range_gyro_next = !nicla_range_gyro_next;
+  if (!refreshed) {
+    nicla_range_holdoff = (uint8_t)NICLA_RANGE_RETRY_CALLS;
+  }
+}
+
 /*@ assigns \nothing; */
 static uint8_t crc8_update(uint8_t crc, uint8_t byte) {
   crc ^= byte;

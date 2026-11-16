@@ -80,6 +80,10 @@ void nicla_put_u32(uint8_t *map, size_t offset, uint32_t value);
     assigns map[offset .. offset + 3]; */
 void nicla_put_f32(uint8_t *map, size_t offset, float value);
 
+/* State of nicla_refresh_one_range; declared here only for its contract. */
+extern bool nicla_range_gyro_next;
+extern uint8_t nicla_range_holdoff;
+
 /* Publish the full-scale range the hub reports as in effect, in g
    (NICLA_REG_ACCEL_RANGE_G) and dps (NICLA_REG_GYRO_RANGE_DPS). A register is
    written only when the hub's answer for exactly that sensor arrived complete
@@ -101,6 +105,17 @@ bool nicla_publish_accel_range(uint8_t *map, uint8_t sensor_id);
     ensures !\result ==> map[NICLA_REG_GYRO_RANGE_DPS] == \old(map[NICLA_REG_GYRO_RANGE_DPS]) &&
                          map[NICLA_REG_GYRO_RANGE_DPS + 1] == \old(map[NICLA_REG_GYRO_RANGE_DPS + 1]); */
 bool nicla_publish_gyro_range(uint8_t *map, uint8_t sensor_id);
+
+/* Periodic refresh of the two range registers; call once a second. Reads one
+   sensor per call, alternating, and after a failed read leaves the hub alone
+   for NICLA_RANGE_RETRY_CALLS calls: a range cannot change after start-up, the
+   refresh only repairs a register that could not be read then, and a hub that
+   does not answer holds the caller for 200 ms or more per read (see
+   nicla_hub.h), which must not happen every second inside the 10 ms tick. */
+#define NICLA_RANGE_RETRY_CALLS 10u
+/*@ requires \valid(map + (0 .. NICLA_REG_MAP_SIZE - 1));
+    assigns map[NICLA_REG_ACCEL_RANGE_G .. NICLA_REG_GYRO_RANGE_DPS + 1], nicla_range_gyro_next, nicla_range_holdoff; */
+void nicla_refresh_one_range(uint8_t *map, uint8_t accel_id, uint8_t gyro_id);
 
 /* USB serial protocol. Frame format:
      [0xA5, 0x5A, 0x7C, <124-byte register image>, crc8(image)]

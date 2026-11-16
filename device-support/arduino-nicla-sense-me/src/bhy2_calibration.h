@@ -6,8 +6,9 @@
  * starts uncalibrated: the rotation-vector accuracy reads pi and the heading is
  * meaningless until the board has been moved through enough orientations.
  * This module stores the three profiles in the nRF52's flash (Mbed KVStore),
- * restores them right after the hub boots, and re-saves them automatically
- * once the fusion reports a good heading for a while. No host commands.
+ * restores them right after the hub boots, and saves them again when the
+ * fusion reports a better heading than the stored profiles were saved at, plus
+ * a rare refresh. No host commands.
  *
  * Status is published in two register-map bytes (see the sketch): a flag byte
  * and "minutes since the last save" (255 = none this session).
@@ -22,7 +23,7 @@ extern "C" {
 #endif
 
 #define BHY2CALIB_FLAG_RESTORED (1u << 0)         /* a stored profile was written into the hub at boot */
-#define BHY2CALIB_FLAG_SAVED (1u << 1)            /* at least one profile was saved this session */
+#define BHY2CALIB_FLAG_SAVED (1u << 1)            /* the profiles were saved this session */
 #define BHY2CALIB_FLAG_STORE_ERROR (1u << 2)      /* flash or hub transfer error since boot */
 #define BHY2CALIB_FLAG_RECORD_IGNORED (1u << 3)   /* a stored record did not match this hub firmware */
 #define BHY2CALIB_FLAG_RESTORE_VERIFIED (1u << 4) /* read-back after restore matched the stored bytes */
@@ -32,7 +33,7 @@ extern "C" {
 
 struct bhy2calib_status {
   uint8_t flags;
-  uint8_t minutes_since_save; /* 0 .. 254, or BHY2CALIB_NO_SAVE */
+  uint8_t minutes_since_save; /* 0 .. 254 (254 = that long or longer), or BHY2CALIB_NO_SAVE */
 };
 
 /* Call once after BHY2.begin() succeeded and BEFORE any sensor begin(): Bosch
@@ -46,10 +47,12 @@ void bhy2calib_restore_profiles(void);
 
 /* Call every tick. `rv_accuracy_rad` is the rotation-vector accuracy register
    when the rotation vector is populated; pass a large value (e.g. 100) while
-   it is not, so an all-zero quaternion never counts as "calibrated". */
+   it is not, so an all-zero quaternion never counts as "calibrated". `now_ms`
+   is millis(); only differences between consecutive calls are used, so the
+   32-bit wrap is harmless. */
 void bhy2calib_service(float rv_accuracy_rad, uint32_t now_ms);
 
-struct bhy2calib_status bhy2calib_get_status(uint32_t now_ms);
+struct bhy2calib_status bhy2calib_get_status(void);
 
 #ifdef __cplusplus
 }

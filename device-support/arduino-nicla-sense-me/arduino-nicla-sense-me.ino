@@ -107,7 +107,8 @@ static uint16_t takeFresh(SensorClass &sensor, uint16_t bit) {
 }
 
 // Publishes the full-scale ranges the hub reports as in effect. Called at
-// start-up and refreshed once a second from loop(). Each register is written
+// start-up; loop() then refreshes one of the two once a second
+// (nicla_refresh_one_range). Each register is written
 // only when the hub's answer for that sensor arrived complete and plausible;
 // otherwise it keeps its previous value, which is 0 ("unknown", consumers do
 // not scale) until the first good read. The library's own getConfiguration()
@@ -221,7 +222,7 @@ void loop() {
   nicla_put_f32(regMap, NICLA_REG_COMP_HUMIDITY, bsec.comp_h());
   regMap[NICLA_REG_BSEC_ACCURACY] = bsec.accuracy();
 
-  // Calibration persistence: the rotation-vector accuracy drives auto-save.
+  // Calibration persistence: the rotation-vector accuracy drives the saves.
   // An unpopulated quaternion reads all zeros (accuracy 0 as well), which must
   // not count as "calibrated", hence the norm gate.
   {
@@ -230,7 +231,7 @@ void loop() {
     if (bhy2Ok) {
       bhy2calib_service(rvPopulated ? quat.accuracy() : 100.0f, millis());
     }
-    const struct bhy2calib_status calib = bhy2calib_get_status(millis());
+    const struct bhy2calib_status calib = bhy2calib_get_status();
     regMap[NICLA_REG_CALIB_FLAGS] = calib.flags;
     regMap[NICLA_REG_CALIB_MINUTES] = calib.minutes_since_save;
   }
@@ -243,7 +244,7 @@ void loop() {
     regMap[NICLA_REG_SAMPLE_COUNTER] = regMap[NICLA_REG_SAMPLE_COUNTER] + 1;
     tickCounter++;
     if (tickCounter % 100 == 0) {
-      publishRanges();
+      nicla_refresh_one_range(regMap, accel.id(), gyro.id());
     }
   }
   nicla_put_u32(regMap, NICLA_REG_TICK_COUNTER, tickCounter);

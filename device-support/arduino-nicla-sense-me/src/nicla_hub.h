@@ -48,7 +48,10 @@ struct bhy2_dev *nicla_hub_dev(void);
 /* Parameter read. On BHY2_OK the payload of the entry whose code is `param`
    is in buffer[0 .. *actual_len - 1]. BHY2_E_BUFFER means the answer was
    larger than the buffer; BHY2_E_TIMEOUT that no answer arrived in time or
-   the channel would not settle. Blocks for a few ms, 200 ms at worst. */
+   the channel would not settle. Blocks for a few ms when the hub answers.
+   Each of the three attempts may wait up to 200 ms for the status flag, so a
+   hub that keeps answering late or with other entries can hold the caller for
+   about 600 ms; a hub that does not answer at all costs 200 ms. */
 /*@ requires \valid(buffer + (0 .. length - 1)) && \valid(actual_len);
     requires \separated(buffer + (0 .. length - 1), actual_len);
     assigns buffer[0 .. length - 1], *actual_len;
@@ -56,13 +59,16 @@ struct bhy2_dev *nicla_hub_dev(void);
 int8_t nicla_hub_read_parameter(uint16_t param, uint8_t *buffer, uint32_t length, uint32_t *actual_len);
 
 /* Reads a BSX calibration state (parameters 0x201 accel, 0x203 gyro, 0x205
-   mag). Never writes outside out[0 .. cap - 1] whatever the hub sends; on
-   BHY2_OK *total is the state length, 1 .. cap. */
+   mag). Never writes outside out[0 .. cap - 1] whatever the hub sends. On
+   BHY2_OK *total is the state length, 1 .. cap, and every section of the state
+   arrived in order: out[0 .. *total - 1] has no gaps. Otherwise *total is 0
+   and the contents of `out` must not be used. */
 /*@ requires 1 <= cap <= 0xFFFF;
     requires \valid(out + (0 .. cap - 1)) && \valid(total);
     requires \separated(out + (0 .. cap - 1), total);
     assigns out[0 .. cap - 1], *total;
-    ensures \result == BHY2_OK ==> 1 <= *total <= cap; */
+    ensures \result == BHY2_OK ==> 1 <= *total <= cap;
+    ensures \result != BHY2_OK ==> *total == 0; */
 int8_t nicla_hub_read_bsx_state(uint16_t param, uint8_t *out, uint32_t cap, uint32_t *total);
 
 /*@ requires \valid_read(state + (0 .. len - 1));

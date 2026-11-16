@@ -30,8 +30,8 @@ be recomputed on recorded data.
 | 0x14 | 3×i16 | accelerometer x, y, z, raw counts |
 | 0x1A | 3×i16 | gyroscope x, y, z, raw counts |
 | 0x20 | 3×i16 | magnetometer x, y, z, raw counts |
-| 0x26 | u16 | accelerometer full scale in g, as read back from the hub (16 requested; refreshed every second; 0 = not read yet, see below) |
-| 0x28 | u16 | gyroscope full scale in dps, as read back from the hub (2000 requested; refreshed every second; 0 = not read yet) |
+| 0x26 | u16 | accelerometer full scale in g, as read back from the hub (16 requested; re-read every 2 s; 0 = not read yet, see below) |
+| 0x28 | u16 | gyroscope full scale in dps, as read back from the hub (2000 requested; re-read every 2 s; 0 = not read yet) |
 | 0x2A | u16 | magnetometer LSB per µT (16) |
 | 0x2C | 5×f32 | rotation vector quaternion w, x, y, z, accuracy (estimated heading error in rad; reads π while the magnetometer is uncalibrated, see the driver README) |
 | 0x40 | f32 | temperature (°C) |
@@ -55,12 +55,15 @@ be recomputed on recorded data.
 | 0x7A–0x7B | — | reserved (zero) |
 | — | — | total length 0x7C (124 bytes) |
 
-The range registers hold what the hub reports as in effect, re-read once a
-second. A register is written only when the hub's answer for exactly that
+The range registers hold what the hub reports as in effect. One of the two is
+re-read each second, alternating, and after a failed read the hub is left alone
+for 10 s: a read the hub does not answer blocks for 200 ms or more, which must
+not happen every second inside the 10 ms tick. A register is written only when the hub's answer for exactly that
 sensor arrived complete and holds a range the sensor can have (2/4/8/16 g;
 125/250/500/1000/2000 dps); otherwise it keeps its previous value. It reads 0
 until the first good read, and consumers must not scale while it is 0 (the
-viewer shows no value). Always scale with the range register of the frame
+viewer shows no value for that sensor; attitude and heading, which need only
+the rotation vector, are unaffected). Always scale with the range register of the frame
 being decoded.
 
 This matters because the stock `getConfiguration()` of Arduino_BHY2 cannot be
@@ -95,19 +98,42 @@ firmware (`src/bhy2_calibration.c`) removes that cost:
 - **Restore:** right after the hub boots and before any sensor is enabled, the
   three BSX calibration profiles (hub parameters 0x201 accel, 0x203 gyro,
   0x205 mag; 72 / 200 / 408 bytes on this board) are read from the nRF52's
-  flash (Mbed KVStore keys `bhy2cal1/3/5`) and written into the hub. A record
-  is ignored if it was saved under a different hub kernel version.
-- **Save:** automatic only, no host command. When the rotation-vector
-  accuracy has stayed below 0.6 rad (~35°) for 30 s (the hub reports quantized
-  levels: π uncalibrated, ~1.03 rad early, 0.436 rad = 25° once calibrated), the profiles are read
-  back from the hub and written to flash if they changed since the last write,
-  at most once per 10 minutes. Power loss before the first good window simply
-  leaves flash untouched.
+  flash and written into the hub. They are one record (Mbed KVStore key
+  `bhy2cal`) together with the hub kernel version and the accuracy they were
+  saved at, so a failed write cannot leave profiles from different moments
+  side by side. A record saved under a different hub kernel version is
+  ignored. The three per-profile records of earlier firmware
+  (`bhy2cal1/3/5`) are still restored when no new record exists, and removed
+  after the first save in the new format.
+- **Save:** automatic only, no host command. The accuracy register falls as
+  the fusion calibrates (π uncalibrated; resting level 0.436 rad on a clean
+  bench, 0.53 rad next to steel), never falls while the board is at rest, and
+  climbs slowly towards π while the board is shaken without being turned
+  (0.02 rad per minute at 10 mg of vibration). The profiles themselves are
+  live state whose bytes differ on every read. So the decision is made on the
+  accuracy, not on the bytes. The profiles are saved when the accuracy has
+  been below 0.6 rad and not rising for 30 s, and
+  - it is at least 0.03 rad better than the accuracy stored with the record
+    (or there is no record yet), or
+  - as a refresh, it has been good and not rising for an hour: once per power
+    cycle, then once per 24 hours. This keeps the gyroscope and accelerometer
+    profiles current and replaces a record whose accuracy the board can no
+    longer reach because its own magnetic surroundings changed.
+
+  At most one attempt per 10 minutes. A rise of more than 0.002 rad above the
+  lowest value of the calm period restarts it, so nothing is saved while
+  vibration is degrading the estimate. A profile that did not arrive from the
+  hub complete (a section missing, repeated or out of order) is refused and
+  nothing is written. Power loss before the first good window simply leaves
+  flash untouched. In a 55-hour recording of a stationary board this policy
+  writes flash twice; saving every 10 minutes whenever the accuracy was good
+  wrote it 193 times, each write delaying one frame by about 50 ms.
   A failed flash write is retried once: Mbed's TDBStore rejects a record that
   ends exactly on the last byte of its 4 KB area (it writes the record, fails
   its own read-back check, compacts the store and returns an error), so the
-  second write lands elsewhere. A 2-hour soak hit this once in 12 saves.
-- **Status:** register 0x69 flags and 0x6A minutes since the last save.
+  second write lands elsewhere.
+- **Status:** register 0x69 flags and 0x6A minutes since the last save (254 =
+  that long or longer).
 
 ## Source layout
 
