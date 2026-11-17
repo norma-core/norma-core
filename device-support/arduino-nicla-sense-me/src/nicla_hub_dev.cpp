@@ -54,6 +54,25 @@ int smallNumber(const char *&p) {
 class StatusLineSink : public Stream {
 public:
   size_t write(uint8_t c) override {
+    consume(c);
+    return 1;
+  }
+  // The library prints a few dozen characters for every sensor sample. Taking
+  // each print() as one call, not one virtual call per character, keeps that
+  // text cheap to discard.
+  size_t write(const uint8_t *buffer, size_t size) override {
+    for (size_t i = 0; i < size; i++) {
+      consume(buffer[i]);
+    }
+    return size;
+  }
+  int available() override { return 0; }
+  int read() override { return -1; }
+  int peek() override { return -1; }
+  void flush() override {}
+
+private:
+  void consume(uint8_t c) {
     static const char kId[] = " Accuracy for sensor id ";
     if (collecting_) {
       if (c == '\n') {
@@ -77,14 +96,8 @@ public:
     } else {
       matched_ = ((char)c == kId[0]) ? 1 : 0;
     }
-    return 1;
   }
-  int available() override { return 0; }
-  int read() override { return -1; }
-  int peek() override { return -1; }
-  void flush() override {}
 
-private:
   // tail_ holds "<id> changed to <status>".
   void parseTail() {
     static const char kStatus[] = " changed to ";

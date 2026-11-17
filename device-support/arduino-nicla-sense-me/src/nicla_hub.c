@@ -68,11 +68,35 @@ static int8_t wait_status_ready(struct bhy2_hif_dev *hif) {
   return BHY2_E_TIMEOUT;
 }
 
+/* Answers are read from the status channel in its synchronous mode, as the
+   stock Bosch read does before every request: in the asynchronous mode the
+   hub frames them differently and none would be recognised. Nothing in this
+   firmware turns that mode on; the check costs one register read. */
+/*@ requires \valid(hif);
+    assigns \nothing; */
+static int8_t use_synchronous_status(struct bhy2_hif_dev *hif) {
+  uint8_t ctrl = 0;
+
+  int8_t rslt = bhy2_hif_get_regs(BHY2_REG_HOST_INTERFACE_CTRL, &ctrl, 1, hif);
+  if (rslt != BHY2_OK) {
+    return rslt;
+  }
+  if (ctrl & BHY2_HIF_CTRL_ASYNC_STATUS_CHANNEL) {
+    ctrl = (uint8_t)(ctrl & (uint8_t)~BHY2_HIF_CTRL_ASYNC_STATUS_CHANNEL);
+    rslt = bhy2_hif_set_regs(BHY2_REG_HOST_INTERFACE_CTRL, &ctrl, 1, hif);
+  }
+  return rslt;
+}
+
 int8_t nicla_hub_read_parameter(uint16_t param, uint8_t *buffer, uint32_t length, uint32_t *actual_len) {
   struct bhy2_hif_dev *hif = &nicla_hub_dev()->hif;
   uint8_t header[STATUS_HEADER_LEN];
 
   *actual_len = 0;
+  const int8_t mode = use_synchronous_status(hif);
+  if (mode != BHY2_OK) {
+    return mode;
+  }
   /*@ loop invariant 0 <= attempt <= READ_ATTEMPTS;
       loop invariant *actual_len == 0;
       loop assigns attempt, header[0 .. STATUS_HEADER_LEN - 1];

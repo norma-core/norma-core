@@ -110,7 +110,7 @@ export const ME_FRESH = {
 export const ME_CALIB = {
   restored: 1 << 0, // a stored profile was written into the hub at boot
   saved: 1 << 1, // at least one profile was saved this session
-  storeError: 1 << 2, // flash or hub transfer error since the last successful save (or since boot)
+  storeError: 1 << 2, // a flash or hub transfer failed for a profile that has not been saved since
   recordIgnored: 1 << 3, // a stored record did not match this hub firmware
   restoreVerified: 1 << 4, // read-back after the restore matched the stored bytes
   restoreMismatch: 1 << 5, // read-back differed: the hub did not keep the profile

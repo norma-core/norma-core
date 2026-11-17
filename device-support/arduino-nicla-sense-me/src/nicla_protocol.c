@@ -2,11 +2,11 @@
 
 #include <string.h>
 
+#include "nicla_bytes.h"
 #include "nicla_hub.h"
 
 void nicla_put_u16(uint8_t *map, size_t offset, uint16_t value) {
-  map[offset] = (uint8_t)(value % 256u);
-  map[offset + 1] = (uint8_t)(value / 256u);
+  nicla_put_le16(&map[offset], value);
 }
 
 void nicla_put_i16(uint8_t *map, size_t offset, int16_t value) {

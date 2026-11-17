@@ -38,6 +38,9 @@ pub const SERIAL_CMD_STREAM_START: u8 = 0x02;
 pub const SERIAL_CMD_STREAM_STOP: u8 = 0x03;
 const SERIAL_MAGIC: [u8; 2] = [0xA5, 0x5A];
 const SERIAL_FRAME_LEN: usize = 3 + RAW_REGISTER_LENGTH + 1;
+/// Rejected frame starts in a row that must announce the same foreign image
+/// length before the board is taken to run another firmware revision.
+const FOREIGN_FRAME_STARTS: u8 = 3;
 /// Read size for the frame scanner: several frames of headroom so a
 /// backlog drains in a few syscalls rather than one per byte.
 const SERIAL_READ_CHUNK: usize = 4 * SERIAL_FRAME_LEN;
@@ -217,9 +220,13 @@ pub async fn prepare_port(port: &mut SerialStream) -> Result<(), String> {
 pub struct FrameScanner {
     pending: Vec<u8>,
     bad_frames: u32,
-    /// Image length announced by the latest rejected frame start, when it is
-    /// not the one this driver reads. Cleared by every valid frame.
+    /// Image length the board keeps announcing in rejected frame starts, when
+    /// it is not the one this driver reads. Cleared by every valid frame.
     foreign_length: Option<u8>,
+    /// The foreign length announced by the latest rejected frame starts and
+    /// how many in a row announced it. A single one proves nothing: the magic
+    /// can occur by chance inside a corrupted frame.
+    foreign_candidate: (u8, u8),
 }
 
 impl FrameScanner {
@@ -240,12 +247,18 @@ impl FrameScanner {
                 Ok(payload) => {
                     self.pending.drain(..start + SERIAL_FRAME_LEN);
                     self.foreign_length = None;
+                    self.foreign_candidate = (0, 0);
                     return Some(payload);
                 }
                 Err(_) => {
                     let announced = self.pending[start + SERIAL_MAGIC.len()];
                     if announced as usize != RAW_REGISTER_LENGTH {
-                        self.foreign_length = Some(announced);
+                        let (length, starts) = self.foreign_candidate;
+                        let starts = if length == announced { starts.saturating_add(1) } else { 1 };
+                        self.foreign_candidate = (announced, starts);
+                        if starts >= FOREIGN_FRAME_STARTS {
+                            self.foreign_length = Some(announced);
+                        }
                     }
                     self.bad_frames += 1;
                     search_from = start + 1;
@@ -682,11 +695,35 @@ mod tests {
         let mut scanner = FrameScanner::default();
         scanner.push(&frame);
         assert_eq!(scanner.next_frame(), None);
+        // One rejected frame start proves nothing (the magic can occur by
+        // chance in a corrupted frame); a board that keeps announcing the
+        // same foreign length does.
+        assert_eq!(scanner.foreign_firmware_hint(), None);
+        for _ in 1..FOREIGN_FRAME_STARTS {
+            scanner.push(&frame);
+            assert_eq!(scanner.next_frame(), None);
+        }
         // The operator is told why nothing arrives, until a valid frame does.
         let hint = scanner.foreign_firmware_hint().expect("hint for a rev-5 stream");
         assert!(hint.contains("168-byte"), "{hint}");
         scanner.push(&build_frame(&vec![0u8; RAW_REGISTER_LENGTH]));
         assert!(scanner.next_frame().is_some());
+        assert_eq!(scanner.foreign_firmware_hint(), None);
+    }
+
+    #[test]
+    fn chance_magic_in_a_corrupted_frame_is_not_a_foreign_firmware() {
+        // A current-revision frame whose payload happens to hold the magic
+        // followed by some other byte, and whose CRC is then corrupted.
+        let mut payload = vec![0u8; RAW_REGISTER_LENGTH];
+        payload[40..43].copy_from_slice(&[SERIAL_MAGIC[0], SERIAL_MAGIC[1], 0x3F]);
+        let mut frame = build_frame(&payload);
+        *frame.last_mut().unwrap() ^= 0xFF;
+        let mut scanner = FrameScanner::default();
+        scanner.push(&frame);
+        scanner.push(&[0u8; SERIAL_FRAME_LEN]);
+        assert_eq!(scanner.next_frame(), None);
+        assert!(scanner.take_bad_frames() >= 2);
         assert_eq!(scanner.foreign_firmware_hint(), None);
     }
 

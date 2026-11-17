@@ -93,6 +93,15 @@ static void writeRawVec3(size_t offset, SensorXYZ &sensor) {
   nicla_put_i16(regMap, offset + 4, sensor.z());
 }
 
+// Clears a sensor's data-available flag. The library's own
+// SensorClass::clearDataAvailFlag() (Arduino_BHY2 1.0.8) is declared bool and
+// returns nothing, which is undefined behaviour to call: newer compilers may
+// drop the code that follows the call. The flag is a protected member, so a
+// derived type may name it; the type is never instantiated.
+struct SensorFlagAccess : SensorClass {
+  static void clear(SensorClass &sensor) { sensor.*(&SensorFlagAccess::_dataAvail) = false; }
+};
+
 // Reads a sensor's data-available flag for this tick and clears it, so the
 // flag reports "new sample since the previous tick". Takes the common
 // SensorClass base (not a template: the Arduino sketch preprocessor mangles
@@ -101,7 +110,7 @@ static uint16_t takeFresh(SensorClass &sensor, uint16_t bit) {
   if (!sensor.dataAvailable()) {
     return 0;
   }
-  sensor.clearDataAvailFlag();
+  SensorFlagAccess::clear(sensor);
   return bit;
 }
 
@@ -158,16 +167,15 @@ void setup() {
     // still return the previous range); one left at 0 ("unknown", consumers
     // do not scale) is filled in by the once-a-second refresh in loop() with
     // whatever the hub then reports, so recorded counts stay scalable even if
-    // a request failed. If the hub did not take a request made before the
-    // sensors were enabled, it is repeated once here. The library's own
+    // a request failed. A request the hub did not take is NOT repeated here:
+    // on a running sensor the hub reports the new range before the samples
+    // are at it, and the published scale would be wrong in between. The
+    // board then runs this session at the range the hub kept. The library's own
     // getConfiguration() is not used: it cannot report a failed read and on
     // this hub returns another request's answer whenever a status entry is
     // pending (see src/nicla_hub.h).
     delay(100);
-    if (!nicla_publish_start_ranges(regMap, accel.id(), gyro.id(), ACCEL_RANGE_G, GYRO_RANGE_DPS)) {
-      accel.setRange(ACCEL_RANGE_G);
-      gyro.setRange(GYRO_RANGE_DPS);
-    }
+    (void)nicla_publish_start_ranges(regMap, accel.id(), gyro.id(), ACCEL_RANGE_G, GYRO_RANGE_DPS);
     nicla_publish_mag_range(regMap, mag.id());
   }
 

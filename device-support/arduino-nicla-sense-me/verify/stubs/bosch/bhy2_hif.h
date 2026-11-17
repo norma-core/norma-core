@@ -12,6 +12,10 @@
     assigns \result \from \nothing; */
 int8_t bhy2_hif_get_regs(uint8_t reg_addr, uint8_t *reg_data, uint32_t length, struct bhy2_hif_dev *hif);
 
+/*@ requires \valid(hif) && \valid_read(reg_data + (0 .. length - 1));
+    assigns \result \from \nothing; */
+int8_t bhy2_hif_set_regs(uint8_t reg_addr, const uint8_t *reg_data, uint32_t length, struct bhy2_hif_dev *hif);
+
 /*@ requires \valid_read(hif);
     assigns \result \from \nothing; */
 int8_t bhy2_hif_delay_us(uint32_t period_us, const struct bhy2_hif_dev *hif);

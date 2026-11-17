@@ -91,6 +91,12 @@ static const char *const RECORD_KEYS[PROFILE_COUNT] = { "/kv/bhy2acc", "/kv/bhy2
 static const char *const OLD_KEYS[OLD_KEY_COUNT] = { "/kv/bhy2cal", "/kv/bhy2cal1", "/kv/bhy2cal3", "/kv/bhy2cal5" };
 
 static uint8_t flags = 0;
+/* What BHY2CALIB_FLAG_STORE_ERROR stands for: a flash or hub transfer failed
+   for this profile and the profile has not been saved since. The flag is
+   cleared only when none of these is left, so a save of one profile does not
+   hide the failure of another. */
+static bool failed[PROFILE_COUNT] = { false, false, false };
+static bool hub_failed = false; /* the hub's kernel version could not be read */
 static uint8_t status[PROFILE_COUNT] = { 0, 0, 0 };          /* latest calibration status from the hub */
 static uint32_t steady_ms[PROFILE_COUNT] = { 0, 0, 0 };      /* how long that status has been 3 */
 static bool stored[PROFILE_COUNT] = { false, false, false }; /* flash holds a profile the hub accepted or produced */
@@ -106,14 +112,6 @@ static uint32_t previous_ms = 0;                    /* meaningful only when serv
 static bool serviced_before = false;
 static uint8_t record[RECORD_CAP];
 static uint8_t readback[PROFILE_CAP];
-
-/*@ requires \valid(p + (0 .. 1));
-    assigns p[0 .. 1];
-    ensures p[0] + 256 * p[1] == value; */
-static void put_le16(uint8_t *p, uint16_t value) {
-  p[0] = (uint8_t)(value % 256u);
-  p[1] = (uint8_t)(value / 256u);
-}
 
 /*@ requires elapsed <= TICK_CAP_MS;
     assigns \nothing;
@@ -173,8 +171,8 @@ void bhy2calib_sensor_status(uint8_t sensor_id, uint8_t value) {
    accuracy to store with it (ACCURACY_UNKNOWN_MRAD for the other sensors).
    Returns whether flash now holds the profile. */
 /*@ requires 0 <= i < PROFILE_COUNT;
-    assigns flags, record[0 .. RECORD_CAP - 1], stored[i], saved_this_session[i], since_profile_save_ms[i], saved_mrad,
-            since_save_ms, any_saved;
+    assigns flags, failed[i], record[0 .. RECORD_CAP - 1], stored[i], saved_this_session[i], since_profile_save_ms[i],
+            saved_mrad, since_save_ms, any_saved;
     ensures i != MAG ==> saved_mrad == \old(saved_mrad); */
 static bool save_profile(int i, uint16_t kernel, uint16_t mrad) {
   uint32_t total = 0;
@@ -182,14 +180,15 @@ static bool save_profile(int i, uint16_t kernel, uint16_t mrad) {
   /* A profile with a missing section is refused by the read; then nothing is
      written. */
   if (nicla_hub_read_bsx_state((uint16_t)(BSX_PARAM_BASE | PROFILE_IDS[i]), &record[RECORD_HEADER_LEN], PROFILE_CAP, &total) != BHY2_OK) {
+    failed[i] = true;
     flags |= BHY2CALIB_FLAG_STORE_ERROR;
     return false;
   }
   record[0] = (uint8_t)RECORD_MAGIC;
   record[1] = (uint8_t)RECORD_FORMAT;
-  put_le16(&record[2], kernel);
-  put_le16(&record[4], mrad);
-  put_le16(&record[6], (uint16_t)total);
+  nicla_put_le16(&record[2], kernel);
+  nicla_put_le16(&record[4], mrad);
+  nicla_put_le16(&record[6], (uint16_t)total);
   /* Mbed's TDBStore (6.17) accepts a record that ends exactly on the last
      byte of its 4 KB flash area, then rejects it in its own read-back check
      and returns an error. That failed call compacts the store, so a second
@@ -199,9 +198,11 @@ static bool save_profile(int i, uint16_t kernel, uint16_t mrad) {
     written = kv_set(RECORD_KEYS[i], record, RECORD_HEADER_LEN + total, 0);
   }
   if (written != 0) {
+    failed[i] = true;
     flags |= BHY2CALIB_FLAG_STORE_ERROR;
     return false;
   }
+  failed[i] = false;
   stored[i] = true;
   saved_this_session[i] = true;
   since_profile_save_ms[i] = 0;
@@ -214,17 +215,21 @@ static bool save_profile(int i, uint16_t kernel, uint16_t mrad) {
   return true;
 }
 
-/* Writes one stored profile into the hub and checks that the hub kept it (the
-   bytes are opaque; a mismatch means the write was issued at the wrong time,
-   see the header). Returns whether the hub now holds it. */
-/*@ requires 1 <= length <= PROFILE_CAP;
+/* Writes the stored profile `i` into the hub and checks that the hub kept it
+   (the bytes are opaque; a mismatch means the write was issued at the wrong
+   time, see the header). Returns whether the hub now holds it. */
+/*@ requires 0 <= i < PROFILE_COUNT;
+    requires 1 <= length <= PROFILE_CAP;
     requires \valid_read(blob + (0 .. length - 1));
-    requires \separated(blob + (0 .. length - 1), readback + (0 .. PROFILE_CAP - 1), &flags);
-    assigns flags, readback[0 .. PROFILE_CAP - 1]; */
-static bool restore_one(uint16_t param, const uint8_t *blob, uint32_t length) {
+    requires \separated(blob + (0 .. length - 1), readback + (0 .. PROFILE_CAP - 1), &flags,
+                        failed + (0 .. PROFILE_COUNT - 1));
+    assigns flags, failed[i], readback[0 .. PROFILE_CAP - 1]; */
+static bool restore_one(int i, const uint8_t *blob, uint32_t length) {
+  const uint16_t param = (uint16_t)(BSX_PARAM_BASE | PROFILE_IDS[i]);
   uint32_t total = 0;
 
   if (nicla_hub_write_bsx_state(param, blob, length) != BHY2_OK) {
+    failed[i] = true;
     flags |= BHY2CALIB_FLAG_STORE_ERROR;
     return false;
   }
@@ -244,7 +249,7 @@ static bool restore_one(uint16_t param, const uint8_t *blob, uint32_t length) {
    another hub firmware, or not kept by the hub leaves it false, and the first
    time the sensor is at status 3 replaces it. */
 /*@ requires 0 <= i < PROFILE_COUNT;
-    assigns flags, stored[i], saved_mrad, record[0 .. RECORD_CAP - 1], readback[0 .. PROFILE_CAP - 1]; */
+    assigns flags, failed[i], stored[i], saved_mrad, record[0 .. RECORD_CAP - 1], readback[0 .. PROFILE_CAP - 1]; */
 static void restore_profile(int i, uint16_t kernel) {
   size_t actual = 0;
 
@@ -253,6 +258,7 @@ static void restore_profile(int i, uint16_t kernel) {
     return;
   }
   if (rc != 0) {
+    failed[i] = true;
     flags |= BHY2CALIB_FLAG_STORE_ERROR;
     return;
   }
@@ -267,7 +273,7 @@ static void restore_profile(int i, uint16_t kernel) {
     flags |= BHY2CALIB_FLAG_RECORD_IGNORED;
     return;
   }
-  if (!restore_one((uint16_t)(BSX_PARAM_BASE | PROFILE_IDS[i]), &record[RECORD_HEADER_LEN], length)) {
+  if (!restore_one(i, &record[RECORD_HEADER_LEN], length)) {
     return;
   }
   stored[i] = true;
@@ -278,11 +284,12 @@ static void restore_profile(int i, uint16_t kernel) {
   }
 }
 
-/*@ assigns flags, stored[0 .. PROFILE_COUNT - 1], saved_mrad, record[0 .. RECORD_CAP - 1],
-            readback[0 .. PROFILE_CAP - 1]; */
+/*@ assigns flags, failed[0 .. PROFILE_COUNT - 1], hub_failed, stored[0 .. PROFILE_COUNT - 1], saved_mrad,
+            record[0 .. RECORD_CAP - 1], readback[0 .. PROFILE_CAP - 1]; */
 void bhy2calib_restore_profiles(void) {
   const uint16_t kernel = nicla_hub_kernel_version();
   if (kernel == 0) {
+    hub_failed = true;
     flags |= BHY2CALIB_FLAG_STORE_ERROR;
     return;
   }
@@ -374,6 +381,7 @@ static bool mag_due(uint16_t mrad) {
    within SAVE_MIN_INTERVAL_MS of the previous attempt. */
 /*@ requires \is_finite(rv_accuracy_rad);
     assigns previous_ms, serviced_before, calm_floor_mrad, calm_ms, since_attempt_ms, since_save_ms, any_saved, flags,
+            failed[0 .. PROFILE_COUNT - 1], hub_failed,
             steady_ms[0 .. PROFILE_COUNT - 1], since_profile_save_ms[0 .. PROFILE_COUNT - 1],
             stored[0 .. PROFILE_COUNT - 1], saved_this_session[0 .. PROFILE_COUNT - 1],
             record[0 .. RECORD_CAP - 1], saved_mrad;
@@ -420,21 +428,22 @@ void bhy2calib_service(float rv_accuracy_rad, uint32_t now_ms) {
   since_attempt_ms = 0;
   const uint16_t kernel = nicla_hub_kernel_version();
   if (kernel == 0) {
+    hub_failed = true;
     flags |= BHY2CALIB_FLAG_STORE_ERROR;
     return;
   }
-  bool complete = true;
-  if (accel_due && !save_profile(ACCEL, kernel, (uint16_t)ACCURACY_UNKNOWN_MRAD)) {
-    complete = false;
+  hub_failed = false;
+  if (accel_due) {
+    (void)save_profile(ACCEL, kernel, (uint16_t)ACCURACY_UNKNOWN_MRAD);
   }
-  if (gyro_due && !save_profile(GYRO, kernel, (uint16_t)ACCURACY_UNKNOWN_MRAD)) {
-    complete = false;
+  if (gyro_due) {
+    (void)save_profile(GYRO, kernel, (uint16_t)ACCURACY_UNKNOWN_MRAD);
   }
-  if (magnetometer_due && !save_profile(MAG, kernel, mrad)) {
-    complete = false;
+  if (magnetometer_due) {
+    (void)save_profile(MAG, kernel, mrad);
   }
-  if (complete) {
-    /* Everything that was due is in flash: an earlier error is history. */
+  if (!failed[ACCEL] && !failed[GYRO] && !failed[MAG]) {
+    /* No profile is left with a failure that a save has not made good. */
     flags = (uint8_t)(flags & (uint8_t)~BHY2CALIB_FLAG_STORE_ERROR);
   }
 }
