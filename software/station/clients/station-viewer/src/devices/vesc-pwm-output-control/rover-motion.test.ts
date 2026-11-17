@@ -31,7 +31,7 @@ function poseQuat(heading: number, noseUp = 0, rightDown = 0): Quaternion {
 }
 
 /**
- * Rev-6 snapshot of a level board facing north, at rest, gyro (1000, 500, -250) dps in hub axes,
+ * Snapshot of a level board facing north, at rest, gyro (1000, 500, -250) dps in hub axes,
  * with a calibrated magnetometer (accuracy 0.44 rad, the board's resting level).
  */
 function sample(): me.IRxEnvelope {
@@ -41,7 +41,7 @@ function sample(): me.IRxEnvelope {
   data[ME_OFFSETS.softwareRevision] = ME_REVISION;
   view.setUint16(ME_OFFSETS.accelRangeG, ACCEL_RANGE_G, true);
   view.setUint16(ME_OFFSETS.gyroRangeDps, GYRO_RANGE_DPS, true);
-  view.setUint16(ME_OFFSETS.magLsbPerUt, 16, true);
+  view.setUint16(ME_OFFSETS.magRangeUt, 2500, true);
   writeVec3i16(view, ME_OFFSETS.accelRaw, 0, 0, ACCEL_COUNTS_PER_G);
   writeVec3i16(view, ME_OFFSETS.gyroRaw, 16384, 8192, -4096);
   writeQuat(view, poseQuat(0));

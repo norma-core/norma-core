@@ -31,7 +31,7 @@ enum {
   NICLA_REG_MAG_RAW = 0x20,          /* 3 x i16 counts */
   NICLA_REG_ACCEL_RANGE_G = 0x26,    /* u16, full scale in g; 0 = not read from the hub yet */
   NICLA_REG_GYRO_RANGE_DPS = 0x28,   /* u16, full scale in dps; 0 = not read from the hub yet */
-  NICLA_REG_MAG_LSB_PER_UT = 0x2A,   /* u16 */
+  NICLA_REG_MAG_RANGE_UT = 0x2A,     /* u16, full scale in uT; 0 = not read from the hub yet */
   NICLA_REG_QUAT = 0x2C,             /* w, x, y, z, accuracy (5 x f32) */
   NICLA_REG_TEMPERATURE = 0x40,
   NICLA_REG_HUMIDITY = 0x44,
@@ -46,6 +46,7 @@ enum {
   NICLA_REG_BSEC_ACCURACY = 0x68,    /* u8 */
   NICLA_REG_CALIB_FLAGS = 0x69,      /* u8, BHY2CALIB_FLAG_* */
   NICLA_REG_CALIB_MINUTES = 0x6A,    /* u8, minutes since last profile save (255 = none) */
+  NICLA_REG_CALIB_STATUS = 0x6B,     /* u8, hub calibration status 0..3: bits 0-1 accel, 2-3 gyro, 4-5 mag */
   NICLA_REG_STEP_COUNT = 0x6C,       /* u32 */
   NICLA_REG_ACTIVITY = 0x70,         /* u32 bitfield */
   NICLA_REG_TICK_COUNTER = 0x74,     /* u32, loop ticks since boot */
@@ -81,14 +82,15 @@ void nicla_put_u32(uint8_t *map, size_t offset, uint32_t value);
 void nicla_put_f32(uint8_t *map, size_t offset, float value);
 
 /* State of nicla_refresh_one_range; declared here only for its contract. */
-extern bool nicla_range_gyro_next;
+extern uint8_t nicla_range_next;
 extern uint8_t nicla_range_holdoff;
 
 /* Publish the full-scale range the hub reports as in effect, in g
-   (NICLA_REG_ACCEL_RANGE_G) and dps (NICLA_REG_GYRO_RANGE_DPS). A register is
-   written only when the hub's answer for exactly that sensor arrived complete
-   AND holds a range the sensor can have (2/4/8/16 g; 125/250/500/1000/2000
-   dps). Otherwise it keeps its previous value, which is 0 ("unknown",
+   (NICLA_REG_ACCEL_RANGE_G), dps (NICLA_REG_GYRO_RANGE_DPS) and uT
+   (NICLA_REG_MAG_RANGE_UT). A register is written only when the hub's answer
+   for exactly that sensor arrived complete AND holds a range the sensor can
+   have (2/4/8/16 g; 125/250/500/1000/2000 dps; 2500 uT, the one range Bosch
+   documents for the BMM150: BST-BHY2XX_BHI3XX-AN002 Table 2). Otherwise it keeps its previous value, which is 0 ("unknown",
    consumers do not scale) until the first good read: a wrong scale is never
    published. Return whether the register was refreshed. */
 /*@ requires \valid(map + (0 .. NICLA_REG_MAP_SIZE - 1));
@@ -106,27 +108,34 @@ bool nicla_publish_accel_range(uint8_t *map, uint8_t sensor_id);
                          map[NICLA_REG_GYRO_RANGE_DPS + 1] == \old(map[NICLA_REG_GYRO_RANGE_DPS + 1]); */
 bool nicla_publish_gyro_range(uint8_t *map, uint8_t sensor_id);
 
+/*@ requires \valid(map + (0 .. NICLA_REG_MAP_SIZE - 1));
+    assigns map[NICLA_REG_MAG_RANGE_UT .. NICLA_REG_MAG_RANGE_UT + 1];
+    ensures !\result ==> map[NICLA_REG_MAG_RANGE_UT] == \old(map[NICLA_REG_MAG_RANGE_UT]) &&
+                         map[NICLA_REG_MAG_RANGE_UT + 1] == \old(map[NICLA_REG_MAG_RANGE_UT + 1]); */
+bool nicla_publish_mag_range(uint8_t *map, uint8_t sensor_id);
+
 /* Start-up publication, right after the ranges were requested. For a moment
    after a range request the hub still answers a read with the range it had
    before, and that answer is a range the sensor can have, so the check above
    cannot tell it from the truth. Here a register is therefore written only
    when the hub confirms the range that was just requested; anything else
    leaves it at 0 ("unknown") for nicla_refresh_one_range to fill in, which
-   publishes whatever the hub then reports, also when the request failed. */
+   publishes whatever the hub then reports, also when the request failed.
+   Returns whether both ranges were confirmed. */
 /*@ requires \valid(map + (0 .. NICLA_REG_MAP_SIZE - 1));
     assigns map[NICLA_REG_ACCEL_RANGE_G .. NICLA_REG_GYRO_RANGE_DPS + 1]; */
-void nicla_publish_start_ranges(uint8_t *map, uint8_t accel_id, uint8_t gyro_id, uint16_t accel_g, uint16_t gyro_dps);
+bool nicla_publish_start_ranges(uint8_t *map, uint8_t accel_id, uint8_t gyro_id, uint16_t accel_g, uint16_t gyro_dps);
 
-/* Periodic refresh of the two range registers; call once a second. Reads one
-   sensor per call, alternating, and after a failed read leaves the hub alone
+/* Periodic refresh of the three range registers; call once a second. Reads
+   one sensor per call, in turn, and after a failed read leaves the hub alone
    for NICLA_RANGE_RETRY_CALLS calls: a range cannot change after start-up, the
    refresh only repairs a register that could not be read then, and a hub that
    does not answer holds the caller for 200 ms or more per read (see
    nicla_hub.h), which must not happen every second inside the 10 ms tick. */
 #define NICLA_RANGE_RETRY_CALLS 10u
 /*@ requires \valid(map + (0 .. NICLA_REG_MAP_SIZE - 1));
-    assigns map[NICLA_REG_ACCEL_RANGE_G .. NICLA_REG_GYRO_RANGE_DPS + 1], nicla_range_gyro_next, nicla_range_holdoff; */
-void nicla_refresh_one_range(uint8_t *map, uint8_t accel_id, uint8_t gyro_id);
+    assigns map[NICLA_REG_ACCEL_RANGE_G .. NICLA_REG_MAG_RANGE_UT + 1], nicla_range_next, nicla_range_holdoff; */
+void nicla_refresh_one_range(uint8_t *map, uint8_t accel_id, uint8_t gyro_id, uint8_t mag_id);
 
 /* USB serial protocol. Frame format:
      [0xA5, 0x5A, 0x7C, <124-byte register image>, crc8(image)]

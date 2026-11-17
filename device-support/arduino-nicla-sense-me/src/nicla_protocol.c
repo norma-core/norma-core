@@ -62,28 +62,57 @@ bool nicla_publish_gyro_range(uint8_t *map, uint8_t sensor_id) {
   return true;
 }
 
-void nicla_publish_start_ranges(uint8_t *map, uint8_t accel_id, uint8_t gyro_id, uint16_t accel_g, uint16_t gyro_dps) {
+bool nicla_publish_mag_range(uint8_t *map, uint8_t sensor_id) {
+  uint16_t ut = 0;
+
+  if (!nicla_hub_read_sensor_range(sensor_id, &ut)) {
+    return false;
+  }
+  if (ut != 2500) {
+    return false; /* not the range the BMM150 has */
+  }
+  nicla_put_u16(map, NICLA_REG_MAG_RANGE_UT, ut);
+  return true;
+}
+
+bool nicla_publish_start_ranges(uint8_t *map, uint8_t accel_id, uint8_t gyro_id, uint16_t accel_g, uint16_t gyro_dps) {
   uint16_t range = 0;
+  bool confirmed = true;
 
   if (nicla_hub_read_sensor_range(accel_id, &range) && range == accel_g) {
     nicla_put_u16(map, NICLA_REG_ACCEL_RANGE_G, range);
+  } else {
+    confirmed = false;
   }
   range = 0;
   if (nicla_hub_read_sensor_range(gyro_id, &range) && range == gyro_dps) {
     nicla_put_u16(map, NICLA_REG_GYRO_RANGE_DPS, range);
+  } else {
+    confirmed = false;
   }
+  return confirmed;
 }
 
-bool nicla_range_gyro_next = false;
+uint8_t nicla_range_next = 0;
 uint8_t nicla_range_holdoff = 0;
 
-void nicla_refresh_one_range(uint8_t *map, uint8_t accel_id, uint8_t gyro_id) {
+void nicla_refresh_one_range(uint8_t *map, uint8_t accel_id, uint8_t gyro_id, uint8_t mag_id) {
+  bool refreshed;
+
   if (nicla_range_holdoff > 0) {
     nicla_range_holdoff--;
     return;
   }
-  const bool refreshed = nicla_range_gyro_next ? nicla_publish_gyro_range(map, gyro_id) : nicla_publish_accel_range(map, accel_id);
-  nicla_range_gyro_next = !nicla_range_gyro_next;
+  if (nicla_range_next == 0) {
+    refreshed = nicla_publish_accel_range(map, accel_id);
+    nicla_range_next = 1;
+  } else if (nicla_range_next == 1) {
+    refreshed = nicla_publish_gyro_range(map, gyro_id);
+    nicla_range_next = 2;
+  } else {
+    refreshed = nicla_publish_mag_range(map, mag_id);
+    nicla_range_next = 0;
+  }
   if (!refreshed) {
     nicla_range_holdoff = (uint8_t)NICLA_RANGE_RETRY_CALLS;
   }

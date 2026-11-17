@@ -34,9 +34,8 @@
 // must scale from those, never from these constants.
 constexpr uint16_t ACCEL_RANGE_G = 16;    // maximum the BHI260AP offers
 constexpr uint16_t GYRO_RANGE_DPS = 2000; // maximum the BHI260AP offers
-// The BMM150 magnetometer has a fixed 16 LSB/uT (0.0625 uT/LSB) resolution
-// in the BHY2 output; recorded so consumers never hard-code it.
-constexpr uint16_t MAG_LSB_PER_UT = 16;
+// No range is requested for the magnetometer: the hub's own (Bosch documents
+// 2500 uT for the BMM150) is read back and published like the other two.
 
 // IMPORTANT: the BHI260AP handles at most 11 concurrent virtual-sensor
 // subscriptions with this firmware — the 12th begin() hard-faults the
@@ -121,13 +120,21 @@ void setup() {
   // board's queue after it, so it must be stable across reboots (it is).
   uint32_t serialWords[2] = { NRF_FICR->DEVICEID[0], NRF_FICR->DEVICEID[1] };
   memcpy(&regMap[NICLA_REG_SERIAL], serialWords, 6);
-  nicla_put_u16(regMap, NICLA_REG_MAG_LSB_PER_UT, MAG_LSB_PER_UT);
 
   bhy2Ok = BHY2.begin(NICLA_STANDALONE);
   if (bhy2Ok) {
+    // The hub reports each sensor's calibration status (0..3) as a meta
+    // event; the calibration store saves a profile only at status 3.
+    nicla_hub_watch_sensor_status();
     // Stored calibration profiles are loaded "at system boot" (Bosch AN002),
     // i.e. before the virtual sensors are enabled.
     bhy2calib_restore_profiles();
+    // Full-scale ranges: the maximum, requested before the sensors are
+    // enabled. A range changed on a running sensor takes effect only at a
+    // later "dynamic range changed" event, and samples until then are still
+    // at the old scale (BHI260AP datasheet 13.2.8, 15.3.9).
+    accel.setRange(ACCEL_RANGE_G);
+    gyro.setRange(GYRO_RANGE_DPS);
   }
   if (bhy2Ok) {
     // Exactly 11 subscriptions (hardware limit, see note at the sensor
@@ -146,20 +153,22 @@ void setup() {
     stepCounter.begin(1);
     activity.begin(1);
 
-    // Full-scale ranges: request the maximum (setRange after begin, as in the
-    // library's IMURangeSettings example), then publish a range register only
-    // if the hub already confirms the requested value: a read this soon can
-    // still return the range from before the request. A register left at 0
-    // ("unknown", consumers do not scale) is filled in by the once-a-second
-    // refresh in loop() with whatever the hub then reports, so recorded counts
-    // stay scalable even if the request failed. The library's own
+    // Publish the ranges in effect. A register is written only when the hub
+    // confirms the requested value (a read this soon after a request can
+    // still return the previous range); one left at 0 ("unknown", consumers
+    // do not scale) is filled in by the once-a-second refresh in loop() with
+    // whatever the hub then reports, so recorded counts stay scalable even if
+    // a request failed. If the hub did not take a request made before the
+    // sensors were enabled, it is repeated once here. The library's own
     // getConfiguration() is not used: it cannot report a failed read and on
     // this hub returns another request's answer whenever a status entry is
     // pending (see src/nicla_hub.h).
-    accel.setRange(ACCEL_RANGE_G);
-    gyro.setRange(GYRO_RANGE_DPS);
     delay(100);
-    nicla_publish_start_ranges(regMap, accel.id(), gyro.id(), ACCEL_RANGE_G, GYRO_RANGE_DPS);
+    if (!nicla_publish_start_ranges(regMap, accel.id(), gyro.id(), ACCEL_RANGE_G, GYRO_RANGE_DPS)) {
+      accel.setRange(ACCEL_RANGE_G);
+      gyro.setRange(GYRO_RANGE_DPS);
+    }
+    nicla_publish_mag_range(regMap, mag.id());
   }
 
   // Serial for the USB transport. On the Nicla the USB port is a SAMD11
@@ -227,6 +236,7 @@ void loop() {
     const struct bhy2calib_status calib = bhy2calib_get_status();
     regMap[NICLA_REG_CALIB_FLAGS] = calib.flags;
     regMap[NICLA_REG_CALIB_MINUTES] = calib.minutes_since_save;
+    regMap[NICLA_REG_CALIB_STATUS] = calib.sensor_status;
   }
 
   nicla_put_u32(regMap, NICLA_REG_STEP_COUNT, (uint32_t)stepCounter.value());
@@ -237,7 +247,7 @@ void loop() {
     regMap[NICLA_REG_SAMPLE_COUNTER] = regMap[NICLA_REG_SAMPLE_COUNTER] + 1;
     tickCounter++;
     if (tickCounter % 100 == 0) {
-      nicla_refresh_one_range(regMap, accel.id(), gyro.id());
+      nicla_refresh_one_range(regMap, accel.id(), gyro.id(), mag.id());
     }
   }
   nicla_put_u32(regMap, NICLA_REG_TICK_COUNTER, tickCounter);

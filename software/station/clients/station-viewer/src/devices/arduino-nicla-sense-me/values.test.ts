@@ -32,7 +32,7 @@ function buildImage(): Uint8Array {
   writeVec3i16(view, ME_OFFSETS.magRaw, 800, -160, 16);
   view.setUint16(ME_OFFSETS.accelRangeG, 16, true);
   view.setUint16(ME_OFFSETS.gyroRangeDps, 2000, true);
-  view.setUint16(ME_OFFSETS.magLsbPerUt, 16, true);
+  view.setUint16(ME_OFFSETS.magRangeUt, 2500, true);
   // Off-unit quaternion on purpose: the decoder normalizes it.
   view.setFloat32(ME_OFFSETS.quat, 1.2, true);
   view.setFloat32(ME_OFFSETS.quat + 4, 0, true);
@@ -52,6 +52,7 @@ function buildImage(): Uint8Array {
   bytes[ME_OFFSETS.bsecAccuracy] = 3;
   bytes[ME_OFFSETS.calibFlags] = ME_CALIB.restored | ME_CALIB.saved | ME_CALIB.restoreVerified;
   bytes[ME_OFFSETS.calibMinutesSinceSave] = 7;
+  bytes[ME_OFFSETS.calibStatus] = 1 | (3 << 2) | (2 << 4);
   view.setUint32(ME_OFFSETS.stepCount, 1234, true);
   view.setUint32(ME_OFFSETS.activity, 0b1000000, true);
   view.setUint32(ME_OFFSETS.tickCounter, 70000, true);
@@ -72,7 +73,7 @@ describe('decodeArduinoNiclaSenseMe', () => {
     expect(sample.magRaw).toEqual({ x: 800, y: -160, z: 16 });
     expect(sample.accelRangeG).toBe(16);
     expect(sample.gyroRangeDps).toBe(2000);
-    expect(sample.magLsbPerUt).toBe(16);
+    expect(sample.magRangeUt).toBe(2500);
   });
 
   it('scales counts with the recorded full-scale ranges', () => {
@@ -80,12 +81,13 @@ describe('decodeArduinoNiclaSenseMe', () => {
     expect(sample.accelG?.x).toBeCloseTo(1.0); // 2048 / 32768 * 16 g
     expect(sample.accelG?.y).toBeCloseTo(-2.0);
     expect(sample.accelG?.z).toBeCloseTo(16 * 32767 / 32768);
+    // Bosch: µT = counts × range / 32768, 2500 µT for the BMM150 (not 16 LSB/µT).
+    expect(sample.magUt?.x).toBeCloseTo(61.035); // 800 / 32768 * 2500 µT
+    expect(sample.magUt?.y).toBeCloseTo(-12.207);
     expect(sample.gyroDps?.x).toBeCloseTo(1000); // 16384 / 32768 * 2000 dps
     expect(sample.gyroDps?.y).toBeCloseTo(-500);
     expect(sample.gyroDps?.z).toBe(0);
-    expect(sample.magUt?.x).toBeCloseTo(50); // 800 / 16 µT
-    expect(sample.magUt?.y).toBeCloseTo(-10);
-    expect(sample.magUt?.z).toBeCloseTo(1);
+    expect(sample.magUt?.z).toBeCloseTo(1.221);
   });
 
   it('exposes the normalized quaternion and its raw form', () => {
@@ -125,7 +127,7 @@ describe('decodeArduinoNiclaSenseMe', () => {
     const image = buildImage();
     const view = new DataView(image.buffer);
     view.setUint16(ME_OFFSETS.accelRangeG, 0, true);
-    view.setUint16(ME_OFFSETS.magLsbPerUt, 0, true);
+    view.setUint16(ME_OFFSETS.magRangeUt, 0, true);
     const sample = decodeArduinoNiclaSenseMe(image)!;
     expect(sample.accelG).toBeNull();
     expect(sample.magUt).toBeNull();
@@ -138,6 +140,7 @@ describe('decodeArduinoNiclaSenseMe', () => {
     expect(sample.calibFlags).toBe(ME_CALIB.restored | ME_CALIB.saved | ME_CALIB.restoreVerified);
     expect(sample.calibFlags & ME_CALIB.restoreMismatch).toBe(0);
     expect(sample.calibMinutesSinceSave).toBe(7);
+    expect(sample.calibStatus).toEqual({ accel: 1, gyro: 3, mag: 2 });
     const never = buildImage();
     never[ME_OFFSETS.calibFlags] = 0;
     never[ME_OFFSETS.calibMinutesSinceSave] = 255;
@@ -164,7 +167,7 @@ describe('decodeArduinoNiclaSenseMe', () => {
     expect(decodeArduinoNiclaSenseMe(legacy)).toBeNull();
   });
 
-  it('accepts a longer buffer that starts with a rev-6 image', () => {
+  it('accepts a longer buffer that starts with a current-revision image', () => {
     const padded = new Uint8Array(ME_REGISTER_LENGTH + 8);
     padded.set(buildImage());
     expect(decodeArduinoNiclaSenseMe(padded)?.stepCount).toBe(1234);

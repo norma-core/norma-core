@@ -14,6 +14,7 @@
 #define EMPTY_HEADER_LIMIT 8u
 #define BSX_SECTION_LIMIT 16u   /* 1024 bytes; the largest profile is 408 */
 #define BSX_LOST_READ_LIMIT 2u  /* section reads that may fail before the hub is given up on */
+#define BSX_BLOCK_HEADER_LEN 4u /* [section][bytes in section][total length u16] */
 #define SENSOR_CONF_LEN 12u     /* [rate f32][latency u32][sensitivity u16][range u16] */
 #define SENSOR_CONF_RANGE_OFFSET 10u
 
@@ -136,8 +137,11 @@ int8_t nicla_hub_read_parameter(uint16_t param, uint8_t *buffer, uint32_t length
 }
 
 /* BSX state block protocol: repeated reads of the same parameter return
-   successive 68-byte sections: [0] section index | 0x80 when last, [1] bytes
-   in this section, [2..3] total length, [4..67] data.
+   successive sections of at most 68 bytes: [0] section index | 0x80 when
+   last, [1] bytes in this section, [2..3] total length, [4..67] data. The
+   datasheet gives the size as "<= 68" (BST-BHI260AP-DS000 Table 72); the hub
+   on the bench pads the last section to 68, but a shorter one that still
+   holds the bytes it announces is taken as well.
 
    A state is accepted only when every section arrived, in order, and the
    sections add up to the announced length. A lost or repeated section (for
@@ -169,7 +173,7 @@ int8_t nicla_hub_read_bsx_state(uint16_t param, uint8_t *out, uint32_t cap, uint
   for (uint32_t i = 0; i < BSX_SECTION_LIMIT; i++) {
     uint32_t len = 0;
     const int8_t rslt = nicla_hub_read_parameter(param, block, sizeof(block), &len);
-    if (rslt != BHY2_OK || len != BHY2_BSX_STATE_STRUCT_LEN) {
+    if (rslt != BHY2_OK || len < BSX_BLOCK_HEADER_LEN || len > BHY2_BSX_STATE_STRUCT_LEN) {
       /* This section is lost and `block` says nothing, not even whether it
          was the last one. */
       if (fault == BHY2_OK) {
@@ -188,7 +192,7 @@ int8_t nicla_hub_read_bsx_state(uint16_t param, uint8_t *out, uint32_t cap, uint
     if (fault == BHY2_OK) {
       if (total_len == 0 || total_len > cap) {
         fault = BHY2_E_BUFFER; /* nothing to read, or larger than the caller's buffer */
-      } else if (section != i || block_len == 0 || block_len > BHY2_BSX_STATE_BLOCK_LEN ||
+      } else if (section != i || block_len == 0 || block_len > len - BSX_BLOCK_HEADER_LEN ||
                  (i > 0 && total_len != announced) || offset + block_len > total_len) {
         fault = BHY2_E_INVALID_PARAM; /* out of order, repeated or corrupt */
       } else {

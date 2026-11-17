@@ -22,7 +22,7 @@ export const ME_OFFSETS = {
   magRaw: 0x20, // 3 x i16 counts
   accelRangeG: 0x26, // u16, full scale in g
   gyroRangeDps: 0x28, // u16, full scale in dps
-  magLsbPerUt: 0x2a, // u16
+  magRangeUt: 0x2a, // u16, full scale in µT
   quat: 0x2c, // w, x, y, z, accuracy (5 x f32)
   temperature: 0x40,
   humidity: 0x44,
@@ -37,6 +37,7 @@ export const ME_OFFSETS = {
   bsecAccuracy: 0x68, // u8
   calibFlags: 0x69, // u8, see ME_CALIB
   calibMinutesSinceSave: 0x6a, // u8, 255 = no save this session
+  calibStatus: 0x6b, // u8, hub calibration status 0..3: bits 0-1 accel, 2-3 gyro, 4-5 mag
   stepCount: 0x6c, // u32
   activity: 0x70, // u32 bitfield
   tickCounter: 0x74, // u32, loop ticks since boot
@@ -103,7 +104,8 @@ export const ME_FRESH = {
 
 /**
  * Bits of the calibration-store status byte: the firmware persists the hub's
- * accel/gyro/mag calibration profiles in flash and restores them at boot.
+ * accel/gyro/mag calibration profiles in flash, restores them at boot, and
+ * saves a profile only while the hub reports status 3 for its sensor.
  */
 export const ME_CALIB = {
   restored: 1 << 0, // a stored profile was written into the hub at boot
@@ -142,7 +144,7 @@ export interface ArduinoNiclaSenseMeSample {
   magRaw: Vec3;
   accelRangeG: number;
   gyroRangeDps: number;
-  magLsbPerUt: number;
+  magRangeUt: number;
   /** Scaled from counts; null when the recorded range is unusable. */
   accelG: Vec3 | null;
   gyroDps: Vec3 | null;
@@ -170,8 +172,13 @@ export interface ArduinoNiclaSenseMeSample {
   activity: number;
 
   calibFlags: number;
-  /** Minutes since the firmware last saved calibration profiles; null = none this session. */
+  /** Minutes since the firmware last saved a calibration profile; null = none this session. */
   calibMinutesSinceSave: number | null;
+  /**
+   * The hub's calibration status per sensor: 0 unreliable, 1 low, 2 medium,
+   * 3 calibrated. A profile is saved only at 3.
+   */
+  calibStatus: { accel: number; gyro: number; mag: number };
 }
 
 // One DataView per buffer instead of one per field read: a full decode runs
@@ -225,7 +232,8 @@ export function decodeArduinoNiclaSenseMe(
   const magRaw = vec3i16(view, ME_OFFSETS.magRaw);
   const accelRangeG = view.getUint16(ME_OFFSETS.accelRangeG, true);
   const gyroRangeDps = view.getUint16(ME_OFFSETS.gyroRangeDps, true);
-  const magLsbPerUt = view.getUint16(ME_OFFSETS.magLsbPerUt, true);
+  const magRangeUt = view.getUint16(ME_OFFSETS.magRangeUt, true);
+  const calibStatus = data[ME_OFFSETS.calibStatus];
 
   const quatRaw = {
     w: f32(ME_OFFSETS.quat),
@@ -246,10 +254,10 @@ export function decodeArduinoNiclaSenseMe(
     magRaw,
     accelRangeG,
     gyroRangeDps,
-    magLsbPerUt,
+    magRangeUt,
     accelG: scaled(accelRaw, accelRangeG / ADC_FULL_SCALE),
     gyroDps: scaled(gyroRaw, gyroRangeDps / ADC_FULL_SCALE),
-    magUt: scaled(magRaw, magLsbPerUt === 0 ? 0 : 1 / magLsbPerUt),
+    magUt: scaled(magRaw, magRangeUt / ADC_FULL_SCALE),
 
     quat: normalizeQuat(quatRaw),
     quatRaw,
@@ -273,6 +281,7 @@ export function decodeArduinoNiclaSenseMe(
 
     calibFlags: data[ME_OFFSETS.calibFlags],
     calibMinutesSinceSave: data[ME_OFFSETS.calibMinutesSinceSave] === 255 ? null : data[ME_OFFSETS.calibMinutesSinceSave],
+    calibStatus: { accel: calibStatus & 3, gyro: (calibStatus >> 2) & 3, mag: (calibStatus >> 4) & 3 },
   };
 }
 

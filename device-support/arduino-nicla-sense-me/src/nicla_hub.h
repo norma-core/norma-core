@@ -45,6 +45,12 @@ extern "C" {
     ensures \valid(\result); */
 struct bhy2_dev *nicla_hub_dev(void);
 
+/* Makes the hub's "sensor status" meta events (the calibration status 0..3 of
+   a virtual sensor, sent whenever it changes) reach
+   bhy2calib_sensor_status(). Call once after BHY2.begin(). Implemented in
+   nicla_hub_dev.cpp, which explains the route they take through the library. */
+void nicla_hub_watch_sensor_status(void);
+
 /* Parameter read. On BHY2_OK the payload of the entry whose code is `param`
    is in buffer[0 .. *actual_len - 1]. BHY2_E_BUFFER means the answer was
    larger than the buffer; BHY2_E_TIMEOUT that no answer arrived in time or

@@ -672,7 +672,7 @@ mod tests {
     }
 
     #[test]
-    fn register_image_is_the_rev6_layout() {
+    fn register_image_is_124_bytes() {
         // Firmware revision 6 publishes a 124-byte image; there is no legacy
         // path, so a rev-5 (168-byte) frame must be rejected as malformed.
         assert_eq!(RAW_REGISTER_LENGTH, 0x7C);

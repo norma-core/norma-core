@@ -6,12 +6,16 @@
  * starts uncalibrated: the rotation-vector accuracy reads pi and the heading is
  * meaningless until the board has been moved through enough orientations.
  * This module stores the three profiles in the nRF52's flash (Mbed KVStore),
- * restores them right after the hub boots, and saves them again when the
- * fusion reports a better heading than the stored profiles were saved at, plus
- * a rare refresh. No host commands.
+ * one record each, and restores them right after the hub boots. A profile is
+ * saved only while the hub reports calibration status 3 ("completed") for its
+ * own sensor, which is the rule Bosch gives (BHI260AP datasheet 13.3.3,
+ * BST-BHY2XX_BHI3XX-AN002 5.3.1); for the magnetometer the heading accuracy
+ * decides in addition whether a new save is worth a flash write. No host
+ * commands.
  *
- * Status is published in two register-map bytes (see the sketch): a flag byte
- * and "minutes since the last save" (255 = none this session).
+ * Status is published in three register-map bytes (see the sketch): a flag
+ * byte, "minutes since the last save" (255 = none this session) and the three
+ * calibration statuses.
  */
 #ifndef BHY2_CALIBRATION_H
 #define BHY2_CALIBRATION_H
@@ -34,7 +38,15 @@ extern "C" {
 struct bhy2calib_status {
   uint8_t flags;
   uint8_t minutes_since_save; /* 0 .. 254 (254 = that long or longer), or BHY2CALIB_NO_SAVE */
+  uint8_t sensor_status;      /* calibration status 0..3: bits 0-1 accel, 2-3 gyro, 4-5 mag */
 };
+
+/* The hub's calibration status for a virtual sensor (its "sensor status" meta
+   event: 0 unreliable, 1 low, 2 medium, 3 high). Only the corrected
+   accelerometer (4), gyroscope (13) and magnetometer (22) are of interest;
+   other sensors and values above 3 are ignored. Until the hub has reported a
+   status it counts as 0. */
+void bhy2calib_sensor_status(uint8_t sensor_id, uint8_t status);
 
 /* Call once after BHY2.begin() succeeded and BEFORE any sensor begin(): Bosch
    AN002 says to load the states "at system boot", and on the bench a profile
@@ -45,7 +57,8 @@ struct bhy2calib_status {
    fusion confirm the state (seconds, versus 10-15 s of figure-eight cold). */
 void bhy2calib_restore_profiles(void);
 
-/* Call every tick. `rv_accuracy_rad` is the rotation-vector accuracy register
+/* Call every tick; saves the profiles that are due (see the policy in the .c
+   file). `rv_accuracy_rad` is the rotation-vector accuracy register
    when the rotation vector is populated; pass a large value (e.g. 100) while
    it is not, so an all-zero quaternion never counts as "calibrated". `now_ms`
    is millis(); only differences between consecutive calls are used, so the

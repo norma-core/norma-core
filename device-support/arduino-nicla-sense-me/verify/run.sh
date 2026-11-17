@@ -30,11 +30,11 @@ awk '/Proved goals:/ { seen = 1; if ($4 != $6) bad = 1 } END { exit !(seen && !b
   || { echo "WP: not every goal is proved" >&2; exit 1; }
 
 echo "== 2/2 Eva: pointer alignment, function pointers, nicla_f32_bits"
-FUNCTIONS="bhy2calib_restore_profiles bhy2calib_service bhy2calib_get_status
+FUNCTIONS="bhy2calib_restore_profiles bhy2calib_service bhy2calib_get_status bhy2calib_sensor_status
   nicla_hub_read_parameter nicla_hub_read_bsx_state nicla_hub_write_bsx_state
   nicla_hub_read_sensor_range nicla_hub_kernel_version
   nicla_put_u16 nicla_put_i16 nicla_put_u32 nicla_put_f32 nicla_f32_bits
-  nicla_publish_accel_range nicla_publish_gyro_range nicla_publish_start_ranges nicla_refresh_one_range nicla_crc8 nicla_build_frame
+  nicla_publish_accel_range nicla_publish_gyro_range nicla_publish_mag_range nicla_publish_start_ranges nicla_refresh_one_range nicla_crc8 nicla_build_frame
   nicla_stream_command nicla_stream_active nicla_stream_poll"
 docker run --rm -v "$PWD":/work -w /work -e FUNCTIONS="$FUNCTIONS" -e SOURCES="$SOURCES" frama-c-solvers:33.0 sh -c '
   status=0

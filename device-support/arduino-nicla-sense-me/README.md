@@ -30,9 +30,9 @@ be recomputed on recorded data.
 | 0x14 | 3×i16 | accelerometer x, y, z, raw counts |
 | 0x1A | 3×i16 | gyroscope x, y, z, raw counts |
 | 0x20 | 3×i16 | magnetometer x, y, z, raw counts |
-| 0x26 | u16 | accelerometer full scale in g, as read back from the hub (16 requested; re-read every 2 s; 0 = not read yet, see below) |
-| 0x28 | u16 | gyroscope full scale in dps, as read back from the hub (2000 requested; re-read every 2 s; 0 = not read yet) |
-| 0x2A | u16 | magnetometer LSB per µT (16) |
+| 0x26 | u16 | accelerometer full scale in g, as read back from the hub (16 requested; re-read every 3 s; 0 = not read yet, see below) |
+| 0x28 | u16 | gyroscope full scale in dps, as read back from the hub (2000 requested; re-read every 3 s; 0 = not read yet) |
+| 0x2A | u16 | magnetometer full scale in µT, as read back from the hub (2500 for the BMM150; re-read every 3 s; 0 = not read yet) |
 | 0x2C | 5×f32 | rotation vector quaternion w, x, y, z, accuracy (estimated heading error in rad; reads π while the magnetometer is uncalibrated, see the driver README) |
 | 0x40 | f32 | temperature (°C) |
 | 0x44 | f32 | humidity (%RH) |
@@ -47,7 +47,7 @@ be recomputed on recorded data.
 | 0x68 | u8 | BSEC accuracy (0–3) |
 | 0x69 | u8 | calibration-store flags: bit0 profile restored at boot, bit1 saved this session, bit2 storage/hub error (cleared by the next successful save), bit3 stored record ignored (other hub firmware), bit4 restore read-back verified, bit5 restore read-back mismatch; see [Calibration persistence](#calibration-persistence) |
 | 0x6A | u8 | minutes since the last profile save, 255 = none this session |
-| 0x6B | — | reserved (zero) |
+| 0x6B | u8 | hub calibration status per sensor, 0–3 (3 = calibrated): bits 0–1 accelerometer, 2–3 gyroscope, 4–5 magnetometer; 0 until the hub reports one |
 | 0x6C | u32 | step count |
 | 0x70 | u32 | activity recognition bitfield |
 | 0x74 | u32 | tick counter since boot |
@@ -55,12 +55,17 @@ be recomputed on recorded data.
 | 0x7A–0x7B | — | reserved (zero) |
 | — | — | total length 0x7C (124 bytes) |
 
-The range registers hold what the hub reports as in effect. One of the two is
-re-read each second, alternating, and after a failed read the hub is left alone
+The range registers hold what the hub reports as in effect. The accelerometer
+and gyroscope ranges are requested before the sensors are enabled, because a
+range changed on a running sensor takes effect only at a later event and the
+samples until then are still at the old scale (BHI260AP datasheet 13.2.8 and
+15.3.9); at start-up a register is published only once the hub confirms the
+requested value. One of the three is
+re-read each second, in turn, and after a failed read the hub is left alone
 for 10 s: a read the hub does not answer blocks for 200 ms or more, which must
 not happen every second inside the 10 ms tick. A register is written only when the hub's answer for exactly that
 sensor arrived complete and holds a range the sensor can have (2/4/8/16 g;
-125/250/500/1000/2000 dps); otherwise it keeps its previous value. It reads 0
+125/250/500/1000/2000 dps; 2500 µT); otherwise it keeps its previous value. It reads 0
 until the first good read, and consumers must not scale while it is 0 (the
 viewer shows no value for that sensor; attitude and heading, which need only
 the rotation vector, are unaffected). Always scale with the range register of the frame
@@ -79,7 +84,11 @@ is built on). Bench result with the fix: 0 wrong frames, including with stale
 entries injected on purpose.
 
 Scaling, done by the consumer: `g = counts / 32768 × range_g`,
-`dps = counts / 32768 × range_dps`, `µT = counts / lsb_per_µT`. The quaternion
+`dps = counts / 32768 × range_dps`, `µT = counts / 32768 × range_µT` (Bosch's
+scale for the corrected magnetometer, BST-BHY2XX_BHI3XX-AN002 Table 2). Images
+recorded before this register became a range hold 16 in it (a fixed 16 LSB/µT,
+which read about 18 % low); the revision number did not change, so their
+magnetometer values in µT are not usable, only the raw counts are. The quaternion
 is already scaled by the Arduino_BHY2 library (fixed factor 1/16384) and the
 registers read zero until the first rotation-vector sample lands; consumers
 gate on the quaternion norm. The BHI260AP accepts at most 11 concurrent
@@ -98,42 +107,62 @@ firmware (`src/bhy2_calibration.c`) removes that cost:
 - **Restore:** right after the hub boots and before any sensor is enabled, the
   three BSX calibration profiles (hub parameters 0x201 accel, 0x203 gyro,
   0x205 mag; 72 / 200 / 408 bytes on this board) are read from the nRF52's
-  flash and written into the hub. They are one record (Mbed KVStore key
-  `bhy2cal`) together with the hub kernel version and the accuracy they were
-  saved at, so a failed write cannot leave profiles from different moments
-  side by side. A record saved under a different hub kernel version is
-  ignored. The three per-profile records of earlier firmware
-  (`bhy2cal1/3/5`) are still restored when no new record exists, and removed
-  after the first save in the new format.
-- **Save:** automatic only, no host command. The accuracy register falls as
-  the fusion calibrates (π uncalibrated; resting level 0.436 rad on a clean
-  bench, 0.53 rad next to steel), never falls while the board is at rest, and
-  climbs slowly towards π while the board is shaken without being turned
-  (0.02 rad per minute at 10 mg of vibration). The profiles themselves are
-  live state whose bytes differ on every read. So the decision is made on the
-  accuracy, not on the bytes. The profiles are saved when the accuracy has
-  been below 0.6 rad and not rising for 30 s, and
-  - it is at least 0.03 rad better than the accuracy stored with the record
-    (or there is no record yet), or
-  - as a refresh, it has been good and not rising for an hour: once per power
-    cycle, then once per 24 hours. This keeps the gyroscope and accelerometer
-    profiles current and replaces a record whose accuracy the board can no
-    longer reach because its own magnetic surroundings changed.
+  flash and written into the hub. Each profile is its own record (Mbed KVStore
+  keys `bhy2acc`, `bhy2gyr`, `bhy2mag`) with the hub kernel version, and for
+  the magnetometer the heading accuracy it was saved at. A record saved under
+  a different hub kernel version is ignored, and a profile the hub does not
+  keep (read-back mismatch) counts as not stored, so the next good one
+  replaces it. The records of earlier firmware (`bhy2cal`, `bhy2cal1/3/5`) are
+  not read any more and are removed at boot; a board coming from that firmware
+  calibrates once more.
+- **Save:** automatic only, no host command. A profile is saved only while
+  the hub reports **calibration status 3** ("calibration is completed") for
+  its own sensor, and has done so for 30 s. That is Bosch's rule (datasheet
+  13.3.3; BST-BHY2XX_BHI3XX-AN002 5.3.1), and the three are handled
+  individually because they are rarely ready together: the accelerometer
+  reaches 3 only after resting in six orientations, the gyroscope after ten
+  seconds at rest, the magnetometer after being turned through enough
+  directions. The status arrives as a meta event in the FIFO of the sensors
+  that are subscribed anyway and is published in register 0x6B. Arduino_BHY2
+  offers no callback for meta events (its build ignores callback
+  registration), so the firmware takes them from the one place the library
+  sends them, its debug stream: `src/nicla_hub_dev.cpp` describes the route.
+  Bench (2026-11-17): the gyroscope reaches 3 about 9 s after a cold boot at
+  rest and its profile is saved 30 s later; the accelerometer stays at 1 and
+  the magnetometer at 0 on a board that is not moved, and neither is saved. A profile at
+  status 3 is saved
+  - when nothing usable is stored for it yet, or
+  - as a refresh, after the status has been 3 for an hour: once per power
+    cycle, then once per 24 hours. The profiles are live state whose bytes
+    differ on every read, so the decision cannot be made on the bytes.
 
-  At most one attempt per 10 minutes. A rise of more than 0.002 rad above the
-  lowest value of the calm period restarts it, so nothing is saved while
-  vibration is degrading the estimate. A profile that did not arrive from the
-  hub complete (a section missing, repeated or out of order) is refused and
-  nothing is written. Power loss before the first good window simply leaves
-  flash untouched. In a 55-hour recording of a stationary board this policy
-  writes flash twice; saving every 10 minutes whenever the accuracy was good
-  wrote it 193 times, each write delaying one frame by about 50 ms.
-  A failed flash write is retried once: Mbed's TDBStore rejects a record that
-  ends exactly on the last byte of its 4 KB area (it writes the record, fails
-  its own read-back check, compacts the store and returns an error), so the
-  second write lands elsewhere.
-- **Status:** register 0x69 flags and 0x6A minutes since the last save (254 =
-  that long or longer).
+  The magnetometer profile also depends on the rotation-vector accuracy, the
+  hub's estimate of the heading error. It falls as the fusion calibrates (π
+  uncalibrated; resting level 0.436 rad on a clean bench, 0.53 rad next to
+  steel), never falls while the board is at rest, and climbs slowly towards π
+  while the board is shaken without being turned (0.02 rad per minute at 10 mg
+  of vibration). The magnetometer profile is saved only when that accuracy has
+  been below 0.6 rad and not rising for 30 s, and then when it is at least
+  0.03 rad better than the accuracy stored with the record; its refresh needs
+  the accuracy good and not rising for the hour as well. A rise of more than
+  0.002 rad above the lowest value of the calm period restarts it, so nothing
+  is saved while vibration is degrading the estimate.
+
+  Bosch also suggests deleting a stored profile when the status falls below 3.
+  That is not done: the magnetometer's status falls for any passing magnetic
+  disturbance, and a restored profile that no longer fits is caught by the hub
+  itself and then replaced by the rules above.
+
+  At most one attempt per 10 minutes; an attempt saves every profile that is
+  due. A profile that did not arrive from the hub complete (a section missing,
+  repeated or out of order) is refused and not written. Power loss before the
+  first good window simply leaves flash untouched. A failed flash write is
+  retried once: Mbed's TDBStore rejects a record that ends exactly on the last
+  byte of its 4 KB area (it writes the record, fails its own read-back check,
+  compacts the store and returns an error), so the second write lands
+  elsewhere.
+- **Status:** register 0x69 flags, 0x6A minutes since the last save (254 =
+  that long or longer) and 0x6B the three calibration statuses.
 
 ## Source layout
 
@@ -146,7 +175,7 @@ objects, `Serial`, the LED). All logic is plain C under `src/`:
 | `src/nicla_hub.[ch]` | hub parameter reads (ranges, calibration state) that cannot return another request's answer |
 | `src/bhy2_calibration.[ch]` | calibration persistence |
 | `src/nicla_bytes.h` | little-endian 16-bit read shared by the modules |
-| `src/nicla_hub_dev.cpp` | hands the library's private hub handle to the C code; the only other C++ |
+| `src/nicla_hub_dev.cpp` | hands the library's private hub handle and the hub's sensor-status events to the C code; the only other C++ |
 
 ### Formal verification
 
@@ -165,7 +194,9 @@ The script runs two analyses and fails unless both pass:
    out-of-bounds access, overflow, invalid shift or division by zero, plus the
    stated behaviour (for example: a range register is only ever written with a
    valid range; a calibration blob from the hub or from flash can never
-   overrun its buffer; the save policy's timing rules). Every goal must come
+   overrun its buffer; a calibration profile is never written unless its own
+   sensor is at status 3, and nothing is written within 10 minutes of the
+   previous attempt). Every goal must come
    back proved, and no lemma is assumed.
 2. **Eva** covers what WP cannot express. It must reach every statement of
    every function and raise no alarm for a misaligned pointer or an invalid
