@@ -30,7 +30,10 @@ function poseQuat(heading: number, noseUp = 0, rightDown = 0): Quaternion {
   return new Quaternion().setFromEuler(new Euler(noseUp * RAD, rightDown * RAD, -heading * RAD, 'ZXY'));
 }
 
-/** Rev-6 snapshot of a level board facing north, at rest, gyro (1000, 500, -250) dps in hub axes. */
+/**
+ * Rev-6 snapshot of a level board facing north, at rest, gyro (1000, 500, -250) dps in hub axes,
+ * with a calibrated magnetometer (accuracy 0.44 rad, the board's resting level).
+ */
 function sample(): me.IRxEnvelope {
   const data = new Uint8Array(ME_REGISTER_LENGTH);
   const view = new DataView(data.buffer);
@@ -42,6 +45,7 @@ function sample(): me.IRxEnvelope {
   writeVec3i16(view, ME_OFFSETS.accelRaw, 0, 0, ACCEL_COUNTS_PER_G);
   writeVec3i16(view, ME_OFFSETS.gyroRaw, 16384, 8192, -4096);
   writeQuat(view, poseQuat(0));
+  view.setFloat32(ME_OFFSETS.quat + 16, 0.44, true);
   return {
     signalType: me.ArduinoNiclaSenseMeSignalType.ARDUINO_NICLA_SENSE_ME_REGISTERS_SNAPSHOT,
     data,
@@ -177,10 +181,14 @@ describe('rover heading accuracy', () => {
     expect(motion.headingAccuracyDeg).toBeCloseTo(25.2, 1);
   });
 
-  it('treats an accuracy of zero as unknown rather than perfect', () => {
-    const motion = readRoverMotion(sample(), 1100)!; // register left at 0 by sample()
+  it('treats an accuracy of zero as unknown rather than perfect, and shows no heading it cannot qualify', () => {
+    const s = orientedSample(90, 10, 0);
+    new DataView(s.data!.buffer).setFloat32(ME_OFFSETS.quat + 16, 0, true);
+    const motion = readRoverMotion(s, 1100)!;
     expect(motion.headingAccuracyDeg).toBeNull();
-    expect(motion.heading).toBeCloseTo(0);
+    expect(motion.heading).toBeNull();
+    expect(motion.headingUncalibrated).toBe(false);
+    expect(motion.pitch).toBeCloseTo(10);
   });
 });
 

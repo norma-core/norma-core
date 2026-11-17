@@ -106,6 +106,17 @@ bool nicla_publish_accel_range(uint8_t *map, uint8_t sensor_id);
                          map[NICLA_REG_GYRO_RANGE_DPS + 1] == \old(map[NICLA_REG_GYRO_RANGE_DPS + 1]); */
 bool nicla_publish_gyro_range(uint8_t *map, uint8_t sensor_id);
 
+/* Start-up publication, right after the ranges were requested. For a moment
+   after a range request the hub still answers a read with the range it had
+   before, and that answer is a range the sensor can have, so the check above
+   cannot tell it from the truth. Here a register is therefore written only
+   when the hub confirms the range that was just requested; anything else
+   leaves it at 0 ("unknown") for nicla_refresh_one_range to fill in, which
+   publishes whatever the hub then reports, also when the request failed. */
+/*@ requires \valid(map + (0 .. NICLA_REG_MAP_SIZE - 1));
+    assigns map[NICLA_REG_ACCEL_RANGE_G .. NICLA_REG_GYRO_RANGE_DPS + 1]; */
+void nicla_publish_start_ranges(uint8_t *map, uint8_t accel_id, uint8_t gyro_id, uint16_t accel_g, uint16_t gyro_dps);
+
 /* Periodic refresh of the two range registers; call once a second. Reads one
    sensor per call, alternating, and after a failed read leaves the hub alone
    for NICLA_RANGE_RETRY_CALLS calls: a range cannot change after start-up, the

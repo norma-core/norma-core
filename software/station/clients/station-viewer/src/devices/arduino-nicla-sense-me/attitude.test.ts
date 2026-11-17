@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 import { Euler, Quaternion } from 'three';
 import {
   HUB_TO_ROVER,
-  IDENTITY_MOUNT,
   compassHeadingDeg,
   displayAttitude,
   gravityBody,
@@ -89,7 +88,7 @@ describe('compassHeadingDeg', () => {
 
   it('reads the board-frame heading of hub +X for a bare board', () => {
     // Hub +X is right; a level board with hub +Y north has +X pointing east.
-    expect(compassHeadingDeg(withMount(pose(0), IDENTITY_MOUNT))).toBeCloseTo(90);
+    expect(compassHeadingDeg(pose(0))).toBeCloseTo(90);
   });
 });
 

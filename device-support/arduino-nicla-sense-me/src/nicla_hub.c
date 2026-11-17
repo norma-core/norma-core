@@ -13,6 +13,7 @@
 #define READ_ATTEMPTS 3u
 #define EMPTY_HEADER_LIMIT 8u
 #define BSX_SECTION_LIMIT 16u   /* 1024 bytes; the largest profile is 408 */
+#define BSX_LOST_READ_LIMIT 2u  /* section reads that may fail before the hub is given up on */
 #define SENSOR_CONF_LEN 12u     /* [rate f32][latency u32][sensitivity u16][range u16] */
 #define SENSOR_CONF_RANGE_OFFSET 10u
 
@@ -144,28 +145,41 @@ int8_t nicla_hub_read_parameter(uint16_t param, uint8_t *buffer, uint32_t length
    the hub move on to the next section) would otherwise leave a hole of stale
    bytes in a profile that is then stored in flash. After a fault nothing more
    is copied, but the remaining sections are still read and discarded, so that
-   the next call starts at section 0 again. */
+   the next call starts at section 0 again. That holds for a section whose
+   read failed or came back with the wrong size as well: it counts as a fault
+   and the reading goes on. Only after BSX_LOST_READ_LIMIT such reads is the
+   hub taken to have stopped answering (each can block for 200 ms or more) and
+   the transfer abandoned where it is. */
 int8_t nicla_hub_read_bsx_state(uint16_t param, uint8_t *out, uint32_t cap, uint32_t *total) {
   uint8_t block[BHY2_BSX_STATE_STRUCT_LEN];
   uint32_t received = 0;
   uint32_t announced = 0;
   int8_t fault = BHY2_OK;
+  uint32_t lost_reads = 0;
 
   *total = 0;
   /*@ loop invariant 0 <= i <= BSX_SECTION_LIMIT;
       loop invariant *total == 0;
       loop invariant received <= i * BHY2_BSX_STATE_BLOCK_LEN;
       loop invariant received <= announced <= cap;
-      loop assigns i, block[0 .. BHY2_BSX_STATE_STRUCT_LEN - 1], out[0 .. cap - 1], received, announced, fault;
+      loop invariant lost_reads < BSX_LOST_READ_LIMIT;
+      loop invariant lost_reads > 0 ==> fault != BHY2_OK;
+      loop assigns i, block[0 .. BHY2_BSX_STATE_STRUCT_LEN - 1], out[0 .. cap - 1], received, announced, fault, lost_reads;
       loop variant BSX_SECTION_LIMIT - i; */
   for (uint32_t i = 0; i < BSX_SECTION_LIMIT; i++) {
     uint32_t len = 0;
     const int8_t rslt = nicla_hub_read_parameter(param, block, sizeof(block), &len);
-    if (rslt != BHY2_OK) {
-      return rslt;
-    }
-    if (len != BHY2_BSX_STATE_STRUCT_LEN) {
-      return BHY2_E_INVALID_PARAM;
+    if (rslt != BHY2_OK || len != BHY2_BSX_STATE_STRUCT_LEN) {
+      /* This section is lost and `block` says nothing, not even whether it
+         was the last one. */
+      if (fault == BHY2_OK) {
+        fault = rslt != BHY2_OK ? rslt : BHY2_E_INVALID_PARAM;
+      }
+      lost_reads++;
+      if (lost_reads >= BSX_LOST_READ_LIMIT) {
+        return fault;
+      }
+      continue;
     }
     const uint32_t section = block[0] & 0x7Fu;
     const uint32_t block_len = block[1];

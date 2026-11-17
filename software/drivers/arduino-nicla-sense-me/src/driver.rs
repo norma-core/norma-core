@@ -217,6 +217,9 @@ pub async fn prepare_port(port: &mut SerialStream) -> Result<(), String> {
 pub struct FrameScanner {
     pending: Vec<u8>,
     bad_frames: u32,
+    /// Image length announced by the latest rejected frame start, when it is
+    /// not the one this driver reads. Cleared by every valid frame.
+    foreign_length: Option<u8>,
 }
 
 impl FrameScanner {
@@ -236,9 +239,14 @@ impl FrameScanner {
             match parse_dump_frame(&self.pending[start..start + SERIAL_FRAME_LEN]) {
                 Ok(payload) => {
                     self.pending.drain(..start + SERIAL_FRAME_LEN);
+                    self.foreign_length = None;
                     return Some(payload);
                 }
                 Err(_) => {
+                    let announced = self.pending[start + SERIAL_MAGIC.len()];
+                    if announced as usize != RAW_REGISTER_LENGTH {
+                        self.foreign_length = Some(announced);
+                    }
                     self.bad_frames += 1;
                     search_from = start + 1;
                 }
@@ -255,6 +263,19 @@ impl FrameScanner {
     pub fn take_bad_frames(&mut self) -> u32 {
         std::mem::take(&mut self.bad_frames)
     }
+
+    /// Why no frame is arriving, when the stream itself says so: the board
+    /// sends frames, but of another register image length, which means
+    /// another firmware revision. None when nothing points that way.
+    pub fn foreign_firmware_hint(&self) -> Option<String> {
+        self.foreign_length.map(|length| {
+            format!(
+                "the board sends {length}-byte register images, this driver reads \
+                 {RAW_REGISTER_LENGTH}-byte ones: it runs another firmware revision and \
+                 must be reflashed (see device-support/arduino-nicla-sense-me)"
+            )
+        })
+    }
 }
 
 fn find_magic(bytes: &[u8]) -> Option<usize> {
@@ -268,7 +289,7 @@ pub async fn read_frame(
     scanner: &mut FrameScanner,
     timeout: Duration,
 ) -> Result<Bytes, String> {
-    tokio::time::timeout(timeout, async {
+    let outcome = tokio::time::timeout(timeout, async {
         loop {
             if let Some(payload) = scanner.next_frame() {
                 return Ok(payload);
@@ -284,8 +305,14 @@ pub async fn read_frame(
             scanner.push(&chunk[..read]);
         }
     })
-    .await
-    .map_err(|_| format!("no valid frame within {timeout:?}"))?
+    .await;
+    match outcome {
+        Ok(result) => result,
+        Err(_) => Err(match scanner.foreign_firmware_hint() {
+            Some(hint) => format!("no valid frame within {timeout:?}: {hint}"),
+            None => format!("no valid frame within {timeout:?}"),
+        }),
+    }
 }
 
 /// Per-board queue, established once the first frame reveals the serial.
@@ -655,6 +682,12 @@ mod tests {
         let mut scanner = FrameScanner::default();
         scanner.push(&frame);
         assert_eq!(scanner.next_frame(), None);
+        // The operator is told why nothing arrives, until a valid frame does.
+        let hint = scanner.foreign_firmware_hint().expect("hint for a rev-5 stream");
+        assert!(hint.contains("168-byte"), "{hint}");
+        scanner.push(&build_frame(&vec![0u8; RAW_REGISTER_LENGTH]));
+        assert!(scanner.next_frame().is_some());
+        assert_eq!(scanner.foreign_firmware_hint(), None);
     }
 
     #[test]

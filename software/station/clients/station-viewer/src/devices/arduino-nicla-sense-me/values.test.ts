@@ -213,6 +213,12 @@ describe('forwardHeadingDeg', () => {
     expect(forwardHeadingDeg(decodeArduinoNiclaSenseMe(image)!)).toBeNull();
   });
 
+  it.each([0, -1, Number.NaN])('withholds the heading when the hub reports no usable accuracy (%s)', (accuracy) => {
+    const image = buildImage();
+    new DataView(image.buffer).setFloat32(ME_OFFSETS.quat + 16, accuracy, true);
+    expect(forwardHeadingDeg(decodeArduinoNiclaSenseMe(image)!)).toBeNull();
+  });
+
   it('has no heading without a usable rotation vector', () => {
     const image = buildImage();
     new DataView(image.buffer).setFloat32(ME_OFFSETS.quat, 0, true);

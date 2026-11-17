@@ -45,7 +45,7 @@ be recomputed on recorded data.
 | 0x60 | f32 | BSEC compensated temperature (°C) |
 | 0x64 | f32 | BSEC compensated humidity (%RH) |
 | 0x68 | u8 | BSEC accuracy (0–3) |
-| 0x69 | u8 | calibration-store flags: bit0 profile restored at boot, bit1 saved this session, bit2 storage/hub error, bit3 stored record ignored (other hub firmware), bit4 restore read-back verified, bit5 restore read-back mismatch; see [Calibration persistence](#calibration-persistence) |
+| 0x69 | u8 | calibration-store flags: bit0 profile restored at boot, bit1 saved this session, bit2 storage/hub error (cleared by the next successful save), bit3 stored record ignored (other hub firmware), bit4 restore read-back verified, bit5 restore read-back mismatch; see [Calibration persistence](#calibration-persistence) |
 | 0x6A | u8 | minutes since the last profile save, 255 = none this session |
 | 0x6B | — | reserved (zero) |
 | 0x6C | u32 | step count |

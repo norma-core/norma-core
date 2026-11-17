@@ -106,19 +106,6 @@ static uint16_t takeFresh(SensorClass &sensor, uint16_t bit) {
   return bit;
 }
 
-// Publishes the full-scale ranges the hub reports as in effect. Called at
-// start-up; loop() then refreshes one of the two once a second
-// (nicla_refresh_one_range). Each register is written
-// only when the hub's answer for that sensor arrived complete and plausible;
-// otherwise it keeps its previous value, which is 0 ("unknown", consumers do
-// not scale) until the first good read. The library's own getConfiguration()
-// is not used: it cannot report a failed read and on this hub returns another
-// request's answer whenever a status entry is pending (see src/nicla_hub.h).
-static void publishRanges() {
-  nicla_publish_accel_range(regMap, accel.id());
-  nicla_publish_gyro_range(regMap, gyro.id());
-}
-
 void setup() {
   // RGB LED (IS31FL3194 on the internal I2C bus): red = USB streaming
   // active, off = idle.
@@ -159,14 +146,20 @@ void setup() {
     stepCounter.begin(1);
     activity.begin(1);
 
-    // Full-scale ranges: request the maximum, then publish what the hub
-    // reports is in effect (setRange after begin, as in the library's
-    // IMURangeSettings example). If the request fails the read-back still
-    // records the range actually used, so recorded counts stay scalable.
+    // Full-scale ranges: request the maximum (setRange after begin, as in the
+    // library's IMURangeSettings example), then publish a range register only
+    // if the hub already confirms the requested value: a read this soon can
+    // still return the range from before the request. A register left at 0
+    // ("unknown", consumers do not scale) is filled in by the once-a-second
+    // refresh in loop() with whatever the hub then reports, so recorded counts
+    // stay scalable even if the request failed. The library's own
+    // getConfiguration() is not used: it cannot report a failed read and on
+    // this hub returns another request's answer whenever a status entry is
+    // pending (see src/nicla_hub.h).
     accel.setRange(ACCEL_RANGE_G);
     gyro.setRange(GYRO_RANGE_DPS);
     delay(100);
-    publishRanges();
+    nicla_publish_start_ranges(regMap, accel.id(), gyro.id(), ACCEL_RANGE_G, GYRO_RANGE_DPS);
   }
 
   // Serial for the USB transport. On the Nicla the USB port is a SAMD11

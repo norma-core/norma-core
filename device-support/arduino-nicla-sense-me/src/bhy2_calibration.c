@@ -178,7 +178,8 @@ static void attempt_save(uint16_t mrad) {
   saved_mrad = mrad;
   since_save_ms = 0;
   saved_this_session = true;
-  flags |= BHY2CALIB_FLAG_SAVED;
+  /* The record in flash is good again: an earlier error is history. */
+  flags = (uint8_t)((flags & (uint8_t)~BHY2CALIB_FLAG_STORE_ERROR) | BHY2CALIB_FLAG_SAVED);
   /* The new record replaces the per-profile records of the first format.
      Removing a key that is not there writes nothing. */
   /*@ loop invariant 0 <= i <= PROFILE_COUNT;
@@ -277,10 +278,17 @@ void bhy2calib_restore_profiles(void) {
     flags |= BHY2CALIB_FLAG_RECORD_IGNORED;
     return;
   }
-  saved_mrad = nicla_le16(&record[4]);
+  const uint16_t stored_mrad = nicla_le16(&record[4]);
   restore_one((uint16_t)(BSX_PARAM_BASE | PROFILE_IDS[0]), &record[RECORD_HEADER_LEN], accel_len);
   restore_one((uint16_t)(BSX_PARAM_BASE | PROFILE_IDS[1]), &record[RECORD_HEADER_LEN + accel_len], gyro_len);
   restore_one((uint16_t)(BSX_PARAM_BASE | PROFILE_IDS[2]), &record[RECORD_HEADER_LEN + accel_len + gyro_len], mag_len);
+  /* The stored accuracy is the bar a later save has to beat, which is only
+     right while the hub holds the stored profiles. If one of them was not
+     taken, or the stored figure is not an accuracy a save can have recorded,
+     it stays unknown and the first good window replaces the record. */
+  if ((flags & (BHY2CALIB_FLAG_STORE_ERROR | BHY2CALIB_FLAG_RESTORE_MISMATCH)) == 0 && stored_mrad >= 1 && stored_mrad <= 600) {
+    saved_mrad = stored_mrad;
+  }
 }
 
 /* The behaviours are the README's promises about the save policy: when no

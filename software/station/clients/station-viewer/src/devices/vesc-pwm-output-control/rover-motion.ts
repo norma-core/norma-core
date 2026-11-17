@@ -21,7 +21,8 @@ import {
 export interface RoverMotion {
   /**
    * Magnetic bearing, clockwise from north; null when the forward axis is
-   * vertical or the magnetometer is still uncalibrated.
+   * vertical, the magnetometer is still uncalibrated, or the hub has reported
+   * no accuracy for it.
    */
   heading: number | null;
   /**

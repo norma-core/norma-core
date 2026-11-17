@@ -37,9 +37,6 @@ export interface DisplayAttitude {
 const DEG = 180 / Math.PI;
 const SQRT_HALF = Math.SQRT1_2;
 
-/** A body that is the hub frame itself (bare board). */
-export const IDENTITY_MOUNT: ArduinoNiclaSenseMeQuat = { w: 1, x: 0, y: 0, z: 0 };
-
 /**
  * Rotation taking rover-frame axes (x forward, y left, z up) to hub-frame
  * axes (+X right, +Y forward, +Z up): +90° about Z. Rover x = hub y,

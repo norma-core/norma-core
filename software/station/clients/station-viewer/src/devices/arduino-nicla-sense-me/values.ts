@@ -10,7 +10,6 @@ import { HUB_TO_ROVER, compassHeadingDeg, normalizeQuat, withMount } from './att
  */
 export const ME_REVISION = 6;
 export const ME_REGISTER_LENGTH = 0x7c;
-export const ME_PRODUCT_ID = 0x4d;
 
 export const ME_OFFSETS = {
   status: 0x00, // bit0: BHY2 running
@@ -109,7 +108,7 @@ export const ME_FRESH = {
 export const ME_CALIB = {
   restored: 1 << 0, // a stored profile was written into the hub at boot
   saved: 1 << 1, // at least one profile was saved this session
-  storeError: 1 << 2, // flash or hub transfer error since boot
+  storeError: 1 << 2, // flash or hub transfer error since the last successful save (or since boot)
   recordIgnored: 1 << 3, // a stored record did not match this hub firmware
   restoreVerified: 1 << 4, // read-back after the restore matched the stored bytes
   restoreMismatch: 1 << 5, // read-back differed: the hub did not keep the profile
@@ -280,12 +279,19 @@ export function decodeArduinoNiclaSenseMe(
 /**
  * Compass heading of the hub's +Y axis (the mounted rover's forward), the one
  * heading every view shows. Null when there is none to show: the rotation
- * vector is unusable, the forward axis is vertical, or the magnetometer is
- * uncalibrated, in which case the quaternion carries no heading information
- * and a number computed from it would be meaningless.
+ * vector is unusable, the forward axis is vertical, or the hub does not vouch
+ * for the heading. That is the case while the magnetometer is uncalibrated
+ * (the quaternion then carries no heading information) and while the hub has
+ * reported no accuracy at all (register 0 or not a number): a bearing nobody
+ * can qualify is not shown, which is also how the firmware reads the register
+ * when it decides whether a calibration is worth saving. Bosch documents the
+ * Rotation Vector's accuracy as 0.0873 (5°, best) to π (none); 0 is outside
+ * that range and is what the Game Rotation Vector, which has no heading,
+ * reports (BST-BHY2XX_BHI3XX-AN002 rev 1.5, §3.1 "Quaternion+" and §3.14–3.15).
  */
 export function forwardHeadingDeg(sample: ArduinoNiclaSenseMeSample): number | null {
-  if (!sample.quat || headingAccuracy(sample.quatAccuracyRad)?.uncalibrated) {
+  const accuracy = headingAccuracy(sample.quatAccuracyRad);
+  if (!sample.quat || !accuracy || accuracy.uncalibrated) {
     return null;
   }
   return compassHeadingDeg(withMount(sample.quat, HUB_TO_ROVER));
