@@ -5,6 +5,7 @@ import {
   gravityBody,
   linearAccelG,
   rpyRep103,
+  toRoverFrame,
   withMount,
 } from '@/devices/arduino-nicla-sense-me/attitude';
 import {
@@ -131,8 +132,10 @@ function parsedGroups(sample: ArduinoNiclaSenseMeSample, bytes: Uint8Array): Val
   const attitude = rpy ? displayAttitude(rpy) : null;
   const heading = forwardHeadingDeg(sample);
   const headingText = headingAccuracy(sample.quatAccuracyRad)?.uncalibrated ? 'withheld (magnetometer uncalibrated)' : measured(heading, '°', 1);
-  const gravity = q ? gravityBody(q) : null;
-  const linear = q && sample.accelG ? linearAccelG(sample.accelG, q) : null;
+  // Rover frame (forward, left, up) like the attitude above and the rover
+  // HUD; the "Motion" table keeps the measured values in hub axes.
+  const gravity = q ? toRoverFrame(gravityBody(q)) : null;
+  const linear = q && sample.accelG ? toRoverFrame(linearAccelG(sample.accelG, q)) : null;
   return [
     {
       title: 'Board',
@@ -151,7 +154,7 @@ function parsedGroups(sample: ArduinoNiclaSenseMeSample, bytes: Uint8Array): Val
       ],
     },
     {
-      title: 'Motion (raw counts → scaled in viewer)',
+      title: 'Motion (hub axes: X right, Y forward, Z up; raw counts → scaled in viewer)',
       values: [
         { label: 'Accel counts', value: counts(sample.accelRaw), tone: 'text-accent-secondary' },
         { label: 'Accel range', value: `±${sample.accelRangeG} g`, tone: 'text-accent-secondary' },
@@ -178,8 +181,8 @@ function parsedGroups(sample: ArduinoNiclaSenseMeSample, bytes: Uint8Array): Val
         { label: 'Pitch (nose up +)', value: measured(attitude?.pitchNoseUpDeg ?? null, '°', 1), tone: 'text-accent-warning' },
         { label: 'Roll (right down +)', value: measured(attitude?.rollRightDownDeg ?? null, '°', 1), tone: 'text-accent-warning' },
         { label: 'REP-103 yaw (CCW from east)', value: measured(rpy?.yawDeg ?? null, '°', 1), tone: 'text-accent-secondary' },
-        { label: 'Gravity (body)', value: vector(gravity, 'g'), tone: 'text-accent-secondary' },
-        { label: 'Linear accel', value: vector(linear, 'g'), tone: 'text-accent-secondary' },
+        { label: 'Gravity (rover: fwd, left, up)', value: vector(gravity, 'g'), tone: 'text-accent-secondary' },
+        { label: 'Linear accel (rover: fwd, left, up)', value: vector(linear, 'g'), tone: 'text-accent-secondary' },
       ],
     },
     {

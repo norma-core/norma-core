@@ -96,23 +96,44 @@ bool nicla_publish_start_ranges(uint8_t *map, uint8_t accel_id, uint8_t gyro_id,
 uint8_t nicla_range_next = 0;
 uint8_t nicla_range_holdoff = 0;
 
+/* A range register holds a value only once a publish function has checked
+   it (they write nothing else), so nonzero means "known and valid". */
+/*@ requires reg + 2 <= NICLA_REG_MAP_SIZE && \valid_read(map + (0 .. NICLA_REG_MAP_SIZE - 1));
+    assigns \nothing; */
+static bool range_known(const uint8_t *map, size_t reg) {
+  return nicla_le16(&map[reg]) != 0;
+}
+
 void nicla_refresh_one_range(uint8_t *map, uint8_t accel_id, uint8_t gyro_id, uint8_t mag_id) {
+  bool known[3];
   bool refreshed;
 
+  known[0] = range_known(map, NICLA_REG_ACCEL_RANGE_G);
+  known[1] = range_known(map, NICLA_REG_GYRO_RANGE_DPS);
+  known[2] = range_known(map, NICLA_REG_MAG_RANGE_UT);
+  if (known[0] && known[1] && known[2]) {
+    return; /* nothing left to repair: no hub traffic */
+  }
   if (nicla_range_holdoff > 0) {
     nicla_range_holdoff--;
     return;
   }
-  if (nicla_range_next == 0) {
+  /* The next sensor in turn whose register is still unknown. */
+  uint8_t pick = nicla_range_next > 2u ? 2u : nicla_range_next;
+  /*@ loop invariant 0 <= k <= 2 && 0 <= pick <= 2;
+      loop assigns k, pick;
+      loop variant 2 - k; */
+  for (uint8_t k = 0; k < 2u && known[pick]; k++) {
+    pick = (uint8_t)(pick == 2u ? 0u : pick + 1u);
+  }
+  if (pick == 0) {
     refreshed = nicla_publish_accel_range(map, accel_id);
-    nicla_range_next = 1;
-  } else if (nicla_range_next == 1) {
+  } else if (pick == 1) {
     refreshed = nicla_publish_gyro_range(map, gyro_id);
-    nicla_range_next = 2;
   } else {
     refreshed = nicla_publish_mag_range(map, mag_id);
-    nicla_range_next = 0;
   }
+  nicla_range_next = (uint8_t)(pick == 2u ? 0u : pick + 1u);
   if (!refreshed) {
     nicla_range_holdoff = (uint8_t)NICLA_RANGE_RETRY_CALLS;
   }

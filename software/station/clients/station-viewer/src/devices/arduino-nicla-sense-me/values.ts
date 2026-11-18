@@ -145,7 +145,7 @@ export interface ArduinoNiclaSenseMeSample {
   accelRangeG: number;
   gyroRangeDps: number;
   magRangeUt: number;
-  /** Scaled from counts; null when the recorded range is unusable. */
+  /** Scaled from counts; null when the recorded range is not one the firmware publishes. */
   accelG: Vec3 | null;
   gyroDps: Vec3 | null;
   magUt: Vec3 | null;
@@ -203,10 +203,22 @@ function vec3i16(view: DataView, offset: number): Vec3 {
   };
 }
 
-function scaled(raw: Vec3, factor: number): Vec3 | null {
-  if (!Number.isFinite(factor) || factor === 0) {
+/**
+ * The full-scale ranges the firmware can publish (it writes a range register
+ * only with one of these; see nicla_publish_*_range). Anything else — 0
+ * ("not read from the hub yet") or the fixed 16 that images recorded before
+ * the magnetometer register became a range still hold under the same
+ * revision number — cannot be scaled.
+ */
+const ACCEL_RANGES_G: ReadonlySet<number> = new Set([2, 4, 8, 16]);
+const GYRO_RANGES_DPS: ReadonlySet<number> = new Set([125, 250, 500, 1000, 2000]);
+const MAG_RANGES_UT: ReadonlySet<number> = new Set([2500]);
+
+function scaled(raw: Vec3, range: number, published: ReadonlySet<number>): Vec3 | null {
+  if (!published.has(range)) {
     return null;
   }
+  const factor = range / ADC_FULL_SCALE;
   return { x: raw.x * factor, y: raw.y * factor, z: raw.z * factor };
 }
 
@@ -255,9 +267,9 @@ export function decodeArduinoNiclaSenseMe(
     accelRangeG,
     gyroRangeDps,
     magRangeUt,
-    accelG: scaled(accelRaw, accelRangeG / ADC_FULL_SCALE),
-    gyroDps: scaled(gyroRaw, gyroRangeDps / ADC_FULL_SCALE),
-    magUt: scaled(magRaw, magRangeUt / ADC_FULL_SCALE),
+    accelG: scaled(accelRaw, accelRangeG, ACCEL_RANGES_G),
+    gyroDps: scaled(gyroRaw, gyroRangeDps, GYRO_RANGES_DPS),
+    magUt: scaled(magRaw, magRangeUt, MAG_RANGES_UT),
 
     quat: normalizeQuat(quatRaw),
     quatRaw,

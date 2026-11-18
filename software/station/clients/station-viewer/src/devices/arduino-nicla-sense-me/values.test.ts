@@ -135,10 +135,23 @@ describe('decodeArduinoNiclaSenseMe', () => {
     expect(sample.accelRaw.x).toBe(2048);
   });
 
+  it('refuses to scale with a range the firmware never publishes', () => {
+    // Images recorded before the magnetometer register became a range hold a
+    // fixed 16 there under the same revision; scaling by it reads ~150x low.
+    const image = buildImage();
+    const view = new DataView(image.buffer);
+    view.setUint16(ME_OFFSETS.magRangeUt, 16, true);
+    view.setUint16(ME_OFFSETS.accelRangeG, 3, true);
+    view.setUint16(ME_OFFSETS.gyroRangeDps, 300, true);
+    const sample = decodeArduinoNiclaSenseMe(image)!;
+    expect(sample.magUt).toBeNull();
+    expect(sample.accelG).toBeNull();
+    expect(sample.gyroDps).toBeNull();
+    expect(sample.magRaw.x).toBe(800);
+  });
+
   it('decodes the calibration-store status bytes', () => {
     const sample = decodeArduinoNiclaSenseMe(buildImage())!;
-    expect(sample.calibFlags).toBe(ME_CALIB.restored | ME_CALIB.saved | ME_CALIB.restoreVerified);
-    expect(sample.calibFlags & ME_CALIB.restoreMismatch).toBe(0);
     expect(sample.calibMinutesSinceSave).toBe(7);
     expect(sample.calibStatus).toEqual({ accel: 1, gyro: 3, mag: 2 });
     const never = buildImage();

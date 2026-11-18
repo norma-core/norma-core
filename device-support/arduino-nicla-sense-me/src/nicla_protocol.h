@@ -126,10 +126,12 @@ bool nicla_publish_mag_range(uint8_t *map, uint8_t sensor_id);
     assigns map[NICLA_REG_ACCEL_RANGE_G .. NICLA_REG_GYRO_RANGE_DPS + 1]; */
 bool nicla_publish_start_ranges(uint8_t *map, uint8_t accel_id, uint8_t gyro_id, uint16_t accel_g, uint16_t gyro_dps);
 
-/* Periodic refresh of the three range registers; call once a second. Reads
-   one sensor per call, in turn, and after a failed read leaves the hub alone
-   for NICLA_RANGE_RETRY_CALLS calls: a range cannot change after start-up, the
-   refresh only repairs a register that could not be read then, and a hub that
+/* Periodic repair of the three range registers; call once a second. Reads
+   one sensor per call, in turn, skipping any whose register already holds a
+   range, does nothing at all once all three do, and after a failed read
+   leaves the hub alone for NICLA_RANGE_RETRY_CALLS calls: a range cannot
+   change after start-up, the refresh only repairs a register that could not
+   be read then, and a hub that
    does not answer holds the caller for 200 ms or more per read (see
    nicla_hub.h), which must not happen every second inside the 10 ms tick. */
 #define NICLA_RANGE_RETRY_CALLS 10u

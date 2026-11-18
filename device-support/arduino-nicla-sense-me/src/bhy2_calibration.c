@@ -96,7 +96,6 @@ static uint8_t flags = 0;
    cleared only when none of these is left, so a save of one profile does not
    hide the failure of another. */
 static bool failed[PROFILE_COUNT] = { false, false, false };
-static bool hub_failed = false; /* the hub's kernel version could not be read */
 static uint8_t status[PROFILE_COUNT] = { 0, 0, 0 };          /* latest calibration status from the hub */
 static uint32_t steady_ms[PROFILE_COUNT] = { 0, 0, 0 };      /* how long that status has been 3 */
 static bool stored[PROFILE_COUNT] = { false, false, false }; /* flash holds a profile the hub accepted or produced */
@@ -284,12 +283,11 @@ static void restore_profile(int i, uint16_t kernel) {
   }
 }
 
-/*@ assigns flags, failed[0 .. PROFILE_COUNT - 1], hub_failed, stored[0 .. PROFILE_COUNT - 1], saved_mrad,
+/*@ assigns flags, failed[0 .. PROFILE_COUNT - 1], stored[0 .. PROFILE_COUNT - 1], saved_mrad,
             record[0 .. RECORD_CAP - 1], readback[0 .. PROFILE_CAP - 1]; */
 void bhy2calib_restore_profiles(void) {
   const uint16_t kernel = nicla_hub_kernel_version();
   if (kernel == 0) {
-    hub_failed = true;
     flags |= BHY2CALIB_FLAG_STORE_ERROR;
     return;
   }
@@ -381,7 +379,7 @@ static bool mag_due(uint16_t mrad) {
    within SAVE_MIN_INTERVAL_MS of the previous attempt. */
 /*@ requires \is_finite(rv_accuracy_rad);
     assigns previous_ms, serviced_before, calm_floor_mrad, calm_ms, since_attempt_ms, since_save_ms, any_saved, flags,
-            failed[0 .. PROFILE_COUNT - 1], hub_failed,
+            failed[0 .. PROFILE_COUNT - 1],
             steady_ms[0 .. PROFILE_COUNT - 1], since_profile_save_ms[0 .. PROFILE_COUNT - 1],
             stored[0 .. PROFILE_COUNT - 1], saved_this_session[0 .. PROFILE_COUNT - 1],
             record[0 .. RECORD_CAP - 1], saved_mrad;
@@ -428,11 +426,9 @@ void bhy2calib_service(float rv_accuracy_rad, uint32_t now_ms) {
   since_attempt_ms = 0;
   const uint16_t kernel = nicla_hub_kernel_version();
   if (kernel == 0) {
-    hub_failed = true;
     flags |= BHY2CALIB_FLAG_STORE_ERROR;
     return;
   }
-  hub_failed = false;
   if (accel_due) {
     (void)save_profile(ACCEL, kernel, (uint16_t)ACCURACY_UNKNOWN_MRAD);
   }
