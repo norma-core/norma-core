@@ -14,6 +14,8 @@
  *   nicla_protocol  register map layout, frame format, streaming state
  *   nicla_hub       hub parameter reads that survive stale status entries
  *   bhy2_calibration  persistent calibration profiles
+ * plus src/nicla_hub_dev.cpp, the only other C++: it reaches the library's
+ * private hub handle and its sensor-status text for the C code.
  * The map layout is the contract shared with
  * software/drivers/arduino-nicla-sense-me and the station-viewer; see
  * README.md in this directory. The image is served over USB CDC serial as

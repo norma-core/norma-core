@@ -27,7 +27,7 @@ extern "C" {
 #endif
 
 #define BHY2CALIB_FLAG_RESTORED (1u << 0)         /* a stored profile was written into the hub at boot */
-#define BHY2CALIB_FLAG_SAVED (1u << 1)            /* the profiles were saved this session */
+#define BHY2CALIB_FLAG_SAVED (1u << 1)            /* at least one profile was saved this session */
 #define BHY2CALIB_FLAG_STORE_ERROR (1u << 2)      /* a flash or hub transfer failed for a profile that has not been saved since */
 #define BHY2CALIB_FLAG_RECORD_IGNORED (1u << 3)   /* a stored record did not match this hub firmware */
 #define BHY2CALIB_FLAG_RESTORE_VERIFIED (1u << 4) /* read-back after restore matched the stored bytes */

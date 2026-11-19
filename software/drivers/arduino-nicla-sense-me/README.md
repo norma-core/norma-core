@@ -68,14 +68,15 @@ How to read it:
 - **Dropping well below π:** the hub has locked onto the earth field and the
   heading can be trusted to roughly that many radians. Calibrate by moving the
   board through a figure-eight for a few seconds; the value falls as the
-  calibration converges. Once a good heading has been held for 30 s the
-  firmware stores the hub's calibration profiles in flash and restores them at
-  the next boot (see the firmware README, "Calibration persistence"), so this
+  calibration converges. Once the hub has reported a sensor calibrated
+  (status 3) for 30 s, and for the magnetometer also an accuracy below 0.6 rad
+  that is not rising, the firmware stores that calibration profile in flash and
+  restores it at the next boot (see the firmware README, "Calibration persistence"), so this
   state normally lasts only for the first session.
 
 The viewer shows the value in the history detail panel. The rover HUD shows it
 next to the compass as `±N°` and withholds the heading entirely while it reads
-≈ π (see `vesc-pwm-output-control/rover-motion.ts`); attitude is still shown,
+≈ π or 0 (not reported yet; see `vesc-pwm-output-control/rover-motion.ts`); attitude is still shown,
 since only a quaternion whose norm is far from 1 (unpopulated registers) is
 rejected. Any other consumer should pick its own threshold; the raw value is
 recorded in every frame so that decision can be made, or changed, later.

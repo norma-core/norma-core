@@ -63,8 +63,8 @@ export interface HeadingAccuracy {
   deg: number;
   /**
    * Tier for display. The hub reports quantized levels: a calibrated
-   * magnetometer settles at 25–30° on this board (the firmware saves its
-   * profile below ~35°), ~59° early in calibration, 180° uncalibrated.
+   * magnetometer settles at 25–30° on this board (the firmware saves a
+   * magnetometer profile only below 0.6 rad ≈ 34°), ~59° early in calibration, 180° uncalibrated.
    */
   level: HeadingAccuracyLevel;
   /** True at the uncalibrated level: any heading derived from the quaternion is meaningless. */

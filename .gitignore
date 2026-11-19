@@ -9,3 +9,6 @@ js-vendor/
 # shared/libcamera/Makefile and the build-libcamera job in
 # .github/workflows/station-release.yml.
 shared/libcamera/library/
+
+# Frama-C WP session cache written by verify/run.sh
+device-support/arduino-nicla-sense-me/.frama-c/

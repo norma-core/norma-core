@@ -45,7 +45,7 @@ const FOREIGN_FRAME_STARTS: u8 = 3;
 /// backlog drains in a few syscalls rather than one per byte.
 const SERIAL_READ_CHUNK: usize = 4 * SERIAL_FRAME_LEN;
 /// Real UART baud of the SAMD11 usb-bridge link; must match the firmware's
-/// Serial.begin. 115200 capped polling at ~50 Hz (~15 ms per 172-byte dump).
+/// Serial.begin. 115200 caps a 128-byte frame at ~11 ms (under 100 Hz).
 pub const SERIAL_BAUD: u32 = 921_600;
 const SERIAL_RESPONSE_TIMEOUT: Duration = Duration::from_millis(500);
 /// Re-send the stream keepalive well within the firmware's 2s expiry.

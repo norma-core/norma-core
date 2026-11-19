@@ -30,9 +30,9 @@ be recomputed on recorded data.
 | 0x14 | 3×i16 | accelerometer x, y, z, raw counts |
 | 0x1A | 3×i16 | gyroscope x, y, z, raw counts |
 | 0x20 | 3×i16 | magnetometer x, y, z, raw counts |
-| 0x26 | u16 | accelerometer full scale in g, as read back from the hub (16 requested; re-read every 3 s; 0 = not read yet, see below) |
-| 0x28 | u16 | gyroscope full scale in dps, as read back from the hub (2000 requested; re-read every 3 s; 0 = not read yet) |
-| 0x2A | u16 | magnetometer full scale in µT, as read back from the hub (2500 for the BMM150; re-read every 3 s; 0 = not read yet) |
+| 0x26 | u16 | accelerometer full scale in g, as read back from the hub (16 requested; retried while 0, never re-read once known; 0 = not read yet, see below) |
+| 0x28 | u16 | gyroscope full scale in dps, as read back from the hub (2000 requested; retried while 0, never re-read once known; 0 = not read yet) |
+| 0x2A | u16 | magnetometer full scale in µT, as read back from the hub (2500 for the BMM150; retried while 0, never re-read once known; 0 = not read yet) |
 | 0x2C | 5×f32 | rotation vector quaternion w, x, y, z, accuracy (estimated heading error in rad; reads π while the magnetometer is uncalibrated, see the driver README) |
 | 0x40 | f32 | temperature (°C) |
 | 0x44 | f32 | humidity (%RH) |
@@ -60,12 +60,14 @@ and gyroscope ranges are requested before the sensors are enabled, because a
 range changed on a running sensor takes effect only at a later event and the
 samples until then are still at the old scale (BHI260AP datasheet 13.2.8 and
 15.3.9); at start-up a register is published only once the hub confirms the
-requested value. One of the three is
-re-read each second, in turn, and after a failed read the hub is left alone
-for 10 s: a read the hub does not answer blocks for 200 ms or more, which must
-not happen every second inside the 10 ms tick. A register is written only when the hub's answer for exactly that
-sensor arrived complete and holds a range the sensor can have (2/4/8/16 g;
-125/250/500/1000/2000 dps; 2500 µT); otherwise it keeps its previous value. It reads 0
+requested value. Each second the next sensor whose register is still 0 is
+read, in turn; once all three are known there is no further range traffic.
+After a failed read the hub is left alone for 10 s: a read the hub does not
+answer blocks for 200 ms or more, which must not happen every second inside
+the 10 ms tick. A register is written only when the hub's answer for exactly
+that sensor arrived complete and holds a range the sensor can have
+(2/4/8/16 g; 125/250/500/1000/2000 dps; 2500 µT); otherwise it keeps its
+previous value. It reads 0
 until the first good read, and consumers must not scale while it is 0 (the
 viewer shows no value for that sensor; attitude and heading, which need only
 the rotation vector, are unaffected). Always scale with the range register of the frame
@@ -174,7 +176,7 @@ objects, `Serial`, the LED). All logic is plain C under `src/`:
 | `src/nicla_protocol.[ch]` | register map layout and writers, validated range publishing, CRC8 frame, streaming keepalive state |
 | `src/nicla_hub.[ch]` | hub parameter reads (ranges, calibration state) that cannot return another request's answer |
 | `src/bhy2_calibration.[ch]` | calibration persistence |
-| `src/nicla_bytes.h` | little-endian 16-bit read shared by the modules |
+| `src/nicla_bytes.h` | little-endian 16-bit read and write shared by the modules |
 | `src/nicla_hub_dev.cpp` | hands the library's private hub handle and the hub's sensor-status events to the C code; the only other C++ |
 
 ### Formal verification

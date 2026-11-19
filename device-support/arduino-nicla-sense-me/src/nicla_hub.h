@@ -55,9 +55,10 @@ void nicla_hub_watch_sensor_status(void);
    is in buffer[0 .. *actual_len - 1]. BHY2_E_BUFFER means the answer was
    larger than the buffer; BHY2_E_TIMEOUT that no answer arrived in time or
    the channel would not settle. Blocks for a few ms when the hub answers.
-   Each of the three attempts may wait up to 200 ms for the status flag, so a
-   hub that keeps answering late or with other entries can hold the caller for
-   about 600 ms; a hub that does not answer at all costs 200 ms. */
+   Every wait for the status flag may take up to 200 ms. A hub that does not
+   answer at all costs 200 ms; one that keeps answering late or with other
+   entries can, in the worst case, hold the caller for 3 attempts x 8 empty
+   headers x 200 ms (about 5 s), though in practice each attempt is short. */
 /*@ requires \valid(buffer + (0 .. length - 1)) && \valid(actual_len);
     requires \separated(buffer + (0 .. length - 1), actual_len);
     assigns buffer[0 .. length - 1], *actual_len;
@@ -82,7 +83,7 @@ int8_t nicla_hub_read_bsx_state(uint16_t param, uint8_t *out, uint32_t cap, uint
 int8_t nicla_hub_write_bsx_state(uint16_t param, const uint8_t *state, uint32_t len);
 
 /* Full-scale range the hub reports as in effect for a virtual sensor (g for
-   the accelerometer, dps for the gyroscope). *range is written only when the
+   the accelerometer, dps for the gyroscope, µT for the magnetometer). *range is written only when the
    hub's answer for exactly this sensor arrived complete. */
 /*@ requires \valid(range);
     assigns *range;

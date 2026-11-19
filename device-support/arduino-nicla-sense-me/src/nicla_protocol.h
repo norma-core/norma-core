@@ -90,9 +90,10 @@ extern uint8_t nicla_range_holdoff;
    (NICLA_REG_MAG_RANGE_UT). A register is written only when the hub's answer
    for exactly that sensor arrived complete AND holds a range the sensor can
    have (2/4/8/16 g; 125/250/500/1000/2000 dps; 2500 uT, the one range Bosch
-   documents for the BMM150: BST-BHY2XX_BHI3XX-AN002 Table 2). Otherwise it keeps its previous value, which is 0 ("unknown",
-   consumers do not scale) until the first good read: a wrong scale is never
-   published. Return whether the register was refreshed. */
+   documents for the BMM150: BST-BHY2XX_BHI3XX-AN002 Table 2). Otherwise it
+   keeps its previous value, which is 0 ("unknown", consumers do not scale)
+   until the first good read: a wrong scale is never published. Return whether
+   the register was refreshed. */
 /*@ requires \valid(map + (0 .. NICLA_REG_MAP_SIZE - 1));
     assigns map[NICLA_REG_ACCEL_RANGE_G .. NICLA_REG_ACCEL_RANGE_G + 1];
     ensures !\result ==> map[NICLA_REG_ACCEL_RANGE_G] == \old(map[NICLA_REG_ACCEL_RANGE_G]) &&
