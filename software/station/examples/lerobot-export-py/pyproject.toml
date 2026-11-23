@@ -1,0 +1,13 @@
+[project]
+name = "lerobot-export"
+version = "0.1.0"
+description = "Export tagged station recordings at full camera resolution, and convert them to LeRobot datasets"
+requires-python = ">=3.10"
+dependencies = ["pyarrow>=14", "numpy>=1.24", "pillow>=10"]
+
+[project.optional-dependencies]
+# Cameras recorded with `codec: vp8` (the usb-video default) need a VP8 decoder.
+vp8 = ["av>=12"]
+# to_lerobot.py only; the export runs without it, e.g. on the station itself.
+lerobot = ["lerobot[dataset]>=0.6,<0.7"]
+test = ["pytest>=8", "av>=12"]
