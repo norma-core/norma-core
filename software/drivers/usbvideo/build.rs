@@ -33,6 +33,17 @@ fn main() -> Result<()> {
         println!("cargo:rustc-link-lib=dylib=dl");
     }
 
+    if target.contains("windows") {
+        cc::Build::new()
+            .file("src/windows/mf_shim.c")
+            .warnings(true)
+            .compile("nc_mf");
+        println!("cargo:rerun-if-changed=src/windows/mf_shim.c");
+        for lib in ["mf", "mfplat", "mfreadwrite", "mfuuid", "ole32"] {
+            println!("cargo:rustc-link-lib={lib}");
+        }
+    }
+
     if target.contains("apple") {
         // Get the directory of the Cargo.toml file
         let manifest_dir = env::var("CARGO_MANIFEST_DIR").unwrap();

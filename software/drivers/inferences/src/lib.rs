@@ -68,12 +68,19 @@ impl ShmWriter {
             .open(shm_path)
         {
             Ok(file) => file,
-            Err(e) if e.kind() == std::io::ErrorKind::NotFound => std::fs::OpenOptions::new()
-                .read(true)
-                .write(true)
-                .create_new(true)
-                .open(shm_path)
-                .map_err(with_path)?,
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
+                // /tmp/normvla from a Unix config is \tmp\normvla on Windows, which has no \tmp.
+                #[cfg(windows)]
+                if let Some(dir) = shm_path.parent() {
+                    std::fs::create_dir_all(dir).map_err(with_path)?;
+                }
+                std::fs::OpenOptions::new()
+                    .read(true)
+                    .write(true)
+                    .create_new(true)
+                    .open(shm_path)
+                    .map_err(with_path)?
+            }
             Err(e) => return Err(with_path(e)),
         };
 

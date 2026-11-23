@@ -1,5 +1,8 @@
+#[cfg(any(target_os = "macos", target_os = "linux", target_os = "windows"))]
 use normfs::NormFS;
+#[cfg(any(target_os = "macos", target_os = "linux", target_os = "windows"))]
 use station_iface::StationEngine;
+#[cfg(any(target_os = "macos", target_os = "linux", target_os = "windows"))]
 use std::{path::PathBuf, sync::Arc};
 
 pub mod usbvideo_proto {
@@ -28,6 +31,9 @@ pub mod osx;
 
 #[cfg(target_os = "linux")]
 pub mod linux;
+
+#[cfg(target_os = "windows")]
+pub mod windows;
 
 /// A requested camera capture resolution.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -257,6 +263,25 @@ pub async fn start_usbvideo<T: StationEngine>(
     Arc::new(
         pipeline::USBVideoManager::new(
             linux::CameraLinuxDriver::new(),
+            normfs,
+            station_engine,
+            base_path,
+            config,
+        )
+        .await,
+    )
+}
+
+#[cfg(target_os = "windows")]
+pub async fn start_usbvideo<T: StationEngine>(
+    normfs: Arc<NormFS>,
+    station_engine: Arc<T>,
+    base_path: PathBuf,
+    config: USBVideoConfig,
+) -> Arc<pipeline::USBVideoManager<windows::CameraWindowsDriver>> {
+    Arc::new(
+        pipeline::USBVideoManager::new(
+            windows::CameraWindowsDriver::new(),
             normfs,
             station_engine,
             base_path,
