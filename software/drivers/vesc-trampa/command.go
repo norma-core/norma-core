@@ -24,8 +24,9 @@ type RPMStep struct {
 }
 
 type BoardCommandStep struct {
-	Payload    []byte
-	DurationMS uint32
+	Payload        []byte
+	DurationMS     uint32
+	MotorModeAfter *vescpb.VescTrampaMotorModeCommand
 }
 
 func setCurrentPayload(currentMA int32) []byte {
@@ -135,6 +136,7 @@ func SetBoardCommandSequenceStationCommand(
 			Payload:          step.Payload,
 			ResponseExpected: false,
 			DurationMs:       step.DurationMS,
+			MotorModeAfter:   step.MotorModeAfter,
 		})
 	}
 

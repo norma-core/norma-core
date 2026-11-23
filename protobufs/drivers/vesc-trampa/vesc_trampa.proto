@@ -53,6 +53,8 @@ message VescTrampaBoardCommand {
     bytes  payload           = 1;
     bool   response_expected = 2;
     uint32 duration_ms       = 3;
+
+    VescTrampaMotorModeCommand motor_mode_after = 4;
 }
 
 enum VescTrampaMotorMode {

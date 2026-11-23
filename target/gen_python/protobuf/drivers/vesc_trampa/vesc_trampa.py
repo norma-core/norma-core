@@ -461,6 +461,7 @@ class VescTrampaBoardCommand:
     payload: typing.Optional[bytes] = None
     response_expected: bool = False
     duration_ms: int = 0
+    motor_mode_after: typing.Optional[VescTrampaMotorModeCommand] = None
 
     def calc_protobuf_size(self) -> int:
         res = 0
@@ -472,6 +473,10 @@ class VescTrampaBoardCommand:
             res += 2
         if self.duration_ms != 0:
             res += 1 + gremlin.sizes.size_varint(self.duration_ms)
+        if self.motor_mode_after is not None:
+            size = self.motor_mode_after.calc_protobuf_size()
+            if size > 0:
+                res += 1 + (((size | 1).bit_length() + 6) // 7) + size
         return res
 
     def encode(self) -> bytes:
@@ -490,6 +495,11 @@ class VescTrampaBoardCommand:
             target.append_bool(b'\x10', self.response_expected)
         if self.duration_ms != 0:
             target.append_uint32(b'\x18', self.duration_ms)
+        if self.motor_mode_after is not None:
+            size = self.motor_mode_after.calc_protobuf_size()
+            if size > 0:
+                target.append_bytes_size_with_tag(b'"', size)
+                self.motor_mode_after.encode_to(target)
 
 
 class VescTrampaBoardCommandReader:
@@ -497,6 +507,7 @@ class VescTrampaBoardCommandReader:
         self._payload: typing.Optional[memoryview] = None
         self._response_expected: bool = False
         self._duration_ms: int = 0
+        self._motor_mode_after_buf: typing.Optional[memoryview] = None
 
         if not src:
             return
@@ -518,6 +529,10 @@ class VescTrampaBoardCommandReader:
                     result = self._buf.read_uint32(offset)
                     offset += result.size
                     self._duration_ms = result.value
+                case 4:
+                    result = self._buf.read_bytes_view(offset)
+                    offset += result.size
+                    self._motor_mode_after_buf = result.value
                 case _:
                     offset = self._buf.skip_data(offset, tag.wire)
 
@@ -529,6 +544,11 @@ class VescTrampaBoardCommandReader:
 
     def get_duration_ms(self) -> int:
         return self._duration_ms
+
+    def get_motor_mode_after(self) -> VescTrampaMotorModeCommandReader:
+        if self._motor_mode_after_buf is not None:
+            return VescTrampaMotorModeCommandReader(self._motor_mode_after_buf)
+        return VescTrampaMotorModeCommandReader(b'')
 
 
 @dataclasses.dataclass
