@@ -116,7 +116,11 @@ impl VescTrampaCommunicator {
             Ok(vesc_trampa_proto::VescTrampaSignalType::VescTrampaCommandSuccess) => {
                 self.update_mode_for_command_success(board, envelope);
             }
-            Ok(vesc_trampa_proto::VescTrampaSignalType::VescTrampaCommandDone) => {}
+            Ok(vesc_trampa_proto::VescTrampaSignalType::VescTrampaCommandDone) => {
+                if let Some(mode) = completed_motor_mode(envelope) {
+                    self.set_motor_mode(board, mode);
+                }
+            }
             _ => {}
         }
 
@@ -284,5 +288,53 @@ impl VescTrampaCommunicator {
         {
             log::warn!("Failed to publish VESC Trampa inference state: {e}");
         }
+    }
+}
+
+// Acceptance of the finite chain does not mean its terminal HOLD is active.
+// The driver emits done only after writing the final handbrake command.
+fn completed_motor_mode(
+    envelope: &vesc_trampa_proto::RxEnvelope,
+) -> Option<vesc_trampa_proto::VescTrampaMotorMode> {
+    let command = envelope.command.as_ref()?;
+    let mode = command.board_commands.last()?.motor_mode_after.as_ref()?;
+    (mode.mode == vesc_trampa_proto::VescTrampaMotorMode::Hold as i32)
+        .then_some(vesc_trampa_proto::VescTrampaMotorMode::Hold)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::completed_motor_mode;
+    use crate::vesc_trampa_proto::{
+        RxEnvelope, TxEnvelope, VescTrampaBoardCommand, VescTrampaMotorMode,
+        VescTrampaMotorModeCommand,
+    };
+
+    #[test]
+    fn completed_chain_exposes_terminal_hold_in_inference() {
+        let mut envelope = RxEnvelope {
+            command: Some(TxEnvelope {
+                board_commands: vec![VescTrampaBoardCommand {
+                    motor_mode_after: Some(VescTrampaMotorModeCommand {
+                        mode: VescTrampaMotorMode::Hold as i32,
+                    }),
+                    ..Default::default()
+                }],
+                ..Default::default()
+            }),
+            ..Default::default()
+        };
+        assert_eq!(
+            completed_motor_mode(&envelope),
+            Some(VescTrampaMotorMode::Hold)
+        );
+        envelope
+            .command
+            .as_mut()
+            .unwrap()
+            .board_commands
+            .push(VescTrampaBoardCommand::default());
+        assert_eq!(completed_motor_mode(&envelope), None);
+        assert_eq!(completed_motor_mode(&RxEnvelope::default()), None);
     }
 }

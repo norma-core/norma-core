@@ -12285,6 +12285,7 @@ export const vesc_trampa = $root.vesc_trampa = (() => {
          * @property {Uint8Array|null} [payload] VescTrampaBoardCommand payload
          * @property {boolean|null} [responseExpected] VescTrampaBoardCommand responseExpected
          * @property {number|null} [durationMs] VescTrampaBoardCommand durationMs
+         * @property {vesc_trampa.IVescTrampaMotorModeCommand|null} [motorModeAfter] VescTrampaBoardCommand motorModeAfter
          */
 
         /**
@@ -12327,6 +12328,14 @@ export const vesc_trampa = $root.vesc_trampa = (() => {
         VescTrampaBoardCommand.prototype.durationMs = 0;
 
         /**
+         * VescTrampaBoardCommand motorModeAfter.
+         * @member {vesc_trampa.IVescTrampaMotorModeCommand|null|undefined} motorModeAfter
+         * @memberof vesc_trampa.VescTrampaBoardCommand
+         * @instance
+         */
+        VescTrampaBoardCommand.prototype.motorModeAfter = null;
+
+        /**
          * Creates a new VescTrampaBoardCommand instance using the specified properties.
          * @function create
          * @memberof vesc_trampa.VescTrampaBoardCommand
@@ -12356,6 +12365,8 @@ export const vesc_trampa = $root.vesc_trampa = (() => {
                 writer.uint32(/* id 2, wireType 0 =*/16).bool(message.responseExpected);
             if (message.durationMs != null && Object.hasOwnProperty.call(message, "durationMs"))
                 writer.uint32(/* id 3, wireType 0 =*/24).uint32(message.durationMs);
+            if (message.motorModeAfter != null && Object.hasOwnProperty.call(message, "motorModeAfter"))
+                $root.vesc_trampa.VescTrampaMotorModeCommand.encode(message.motorModeAfter, writer.uint32(/* id 4, wireType 2 =*/34).fork()).ldelim();
             return writer;
         };
 
@@ -12408,6 +12419,10 @@ export const vesc_trampa = $root.vesc_trampa = (() => {
                         message.durationMs = reader.uint32();
                         break;
                     }
+                case 4: {
+                        message.motorModeAfter = $root.vesc_trampa.VescTrampaMotorModeCommand.decode(reader, reader.uint32(), undefined, long + 1);
+                        break;
+                    }
                 default:
                     reader.skipType(tag & 7, long);
                     break;
@@ -12456,6 +12471,11 @@ export const vesc_trampa = $root.vesc_trampa = (() => {
             if (message.durationMs != null && message.hasOwnProperty("durationMs"))
                 if (!$util.isInteger(message.durationMs))
                     return "durationMs: integer expected";
+            if (message.motorModeAfter != null && message.hasOwnProperty("motorModeAfter")) {
+                let error = $root.vesc_trampa.VescTrampaMotorModeCommand.verify(message.motorModeAfter, long + 1);
+                if (error)
+                    return "motorModeAfter." + error;
+            }
             return null;
         };
 
@@ -12484,6 +12504,11 @@ export const vesc_trampa = $root.vesc_trampa = (() => {
                 message.responseExpected = Boolean(object.responseExpected);
             if (object.durationMs != null)
                 message.durationMs = object.durationMs >>> 0;
+            if (object.motorModeAfter != null) {
+                if (typeof object.motorModeAfter !== "object")
+                    throw TypeError(".vesc_trampa.VescTrampaBoardCommand.motorModeAfter: object expected");
+                message.motorModeAfter = $root.vesc_trampa.VescTrampaMotorModeCommand.fromObject(object.motorModeAfter, long + 1);
+            }
             return message;
         };
 
@@ -12510,6 +12535,7 @@ export const vesc_trampa = $root.vesc_trampa = (() => {
                 }
                 object.responseExpected = false;
                 object.durationMs = 0;
+                object.motorModeAfter = null;
             }
             if (message.payload != null && message.hasOwnProperty("payload"))
                 object.payload = options.bytes === String ? $util.base64.encode(message.payload, 0, message.payload.length) : options.bytes === Array ? Array.prototype.slice.call(message.payload) : message.payload;
@@ -12517,6 +12543,8 @@ export const vesc_trampa = $root.vesc_trampa = (() => {
                 object.responseExpected = message.responseExpected;
             if (message.durationMs != null && message.hasOwnProperty("durationMs"))
                 object.durationMs = message.durationMs;
+            if (message.motorModeAfter != null && message.hasOwnProperty("motorModeAfter"))
+                object.motorModeAfter = $root.vesc_trampa.VescTrampaMotorModeCommand.toObject(message.motorModeAfter, options);
             return object;
         };
 

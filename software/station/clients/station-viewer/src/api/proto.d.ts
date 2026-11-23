@@ -4221,6 +4221,9 @@ export namespace vesc_trampa {
 
         /** VescTrampaBoardCommand durationMs */
         durationMs?: (number|null);
+
+        /** VescTrampaBoardCommand motorModeAfter */
+        motorModeAfter?: (vesc_trampa.IVescTrampaMotorModeCommand|null);
     }
 
     /** Represents a VescTrampaBoardCommand. */
@@ -4240,6 +4243,9 @@ export namespace vesc_trampa {
 
         /** VescTrampaBoardCommand durationMs. */
         public durationMs: number;
+
+        /** VescTrampaBoardCommand motorModeAfter. */
+        public motorModeAfter?: (vesc_trampa.IVescTrampaMotorModeCommand|null);
 
         /**
          * Creates a new VescTrampaBoardCommand instance using the specified properties.
