@@ -1,5 +1,6 @@
 import { Link, useLocation } from "react-router-dom";
 import { useTheme } from "@/hooks/useTheme";
+import { FEATURE_FLAGS } from "@/utils/feature-flags";
 import { isElectron } from "@/utils/platform";
 import { Laptop, Moon, Sun } from "lucide-react";
 
@@ -66,6 +67,18 @@ function Navigation() {
           >
             History
           </Link>
+          {FEATURE_FLAGS.chat && (
+            <Link
+              to="/chat"
+              className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
+                isActive("/chat")
+                  ? "bg-accent-success-bg text-text-primary"
+                  : "text-text-secondary hover:text-text-primary hover:bg-surface-tertiary"
+              }`}
+            >
+              Chat
+            </Link>
+          )}
         </nav>
 
         <button
