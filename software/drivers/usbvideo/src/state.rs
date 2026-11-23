@@ -837,6 +837,7 @@ mod tests {
         }
         normfs.close().await.unwrap();
         drop(tracker);
+        drop(normfs);
         let keyframes = check_by_id_from_store(dir.clone()).await;
         assert!(store_files(&dir, &queue) > 1);
         assert_eq!(opened.len(), store_files(&dir, &queue));
@@ -914,6 +915,7 @@ mod tests {
         }
         normfs.close().await.unwrap();
         drop(tracker);
+        drop(normfs);
         // Frame 15 is lost; the next kept one, 18, has to be a keyframe.
         assert_eq!(check_by_id_from_store(dir).await, [0, 18]);
     }
