@@ -1,0 +1,10 @@
+# 8 MB flash of the XIAO ESP32-S3 Sense. Two app slots for OTA (POST /update, ota.ps1) with rollback, and the
+# YOLO11n model in its own partition so an update only carries the app, not 2.9 MB of weights.
+# App slots start on 64 K: 0x20000 + 2 x 2624K = 0x540000, model 2816K to the end (the packed model is 2792K).
+# Name,     Type, SubType, Offset,   Size,   Flags
+nvs,        data, nvs,     0x9000,   24K,
+otadata,    data, ota,     0xf000,   8K,
+phy_init,   data, phy,     0x11000,  4K,
+ota_0,      app,  ota_0,   0x20000,  2624K,
+ota_1,      app,  ota_1,   ,         2624K,
+coco_det,   data, spiffs,  ,         2816K,

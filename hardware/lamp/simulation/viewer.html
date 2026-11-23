@@ -1,0 +1,333 @@
+<title>Lamp Viewer</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+  /* Layout: one-screen instrument. Canvas fills the left, a control column on the right (stacks below on phones). */
+  :root {
+    --bg: #eceae4; --panel: #f7f6f2; --fg: #1d1c1a; --muted: #6b675f; --line: #d6d2c8;
+    --accent: #c8711f; --accent-ink: #ffffff; --track: #dcd8ce; --canvas: #e3e0d8;
+    --font-ui: 'Manrope', 'Segoe UI', system-ui, sans-serif;
+    --font-mono: 'JetBrains Mono', 'Cascadia Mono', Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #17181b; --panel: #1f2126; --fg: #ebe8e1; --muted: #9b978e; --line: #33363d;
+      --accent: #e8903a; --accent-ink: #17181b; --track: #2d3036; --canvas: #1b1d21; color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #17181b; --panel: #1f2126; --fg: #ebe8e1; --muted: #9b978e; --line: #33363d;
+    --accent: #e8903a; --accent-ink: #17181b; --track: #2d3036; --canvas: #1b1d21; color-scheme: dark;
+  }
+  html, body { height: 100%; }
+  body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--font-ui); font-size: 14px; line-height: 1.45; }
+  .app { display: flex; flex-direction: column; height: 100%; padding-inline: 16px; padding-block: 12px; box-sizing: border-box; gap: 10px; }
+  header { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; }
+  header h1 { margin: 0; font-size: 20px; font-weight: 800; letter-spacing: -0.01em; text-wrap: balance; }
+  header .sub { color: var(--muted); font-size: 13px; }
+  #status { margin-left: auto; font-family: var(--font-mono); font-size: 12px; color: var(--muted); }
+  main { display: flex; gap: 12px; flex: 1; min-height: 0; }
+  #stage { flex: 1; min-width: 0; position: relative; border-radius: 10px; background: var(--canvas); border: 1px solid var(--line); overflow: hidden; touch-action: none; }
+  #stage canvas { display: block; width: 100%; height: 100%; }
+  #hint { position: absolute; left: 12px; bottom: 10px; font-size: 12px; color: var(--muted); pointer-events: none; }
+  #spot { position: absolute; right: 12px; bottom: 10px; font-family: var(--font-mono); font-size: 12px; color: var(--muted); pointer-events: none; font-variant-numeric: tabular-nums; }
+  aside { width: 300px; flex: none; display: flex; flex-direction: column; gap: 14px; overflow-y: auto; min-width: 0; }
+  .joint { display: grid; grid-template-columns: 1fr auto; gap: 2px 10px; align-items: baseline; }
+  .joint label { font-weight: 700; }
+  .joint .val { font-family: var(--font-mono); font-size: 13px; font-variant-numeric: tabular-nums; }
+  .joint .val small { color: var(--muted); font-size: 11px; margin-left: 4px; }
+  .joint input[type=range] { grid-column: 1 / -1; width: 100%; margin: 0; accent-color: var(--accent); }
+  .joint .lim { grid-column: 1 / -1; display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: 11px; color: var(--muted); }
+  .row { display: flex; flex-wrap: wrap; gap: 8px; }
+  button { font: inherit; font-weight: 700; padding: 7px 12px; border-radius: 8px; border: 1px solid var(--line); background: var(--panel); color: var(--fg); cursor: pointer; }
+  button:hover { border-color: var(--accent); }
+  button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  button.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+  .opts { display: grid; gap: 6px; }
+  .opts label { display: flex; gap: 8px; align-items: center; }
+  .opts input { accent-color: var(--accent); margin: 0; }
+  h2 { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin: 0 0 6px; font-weight: 700; }
+  section { border-top: 1px solid var(--line); padding-top: 10px; }
+  section:first-child { border-top: 0; padding-top: 0; }
+  .note { color: var(--muted); font-size: 12px; }
+  @media (max-width: 760px) {
+    main { flex-direction: column; }
+    #stage { flex: none; height: 52vh; }
+    aside { width: auto; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="app">
+  <header>
+    <h1>Lamp</h1>
+    <span class="sub">5 x ST3215, URDF viewer</span>
+    <span id="status">loading</span>
+  </header>
+  <main>
+    <div id="stage"><div id="hint">drag to orbit, wheel to zoom, right-drag or shift-drag to pan</div><div id="spot"></div></div>
+    <aside>
+      <section>
+        <h2>Joints</h2>
+        <div id="joints"></div>
+      </section>
+      <section>
+        <h2>Poses</h2>
+        <div class="row">
+          <button id="home" class="primary">Home</button>
+          <button id="folded">Folded</button>
+          <button id="reach">Reach</button>
+          <button id="lookdown">Look down</button>
+        </div>
+      </section>
+      <section>
+        <h2>View</h2>
+        <div class="opts">
+          <label><input type="checkbox" id="lamp" checked> Lamp on (spot on the desk)</label>
+          <label><input type="checkbox" id="servos" checked> Show servos</label>
+          <label><input type="checkbox" id="axes"> Show joint axes</label>
+          <label><input type="checkbox" id="xray"> X-ray</label>
+        </div>
+      </section>
+      <section>
+        <p class="note">Pitch joints are relative to the parent link; positive raises the link. Limits come from the model's pose sweeps (no contact between parts). Base yaw is free mechanically; the cable in the base limits it to about half a turn.</p>
+      </section>
+    </aside>
+  </main>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function () {
+  const $ = (s) => document.querySelector(s);
+  const status = $('#status');
+  const JOINT_LABEL = { base_yaw: 'Base yaw', shoulder: 'Shoulder', elbow: 'Elbow', wrist: 'Wrist', head_roll: 'Head roll' };
+  const POSES = {
+    home: null,                                                  // the URDF defaults
+    folded: { base_yaw: 0, shoulder: 105, elbow: -80, wrist: 100, head_roll: 0 },
+    reach: { base_yaw: 0, shoulder: 35, elbow: 40, wrist: -30, head_roll: 0 },
+    lookdown: { base_yaw: 0, shoulder: 80, elbow: -70, wrist: 70, head_roll: 0 },
+  };
+  THREE.Object3D.DefaultUp.set(0, 0, 1);                        // URDF is z-up
+
+  // ---- binary STL -> BufferGeometry
+  function parseSTL(buf) {
+    const dv = new DataView(buf); const n = dv.getUint32(80, true);
+    const pos = new Float32Array(n * 9); const nor = new Float32Array(n * 9);
+    let o = 84;
+    for (let i = 0; i < n; i++) {
+      const nx = dv.getFloat32(o, true), ny = dv.getFloat32(o + 4, true), nz = dv.getFloat32(o + 8, true); o += 12;
+      for (let k = 0; k < 3; k++) {
+        pos[i * 9 + k * 3] = dv.getFloat32(o, true); pos[i * 9 + k * 3 + 1] = dv.getFloat32(o + 4, true); pos[i * 9 + k * 3 + 2] = dv.getFloat32(o + 8, true); o += 12;
+        nor[i * 9 + k * 3] = nx; nor[i * 9 + k * 3 + 1] = ny; nor[i * 9 + k * 3 + 2] = nz;
+      }
+      o += 2;
+    }
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    g.setAttribute('normal', new THREE.BufferAttribute(nor, 3));
+    return g;
+  }
+
+  // The repo serves the STLs next to the URDF; the published page carries the same meshes as JSON
+  // (float32 triangle positions, base64) because its host does not serve .stl, so each file is tried both ways.
+  async function fetchFirst(urls) {
+    let last = null;
+    for (const u of urls) { try { const r = await fetch(u); if (r.ok) return r; last = new Error(u + ' ' + r.status); } catch (e) { last = e; } }
+    throw last || new Error('nothing to fetch');
+  }
+  async function loadMesh(f) {
+    try { const r = await fetch(f); if (r.ok) { const buf = await r.arrayBuffer(); if (buf.byteLength > 84) return parseSTL(buf); } } catch (e) { /* fall through to JSON */ }
+    const j = await (await fetchFirst([f.replace(/\.stl$/, '.json')])).json();
+    const bin = atob(j.pos); const bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(bytes.buffer), 3));
+    g.computeVertexNormals();
+    return g;
+  }
+
+  // ---- URDF subset: link/visual(origin, mesh, material), joint(parent, child, origin, axis, limit)
+  function num3(s, d) { if (!s) return d; return s.trim().split(/\s+/).map(Number); }
+  function applyOrigin(obj, el) {
+    const o = el && el.querySelector(':scope > origin');
+    const xyz = num3(o && o.getAttribute('xyz'), [0, 0, 0]); const rpy = num3(o && o.getAttribute('rpy'), [0, 0, 0]);
+    obj.position.set(xyz[0], xyz[1], xyz[2]);
+    obj.quaternion.setFromEuler(new THREE.Euler(rpy[0], rpy[1], rpy[2], 'ZYX'));   // fixed-axis roll, pitch, yaw
+  }
+  function parseURDF(text) {
+    const doc = new DOMParser().parseFromString(text, 'application/xml');
+    const materials = {};
+    doc.querySelectorAll('robot > material').forEach((m) => { const c = m.querySelector('color'); materials[m.getAttribute('name')] = num3(c && c.getAttribute('rgba'), [0.5, 0.5, 0.5, 1]); });
+    const links = {};
+    doc.querySelectorAll('robot > link').forEach((l) => {
+      const visuals = [];
+      l.querySelectorAll(':scope > visual').forEach((v) => {
+        const mesh = v.querySelector('geometry > mesh'); if (!mesh) return;
+        const mat = v.querySelector('material');
+        visuals.push({ name: v.getAttribute('name') || '', file: mesh.getAttribute('filename'), scale: num3(mesh.getAttribute('scale'), [1, 1, 1]), el: v, material: mat ? mat.getAttribute('name') : null });
+      });
+      links[l.getAttribute('name')] = { visuals };
+    });
+    const joints = [];
+    doc.querySelectorAll('robot > joint').forEach((j) => {
+      const lim = j.querySelector('limit'); let def = 0;
+      j.childNodes.forEach((n) => { if (n.nodeType === 8) { const m = /default pose\s+(-?[\d.]+)/.exec(n.data); if (m) def = parseFloat(m[1]); } });
+      joints.push({ name: j.getAttribute('name'), type: j.getAttribute('type'), parent: j.querySelector('parent').getAttribute('link'), child: j.querySelector('child').getAttribute('link'),
+        el: j, axis: num3(j.querySelector('axis') && j.querySelector('axis').getAttribute('xyz'), [0, 0, 1]),
+        lower: lim ? parseFloat(lim.getAttribute('lower')) : -Math.PI, upper: lim ? parseFloat(lim.getAttribute('upper')) : Math.PI, def });
+    });
+    return { materials, links, joints };
+  }
+
+  // ---- scene
+  const stage = $('#stage');
+  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.outputEncoding = THREE.sRGBEncoding;
+  stage.appendChild(renderer.domElement);
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(35, 1, 0.01, 20);
+  const hemi = new THREE.HemisphereLight(0xffffff, 0x807868, 0.9); scene.add(hemi);
+  const key = new THREE.DirectionalLight(0xffffff, 0.55); key.position.set(0.6, -0.8, 1.2); scene.add(key);
+  const fill = new THREE.DirectionalLight(0xffffff, 0.25); fill.position.set(-0.8, 0.6, 0.5); scene.add(fill);
+  const desk = new THREE.Mesh(new THREE.CircleGeometry(0.6, 64), new THREE.MeshStandardMaterial({ color: 0x9a9388, roughness: 0.95 }));
+  desk.receiveShadow = true; desk.position.z = -0.0005; scene.add(desk);
+  const grid = new THREE.GridHelper(1.2, 24, 0x888480, 0x888480); grid.rotation.x = Math.PI / 2; grid.material.transparent = true; grid.material.opacity = 0.25; scene.add(grid);
+
+  const orbit = { target: new THREE.Vector3(0.08, 0.0, 0.17), r: 0.85, theta: 1.15, phi: -1.0 };
+  function placeCamera() {
+    const st = Math.sin(orbit.theta);
+    camera.position.set(orbit.target.x + orbit.r * st * Math.cos(orbit.phi), orbit.target.y + orbit.r * st * Math.sin(orbit.phi), orbit.target.z + orbit.r * Math.cos(orbit.theta));
+    camera.up.set(0, 0, 1); camera.lookAt(orbit.target);
+  }
+  function resize() {
+    const w = stage.clientWidth, h = stage.clientHeight; if (!w || !h) return;
+    renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix(); render();
+  }
+  window.addEventListener('resize', resize);
+
+  // orbit: left-drag turns, wheel zooms, right/shift-drag or two fingers pan
+  let drag = null; const pointers = new Map();
+  stage.addEventListener('contextmenu', (e) => e.preventDefault());
+  stage.addEventListener('pointerdown', (e) => { stage.setPointerCapture(e.pointerId); pointers.set(e.pointerId, { x: e.clientX, y: e.clientY }); drag = { x: e.clientX, y: e.clientY, pan: e.button === 2 || e.shiftKey }; });
+  stage.addEventListener('pointerup', (e) => { pointers.delete(e.pointerId); if (!pointers.size) drag = null; });
+  stage.addEventListener('pointercancel', (e) => { pointers.delete(e.pointerId); drag = null; });
+  function pan(dx, dy) {
+    const right = new THREE.Vector3(); const up = new THREE.Vector3(); const m = camera.matrixWorld.elements;
+    right.set(m[0], m[1], m[2]); up.set(m[4], m[5], m[6]);
+    const k = orbit.r * 0.0015;
+    orbit.target.addScaledVector(right, -dx * k).addScaledVector(up, dy * k);
+  }
+  stage.addEventListener('pointermove', (e) => {
+    if (!drag) return;
+    if (pointers.size === 2) {
+      const prev = pointers.get(e.pointerId); pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      const pts = [...pointers.values()]; const d = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
+      if (drag.pinch) orbit.r = Math.min(3, Math.max(0.15, orbit.r * drag.pinch / d));
+      drag.pinch = d; pan(e.clientX - prev.x, e.clientY - prev.y); placeCamera(); render(); return;
+    }
+    const dx = e.clientX - drag.x, dy = e.clientY - drag.y; drag.x = e.clientX; drag.y = e.clientY;
+    if (drag.pan) pan(dx, dy); else { orbit.phi -= dx * 0.008; orbit.theta = Math.min(Math.PI - 0.05, Math.max(0.05, orbit.theta - dy * 0.008)); }
+    placeCamera(); render();
+  });
+  stage.addEventListener('wheel', (e) => { e.preventDefault(); orbit.r = Math.min(3, Math.max(0.15, orbit.r * Math.exp(e.deltaY * 0.0012))); placeCamera(); render(); }, { passive: false });
+
+  // ---- robot
+  const robot = new THREE.Group(); scene.add(robot);
+  const linkObjs = {}, jointObjs = {}, meshes = [], servoMeshes = [], axesHelpers = [];
+  let jointsDef = [], q = {};
+  let lamp = null, lampTarget = null;
+  function render() { renderer.render(scene, camera); }
+  function setJoint(name, deg) {
+    const j = jointObjs[name]; if (!j) return;
+    q[name] = deg;
+    j.rot.quaternion.setFromAxisAngle(j.axis, deg * Math.PI / 180);
+  }
+  function headSpot() {
+    if (!linkObjs.head) return;
+    linkObjs.head.updateWorldMatrix(true, false);
+    const o = new THREE.Vector3(0.005, 0, 0).applyMatrix4(linkObjs.head.matrixWorld);
+    const d = new THREE.Vector3(0, 0, -1).transformDirection(linkObjs.head.matrixWorld);
+    const el = $('#spot');
+    if (d.z >= -0.05) { el.textContent = 'beam above the desk'; return; }
+    const t = -o.z / d.z; const x = (o.x + d.x * t) * 1000, y = (o.y + d.y * t) * 1000;
+    el.textContent = 'beam hits the desk at x ' + x.toFixed(0) + ' mm, y ' + y.toFixed(0) + ' mm, head ' + (o.z * 1000).toFixed(0) + ' mm up';
+  }
+  function update() { headSpot(); render(); }
+
+  async function load() {
+    const text = await (await fetchFirst(['nc_lamp.urdf', 'nc_lamp.xml'])).text();
+    const u = parseURDF(text); jointsDef = u.joints;
+    const files = [...new Set(Object.values(u.links).flatMap((l) => l.visuals.map((v) => v.file)))];
+    const geos = {}; let done = 0;
+    await Promise.all(files.map(async (f) => {
+      geos[f] = await loadMesh(f); done++;
+      status.textContent = 'meshes ' + done + '/' + files.length;
+    }));
+    const mats = {};
+    for (const [n, c] of Object.entries(u.materials)) mats[n] = new THREE.MeshStandardMaterial({ color: new THREE.Color(c[0], c[1], c[2]), roughness: n === 'clear' ? 0.2 : 0.75, metalness: 0.0, transparent: c[3] < 1, opacity: c[3], side: THREE.DoubleSide });
+    for (const [name, l] of Object.entries(u.links)) {
+      const g = new THREE.Group(); g.name = name; linkObjs[name] = g;
+      for (const v of l.visuals) {
+        const m = new THREE.Mesh(geos[v.file], mats[v.material] || mats.dark); m.scale.set(v.scale[0], v.scale[1], v.scale[2]);
+        applyOrigin(m, v.el); m.castShadow = true; m.receiveShadow = true; m.name = v.name;
+        g.add(m); meshes.push(m); if (v.name.startsWith('servo')) servoMeshes.push(m);
+      }
+    }
+    const children = new Set(u.joints.map((j) => j.child));
+    for (const name of Object.keys(u.links)) if (!children.has(name)) robot.add(linkObjs[name]);
+    for (const j of u.joints) {
+      const frame = new THREE.Object3D(); applyOrigin(frame, j.el);
+      const rot = new THREE.Object3D(); frame.add(rot); rot.add(linkObjs[j.child]);
+      linkObjs[j.parent].add(frame);
+      const ax = new THREE.AxesHelper(0.04); ax.visible = false; frame.add(ax); axesHelpers.push(ax);
+      jointObjs[j.name] = { frame, rot, axis: new THREE.Vector3(j.axis[0], j.axis[1], j.axis[2]).normalize() };
+    }
+    // lamp: spot from the shade along the head axis (local -z, mouth side), 90 mm in front of the servo
+    lamp = new THREE.SpotLight(0xfff1d6, 1.6, 2.5, 0.42, 0.5, 1.5); lamp.position.set(0.005, 0, -0.09);
+    lampTarget = new THREE.Object3D(); lampTarget.position.set(0.005, 0, -1); linkObjs.head.add(lampTarget); lamp.target = lampTarget;
+    lamp.castShadow = true; lamp.shadow.mapSize.set(1024, 1024); lamp.shadow.bias = -0.0005; linkObjs.head.add(lamp);
+    buildSliders();
+    applyPose(null);
+    status.textContent = files.length + ' meshes, ' + u.joints.length + ' joints';
+    resize(); placeCamera(); update();
+  }
+
+  function buildSliders() {
+    const box = $('#joints'); box.innerHTML = '';
+    for (const j of jointsDef) {
+      const lo = Math.round(j.lower * 180 / Math.PI), hi = Math.round(j.upper * 180 / Math.PI);
+      const d = document.createElement('div'); d.className = 'joint';
+      d.innerHTML = '<label for="j_' + j.name + '">' + (JOINT_LABEL[j.name] || j.name) + '</label><span class="val"><span id="v_' + j.name + '"></span><small>deg</small></span>' +
+        '<input type="range" id="j_' + j.name + '" min="' + lo + '" max="' + hi + '" step="0.5" value="' + j.def + '">' +
+        '<div class="lim"><span>' + lo + '</span><span>' + j.name + '</span><span>' + hi + '</span></div>';
+      box.appendChild(d);
+      const inp = d.querySelector('input');
+      inp.addEventListener('input', () => { setJoint(j.name, parseFloat(inp.value)); $('#v_' + j.name).textContent = parseFloat(inp.value).toFixed(1); update(); });
+    }
+  }
+  function applyPose(p) {
+    for (const j of jointsDef) {
+      let v = p ? p[j.name] : j.def; if (v === undefined) v = j.def;
+      v = Math.min(j.upper * 180 / Math.PI, Math.max(j.lower * 180 / Math.PI, v));
+      setJoint(j.name, v); const inp = $('#j_' + j.name); if (inp) inp.value = v; const vv = $('#v_' + j.name); if (vv) vv.textContent = v.toFixed(1);
+    }
+    update();
+  }
+  for (const id of Object.keys(POSES)) $('#' + id).addEventListener('click', () => applyPose(POSES[id]));
+  $('#lamp').addEventListener('change', (e) => { if (lamp) lamp.visible = e.target.checked; render(); });
+  $('#servos').addEventListener('change', (e) => { servoMeshes.forEach((m) => { m.visible = e.target.checked; }); render(); });
+  $('#axes').addEventListener('change', (e) => { axesHelpers.forEach((a) => { a.visible = e.target.checked; }); render(); });
+  $('#xray').addEventListener('change', (e) => { meshes.forEach((m) => { if (m.material.name === 'clear') return; m.material.transparent = e.target.checked || m.material.opacity < 1; m.material.opacity = e.target.checked ? 0.35 : (m.material.userData.alpha ?? 1); m.material.depthWrite = !e.target.checked; }); render(); });
+
+  const hot = window.claude && window.claude.hot;
+  if (hot && hot.snapshot) hot.snapshot(() => ({ q, orbit: { x: orbit.target.x, y: orbit.target.y, z: orbit.target.z, r: orbit.r, theta: orbit.theta, phi: orbit.phi } }));
+  function start(data) {
+    if (data && data.orbit) { orbit.target.set(data.orbit.x, data.orbit.y, data.orbit.z); orbit.r = data.orbit.r; orbit.theta = data.orbit.theta; orbit.phi = data.orbit.phi; }
+    load().then(() => { if (data && data.q) applyPose(data.q); }).catch((err) => { status.textContent = 'could not load: ' + err.message; });
+  }
+  if (hot && hot.ready) hot.ready(start); else start((hot && hot.data) || {});
+  resize();
+})();
+</script>
