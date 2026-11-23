@@ -33,6 +33,7 @@ from elrobot_ik.station.cameras import (
 )
 from elrobot_ik.station.client import StationError
 from elrobot_ik.station.commands import drive_commands, goal_command, mirroring_stop_command, torque_command
+from elrobot_ik.station.mirroring import MIRRORING_QUEUE, mirroring_targets, stop_acknowledged, torque_release_receipt
 
 log = logging.getLogger(__name__)
 
@@ -41,6 +42,7 @@ PATH_CHECK_STEP_RAD = math.radians(5)  # one collision check per 5 deg of the la
 ARC_MISMATCH_WARN_DEG = 10.0
 LIMIT_EPS_RAD = 1e-4
 CAMERA_LIST_TTL_S = 3.0
+MIRRORING_PAGE = 64  # entries per read when counting the driver's stop echoes during a handoff
 
 
 class ServiceError(Exception):
@@ -68,6 +70,15 @@ class MotionResult:
 
     def public(self) -> dict:
         return {"status": self.status, "duration_ms": self.duration_ms}
+
+
+@dataclass
+class PendingHandoff:
+    restore_ids: tuple[int, ...]
+    previous_receipt: bytes | None
+    mirroring_id: int  # the newest inference/mirroring entry when the handoff began; the driver's echo comes after it
+    stop_written: bool = False  # the station acknowledged writing the stop; the driver echoes it once processed
+    released: bool = False
 
 
 NOT_EXECUTED = MotionResult("not_executed")
@@ -106,6 +117,7 @@ class ArmService:
         self.settings = settings
         self._warned_arcs: set[tuple[str, int]] = set()
         self._arm_locks: dict[str, asyncio.Lock] = {}
+        self._pending_handoffs: dict[str, PendingHandoff] = {}
         self._tickets: dict[str, int] = {}  # per arm: the ticket of the newest motion/torque request
         self._camera_cache: tuple[float, list[CameraQueue]] | None = None
         # The placo model is one mutable object: solves run in a worker thread under this lock
@@ -339,9 +351,11 @@ class ArmService:
     async def set_torque(self, arm_id: str, enabled: bool) -> dict:
         bus = self.resolve(arm_id)
         async with self._exclusive(bus.serial):
+            await self._release_from_mirroring(bus.serial, restore=enabled)
             if enabled:
-                await self._send([mirroring_stop_command(bus.serial)])  # the leader must not fight the hold
+                await self._prepare_torque_on(self.resolve(bus.serial), ELROBOT_MOTOR_IDS)
             await self._send([torque_command(bus.serial, ELROBOT_MOTOR_IDS, enabled)])
+            await self._wait_torque(bus.serial, ELROBOT_MOTOR_IDS, enabled)
         return {"id": bus.serial, "torque_enabled": enabled}
 
     # -- motion internals ----------------------------------------------------------
@@ -435,6 +449,141 @@ class ArmService:
                 found[kind].extend(p for p in pairs if frozenset(p) not in known and p not in found[kind])
         return found["self"], found["table"]
 
+    async def _mirroring_state(self) -> tuple[int, bytes] | None:
+        """The newest `inference/mirroring` entry as (entry id, data); None when the driver never
+        published, which means nothing is mirrored."""
+        try:
+            entries = await self.client.read_tail(MIRRORING_QUEUE, 1)
+        except StationError as e:
+            if e.code == "not_found":
+                return None
+            raise self._station_error(e) from e
+        if not entries:
+            return None
+        entry_id, data = entries[-1]
+        return int.from_bytes(entry_id, "little"), data
+
+    async def _handoff_progress(self, serial: str, pending: PendingHandoff) -> tuple[bool, bool]:
+        """Whether the mirroring driver has processed the handoff's stop, and whether the bus is still a
+        target. The driver echoes every command it processes into `inference/mirroring`, so an entry
+        written since the handoff began carrying our stop says it was processed, and the newest entry
+        says what it mirrors now."""
+        echoed, newest, first_id = False, None, pending.mirroring_id
+        while True:
+            try:
+                page = await self.client.read_from(MIRRORING_QUEUE, first_id.to_bytes(8, "little"), MIRRORING_PAGE)
+            except StationError as e:
+                if e.code == "not_found":
+                    raise ServiceError(503, "no_frame", "mirroring state disappeared during handoff") from e
+                raise self._station_error(e) from e
+            for eid, data in page:
+                if int.from_bytes(eid, "little") > pending.mirroring_id and stop_acknowledged(data, serial):
+                    echoed = True
+                newest = data
+            if len(page) < MIRRORING_PAGE:
+                break
+            first_id = int.from_bytes(page[-1][0], "little") + 1
+        if newest is None:
+            raise ServiceError(503, "no_frame", "mirroring state disappeared during handoff")
+        return echoed, serial in mirroring_targets(newest)
+
+    async def _release_from_mirroring(self, serial: str, *, restore: bool = True) -> None:
+        """Stop only active mirroring; finish its asynchronous torque-off before restoring torque.
+
+        Keep an unfinished handoff across failures so a retry cannot skip its pending torque-off
+        just because mirroring is already absent. This is not a persistent control session.
+        """
+        first = serial not in self._pending_handoffs
+        if first:
+            newest = await self._mirroring_state()
+            if newest is None or serial not in mirroring_targets(newest[1]):
+                return
+            bus = self.resolve(serial)
+            self._pending_handoffs[serial] = PendingHandoff(
+                tuple(m.id for m in bus.motors if m.torque_enabled),
+                torque_release_receipt(self.client.latest_frame, serial),
+                mirroring_id=newest[0],
+            )
+        # A disconnected HTTP caller must not cancel restoration halfway through the handoff.
+        task = asyncio.create_task(self._finish_handoff(serial, restore=restore))
+        try:
+            await asyncio.shield(task)
+        except asyncio.CancelledError:
+            try:
+                await task
+            except ServiceError:
+                log.exception("Mirroring handoff unfinished for %s after caller cancellation", serial)
+            raise
+        if not first:
+            # A retry recovered an earlier handoff. Mirroring might have been restarted since
+            # that stop completed, so apply the normal movement-triggered check once more.
+            await self._release_from_mirroring(serial, restore=restore)
+
+    async def _finish_handoff(self, serial: str, *, restore: bool) -> None:
+        pending = self._pending_handoffs[serial]
+        try:
+            async with asyncio.timeout(self.settings.handoff_timeout_s):
+                # One stop per handoff. A retry sends it only when no earlier write of it was acknowledged;
+                # a stop the station holds is waited for, never doubled: a second one would torque the bus
+                # off again after the restoration below.
+                sent_now = not pending.released and not pending.stop_written
+                if sent_now:
+                    await self._send_stop(serial, pending)
+                while not pending.released:
+                    if await self._stop_landed(serial, pending, need_receipt=sent_now):
+                        pending.released = True
+                        break
+                    await asyncio.sleep(0.02)
+        except TimeoutError:
+            raise ServiceError(503, "station_timeout",
+                               "mirroring stop's torque-off was not confirmed; no movement sent; "
+                               "torque may be released, check the arm before retrying") from None
+        if restore and pending.restore_ids:
+            # Preserve existing goals, including a gripper's squeeze on an object.
+            await self._send([torque_command(serial, pending.restore_ids, True)])
+            await self._wait_torque(serial, pending.restore_ids, True)
+        del self._pending_handoffs[serial]
+
+    async def _send_stop(self, serial: str, pending: PendingHandoff) -> None:
+        await self._send([mirroring_stop_command(serial)])
+        # Recorded only once the station acknowledged the write: one it did not acknowledge may or may
+        # not be queued, and a retry sends it again (its echo, if it was, still counts).
+        pending.stop_written = True
+
+    async def _stop_landed(self, serial: str, pending: PendingHandoff, *, need_receipt: bool) -> bool:
+        """Whether the handoff's whole-bus torque-off is behind us: the driver has processed the stop and
+        the bus is no longer a target. The driver echoes the stop a moment before it enqueues the
+        torque-off, so right after sending the stop that is not enough: a torque-off receipt newer than
+        the one seen before the stop, with every motor reading torque off, shows it landed. On a retry the
+        stop was written a whole handoff timeout ago; once echoed, its torque-off sits in the station's
+        command queue ahead of anything sent from here (each bus is driven in order), so the echo
+        suffices. Error flags are not a reason to wait: motion refuses them up front, and a torque
+        release is how an overloaded servo gets relieved."""
+        if need_receipt:
+            bus = self.resolve(serial)
+            receipt = torque_release_receipt(self.client.latest_frame, serial)
+            if receipt is None or receipt == pending.previous_receipt or any(m.torque_enabled for m in bus.motors):
+                return False
+        echoed, target = await self._handoff_progress(serial, pending)
+        return echoed and not target
+
+    async def _wait_torque(self, serial: str, motor_ids, enabled: bool) -> None:
+        deadline = time.monotonic() + self.settings.handoff_timeout_s
+        while time.monotonic() < deadline:
+            bus = self.resolve(serial)
+            motors = [bus.motor(i) for i in motor_ids]
+            if all(m is not None and m.torque_enabled == enabled for m in motors):
+                return
+            await asyncio.sleep(0.02)
+        raise ServiceError(503, "station_timeout", "station did not confirm requested torque state",
+                           motors=list(motor_ids), torque_enabled=enabled)
+
+    async def _prepare_torque_on(self, bus: BusSnapshot, motor_ids) -> None:
+        """Only newly enabled, commanded motors get a hold goal before torque is applied."""
+        hold = {m.id: m.steps for m in bus.motors if m.id in motor_ids and not m.torque_enabled}
+        if hold:
+            await self._send([goal_command(bus.serial, hold)])
+
     async def _send(self, commands) -> None:
         try:
             await self.client.send_commands(commands)
@@ -448,11 +597,16 @@ class ArmService:
         speed = clamp(self.settings.motion_speed if speed is None else int(speed), *SPEED_RANGE)
         accel = clamp(self.settings.motion_accel if accel is None else int(accel), *ACCEL_RANGE)
         t0 = time.monotonic()
-        # Release the bus from the station's leader->follower mirroring, or the leader's goals
-        # would override ours while we move; then torque, speed and accel in one write.
-        await self._send([mirroring_stop_command(bus.serial)])
+        await self._release_from_mirroring(bus.serial)
+        if self._superseded(bus.serial, ticket):
+            return NOT_EXECUTED
+        await self._prepare_torque_on(self.resolve(bus.serial), goals)
+        # Torque, speed and accel in one write, then the goals.
         *setup, goal = drive_commands(bus.serial, goals, speed, accel)
         await self._send(setup)
+        await self._wait_torque(bus.serial, goals, True)
+        if self._superseded(bus.serial, ticket):
+            return NOT_EXECUTED
 
         commanded = dict(goals)
         final = bus.steps()

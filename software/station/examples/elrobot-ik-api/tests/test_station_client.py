@@ -65,7 +65,10 @@ class FakeStation:
                         first = struct.unpack("<Q", req.read.offset.id.raw)[0] - 1  # entry ids are 1-based here
                         items = items[first : first + n]
                     else:
-                        items = items[-n:]
+                        # NormFS shift 0 is the latest entry, shift 1 its predecessor.
+                        shift = int.from_bytes(req.read.offset.id.raw, "little")
+                        first = max(0, len(items) - 1 - shift)
+                        items = items[first : first + n]
                     for i, data in items:
                         await ws.send(self._entry(rid, i, data))
                     resp.read.result = normfs_pb2.ReadResponse.RR_END
@@ -248,3 +251,28 @@ async def test_read_tail_returns_last_entries_and_errors_for_unknown_queue():
             assert [(struct.unpack("<Q", i)[0], d) for i, d in from_second] == [(2, b"b"), (3, b"c")]
         finally:
             await client.stop()
+
+
+@pytest.mark.parametrize("was_mirrored,is_mirrored", [(False, True), (True, False)])
+async def test_read_tail_one_returns_latest_mirroring_state(was_mirrored, is_mirrored):
+    from elrobot_ik.station.mirroring import MIRRORING_QUEUE, mirroring_targets
+    from tests.helpers import make_mirroring_state
+
+    history = [make_mirroring_state(["F1"] if active else []) for active in (was_mirrored, is_mirrored)]
+    async with FakeStation([FRAME_A], queues={MIRRORING_QUEUE: history}) as station:
+        client = StationClient(station.url)
+        await client.start()
+        try:
+            assert await client.wait_connected(2.0)
+            rows = await client.read_tail(MIRRORING_QUEUE, 1)
+            assert len(rows) == 1
+            assert ("F1" in mirroring_targets(rows[0][1])) is is_mirrored
+        finally:
+            await client.stop()
+
+
+@pytest.mark.parametrize("n", [0, -1])
+async def test_read_tail_rejects_nonpositive_count(n):
+    client = StationClient("ws://127.0.0.1:1/api")
+    with pytest.raises(ValueError, match="positive"):
+        await client.read_tail("inference/mirroring", n)

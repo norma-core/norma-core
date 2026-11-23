@@ -18,6 +18,7 @@ from tests.helpers import (
     CAM_QUEUE,
     FAST,
     INSTANCE,
+    MIRRORING_QUEUE,
     camera_queues,
     goal_steps,
     is_goal_write,
@@ -26,8 +27,10 @@ from tests.helpers import (
     make_elrobot_bus,
     make_frame,
     make_inference_states,
+    make_mirroring_state,
     make_motor_state,
     make_service,
+    mirroring_queues,
     vp8_camera_queues,
     vp8_packets,
 )
@@ -220,19 +223,47 @@ async def test_execute_refuses_station_reported_motor_error(model, solver):
 
 
 async def test_execute_stops_mirroring_then_sends_torque_speed_accel_goal(model, solver):
-    svc, client = make_service(model, solver, calibrated_frame())
+    svc, client = make_service(model, solver, calibrated_frame(), queues=mirroring_queues("F1"))
     client.arrive_at_goals()
     out = await point(svc, 0.21, 0.05, 0.05, execute=True, speed=800, accel=40)
     assert out.executed and out.motion.status == "reached"
     assert client.driver_types[0] == 1  # STC_MOTOR_MIRRORING_COMMAND first
     stop = mirroring_pb2.Command.FromString(client.sent[0][0].body)
     assert stop.type == mirroring_pb2.CT_STOP_MIRROR and stop.source.unique_id == "F1"
-    assert addresses(client) == DRIVE_ADDRESSES
-    torque, speed, accel, goal = client.st3215_commands
+    assert addresses(client) == [TORQUE, *DRIVE_ADDRESSES]
+    restore, torque, speed, accel, goal = client.st3215_commands
+    assert {w.motor_id for w in restore.sync_write.motors} == set(range(1, 9))
+    assert {w.motor_id for w in torque.sync_write.motors} == set(range(1, 8))
     assert all(m.value == b"\x01" for m in torque.sync_write.motors)
     assert int.from_bytes(speed.sync_write.motors[0].value, "little") == 800
     assert accel.sync_write.motors[0].value == bytes([40])
     assert list(goal_steps([goal]).values()) == out.motor_steps[:7]  # gripper omitted: motor 8 is not written
+
+
+async def test_execute_does_not_stop_mirroring_when_bus_is_not_a_target(model, solver):
+    """No mirroring state published at all: the arm is not mirrored, so no stop (the driver would torque the whole bus off)."""
+    svc, client = make_service(model, solver, calibrated_frame())
+    client.arrive_at_goals()
+    out = await point(svc, 0.21, 0.05, 0.05, execute=True)
+    assert out.motion.status == "reached"
+    assert 1 not in client.driver_types
+    assert addresses(client) == DRIVE_ADDRESSES
+
+
+async def test_execute_does_not_stop_mirroring_when_bus_is_only_a_source(model, solver):
+    svc, client = make_service(model, solver, calibrated_frame(), queues=mirroring_queues("X1", source="F1"))
+    client.arrive_at_goals()
+    await point(svc, 0.21, 0.05, 0.05, execute=True)
+    assert 1 not in client.driver_types
+
+
+async def test_execute_uses_the_newest_mirroring_state(model, solver):
+    """F1 was a target once; the newest entry says nothing is mirrored any more."""
+    queues = {MIRRORING_QUEUE: [make_mirroring_state(["F1"]), make_mirroring_state()]}
+    svc, client = make_service(model, solver, calibrated_frame(), queues=queues)
+    client.arrive_at_goals()
+    await point(svc, 0.21, 0.05, 0.05, execute=True)
+    assert 1 not in client.driver_types
 
 
 async def test_execute_reports_stalled_when_arm_does_not_move(model, solver):
@@ -263,10 +294,15 @@ async def test_set_torque(model, solver):
     assert res == {"id": "F1", "torque_enabled": False}
     assert addresses(client) == [TORQUE]
     assert all(m.value == b"\x00" for m in client.st3215_commands[0].sync_write.motors)
-    assert client.driver_types == [0]  # releasing does not touch mirroring
+    assert client.driver_types == [0]  # not mirrored: nothing to detach before releasing
     client.sent.clear()
     await svc.set_torque("F1", True)
-    assert client.driver_types == [1, 0]  # holding the arm first releases it from leader mirroring
+    assert client.driver_types == [0, 0]  # hold current positions before enabling released motors
+    assert addresses(client) == [GOAL, TORQUE]
+    client.sent.clear()
+    client.queues.update(mirroring_queues("F1"))
+    await svc.set_torque("F1", True)
+    assert client.driver_types == [1, 0, 0]  # detach, restore prior torque, explicit all-motor torque request
 
 
 async def test_station_error_becomes_503(model, solver):

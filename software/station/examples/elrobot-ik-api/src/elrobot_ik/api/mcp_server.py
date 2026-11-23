@@ -24,6 +24,13 @@ from elrobot_ik.service import ArmService, ServiceError
 INSTRUCTIONS = """You control ElRobot arms through these tools. Call list_arms first: it returns every arm with its
 arm_id (the bus serial, needed by every arm tool), role, torque, joints and current tool point pose; drive the
 arm whose role is 'follower'.
+Every executed move or gripper command stops active mirroring onto that follower. The current station
+temporarily releases the whole follower during this stop; the service waits and restores previously
+enabled motors, then enables the commanded motors. Untouched motors retain their torque state and goals.
+There is no session: the next movement command stops mirroring again if it was re-enabled.
+Read-only and solve-only calls do not stop mirroring. Explicit torque requests apply to all eight motors.
+A failed handoff can leave torque released: check the arm before retrying. Do not use another controller
+or restart the service during a handoff. Completing a move does not release torque.
 World frame: origin on the base motor's rotation axis at table level, X forward, Y left, Z up.
 The tool point is the center of the closed jaws' tip edge; z is its height above the table.
 move_to with orientation rpy {roll: -1.5708, pitch: 0, yaw: θ} points the gripper straight down with the jaws

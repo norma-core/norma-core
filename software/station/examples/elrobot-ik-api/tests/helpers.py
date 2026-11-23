@@ -1,5 +1,6 @@
 """Shared test builders: register snapshots, inference frames, camera queues, a fake station client."""
 import functools
+import time
 from collections.abc import Callable
 from fractions import Fraction
 
@@ -13,10 +14,12 @@ from elrobot_ik.station import registers as R
 from elrobot_ik.station.arms import parse_frame
 from elrobot_ik.station.cameras import FF_JPEG, FF_VP8
 from elrobot_ik.station.client import StationError
-from elrobot_ik.station.proto import commands_pb2, drivers_pb2, inference_pb2, st3215_pb2
+from elrobot_ik.station.commands import torque_command
+from elrobot_ik.station.proto import commands_pb2, drivers_pb2, inference_pb2, mirroring_pb2, st3215_pb2
 from elrobot_ik.station.proto.usbvideo import usbvideo_pb2
 
 CAL_MIN, CAL_MAX = 1024, 3072
+MIRRORING_QUEUE = "inference/mirroring"  # the station's mirroring state; the service must read exactly this queue
 INSTANCE = "/155b778e7f8b0d414166c9669fd609d5c12e10d48a82916554077bb4e62817eb"
 CAM_ID = "7bd21f18e39708492c1deee9e2a86aa7"
 CAM_QUEUE = f"{INSTANCE}/usbvideo/{CAM_ID}"
@@ -140,6 +143,23 @@ def vp8_camera_queues(n: int = 4, *, first_id: int = 1) -> dict[str, list[bytes]
     }
 
 
+def make_mirroring_state(targets: tuple[str, ...] | list[str] = (), source: str = "L1") -> bytes:
+    """An inference/mirroring entry: the station's current mirroring, `source` driving `targets` (none = nothing mirrored)."""
+    env = mirroring_pb2.RxEnvelope()
+    env.state.SetInParent()
+    if targets:
+        m = env.state.mirroring.add()
+        m.source.id.unique_id = source
+        for t in targets:
+            m.targets.add().id.unique_id = t
+    return env.SerializeToString()
+
+
+def mirroring_queues(*targets: str, source: str = "L1") -> dict[str, list[bytes]]:
+    """Fake station queues where `source` currently mirrors onto `targets`."""
+    return {MIRRORING_QUEUE: [make_mirroring_state(targets, source=source)]}
+
+
 def camera_queues(latest_jpeg: bytes = b"\xff\xd8\xffjpeg") -> dict[str, list[bytes]]:
     """Fake station queues: one camera (a connect event, an older and the latest frame)."""
     return {
@@ -179,10 +199,15 @@ class FakeStationClient:
         self.sent: list[list] = []
         self.on_send: Callable[[list], None] | None = None
         self._frame = frame
+        self.auto_stop = True
         self.queues = queues or {}  # queue id -> entries oldest first, for read_tail
 
     def set_frame(self, frame: bytes | None) -> None:
         self._frame = frame
+
+    @property
+    def latest_frame(self):
+        return self._frame
 
     def frame_age_ms(self):
         return None if self._frame is None else self.age_ms
@@ -192,8 +217,53 @@ class FakeStationClient:
 
     async def send_commands(self, commands):
         self.sent.append(list(commands))
+        for c in commands:
+            if isinstance(c, commands_pb2.DriverCommand) and c.type == drivers_pb2.STC_MOTOR_MIRRORING_COMMAND and self.auto_stop:
+                stop = mirroring_pb2.Command.FromString(c.body)
+                if stop.type == mirroring_pb2.CT_STOP_MIRROR:
+                    self.detach_mirroring(stop.source.unique_id)
+                    self.complete_stop(stop.source.unique_id)
+            elif isinstance(c, st3215_pb2.Command) and c.sync_write.address == R.ADDR_TORQUE_ENABLE:
+                self.apply_torque(c)
         if self.on_send:
             self.on_send(list(commands))
+
+    def detach_mirroring(self, serial):
+        """The mirroring driver processing a stop for `serial`: it publishes the new state with the stop echoed."""
+        env = mirroring_pb2.RxEnvelope.FromString(self.queues[MIRRORING_QUEUE][-1])
+        env.command.type = mirroring_pb2.CT_STOP_MIRROR
+        env.command.source.unique_id = serial
+        for mapping in env.state.mirroring:
+            remaining = [t for t in mapping.targets if t.id.unique_id != serial]
+            del mapping.targets[:]
+            mapping.targets.extend(remaining)
+        self.queues[MIRRORING_QUEUE].append(env.SerializeToString())
+
+    def apply_torque(self, command, *, receipt=False):
+        state = st3215_pb2.InferenceState.FromString(self._frame)
+        writes = {w.motor_id: w.value[0] for w in command.sync_write.motors}
+        stamp = time.monotonic_ns()
+        for bus in state.buses:
+            if bus.bus.serial_number != command.target_bus_serial:
+                continue
+            for motor in bus.motors:
+                if motor.id not in writes:
+                    continue
+                data = bytearray(motor.state)
+                data[R.ADDR_TORQUE_ENABLE] = writes[motor.id]
+                motor.state = bytes(data)
+                if receipt:
+                    last = motor.last_command
+                    last.result = st3215_pb2.CR_SUCCESS
+                    last.command.monotonic_stamp_ns = stamp
+                    last.command.app_start_id = 1
+                    last.command.command_id = command.target_bus_serial.encode()
+                    last.command.target_bus_serial = command.target_bus_serial
+                    last.command.sync_write.CopyFrom(command.sync_write)
+        self.set_frame(state.SerializeToString())
+
+    def complete_stop(self, serial):
+        self.apply_torque(torque_command(serial, range(1, 9), False), receipt=True)
 
     async def read_tail(self, queue_id: str, n: int):
         if not self.connected:
@@ -228,8 +298,17 @@ class FakeStationClient:
         def on_send(cmds):
             goals = goal_steps(cmds)
             if goals:
-                positions = [goals.get(i, 2048) - (sag or {}).get(i, 0) for i in range(1, 9)]
-                self.set_frame(make_frame(make_elrobot_bus(serial, positions=positions)))
+                state = st3215_pb2.InferenceState.FromString(self._frame)
+                for bus in state.buses:
+                    if bus.bus.serial_number != serial:
+                        continue
+                    for motor in bus.motors:
+                        if motor.id in goals:
+                            data = bytearray(motor.state)
+                            steps = goals[motor.id] - (sag or {}).get(motor.id, 0)
+                            data[R.ADDR_PRESENT_POSITION:R.ADDR_PRESENT_POSITION + 2] = steps.to_bytes(2, "little")
+                            motor.state = bytes(data)
+                self.set_frame(state.SerializeToString())
         self.on_send = on_send
 
 
