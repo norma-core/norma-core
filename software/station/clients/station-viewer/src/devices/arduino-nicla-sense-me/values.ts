@@ -1,37 +1,123 @@
-export const ME_REGISTER_LENGTH = 0xa8;
+import { HUB_TO_ROVER, compassHeadingDeg, normalizeQuat, withMount } from './attitude';
+
+/**
+ * Register image published by firmware revision 6 (see
+ * device-support/arduino-nicla-sense-me/README.md). The firmware writes only
+ * what the sensor hub measured plus the metadata needed to interpret it
+ * (full-scale ranges, freshness flags); everything derived — SI scaling,
+ * gravity, linear acceleration, roll/pitch/yaw, heading — is computed here
+ * and in ./attitude.ts.
+ */
+export const ME_REVISION = 6;
+export const ME_REGISTER_LENGTH = 0x7c;
 
 export const ME_OFFSETS = {
-  status: 0x00,
-  sampleCounter: 0x01,
+  status: 0x00, // bit0: BHY2 running
+  sampleCounter: 0x01, // u8, wraps
   softwareRevision: 0x0c,
   productId: 0x0d,
-  serial: 0x0e,
-  accel: 0x14,
-  gyro: 0x20,
-  mag: 0x2c,
-  linAccel: 0x38,
-  gravity: 0x44,
-  quat: 0x50, // w, x, y, z, accuracy (5 x f32)
-  euler: 0x64, // heading, pitch, roll
-  temperature: 0x70,
-  humidity: 0x74,
-  pressure: 0x78,
-  gasResistance: 0x7c,
-  iaq: 0x80,
-  iaqStatic: 0x84,
-  eco2: 0x88,
-  bvoc: 0x8c,
-  bsecAccuracy: 0x90,
-  compTemperature: 0x94,
-  compHumidity: 0x98,
-  stepCount: 0xa0,
-  activity: 0xa4,
+  serial: 0x0e, // 6 bytes
+  accelRaw: 0x14, // 3 x i16 counts
+  gyroRaw: 0x1a, // 3 x i16 counts
+  magRaw: 0x20, // 3 x i16 counts
+  accelRangeG: 0x26, // u16, full scale in g
+  gyroRangeDps: 0x28, // u16, full scale in dps
+  magRangeUt: 0x2a, // u16, full scale in µT
+  quat: 0x2c, // w, x, y, z, accuracy (5 x f32)
+  temperature: 0x40,
+  humidity: 0x44,
+  pressure: 0x48,
+  gasResistance: 0x4c,
+  iaq: 0x50,
+  iaqStatic: 0x54,
+  eco2: 0x58,
+  bvoc: 0x5c,
+  compTemperature: 0x60,
+  compHumidity: 0x64,
+  bsecAccuracy: 0x68, // u8
+  calibFlags: 0x69, // u8, see ME_CALIB
+  calibMinutesSinceSave: 0x6a, // u8, 255 = no save this session
+  calibStatus: 0x6b, // u8, hub calibration status 0..3: bits 0-1 accel, 2-3 gyro, 4-5 mag
+  stepCount: 0x6c, // u32
+  activity: 0x70, // u32 bitfield
+  tickCounter: 0x74, // u32, loop ticks since boot
+  freshFlags: 0x78, // u16, see ME_FRESH
 } as const;
 
-// Only offsets at or below this value are considered "header" fields that remain readable
-// from truncated/untrusted buffers. All sensor data beyond this point returns null for
-// buffers shorter than ME_REGISTER_LENGTH.
-const HEADER_SAFE_OFFSET = ME_OFFSETS.sampleCounter;
+/** Bits of the status register. */
+export const ME_STATUS = {
+  bhy2Running: 1 << 0,
+} as const;
+
+/**
+ * Rotation-vector accuracy (rad) at or above which the hub has no magnetic
+ * reference at all: the register reads π while the magnetometer is
+ * uncalibrated and the quaternion then carries no heading information.
+ */
+export const ME_HEADING_UNCALIBRATED_RAD = 3.0;
+
+export type HeadingAccuracyLevel = 'good' | 'fair' | 'poor';
+
+export interface HeadingAccuracy {
+  /** Hub-estimated heading error in degrees. */
+  deg: number;
+  /**
+   * Tier for display. The hub reports quantized levels: a calibrated
+   * magnetometer settles at 25–30° on this board (the firmware saves a
+   * magnetometer profile only below 0.6 rad ≈ 34°), ~59° early in calibration, 180° uncalibrated.
+   */
+  level: HeadingAccuracyLevel;
+  /** True at the uncalibrated level: any heading derived from the quaternion is meaningless. */
+  uncalibrated: boolean;
+}
+
+/**
+ * Interprets the rotation-vector accuracy register. Null when the hub has not
+ * reported one yet (register still 0) or the value is not finite.
+ */
+export function headingAccuracy(rad: number): HeadingAccuracy | null {
+  if (!Number.isFinite(rad) || rad <= 0) {
+    return null;
+  }
+  const deg = rad * (180 / Math.PI);
+  return {
+    deg,
+    level: deg < 35 ? 'good' : deg < 70 ? 'fair' : 'poor',
+    uncalibrated: rad >= ME_HEADING_UNCALIBRATED_RAD,
+  };
+}
+
+/** Bits of the freshness register: the sensor delivered a new sample this tick. */
+export const ME_FRESH = {
+  accel: 1 << 0,
+  gyro: 1 << 1,
+  mag: 1 << 2,
+  quat: 1 << 3,
+  temperature: 1 << 4,
+  humidity: 1 << 5,
+  pressure: 1 << 6,
+  gas: 1 << 7,
+  bsec: 1 << 8,
+  steps: 1 << 9,
+  activity: 1 << 10,
+} as const;
+
+/**
+ * Bits of the calibration-store status byte: the firmware persists the hub's
+ * accel/gyro/mag calibration profiles in flash, restores them at boot, and
+ * saves a profile only while the hub reports status 3 for its sensor.
+ */
+export const ME_CALIB = {
+  restored: 1 << 0, // a stored profile was written into the hub at boot
+  saved: 1 << 1, // at least one profile was saved this session
+  storeError: 1 << 2, // a flash or hub transfer failed for a profile that has not been saved since
+  recordIgnored: 1 << 3, // a stored record did not match this hub firmware
+  restoreVerified: 1 << 4, // read-back after the restore matched the stored bytes
+  restoreMismatch: 1 << 5, // read-back differed: the hub did not keep the profile
+} as const;
+
+/** Full-scale counts of the BHI260AP's 16-bit outputs. */
+const ADC_FULL_SCALE = 32768;
 
 export interface Vec3 {
   x: number;
@@ -46,42 +132,58 @@ export interface ArduinoNiclaSenseMeQuat {
   z: number;
 }
 
-export interface ArduinoNiclaSenseMeMainValues {
+export interface ArduinoNiclaSenseMeSample {
+  revision: number;
+  statusByte: number;
+  sampleCounter: number;
+  tickCounter: number;
+  freshFlags: number;
+
+  accelRaw: Vec3;
+  gyroRaw: Vec3;
+  magRaw: Vec3;
+  accelRangeG: number;
+  gyroRangeDps: number;
+  magRangeUt: number;
+  /** Scaled from counts; null when the recorded range is not one the firmware publishes. */
   accelG: Vec3 | null;
-  linearAccelG: Vec3 | null;
   gyroDps: Vec3 | null;
   magUt: Vec3 | null;
+
+  /** Unit rotation vector, or null while unpopulated / off-scale. */
   quat: ArduinoNiclaSenseMeQuat | null;
-  headingDeg: number | null;
-  pitchDeg: number | null;
-  rollDeg: number | null;
-  temperatureC: number | null;
-  humidityPercent: number | null;
-  pressureHpa: number | null;
-  iaq: number | null;
-  eco2Ppm: number | null;
-  stepCount: number | null;
-  statusByte: number | null;
-  sampleCounter: number | null;
+  quatRaw: ArduinoNiclaSenseMeQuat;
+  quatAccuracyRad: number;
+
+  temperatureC: number;
+  humidityPercent: number;
+  pressureHpa: number;
+  gasResistanceOhm: number;
+
+  iaq: number;
+  iaqStatic: number;
+  eco2Ppm: number;
+  bvocPpm: number;
+  bsecAccuracy: number;
+  compTemperatureC: number;
+  compHumidityPercent: number;
+
+  stepCount: number;
+  activity: number;
+
+  calibFlags: number;
+  /** Minutes since the firmware last saved a calibration profile; null = none this session. */
+  calibMinutesSinceSave: number | null;
+  /**
+   * The hub's calibration status per sensor: 0 unreliable, 1 low, 2 medium,
+   * 3 calibrated. A profile is saved only at 3.
+   */
+  calibStatus: { accel: number; gyro: number; mag: number };
 }
 
-// Low-level register readers (f32le, u32le, u8) enforce whole-image-trust semantics:
-// They treat the buffer as a complete 168-byte register image. Any buffer shorter than
-// ME_REGISTER_LENGTH is considered truncated/untrusted — only the header bytes at offsets
-// ≤ HEADER_SAFE_OFFSET (sampleCounter at 0x01) remain readable. All other reads from
-// short buffers return null, preventing interpretation of potentially stale or partial
-// sensor measurements. Callers must pass a full-length buffer or accept all sensor fields
-// as null.
-function hasRange(bytes: Uint8Array, offset: number, length: number): boolean {
-  if (bytes.length < ME_REGISTER_LENGTH && offset > HEADER_SAFE_OFFSET) {
-    return false;
-  }
-  return offset >= 0 && length >= 0 && offset + length <= bytes.length;
-}
-
-// One DataView per buffer instead of one per field read: a full decode does
-// ~20 reads and runs at render rate (~100 Hz over USB), so per-read
-// allocations are measurable GC churn.
+// One DataView per buffer instead of one per field read: a full decode runs
+// at render rate (~100 Hz over USB), so per-read allocations are measurable
+// GC churn.
 const viewCache = new WeakMap<Uint8Array, DataView>();
 
 function viewFor(bytes: Uint8Array): DataView {
@@ -93,26 +195,131 @@ function viewFor(bytes: Uint8Array): DataView {
   return view;
 }
 
-export function f32le(bytes: Uint8Array, offset: number): number | null {
-  return hasRange(bytes, offset, 4) ? viewFor(bytes).getFloat32(offset, true) : null;
+function vec3i16(view: DataView, offset: number): Vec3 {
+  return {
+    x: view.getInt16(offset, true),
+    y: view.getInt16(offset + 2, true),
+    z: view.getInt16(offset + 4, true),
+  };
 }
 
-export function u32le(bytes: Uint8Array, offset: number): number | null {
-  return hasRange(bytes, offset, 4) ? viewFor(bytes).getUint32(offset, true) : null;
-}
+/**
+ * The full-scale ranges the firmware can publish (it writes a range register
+ * only with one of these; see nicla_publish_*_range). Anything else — 0
+ * ("not read from the hub yet") or the fixed 16 that images recorded before
+ * the magnetometer register became a range still hold under the same
+ * revision number — cannot be scaled.
+ */
+const ACCEL_RANGES_G: ReadonlySet<number> = new Set([2, 4, 8, 16]);
+const GYRO_RANGES_DPS: ReadonlySet<number> = new Set([125, 250, 500, 1000, 2000]);
+const MAG_RANGES_UT: ReadonlySet<number> = new Set([2500]);
 
-export function u8(bytes: Uint8Array, offset: number): number | null {
-  return hasRange(bytes, offset, 1) ? bytes[offset] : null;
-}
-
-export function vec3(bytes: Uint8Array, offset: number): Vec3 | null {
-  const x = f32le(bytes, offset);
-  const y = f32le(bytes, offset + 4);
-  const z = f32le(bytes, offset + 8);
-  if (x === null || y === null || z === null) {
+function scaled(raw: Vec3, range: number, published: ReadonlySet<number>): Vec3 | null {
+  if (!published.has(range)) {
     return null;
   }
-  return { x, y, z };
+  const factor = range / ADC_FULL_SCALE;
+  return { x: raw.x * factor, y: raw.y * factor, z: raw.z * factor };
+}
+
+/**
+ * Decodes a revision-6 register image. Returns null for a missing or short
+ * buffer or for any other firmware revision: there is no legacy path, the
+ * layout is the contract with the firmware.
+ */
+export function decodeArduinoNiclaSenseMe(
+  data: Uint8Array | null | undefined,
+): ArduinoNiclaSenseMeSample | null {
+  if (!(data instanceof Uint8Array) || data.length < ME_REGISTER_LENGTH) {
+    return null;
+  }
+  if (data[ME_OFFSETS.softwareRevision] !== ME_REVISION) {
+    return null;
+  }
+  const view = viewFor(data);
+  const f32 = (offset: number) => view.getFloat32(offset, true);
+
+  const accelRaw = vec3i16(view, ME_OFFSETS.accelRaw);
+  const gyroRaw = vec3i16(view, ME_OFFSETS.gyroRaw);
+  const magRaw = vec3i16(view, ME_OFFSETS.magRaw);
+  const accelRangeG = view.getUint16(ME_OFFSETS.accelRangeG, true);
+  const gyroRangeDps = view.getUint16(ME_OFFSETS.gyroRangeDps, true);
+  const magRangeUt = view.getUint16(ME_OFFSETS.magRangeUt, true);
+  const calibStatus = data[ME_OFFSETS.calibStatus];
+
+  const quatRaw = {
+    w: f32(ME_OFFSETS.quat),
+    x: f32(ME_OFFSETS.quat + 4),
+    y: f32(ME_OFFSETS.quat + 8),
+    z: f32(ME_OFFSETS.quat + 12),
+  };
+
+  return {
+    revision: data[ME_OFFSETS.softwareRevision],
+    statusByte: data[ME_OFFSETS.status],
+    sampleCounter: data[ME_OFFSETS.sampleCounter],
+    tickCounter: view.getUint32(ME_OFFSETS.tickCounter, true),
+    freshFlags: view.getUint16(ME_OFFSETS.freshFlags, true),
+
+    accelRaw,
+    gyroRaw,
+    magRaw,
+    accelRangeG,
+    gyroRangeDps,
+    magRangeUt,
+    accelG: scaled(accelRaw, accelRangeG, ACCEL_RANGES_G),
+    gyroDps: scaled(gyroRaw, gyroRangeDps, GYRO_RANGES_DPS),
+    magUt: scaled(magRaw, magRangeUt, MAG_RANGES_UT),
+
+    quat: normalizeQuat(quatRaw),
+    quatRaw,
+    quatAccuracyRad: f32(ME_OFFSETS.quat + 16),
+
+    temperatureC: f32(ME_OFFSETS.temperature),
+    humidityPercent: f32(ME_OFFSETS.humidity),
+    pressureHpa: f32(ME_OFFSETS.pressure),
+    gasResistanceOhm: f32(ME_OFFSETS.gasResistance),
+
+    iaq: f32(ME_OFFSETS.iaq),
+    iaqStatic: f32(ME_OFFSETS.iaqStatic),
+    eco2Ppm: f32(ME_OFFSETS.eco2),
+    bvocPpm: f32(ME_OFFSETS.bvoc),
+    bsecAccuracy: data[ME_OFFSETS.bsecAccuracy],
+    compTemperatureC: f32(ME_OFFSETS.compTemperature),
+    compHumidityPercent: f32(ME_OFFSETS.compHumidity),
+
+    stepCount: view.getUint32(ME_OFFSETS.stepCount, true),
+    activity: view.getUint32(ME_OFFSETS.activity, true),
+
+    calibFlags: data[ME_OFFSETS.calibFlags],
+    calibMinutesSinceSave: data[ME_OFFSETS.calibMinutesSinceSave] === 255 ? null : data[ME_OFFSETS.calibMinutesSinceSave],
+    calibStatus: { accel: calibStatus & 3, gyro: (calibStatus >> 2) & 3, mag: (calibStatus >> 4) & 3 },
+  };
+}
+
+/**
+ * Compass heading of the hub's +Y axis (the mounted rover's forward), the one
+ * heading every view shows. Null when there is none to show: the rotation
+ * vector is unusable, the forward axis is vertical, or the hub does not vouch
+ * for the heading. That is the case while the magnetometer is uncalibrated
+ * (the quaternion then carries no heading information) and while the hub has
+ * reported no accuracy at all (register 0 or not a number): a bearing nobody
+ * can qualify is not shown, which is also how the firmware reads the register
+ * when it decides whether a calibration is worth saving. Bosch documents the
+ * Rotation Vector's accuracy as 0.0873 (5°, best) to π (none); 0 is outside
+ * that range and is what the Game Rotation Vector, which has no heading,
+ * reports (BST-BHY2XX_BHI3XX-AN002 rev 1.5, §3.1 "Quaternion+" and §3.14–3.15).
+ */
+export function forwardHeadingDeg(sample: ArduinoNiclaSenseMeSample): number | null {
+  const accuracy = headingAccuracy(sample.quatAccuracyRad);
+  if (!sample.quat || !accuracy || accuracy.uncalibrated) {
+    return null;
+  }
+  return compassHeadingDeg(withMount(sample.quat, HUB_TO_ROVER));
+}
+
+export function isFresh(sample: ArduinoNiclaSenseMeSample, flag: number): boolean {
+  return (sample.freshFlags & flag) !== 0;
 }
 
 export function vecMagnitude(v: Vec3 | null): number | null {
@@ -127,52 +334,4 @@ const CARDINALS = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'] as const;
 export function cardinalName(headingDeg: number): string {
   const normalized = ((headingDeg % 360) + 360) % 360;
   return CARDINALS[Math.round(normalized / 45) % 8];
-}
-
-/**
- * Rotation-vector quaternion, or null when the registers are unpopulated
- * (zeros before the first BHY2 sample / on a failed subscription) or the
- * buffer is short. Gate any orientation-derived display on this.
- */
-export function readQuat(bytes: Uint8Array): ArduinoNiclaSenseMeQuat | null {
-  const w = f32le(bytes, ME_OFFSETS.quat);
-  const x = f32le(bytes, ME_OFFSETS.quat + 4);
-  const y = f32le(bytes, ME_OFFSETS.quat + 8);
-  const z = f32le(bytes, ME_OFFSETS.quat + 12);
-  if (w === null || x === null || y === null || z === null) {
-    return null;
-  }
-  // Unpopulated registers read as zeros; a real rotation vector is ~unit.
-  const norm = Math.hypot(w, x, y, z);
-  if (!Number.isFinite(norm) || norm < 0.5) {
-    return null;
-  }
-  return { w, x, y, z };
-}
-
-export function readArduinoNiclaSenseMeMainValues(
-  data: Uint8Array | null | undefined,
-): ArduinoNiclaSenseMeMainValues {
-  const bytes = data instanceof Uint8Array ? data : new Uint8Array();
-  // Euler is firmware-derived from the rotation vector; without a valid
-  // quaternion the euler registers hold zeros, not measurements.
-  const quat = readQuat(bytes);
-  return {
-    accelG: vec3(bytes, ME_OFFSETS.accel),
-    linearAccelG: quat ? vec3(bytes, ME_OFFSETS.linAccel) : null,
-    gyroDps: vec3(bytes, ME_OFFSETS.gyro),
-    magUt: vec3(bytes, ME_OFFSETS.mag),
-    quat,
-    headingDeg: quat ? f32le(bytes, ME_OFFSETS.euler) : null,
-    pitchDeg: quat ? f32le(bytes, ME_OFFSETS.euler + 4) : null,
-    rollDeg: quat ? f32le(bytes, ME_OFFSETS.euler + 8) : null,
-    temperatureC: f32le(bytes, ME_OFFSETS.temperature),
-    humidityPercent: f32le(bytes, ME_OFFSETS.humidity),
-    pressureHpa: f32le(bytes, ME_OFFSETS.pressure),
-    iaq: f32le(bytes, ME_OFFSETS.iaq),
-    eco2Ppm: f32le(bytes, ME_OFFSETS.eco2),
-    stepCount: u32le(bytes, ME_OFFSETS.stepCount),
-    statusByte: u8(bytes, ME_OFFSETS.status),
-    sampleCounter: u8(bytes, ME_OFFSETS.sampleCounter),
-  };
 }

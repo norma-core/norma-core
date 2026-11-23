@@ -18,7 +18,10 @@ use tokio_serial::{SerialPort, SerialPortBuilderExt, SerialStream};
 
 /// Queue name prefix; each board gets `<prefix>/<serial-hex>/rx`.
 pub const RX_QUEUE_PREFIX: &str = "arduino-nicla-sense-me";
-pub const RAW_REGISTER_LENGTH: usize = 0xA8;
+/// Length of the firmware's register image (revision 6). The layout is the
+/// contract with the firmware and the viewer; frames of any other length are
+/// rejected as malformed, there is no legacy path.
+pub const RAW_REGISTER_LENGTH: usize = 0x7C;
 
 const SOFTWARE_REVISION_REGISTER: usize = 0x0C;
 const PRODUCT_ID_REGISTER: usize = 0x0D;
@@ -35,11 +38,14 @@ pub const SERIAL_CMD_STREAM_START: u8 = 0x02;
 pub const SERIAL_CMD_STREAM_STOP: u8 = 0x03;
 const SERIAL_MAGIC: [u8; 2] = [0xA5, 0x5A];
 const SERIAL_FRAME_LEN: usize = 3 + RAW_REGISTER_LENGTH + 1;
+/// Rejected frame starts in a row that must announce the same foreign image
+/// length before the board is taken to run another firmware revision.
+const FOREIGN_FRAME_STARTS: u8 = 3;
 /// Read size for the frame scanner: several frames of headroom so a
 /// backlog drains in a few syscalls rather than one per byte.
 const SERIAL_READ_CHUNK: usize = 4 * SERIAL_FRAME_LEN;
 /// Real UART baud of the SAMD11 usb-bridge link; must match the firmware's
-/// Serial.begin. 115200 capped polling at ~50 Hz (~15 ms per 172-byte dump).
+/// Serial.begin. 115200 caps a 128-byte frame at ~11 ms (under 100 Hz).
 pub const SERIAL_BAUD: u32 = 921_600;
 const SERIAL_RESPONSE_TIMEOUT: Duration = Duration::from_millis(500);
 /// Re-send the stream keepalive well within the firmware's 2s expiry.
@@ -214,6 +220,13 @@ pub async fn prepare_port(port: &mut SerialStream) -> Result<(), String> {
 pub struct FrameScanner {
     pending: Vec<u8>,
     bad_frames: u32,
+    /// Image length the board keeps announcing in rejected frame starts, when
+    /// it is not the one this driver reads. Cleared by every valid frame.
+    foreign_length: Option<u8>,
+    /// The foreign length announced by the latest rejected frame starts and
+    /// how many in a row announced it. A single one proves nothing: the magic
+    /// can occur by chance inside a corrupted frame.
+    foreign_candidate: (u8, u8),
 }
 
 impl FrameScanner {
@@ -233,9 +246,20 @@ impl FrameScanner {
             match parse_dump_frame(&self.pending[start..start + SERIAL_FRAME_LEN]) {
                 Ok(payload) => {
                     self.pending.drain(..start + SERIAL_FRAME_LEN);
+                    self.foreign_length = None;
+                    self.foreign_candidate = (0, 0);
                     return Some(payload);
                 }
                 Err(_) => {
+                    let announced = self.pending[start + SERIAL_MAGIC.len()];
+                    if announced as usize != RAW_REGISTER_LENGTH {
+                        let (length, starts) = self.foreign_candidate;
+                        let starts = if length == announced { starts.saturating_add(1) } else { 1 };
+                        self.foreign_candidate = (announced, starts);
+                        if starts >= FOREIGN_FRAME_STARTS {
+                            self.foreign_length = Some(announced);
+                        }
+                    }
                     self.bad_frames += 1;
                     search_from = start + 1;
                 }
@@ -252,6 +276,19 @@ impl FrameScanner {
     pub fn take_bad_frames(&mut self) -> u32 {
         std::mem::take(&mut self.bad_frames)
     }
+
+    /// Why no frame is arriving, when the stream itself says so: the board
+    /// sends frames, but of another register image length, which means
+    /// another firmware revision. None when nothing points that way.
+    pub fn foreign_firmware_hint(&self) -> Option<String> {
+        self.foreign_length.map(|length| {
+            format!(
+                "the board sends {length}-byte register images, this driver reads \
+                 {RAW_REGISTER_LENGTH}-byte ones: it runs another firmware revision and \
+                 must be reflashed (see device-support/arduino-nicla-sense-me)"
+            )
+        })
+    }
 }
 
 fn find_magic(bytes: &[u8]) -> Option<usize> {
@@ -265,7 +302,7 @@ pub async fn read_frame(
     scanner: &mut FrameScanner,
     timeout: Duration,
 ) -> Result<Bytes, String> {
-    tokio::time::timeout(timeout, async {
+    let outcome = tokio::time::timeout(timeout, async {
         loop {
             if let Some(payload) = scanner.next_frame() {
                 return Ok(payload);
@@ -281,8 +318,14 @@ pub async fn read_frame(
             scanner.push(&chunk[..read]);
         }
     })
-    .await
-    .map_err(|_| format!("no valid frame within {timeout:?}"))?
+    .await;
+    match outcome {
+        Ok(result) => result,
+        Err(_) => Err(match scanner.foreign_firmware_hint() {
+            Some(hint) => format!("no valid frame within {timeout:?}: {hint}"),
+            None => format!("no valid frame within {timeout:?}"),
+        }),
+    }
 }
 
 /// Per-board queue, established once the first frame reveals the serial.
@@ -639,6 +682,49 @@ mod tests {
     #[test]
     fn parse_device_info_rejects_short_buffer() {
         assert!(parse_device_info(&[0u8; 0x10]).is_none());
+    }
+
+    #[test]
+    fn register_image_is_124_bytes() {
+        // Firmware revision 6 publishes a 124-byte image; there is no legacy
+        // path, so a rev-5 (168-byte) frame must be rejected as malformed.
+        assert_eq!(RAW_REGISTER_LENGTH, 0x7C);
+        let legacy_payload = vec![0u8; 0xA8];
+        let frame = build_frame(&legacy_payload);
+        assert!(parse_dump_frame(&frame).is_err());
+        let mut scanner = FrameScanner::default();
+        scanner.push(&frame);
+        assert_eq!(scanner.next_frame(), None);
+        // One rejected frame start proves nothing (the magic can occur by
+        // chance in a corrupted frame); a board that keeps announcing the
+        // same foreign length does.
+        assert_eq!(scanner.foreign_firmware_hint(), None);
+        for _ in 1..FOREIGN_FRAME_STARTS {
+            scanner.push(&frame);
+            assert_eq!(scanner.next_frame(), None);
+        }
+        // The operator is told why nothing arrives, until a valid frame does.
+        let hint = scanner.foreign_firmware_hint().expect("hint for a rev-5 stream");
+        assert!(hint.contains("168-byte"), "{hint}");
+        scanner.push(&build_frame(&vec![0u8; RAW_REGISTER_LENGTH]));
+        assert!(scanner.next_frame().is_some());
+        assert_eq!(scanner.foreign_firmware_hint(), None);
+    }
+
+    #[test]
+    fn chance_magic_in_a_corrupted_frame_is_not_a_foreign_firmware() {
+        // A current-revision frame whose payload happens to hold the magic
+        // followed by some other byte, and whose CRC is then corrupted.
+        let mut payload = vec![0u8; RAW_REGISTER_LENGTH];
+        payload[40..43].copy_from_slice(&[SERIAL_MAGIC[0], SERIAL_MAGIC[1], 0x3F]);
+        let mut frame = build_frame(&payload);
+        *frame.last_mut().unwrap() ^= 0xFF;
+        let mut scanner = FrameScanner::default();
+        scanner.push(&frame);
+        scanner.push(&[0u8; SERIAL_FRAME_LEN]);
+        assert_eq!(scanner.next_frame(), None);
+        assert!(scanner.take_bad_frames() >= 2);
+        assert_eq!(scanner.foreign_firmware_hint(), None);
     }
 
     #[test]
