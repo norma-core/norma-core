@@ -52,8 +52,16 @@ impl<K: StationEngine> StateTracker<K> {
             log::error!("OV5647 failed to start queue {}: {}", self.queue_id, e);
             return;
         }
+        self.register();
+    }
+
+    pub(crate) fn register(&self) {
         self.engine
             .register_queue(&self.queue_id, QueueDataType::QdtUsbVideoFrames, vec![]);
+    }
+
+    pub(crate) fn unregister(&self) {
+        self.engine.unregister_queue(&self.queue_id);
     }
 
     pub(crate) fn enqueue_frame(

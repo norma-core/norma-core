@@ -414,6 +414,12 @@ impl station_iface::StationEngine for Engine {
         }
     }
 
+    fn unregister_queue(&self, queue_id: &normfs::QueueId) {
+        if let Some(inference) = self.inference.lock().as_ref() {
+            inference.unregister_queue(queue_id);
+        }
+    }
+
     fn snapshot_gate(&self) -> station_iface::SnapshotGate {
         self.snapshot_gate.clone()
     }

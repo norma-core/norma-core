@@ -109,6 +109,7 @@ async fn watch_camera<K: StationEngine + Send + Sync + 'static>(
     stopped: Arc<AtomicBool>,
 ) {
     let poll_interval = Duration::from_secs(1);
+    let mut registered = true;
 
     loop {
         if stopped.load(Ordering::Acquire) {
@@ -120,6 +121,10 @@ async fn watch_camera<K: StationEngine + Send + Sync + 'static>(
             Ok(camera) => {
                 let camera_id = camera.id().await;
                 log::info!("OV5647 camera connected (id={})", camera_id);
+                if !registered {
+                    tracker.register();
+                    registered = true;
+                }
 
                 let camera_info = Camera {
                     manufacturer: "Raspberry Pi".to_string(),
@@ -144,6 +149,9 @@ async fn watch_camera<K: StationEngine + Send + Sync + 'static>(
                 tracker
                     .enqueue_device_disconnected(&session_camera_info)
                     .await;
+                // The queue stays open, but its last entry is the disconnect, not a frame.
+                tracker.unregister();
+                registered = false;
 
                 log::info!("OV5647 camera disconnected (id={})", camera_id);
             }

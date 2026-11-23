@@ -155,6 +155,7 @@ impl<T: StationEngine> StateTracker<T> {
     }
 
     pub async fn handle_queue_end(&self, queue_id: &normfs::QueueId) {
+        self.station_engine.unregister_queue(queue_id);
         if let Err(e) = self.normfs.close_queue(queue_id).await {
             error!("Failed to close USB video queue {}: {}", queue_id, e);
         }
