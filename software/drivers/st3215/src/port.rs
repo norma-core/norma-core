@@ -20,8 +20,16 @@ use tokio::sync::mpsc;
 use tokio_serial::SerialPortBuilderExt;
 use tokio_serial::SerialPortInfo;
 
+// A motor answers in under 2 ms over USB serial on Linux and in 21-23 ms on macOS.
+#[cfg(not(target_os = "macos"))]
 pub const ST3215_TIMEOUT_MS: u64 = 20;
-pub const ST3215_COMMAND_TIMEOUT_MS: u64 = 20;
+#[cfg(target_os = "macos")]
+pub const ST3215_TIMEOUT_MS: u64 = 50;
+pub const ST3215_COMMAND_TIMEOUT_MS: u64 = ST3215_TIMEOUT_MS;
+#[cfg(not(target_os = "macos"))]
+const ST3215_PING_TIMEOUT_MS: u64 = 10;
+#[cfg(target_os = "macos")]
+const ST3215_PING_TIMEOUT_MS: u64 = 50;
 pub const ST3215_SLOW_READ_WARN_MS: u128 = 10;
 
 const NO_COMMAND_SEARCH_DELAY_MS: u64 = 500;
@@ -472,7 +480,7 @@ impl St3215Port {
             }
 
             let ping_req = protocol::ST3215Request::Ping { motor: motor_id };
-            match ping_req.async_readwrite(port, 10).await {
+            match ping_req.async_readwrite(port, ST3215_PING_TIMEOUT_MS).await {
                 Ok(_) => {
                     found_motors.push(motor_id);
                 }
@@ -830,6 +838,7 @@ impl St3215Port {
                     }
                     Err(e) => {
                         warn!("Failed to reset calibration for motor {}: {}", motor_id, e);
+                        Self::drain_serial(port).await;
                         if motor_id <= 6 {
                             all_ok = false;
                         }
@@ -870,6 +879,7 @@ impl St3215Port {
                 let reset_req = protocol::ST3215Request::Reset { motor: motor_id };
                 if let Err(e) = reset_req.async_readwrite(port, ST3215_COMMAND_TIMEOUT_MS).await {
                     warn!("Failed to send reset to motor {}: {}", motor_id, e);
+                    Self::drain_serial(port).await;
                 } else {
                     info!("FreezeCalibration: Hardware reset completed for motor {}", motor_id);
                 }
@@ -887,6 +897,7 @@ impl St3215Port {
                     }
                     Err(e) => {
                         warn!("Failed to freeze calibration for motor {}: {}", motor_id, e);
+                        Self::drain_serial(port).await;
                         all_ok = false;
                     }
                 }
