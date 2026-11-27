@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NormaCore — Interactive Repository Guide</title>
+<style>
+  :root{
+    --bg:#0d1117; --panel:#161b22; --panel2:#1c2330; --border:#2d3646;
+    --text:#d7dee8; --dim:#8b98a9; --accent:#4cc2ff; --green:#3fb950;
+    --yellow:#d29922; --red:#f85149; --cyan:#39c5cf; --purple:#bc8cff;
+    --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--text);font:15px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+  a{color:var(--accent);text-decoration:none}
+  a:hover{text-decoration:underline}
+  code{font-family:var(--mono);font-size:.86em;background:#21283a;padding:1px 5px;border-radius:4px;color:#a8d1ff}
+  /* layout */
+  #layout{display:flex;min-height:100vh}
+  nav{width:250px;flex-shrink:0;position:sticky;top:0;height:100vh;overflow-y:auto;background:var(--panel);border-right:1px solid var(--border);padding:18px 0}
+  nav .brand{padding:0 18px 12px;font-weight:700;font-size:16px;color:#fff}
+  nav .brand small{display:block;color:var(--dim);font-weight:400;font-size:11px;margin-top:2px}
+  nav a{display:block;padding:6px 18px;color:var(--dim);font-size:13.5px;border-left:3px solid transparent}
+  nav a:hover{color:var(--text);text-decoration:none;background:#1a2130}
+  nav a.active{color:var(--accent);border-left-color:var(--accent);background:#1a2130}
+  nav .navgroup{padding:12px 18px 4px;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:#5b6779}
+  main{flex:1;min-width:0;padding:34px 44px 90px;max-width:1080px}
+  section{margin-bottom:56px;scroll-margin-top:20px}
+  h1{font-size:27px;color:#fff;margin:0 0 6px}
+  h2{font-size:21px;color:#fff;border-bottom:1px solid var(--border);padding-bottom:8px;margin:0 0 16px}
+  h3{font-size:16.5px;color:var(--accent);margin:26px 0 8px}
+  h4{font-size:14.5px;color:#fff;margin:18px 0 6px}
+  p{margin:8px 0}
+  ul,ol{margin:8px 0;padding-left:22px}
+  li{margin:4px 0}
+  .sub{color:var(--dim);font-size:14px}
+  /* badges & cards */
+  .badge{display:inline-block;font-size:10.5px;font-weight:700;letter-spacing:.06em;padding:2px 8px;border-radius:10px;vertical-align:middle}
+  .b-green{background:#12351c;color:var(--green)} .b-yellow{background:#3a2c0a;color:var(--yellow)}
+  .b-red{background:#3d1512;color:var(--red)} .b-cyan{background:#0e3236;color:var(--cyan)}
+  .b-purple{background:#2b1f3d;color:var(--purple)} .b-dim{background:#232b3a;color:var(--dim)}
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin:10px 0}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:12px}
+  .grid .card{margin:0}
+  .card h4{margin:0 0 6px}
+  .card .path{font-family:var(--mono);font-size:11.5px;color:var(--purple);word-break:break-all}
+  .card p{font-size:13.5px;color:var(--text);margin:6px 0}
+  .card .try{font-size:12px;color:var(--dim)}
+  /* commands */
+  .cmd{position:relative;background:#0a0e14;border:1px solid var(--border);border-radius:8px;padding:11px 44px 11px 14px;font-family:var(--mono);font-size:12.8px;color:#9fd0a8;overflow-x:auto;white-space:pre;margin:8px 0;line-height:1.55}
+  .cmd .copy{position:absolute;top:7px;right:7px;background:#21283a;border:1px solid var(--border);color:var(--dim);border-radius:6px;font-size:11px;padding:3px 9px;cursor:pointer;font-family:inherit}
+  .cmd .copy:hover{color:var(--accent);border-color:var(--accent)}
+  .cmd .cmt{color:#5b6779}
+  /* tables */
+  table{border-collapse:collapse;width:100%;margin:12px 0;font-size:13.5px}
+  th{background:var(--panel2);color:#fff;text-align:left;padding:8px 10px;border:1px solid var(--border);font-size:12.5px}
+  td{padding:7px 10px;border:1px solid var(--border);vertical-align:top}
+  tr:nth-child(even) td{background:#121722}
+  td code{white-space:nowrap}
+  /* callouts */
+  .note,.warn,.danger,.ok{border-radius:8px;padding:11px 14px;margin:12px 0;font-size:13.8px;border:1px solid}
+  .note{background:#10202e;border-color:#1f4560;color:#bfe3ff}
+  .warn{background:#2b220c;border-color:#5c470f;color:#f0d48a}
+  .danger{background:#2d1210;border-color:#6e231d;color:#ffb3ad}
+  .ok{background:#0f2416;border-color:#1f5c2d;color:#a7e8b4}
+  /* tabs */
+  .tabs{display:flex;gap:6px;flex-wrap:wrap;margin:12px 0}
+  .tabs button{background:var(--panel2);border:1px solid var(--border);color:var(--dim);padding:7px 15px;border-radius:8px;cursor:pointer;font-size:13px;font-family:inherit}
+  .tabs button.active{background:#123047;border-color:var(--accent);color:var(--accent)}
+  .tabpane{display:none}.tabpane.active{display:block}
+  /* search & chips */
+  .search{width:100%;background:#0a0e14;border:1px solid var(--border);color:var(--text);border-radius:8px;padding:10px 14px;font-size:14px;margin:10px 0;font-family:inherit}
+  .search:focus{outline:none;border-color:var(--accent)}
+  .chips{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
+  .chips button{background:var(--panel2);border:1px solid var(--border);color:var(--dim);padding:4px 12px;border-radius:14px;cursor:pointer;font-size:12px;font-family:inherit}
+  .chips button.active{color:#fff;border-color:currentColor}
+  details{background:var(--panel);border:1px solid var(--border);border-radius:8px;margin:8px 0;padding:0}
+  details summary{cursor:pointer;padding:11px 14px;font-weight:600;color:#fff;font-size:14px;list-style:none}
+  details summary::before{content:"▸ ";color:var(--accent)}
+  details[open] summary::before{content:"▾ "}
+  details .body{padding:2px 16px 14px;border-top:1px solid var(--border)}
+  /* architecture diagram */
+  .arch{display:flex;flex-direction:column;gap:8px;margin:16px 0}
+  .arch .layer{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:10px 14px}
+  .arch .layer .lt{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);margin-bottom:6px}
+  .arch .boxes{display:flex;gap:8px;flex-wrap:wrap}
+  .arch .box{background:var(--panel2);border:1px solid var(--border);border-radius:7px;padding:6px 11px;font-size:12.5px;font-family:var(--mono)}
+  .arch .box.hl{border-color:var(--accent);color:var(--accent)}
+  .arch .arrow{text-align:center;color:var(--dim);font-size:15px;line-height:1}
+  .kbd{background:#21283a;border:1px solid #3a4557;border-bottom-width:2px;border-radius:5px;padding:1px 7px;font-family:var(--mono);font-size:12px;color:#fff}
+  .stepnum{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;background:var(--accent);color:#04121d;font-weight:700;font-size:13px;margin-right:8px;flex-shrink:0}
+  .flowstep{display:flex;align-items:flex-start;margin:10px 0}
+  .hidden{display:none!important}
+  .count{color:var(--dim);font-size:12.5px;margin-left:8px}
+  @media(max-width:900px){nav{display:none}main{padding:22px}}
+</style>
+</head>
+<body>
+<div id="layout">
+<nav>
+  <div class="brand">NormaCore<small>Interactive repository guide</small></div>
+  <div class="navgroup">Orient</div>
+  <a href="#start">1. Start here</a>
+  <a href="#arch">2. Architecture &amp; repo map</a>
+  <div class="navgroup">Run</div>
+  <a href="#station">3. Station runtime</a>
+  <a href="#drivers">4. Driver catalog</a>
+  <a href="#normfs">5. NormFS &amp; Gremlin SDK</a>
+  <div class="navgroup">Build</div>
+  <a href="#hardware">6. Hardware projects</a>
+  <a href="#sim">7. Simulation &amp; no-hardware demos</a>
+  <a href="#examples">8. Examples &amp; AI workflows</a>
+  <div class="navgroup">Master</div>
+  <a href="#components">9. Component explorer</a>
+  <a href="#build">10. Build &amp; test</a>
+  <a href="#docs">11. Documentation map</a>
+</nav>
+<main>
+
+<!-- ═══════════════════ 1. START ═══════════════════ -->
+<section id="start">
+<h1>NormaCore — Interactive Guide</h1>
+<p class="sub">The unified toolkit for physical system development &amp; operations: what is in this repository, how to build and run it, and how to explore it without any hardware.</p>
+
+<h3>What is this repository?</h3>
+<p><b>NormaCore</b> combines a unified API, high-performance data pipelines, and visual tooling to manage physical systems as one ecosystem. The pillars:</p>
+<ul>
+  <li><b>Station</b> (<code>software/station/</code>) — a real-time robotics platform in a single Rust binary: device drivers, the NormFS data layer, an inference pipeline, and an embedded web UI.</li>
+  <li><b>Hardware</b> (<code>hardware/</code>) — fully 3D-printable machines: the <b>ElRobot</b> 7+1&nbsp;DoF arm (~$220), a <b>parallel-jaw gripper</b>, and a 5&nbsp;DoF robotic <b>desk lamp</b> with its own web UI.</li>
+  <li><b>Gremlin</b> (<code>shared/gremlin_go/</code>, <code>shared/gremlin_py/</code>) — high-performance pure-Go / pure-Python protobuf implementations and code generators used across the stack.</li>
+  <li><b>SmolVLA</b> (<code>software/ai/smolvla_py/</code>) — fine-tune and deploy a vision-language-action policy on the SO-101 arm.</li>
+</ul>
+
+<h3>Choose your path</h3>
+<div class="grid">
+  <div class="card"><h4>🖥️ No hardware</h4>
+    <p>Station ships a <b>built-in simulator</b> for the DOGZILLA-Lite robot dog (<code>mode: simulation</code> is the default), the lamp has a browser-based URDF simulation, and the web viewer renders ElRobot / SO-101 arms in 3D from URDF.</p>
+    <p class="try">→ <a href="#sim">Simulation &amp; no-hardware demos</a>.</p></div>
+  <div class="card"><h4>🦾 Building the hardware</h4>
+    <p>Print files (.3mf / STL / STEP), assembly manuals, BOMs and firmware for the arm, gripper and lamp — plus the URDF models used by the viewer.</p>
+    <p class="try">→ <a href="#hardware">Hardware projects</a>.</p></div>
+  <div class="card"><h4>🧭 Exploring the code</h4>
+    <p>The <a href="#arch">architecture map</a> for the mental model, then the searchable <a href="#components">component explorer</a> and <a href="#drivers">driver catalog</a>.</p>
+    <p class="try">→ <a href="#station">Station runtime</a> to run it.</p></div>
+  <div class="card"><h4>🤖 Training a policy</h4>
+    <p>Record episodes with viewer Tags, export parquet datasets, fine-tune SmolVLA, deploy on the arm.</p>
+    <p class="try">→ <a href="#examples">Examples &amp; AI workflows</a>.</p></div>
+</div>
+
+<h3>Quickstart — build &amp; run Station</h3>
+<div class="cmd"><span class="cmt"># builds the web viewer, then the release binary (needs Rust, Node ≥22)</span>
+make -C software/station/bin/station build
+<span class="cmt"># run: NormFS TCP on :8888, web viewer on :8889</span>
+./target/release/station --tcp --web</div>
+<p class="sub">Open <code>http://localhost:8889</code>. With the bundled <code>station.yaml</code>, the DOGZILLA-Lite driver starts in <b>simulation mode</b> and streams telemetry immediately — no hardware required. Drivers for physical devices (servo bus, cameras, VESC) log warnings until the devices are plugged in. On Linux, add yourself to the dialout group for USB serial access: <code>sudo usermod -a -G dialout $USER</code>.</p>
+<div class="note">This guide is grounded in the repository source (verified 2026-11-27). Where the docs and the code disagree, the code wins — and the discrepancy is flagged.</div>
+</section>
+
+<!-- ═══════════════════ 2. ARCH ═══════════════════ -->
+<section id="arch">
+<h2>2. Architecture &amp; repository map</h2>
+<h3>The stack, top to bottom</h3>
+<div class="arch">
+  <div class="layer"><div class="lt">Clients &amp; tools</div><div class="boxes">
+    <span class="box hl">station-viewer (web UI, embedded)</span><span class="box">station-app (Electron shell)</span><span class="box">Go / Python station clients</span><span class="box">dataset-generator · dataset-mp4</span><span class="box">examples (teleop, arm2dog, IK API…)</span></div></div>
+  <div class="arrow">↓ NormFS protocol — TCP :8888 · WebSocket :8889</div>
+  <div class="layer"><div class="lt">Station runtime — single Rust binary (software/station/bin/station)</div><div class="boxes">
+    <span class="box">engine + queue registry</span><span class="box">NormFS queues (disk/WAL/memory, zstd, AES)</span><span class="box">inference pipeline (normvla shm)</span><span class="box">embedded web server + viewer assets</span></div></div>
+  <div class="arrow">↓</div>
+  <div class="layer"><div class="lt">Drivers (software/drivers — Rust crates)</div><div class="boxes">
+    <span class="box">st3215 servo bus</span><span class="box">usbvideo / ov5647</span><span class="box hl">yahboom-dogzilla-lite (sim!)</span><span class="box">vesc-trampa</span><span class="box">hikmicro-thermal</span><span class="box">ina226 · nicla · airgradient · victron</span><span class="box">sysinfod · dmesg</span><span class="box">motors-mirroring · inferences · pwm-output</span></div></div>
+  <div class="arrow">↓ USB / UART / I2C</div>
+  <div class="layer"><div class="lt">Hardware</div><div class="boxes">
+    <span class="box">ElRobot / SO-101 (ST3215 bus servos)</span><span class="box">USB + Pi cameras</span><span class="box">DOGZILLA-Lite dog</span><span class="box">lamp (ESP32-S3)</span><span class="box">solar / air / power sensors</span></div></div>
+</div>
+<p class="sub">Wire schemas live in <code>protobufs/</code> (NormFS transport, station commands, 16 driver schemas). Codegen: Go via <code>gremlinc</code>, Python via <code>gremlin.py</code> (root <code>make protobuf</code>), Rust via <code>prost-build</code> per crate, JavaScript via protobufjs in the viewer.</p>
+
+<h3>Repository map</h3>
+<table>
+<tr><th>Path</th><th>What lives there</th></tr>
+<tr><td><code>software/station/</code></td><td>The Station runtime (<code>bin/station</code>), dataset tools (<code>bin/dataset-generator</code>, <code>bin/dataset-mp4</code>), clients (<code>clients/station-viewer</code>, <code>clients/station-app</code>), Go/Python client libraries (<code>shared/station</code>, <code>shared/station_py</code>), and runnable <code>examples/</code>. <a href="#station">§3</a></td></tr>
+<tr><td><code>software/drivers/</code></td><td>16 device-driver crates — servos, cameras, sensors, system telemetry, inference. <a href="#drivers">Catalog →</a></td></tr>
+<tr><td><code>software/ai/smolvla_py/</code></td><td>SmolVLA fine-tuning + policy deployment for the SO-101. <a href="#examples">§8</a></td></tr>
+<tr><td><code>software/arduino-portenta/</code></td><td>Plain-C daemons for Portenta X8: cellular supervisor + network watchdog. <a href="#components">Explorer →</a></td></tr>
+<tr><td><code>hardware/elrobot/</code></td><td>7+1 DoF 3D-printed arm: print files, manuals, URDF + STL simulation models. <a href="#hardware">§6</a></td></tr>
+<tr><td><code>hardware/pgripper/</code></td><td>Parallel-jaw gripper (SO-101 &amp; ElRobot compatible).</td></tr>
+<tr><td><code>hardware/lamp/</code></td><td>5 DoF robotic desk lamp: ESP32-S3 firmware, web UI, MCP endpoint, browser simulation.</td></tr>
+<tr><td><code>shared/gremlin_go/</code> · <code>shared/gremlin_py/</code></td><td>Gremlin protobuf SDKs + generators. <a href="#normfs">§5</a></td></tr>
+<tr><td><code>shared/</code> (other)</td><td><code>console-tool</code> (Go logging), <code>i2c-async</code> (Rust async I2C), <code>libcamera</code> + <code>libcamera-sys-static</code> (Pi camera cross-build), <code>ulimits</code> (fd rlimits).</td></tr>
+<tr><td><code>protobufs/</code></td><td>All wire schemas: <code>normfs/</code>, <code>station/</code>, <code>drivers/</code>.</td></tr>
+<tr><td><code>device-support/</code></td><td>Device firmware &amp; OS images: AirGradient ESPHome, Nicla Sense ME firmware, Portenta X8 Yocto layer, <code>image-maker</code> golden SD images.</td></tr>
+<tr><td><code>docs/</code></td><td>Dataset recording/export guide (<code>docs/datasets/</code>). This guide lives here too.</td></tr>
+<tr><td><code>Makefile</code> · <code>Cargo.toml</code> · <code>go.work</code></td><td>Polyglot build: Rust workspace (19 crates), Go workspace, protobuf codegen. <a href="#build">§10</a></td></tr>
+</table>
+</section>
+<!-- ═══════════════════ 3. STATION ═══════════════════ -->
+<section id="station">
+<h2>3. Station runtime</h2>
+<p>Station is one Rust binary that owns the devices, stores every measurement in <b>NormFS queues</b>, runs the inference pipeline, and serves the web viewer. Source: <code>software/station/bin/station/</code>.</p>
+
+<h3>Build &amp; run</h3>
+<div class="cmd"><span class="cmt"># native build: viewer (npm ci + build) then cargo build --release -p station</span>
+make -C software/station/bin/station build
+<span class="cmt"># run with defaults: config station.yaml, data in ./station_data</span>
+./target/release/station --tcp --web
+<span class="cmt"># explicit form</span>
+./target/release/station --config station.yaml --normfs-base-folder ./station_data \
+  --tcp 0.0.0.0:8888 --web 0.0.0.0:8889</div>
+
+<h3>CLI flags (from src/main.rs)</h3>
+<table>
+<tr><th>Flag</th><th>Default</th><th>Effect</th></tr>
+<tr><td><code>-c, --config</code></td><td><code>station.yaml</code></td><td>Driver + inference config; a default file is written on first run.</td></tr>
+<tr><td><code>-t, --tcp [ADDR]</code></td><td><code>0.0.0.0:8888</code></td><td>NormFS TCP endpoint for clients.</td></tr>
+<tr><td><code>--web [ADDR]</code></td><td><code>0.0.0.0:8889</code></td><td>Web viewer + NormFS-over-WebSocket endpoint.</td></tr>
+<tr><td><code>--normfs-base-folder</code></td><td><code>./station_data</code></td><td>Where queue pages live on disk.</td></tr>
+<tr><td><code>--max-queue-disk-size</code></td><td><code>2G</code></td><td>Per-queue disk cap.</td></tr>
+<tr><td><code>--normfs-file-size</code></td><td><code>4M</code></td><td>Page size; must be ≤ ⅓ of the queue disk cap.</td></tr>
+<tr><td><code>--normfs-persistence-mode</code></td><td><code>durable</code></td><td><code>durable</code> (WAL + store), <code>cloud-only</code> (S3 upload every 60 s), <code>memory-only</code> (RAM except <code>normfs/system</code>).</td></tr>
+<tr><td><code>--max-memory-usage</code></td><td><code>256M</code></td><td>Memory budget.</td></tr>
+<tr><td><code>--static-path DIR</code></td><td>embedded</td><td>Override the embedded viewer / URDF assets.</td></tr>
+</table>
+<div class="note">The README's <code>--help</code> block is stale — it omits <code>--normfs-file-size</code>, <code>--normfs-persistence-mode</code> and <code>--static-path</code>, which exist in <code>src/main.rs</code>. Trust the table above (or <code>station --help</code> on your build).</div>
+
+<h3>Configuration — the bundled station.yaml</h3>
+<div class="cmd">drivers:
+  st3215:
+    enabled: true
+    current-threshold: 100
+    deadband: 20
+  vesc-trampa:
+    enabled: true
+    port-baud-rate: 115200
+  system-info: true
+  usb-video:
+    enabled: true
+    resolution: auto      <span class="cmt"># "auto" or "&lt;width&gt;x&lt;height&gt;"</span>
+    resize_target: 224    <span class="cmt"># resize shortest dimension of stored frames</span>
+    frame-skip: 0
+    codec: vp8            <span class="cmt"># or "jpeg"</span>
+  hikmicro-thermal:
+    enabled: false
+    frame-timeout: 5s
+    frame-skip: 0
+  yahboom-dogzilla-lite:
+    enabled: true
+    mode: simulation      <span class="cmt"># the built-in simulator — see §7</span>
+  arduino-nicla-sense-me:
+    enabled: true         <span class="cmt"># autodetects USB 2341:0060, ~100 Hz/board</span>
+inference:
+- queue-id: inference/normvla
+  shm: /tmp/normvla
+  shm-size-mb: 12
+  format: normvla
+  st3215-bus: auto
+  update-interval: 100ms</div>
+<p class="sub">Schema: <code>software/station/shared/station-iface/src/config.rs</code>. Also supported: per-motor <code>motor-current-thresholds</code>, <code>keyframe-interval</code> for VP8 (capped 5 s), and a <code>cloud-offload:</code> S3 section (bucket/region/keys/endpoint/exclude, with <code>AWS_*</code> env fallbacks). Cargo features gate optional drivers: <code>default = ["arduino", "ina226"]</code>, plus <code>ov5647</code> and <code>yahboom-dogzilla-lite</code>.</p>
+
+<h3>Queues &amp; the engine</h3>
+<ul>
+  <li>Every driver publishes into named queues — e.g. <code>st3215/rx</code> (telemetry), <code>st3215/tx</code>, <code>usbvideo/&lt;md5(unique_id)&gt;</code>, <code>system/rx</code>. Commands go into the <code>commands</code> queue.</li>
+  <li>Per-queue storage policies are set in <code>queue_settings()</code> (<code>src/main.rs</code>): 4 MiB pages for active streams vs 32 KiB for passive ones, zstd compression, AES encryption, fsync per rule; video/thermal skip the WAL.</li>
+  <li>The <b>engine</b> (<code>StationEngine</code> trait in <code>station-iface</code>) registers/unregisters queues and gates snapshots; the inference module maintains <code>inference-states</code> (latest pointer per registered queue) and <code>startups</code>.</li>
+  <li>The web server (hyper + fastwebsockets) hands any WebSocket upgrade to NormFS — the viewer speaks the <i>same</i> queue protocol over WS as TCP clients do.</li>
+</ul>
+
+<h3>Cross-compiling for a robot host</h3>
+<div class="cmd"><span class="cmt"># Raspberry Pi (arm64). Needs: cargo install cargo-zigbuild</span>
+make -C software/station/bin/station build-arm64
+<span class="cmt"># or directly:</span>
+cargo zigbuild --target aarch64-unknown-linux-gnu --release -p station
+<span class="cmt"># with the dog + Pi camera drivers (needs prebuilt libcamera, glibc 2.36/bookworm):</span>
+make -C shared/libcamera build-libcamera LIBCAMERA_VARIANT=bookworm
+cargo zigbuild --release -p station --features yahboom-dogzilla-lite,ov5647 \
+  --target aarch64-unknown-linux-gnu.2.36</div>
+<p class="sub">AMD64 targets: <code>make build-amd64</code>. On macOS, AMD64 builds need <code>brew install nasm</code> (turbojpeg). The station Makefile's help text claims <code>build</code> builds both architectures — it actually builds the native one only.</p>
+</section>
+
+<!-- ═══════════════════ 4. DRIVERS ═══════════════════ -->
+<section id="drivers">
+<h2>4. Driver catalog <span class="count" id="driver-count"></span></h2>
+<p class="sub">Every crate in <code>software/drivers/</code> — what it talks to, which queues it publishes, and how to configure it. Search or filter by class.</p>
+<input class="search" id="driver-search" placeholder="Search drivers… e.g. servo, camera, i2c, simulation">
+<div class="chips" id="driver-chips"></div>
+<div id="driver-list"></div>
+<div class="note">Only <code>yahboom-dogzilla-lite</code> has a simulation mode. The ST3215 servo driver talks to real hardware only — for hardware-free arm <i>visualization</i>, the viewer renders URDF models from recorded or live telemetry (<a href="#sim">§7</a>).</div>
+</section>
+<!-- ═══════════════════ 5. NORMFS ═══════════════════ -->
+<section id="normfs">
+<h2>5. NormFS &amp; the SDKs</h2>
+<h3>NormFS — the data layer</h3>
+<p>NormFS is an append-only queue log: writers append entries, readers replay from an offset or follow the tail. Station embeds it (Rust crate <code>normfs 0.4.12</code>); the implementation lives in its own repo (<code>github.com/norma-core/normfs</code>) — what's in <i>this</i> tree is the wire schema (<code>protobufs/normfs/normfs.proto</code>) and the clients.</p>
+<table>
+<tr><th>Concept</th><th>Wire reality</th></tr>
+<tr><td>Write</td><td><code>WriteRequest{write_id, queue_id, packets[]}</code> → <code>WriteResponse{ids[]}</code>. Entries get monotonic ids.</td></tr>
+<tr><td>Read</td><td><code>ReadRequest{read_id, queue_id, step, offset, limit, accept_encodings}</code> → streamed <code>ReadResponse</code> (<code>RR_START / RR_ENTRY / RR_END / RR_QUEUE_NOT_FOUND</code>), each entry tagged with its source: cloud, disk store, disk WAL, or memory.</td></tr>
+<tr><td>Offset</td><td><code>OT_ABSOLUTE</code> (from an id) or <code>OT_SHIFT_FROM_TAIL</code> (N entries back from newest).</td></tr>
+<tr><td>Encoding</td><td><code>ENC_NONE</code> or <code>ENC_ZSTD</code>, negotiated per read.</td></tr>
+<tr><td>Transport</td><td>TCP :8888 and WebSocket :8889 speak the same protocol; setup + ping keepalive.</td></tr>
+</table>
+
+<h3>Gremlin — protobuf, not a connection library</h3>
+<p>Gremlin is the wire-codec layer: pure-Go and pure-Python protobuf implementations with their own code generators (no protoc). Lazy parsing, null-safe getters, zero-copy reads; the Go README reports up to 23× faster unmarshal than Google protobuf on a Pi 5.</p>
+<div class="tabs" data-tabs="gremlin">
+  <button class="active" data-tab="g-go">Go</button>
+  <button data-tab="g-py">Python</button>
+</div>
+<div id="g-go" class="tabpane active">
+  <div class="cmd"><span class="cmt"># install the generator</span>
+go install github.com/norma-core/norma-core/shared/gremlin_go/gremlinc@latest
+<span class="cmt"># generate from .proto files</span>
+gremlinc -src ./proto -out ./generated -module yourmodule/generated</div>
+  <div class="cmd"><span class="cmt">// marshal with the generated struct; read lazily with the generated reader</span>
+data := user.Marshal()
+reader := example.NewUserReader()
+reader.Unmarshal(data)
+reader.GetProfile().GetFullName()   <span class="cmt">// null-safe, no panic on missing fields</span>
+reader.ToStruct()</div>
+  <p class="sub">Tests: <code>go test ./...</code> in <code>shared/gremlin_go/</code>. Benchmarks: <code>cd bench &amp;&amp; make run-gobench</code>. Runnable example: <code>cd example &amp;&amp; make run</code>.</p>
+</div>
+<div id="g-py" class="tabpane">
+  <div class="cmd"><span class="cmt"># generate dataclasses + lazy readers from .proto files</span>
+python3 shared/gremlin_py/gremlin.py --proto-root protobufs/drivers/st3215 \
+  --target-root target/gen_python/protobuf/st3215 --project-root . \
+  --gremlin-import-path "shared.gremlin_py.gremlin"</div>
+  <p>Generated messages expose <code>encode()</code> / <code>encode_to()</code> / <code>calc_protobuf_size()</code>; readers wrap a <code>memoryview</code> with <code>get_*()</code> accessors. Zero runtime dependencies.</p>
+  <p class="sub">Tests: <code>python -m unittest discover -p "*_test.py"</code> in <code>shared/gremlin_py/</code>. The root <code>make protobuf</code> runs both generators over every <code>protobufs/*</code> directory.</p>
+</div>
+
+<h3>Station clients — connecting, following, commanding</h3>
+<p>The connection libraries live in <code>software/station/shared/station/</code> (Go) and <code>station_py/</code> (Python). The station README labels them <i>Work in Progress</i> — the examples below are the in-tree usage patterns.</p>
+<div class="tabs" data-tabs="clients">
+  <button class="active" data-tab="c-py">Python</button>
+  <button data-tab="c-go">Go</button>
+</div>
+<div id="c-py" class="tabpane active">
+  <div class="cmd"><span class="cmt"># connect (default port 8888, auto-reconnect + ping keepalive)</span>
+client = await new_station_client("localhost", logger)
+<span class="cmt"># follow a queue: new entries streamed into an asyncio.Queue as they arrive</span>
+entries = asyncio.Queue()
+errq = client.follow("st3215/inference", entries)
+<span class="cmt"># or page through history: read_from_tail(queue_id, offset, limit, step, buf_size)</span>
+<span class="cmt"># write raw bytes into any queue</span>
+await client.enqueue("my/queue", payload)</div>
+  <div class="cmd"><span class="cmt"># send a servo command through the commands queue</span>
+cmd = st3215.Command(target_bus_serial=bus,
+    write=st3215.ST3215WriteCommand(motor_id=1, address=0x2A,
+                                    value=(2000).to_bytes(2, "little")))
+await send_commands(client, [commands.DriverCommand(
+    type=drivers.StationCommandType.STC_ST3215_COMMAND, body=cmd.encode())])</div>
+  <p class="sub">Runnable references: <code>station_py/example_follow.py</code>, <code>example_commands.py</code>. Exports: <code>Client / StationClient, QueueRead, StreamEntry, new_station_client, send_commands</code>.</p>
+</div>
+<div id="c-go" class="tabpane">
+  <div class="cmd">client := station.NewStationClient("192.168.1.100")  <span class="cmt">// defaults to port 8888</span>
+station.SendCommands(client, []*commandspb.DriverCommand{ /* … */ })
+<span class="cmt">// SendCommands enqueues a StationCommandsPack into the "commands" queue</span></div>
+  <p class="sub">Source: <code>software/station/shared/station/streams.go</code> (wraps <code>normfs.NewClient</code>). A full consumer example: <code>software/station/bin/dataset-generator/</code>.</p>
+</div>
+</section>
+
+<!-- ═══════════════════ 6. HARDWARE ═══════════════════ -->
+<section id="hardware">
+<h2>6. Hardware projects</h2>
+<div class="grid">
+  <div class="card"><h4>🦾 ElRobot — 7+1 DoF arm</h4>
+    <p class="path">hardware/elrobot/</p>
+    <p>Fully 3D-printed, 430 mm reach, ~800 g, <b>~$220 per arm</b>. Follower: 8× ST3215 12V/30 kg; leader: 8× ST3215 7.4V (low-ratio gears for back-drivability). Waveshare/Seeed bus-servo adapter; 12V/4A follower PSU, 5V/3A leader.</p>
+    <p>Print: ~320 g PLA leader (13.5 h) + ~360 g follower (16 h); .3mf profiles, STL + STEP, 0.4 mm nozzle / 0.2 mm layers. Assembly: <code>manual-follower.pdf</code>, <code>manual-leader.pdf</code>. SO-ARM100 attribution for handle/trigger/wrist-roll parts.</p>
+    <p class="try">▸ URDF + STL models: <code>simulation/elrobot_follower.urdf</code>, <code>elrobot_leader.urdf</code> — rendered by the viewer.</p></div>
+  <div class="card"><h4>🤏 Parallel-jaw gripper</h4>
+    <p class="path">hardware/pgripper/</p>
+    <p>Modular parallel-jaw gripper, <b>compatible with both SO-101 and ElRobot</b>. 1× ST3215; 27 mm stroke per jaw (54 mm total), ≥4 kg closing force. ~91 g PLA, 4.5 h print; camera-mount variants; STL + STEP, <code>Gripper_ElRobot.pdf</code> manual.</p>
+    <p class="try">▸ 4 perimeters recommended for STL prints.</p></div>
+  <div class="card"><h4>💡 Lamp — 5 DoF desk lamp</h4>
+    <p class="path">hardware/lamp/</p>
+    <p>3D-printed yaw/shoulder/elbow/wrist/head-roll lamp, 5× ST3215 12V (IDs 1–5), ~$140 simple / ~$170 LED version. ~550 g PLA + PETG window, ~19 h; M16-bolt ballast. No end stops on joints 1 &amp; 5.</p>
+    <p>LED version: XIAO ESP32-S3, WS2812B ring (~48 LEDs), ESP-IDF 5.5 firmware (<code>firmware/esp32-s3/</code>, <code>./build.sh build</code> / <code>flash monitor</code>, OTA via <code>./ota.sh</code>).</p>
+    <p class="try">▸ Web UI: <code>http://nc-lamp.local</code> — sliders, gestures, safe poses, calibration. REST <code>/api/*</code> + MCP at <code>POST /mcp</code>. Optional camera: MJPEG :81 + YOLO11n detector.</p></div>
+</div>
+<div class="cmd"><span class="cmt"># lamp firmware flash (LED version)</span>
+cd hardware/lamp/firmware/esp32-s3
+./build.sh -p /dev/cu.usbmodem1101 flash monitor
+<span class="cmt"># register the lamp's MCP server with Claude Code</span>
+claude mcp add --transport http lamp http://nc-lamp.local/mcp</div>
+</section>
+
+<!-- ═══════════════════ 7. SIM ═══════════════════ -->
+<section id="sim">
+<h2>7. Simulation &amp; no-hardware demos</h2>
+
+<details open><summary>🐕 DOGZILLA-Lite simulator — built into Station</summary><div class="body">
+<p>The Yahboom driver ships a real kinematic simulator (<code>software/drivers/yahboom-dogzilla-lite/src/sim.rs</code>), enabled by config — and the bundled <code>station.yaml</code> already sets it:</p>
+<div class="cmd">drivers:
+  yahboom-dogzilla-lite:
+    enabled: true
+    mode: simulation   <span class="cmt"># vs real hardware on /dev/ttyAMA0 @115200</span></div>
+<p>What it models: a 20 ms tick; servo positions slewing toward targets at ≤255 units/s (scaled by the speed registers); a trot gait generator (4 leg groups, phase offsets 0/π/0/π, stride 6–28, 0.8–3.0 Hz); yaw integrating into a simulated IMU orientation; battery reported as 100. It publishes the same <code>yahboom-dogzilla-lite/{rx,tx,inference}</code> queues as the real dog, so clients and the viewer work unchanged.</p>
+<div class="cmd">./target/release/station --tcp --web
+<span class="cmt"># open http://localhost:8889 → the dog's 3D view (hand-built Three.js model)</span></div>
+<div class="warn"><b>Honest limits:</b> simulated telemetry is command echo — there is no real position/current feedback, and the follower has no current sensing. The arm2dog README documents exactly what is and isn't modelled. Great for UI/client development; not a physics ground truth.</div>
+</div></details>
+
+<details><summary>🦾 Arm visualization — URDF in the viewer</summary><div class="body">
+<p>The web viewer renders <b>ElRobot</b> and <b>SO-101</b> (leader + follower variants) in 3D from the URDFs in <code>station-viewer/public/devices/</code>, driven by live <code>st3215</code> telemetry. The same models ship with the hardware: <code>hardware/elrobot/simulation/</code>. There is no ST3215 bus simulator in Station — arm <i>motion</i> simulation with physics is not part of this repo; visualization from telemetry is.</p>
+<div class="cmd"><span class="cmt"># viewer dev mode against a running station</span>
+cd software/station/clients/station-viewer
+npm ci &amp;&amp; npm run dev   <span class="cmt"># http://localhost:5173</span></div>
+</div></details>
+
+<details><summary>💡 Lamp browser simulation</summary><div class="body">
+<p>The lamp ships a URDF + a standalone browser viewer — no firmware or hardware needed:</p>
+<div class="cmd">cd hardware/lamp/simulation
+python -m http.server 8000   <span class="cmt"># then open viewer.html</span></div>
+</div></details>
+
+<details><summary>🔁 arm2dog — drive the simulated dog with a leader arm</summary><div class="body">
+<p><code>software/station/examples/arm2dog-py/</code> maps ElRobot leader joints onto the dog's arm servos (ids 51/52/53) plus movement axes, across two stations. With the dog station in simulation mode, the follower side needs no hardware:</p>
+<div class="cmd">uv run python main.py --leader-server 192.168.68.66 --follower-server 192.168.68.56 \
+  --map "8:51:inv,6:52,4:53" --yaw-leader-id 1 --fwd-leader-id 2
+<span class="cmt"># or a YAML mapping:</span>
+uv run python main.py --config configs/three-axes-test.yaml</div>
+<p class="sub">Read its README's safety section first: command-echo telemetry, no follower current sensing, no torque-disable path.</p>
+</div></details>
+</section>
+<!-- ═══════════════════ 8. EXAMPLES ═══════════════════ -->
+<section id="examples">
+<h2>8. Examples &amp; AI workflows</h2>
+<h3>Runnable examples (software/station/examples/)</h3>
+<table>
+<tr><th>Example</th><th>What it does</th><th>Run</th></tr>
+<tr><td><code>arm2dog-py</code></td><td>ElRobot leader joints → DOGZILLA arm servos + movement axes, across two stations.</td><td><code>uv run python main.py --leader-server … --follower-server … --map "8:51:inv,6:52,4:53"</code></td></tr>
+<tr><td><code>st3215-remote-teleop-py</code></td><td>Leader→follower ST3215 teleop across stations; torque disabled on exit.</td><td><code>uv run python main.py --leader-server localhost --leader-bus auto --follower-server ab-rpi5.server --follower-bus auto</code></td></tr>
+<tr><td><code>so101-autocalibration-py</code></td><td>SO-101 auto-calibration: find limits by stall, apply offsets.</td><td><code>python main.py --server localhost [--bus-serial …]</code></td></tr>
+<tr><td><code>elrobot-ik-api</code></td><td>FastAPI IK service for ElRobot (placo). Swagger <code>/docs</code>, MCP at <code>/mcp</code>, URDF at <code>/urdf</code>. Requires a calibrated, frozen bus (409 otherwise).</td><td><code>uv sync</code> then <code>STATION_URL=ws://localhost:8889/api IK_PORT=8020 uv run elrobot-ik</code></td></tr>
+<tr><td><code>yahboom-dogzilla-lite-monitor</code></td><td>On-device Pi status screen (Pillow): connectivity, telemetry freshness, battery, IPs.</td><td><code>make protobuf</code> then <code>uv run --frozen yahboom-dogzilla-lite-monitor</code></td></tr>
+<tr><td><code>vesc-trampa-rx-go</code></td><td>VESC RX monitor in Go.</td><td><code>go run ./software/station/examples/vesc-trampa-rx-go --server localhost</code></td></tr>
+</table>
+
+<h3>Record → export → train → deploy (SmolVLA on SO-101)</h3>
+<div class="flowstep"><span class="stepnum">1</span><div><b>Record</b> — in the web viewer, create start/end <b>Tags</b> around episodes (default 45 s, min 5 s between, 8 s reset recommended). Copy frame numbers from the History page. Full guide: <code>docs/datasets/export-parquet/datasets-export.md</code>.</div></div>
+<div class="flowstep"><span class="stepnum">2</span><div><b>Export</b> — the dataset tools cut parquet episodes from the queues; preview as mp4.
+<div class="cmd">./dataset-generator -episode.duration 35 -from 18979274 -to 22445334 \
+  -robot 192.168.0.10 -output ~/datasets/dataset-cube -task "put the cube inside box"
+./dataset-mp4 --input ~/datasets/dataset-cube.parquet --output ~/datasets/dataset-cube.mp4</div></div></div>
+<div class="flowstep"><span class="stepnum">3</span><div><b>Fine-tune</b> — SmolVLA (<code>lerobot/smolvla_base</code>) on the parquets.
+<div class="cmd">cd software/ai/smolvla_py &amp;&amp; uv sync
+uv run python scripts/train.py --steps 30000 --batch-size 64 \
+  --parquets path/to/dataset.parquet --output checkpoints/run
+<span class="cmt"># merge several datasets first if needed:</span>
+uv run python scripts/merge_datasets.py --inputs path/to/dataset-*.parquet --output merged.parquet</div></div></div>
+<div class="flowstep"><span class="stepnum">4</span><div><b>Deploy</b> — run the policy on the arm's machine; it reads frames from <code>inference/normvla</code>.
+<div class="cmd"><span class="cmt"># interactive: SPACE advances one tick</span>
+uv run python scripts/run_policy.py --checkpoint checkpoints/run/final \
+  --task "place the yellow cube on top of the other" --bus-serial 5AB9068807 --max-delta-ticks 512
+<span class="cmt"># continuous:</span>
+uv run python scripts/run_policy.py --checkpoint checkpoints/run/final --auto --max-ticks 200 …</div>
+<span class="sub">Remote training: <code>./scripts/build_bundle.sh dataset.parquet</code> → <code>smolvla-bundle.zip</code>; full Nebius serverless recipe in <code>nebius.md</code>.</span></div></div>
+</section>
+
+<!-- ═══════════════════ 9. COMPONENTS ═══════════════════ -->
+<section id="components">
+<h2>9. Component explorer</h2>
+<p class="sub">Everything else in the repo — what it does and where to look. Type to filter.</p>
+<input class="search" id="comp-search" placeholder="Search components… e.g. viewer, dataset, yocto, watchdog, libcamera">
+<div class="chips" id="comp-chips"></div>
+<div class="grid" id="comp-grid"></div>
+</section>
+
+<!-- ═══════════════════ 10. BUILD ═══════════════════ -->
+<section id="build">
+<h2>10. Build &amp; test</h2>
+<h3>Root Makefile targets</h3>
+<table>
+<tr><th>Target</th><th>What it runs</th></tr>
+<tr><td><code>make protobuf</code></td><td>Go codegen via <code>gremlinc</code> over <code>protobufs/</code>, then Python codegen via <code>gremlin.py</code> for every schema dir.</td></tr>
+<tr><td><code>make generates</code></td><td><code>go generate ./...</code></td></tr>
+<tr><td><code>make tests</code></td><td><code>go test -failfast ./...</code></td></tr>
+<tr><td><code>make checks</code></td><td><code>go vet ./...</code> + <code>staticcheck ./...</code></td></tr>
+<tr><td><code>make deps</code></td><td>Installs staticcheck 2025.1.1.</td></tr>
+<tr><td><code>make clean</code></td><td>Wipes and recreates <code>target/</code>.</td></tr>
+</table>
+<div class="warn"><b>Honest flag:</b> the default target <code>all</code> depends on <code>build-all</code>, and <code>prebuild</code> depends on <code>configs</code> — neither is defined anywhere in the Makefile. Use the individual targets above (and <code>make -C software/station/bin/station build</code> for the binary) rather than bare <code>make</code>.</div>
+
+<h3>Tests by language</h3>
+<div class="cmd"><span class="cmt"># Go (whole repo)</span>
+go test -failfast ./...
+<span class="cmt"># Gremlin Go SDK + generator</span>
+cd shared/gremlin_go &amp;&amp; go test ./...
+<span class="cmt"># Gremlin Python SDK</span>
+cd shared/gremlin_py &amp;&amp; python -m unittest discover -p "*_test.py"
+<span class="cmt"># Rust — the CI subset (ov5647/libcamera need a Pi toolchain)</span>
+cargo check --workspace --exclude ov5647 --exclude libcamera-sys-static --all-targets
+cargo test -p station_iface -p usbvideo
+<span class="cmt"># Web viewer (Node ≥22)</span>
+cd software/station/clients/station-viewer
+npm ci &amp;&amp; npm run lint &amp;&amp; npm run type-check &amp;&amp; npm test &amp;&amp; npm run build</div>
+<p class="sub">Hardware opt-in example: <code>cargo test -p hikmicro-thermal camera_calibration_and_compact_stream -- --ignored --nocapture</code> (needs the camera). CI workflows in <code>.github/workflows/</code>: Rust PR check (Rust 1.99.0, zig 0.15.1, cargo-zigbuild), viewer PR check (lint + type-check + vitest + build), station-app check (lint/type-check/build), and a manual release workflow building Linux amd64/arm64 + macOS tarballs.</p>
+
+<h3>Workspaces</h3>
+<ul>
+  <li><b>Rust</b> — <code>Cargo.toml</code>: 19 members (station, station-iface, i2c-async + 16 driver crates), resolver 3, workspace version 0.1.0-beta.11. <code>libcamera-sys-static</code> is a crate but intentionally outside the workspace.</li>
+  <li><b>Go</b> — <code>go.work</code>: root module <code>norma_core</code> + gremlin_go (bench, example, gremlinc). Go 1.25.6.</li>
+  <li><b>Viewer</b> — React 19 + TypeScript + Vite 7 + Tailwind v4 + Three.js + protobufjs; protobuf codegen via <code>npm run build:proto</code>.</li>
+</ul>
+</section>
+
+<!-- ═══════════════════ 11. DOCS ═══════════════════ -->
+<section id="docs">
+<h2>11. Documentation map — where to read next</h2>
+<table>
+<tr><th>Document</th><th>Read it for</th></tr>
+<tr><td><code>CONTRIBUTING.md</code></td><td><b>PRs go to the <code>dev</code> branch, not <code>main</code>.</b> Sync your fork's dev with upstream first.</td></tr>
+<tr><td><code>software/station/bin/station/README.md</code></td><td>Running Station: drivers, queues, web viewer, Go/Python client examples (clients marked WIP).</td></tr>
+<tr><td><code>software/station/clients/station-viewer/README.md</code> + <code>docs/adr/</code></td><td>Viewer development; 10 architecture decision records.</td></tr>
+<tr><td><code>software/station/clients/station-app/README.md</code></td><td>Electron desktop shell bundling viewer + station.</td></tr>
+<tr><td><code>docs/datasets/export-parquet/datasets-export.md</code></td><td>Recording episodes with Tags, exporting parquet, per-frame schema table.</td></tr>
+<tr><td><code>software/ai/smolvla_py/README.md</code> + <code>nebius.md</code></td><td>SmolVLA train/deploy; remote serverless training recipe.</td></tr>
+<tr><td><code>hardware/elrobot/README.md</code> · <code>pgripper/README.md</code> · <code>lamp/README.md</code></td><td>BOMs, printing, assembly, firmware, lamp web UI + MCP.</td></tr>
+<tr><td>Driver READMEs (<code>software/drivers/*/</code>)</td><td>Per-device protocol details, queue names, config, hardware test instructions.</td></tr>
+<tr><td><code>device-support/*/README.md</code></td><td>AirGradient ESPHome firmware, Nicla ME firmware, Portenta X8 Yocto layer, image-maker golden images.</td></tr>
+<tr><td><code>software/station/examples/arm2dog-py/README.md</code></td><td>The most thoroughly documented example — including what the dog simulator does and doesn't model.</td></tr>
+<tr><td><code>shared/gremlin_go/README.md</code> · <code>gremlin_py/README.md</code></td><td>SDK usage, codegen, benchmarks.</td></tr>
+</table>
+<div class="note"><b>Suggested learning path:</b> run Station with the simulated dog (<a href="#start">§1</a>) → watch the queues in the viewer → read the station README → pick a driver in the <a href="#drivers">catalog</a> and follow its queues with the Python client (<a href="#normfs">§5</a>) → browse an <a href="#examples">example</a> → if you have hardware, start with the <a href="#hardware">hardware</a> manuals and the calibration pages in the viewer.</div>
+</section>
+
+</main>
+</div>
+
+<script>
+/* ── data ─────────────────────────────────────────────── */
+const DRIVERS = [
+ {name:"st3215", cat:"Motion", badge:"b-red", path:"software/drivers/st3215/", sim:false,
+  desc:"Feetech ST3215 serial-bus servos (SO-101 / ElRobot). 0xFF 0xFF packet protocol at up to 1 Mbaud; Ping/Read/Write/RegWrite/Action/SyncWrite. Caches EEPROM once, dumps RAM registers each poll (torque, goal/present position, speed, load, voltage, temperature, current). Includes calibration and SO-101/ElRobot auto-calibration. Queues: st3215/rx, st3215/tx, st3215/meta, st3215/inference.",
+  config:"enabled, current-threshold (100), deadband (20), motor-current-thresholds {id: threshold}",
+  try:"viewer → ST3215 bus calibration pages"},
+ {name:"yahboom-dogzilla-lite", cat:"Motion", badge:"b-red", path:"software/drivers/yahboom-dogzilla-lite/", sim:true,
+  desc:"Yahboom DOGZILLA-Lite / Luwu XGO2-Lite robot dog. Binary UART protocol (0x55 … 0xAA) at 115200 on /dev/ttyAMA0: 12 leg servos, gripper, 2 arm servos, move x/y/yaw, IMU, battery. Built-in simulator (src/sim.rs): 20 ms tick, servo slew, trot gait generator, simulated IMU. Queues: yahboom-dogzilla-lite/{rx,tx,inference}. Optional cargo feature.",
+  config:"enabled, mode: simulation | real",
+  try:"station --tcp --web  (bundled config defaults to simulation)"},
+ {name:"motors-mirroring", cat:"Motion", badge:"b-red", path:"software/drivers/motors-mirroring/", sim:false,
+  desc:"In-station leader→follower ST3215 mirroring for teleoperation. Derives motor config from the st3215 block (safety margin 20, deadband 20, speed 300–3300, current thresholds). Queues: motors_mirroring/modes, inference/mirroring.",
+  config:"via the st3215 config block",
+  try:"see examples/st3215-remote-teleop-py for the cross-station variant"},
+ {name:"vesc-trampa", cat:"Motion", badge:"b-red", path:"software/drivers/vesc-trampa/", sim:false,
+  desc:"VESC / Trampa motor controllers over UART (VESC packet protocol). Set current / RPM / position commands; Go helpers in command.go. Queues: vesc-trampa/{rx,tx,inference}.",
+  config:"enabled, port-baud-rate (115200)",
+  try:"go run ./software/station/examples/vesc-trampa-rx-go --server localhost"},
+ {name:"pwm-output", cat:"Motion", badge:"b-red", path:"software/drivers/pwm-output/", sim:false,
+  desc:"PWM wave output through Portenta X8 M4 firmware. Host frames: NCWV | ver | len | protobuf TxEnvelope | crc32. Queues: pwm-output/{rx,tx}.",
+  config:"enabled, device-path, outputs[] (id, …)",
+  try:"firmware/README.md in the driver dir"},
+ {name:"usbvideo", cat:"Cameras", badge:"b-cyan", path:"software/drivers/usbvideo/", sim:false,
+  desc:"UVC USB cameras with macOS (AVFoundation) and Linux backends. One queue per camera: usbvideo/<md5(unique_id)>; commands via usbvideo/tx. Stores JPEG or VP8 with keyframe chains; frames decoded in-browser by the viewer.",
+  config:"enabled, resolution (auto|WxH), resize_target (224), frame-skip, codec (vp8|jpeg), keyframe-interval (≤5s), formats",
+  try:"viewer → camera views"},
+ {name:"ov5647", cat:"Cameras", badge:"b-cyan", path:"software/drivers/ov5647/", sim:false,
+  desc:"Raspberry Pi OV5647 camera via libcamera. Linux-only optional cargo feature; needs the prebuilt libcamera from shared/libcamera (Docker cross-build).",
+  config:"enabled, dimension (320x240), frames_per_second (30), codec, keyframe-interval",
+  try:"make -C shared/libcamera build-libcamera LIBCAMERA_VARIANT=bookworm"},
+ {name:"hikmicro-thermal", cat:"Cameras", badge:"b-cyan", path:"software/drivers/hikmicro-thermal/", sim:false,
+  desc:"HIKMICRO thermal camera (USB 2bdf:0102, Linux-only). libusb UVC extension-unit calibration + libuvc YUYV 256×196@25 fps; lossless y16 packing (MED predictor + zigzag + zstd). Queues: hikmicro-thermal/<serial>, hikmicro-thermal/device-info/<serial>. Viewer includes a thermal spectrogram.",
+  config:"enabled, frame-timeout (5s), frame-skip",
+  try:"cargo test -p hikmicro-thermal camera_calibration_and_compact_stream -- --ignored --nocapture  (needs camera)"},
+ {name:"ina226", cat:"Sensors", badge:"b-green", path:"software/drivers/ina226/", sim:false,
+  desc:"TI INA226 I2C power/current monitor (Linux, default feature). Default address 0x40; dumps 10 registers at 1 Hz into ina226/rx. Uses shared/i2c-async.",
+  config:"enabled, devices[]: i2c-bus, i2c-address, shunt-resistance-ohms",
+  try:"viewer → INA226 power view"},
+ {name:"airgradient-open-air-o-1pst", cat:"Sensors", badge:"b-green", path:"software/drivers/airgradient-open-air-o-1pst/", sim:false,
+  desc:"AirGradient Open Air O-1PST air quality over USB serial JSON lines: pm1_0, pm2_5, pm10_0, temp_c, humidity, co2, voc_index, nox_index. Requires the ESPHome firmware from device-support/ (networking disabled, plain JSON).",
+  config:"enabled, read-timeout (10s)",
+  try:"device-support/airgradient-open-air-o1-pst/README.md"},
+ {name:"arduino-nicla-sense-env", cat:"Sensors", badge:"b-green", path:"software/drivers/arduino-nicla-sense-env/", sim:false,
+  desc:"Nicla Sense ENV over I2C (Linux, arduino feature). Default address 0x21; raw register block 0x00–0xD5 into arduino-nicla-sense-env/rx.",
+  config:"enabled, boards[] (id, i2c-bus), poll-interval",
+  try:"viewer → Nicla Sense ENV view"},
+ {name:"arduino-nicla-sense-me", cat:"Sensors", badge:"b-green", path:"software/drivers/arduino-nicla-sense-me/", sim:false,
+  desc:"Nicla Sense ME over USB: autodetects vid/pid 2341:0060 at 921600 baud; 168-byte BHY2 register snapshot ~100 Hz per board (BHI260AP IMU, BMM150, BMP390, BME688) → arduino-nicla-sense-me/<serial>/rx. Needs the firmware from device-support/. ~2.3 GB/day per board.",
+  config:"enabled",
+  try:"device-support/arduino-nicla-sense-me/README.md"},
+ {name:"victron-smartsolar-mppt", cat:"Sensors", badge:"b-green", path:"software/drivers/victron-smartsolar-mppt/", sim:false,
+  desc:"Victron SmartSolar MPPT solar charger over VE.Direct (text + HEX, USB @19200). Known PIDs include 0xA053 (SmartSolar MPPT 75|15).",
+  config:"enabled, read-timeout (10s)",
+  try:"viewer → Victron view"},
+ {name:"sysinfod", cat:"System", badge:"b-purple", path:"software/drivers/sysinfod/", sim:false,
+  desc:"Host telemetry via the sysinfo crate → system/rx: CPU, memory, disks, networks, temperatures, power, users, processes, OS/motherboard, cellular modems, throttling.",
+  config:"system-info: true",
+  try:"viewer → system info"},
+ {name:"dmesg", cat:"System", badge:"b-purple", path:"software/drivers/dmesg/", sim:false,
+  desc:"Linux kernel log → dmesg/rx.",
+  config:"enabled",
+  try:"read the queue with the Python client (§5)"},
+ {name:"inferences", cat:"Inference", badge:"b-yellow", path:"software/drivers/inferences/", sim:false,
+  desc:"Builds normvla inference frames (motor state + camera frames) into a shared-memory ring (4 buffers, 24-byte header) for an external policy process; publishes inference-states. This is what SmolVLA's run_policy.py consumes.",
+  config:"inference[]: queue-id, shm, shm-size-mb, format, st3215-bus, update-interval",
+  try:"software/ai/smolvla_py (§8)"}
+];
+
+const COMPONENTS = [
+ ["Station","Station runtime","software/station/bin/station/","Single Rust binary: engine, NormFS queues, drivers, inference, embedded web viewer.","make -C software/station/bin/station build"],
+ ["Station","station-iface","software/station/shared/station-iface/","Config schema (serde YAML) + StationEngine trait shared by station and drivers.","cargo test -p station_iface"],
+ ["Station","dataset-generator","software/station/bin/dataset-generator/","Go tool: cut tagged episodes from queues into parquet datasets.","docs/datasets/export-parquet/datasets-export.md"],
+ ["Station","dataset-mp4","software/station/bin/dataset-mp4/","Go tool: preview a parquet dataset as mp4.","./dataset-mp4 --input dataset.parquet --output preview.mp4"],
+ ["Clients","Station Viewer","software/station/clients/station-viewer/","React 19 + Vite + Three.js web UI: 3D URDF arms, dog model, camera views (VP8 in-browser), thermal spectrogram, History timeline, ST3215 calibration pages, dataset Tags.","npm ci && npm run dev"],
+ ["Clients","station-app","software/station/clients/station-app/","Electron desktop shell bundling the viewer + station binary; package:mac builds arm64+x64.","npm ci && npm run install:electron"],
+ ["Clients","Go station client","software/station/shared/station/","NewStationClient + SendCommands over NormFS (WIP per README).","see §5 Go tab"],
+ ["Clients","Python station client","software/station/shared/station_py/","Async client: connect, follow, read_from_tail, enqueue, send_commands; auto-reconnect + keepalive (WIP per README).","example_follow.py · example_commands.py"],
+ ["SDK & wire","Gremlin Go","shared/gremlin_go/","Pure-Go protobuf: lazy readers, null-safe getters, zero-copy; gremlinc generator; up to 23× faster unmarshal (Pi 5, README).","cd shared/gremlin_go && go test ./..."],
+ ["SDK & wire","Gremlin Python","shared/gremlin_py/","Zero-dependency pure-Python protobuf (proto2/3): dataclasses + memoryview readers; gremlin.py generator.","python -m unittest discover -p \"*_test.py\""],
+ ["SDK & wire","protobufs","protobufs/","Wire schemas: normfs transport, station commands/dataset/inference, 16 driver schemas.","make protobuf"],
+ ["Shared infra","console-tool","shared/console-tool/","Go zerolog console setup: ConsoleInit(name), line-info hook, raises fd limits.","import in Go mains"],
+ ["Shared infra","i2c-async","shared/i2c-async/","Rust async I2C abstraction (tokio, Linux i2cdev) used by ina226 / nicla-env.","cargo test -p i2c-async"],
+ ["Shared infra","libcamera","shared/libcamera/","Docker cross-build of Raspberry Pi libcamera 0.7.0 shared libs (trixie/bookworm/bullseye glibc baselines).","make build-libcamera LIBCAMERA_VARIANT=bookworm"],
+ ["Shared infra","libcamera-sys-static","shared/libcamera-sys-static/","C++ FFI wrapper linking the prebuilt libcamera for the ov5647 crate (outside the Cargo workspace).","see ov5647 driver"],
+ ["Shared infra","ulimits","shared/ulimits/","Go SetupForHighLoad(): raises fd rlimits for many-device hosts.","used by console-tool"],
+ ["Hardware","ElRobot","hardware/elrobot/","7+1 DoF 3D-printed arm (~$220): .3mf/STL/STEP, assembly PDFs, leader+follower URDFs.","open hardware/elrobot/README.md"],
+ ["Hardware","Parallel gripper","hardware/pgripper/","SO-101 & ElRobot compatible parallel jaws: 27 mm/jaw stroke, ≥4 kg force, camera mounts.","open hardware/pgripper/README.md"],
+ ["Hardware","Lamp","hardware/lamp/","5 DoF desk lamp: ESP32-S3 firmware, web UI at nc-lamp.local, REST + MCP, optional YOLO camera.","cd hardware/lamp/simulation && python -m http.server 8000"],
+ ["AI & datasets","SmolVLA","software/ai/smolvla_py/","Fine-tune lerobot/smolvla_base on parquet episodes; deploy with run_policy.py; Nebius remote-training bundle.","uv run python scripts/train.py --help"],
+ ["AI & datasets","Dataset guide","docs/datasets/export-parquet/","Record with viewer Tags → dataset-generator → parquet schema table → mp4 preview.","read datasets-export.md"],
+ ["Device support","AirGradient firmware","device-support/airgradient-open-air-o1-pst/","ESPHome firmware reflashing the O-1PST to plain JSON over USB serial (networking off).","see README"],
+ ["Device support","Nicla ME firmware","device-support/arduino-nicla-sense-me/","BHY2 sensor outputs as a 168-byte register map streamed every 10 ms over USB.","see README"],
+ ["Device support","Portenta X8 Yocto","device-support/arduino-portenta-x8/yocto/","Yocto layer + build template for Portenta X8 (i.MX manifest + Arduino/Tailscale/NormaCore layers); NormFS disk caps, cellular, watchdog.","see README"],
+ ["Device support","image-maker","device-support/image-maker/","Docker-only golden SD image builder: build (credential-free) + customize (Wi-Fi/SSH/Tailscale). Ships a dogzilla golden image.","image-maker build"],
+ ["Embedded","x8-cellulard","software/arduino-portenta/x8-cellulard/","C cellular supervisor for Portenta X8: Quectel EC200A + u-blox SARA-R412M modems, APN via CLI.","cmake -S . -B build && cmake --build build"],
+ ["Embedded","x8-watchdogd","software/arduino-portenta/x8-watchdogd/","C network watchdog owning /dev/watchdog0: stops feeding when all IP targets fail → board reset.","./build/x8-watchdogd --once  (safe check)"],
+ ["Examples","arm2dog-py","software/station/examples/arm2dog-py/","Leader arm → dog arm servos + movement axes across two stations; extensive simulator/safety docs.","uv run python main.py --config configs/three-axes-test.yaml"],
+ ["Examples","elrobot-ik-api","software/station/examples/elrobot-ik-api/","FastAPI IK service (placo) with Swagger, MCP and URDF endpoints; requires calibrated frozen bus.","STATION_URL=ws://localhost:8889/api uv run elrobot-ik"],
+ ["Examples","teleop & calibration","software/station/examples/","st3215-remote-teleop-py, so101-autocalibration-py, dogzilla monitor, vesc-trampa-rx-go.","see §8 table"]
+];
+
+/* ── render drivers ───────────────────────────────────── */
+const driverList = document.getElementById("driver-list");
+const driverChips = document.getElementById("driver-chips");
+const driverCats = [...new Set(DRIVERS.map(d=>d.cat))];
+let driverCat = "All";
+function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")}
+function renderDrivers(){
+  const q = document.getElementById("driver-search").value.toLowerCase();
+  driverList.innerHTML="";
+  let n=0;
+  for(const d of DRIVERS){
+    if(driverCat!=="All" && d.cat!==driverCat) continue;
+    if(q && !(d.name+" "+d.desc+" "+d.path+" "+d.cat+" "+(d.config||"")+" "+(d.try||"")+(d.sim?" simulation sim":"")).toLowerCase().includes(q)) continue;
+    n++;
+    const el=document.createElement("details");
+    el.innerHTML=`<summary><code style="font-size:13.5px">${esc(d.name)}</code> &nbsp;<span class="badge ${d.badge||'b-dim'}">${esc(d.cat)}</span>${d.sim?' &nbsp;<span class="badge b-green">SIMULATION</span>':''}</summary>
+      <div class="body"><p style="font-size:13.5px">${esc(d.desc)}</p>
+      <p class="sub" style="font-family:var(--mono);font-size:11.5px;color:var(--purple)">${esc(d.path)}</p>
+      ${d.config?`<p style="font-size:12.5px"><b>Config:</b> <code>${esc(d.config)}</code></p>`:''}
+      ${d.try?`<p class="sub" style="font-size:12px">▸ <code>${esc(d.try)}</code></p>`:''}</div>`;
+    driverList.appendChild(el);
+  }
+  document.getElementById("driver-count").textContent = `${n} of ${DRIVERS.length} shown`;
+  if(!n) driverList.innerHTML='<p class="sub">No drivers match.</p>';
+}
+driverChips.innerHTML = ["All",...driverCats].map(c=>`<button data-cat="${c}" class="${c==='All'?'active':''}">${c}</button>`).join("");
+driverChips.addEventListener("click",e=>{
+  if(e.target.tagName!=="BUTTON")return;
+  driverCat=e.target.dataset.cat;
+  driverChips.querySelectorAll("button").forEach(b=>b.classList.toggle("active",b===e.target));
+  renderDrivers();
+});
+document.getElementById("driver-search").addEventListener("input",renderDrivers);
+renderDrivers();
+
+/* ── render components ────────────────────────────────── */
+const compGrid = document.getElementById("comp-grid");
+const compChips = document.getElementById("comp-chips");
+const cats = [...new Set(COMPONENTS.map(c=>c[0]))];
+let compCat = "All";
+function renderComps(){
+  const q = document.getElementById("comp-search").value.toLowerCase();
+  compGrid.innerHTML = "";
+  let n=0;
+  for(const [cat,name,path,desc,trycmd] of COMPONENTS){
+    if(compCat!=="All" && cat!==compCat) continue;
+    if(q && !(name+" "+path+" "+desc+" "+cat).toLowerCase().includes(q)) continue;
+    n++;
+    const d=document.createElement("div");
+    d.className="card";
+    d.innerHTML = `<h4>${esc(name)} <span class="badge b-dim">${esc(cat)}</span></h4>
+      <div class="path">${esc(path)}</div><p>${esc(desc)}</p>
+      <div class="try">▸ <code>${esc(trycmd)}</code></div>`;
+    compGrid.appendChild(d);
+  }
+  if(!n) compGrid.innerHTML = '<p class="sub">No components match.</p>';
+}
+compChips.innerHTML = ["All",...cats].map(c=>`<button data-cat="${c}" class="${c==='All'?'active':''}">${c}</button>`).join("");
+compChips.addEventListener("click",e=>{
+  if(e.target.tagName!=="BUTTON")return;
+  compCat=e.target.dataset.cat;
+  compChips.querySelectorAll("button").forEach(b=>b.classList.toggle("active",b===e.target));
+  renderComps();
+});
+document.getElementById("comp-search").addEventListener("input",renderComps);
+renderComps();
+
+/* ── tabs ─────────────────────────────────────────────── */
+document.querySelectorAll(".tabs").forEach(tabs=>{
+  tabs.addEventListener("click",e=>{
+    if(e.target.tagName!=="BUTTON")return;
+    tabs.querySelectorAll("button").forEach(b=>b.classList.toggle("active",b===e.target));
+    const panes = tabs.parentElement.querySelectorAll(":scope > .tabpane");
+    panes.forEach(p=>p.classList.toggle("active",p.id===e.target.dataset.tab));
+  });
+});
+
+/* ── copy buttons ─────────────────────────────────────── */
+document.querySelectorAll(".cmd").forEach(pre=>{
+  const b=document.createElement("button");
+  b.className="copy";b.textContent="copy";
+  b.onclick=()=>{
+    const txt=[...pre.childNodes].filter(n=>n.nodeType===3||(n.nodeType===1&&!n.classList.contains("copy"))).map(n=>n.textContent).join("").trim();
+    navigator.clipboard.writeText(txt).then(()=>{b.textContent="✓ copied";setTimeout(()=>b.textContent="copy",1400)});
+  };
+  pre.appendChild(b);
+});
+
+/* ── scrollspy ────────────────────────────────────────── */
+const links=[...document.querySelectorAll("nav a")];
+const obs=new IntersectionObserver(es=>{
+  es.forEach(e=>{
+    if(e.isIntersecting){
+      links.forEach(l=>l.classList.toggle("active",l.getAttribute("href")==="#"+e.target.id));
+    }
+  });
+},{rootMargin:"-20% 0px -70% 0px"});
+document.querySelectorAll("main section").forEach(s=>obs.observe(s));
+</script>
+</body>
+</html>
