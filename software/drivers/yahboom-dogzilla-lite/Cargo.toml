@@ -9,7 +9,7 @@ default = []
 [dependencies]
 tokio = { version = "1", features = ["io-util", "time", "sync"] }
 normfs = { workspace = true }
-systime = { path = "../../station/shared/systime-rs" }
+normfs-time = { workspace = true }
 station_iface = { path = "../../station/shared/station-iface" }
 prost = "0.12"
 bytes = "1.5"

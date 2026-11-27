@@ -93,14 +93,6 @@ const St3215BusCalibrationPage: React.FC = () => {
     });
   };
 
-  // Send reset command when the calibration page opens
-  useEffect(() => {
-    const busSerial = selectedBus?.bus?.serialNumber;
-    if (!busSerial) return;
-    resetCalibration(busSerial);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedBus?.bus?.serialNumber]);
-
   useEffect(() => {
     if (isSavePending && isCalibrationFrozen) {
       navigate('/');

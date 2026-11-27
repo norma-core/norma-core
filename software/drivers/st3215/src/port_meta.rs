@@ -185,7 +185,7 @@ impl St3215PortMeta {
                             rx_uintn_ptr: entry.id.value_to_bytes(),
                             ..Default::default()
                         };
-                        if let Err(e) = comm.send_meta(&meta_envelope) {
+                        if let Err(e) = comm.send_meta(&meta_envelope).await {
                             log::error!("Failed to send reset calibration meta: {:?}", e);
                             return;
                         }
@@ -311,7 +311,7 @@ impl St3215PortMeta {
                             arcs,
                             ..Default::default()
                         };
-                        if let Err(e) = comm.send_meta(&meta_envelope) {
+                        if let Err(e) = comm.send_meta(&meta_envelope).await {
                             log::error!("Failed to send freeze calibration meta: {:?}", e);
                             return;
                         }

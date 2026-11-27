@@ -1,5 +1,5 @@
-use bytes::{Bytes, BytesMut};
 use super::yuv_tables::get_yuv_to_rgb_tables;
+use bytes::{Bytes, BytesMut};
 
 /// Convert YUV2 (YUYV) format to RGB format
 ///
@@ -19,7 +19,7 @@ use super::yuv_tables::get_yuv_to_rgb_tables;
 pub fn convert_yuv2_to_rgb(width: u16, height: u16, data: Bytes) -> Result<BytesMut, String> {
     let width = width as usize;
     let height = height as usize;
-    
+
     // YUV2 has 2 bytes per pixel (4 bytes per 2 pixels)
     let expected_size = width * height * 2;
     if data.len() != expected_size {
@@ -84,41 +84,41 @@ mod tests {
         // Create a simple 2x2 YUV2 image
         let width = 2;
         let height = 2;
-        
+
         // YUV2 data for 2x2 image (8 bytes total)
         let yuv_data = vec![
             // Row 0: Y0 U0 Y1 V0
-            235, 128, 235, 128,  // Two white pixels
+            235, 128, 235, 128, // Two white pixels
             // Row 1: Y0 U0 Y1 V0
-            16, 128, 16, 128,    // Two black pixels
+            16, 128, 16, 128, // Two black pixels
         ];
-        
+
         let data = Bytes::from(yuv_data);
         let result = convert_yuv2_to_rgb(width, height, data).unwrap();
-        
+
         // Check output size (2x2x3 = 12 bytes)
         assert_eq!(result.len(), 12);
-        
+
         // Verify RGB format (interleaved)
         // First white pixel (R, G, B)
-        assert!(result[0] > 230);  // R
-        assert!(result[1] > 230);  // G
-        assert!(result[2] > 230);  // B
-        
+        assert!(result[0] > 230); // R
+        assert!(result[1] > 230); // G
+        assert!(result[2] > 230); // B
+
         // Second white pixel (R, G, B)
-        assert!(result[3] > 230);  // R
-        assert!(result[4] > 230);  // G
-        assert!(result[5] > 230);  // B
-        
+        assert!(result[3] > 230); // R
+        assert!(result[4] > 230); // G
+        assert!(result[5] > 230); // B
+
         // First black pixel (R, G, B)
-        assert!(result[6] < 20);   // R
-        assert!(result[7] < 20);   // G
-        assert!(result[8] < 20);   // B
-        
+        assert!(result[6] < 20); // R
+        assert!(result[7] < 20); // G
+        assert!(result[8] < 20); // B
+
         // Second black pixel (R, G, B)
-        assert!(result[9] < 20);   // R
-        assert!(result[10] < 20);  // G
-        assert!(result[11] < 20);  // B
+        assert!(result[9] < 20); // R
+        assert!(result[10] < 20); // G
+        assert!(result[11] < 20); // B
     }
 
     #[test]
@@ -126,7 +126,7 @@ mod tests {
         let width = 4;
         let height = 2;
         let data = Bytes::from(vec![0; 10]); // Wrong size
-        
+
         let result = convert_yuv2_to_rgb(width, height, data);
         assert!(result.is_err());
     }
@@ -136,7 +136,7 @@ mod tests {
         let width = 3; // Odd width
         let height = 2;
         let data = Bytes::from(vec![0; 12]);
-        
+
         let result = convert_yuv2_to_rgb(width, height, data);
         assert!(result.is_err());
     }

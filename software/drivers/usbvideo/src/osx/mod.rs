@@ -1,20 +1,20 @@
 mod ffi;
 
+use bytes::Bytes;
+use log::error;
 use std::ffi::{CStr, CString};
 use std::mem::MaybeUninit;
 use std::sync::Arc;
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::time::Duration;
-use bytes::Bytes;
-use log::error;
 use tokio::time::Instant;
 
-use station_iface::StationEngine;
 use crate::converters;
 use crate::pipeline::{CaptureResult, USBCameraDriver};
 use crate::state::StateTracker;
 use crate::usbvideo_proto::frame::FrameStamp;
 use crate::usbvideo_proto::usbvideo as framesrec_proto;
+use station_iface::StationEngine;
 
 static CAMERA_ACCESS_GRANTED: AtomicBool = AtomicBool::new(false);
 
@@ -25,7 +25,10 @@ unsafe extern "C" fn on_camera_access(granted: i32) {
     }
 }
 
-pub struct CameraMacDriver {}
+pub struct CameraMacDriver {
+    /// Bumped by `stop`; a capture exits when it no longer matches.
+    stop_generation: AtomicU64,
+}
 
 impl Default for CameraMacDriver {
     fn default() -> Self {
@@ -46,7 +49,9 @@ impl CameraMacDriver {
                 if status == 1 { "restricted" } else { "denied" }
             ),
         }
-        Self {}
+        Self {
+            stop_generation: AtomicU64::new(0),
+        }
     }
 }
 
@@ -56,9 +61,7 @@ impl USBCameraDriver for CameraMacDriver {
             return vec![];
         }
 
-        let cnt = unsafe {
-            ffi::getVideoDeviceCount()
-        };
+        let cnt = unsafe { ffi::getVideoDeviceCount() };
 
         if cnt < 0 {
             log::warn!("Failed to get video device count: {}", cnt);
@@ -80,7 +83,7 @@ impl USBCameraDriver for CameraMacDriver {
                         unique_id: CStr::from_ptr(info.unique_id.as_ptr())
                             .to_string_lossy()
                             .to_string(),
-                        product: CStr::from_ptr(info.model_id.as_ptr()) 
+                        product: CStr::from_ptr(info.model_id.as_ptr())
                             .to_string_lossy()
                             .to_string(),
                         manufacturer: CStr::from_ptr(info.manufacturer.as_ptr())
@@ -90,8 +93,12 @@ impl USBCameraDriver for CameraMacDriver {
                     };
 
                     cameras.push(info);
-                }else {
-                    log::warn!("Failed to get video device info for index {}: {}", idx, result);
+                } else {
+                    log::warn!(
+                        "Failed to get video device info for index {}: {}",
+                        idx,
+                        result
+                    );
                     continue;
                 }
             }
@@ -100,14 +107,19 @@ impl USBCameraDriver for CameraMacDriver {
         cameras
     }
 
-    async fn get_camera_formats(&self, camera: &framesrec_proto::Camera) -> Vec<framesrec_proto::CameraFormat> {
+    async fn get_camera_formats(
+        &self,
+        camera: &framesrec_proto::Camera,
+    ) -> Vec<framesrec_proto::CameraFormat> {
         let c_device_id = CString::new(camera.unique_id.clone()).unwrap();
-        let formats_cnt = unsafe {
-            ffi::getFormatCountForDevice(c_device_id.as_ptr())
-        };
+        let formats_cnt = unsafe { ffi::getFormatCountForDevice(c_device_id.as_ptr()) };
 
         if formats_cnt < 0 {
-            log::warn!("Failed to get format count for device {}: {}", camera.unique_id, formats_cnt);
+            log::warn!(
+                "Failed to get format count for device {}: {}",
+                camera.unique_id,
+                formats_cnt
+            );
             return vec![];
         }
 
@@ -117,7 +129,8 @@ impl USBCameraDriver for CameraMacDriver {
         for idx in 0..formats_cnt {
             unsafe {
                 let mut info = MaybeUninit::<ffi::CameraFormatInfo>::uninit();
-                let result = ffi::getFormatInfo(c_device_id.as_ptr(), idx as i32, info.as_mut_ptr());
+                let result =
+                    ffi::getFormatInfo(c_device_id.as_ptr(), idx as i32, info.as_mut_ptr());
 
                 if result == 0 {
                     let info = &info.assume_init();
@@ -131,8 +144,13 @@ impl USBCameraDriver for CameraMacDriver {
                     };
 
                     formats.push(format);
-                }else {
-                    log::warn!("Failed to get format info for device {} index {}: {}", camera.unique_id, idx, result);
+                } else {
+                    log::warn!(
+                        "Failed to get format info for device {} index {}: {}",
+                        camera.unique_id,
+                        idx,
+                        result
+                    );
                     continue;
                 }
             }
@@ -146,23 +164,25 @@ impl USBCameraDriver for CameraMacDriver {
         tracker: Arc<StateTracker<K>>,
         camera: &framesrec_proto::Camera,
         format: &framesrec_proto::CameraFormat,
+        format_revision: u64,
         queue_id: &normfs::QueueId,
     ) -> CaptureResult {
-
         let c_device_id = CString::new(camera.unique_id.clone()).unwrap();
 
-        log::info!("Starting capture for camera {} with format {:?}", camera.unique_id, format);
+        log::info!(
+            "Starting capture for camera {} with format {:?}",
+            camera.unique_id,
+            format
+        );
 
-        let session_id = unsafe {
-            ffi::createCaptureSession(
-                c_device_id.as_ptr(),
-                format.index as i32,
-                1,
-            )
-        };
+        let session_id =
+            unsafe { ffi::createCaptureSession(c_device_id.as_ptr(), format.index as i32, 1) };
 
         if session_id < 0 {
-            error!("Failed to create capture session for camera {}: {}", camera.unique_id, session_id);
+            error!(
+                "Failed to create capture session for camera {}: {}",
+                camera.unique_id, session_id
+            );
             return CaptureResult {
                 has_frames: false,
                 error_message: Some(format!("Failed to create capture session: {}", session_id)),
@@ -171,8 +191,13 @@ impl USBCameraDriver for CameraMacDriver {
 
         let start_res = unsafe { ffi::startCapture(session_id) };
         if start_res != 0 {
-            error!("Failed to start capture session for camera {}: {}", camera.unique_id, start_res);
-            unsafe { ffi::destroyCaptureSession(session_id); }
+            error!(
+                "Failed to start capture session for camera {}: {}",
+                camera.unique_id, start_res
+            );
+            unsafe {
+                ffi::destroyCaptureSession(session_id);
+            }
             return CaptureResult {
                 has_frames: false,
                 error_message: Some(format!("Failed to start capture session: {}", start_res)),
@@ -181,21 +206,31 @@ impl USBCameraDriver for CameraMacDriver {
 
         let mut frame_index = 0;
         let mut last_frame_time = Instant::now();
+        let stop_generation = self.stop_generation.load(Ordering::Acquire);
         loop {
+            if self.stop_generation.load(Ordering::Acquire) != stop_generation {
+                log::info!("Capture for camera {} stopped", camera.unique_id);
+                break;
+            }
             let max_buffer_size = 1920 * 1080 * 4;
             let mut buffer = vec![0u8; max_buffer_size];
 
             let mut frame_info = MaybeUninit::<ffi::CameraFrameInfo>::uninit();
             let mut actual_size: usize = 0;
 
-            let frame_cnt = unsafe {
-                ffi::getAvailableFrameCount(session_id)
-            };
+            let frame_cnt = unsafe { ffi::getAvailableFrameCount(session_id) };
 
             if last_frame_time.elapsed() > Duration::from_secs(300) {
-                error!("No frames received from camera {} for 5 minutes, stopping capture.", camera.unique_id);
-                unsafe { ffi::stopCapture(session_id); }
-                unsafe { ffi::destroyCaptureSession(session_id); }
+                error!(
+                    "No frames received from camera {} for 5 minutes, stopping capture.",
+                    camera.unique_id
+                );
+                unsafe {
+                    ffi::stopCapture(session_id);
+                }
+                unsafe {
+                    ffi::destroyCaptureSession(session_id);
+                }
                 return CaptureResult {
                     has_frames: frame_index > 0,
                     error_message: Some("No frames received for 5 minutes".to_string()),
@@ -236,7 +271,8 @@ impl USBCameraDriver for CameraMacDriver {
                 )
             };
 
-            if result == -1 { // no frames available
+            if result == -1 {
+                // no frames available
                 if last_frame_time.elapsed() > Duration::from_secs(5) {
                     log::warn!("No new frames in 5 seconds, exiting capture loop.");
                     break;
@@ -250,32 +286,41 @@ impl USBCameraDriver for CameraMacDriver {
 
                 let format = converters::FourCCFormat::from_fourcc_u32(frame_info.pixel_format);
                 if format.is_none() {
-                    error!("Unsupported pixel format {} for camera {}", frame_info.pixel_format, camera.unique_id);
-                    unsafe { ffi::stopCapture(session_id); }
-                    unsafe { ffi::destroyCaptureSession(session_id); }
+                    error!(
+                        "Unsupported pixel format {} for camera {}",
+                        frame_info.pixel_format, camera.unique_id
+                    );
+                    unsafe {
+                        ffi::stopCapture(session_id);
+                    }
+                    unsafe {
+                        ffi::destroyCaptureSession(session_id);
+                    }
                     break;
                 }
                 let format = format.unwrap();
 
                 tracker.enqueue_frame(
-                    queue_id, 
-                    format, 
-                    camera, 
+                    queue_id,
+                    format,
+                    camera,
                     FrameStamp {
                         monotonic_stamp_ns: frame_info.monotonic_timestamp_ns,
                         local_stamp_ns: frame_info.local_timestamp_ns,
-                        app_start_id: systime::get_app_start_id(),
+                        app_start_id: normfs_time::app_start_id(),
                         index: frame_index,
-                    }, 
+                    },
+                    format_revision,
                     frame_info.width as u32,
                     frame_info.height as u32,
-                    Bytes::from(buffer)
+                    Bytes::from(buffer),
                 );
 
                 frame_index += 1;
 
                 tokio::time::sleep(Duration::from_millis(1)).await;
-            } else { // error
+            } else {
+                // error
                 error!("Error capturing frame from camera {}", camera.unique_id);
                 break;
             }
@@ -293,6 +338,7 @@ impl USBCameraDriver for CameraMacDriver {
     }
 
     async fn stop(&self) {
+        self.stop_generation.fetch_add(1, Ordering::AcqRel);
     }
 }
 
@@ -301,5 +347,90 @@ impl USBCameraDriver for CameraMacDriver {
 pub fn process_main_run_loop() {
     unsafe {
         ffi::processMainRunLoop();
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::pipeline::USBCameraDriver;
+    use normfs::{NormFS, NormFsSettings, Persist, QueueSettings};
+
+    struct NoopEngine;
+
+    impl StationEngine for NoopEngine {
+        fn register_queue(
+            &self,
+            _: &normfs::QueueId,
+            _: station_iface::iface_proto::drivers::QueueDataType,
+            _: Vec<station_iface::iface_proto::envelope::QueueOpt>,
+        ) {
+        }
+    }
+
+    /// Needs a camera.
+    #[ignore]
+    #[tokio::test(flavor = "multi_thread")]
+    async fn stop_only_ends_the_capture_running_at_the_time() {
+        let dir = std::env::temp_dir().join(format!("usbvideo-stop-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let settings = NormFsSettings {
+            queue_settings: QueueSettings::default().with_default_persist(Persist::MEMORY),
+            ..Default::default()
+        };
+        let normfs = Arc::new(NormFS::new(dir.clone(), settings).await.unwrap());
+        let queue_id = normfs.resolve("usbvideo/test");
+        normfs
+            .ensure_queue_exists_for_write(&queue_id)
+            .await
+            .unwrap();
+        let tracker = Arc::new(StateTracker::new(
+            normfs,
+            Arc::new(NoopEngine),
+            crate::USBVideoConfig::default(),
+        ));
+
+        let driver = Arc::new(CameraMacDriver::new());
+        let mut cameras = Vec::new();
+        for _ in 0..50 {
+            process_main_run_loop();
+            cameras = driver.get_available_cameras().await;
+            if !cameras.is_empty() {
+                break;
+            }
+            tokio::time::sleep(Duration::from_millis(100)).await;
+        }
+        let camera = cameras.into_iter().next().expect("no camera");
+        let format = driver.get_camera_formats(&camera).await.remove(0);
+
+        let capture = |driver: Arc<CameraMacDriver>, camera: framesrec_proto::Camera| {
+            let tracker = tracker.clone();
+            let format = format.clone();
+            let queue_id = queue_id.clone();
+            tokio::spawn(async move {
+                driver
+                    .run_capture(tracker, &camera, &format, 0, &queue_id)
+                    .await
+            })
+        };
+
+        let first = capture(driver.clone(), camera.clone());
+        tokio::time::sleep(Duration::from_secs(3)).await;
+        driver.stop().await;
+        let result = tokio::time::timeout(Duration::from_secs(5), first)
+            .await
+            .expect("capture did not stop")
+            .unwrap();
+        assert!(result.has_frames, "no frames before stop");
+
+        let second = capture(driver.clone(), camera);
+        tokio::time::sleep(Duration::from_secs(3)).await;
+        assert!(
+            !second.is_finished(),
+            "capture exited after an earlier stop"
+        );
+        driver.stop().await;
+        let _ = tokio::time::timeout(Duration::from_secs(5), second).await;
+        let _ = std::fs::remove_dir_all(dir);
     }
 }

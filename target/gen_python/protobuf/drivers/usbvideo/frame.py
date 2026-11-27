@@ -13,6 +13,7 @@ import enum as enum
 class FrameFormatKind(enum.IntEnum):
     FF_NCHW = 0
     FF_JPEG = 1
+    FF_VP8 = 2
 
 
 # messages
@@ -23,6 +24,8 @@ class FramesPack:
     stamps: list[FrameStamp | None] | None = None
     linear_data: typing.Optional[bytes] = None
     frames_data: typing.Optional[list[typing.Optional[bytes]]] = None
+    keyframe: bool = False
+    keyframe_ptr: typing.Optional[bytes] = None
 
     def calc_protobuf_size(self) -> int:
         res = 0
@@ -50,6 +53,12 @@ class FramesPack:
                     res += (((len(v) | 1).bit_length() + 6) // 7) + len(v)
                 else:
                     res += 1
+        if self.keyframe:
+            res += 2
+        if self.keyframe_ptr is not None and len(self.keyframe_ptr) > 0:
+            bytes_len = len(self.keyframe_ptr)
+            bytes_len_size = ((bytes_len | 1).bit_length() + 6) // 7
+            res += 1 + bytes_len_size + bytes_len
         return res
 
     def encode(self) -> bytes:
@@ -84,6 +93,10 @@ class FramesPack:
                     target.append_bytes(b'b', v)
                 else:
                     target.append_bytes_size_with_tag(b'b', 0)
+        if self.keyframe:
+            target.append_bool(b'h', self.keyframe)
+        if self.keyframe_ptr is not None and len(self.keyframe_ptr) > 0:
+            target.append_bytes(b'r', self.keyframe_ptr)
 
 
 class FramesPackReader:
@@ -92,6 +105,8 @@ class FramesPackReader:
         self._stamps_bufs: list[memoryview] | None = None
         self._linear_data: typing.Optional[memoryview] = None
         self._frames_data: typing.Optional[list[memoryview]] = None
+        self._keyframe: bool = False
+        self._keyframe_ptr: typing.Optional[memoryview] = None
 
         if not src:
             return
@@ -122,6 +137,14 @@ class FramesPackReader:
                     if self._frames_data is None:
                         self._frames_data = []
                     self._frames_data.append(result.value)
+                case 13:
+                    result = self._buf.read_bool(offset)
+                    offset += result.size
+                    self._keyframe = result.value
+                case 14:
+                    result = self._buf.read_bytes_view(offset)
+                    offset += result.size
+                    self._keyframe_ptr = result.value
                 case _:
                     offset = self._buf.skip_data(offset, tag.wire)
 
@@ -144,6 +167,12 @@ class FramesPackReader:
 
     def get_frames_data(self) -> list[memoryview]:
         return self._frames_data if self._frames_data is not None else []
+
+    def get_keyframe(self) -> bool:
+        return self._keyframe
+
+    def get_keyframe_ptr(self) -> memoryview:
+        return self._keyframe_ptr if self._keyframe_ptr is not None else memoryview(b'')
 
 
 @dataclasses.dataclass

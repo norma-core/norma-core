@@ -248,6 +248,7 @@ export namespace drivers {
         QDT_USB_VIDEO_FRAMES = 21,
         QDT_INFERENCE_FRAMES = 22,
         QDT_HIKMICRO_THERMAL = 23,
+        QDT_USB_VIDEO_TX = 24,
         QDT_MOTOR_MIRRORING_MODES = 30,
         QDT_MOTOR_MIRRORING_RX = 32,
         QDT_YAHBOOM_DOGZILLA_LITE_SERIAL_TX = 40,
@@ -257,7 +258,11 @@ export namespace drivers {
         QDT_ARDUINO_NICLA_SENSE_ENV_RX = 51,
         QDT_INA226_RX = 52,
         QDT_AIRGRADIENT_OPEN_AIR_O_1PST_RX = 53,
-        QDT_VICTRON_SMARTSOLAR_MPPT_RX = 54
+        QDT_VICTRON_SMARTSOLAR_MPPT_RX = 54,
+        QDT_PWM_OUTPUT_TX = 55,
+        QDT_PWM_OUTPUT_RX = 56,
+        QDT_DMESG_RX = 57,
+        QDT_ARDUINO_NICLA_SENSE_ME_RX = 59
     }
 
     /** StationCommandType enum. */
@@ -267,7 +272,9 @@ export namespace drivers {
         STC_INFERENCE_TAG_COMMAND = 2,
         STC_YAHBOOM_DOGZILLA_LITE_COMMAND = 3,
         STC_VESC_TRAMPA_COMMAND = 4,
-        STC_ARDUINO_NICLA_SENSE_ENV_COMMAND = 5
+        STC_ARDUINO_NICLA_SENSE_ENV_COMMAND = 5,
+        STC_PWM_OUTPUT_COMMAND = 6,
+        STC_USB_VIDEO_COMMAND = 7
     }
 }
 
@@ -3818,7 +3825,8 @@ export namespace vesc_trampa {
         VESC_TRAMPA_COMMAND = 4,
         VESC_TRAMPA_COMMAND_SUCCESS = 5,
         VESC_TRAMPA_COMMAND_REJECTED = 6,
-        VESC_TRAMPA_COMMAND_FAILED = 7
+        VESC_TRAMPA_COMMAND_FAILED = 7,
+        VESC_TRAMPA_COMMAND_DONE = 8
     }
 
     /** Properties of a RxEnvelope. */
@@ -3978,11 +3986,11 @@ export namespace vesc_trampa {
         /** TxEnvelope commandId */
         commandId?: (Uint8Array|null);
 
-        /** TxEnvelope boardCommand */
-        boardCommand?: (vesc_trampa.IVescTrampaBoardCommand|null);
-
         /** TxEnvelope motorMode */
         motorMode?: (vesc_trampa.IVescTrampaMotorModeCommand|null);
+
+        /** TxEnvelope boardCommands */
+        boardCommands?: (vesc_trampa.IVescTrampaBoardCommand[]|null);
     }
 
     /** Represents a TxEnvelope. */
@@ -4009,11 +4017,11 @@ export namespace vesc_trampa {
         /** TxEnvelope commandId. */
         public commandId: Uint8Array;
 
-        /** TxEnvelope boardCommand. */
-        public boardCommand?: (vesc_trampa.IVescTrampaBoardCommand|null);
-
         /** TxEnvelope motorMode. */
         public motorMode?: (vesc_trampa.IVescTrampaMotorModeCommand|null);
+
+        /** TxEnvelope boardCommands. */
+        public boardCommands: vesc_trampa.IVescTrampaBoardCommand[];
 
         /**
          * Creates a new TxEnvelope instance using the specified properties.
@@ -4099,11 +4107,11 @@ export namespace vesc_trampa {
         /** Command targetBoardUuid */
         targetBoardUuid?: (Uint8Array|null);
 
-        /** Command boardCommand */
-        boardCommand?: (vesc_trampa.IVescTrampaBoardCommand|null);
-
         /** Command motorMode */
         motorMode?: (vesc_trampa.IVescTrampaMotorModeCommand|null);
+
+        /** Command boardCommands */
+        boardCommands?: (vesc_trampa.IVescTrampaBoardCommand[]|null);
     }
 
     /** Represents a Command. */
@@ -4118,11 +4126,11 @@ export namespace vesc_trampa {
         /** Command targetBoardUuid. */
         public targetBoardUuid: Uint8Array;
 
-        /** Command boardCommand. */
-        public boardCommand?: (vesc_trampa.IVescTrampaBoardCommand|null);
-
         /** Command motorMode. */
         public motorMode?: (vesc_trampa.IVescTrampaMotorModeCommand|null);
+
+        /** Command boardCommands. */
+        public boardCommands: vesc_trampa.IVescTrampaBoardCommand[];
 
         /**
          * Creates a new Command instance using the specified properties.
@@ -4210,6 +4218,12 @@ export namespace vesc_trampa {
 
         /** VescTrampaBoardCommand responseExpected */
         responseExpected?: (boolean|null);
+
+        /** VescTrampaBoardCommand durationMs */
+        durationMs?: (number|null);
+
+        /** VescTrampaBoardCommand motorModeAfter */
+        motorModeAfter?: (vesc_trampa.IVescTrampaMotorModeCommand|null);
     }
 
     /** Represents a VescTrampaBoardCommand. */
@@ -4226,6 +4240,12 @@ export namespace vesc_trampa {
 
         /** VescTrampaBoardCommand responseExpected. */
         public responseExpected: boolean;
+
+        /** VescTrampaBoardCommand durationMs. */
+        public durationMs: number;
+
+        /** VescTrampaBoardCommand motorModeAfter. */
+        public motorModeAfter?: (vesc_trampa.IVescTrampaMotorModeCommand|null);
 
         /**
          * Creates a new VescTrampaBoardCommand instance using the specified properties.
@@ -5032,7 +5052,12 @@ export namespace usbvideo {
         ET_DEVICE_RECORDING_START = 3,
         ET_DEVICE_RECORDING_END = 4,
         ET_DEVICE_DISCONNECTED = 5,
-        ET_ERROR = 6
+        ET_ERROR = 6,
+        ET_COMMAND = 7,
+        ET_COMMAND_SUCCESS = 8,
+        ET_COMMAND_REJECTED = 9,
+        ET_COMMAND_FAILED = 10,
+        ET_CAPTURE_SESSION = 11
     }
 
     /** Properties of a RxEnvelope. */
@@ -5056,8 +5081,14 @@ export namespace usbvideo {
         /** RxEnvelope lastInferenceQueuePtr */
         lastInferenceQueuePtr?: (Uint8Array|null);
 
+        /** RxEnvelope sessionPtr */
+        sessionPtr?: (Uint8Array|null);
+
         /** RxEnvelope frames */
         frames?: (frame.IFramesPack|null);
+
+        /** RxEnvelope command */
+        command?: (usbvideo.ITxEnvelope|null);
     }
 
     /** Represents a RxEnvelope. */
@@ -5087,8 +5118,14 @@ export namespace usbvideo {
         /** RxEnvelope lastInferenceQueuePtr. */
         public lastInferenceQueuePtr: Uint8Array;
 
+        /** RxEnvelope sessionPtr. */
+        public sessionPtr: Uint8Array;
+
         /** RxEnvelope frames. */
         public frames?: (frame.IFramesPack|null);
+
+        /** RxEnvelope command. */
+        public command?: (usbvideo.ITxEnvelope|null);
 
         /**
          * Creates a new RxEnvelope instance using the specified properties.
@@ -5162,6 +5199,346 @@ export namespace usbvideo {
 
         /**
          * Gets the default type url for RxEnvelope
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
+    /** SetFormatMode enum. */
+    enum SetFormatMode {
+        SET_FORMAT_MODE_AUTO = 0,
+        SET_FORMAT_MODE_MANUAL = 1,
+        SET_FORMAT_MODE_NONE = 2
+    }
+
+    /** Properties of a SetFormatCommand. */
+    interface ISetFormatCommand {
+
+        /** SetFormatCommand mode */
+        mode?: (usbvideo.SetFormatMode|null);
+
+        /** SetFormatCommand format */
+        format?: (usbvideo.ICameraFormat|null);
+    }
+
+    /** Represents a SetFormatCommand. */
+    class SetFormatCommand implements ISetFormatCommand {
+
+        /**
+         * Constructs a new SetFormatCommand.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: usbvideo.ISetFormatCommand);
+
+        /** SetFormatCommand mode. */
+        public mode: usbvideo.SetFormatMode;
+
+        /** SetFormatCommand format. */
+        public format?: (usbvideo.ICameraFormat|null);
+
+        /**
+         * Creates a new SetFormatCommand instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns SetFormatCommand instance
+         */
+        public static create(properties?: usbvideo.ISetFormatCommand): usbvideo.SetFormatCommand;
+
+        /**
+         * Encodes the specified SetFormatCommand message. Does not implicitly {@link usbvideo.SetFormatCommand.verify|verify} messages.
+         * @param message SetFormatCommand message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: usbvideo.ISetFormatCommand, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified SetFormatCommand message, length delimited. Does not implicitly {@link usbvideo.SetFormatCommand.verify|verify} messages.
+         * @param message SetFormatCommand message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: usbvideo.ISetFormatCommand, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes a SetFormatCommand message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns SetFormatCommand
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): usbvideo.SetFormatCommand;
+
+        /**
+         * Decodes a SetFormatCommand message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns SetFormatCommand
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): usbvideo.SetFormatCommand;
+
+        /**
+         * Verifies a SetFormatCommand message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates a SetFormatCommand message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns SetFormatCommand
+         */
+        public static fromObject(object: { [k: string]: any }): usbvideo.SetFormatCommand;
+
+        /**
+         * Creates a plain object from a SetFormatCommand message. Also converts values to other types if specified.
+         * @param message SetFormatCommand
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: usbvideo.SetFormatCommand, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this SetFormatCommand to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for SetFormatCommand
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
+    /** Properties of a Command. */
+    interface ICommand {
+
+        /** Command targetCameraUniqueId */
+        targetCameraUniqueId?: (string|null);
+
+        /** Command setFormat */
+        setFormat?: (usbvideo.ISetFormatCommand|null);
+    }
+
+    /** Represents a Command. */
+    class Command implements ICommand {
+
+        /**
+         * Constructs a new Command.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: usbvideo.ICommand);
+
+        /** Command targetCameraUniqueId. */
+        public targetCameraUniqueId: string;
+
+        /** Command setFormat. */
+        public setFormat?: (usbvideo.ISetFormatCommand|null);
+
+        /**
+         * Creates a new Command instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns Command instance
+         */
+        public static create(properties?: usbvideo.ICommand): usbvideo.Command;
+
+        /**
+         * Encodes the specified Command message. Does not implicitly {@link usbvideo.Command.verify|verify} messages.
+         * @param message Command message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: usbvideo.ICommand, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified Command message, length delimited. Does not implicitly {@link usbvideo.Command.verify|verify} messages.
+         * @param message Command message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: usbvideo.ICommand, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes a Command message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns Command
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): usbvideo.Command;
+
+        /**
+         * Decodes a Command message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns Command
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): usbvideo.Command;
+
+        /**
+         * Verifies a Command message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates a Command message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns Command
+         */
+        public static fromObject(object: { [k: string]: any }): usbvideo.Command;
+
+        /**
+         * Creates a plain object from a Command message. Also converts values to other types if specified.
+         * @param message Command
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: usbvideo.Command, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this Command to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for Command
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
+    /** Properties of a TxEnvelope. */
+    interface ITxEnvelope {
+
+        /** TxEnvelope monotonicStampNs */
+        monotonicStampNs?: (Long|null);
+
+        /** TxEnvelope localStampNs */
+        localStampNs?: (Long|null);
+
+        /** TxEnvelope appStartId */
+        appStartId?: (Long|null);
+
+        /** TxEnvelope commandId */
+        commandId?: (Uint8Array|null);
+
+        /** TxEnvelope targetCameraUniqueId */
+        targetCameraUniqueId?: (string|null);
+
+        /** TxEnvelope command */
+        command?: (usbvideo.ICommand|null);
+    }
+
+    /** Represents a TxEnvelope. */
+    class TxEnvelope implements ITxEnvelope {
+
+        /**
+         * Constructs a new TxEnvelope.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: usbvideo.ITxEnvelope);
+
+        /** TxEnvelope monotonicStampNs. */
+        public monotonicStampNs: Long;
+
+        /** TxEnvelope localStampNs. */
+        public localStampNs: Long;
+
+        /** TxEnvelope appStartId. */
+        public appStartId: Long;
+
+        /** TxEnvelope commandId. */
+        public commandId: Uint8Array;
+
+        /** TxEnvelope targetCameraUniqueId. */
+        public targetCameraUniqueId: string;
+
+        /** TxEnvelope command. */
+        public command?: (usbvideo.ICommand|null);
+
+        /**
+         * Creates a new TxEnvelope instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns TxEnvelope instance
+         */
+        public static create(properties?: usbvideo.ITxEnvelope): usbvideo.TxEnvelope;
+
+        /**
+         * Encodes the specified TxEnvelope message. Does not implicitly {@link usbvideo.TxEnvelope.verify|verify} messages.
+         * @param message TxEnvelope message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: usbvideo.ITxEnvelope, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified TxEnvelope message, length delimited. Does not implicitly {@link usbvideo.TxEnvelope.verify|verify} messages.
+         * @param message TxEnvelope message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: usbvideo.ITxEnvelope, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes a TxEnvelope message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns TxEnvelope
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): usbvideo.TxEnvelope;
+
+        /**
+         * Decodes a TxEnvelope message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns TxEnvelope
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): usbvideo.TxEnvelope;
+
+        /**
+         * Verifies a TxEnvelope message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates a TxEnvelope message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns TxEnvelope
+         */
+        public static fromObject(object: { [k: string]: any }): usbvideo.TxEnvelope;
+
+        /**
+         * Creates a plain object from a TxEnvelope message. Also converts values to other types if specified.
+         * @param message TxEnvelope
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: usbvideo.TxEnvelope, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this TxEnvelope to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for TxEnvelope
          * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
          * @returns The default type url
          */
@@ -5458,6 +5835,12 @@ export namespace frame {
 
         /** FramesPack framesData */
         framesData?: (Uint8Array[]|null);
+
+        /** FramesPack keyframe */
+        keyframe?: (boolean|null);
+
+        /** FramesPack keyframePtr */
+        keyframePtr?: (Uint8Array|null);
     }
 
     /** Represents a FramesPack. */
@@ -5480,6 +5863,12 @@ export namespace frame {
 
         /** FramesPack framesData. */
         public framesData: Uint8Array[];
+
+        /** FramesPack keyframe. */
+        public keyframe: boolean;
+
+        /** FramesPack keyframePtr. */
+        public keyframePtr: Uint8Array;
 
         /**
          * Creates a new FramesPack instance using the specified properties.
@@ -5677,7 +6066,8 @@ export namespace frame {
     /** FrameFormatKind enum. */
     enum FrameFormatKind {
         FF_NCHW = 0,
-        FF_JPEG = 1
+        FF_JPEG = 1,
+        FF_VP8 = 2
     }
 
     /** Properties of a FrameFormat. */
@@ -9177,11 +9567,17 @@ export namespace sysinfo {
         /** EnvelopeData networks */
         networks?: (sysinfo.INetwork[]|null);
 
+        /** EnvelopeData processes */
+        processes?: (sysinfo.IProcessInfo[]|null);
+
         /** EnvelopeData temperatures */
         temperatures?: (sysinfo.ITemperatureSensor[]|null);
 
         /** EnvelopeData powerSources */
         powerSources?: (sysinfo.IPowerSource[]|null);
+
+        /** EnvelopeData throttling */
+        throttling?: (sysinfo.IThrottlingState|null);
 
         /** EnvelopeData cellularModems */
         cellularModems?: (sysinfo.ICellularModem[]|null);
@@ -9235,11 +9631,17 @@ export namespace sysinfo {
         /** EnvelopeData networks. */
         public networks: sysinfo.INetwork[];
 
+        /** EnvelopeData processes. */
+        public processes: sysinfo.IProcessInfo[];
+
         /** EnvelopeData temperatures. */
         public temperatures: sysinfo.ITemperatureSensor[];
 
         /** EnvelopeData powerSources. */
         public powerSources: sysinfo.IPowerSource[];
+
+        /** EnvelopeData throttling. */
+        public throttling?: (sysinfo.IThrottlingState|null);
 
         /** EnvelopeData cellularModems. */
         public cellularModems: sysinfo.ICellularModem[];
@@ -10381,6 +10783,235 @@ export namespace sysinfo {
         public static getTypeUrl(typeUrlPrefix?: string): string;
     }
 
+    /** Properties of a ProcessInfo. */
+    interface IProcessInfo {
+
+        /** ProcessInfo pid */
+        pid?: (number|null);
+
+        /** ProcessInfo parentPid */
+        parentPid?: (Long|null);
+
+        /** ProcessInfo name */
+        name?: (string|null);
+
+        /** ProcessInfo exe */
+        exe?: (string|null);
+
+        /** ProcessInfo cmd */
+        cmd?: (string[]|null);
+
+        /** ProcessInfo cwd */
+        cwd?: (string|null);
+
+        /** ProcessInfo kind */
+        kind?: (string|null);
+
+        /** ProcessInfo status */
+        status?: (string|null);
+
+        /** ProcessInfo userName */
+        userName?: (string|null);
+
+        /** ProcessInfo uid */
+        uid?: (Long|null);
+
+        /** ProcessInfo gid */
+        gid?: (Long|null);
+
+        /** ProcessInfo sessionId */
+        sessionId?: (Long|null);
+
+        /** ProcessInfo startTimeEpochSeconds */
+        startTimeEpochSeconds?: (Long|null);
+
+        /** ProcessInfo runTimeSeconds */
+        runTimeSeconds?: (Long|null);
+
+        /** ProcessInfo threadCount */
+        threadCount?: (number|null);
+
+        /** ProcessInfo cpuUsage */
+        cpuUsage?: (number|null);
+
+        /** ProcessInfo memoryBytes */
+        memoryBytes?: (Long|null);
+
+        /** ProcessInfo virtualMemoryBytes */
+        virtualMemoryBytes?: (Long|null);
+
+        /** ProcessInfo accumulatedCpuTimeMs */
+        accumulatedCpuTimeMs?: (Long|null);
+
+        /** ProcessInfo totalReadBytes */
+        totalReadBytes?: (Long|null);
+
+        /** ProcessInfo totalWrittenBytes */
+        totalWrittenBytes?: (Long|null);
+
+        /** ProcessInfo readBytes */
+        readBytes?: (Long|null);
+
+        /** ProcessInfo writtenBytes */
+        writtenBytes?: (Long|null);
+    }
+
+    /** Represents a ProcessInfo. */
+    class ProcessInfo implements IProcessInfo {
+
+        /**
+         * Constructs a new ProcessInfo.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: sysinfo.IProcessInfo);
+
+        /** ProcessInfo pid. */
+        public pid: number;
+
+        /** ProcessInfo parentPid. */
+        public parentPid: Long;
+
+        /** ProcessInfo name. */
+        public name: string;
+
+        /** ProcessInfo exe. */
+        public exe: string;
+
+        /** ProcessInfo cmd. */
+        public cmd: string[];
+
+        /** ProcessInfo cwd. */
+        public cwd: string;
+
+        /** ProcessInfo kind. */
+        public kind: string;
+
+        /** ProcessInfo status. */
+        public status: string;
+
+        /** ProcessInfo userName. */
+        public userName: string;
+
+        /** ProcessInfo uid. */
+        public uid: Long;
+
+        /** ProcessInfo gid. */
+        public gid: Long;
+
+        /** ProcessInfo sessionId. */
+        public sessionId: Long;
+
+        /** ProcessInfo startTimeEpochSeconds. */
+        public startTimeEpochSeconds: Long;
+
+        /** ProcessInfo runTimeSeconds. */
+        public runTimeSeconds: Long;
+
+        /** ProcessInfo threadCount. */
+        public threadCount: number;
+
+        /** ProcessInfo cpuUsage. */
+        public cpuUsage: number;
+
+        /** ProcessInfo memoryBytes. */
+        public memoryBytes: Long;
+
+        /** ProcessInfo virtualMemoryBytes. */
+        public virtualMemoryBytes: Long;
+
+        /** ProcessInfo accumulatedCpuTimeMs. */
+        public accumulatedCpuTimeMs: Long;
+
+        /** ProcessInfo totalReadBytes. */
+        public totalReadBytes: Long;
+
+        /** ProcessInfo totalWrittenBytes. */
+        public totalWrittenBytes: Long;
+
+        /** ProcessInfo readBytes. */
+        public readBytes: Long;
+
+        /** ProcessInfo writtenBytes. */
+        public writtenBytes: Long;
+
+        /**
+         * Creates a new ProcessInfo instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns ProcessInfo instance
+         */
+        public static create(properties?: sysinfo.IProcessInfo): sysinfo.ProcessInfo;
+
+        /**
+         * Encodes the specified ProcessInfo message. Does not implicitly {@link sysinfo.ProcessInfo.verify|verify} messages.
+         * @param message ProcessInfo message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: sysinfo.IProcessInfo, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified ProcessInfo message, length delimited. Does not implicitly {@link sysinfo.ProcessInfo.verify|verify} messages.
+         * @param message ProcessInfo message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: sysinfo.IProcessInfo, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes a ProcessInfo message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns ProcessInfo
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): sysinfo.ProcessInfo;
+
+        /**
+         * Decodes a ProcessInfo message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns ProcessInfo
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): sysinfo.ProcessInfo;
+
+        /**
+         * Verifies a ProcessInfo message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates a ProcessInfo message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns ProcessInfo
+         */
+        public static fromObject(object: { [k: string]: any }): sysinfo.ProcessInfo;
+
+        /**
+         * Creates a plain object from a ProcessInfo message. Also converts values to other types if specified.
+         * @param message ProcessInfo
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: sysinfo.ProcessInfo, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this ProcessInfo to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for ProcessInfo
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
     /** Properties of a TemperatureSensor. */
     interface ITemperatureSensor {
 
@@ -10702,6 +11333,514 @@ export namespace sysinfo {
 
         /**
          * Gets the default type url for PowerSource
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
+    /** Properties of a RpiThrottling. */
+    interface IRpiThrottling {
+
+        /** RpiThrottling raw */
+        raw?: (number|null);
+
+        /** RpiThrottling underVoltage */
+        underVoltage?: (boolean|null);
+
+        /** RpiThrottling armFrequencyCapped */
+        armFrequencyCapped?: (boolean|null);
+
+        /** RpiThrottling throttled */
+        throttled?: (boolean|null);
+
+        /** RpiThrottling softTempLimit */
+        softTempLimit?: (boolean|null);
+
+        /** RpiThrottling underVoltageSinceBoot */
+        underVoltageSinceBoot?: (boolean|null);
+
+        /** RpiThrottling armFrequencyCappedSinceBoot */
+        armFrequencyCappedSinceBoot?: (boolean|null);
+
+        /** RpiThrottling throttledSinceBoot */
+        throttledSinceBoot?: (boolean|null);
+
+        /** RpiThrottling softTempLimitSinceBoot */
+        softTempLimitSinceBoot?: (boolean|null);
+    }
+
+    /** Represents a RpiThrottling. */
+    class RpiThrottling implements IRpiThrottling {
+
+        /**
+         * Constructs a new RpiThrottling.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: sysinfo.IRpiThrottling);
+
+        /** RpiThrottling raw. */
+        public raw: number;
+
+        /** RpiThrottling underVoltage. */
+        public underVoltage: boolean;
+
+        /** RpiThrottling armFrequencyCapped. */
+        public armFrequencyCapped: boolean;
+
+        /** RpiThrottling throttled. */
+        public throttled: boolean;
+
+        /** RpiThrottling softTempLimit. */
+        public softTempLimit: boolean;
+
+        /** RpiThrottling underVoltageSinceBoot. */
+        public underVoltageSinceBoot: boolean;
+
+        /** RpiThrottling armFrequencyCappedSinceBoot. */
+        public armFrequencyCappedSinceBoot: boolean;
+
+        /** RpiThrottling throttledSinceBoot. */
+        public throttledSinceBoot: boolean;
+
+        /** RpiThrottling softTempLimitSinceBoot. */
+        public softTempLimitSinceBoot: boolean;
+
+        /**
+         * Creates a new RpiThrottling instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns RpiThrottling instance
+         */
+        public static create(properties?: sysinfo.IRpiThrottling): sysinfo.RpiThrottling;
+
+        /**
+         * Encodes the specified RpiThrottling message. Does not implicitly {@link sysinfo.RpiThrottling.verify|verify} messages.
+         * @param message RpiThrottling message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: sysinfo.IRpiThrottling, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified RpiThrottling message, length delimited. Does not implicitly {@link sysinfo.RpiThrottling.verify|verify} messages.
+         * @param message RpiThrottling message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: sysinfo.IRpiThrottling, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes a RpiThrottling message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns RpiThrottling
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): sysinfo.RpiThrottling;
+
+        /**
+         * Decodes a RpiThrottling message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns RpiThrottling
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): sysinfo.RpiThrottling;
+
+        /**
+         * Verifies a RpiThrottling message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates a RpiThrottling message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns RpiThrottling
+         */
+        public static fromObject(object: { [k: string]: any }): sysinfo.RpiThrottling;
+
+        /**
+         * Creates a plain object from a RpiThrottling message. Also converts values to other types if specified.
+         * @param message RpiThrottling
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: sysinfo.RpiThrottling, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this RpiThrottling to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for RpiThrottling
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
+    /** Properties of a CoolingDevice. */
+    interface ICoolingDevice {
+
+        /** CoolingDevice name */
+        name?: (string|null);
+
+        /** CoolingDevice type */
+        type?: (string|null);
+
+        /** CoolingDevice curState */
+        curState?: (Long|null);
+
+        /** CoolingDevice maxState */
+        maxState?: (Long|null);
+    }
+
+    /** Represents a CoolingDevice. */
+    class CoolingDevice implements ICoolingDevice {
+
+        /**
+         * Constructs a new CoolingDevice.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: sysinfo.ICoolingDevice);
+
+        /** CoolingDevice name. */
+        public name: string;
+
+        /** CoolingDevice type. */
+        public type: string;
+
+        /** CoolingDevice curState. */
+        public curState: Long;
+
+        /** CoolingDevice maxState. */
+        public maxState: Long;
+
+        /**
+         * Creates a new CoolingDevice instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns CoolingDevice instance
+         */
+        public static create(properties?: sysinfo.ICoolingDevice): sysinfo.CoolingDevice;
+
+        /**
+         * Encodes the specified CoolingDevice message. Does not implicitly {@link sysinfo.CoolingDevice.verify|verify} messages.
+         * @param message CoolingDevice message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: sysinfo.ICoolingDevice, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified CoolingDevice message, length delimited. Does not implicitly {@link sysinfo.CoolingDevice.verify|verify} messages.
+         * @param message CoolingDevice message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: sysinfo.ICoolingDevice, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes a CoolingDevice message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns CoolingDevice
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): sysinfo.CoolingDevice;
+
+        /**
+         * Decodes a CoolingDevice message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns CoolingDevice
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): sysinfo.CoolingDevice;
+
+        /**
+         * Verifies a CoolingDevice message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates a CoolingDevice message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns CoolingDevice
+         */
+        public static fromObject(object: { [k: string]: any }): sysinfo.CoolingDevice;
+
+        /**
+         * Creates a plain object from a CoolingDevice message. Also converts values to other types if specified.
+         * @param message CoolingDevice
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: sysinfo.CoolingDevice, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this CoolingDevice to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for CoolingDevice
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
+    /** Properties of a CpuFreqPolicy. */
+    interface ICpuFreqPolicy {
+
+        /** CpuFreqPolicy name */
+        name?: (string|null);
+
+        /** CpuFreqPolicy scalingGovernor */
+        scalingGovernor?: (string|null);
+
+        /** CpuFreqPolicy scalingCurFreqKhz */
+        scalingCurFreqKhz?: (Long|null);
+
+        /** CpuFreqPolicy scalingMinFreqKhz */
+        scalingMinFreqKhz?: (Long|null);
+
+        /** CpuFreqPolicy scalingMaxFreqKhz */
+        scalingMaxFreqKhz?: (Long|null);
+
+        /** CpuFreqPolicy cpuinfoMinFreqKhz */
+        cpuinfoMinFreqKhz?: (Long|null);
+
+        /** CpuFreqPolicy cpuinfoMaxFreqKhz */
+        cpuinfoMaxFreqKhz?: (Long|null);
+    }
+
+    /** Represents a CpuFreqPolicy. */
+    class CpuFreqPolicy implements ICpuFreqPolicy {
+
+        /**
+         * Constructs a new CpuFreqPolicy.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: sysinfo.ICpuFreqPolicy);
+
+        /** CpuFreqPolicy name. */
+        public name: string;
+
+        /** CpuFreqPolicy scalingGovernor. */
+        public scalingGovernor: string;
+
+        /** CpuFreqPolicy scalingCurFreqKhz. */
+        public scalingCurFreqKhz: Long;
+
+        /** CpuFreqPolicy scalingMinFreqKhz. */
+        public scalingMinFreqKhz: Long;
+
+        /** CpuFreqPolicy scalingMaxFreqKhz. */
+        public scalingMaxFreqKhz: Long;
+
+        /** CpuFreqPolicy cpuinfoMinFreqKhz. */
+        public cpuinfoMinFreqKhz: Long;
+
+        /** CpuFreqPolicy cpuinfoMaxFreqKhz. */
+        public cpuinfoMaxFreqKhz: Long;
+
+        /**
+         * Creates a new CpuFreqPolicy instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns CpuFreqPolicy instance
+         */
+        public static create(properties?: sysinfo.ICpuFreqPolicy): sysinfo.CpuFreqPolicy;
+
+        /**
+         * Encodes the specified CpuFreqPolicy message. Does not implicitly {@link sysinfo.CpuFreqPolicy.verify|verify} messages.
+         * @param message CpuFreqPolicy message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: sysinfo.ICpuFreqPolicy, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified CpuFreqPolicy message, length delimited. Does not implicitly {@link sysinfo.CpuFreqPolicy.verify|verify} messages.
+         * @param message CpuFreqPolicy message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: sysinfo.ICpuFreqPolicy, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes a CpuFreqPolicy message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns CpuFreqPolicy
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): sysinfo.CpuFreqPolicy;
+
+        /**
+         * Decodes a CpuFreqPolicy message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns CpuFreqPolicy
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): sysinfo.CpuFreqPolicy;
+
+        /**
+         * Verifies a CpuFreqPolicy message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates a CpuFreqPolicy message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns CpuFreqPolicy
+         */
+        public static fromObject(object: { [k: string]: any }): sysinfo.CpuFreqPolicy;
+
+        /**
+         * Creates a plain object from a CpuFreqPolicy message. Also converts values to other types if specified.
+         * @param message CpuFreqPolicy
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: sysinfo.CpuFreqPolicy, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this CpuFreqPolicy to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for CpuFreqPolicy
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
+    /** Properties of a ThrottlingState. */
+    interface IThrottlingState {
+
+        /** ThrottlingState rpi */
+        rpi?: (sysinfo.IRpiThrottling|null);
+
+        /** ThrottlingState thermallyThrottled */
+        thermallyThrottled?: (boolean|null);
+
+        /** ThrottlingState coolingDevices */
+        coolingDevices?: (sysinfo.ICoolingDevice[]|null);
+
+        /** ThrottlingState cpufreqPolicies */
+        cpufreqPolicies?: (sysinfo.ICpuFreqPolicy[]|null);
+    }
+
+    /** Represents a ThrottlingState. */
+    class ThrottlingState implements IThrottlingState {
+
+        /**
+         * Constructs a new ThrottlingState.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: sysinfo.IThrottlingState);
+
+        /** ThrottlingState rpi. */
+        public rpi?: (sysinfo.IRpiThrottling|null);
+
+        /** ThrottlingState thermallyThrottled. */
+        public thermallyThrottled: boolean;
+
+        /** ThrottlingState coolingDevices. */
+        public coolingDevices: sysinfo.ICoolingDevice[];
+
+        /** ThrottlingState cpufreqPolicies. */
+        public cpufreqPolicies: sysinfo.ICpuFreqPolicy[];
+
+        /**
+         * Creates a new ThrottlingState instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns ThrottlingState instance
+         */
+        public static create(properties?: sysinfo.IThrottlingState): sysinfo.ThrottlingState;
+
+        /**
+         * Encodes the specified ThrottlingState message. Does not implicitly {@link sysinfo.ThrottlingState.verify|verify} messages.
+         * @param message ThrottlingState message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: sysinfo.IThrottlingState, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified ThrottlingState message, length delimited. Does not implicitly {@link sysinfo.ThrottlingState.verify|verify} messages.
+         * @param message ThrottlingState message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: sysinfo.IThrottlingState, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes a ThrottlingState message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns ThrottlingState
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): sysinfo.ThrottlingState;
+
+        /**
+         * Decodes a ThrottlingState message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns ThrottlingState
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): sysinfo.ThrottlingState;
+
+        /**
+         * Verifies a ThrottlingState message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates a ThrottlingState message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns ThrottlingState
+         */
+        public static fromObject(object: { [k: string]: any }): sysinfo.ThrottlingState;
+
+        /**
+         * Creates a plain object from a ThrottlingState message. Also converts values to other types if specified.
+         * @param message ThrottlingState
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: sysinfo.ThrottlingState, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this ThrottlingState to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for ThrottlingState
          * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
          * @returns The default type url
          */
@@ -12412,6 +13551,370 @@ export namespace arduino_nicla_sense_env {
     }
 }
 
+/** Namespace arduino_nicla_sense_me. */
+export namespace arduino_nicla_sense_me {
+
+    /** ArduinoNiclaSenseMeSignalType enum. */
+    enum ArduinoNiclaSenseMeSignalType {
+        ARDUINO_NICLA_SENSE_ME_SIGNAL_TYPE_UNSPECIFIED = 0,
+        ARDUINO_NICLA_SENSE_ME_CONNECTED = 1,
+        ARDUINO_NICLA_SENSE_ME_DISCONNECTED = 2,
+        ARDUINO_NICLA_SENSE_ME_REGISTERS_SNAPSHOT = 3,
+        ARDUINO_NICLA_SENSE_ME_ERROR = 8
+    }
+
+    /** Properties of an ArduinoNiclaSenseMeDeviceInfo. */
+    interface IArduinoNiclaSenseMeDeviceInfo {
+
+        /** ArduinoNiclaSenseMeDeviceInfo softwareRevision */
+        softwareRevision?: (number|null);
+
+        /** ArduinoNiclaSenseMeDeviceInfo productId */
+        productId?: (number|null);
+
+        /** ArduinoNiclaSenseMeDeviceInfo serialNumber */
+        serialNumber?: (Uint8Array|null);
+    }
+
+    /** Represents an ArduinoNiclaSenseMeDeviceInfo. */
+    class ArduinoNiclaSenseMeDeviceInfo implements IArduinoNiclaSenseMeDeviceInfo {
+
+        /**
+         * Constructs a new ArduinoNiclaSenseMeDeviceInfo.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: arduino_nicla_sense_me.IArduinoNiclaSenseMeDeviceInfo);
+
+        /** ArduinoNiclaSenseMeDeviceInfo softwareRevision. */
+        public softwareRevision: number;
+
+        /** ArduinoNiclaSenseMeDeviceInfo productId. */
+        public productId: number;
+
+        /** ArduinoNiclaSenseMeDeviceInfo serialNumber. */
+        public serialNumber: Uint8Array;
+
+        /**
+         * Creates a new ArduinoNiclaSenseMeDeviceInfo instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns ArduinoNiclaSenseMeDeviceInfo instance
+         */
+        public static create(properties?: arduino_nicla_sense_me.IArduinoNiclaSenseMeDeviceInfo): arduino_nicla_sense_me.ArduinoNiclaSenseMeDeviceInfo;
+
+        /**
+         * Encodes the specified ArduinoNiclaSenseMeDeviceInfo message. Does not implicitly {@link arduino_nicla_sense_me.ArduinoNiclaSenseMeDeviceInfo.verify|verify} messages.
+         * @param message ArduinoNiclaSenseMeDeviceInfo message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: arduino_nicla_sense_me.IArduinoNiclaSenseMeDeviceInfo, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified ArduinoNiclaSenseMeDeviceInfo message, length delimited. Does not implicitly {@link arduino_nicla_sense_me.ArduinoNiclaSenseMeDeviceInfo.verify|verify} messages.
+         * @param message ArduinoNiclaSenseMeDeviceInfo message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: arduino_nicla_sense_me.IArduinoNiclaSenseMeDeviceInfo, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes an ArduinoNiclaSenseMeDeviceInfo message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns ArduinoNiclaSenseMeDeviceInfo
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): arduino_nicla_sense_me.ArduinoNiclaSenseMeDeviceInfo;
+
+        /**
+         * Decodes an ArduinoNiclaSenseMeDeviceInfo message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns ArduinoNiclaSenseMeDeviceInfo
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): arduino_nicla_sense_me.ArduinoNiclaSenseMeDeviceInfo;
+
+        /**
+         * Verifies an ArduinoNiclaSenseMeDeviceInfo message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates an ArduinoNiclaSenseMeDeviceInfo message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns ArduinoNiclaSenseMeDeviceInfo
+         */
+        public static fromObject(object: { [k: string]: any }): arduino_nicla_sense_me.ArduinoNiclaSenseMeDeviceInfo;
+
+        /**
+         * Creates a plain object from an ArduinoNiclaSenseMeDeviceInfo message. Also converts values to other types if specified.
+         * @param message ArduinoNiclaSenseMeDeviceInfo
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: arduino_nicla_sense_me.ArduinoNiclaSenseMeDeviceInfo, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this ArduinoNiclaSenseMeDeviceInfo to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for ArduinoNiclaSenseMeDeviceInfo
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
+    /** Properties of an ArduinoNiclaSenseMeDevice. */
+    interface IArduinoNiclaSenseMeDevice {
+
+        /** ArduinoNiclaSenseMeDevice id */
+        id?: (string|null);
+
+        /** ArduinoNiclaSenseMeDevice usbPort */
+        usbPort?: (string|null);
+
+        /** ArduinoNiclaSenseMeDevice info */
+        info?: (arduino_nicla_sense_me.IArduinoNiclaSenseMeDeviceInfo|null);
+    }
+
+    /** Represents an ArduinoNiclaSenseMeDevice. */
+    class ArduinoNiclaSenseMeDevice implements IArduinoNiclaSenseMeDevice {
+
+        /**
+         * Constructs a new ArduinoNiclaSenseMeDevice.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: arduino_nicla_sense_me.IArduinoNiclaSenseMeDevice);
+
+        /** ArduinoNiclaSenseMeDevice id. */
+        public id: string;
+
+        /** ArduinoNiclaSenseMeDevice usbPort. */
+        public usbPort: string;
+
+        /** ArduinoNiclaSenseMeDevice info. */
+        public info?: (arduino_nicla_sense_me.IArduinoNiclaSenseMeDeviceInfo|null);
+
+        /**
+         * Creates a new ArduinoNiclaSenseMeDevice instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns ArduinoNiclaSenseMeDevice instance
+         */
+        public static create(properties?: arduino_nicla_sense_me.IArduinoNiclaSenseMeDevice): arduino_nicla_sense_me.ArduinoNiclaSenseMeDevice;
+
+        /**
+         * Encodes the specified ArduinoNiclaSenseMeDevice message. Does not implicitly {@link arduino_nicla_sense_me.ArduinoNiclaSenseMeDevice.verify|verify} messages.
+         * @param message ArduinoNiclaSenseMeDevice message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: arduino_nicla_sense_me.IArduinoNiclaSenseMeDevice, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified ArduinoNiclaSenseMeDevice message, length delimited. Does not implicitly {@link arduino_nicla_sense_me.ArduinoNiclaSenseMeDevice.verify|verify} messages.
+         * @param message ArduinoNiclaSenseMeDevice message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: arduino_nicla_sense_me.IArduinoNiclaSenseMeDevice, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes an ArduinoNiclaSenseMeDevice message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns ArduinoNiclaSenseMeDevice
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): arduino_nicla_sense_me.ArduinoNiclaSenseMeDevice;
+
+        /**
+         * Decodes an ArduinoNiclaSenseMeDevice message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns ArduinoNiclaSenseMeDevice
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): arduino_nicla_sense_me.ArduinoNiclaSenseMeDevice;
+
+        /**
+         * Verifies an ArduinoNiclaSenseMeDevice message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates an ArduinoNiclaSenseMeDevice message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns ArduinoNiclaSenseMeDevice
+         */
+        public static fromObject(object: { [k: string]: any }): arduino_nicla_sense_me.ArduinoNiclaSenseMeDevice;
+
+        /**
+         * Creates a plain object from an ArduinoNiclaSenseMeDevice message. Also converts values to other types if specified.
+         * @param message ArduinoNiclaSenseMeDevice
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: arduino_nicla_sense_me.ArduinoNiclaSenseMeDevice, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this ArduinoNiclaSenseMeDevice to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for ArduinoNiclaSenseMeDevice
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
+    /** Properties of a RxEnvelope. */
+    interface IRxEnvelope {
+
+        /** RxEnvelope monotonicStampNs */
+        monotonicStampNs?: (Long|null);
+
+        /** RxEnvelope localStampNs */
+        localStampNs?: (Long|null);
+
+        /** RxEnvelope appStartId */
+        appStartId?: (Long|null);
+
+        /** RxEnvelope signalType */
+        signalType?: (arduino_nicla_sense_me.ArduinoNiclaSenseMeSignalType|null);
+
+        /** RxEnvelope device */
+        device?: (arduino_nicla_sense_me.IArduinoNiclaSenseMeDevice|null);
+
+        /** RxEnvelope data */
+        data?: (Uint8Array|null);
+
+        /** RxEnvelope error */
+        error?: (string|null);
+    }
+
+    /** Represents a RxEnvelope. */
+    class RxEnvelope implements IRxEnvelope {
+
+        /**
+         * Constructs a new RxEnvelope.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: arduino_nicla_sense_me.IRxEnvelope);
+
+        /** RxEnvelope monotonicStampNs. */
+        public monotonicStampNs: Long;
+
+        /** RxEnvelope localStampNs. */
+        public localStampNs: Long;
+
+        /** RxEnvelope appStartId. */
+        public appStartId: Long;
+
+        /** RxEnvelope signalType. */
+        public signalType: arduino_nicla_sense_me.ArduinoNiclaSenseMeSignalType;
+
+        /** RxEnvelope device. */
+        public device?: (arduino_nicla_sense_me.IArduinoNiclaSenseMeDevice|null);
+
+        /** RxEnvelope data. */
+        public data: Uint8Array;
+
+        /** RxEnvelope error. */
+        public error: string;
+
+        /**
+         * Creates a new RxEnvelope instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns RxEnvelope instance
+         */
+        public static create(properties?: arduino_nicla_sense_me.IRxEnvelope): arduino_nicla_sense_me.RxEnvelope;
+
+        /**
+         * Encodes the specified RxEnvelope message. Does not implicitly {@link arduino_nicla_sense_me.RxEnvelope.verify|verify} messages.
+         * @param message RxEnvelope message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: arduino_nicla_sense_me.IRxEnvelope, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified RxEnvelope message, length delimited. Does not implicitly {@link arduino_nicla_sense_me.RxEnvelope.verify|verify} messages.
+         * @param message RxEnvelope message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: arduino_nicla_sense_me.IRxEnvelope, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes a RxEnvelope message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns RxEnvelope
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): arduino_nicla_sense_me.RxEnvelope;
+
+        /**
+         * Decodes a RxEnvelope message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns RxEnvelope
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): arduino_nicla_sense_me.RxEnvelope;
+
+        /**
+         * Verifies a RxEnvelope message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates a RxEnvelope message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns RxEnvelope
+         */
+        public static fromObject(object: { [k: string]: any }): arduino_nicla_sense_me.RxEnvelope;
+
+        /**
+         * Creates a plain object from a RxEnvelope message. Also converts values to other types if specified.
+         * @param message RxEnvelope
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: arduino_nicla_sense_me.RxEnvelope, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this RxEnvelope to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for RxEnvelope
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+}
+
 /** Namespace ina226. */
 export namespace ina226 {
 
@@ -13267,6 +14770,9 @@ export namespace victron_smartsolar_mppt {
         /** RxEnvelope hexFrame */
         hexFrame?: (Uint8Array|null);
 
+        /** RxEnvelope hexFrames */
+        hexFrames?: (Uint8Array[]|null);
+
         /** RxEnvelope error */
         error?: (string|null);
     }
@@ -13300,6 +14806,9 @@ export namespace victron_smartsolar_mppt {
 
         /** RxEnvelope hexFrame. */
         public hexFrame: Uint8Array;
+
+        /** RxEnvelope hexFrames. */
+        public hexFrames: Uint8Array[];
 
         /** RxEnvelope error. */
         public error: string;
@@ -13367,6 +14876,1084 @@ export namespace victron_smartsolar_mppt {
          * @returns Plain object
          */
         public static toObject(message: victron_smartsolar_mppt.RxEnvelope, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this RxEnvelope to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for RxEnvelope
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+}
+
+/** Namespace pwm_output. */
+export namespace pwm_output {
+
+    /** PwmOutputSignalType enum. */
+    enum PwmOutputSignalType {
+        PWM_OUTPUT_SIGNAL_TYPE_UNSPECIFIED = 0,
+        PWM_OUTPUT_CONFIGURED = 1,
+        PWM_OUTPUT_COMMAND = 2,
+        PWM_OUTPUT_COMMAND_SUCCESS = 3,
+        PWM_OUTPUT_COMMAND_REJECTED = 4,
+        PWM_OUTPUT_COMMAND_FAILED = 5,
+        PWM_OUTPUT_ERROR = 6
+    }
+
+    /** Properties of a PwmOutputDevice. */
+    interface IPwmOutputDevice {
+
+        /** PwmOutputDevice id */
+        id?: (string|null);
+    }
+
+    /** Represents a PwmOutputDevice. */
+    class PwmOutputDevice implements IPwmOutputDevice {
+
+        /**
+         * Constructs a new PwmOutputDevice.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: pwm_output.IPwmOutputDevice);
+
+        /** PwmOutputDevice id. */
+        public id: string;
+
+        /**
+         * Creates a new PwmOutputDevice instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns PwmOutputDevice instance
+         */
+        public static create(properties?: pwm_output.IPwmOutputDevice): pwm_output.PwmOutputDevice;
+
+        /**
+         * Encodes the specified PwmOutputDevice message. Does not implicitly {@link pwm_output.PwmOutputDevice.verify|verify} messages.
+         * @param message PwmOutputDevice message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: pwm_output.IPwmOutputDevice, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified PwmOutputDevice message, length delimited. Does not implicitly {@link pwm_output.PwmOutputDevice.verify|verify} messages.
+         * @param message PwmOutputDevice message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: pwm_output.IPwmOutputDevice, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes a PwmOutputDevice message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns PwmOutputDevice
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): pwm_output.PwmOutputDevice;
+
+        /**
+         * Decodes a PwmOutputDevice message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns PwmOutputDevice
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): pwm_output.PwmOutputDevice;
+
+        /**
+         * Verifies a PwmOutputDevice message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates a PwmOutputDevice message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns PwmOutputDevice
+         */
+        public static fromObject(object: { [k: string]: any }): pwm_output.PwmOutputDevice;
+
+        /**
+         * Creates a plain object from a PwmOutputDevice message. Also converts values to other types if specified.
+         * @param message PwmOutputDevice
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: pwm_output.PwmOutputDevice, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this PwmOutputDevice to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for PwmOutputDevice
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
+    /** Properties of an OutputState. */
+    interface IOutputState {
+
+        /** OutputState id */
+        id?: (string|null);
+
+        /** OutputState enabled */
+        enabled?: (boolean|null);
+
+        /** OutputState wave */
+        wave?: (pwm_output.IWaveCommand|null);
+    }
+
+    /** Represents an OutputState. */
+    class OutputState implements IOutputState {
+
+        /**
+         * Constructs a new OutputState.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: pwm_output.IOutputState);
+
+        /** OutputState id. */
+        public id: string;
+
+        /** OutputState enabled. */
+        public enabled: boolean;
+
+        /** OutputState wave. */
+        public wave?: (pwm_output.IWaveCommand|null);
+
+        /**
+         * Creates a new OutputState instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns OutputState instance
+         */
+        public static create(properties?: pwm_output.IOutputState): pwm_output.OutputState;
+
+        /**
+         * Encodes the specified OutputState message. Does not implicitly {@link pwm_output.OutputState.verify|verify} messages.
+         * @param message OutputState message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: pwm_output.IOutputState, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified OutputState message, length delimited. Does not implicitly {@link pwm_output.OutputState.verify|verify} messages.
+         * @param message OutputState message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: pwm_output.IOutputState, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes an OutputState message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns OutputState
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): pwm_output.OutputState;
+
+        /**
+         * Decodes an OutputState message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns OutputState
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): pwm_output.OutputState;
+
+        /**
+         * Verifies an OutputState message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates an OutputState message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns OutputState
+         */
+        public static fromObject(object: { [k: string]: any }): pwm_output.OutputState;
+
+        /**
+         * Creates a plain object from an OutputState message. Also converts values to other types if specified.
+         * @param message OutputState
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: pwm_output.OutputState, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this OutputState to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for OutputState
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
+    /** WaveLevel enum. */
+    enum WaveLevel {
+        WAVE_LEVEL_UNSPECIFIED = 0,
+        WAVE_LEVEL_LOW = 1,
+        WAVE_LEVEL_HIGH = 2
+    }
+
+    /** Properties of a WaveSegment. */
+    interface IWaveSegment {
+
+        /** WaveSegment level */
+        level?: (pwm_output.WaveLevel|null);
+
+        /** WaveSegment durationUs */
+        durationUs?: (number|null);
+    }
+
+    /** Represents a WaveSegment. */
+    class WaveSegment implements IWaveSegment {
+
+        /**
+         * Constructs a new WaveSegment.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: pwm_output.IWaveSegment);
+
+        /** WaveSegment level. */
+        public level: pwm_output.WaveLevel;
+
+        /** WaveSegment durationUs. */
+        public durationUs: number;
+
+        /**
+         * Creates a new WaveSegment instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns WaveSegment instance
+         */
+        public static create(properties?: pwm_output.IWaveSegment): pwm_output.WaveSegment;
+
+        /**
+         * Encodes the specified WaveSegment message. Does not implicitly {@link pwm_output.WaveSegment.verify|verify} messages.
+         * @param message WaveSegment message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: pwm_output.IWaveSegment, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified WaveSegment message, length delimited. Does not implicitly {@link pwm_output.WaveSegment.verify|verify} messages.
+         * @param message WaveSegment message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: pwm_output.IWaveSegment, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes a WaveSegment message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns WaveSegment
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): pwm_output.WaveSegment;
+
+        /**
+         * Decodes a WaveSegment message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns WaveSegment
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): pwm_output.WaveSegment;
+
+        /**
+         * Verifies a WaveSegment message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates a WaveSegment message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns WaveSegment
+         */
+        public static fromObject(object: { [k: string]: any }): pwm_output.WaveSegment;
+
+        /**
+         * Creates a plain object from a WaveSegment message. Also converts values to other types if specified.
+         * @param message WaveSegment
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: pwm_output.WaveSegment, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this WaveSegment to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for WaveSegment
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
+    /** WaveRepeatMode enum. */
+    enum WaveRepeatMode {
+        WAVE_REPEAT_MODE_FINITE = 0,
+        WAVE_REPEAT_MODE_FOREVER = 1
+    }
+
+    /** Properties of a WaveCommand. */
+    interface IWaveCommand {
+
+        /** WaveCommand channel */
+        channel?: (number|null);
+
+        /** WaveCommand segments */
+        segments?: (pwm_output.IWaveSegment[]|null);
+
+        /** WaveCommand repeat */
+        repeat?: (number|null);
+
+        /** WaveCommand repeatMode */
+        repeatMode?: (pwm_output.WaveRepeatMode|null);
+    }
+
+    /** Represents a WaveCommand. */
+    class WaveCommand implements IWaveCommand {
+
+        /**
+         * Constructs a new WaveCommand.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: pwm_output.IWaveCommand);
+
+        /** WaveCommand channel. */
+        public channel: number;
+
+        /** WaveCommand segments. */
+        public segments: pwm_output.IWaveSegment[];
+
+        /** WaveCommand repeat. */
+        public repeat: number;
+
+        /** WaveCommand repeatMode. */
+        public repeatMode: pwm_output.WaveRepeatMode;
+
+        /**
+         * Creates a new WaveCommand instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns WaveCommand instance
+         */
+        public static create(properties?: pwm_output.IWaveCommand): pwm_output.WaveCommand;
+
+        /**
+         * Encodes the specified WaveCommand message. Does not implicitly {@link pwm_output.WaveCommand.verify|verify} messages.
+         * @param message WaveCommand message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: pwm_output.IWaveCommand, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified WaveCommand message, length delimited. Does not implicitly {@link pwm_output.WaveCommand.verify|verify} messages.
+         * @param message WaveCommand message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: pwm_output.IWaveCommand, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes a WaveCommand message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns WaveCommand
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): pwm_output.WaveCommand;
+
+        /**
+         * Decodes a WaveCommand message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns WaveCommand
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): pwm_output.WaveCommand;
+
+        /**
+         * Verifies a WaveCommand message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates a WaveCommand message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns WaveCommand
+         */
+        public static fromObject(object: { [k: string]: any }): pwm_output.WaveCommand;
+
+        /**
+         * Creates a plain object from a WaveCommand message. Also converts values to other types if specified.
+         * @param message WaveCommand
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: pwm_output.WaveCommand, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this WaveCommand to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for WaveCommand
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
+    /** Properties of a DisableCommand. */
+    interface IDisableCommand {
+
+        /** DisableCommand channel */
+        channel?: (number|null);
+    }
+
+    /** Represents a DisableCommand. */
+    class DisableCommand implements IDisableCommand {
+
+        /**
+         * Constructs a new DisableCommand.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: pwm_output.IDisableCommand);
+
+        /** DisableCommand channel. */
+        public channel: number;
+
+        /**
+         * Creates a new DisableCommand instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns DisableCommand instance
+         */
+        public static create(properties?: pwm_output.IDisableCommand): pwm_output.DisableCommand;
+
+        /**
+         * Encodes the specified DisableCommand message. Does not implicitly {@link pwm_output.DisableCommand.verify|verify} messages.
+         * @param message DisableCommand message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: pwm_output.IDisableCommand, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified DisableCommand message, length delimited. Does not implicitly {@link pwm_output.DisableCommand.verify|verify} messages.
+         * @param message DisableCommand message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: pwm_output.IDisableCommand, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes a DisableCommand message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns DisableCommand
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): pwm_output.DisableCommand;
+
+        /**
+         * Decodes a DisableCommand message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns DisableCommand
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): pwm_output.DisableCommand;
+
+        /**
+         * Verifies a DisableCommand message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates a DisableCommand message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns DisableCommand
+         */
+        public static fromObject(object: { [k: string]: any }): pwm_output.DisableCommand;
+
+        /**
+         * Creates a plain object from a DisableCommand message. Also converts values to other types if specified.
+         * @param message DisableCommand
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: pwm_output.DisableCommand, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this DisableCommand to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for DisableCommand
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
+    /** Properties of a Command. */
+    interface ICommand {
+
+        /** Command targetOutputId */
+        targetOutputId?: (string|null);
+
+        /** Command wave */
+        wave?: (pwm_output.IWaveCommand|null);
+
+        /** Command disable */
+        disable?: (pwm_output.IDisableCommand|null);
+    }
+
+    /** Represents a Command. */
+    class Command implements ICommand {
+
+        /**
+         * Constructs a new Command.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: pwm_output.ICommand);
+
+        /** Command targetOutputId. */
+        public targetOutputId: string;
+
+        /** Command wave. */
+        public wave?: (pwm_output.IWaveCommand|null);
+
+        /** Command disable. */
+        public disable?: (pwm_output.IDisableCommand|null);
+
+        /**
+         * Creates a new Command instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns Command instance
+         */
+        public static create(properties?: pwm_output.ICommand): pwm_output.Command;
+
+        /**
+         * Encodes the specified Command message. Does not implicitly {@link pwm_output.Command.verify|verify} messages.
+         * @param message Command message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: pwm_output.ICommand, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified Command message, length delimited. Does not implicitly {@link pwm_output.Command.verify|verify} messages.
+         * @param message Command message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: pwm_output.ICommand, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes a Command message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns Command
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): pwm_output.Command;
+
+        /**
+         * Decodes a Command message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns Command
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): pwm_output.Command;
+
+        /**
+         * Verifies a Command message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates a Command message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns Command
+         */
+        public static fromObject(object: { [k: string]: any }): pwm_output.Command;
+
+        /**
+         * Creates a plain object from a Command message. Also converts values to other types if specified.
+         * @param message Command
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: pwm_output.Command, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this Command to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for Command
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
+    /** Properties of a TxEnvelope. */
+    interface ITxEnvelope {
+
+        /** TxEnvelope monotonicStampNs */
+        monotonicStampNs?: (Long|null);
+
+        /** TxEnvelope localStampNs */
+        localStampNs?: (Long|null);
+
+        /** TxEnvelope appStartId */
+        appStartId?: (Long|null);
+
+        /** TxEnvelope commandId */
+        commandId?: (Uint8Array|null);
+
+        /** TxEnvelope targetOutputId */
+        targetOutputId?: (string|null);
+
+        /** TxEnvelope command */
+        command?: (pwm_output.ICommand|null);
+    }
+
+    /** Represents a TxEnvelope. */
+    class TxEnvelope implements ITxEnvelope {
+
+        /**
+         * Constructs a new TxEnvelope.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: pwm_output.ITxEnvelope);
+
+        /** TxEnvelope monotonicStampNs. */
+        public monotonicStampNs: Long;
+
+        /** TxEnvelope localStampNs. */
+        public localStampNs: Long;
+
+        /** TxEnvelope appStartId. */
+        public appStartId: Long;
+
+        /** TxEnvelope commandId. */
+        public commandId: Uint8Array;
+
+        /** TxEnvelope targetOutputId. */
+        public targetOutputId: string;
+
+        /** TxEnvelope command. */
+        public command?: (pwm_output.ICommand|null);
+
+        /**
+         * Creates a new TxEnvelope instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns TxEnvelope instance
+         */
+        public static create(properties?: pwm_output.ITxEnvelope): pwm_output.TxEnvelope;
+
+        /**
+         * Encodes the specified TxEnvelope message. Does not implicitly {@link pwm_output.TxEnvelope.verify|verify} messages.
+         * @param message TxEnvelope message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: pwm_output.ITxEnvelope, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified TxEnvelope message, length delimited. Does not implicitly {@link pwm_output.TxEnvelope.verify|verify} messages.
+         * @param message TxEnvelope message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: pwm_output.ITxEnvelope, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes a TxEnvelope message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns TxEnvelope
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): pwm_output.TxEnvelope;
+
+        /**
+         * Decodes a TxEnvelope message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns TxEnvelope
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): pwm_output.TxEnvelope;
+
+        /**
+         * Verifies a TxEnvelope message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates a TxEnvelope message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns TxEnvelope
+         */
+        public static fromObject(object: { [k: string]: any }): pwm_output.TxEnvelope;
+
+        /**
+         * Creates a plain object from a TxEnvelope message. Also converts values to other types if specified.
+         * @param message TxEnvelope
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: pwm_output.TxEnvelope, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this TxEnvelope to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for TxEnvelope
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
+    /** Properties of a RxEnvelope. */
+    interface IRxEnvelope {
+
+        /** RxEnvelope monotonicStampNs */
+        monotonicStampNs?: (Long|null);
+
+        /** RxEnvelope localStampNs */
+        localStampNs?: (Long|null);
+
+        /** RxEnvelope appStartId */
+        appStartId?: (Long|null);
+
+        /** RxEnvelope signalType */
+        signalType?: (pwm_output.PwmOutputSignalType|null);
+
+        /** RxEnvelope device */
+        device?: (pwm_output.IPwmOutputDevice|null);
+
+        /** RxEnvelope state */
+        state?: (pwm_output.IOutputState|null);
+
+        /** RxEnvelope command */
+        command?: (pwm_output.ITxEnvelope|null);
+
+        /** RxEnvelope error */
+        error?: (string|null);
+    }
+
+    /** Represents a RxEnvelope. */
+    class RxEnvelope implements IRxEnvelope {
+
+        /**
+         * Constructs a new RxEnvelope.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: pwm_output.IRxEnvelope);
+
+        /** RxEnvelope monotonicStampNs. */
+        public monotonicStampNs: Long;
+
+        /** RxEnvelope localStampNs. */
+        public localStampNs: Long;
+
+        /** RxEnvelope appStartId. */
+        public appStartId: Long;
+
+        /** RxEnvelope signalType. */
+        public signalType: pwm_output.PwmOutputSignalType;
+
+        /** RxEnvelope device. */
+        public device?: (pwm_output.IPwmOutputDevice|null);
+
+        /** RxEnvelope state. */
+        public state?: (pwm_output.IOutputState|null);
+
+        /** RxEnvelope command. */
+        public command?: (pwm_output.ITxEnvelope|null);
+
+        /** RxEnvelope error. */
+        public error: string;
+
+        /**
+         * Creates a new RxEnvelope instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns RxEnvelope instance
+         */
+        public static create(properties?: pwm_output.IRxEnvelope): pwm_output.RxEnvelope;
+
+        /**
+         * Encodes the specified RxEnvelope message. Does not implicitly {@link pwm_output.RxEnvelope.verify|verify} messages.
+         * @param message RxEnvelope message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: pwm_output.IRxEnvelope, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified RxEnvelope message, length delimited. Does not implicitly {@link pwm_output.RxEnvelope.verify|verify} messages.
+         * @param message RxEnvelope message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: pwm_output.IRxEnvelope, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes a RxEnvelope message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns RxEnvelope
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): pwm_output.RxEnvelope;
+
+        /**
+         * Decodes a RxEnvelope message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns RxEnvelope
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): pwm_output.RxEnvelope;
+
+        /**
+         * Verifies a RxEnvelope message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates a RxEnvelope message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns RxEnvelope
+         */
+        public static fromObject(object: { [k: string]: any }): pwm_output.RxEnvelope;
+
+        /**
+         * Creates a plain object from a RxEnvelope message. Also converts values to other types if specified.
+         * @param message RxEnvelope
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: pwm_output.RxEnvelope, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this RxEnvelope to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for RxEnvelope
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+}
+
+/** Namespace dmesg. */
+export namespace dmesg {
+
+    /** DmesgSignalType enum. */
+    enum DmesgSignalType {
+        DMESG_SIGNAL_TYPE_UNSPECIFIED = 0,
+        DMESG_STARTED = 1,
+        DMESG_MESSAGES = 2,
+        DMESG_BACKLOG_COMPLETE = 3,
+        DMESG_GAP = 4,
+        DMESG_SOURCE_UNAVAILABLE = 5,
+        DMESG_ERROR = 6
+    }
+
+    /** Properties of a RxEnvelope. */
+    interface IRxEnvelope {
+
+        /** RxEnvelope monotonicStampNs */
+        monotonicStampNs?: (Long|null);
+
+        /** RxEnvelope localStampNs */
+        localStampNs?: (Long|null);
+
+        /** RxEnvelope appStartId */
+        appStartId?: (Long|null);
+
+        /** RxEnvelope signalType */
+        signalType?: (dmesg.DmesgSignalType|null);
+
+        /** RxEnvelope records */
+        records?: (string[]|null);
+
+        /** RxEnvelope fromBacklog */
+        fromBacklog?: (boolean|null);
+
+        /** RxEnvelope droppedRecords */
+        droppedRecords?: (Long|null);
+
+        /** RxEnvelope error */
+        error?: (string|null);
+    }
+
+    /** Represents a RxEnvelope. */
+    class RxEnvelope implements IRxEnvelope {
+
+        /**
+         * Constructs a new RxEnvelope.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: dmesg.IRxEnvelope);
+
+        /** RxEnvelope monotonicStampNs. */
+        public monotonicStampNs: Long;
+
+        /** RxEnvelope localStampNs. */
+        public localStampNs: Long;
+
+        /** RxEnvelope appStartId. */
+        public appStartId: Long;
+
+        /** RxEnvelope signalType. */
+        public signalType: dmesg.DmesgSignalType;
+
+        /** RxEnvelope records. */
+        public records: string[];
+
+        /** RxEnvelope fromBacklog. */
+        public fromBacklog: boolean;
+
+        /** RxEnvelope droppedRecords. */
+        public droppedRecords: Long;
+
+        /** RxEnvelope error. */
+        public error: string;
+
+        /**
+         * Creates a new RxEnvelope instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns RxEnvelope instance
+         */
+        public static create(properties?: dmesg.IRxEnvelope): dmesg.RxEnvelope;
+
+        /**
+         * Encodes the specified RxEnvelope message. Does not implicitly {@link dmesg.RxEnvelope.verify|verify} messages.
+         * @param message RxEnvelope message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: dmesg.IRxEnvelope, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified RxEnvelope message, length delimited. Does not implicitly {@link dmesg.RxEnvelope.verify|verify} messages.
+         * @param message RxEnvelope message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: dmesg.IRxEnvelope, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes a RxEnvelope message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns RxEnvelope
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): dmesg.RxEnvelope;
+
+        /**
+         * Decodes a RxEnvelope message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns RxEnvelope
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): dmesg.RxEnvelope;
+
+        /**
+         * Verifies a RxEnvelope message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates a RxEnvelope message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns RxEnvelope
+         */
+        public static fromObject(object: { [k: string]: any }): dmesg.RxEnvelope;
+
+        /**
+         * Creates a plain object from a RxEnvelope message. Also converts values to other types if specified.
+         * @param message RxEnvelope
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: dmesg.RxEnvelope, options?: $protobuf.IConversionOptions): { [k: string]: any };
 
         /**
          * Converts this RxEnvelope to JSON.
@@ -14762,6 +17349,12 @@ export namespace hikmicro {
         public static getTypeUrl(typeUrlPrefix?: string): string;
     }
 
+    /** Y16Encoding enum. */
+    enum Y16Encoding {
+        Y16_RAW = 0,
+        Y16_MED_SPLIT_ZSTD = 1
+    }
+
     /** Properties of a ThermalFrame. */
     interface IThermalFrame {
 
@@ -14779,6 +17372,15 @@ export namespace hikmicro {
 
         /** ThermalFrame payload */
         payload?: (Uint8Array|null);
+
+        /** ThermalFrame y16Encoding */
+        y16Encoding?: (hikmicro.Y16Encoding|null);
+
+        /** ThermalFrame y16 */
+        y16?: (Uint8Array|null);
+
+        /** ThermalFrame runtimeBlock */
+        runtimeBlock?: (Uint8Array|null);
     }
 
     /** Represents a ThermalFrame. */
@@ -14804,6 +17406,15 @@ export namespace hikmicro {
 
         /** ThermalFrame payload. */
         public payload: Uint8Array;
+
+        /** ThermalFrame y16Encoding. */
+        public y16Encoding: hikmicro.Y16Encoding;
+
+        /** ThermalFrame y16. */
+        public y16: Uint8Array;
+
+        /** ThermalFrame runtimeBlock. */
+        public runtimeBlock: Uint8Array;
 
         /**
          * Creates a new ThermalFrame instance using the specified properties.
@@ -15028,6 +17639,109 @@ export namespace hikmicro {
         public static getTypeUrl(typeUrlPrefix?: string): string;
     }
 
+    /** Properties of a DeviceInfoRef. */
+    interface IDeviceInfoRef {
+
+        /** DeviceInfoRef queue */
+        queue?: (string|null);
+
+        /** DeviceInfoRef id */
+        id?: (Uint8Array|null);
+    }
+
+    /** Represents a DeviceInfoRef. */
+    class DeviceInfoRef implements IDeviceInfoRef {
+
+        /**
+         * Constructs a new DeviceInfoRef.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: hikmicro.IDeviceInfoRef);
+
+        /** DeviceInfoRef queue. */
+        public queue: string;
+
+        /** DeviceInfoRef id. */
+        public id: Uint8Array;
+
+        /**
+         * Creates a new DeviceInfoRef instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns DeviceInfoRef instance
+         */
+        public static create(properties?: hikmicro.IDeviceInfoRef): hikmicro.DeviceInfoRef;
+
+        /**
+         * Encodes the specified DeviceInfoRef message. Does not implicitly {@link hikmicro.DeviceInfoRef.verify|verify} messages.
+         * @param message DeviceInfoRef message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: hikmicro.IDeviceInfoRef, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified DeviceInfoRef message, length delimited. Does not implicitly {@link hikmicro.DeviceInfoRef.verify|verify} messages.
+         * @param message DeviceInfoRef message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: hikmicro.IDeviceInfoRef, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes a DeviceInfoRef message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns DeviceInfoRef
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): hikmicro.DeviceInfoRef;
+
+        /**
+         * Decodes a DeviceInfoRef message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns DeviceInfoRef
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): hikmicro.DeviceInfoRef;
+
+        /**
+         * Verifies a DeviceInfoRef message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates a DeviceInfoRef message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns DeviceInfoRef
+         */
+        public static fromObject(object: { [k: string]: any }): hikmicro.DeviceInfoRef;
+
+        /**
+         * Creates a plain object from a DeviceInfoRef message. Also converts values to other types if specified.
+         * @param message DeviceInfoRef
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: hikmicro.DeviceInfoRef, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this DeviceInfoRef to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for DeviceInfoRef
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
     /** Properties of a RxEnvelope. */
     interface IRxEnvelope {
 
@@ -15036,6 +17750,9 @@ export namespace hikmicro {
 
         /** RxEnvelope frames */
         frames?: (hikmicro.IThermalFramesBlock|null);
+
+        /** RxEnvelope deviceInfoRef */
+        deviceInfoRef?: (hikmicro.IDeviceInfoRef|null);
     }
 
     /** Represents a RxEnvelope. */
@@ -15052,6 +17769,9 @@ export namespace hikmicro {
 
         /** RxEnvelope frames. */
         public frames?: (hikmicro.IThermalFramesBlock|null);
+
+        /** RxEnvelope deviceInfoRef. */
+        public deviceInfoRef?: (hikmicro.IDeviceInfoRef|null);
 
         /**
          * Creates a new RxEnvelope instance using the specified properties.
@@ -16216,6 +18936,12 @@ export namespace normfs {
         }
     }
 
+    /** Encoding enum. */
+    enum Encoding {
+        ENC_NONE = 0,
+        ENC_ZSTD = 1
+    }
+
     /** Properties of a ReadRequest. */
     interface IReadRequest {
 
@@ -16227,6 +18953,9 @@ export namespace normfs {
 
         /** ReadRequest step */
         step?: (Long|null);
+
+        /** ReadRequest acceptEncodings */
+        acceptEncodings?: (normfs.Encoding[]|null);
 
         /** ReadRequest offset */
         offset?: (normfs.IOffset|null);
@@ -16252,6 +18981,9 @@ export namespace normfs {
 
         /** ReadRequest step. */
         public step: Long;
+
+        /** ReadRequest acceptEncodings. */
+        public acceptEncodings: normfs.Encoding[];
 
         /** ReadRequest offset. */
         public offset?: (normfs.IOffset|null);
@@ -16354,6 +19086,9 @@ export namespace normfs {
 
         /** ReadResponse dataSource */
         dataSource?: (normfs.ReadResponse.DataSource|null);
+
+        /** ReadResponse encoding */
+        encoding?: (normfs.Encoding|null);
     }
 
     /** Represents a ReadResponse. */
@@ -16379,6 +19114,9 @@ export namespace normfs {
 
         /** ReadResponse dataSource. */
         public dataSource: normfs.ReadResponse.DataSource;
+
+        /** ReadResponse encoding. */
+        public encoding: normfs.Encoding;
 
         /**
          * Creates a new ReadResponse instance using the specified properties.

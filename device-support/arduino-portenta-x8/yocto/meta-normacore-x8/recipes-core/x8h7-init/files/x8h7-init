@@ -10,6 +10,24 @@
 ### END INIT INFO
 
 DT_X8H7="/sys/firmware/devicetree/base/soc@0/bus@30800000/spba-bus@30800000/spi@30840000/x8h7@0"
+M4_FIRMWARE="/opt/x8-firmware/m4-user-sketch.elf"
+M4_DONE="/var/lib/x8h7-init/m4-user-sketch.done"
+
+program_m4_once() {
+    [ -f "$M4_FIRMWARE" ] || return 0
+    [ ! -f "$M4_DONE" ] || return 0
+
+    if [ ! -f /usr/arduino/extra/program-m4.sh ]; then
+        echo "Portenta X8: M4 firmware found but program-m4.sh is missing"
+        return 1
+    fi
+
+    echo "Portenta X8: programming STM32H7 M4 firmware"
+    /bin/sh /usr/arduino/extra/program-m4.sh || return 1
+
+    mkdir -p "$(dirname "$M4_DONE")"
+    echo "programmed: $(date '+%Y-%m-%dT%H:%M:%S%z')" > "$M4_DONE"
+}
 
 case "$1" in
     start)
@@ -20,6 +38,8 @@ case "$1" in
 
         echo "Portenta X8: programming/checking STM32H7 firmware"
         /bin/sh /usr/arduino/extra/program-h7.sh || exit 1
+
+        program_m4_once || exit 1
 
         echo "Portenta X8: loading post-H7 IO modules"
         /bin/sh /usr/arduino/extra/load_modules_post.sh || exit 1

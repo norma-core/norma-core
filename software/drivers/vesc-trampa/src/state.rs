@@ -5,6 +5,7 @@ use normfs::NormFS;
 use normfs::UintN;
 use parking_lot::RwLock;
 use prost::Message;
+use station_iface::{Backpressure, SnapshotGate, WRITE_TIMEOUT, enqueue_with, try_enqueue_with};
 use std::sync::Arc;
 
 #[derive(Default)]
@@ -19,54 +20,84 @@ pub struct VescTrampaCommunicator {
     inference_queue_id: normfs::QueueId,
     inference_states_queue_id: normfs::QueueId,
     state: Arc<RwLock<VescInferenceState>>,
+    snapshot_gate: SnapshotGate,
 }
 
 impl VescTrampaCommunicator {
-    pub fn new(
+    pub async fn new(
         normfs: Arc<NormFS>,
         rx_queue_id: normfs::QueueId,
         tx_queue_id: normfs::QueueId,
         inference_queue_id: normfs::QueueId,
-    ) -> Self {
+        snapshot_gate: SnapshotGate,
+    ) -> Result<Self, normfs::Error> {
         let inference_states_queue_id = normfs.resolve("inference-states");
-        Self {
+        normfs.ensure_queue_exists_for_write(&rx_queue_id).await?;
+        normfs.ensure_queue_exists_for_write(&tx_queue_id).await?;
+        normfs
+            .ensure_queue_exists_for_write(&inference_queue_id)
+            .await?;
+        Ok(Self {
             normfs,
             rx_queue_id,
             tx_queue_id,
             inference_queue_id,
             inference_states_queue_id,
             state: Arc::new(RwLock::new(VescInferenceState::default())),
+            snapshot_gate,
+        })
+    }
+
+    fn encode<M: Message>(envelope: &M) -> Bytes {
+        let mut envelope_buf = Vec::new();
+        envelope.encode(&mut envelope_buf).unwrap();
+        Bytes::from(envelope_buf)
+    }
+
+    /// A skipped record does not update the inference state.
+    pub async fn send_rx(
+        &self,
+        envelope: &crate::vesc_trampa_proto::RxEnvelope,
+        policy: Backpressure,
+    ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let data = Self::encode(envelope);
+        // The record and the inference state it produces go out as one snapshot. Only on
+        // Skip, where neither write waits, so a full queue cannot stall other snapshots.
+        let _hold = (policy == Backpressure::Skip).then(|| self.snapshot_gate.hold());
+        let ptr = match policy {
+            Backpressure::Skip => match self.normfs.try_enqueue(&self.rx_queue_id, data) {
+                Ok(id) => id,
+                Err(normfs::Error::WouldBlock) => return Ok(()),
+                Err(e) => return Err(Box::new(e)),
+            },
+            Backpressure::Keep => {
+                self.normfs
+                    .enqueue_timeout(&self.rx_queue_id, data, WRITE_TIMEOUT)
+                    .await?
+            }
+        };
+        self.update_state(envelope, ptr, policy).await;
+        Ok(())
+    }
+
+    /// Called from the commands subscriber callback; must not block.
+    pub fn send_tx(&self, envelope: &crate::vesc_trampa_proto::TxEnvelope) {
+        if let Err(e) = try_enqueue_with(
+            &self.normfs,
+            &self.tx_queue_id,
+            Self::encode(envelope),
+            Backpressure::Keep,
+        ) {
+            log::warn!("Failed to publish VESC Trampa command echo: {e}");
         }
     }
 
-    fn send_envelope<M: Message>(
+    async fn update_state(
         &self,
-        queue_id: &normfs::QueueId,
-        envelope: &M,
-    ) -> Result<normfs::UintN, normfs::Error> {
-        let mut envelope_buf = Vec::new();
-        envelope.encode(&mut envelope_buf).unwrap();
-        self.normfs.enqueue(queue_id, Bytes::from(envelope_buf))
-    }
-
-    pub fn send_rx(
-        &self,
-        envelope: &crate::vesc_trampa_proto::RxEnvelope,
-    ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        let ptr = self.send_envelope(&self.rx_queue_id, envelope)?;
-        self.update_state(envelope, ptr);
-        Ok(())
-    }
-
-    pub fn send_tx(
-        &self,
-        envelope: &crate::vesc_trampa_proto::TxEnvelope,
-    ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        self.send_envelope(&self.tx_queue_id, envelope)?;
-        Ok(())
-    }
-
-    fn update_state(&self, envelope: &vesc_trampa_proto::RxEnvelope, ptr: UintN) {
+        envelope: &vesc_trampa_proto::RxEnvelope,
+        ptr: UintN,
+        policy: Backpressure,
+    ) {
         let Some(board) = envelope.board.as_ref() else {
             return;
         };
@@ -81,11 +112,14 @@ impl VescTrampaCommunicator {
             Ok(vesc_trampa_proto::VescTrampaSignalType::VescTrampaBoardPacket) => {
                 self.update_values(board, envelope, ptr);
             }
-            Ok(vesc_trampa_proto::VescTrampaSignalType::VescTrampaCommand) => {
-                self.update_mode_for_command_received(board, envelope);
-            }
+            Ok(vesc_trampa_proto::VescTrampaSignalType::VescTrampaCommand) => {}
             Ok(vesc_trampa_proto::VescTrampaSignalType::VescTrampaCommandSuccess) => {
                 self.update_mode_for_command_success(board, envelope);
+            }
+            Ok(vesc_trampa_proto::VescTrampaSignalType::VescTrampaCommandDone) => {
+                if let Some(mode) = completed_motor_mode(envelope) {
+                    self.set_motor_mode(board, mode);
+                }
             }
             _ => {}
         }
@@ -94,7 +128,7 @@ impl VescTrampaCommunicator {
             let mut state = self.state.write();
             state.state.last_inference_queue_ptr = self.get_last_inference_id_bytes();
         }
-        self.publish_inference_state();
+        self.publish_inference_state(policy).await;
     }
 
     fn add_board(
@@ -172,19 +206,6 @@ impl VescTrampaCommunicator {
         }
     }
 
-    fn update_mode_for_command_received(
-        &self,
-        board: &vesc_trampa_proto::VescTrampaBoard,
-        envelope: &vesc_trampa_proto::RxEnvelope,
-    ) {
-        let Some(command) = envelope.command.as_ref() else {
-            return;
-        };
-        if !Self::is_motor_mode_hold_command(command) {
-            self.set_motor_mode(board, vesc_trampa_proto::VescTrampaMotorMode::Unspecified);
-        }
-    }
-
     fn update_mode_for_command_success(
         &self,
         board: &vesc_trampa_proto::VescTrampaBoard,
@@ -193,7 +214,7 @@ impl VescTrampaCommunicator {
         let Some(command) = envelope.command.as_ref() else {
             return;
         };
-        if command.board_command.is_some() {
+        if !command.board_commands.is_empty() {
             self.set_motor_mode(board, vesc_trampa_proto::VescTrampaMotorMode::Unspecified);
             return;
         }
@@ -222,17 +243,6 @@ impl VescTrampaCommunicator {
         {
             board_state.motor_mode = mode as i32;
         }
-    }
-
-    fn is_motor_mode_hold_command(command: &vesc_trampa_proto::TxEnvelope) -> bool {
-        if command.board_command.is_some() {
-            return false;
-        }
-        let Some(motor_mode) = command.motor_mode.as_ref() else {
-            return false;
-        };
-        vesc_trampa_proto::VescTrampaMotorMode::try_from(motor_mode.mode)
-            == Ok(vesc_trampa_proto::VescTrampaMotorMode::Hold)
     }
 
     fn same_board(
@@ -265,11 +275,66 @@ impl VescTrampaCommunicator {
         }
     }
 
-    fn publish_inference_state(&self) {
-        let state = self.state.read();
+    async fn publish_inference_state(&self, policy: Backpressure) {
         let mut buf = Vec::new();
-        state.state.encode(&mut buf).unwrap();
-        let data = Bytes::from(buf);
-        let _ = self.normfs.enqueue(&self.inference_queue_id, data);
+        self.state.read().state.encode(&mut buf).unwrap();
+        if let Err(e) = enqueue_with(
+            &self.normfs,
+            &self.inference_queue_id,
+            Bytes::from(buf),
+            policy,
+        )
+        .await
+        {
+            log::warn!("Failed to publish VESC Trampa inference state: {e}");
+        }
+    }
+}
+
+// Acceptance of the finite chain does not mean its terminal HOLD is active.
+// The driver emits done only after writing the final handbrake command.
+fn completed_motor_mode(
+    envelope: &vesc_trampa_proto::RxEnvelope,
+) -> Option<vesc_trampa_proto::VescTrampaMotorMode> {
+    let command = envelope.command.as_ref()?;
+    let mode = command.board_commands.last()?.motor_mode_after.as_ref()?;
+    (mode.mode == vesc_trampa_proto::VescTrampaMotorMode::Hold as i32)
+        .then_some(vesc_trampa_proto::VescTrampaMotorMode::Hold)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::completed_motor_mode;
+    use crate::vesc_trampa_proto::{
+        RxEnvelope, TxEnvelope, VescTrampaBoardCommand, VescTrampaMotorMode,
+        VescTrampaMotorModeCommand,
+    };
+
+    #[test]
+    fn completed_chain_exposes_terminal_hold_in_inference() {
+        let mut envelope = RxEnvelope {
+            command: Some(TxEnvelope {
+                board_commands: vec![VescTrampaBoardCommand {
+                    motor_mode_after: Some(VescTrampaMotorModeCommand {
+                        mode: VescTrampaMotorMode::Hold as i32,
+                    }),
+                    ..Default::default()
+                }],
+                ..Default::default()
+            }),
+            ..Default::default()
+        };
+        assert_eq!(
+            completed_motor_mode(&envelope),
+            Some(VescTrampaMotorMode::Hold)
+        );
+        envelope
+            .command
+            .as_mut()
+            .unwrap()
+            .board_commands
+            .push(VescTrampaBoardCommand::default());
+        assert_eq!(completed_motor_mode(&envelope), None);
+        assert_eq!(completed_motor_mode(&RxEnvelope::default()), None);
     }
 }

@@ -13,7 +13,7 @@ export default st3215Model({
   label: 'SO101',
   motorCount: SO101_MOTOR_COUNT,
   kinematics: {
-    urdfPath: resolveSo101UrdfPath(false),
+    urdfPath: resolveSo101UrdfPath('follower'),
     basePos: so101BasePos,
     baseRpy: so101BaseRpy,
     jointNames: so101JointNames,

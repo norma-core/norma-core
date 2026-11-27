@@ -1,4 +1,6 @@
 import type { hikmicro } from '@/api/proto.js';
+import { buildThermalSpectrum, type ThermalSpectrum } from './hud/spectrum';
+import { decodeY16 } from './y16';
 
 const SENSOR_WIDTH = 256;
 const SENSOR_HEIGHT = 192;
@@ -6,14 +8,24 @@ const PIXEL_COUNT = SENSOR_WIDTH * SENSOR_HEIGHT;
 const Y16_BYTES = PIXEL_COUNT * 2;
 const APPEND_BYTES = 2048;
 const FACTORY_BLOB_BYTES = 0x3800;
+// hikmicro.Y16Encoding; the worker does not load the protobuf runtime.
+const Y16_RAW = 0;
+const Y16_MED_SPLIT_ZSTD = 1;
 const RESP_INV_NUMERATOR = 70368744177664;
 const KELVIN_OFFSET_Q8 = 0x11126;
 const KELVIN_OFFSET_Q12 = 0x111266;
+// Fixed-size scratch storage: cache conversions within a frame, never across
+// runtime calibration states. Decoding is synchronous (and runs in a Worker).
+const TEMPERATURE_CACHE = new Float32Array(0x10000);
+
+export type ThermalPalette = 'arctic' | 'iron' | 'silver' | 'terminator';
+export type ThermalFrameData = Pick<hikmicro.IThermalFrame, 'payload' | 'y16Encoding' | 'y16' | 'runtimeBlock'>;
 
 export interface ThermalRenderResult {
   width: number;
   height: number;
   rgba: Uint8ClampedArray;
+  spectrum?: ThermalSpectrum;
   minC: number | null;
   maxC: number | null;
   centerC: number | null;
@@ -23,6 +35,8 @@ export interface ThermalRenderResult {
   centerRaw: number;
   usedCalibration: boolean;
   error: string | null;
+  // The decoded plane, so the HUD does not unpack the frame a second time.
+  y16: Uint16Array;
 }
 
 interface TemperatureState {
@@ -497,7 +511,7 @@ function calibrationBlob(deviceInfo: hikmicro.IDeviceInfo | null | undefined): U
   const offset = calibration.factoryBlobOffset ?? 0;
   const length = calibration.factoryBlobLength ?? 0;
   if (length === FACTORY_BLOB_BYTES && offset >= 0 && offset + length <= container.length) {
-    return container.slice(offset, offset + length);
+    return container.subarray(offset, offset + length);
   }
 
   if (container.length === FACTORY_BLOB_BYTES) {
@@ -507,7 +521,19 @@ function calibrationBlob(deviceInfo: hikmicro.IDeviceInfo | null | undefined): U
   return null;
 }
 
-function y16Plane(payload: Uint8Array): Uint16Array {
+function isEncoded(frame: ThermalFrameData): boolean {
+  const encoding = frame.y16Encoding ?? Y16_RAW;
+  if (encoding !== Y16_RAW && encoding !== Y16_MED_SPLIT_ZSTD) {
+    throw new Error(`unsupported Y16 encoding ${encoding}`);
+  }
+  return encoding === Y16_MED_SPLIT_ZSTD;
+}
+
+export function y16Plane(frame: ThermalFrameData): Uint16Array {
+  if (isEncoded(frame)) {
+    return decodeY16(frame.y16 ?? new Uint8Array(), SENSOR_WIDTH, SENSOR_HEIGHT);
+  }
+  const payload = frame.payload ?? new Uint8Array();
   if (payload.length < Y16_BYTES) {
     throw new Error(`short HIKMICRO payload: ${payload.length} bytes`);
   }
@@ -519,19 +545,33 @@ function y16Plane(payload: Uint8Array): Uint16Array {
   return values;
 }
 
-function runtimeBlock(payload: Uint8Array): Uint8Array {
+function runtimeBlock(frame: ThermalFrameData): Uint8Array {
+  if (isEncoded(frame)) {
+    const block = frame.runtimeBlock ?? new Uint8Array();
+    if (block.length < APPEND_BYTES) {
+      throw new Error(`short HIKMICRO runtime block: ${block.length} bytes`);
+    }
+    return block.subarray(0, APPEND_BYTES);
+  }
+  const payload = frame.payload ?? new Uint8Array();
   if (payload.length < Y16_BYTES + APPEND_BYTES) {
     throw new Error(`short HIKMICRO runtime block: ${payload.length} bytes`);
   }
-  return payload.slice(Y16_BYTES, Y16_BYTES + APPEND_BYTES);
+  return payload.subarray(Y16_BYTES, Y16_BYTES + APPEND_BYTES);
 }
 
 function temperatureMap(y16: Uint16Array, state: TemperatureState): Float32Array {
   const values = new Float32Array(y16.length);
+  TEMPERATURE_CACHE.fill(Number.NaN);
   for (let i = 0; i < y16.length; i += 1) {
-    const bb = blackbodyCQ12FromGray(state, y16[i]);
-    const obj = objectCQ6FromBbQ12(state, bb);
-    values[i] = obj / 64.0;
+    const gray = y16[i];
+    let temperature = TEMPERATURE_CACHE[gray];
+    if (Number.isNaN(temperature)) {
+      const bb = blackbodyCQ12FromGray(state, gray);
+      temperature = objectCQ6FromBbQ12(state, bb) / 64.0;
+      TEMPERATURE_CACHE[gray] = temperature;
+    }
+    values[i] = temperature;
   }
   return values;
 }
@@ -601,15 +641,43 @@ function palette(value: number, lo: number, hi: number): [number, number, number
   ];
 }
 
-function toRgba(values: Float32Array, lo: number, hi: number): Uint8ClampedArray {
+const ARCTIC_STOPS = [
+  [57, 70, 157], [45, 139, 212], [75, 207, 216], [174, 238, 208], [255, 236, 135],
+];
+
+function toRgba(values: Float32Array, lo: number, hi: number, paletteName: ThermalPalette): Uint8ClampedArray {
   const rgba = new Uint8ClampedArray(values.length * 4);
+  const span = hi > lo ? hi - lo : 1;
   for (let i = 0; i < values.length; i += 1) {
     const value = values[i];
-    const [r, g, b] = Number.isFinite(value) ? palette(value, lo, hi) : [0, 0, 0];
+    // Rotate while writing the output: no extra frame allocation or pixel pass.
     const j = i * 4;
-    rgba[j] = r;
-    rgba[j + 1] = g;
-    rgba[j + 2] = b;
+    if (!Number.isFinite(value)) {
+      rgba[j] = rgba[j + 1] = rgba[j + 2] = 241;
+    } else if (paletteName === 'iron') {
+      const [r, g, b] = palette(value, lo, hi);
+      rgba[j] = r;
+      rgba[j + 1] = g;
+      rgba[j + 2] = b;
+    } else {
+      const t = Math.max(0, Math.min(1, (value - lo) / span));
+      if (paletteName === 'terminator') {
+        rgba[j] = Math.min(255, Math.round(t * 420));
+        rgba[j + 1] = Math.round(Math.max(0, (t - 0.65) / 0.35) ** 1.5 * 244);
+        rgba[j + 2] = Math.round(Math.max(0, (t - 0.72) / 0.28) ** 1.5 * 225);
+      } else if (paletteName === 'silver') {
+        const gray = Math.round(65 + t * 190);
+        rgba[j] = rgba[j + 1] = rgba[j + 2] = gray;
+      } else {
+        const position = t * (ARCTIC_STOPS.length - 1);
+        const index = Math.min(Math.floor(position), ARCTIC_STOPS.length - 2);
+        const fraction = position - index;
+        for (let channel = 0; channel < 3; channel++) {
+          rgba[j + channel] = Math.round(ARCTIC_STOPS[index][channel] +
+            (ARCTIC_STOPS[index + 1][channel] - ARCTIC_STOPS[index][channel]) * fraction);
+        }
+      }
+    }
     rgba[j + 3] = 255;
   }
   return rgba;
@@ -617,11 +685,11 @@ function toRgba(values: Float32Array, lo: number, hi: number): Uint8ClampedArray
 
 export function renderThermalFrame(
   envelope: hikmicro.IRxEnvelope,
-  frame: hikmicro.IThermalFrame,
+  frame: ThermalFrameData,
+  paletteName: ThermalPalette = 'iron',
 ): ThermalRenderResult {
   let error: string | null = null;
-  const payload = frame.payload ?? new Uint8Array();
-  const y16 = y16Plane(payload);
+  const y16 = y16Plane(frame);
   const raw = rawStats(y16);
 
   let map: Float32Array;
@@ -629,7 +697,7 @@ export function renderThermalFrame(
   const blob = calibrationBlob(envelope.deviceInfo);
   if (blob) {
     try {
-      const state = buildState(blob, runtimeBlock(payload));
+      const state = buildState(blob, runtimeBlock(frame));
       map = temperatureMap(y16, state);
       usedCalibration = true;
     } catch (err) {
@@ -648,7 +716,8 @@ export function renderThermalFrame(
   return {
     width: SENSOR_WIDTH,
     height: SENSOR_HEIGHT,
-    rgba: toRgba(map, lo, hi),
+    rgba: toRgba(map, lo, hi, paletteName),
+    spectrum: paletteName === 'terminator' ? buildThermalSpectrum(map, usedCalibration) : undefined,
     minC: usedCalibration ? stats.min : null,
     maxC: usedCalibration ? stats.max : null,
     centerC: usedCalibration ? stats.center : null,
@@ -658,6 +727,7 @@ export function renderThermalFrame(
     centerRaw: raw.center,
     usedCalibration,
     error,
+    y16,
   };
 }
 
@@ -684,4 +754,13 @@ export function formatCelsius(value: number | null): string {
     return 'N/A';
   }
   return `${value.toFixed(1)} C`;
+}
+
+export function formatTemperatureDelta(value: number | null, reference: number | null): string {
+  if (value === null || reference === null || !Number.isFinite(value) || !Number.isFinite(reference)) {
+    return '—';
+  }
+  const delta = Math.round((value - reference) * 10) / 10;
+  const sign = delta > 0 ? '+' : delta < 0 ? '−' : '';
+  return `${sign}${Math.abs(delta).toFixed(1)} °C`;
 }

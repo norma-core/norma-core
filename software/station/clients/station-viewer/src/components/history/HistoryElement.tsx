@@ -1,11 +1,13 @@
 import { useState } from 'react';
-import { airgradient_open_air_o_1pst, arduino_nicla_sense_env, hikmicro, ina226, usbvideo, st3215, motors_mirroring, sysinfo, yahboom_dogzilla_lite, normvla, vesc_trampa, victron_smartsolar_mppt } from '@/api/proto.js';
-import { formatBytes, parseUsbVideoData, parseHikmicroThermalData, parseMirroringData, parseSysinfoData, parseArduinoNiclaSenseEnvData, parseIna226Data, parseAirGradientData, parseVictronSmartSolarData, parseYahboomDogzillaLiteData, parseNormvlaData } from '@/components/history/history-utils';
+import { airgradient_open_air_o_1pst, arduino_nicla_sense_env, arduino_nicla_sense_me, hikmicro, ina226, usbvideo, st3215, motors_mirroring, sysinfo, yahboom_dogzilla_lite, normvla, vesc_trampa, victron_smartsolar_mppt } from '@/api/proto.js';
+import { formatBytes, parseUsbVideoData, parseHikmicroThermalData, parseMirroringData, parseSysinfoData, parseArduinoNiclaSenseEnvData, parseArduinoNiclaSenseMeData, parseIna226Data, parseAirGradientData, parseVictronSmartSolarData, parseYahboomDogzillaLiteData, parseNormvlaData } from '@/components/history/history-utils';
 import ExpandedView from '@/components/history/ExpandedView';
 import { readArduinoNiclaSenseEnvMainValues } from '@/devices/arduino-nicla-sense-env/values';
+import { cardinalName, readArduinoNiclaSenseMeMainValues, vecMagnitude } from '@/devices/arduino-nicla-sense-me/values';
 import { formatIna226Current, readIna226CurrentAmps, readIna226ShuntMillivolts } from '@/devices/ina226/values';
 import { airGradientDeviceLabel, readAirGradientValues } from '@/devices/airgradient-open-air-o-1pst/values';
-import { formatCelsius, latestThermalFrame, renderThermalFrame } from '@/devices/hikmicro-thermal/thermal';
+import { latestThermalFrame, renderThermalFrame } from '@/devices/hikmicro-thermal/thermal';
+import { useThermalDeviceInfo } from '@/devices/hikmicro-thermal/ui/useThermalDeviceInfo';
 import {
   describeRegisterValue,
   formatRegisterHex,
@@ -18,7 +20,7 @@ import {
 export interface HistoryElementData {
   queueId: string;
   entryId: Uint8Array;
-  data: Uint8Array | usbvideo.IRxEnvelope | hikmicro.IRxEnvelope | st3215.IInferenceState | st3215.ITxEnvelope | motors_mirroring.IRxEnvelope | sysinfo.IEnvelope | arduino_nicla_sense_env.IRxEnvelope | ina226.IRxEnvelope | airgradient_open_air_o_1pst.IRxEnvelope | victron_smartsolar_mppt.IRxEnvelope | yahboom_dogzilla_lite.IInferenceState | vesc_trampa.IInferenceState | vesc_trampa.IRxEnvelope | vesc_trampa.ITxEnvelope | normvla.IFrame | null;
+  data: Uint8Array | usbvideo.IRxEnvelope | usbvideo.ITxEnvelope | hikmicro.IRxEnvelope | st3215.IInferenceState | st3215.ITxEnvelope | motors_mirroring.IRxEnvelope | sysinfo.IEnvelope | arduino_nicla_sense_env.IRxEnvelope | arduino_nicla_sense_me.IRxEnvelope | ina226.IRxEnvelope | airgradient_open_air_o_1pst.IRxEnvelope | victron_smartsolar_mppt.IRxEnvelope | yahboom_dogzilla_lite.IInferenceState | vesc_trampa.IInferenceState | vesc_trampa.IRxEnvelope | vesc_trampa.ITxEnvelope | normvla.IFrame | null;
   rawData?: Uint8Array | null;
   error?: string;
   type?: string;
@@ -58,11 +60,11 @@ function formatSensorValue(value: number | null, unit = '', decimals = 2): strin
 }
 
 function HistoryElement({ element, index, dataQueueType, dataQueueId }: HistoryElementProps) {
-  const [isExpanded, setIsExpanded] = useState(element.type === 'usbvideo' || element.type === 'hikmicro-thermal' || element.type === 'st3215' || element.type === 'yahboom_dogzilla_lite' || element.type === 'arduino-nicla-sense-env' || element.type === 'ina226' || element.type === 'airgradient-open-air-o-1pst' || element.type === 'victron-smartsolar-mppt' || element.type === 'normvla' || element.type === 'st3215tx' || element.type === 'vesc-trampa' || element.type === 'vesc-trampa-rx' || element.type === 'vesc-trampa-tx');
+  const [isExpanded, setIsExpanded] = useState(element.type === 'usbvideo' || element.type === 'usbvideo-tx' || element.type === 'hikmicro-thermal' || element.type === 'st3215' || element.type === 'yahboom_dogzilla_lite' || element.type === 'arduino-nicla-sense-env' || element.type === 'arduino-nicla-sense-me' || element.type === 'ina226' || element.type === 'airgradient-open-air-o-1pst' || element.type === 'victron-smartsolar-mppt' || element.type === 'normvla' || element.type === 'st3215tx' || element.type === 'vesc-trampa' || element.type === 'vesc-trampa-rx' || element.type === 'vesc-trampa-tx');
   const displayQueueId = formatQueueIdForDisplay(element.queueId);
 
   const usbVideoData = element.type === 'usbvideo' && element.data ? parseUsbVideoData(element.data) : null;
-  const hikmicroThermalData = element.type === 'hikmicro-thermal' && element.data ? parseHikmicroThermalData(element.data) : null;
+  const hikmicroThermalData = useThermalDeviceInfo(element.type === 'hikmicro-thermal' && element.data ? parseHikmicroThermalData(element.data) : null);
   const hikmicroFrame = hikmicroThermalData ? latestThermalFrame(hikmicroThermalData) : null;
   const hikmicroRendered = hikmicroThermalData && hikmicroFrame ? renderThermalFrame(hikmicroThermalData, hikmicroFrame) : null;
   const mirroringData = element.type === 'mirroring' && element.data ? parseMirroringData(element.data) : null;
@@ -75,6 +77,15 @@ function HistoryElement({ element, index, dataQueueType, dataQueueId }: HistoryE
   const arduinoNiclaSenseEnvIaq = formatSensorValue(arduinoNiclaSenseEnvValues.iaq);
   const arduinoNiclaSenseEnvTvoc = formatSensorValue(arduinoNiclaSenseEnvValues.tvocMgM3, 'mg/m^3');
   const arduinoNiclaSenseEnvEco2 = formatSensorValue(arduinoNiclaSenseEnvValues.eco2Ppm, 'ppm');
+  const arduinoNiclaSenseMeData = element.type === 'arduino-nicla-sense-me' && element.data ? parseArduinoNiclaSenseMeData(element.data) : null;
+  const arduinoNiclaSenseMeValues = readArduinoNiclaSenseMeMainValues(arduinoNiclaSenseMeData?.data);
+  const arduinoNiclaSenseMeTemperature = formatSensorValue(arduinoNiclaSenseMeValues.temperatureC, 'C', 1);
+  const arduinoNiclaSenseMeHumidity = formatSensorValue(arduinoNiclaSenseMeValues.humidityPercent, '%', 0);
+  const arduinoNiclaSenseMeIaq = formatSensorValue(arduinoNiclaSenseMeValues.iaq, '', 0);
+  const arduinoNiclaSenseMeAccel = formatSensorValue(vecMagnitude(arduinoNiclaSenseMeValues.accelG), 'g');
+  const arduinoNiclaSenseMeHeading = arduinoNiclaSenseMeValues.headingDeg !== null && Number.isFinite(arduinoNiclaSenseMeValues.headingDeg)
+    ? `${arduinoNiclaSenseMeValues.headingDeg.toFixed(0)}° ${cardinalName(arduinoNiclaSenseMeValues.headingDeg)}`
+    : null;
   const ina226Data = element.type === 'ina226' && element.data ? parseIna226Data(element.data) : null;
   const ina226ShuntVoltage = formatSensorValue(readIna226ShuntMillivolts(ina226Data?.data), 'mV', 4);
   const ina226CurrentValue = readIna226CurrentAmps(ina226Data?.data, ina226Data?.device?.info?.shuntResistanceOhms);
@@ -187,14 +198,6 @@ function HistoryElement({ element, index, dataQueueType, dataQueueId }: HistoryE
               <span className={hikmicroRendered?.usedCalibration ? 'text-accent-success' : 'text-accent-warning'}>
                 {hikmicroRendered?.usedCalibration ? 'Calibrated' : 'Raw'}
               </span>
-              {hikmicroRendered && (
-                <>
-                  <span className="text-accent-warning">Center: {formatCelsius(hikmicroRendered.centerC)}</span>
-                  <span className="text-accent-data">Avg: {formatCelsius(hikmicroRendered.avgC)}</span>
-                  <span className="text-accent-info">Min: {formatCelsius(hikmicroRendered.minC)}</span>
-                  <span className="text-accent-critical">Max: {formatCelsius(hikmicroRendered.maxC)}</span>
-                </>
-              )}
               <span className="text-text-label">
                 Frames: {hikmicroThermalData.frames?.frameCount ?? hikmicroThermalData.frames?.frames?.length ?? 0}
               </span>
@@ -260,6 +263,36 @@ function HistoryElement({ element, index, dataQueueType, dataQueueId }: HistoryE
               )}
               {arduinoNiclaSenseEnvEco2 && (
                 <span className="text-accent-success">eCO2: {arduinoNiclaSenseEnvEco2}</span>
+              )}
+            </div>
+          )}
+
+          {arduinoNiclaSenseMeData && (
+            <div className="flex items-center gap-3 text-xs">
+              <span className="text-accent-success">
+                {arduino_nicla_sense_me.ArduinoNiclaSenseMeSignalType[arduinoNiclaSenseMeData.signalType]
+                  ?.replace(/^ARDUINO_NICLA_SENSE_ME_/, '')
+                  .replace(/_/g, ' ') ?? arduinoNiclaSenseMeData.signalType}
+              </span>
+              {arduinoNiclaSenseMeData.device && (
+                <span className="text-accent-info">
+                  {arduinoNiclaSenseMeData.device.id || arduinoNiclaSenseMeData.device.usbPort || 'N/A'}
+                </span>
+              )}
+              {arduinoNiclaSenseMeTemperature && (
+                <span className="text-accent-danger">Temp: {arduinoNiclaSenseMeTemperature}</span>
+              )}
+              {arduinoNiclaSenseMeHumidity && (
+                <span className="text-accent-info">RH: {arduinoNiclaSenseMeHumidity}</span>
+              )}
+              {arduinoNiclaSenseMeIaq && (
+                <span className="text-accent-warning">IAQ: {arduinoNiclaSenseMeIaq}</span>
+              )}
+              {arduinoNiclaSenseMeAccel && (
+                <span className="text-accent-data">|a|: {arduinoNiclaSenseMeAccel}</span>
+              )}
+              {arduinoNiclaSenseMeHeading && (
+                <span className="text-accent-secondary">Heading: {arduinoNiclaSenseMeHeading}</span>
               )}
             </div>
           )}
@@ -399,12 +432,12 @@ function HistoryElement({ element, index, dataQueueType, dataQueueId }: HistoryE
                   UUID: {formatBytes(vescTrampaTxData.targetBoardUuid, 12)}
                 </span>
               )}
-              {vescTrampaTxData.boardCommand && (
+              {(vescTrampaTxData.boardCommands?.length ?? 0) > 0 && (
                 <span className="text-accent-data">
-                  Payload: {vescTrampaTxData.boardCommand.payload?.length ?? 0}b
+                  Commands: {vescTrampaTxData.boardCommands?.length ?? 0}
                 </span>
               )}
-              {vescTrampaTxData.boardCommand?.responseExpected && (
+              {vescTrampaTxData.boardCommands?.some((command) => command.responseExpected) && (
                 <span className="text-accent-success">
                   Response
                 </span>

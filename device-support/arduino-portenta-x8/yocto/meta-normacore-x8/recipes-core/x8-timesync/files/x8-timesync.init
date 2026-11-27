@@ -2,7 +2,7 @@
 
 ### BEGIN INIT INFO
 # Provides:          x8-timesync
-# Required-Start:    $network
+# Required-Start:    $network chronyd
 # Required-Stop:
 # Default-Start:     2 3 4 5
 # Default-Stop:

@@ -91,13 +91,29 @@ message DeviceInfo {
     CalibrationData calibration = 5;
 }
 
+enum Y16Encoding {
+    Y16_RAW = 0; // payload holds the original UVC payload.
+    // y16 is one zstd frame with its content size set, holding the low bytes
+    // of all residuals, then the high bytes. In row-major order, with
+    // r = int16(pixel - prediction mod 2^16), residual = (r << 1) ^ (r >> 15).
+    // Prediction: 0 for the first pixel, the left neighbour in the first row,
+    // the one above in the first column, otherwise MED(a = left, b = above,
+    // c = above-left): min(a, b) if c >= max(a, b), max(a, b) if
+    // c <= min(a, b), else a + b - c.
+    Y16_MED_SPLIT_ZSTD = 1;
+}
+
 message ThermalFrame {
     uint32 sequence = 1;
     uint64 monotonic_stamp_ns = 2;
     uint64 local_stamp_ns = 3;
     RuntimeBlockInfo runtime = 6;
 
-    bytes payload = 10; // Complete original 256x196 UVC payload.
+    bytes payload = 10; // Complete original 256x196 UVC payload, Y16_RAW only.
+
+    Y16Encoding y16_encoding = 11;
+    bytes y16 = 12; // Encoded sensor_width x sensor_height plane.
+    bytes runtime_block = 13; // The 2048 bytes after the Y16 plane, as captured.
 }
 
 message ThermalFramesBlock {
@@ -107,13 +123,20 @@ message ThermalFramesBlock {
     uint64 monotonic_end_ns = 4;
     uint64 local_start_ns = 5;
     uint64 local_end_ns = 6;
+    // Unset when the envelope has device_info_ref: the session record holds them.
     CompactStreamFormat stream_format = 7;
     CompactPayloadLayout layout = 8;
 
     repeated ThermalFrame frames = 10;
 }
 
+message DeviceInfoRef {
+    string queue = 1; // Absolute queue id, e.g. /<instance>/hikmicro-thermal/device-info/<serial>.
+    bytes id = 2; // Entry id in that queue, little-endian.
+}
+
 message RxEnvelope {
-    DeviceInfo device_info = 1;
+    DeviceInfo device_info = 1; // Inline in frame records written before device_info_ref.
     ThermalFramesBlock frames = 2;
+    DeviceInfoRef device_info_ref = 3; // The capture session's device_info record.
 }

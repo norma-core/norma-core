@@ -11,6 +11,7 @@ enum VescTrampaSignalType {
     VESC_TRAMPA_COMMAND_SUCCESS         = 5;
     VESC_TRAMPA_COMMAND_REJECTED        = 6;
     VESC_TRAMPA_COMMAND_FAILED          = 7;
+    VESC_TRAMPA_COMMAND_DONE            = 8;
 }
 
 message RxEnvelope {
@@ -37,20 +38,23 @@ message TxEnvelope {
 
     bytes command_id = 4;
 
-    VescTrampaBoardCommand     board_command = 10;
-    VescTrampaMotorModeCommand motor_mode    = 11;
+    VescTrampaMotorModeCommand      motor_mode     = 11;
+    repeated VescTrampaBoardCommand board_commands = 12;
 }
 
 message Command {
     bytes target_board_uuid = 1;
 
-    VescTrampaBoardCommand     board_command = 10;
-    VescTrampaMotorModeCommand motor_mode    = 11;
+    VescTrampaMotorModeCommand      motor_mode     = 11;
+    repeated VescTrampaBoardCommand board_commands = 12;
 }
 
 message VescTrampaBoardCommand {
-    bytes payload = 1;
-    bool  response_expected = 2;
+    bytes  payload           = 1;
+    bool   response_expected = 2;
+    uint32 duration_ms       = 3;
+
+    VescTrampaMotorModeCommand motor_mode_after = 4;
 }
 
 enum VescTrampaMotorMode {

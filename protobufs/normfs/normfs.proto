@@ -72,10 +72,16 @@ message WriteResponse {
     repeated Id ids = 10;
 }
 
+enum Encoding {
+    ENC_NONE = 0;
+    ENC_ZSTD = 1;
+}
+
 message ReadRequest {
     uint64 read_id  = 1;
     string queue_id = 2;
     uint64 step     = 3;
+    repeated Encoding accept_encodings = 4;
 
     Offset offset = 10;
     uint64 limit  = 11;
@@ -105,4 +111,5 @@ message ReadResponse {
     Id         id          = 10;
     bytes      data        = 11;
     DataSource data_source = 12;
+    Encoding   encoding    = 13;
 }

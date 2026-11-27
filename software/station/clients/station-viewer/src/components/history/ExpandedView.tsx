@@ -1,8 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { airgradient_open_air_o_1pst, arduino_nicla_sense_env, hikmicro, ina226, usbvideo, st3215, motors_mirroring, sysinfo, yahboom_dogzilla_lite, normvla, vesc_trampa, victron_smartsolar_mppt } from '@/api/proto.js';
+import { airgradient_open_air_o_1pst, arduino_nicla_sense_env, dmesg, hikmicro, ina226, usbvideo, st3215, motors_mirroring, sysinfo, yahboom_dogzilla_lite, normvla, vesc_trampa, victron_smartsolar_mppt, arduino_nicla_sense_me } from '@/api/proto.js';
 import ArduinoNiclaSenseEnvExpanded from '@/components/history/ArduinoNiclaSenseEnvExpanded';
+import ArduinoNiclaSenseMeExpanded from '@/components/history/ArduinoNiclaSenseMeExpanded';
 import Ina226Expanded from '@/components/history/Ina226Expanded';
 import VictronSmartSolarExpanded from '@/components/history/VictronSmartSolarExpanded';
+import VescTrampaExpanded from '@/components/history/VescTrampaExpanded';
+import { parseVescTrampaValuesPayload } from '@/devices/vesc-trampa/values-parser';
 import { airGradientDeviceLabel, airGradientLineText, readAirGradientValues } from '@/devices/airgradient-open-air-o-1pst/values';
 import { createCroppedHikmicroJson, createCroppedJson } from '@/components/history/history-utils';
 import RawBytesExpanded from '@/components/history/RawBytesExpanded';
@@ -19,7 +22,7 @@ import HikmicroThermalLiveView from '@/devices/hikmicro-thermal/ui/HikmicroTherm
 type DataTab = 'visual' | 'json' | 'raw';
 
 interface ExpandedViewProps {
-  data: usbvideo.IRxEnvelope | hikmicro.IRxEnvelope | st3215.IInferenceState | st3215.ITxEnvelope | motors_mirroring.IRxEnvelope | sysinfo.IEnvelope | arduino_nicla_sense_env.IRxEnvelope | ina226.IRxEnvelope | airgradient_open_air_o_1pst.IRxEnvelope | victron_smartsolar_mppt.IRxEnvelope | yahboom_dogzilla_lite.IInferenceState | vesc_trampa.IInferenceState | vesc_trampa.IRxEnvelope | vesc_trampa.ITxEnvelope | normvla.IFrame | Uint8Array;
+  data: usbvideo.IRxEnvelope | usbvideo.ITxEnvelope | hikmicro.IRxEnvelope | st3215.IInferenceState | st3215.ITxEnvelope | motors_mirroring.IRxEnvelope | sysinfo.IEnvelope | arduino_nicla_sense_env.IRxEnvelope | arduino_nicla_sense_me.IRxEnvelope | ina226.IRxEnvelope | airgradient_open_air_o_1pst.IRxEnvelope | victron_smartsolar_mppt.IRxEnvelope | yahboom_dogzilla_lite.IInferenceState | vesc_trampa.IInferenceState | vesc_trampa.IRxEnvelope | vesc_trampa.ITxEnvelope | normvla.IFrame | Uint8Array;
   type: string | undefined;
   rawData?: Uint8Array | null;
   queueId?: string;
@@ -39,11 +42,13 @@ function tryDecodeProtobuf(rawData: Uint8Array): { decoded: unknown; typeName: s
     { name: 'st3215.RxEnvelope', decode: () => st3215.RxEnvelope.decode(rawData) },
     { name: 'st3215.TxEnvelope', decode: () => st3215.TxEnvelope.decode(rawData) },
     { name: 'usbvideo.RxEnvelope', decode: () => usbvideo.RxEnvelope.decode(rawData) },
+    { name: 'usbvideo.TxEnvelope', decode: () => usbvideo.TxEnvelope.decode(rawData) },
     { name: 'hikmicro.RxEnvelope', decode: () => hikmicro.RxEnvelope.decode(rawData) },
     { name: 'victron_smartsolar_mppt.RxEnvelope', decode: () => victron_smartsolar_mppt.RxEnvelope.decode(rawData) },
     { name: 'motors_mirroring.RxEnvelope', decode: () => motors_mirroring.RxEnvelope.decode(rawData) },
     { name: 'sysinfo.Envelope', decode: () => sysinfo.Envelope.decode(rawData) },
     { name: 'arduino_nicla_sense_env.RxEnvelope', decode: () => arduino_nicla_sense_env.RxEnvelope.decode(rawData) },
+    { name: 'arduino_nicla_sense_me.RxEnvelope', decode: () => arduino_nicla_sense_me.RxEnvelope.decode(rawData) },
     { name: 'ina226.RxEnvelope', decode: () => ina226.RxEnvelope.decode(rawData) },
     { name: 'airgradient_open_air_o_1pst.RxEnvelope', decode: () => airgradient_open_air_o_1pst.RxEnvelope.decode(rawData) },
     { name: 'yahboom_dogzilla_lite.InferenceState', decode: () => yahboom_dogzilla_lite.InferenceState.decode(rawData) },
@@ -77,6 +82,7 @@ function getAvailableTabs(
   }
 
   const isUsbVideo = type === 'usbvideo' && data instanceof usbvideo.RxEnvelope;
+  const isUsbVideoTx = type === 'usbvideo-tx' && data instanceof usbvideo.TxEnvelope;
   const isHikmicroThermal = type === 'hikmicro-thermal' && data instanceof hikmicro.RxEnvelope;
   const isSt3215 = type === 'st3215' && data instanceof st3215.InferenceState;
   const isSt3215Tx = type === 'st3215tx' && data instanceof st3215.TxEnvelope;
@@ -84,19 +90,21 @@ function getAvailableTabs(
   const isMirroring = type === 'mirroring' && data instanceof motors_mirroring.RxEnvelope;
   const isSysinfo = type === 'sysinfo' && data instanceof sysinfo.Envelope;
   const isArduinoNiclaSenseEnv = type === 'arduino-nicla-sense-env' && data instanceof arduino_nicla_sense_env.RxEnvelope;
+  const isArduinoNiclaSenseMe = type === 'arduino-nicla-sense-me' && data instanceof arduino_nicla_sense_me.RxEnvelope;
   const isIna226 = type === 'ina226' && data instanceof ina226.RxEnvelope;
   const isAirGradient = type === 'airgradient-open-air-o-1pst' && data instanceof airgradient_open_air_o_1pst.RxEnvelope;
   const isVictronSmartSolar = type === 'victron-smartsolar-mppt' && data instanceof victron_smartsolar_mppt.RxEnvelope;
   const isYahboomDogzillaLite = type === 'yahboom_dogzilla_lite' && data instanceof yahboom_dogzilla_lite.InferenceState;
   const isNormvla = type === 'normvla' && data instanceof normvla.Frame;
-  const isVescTrampa = type === 'vesc-trampa-rx' && data instanceof vesc_trampa.RxEnvelope;
+  const isVescTrampa = (type === 'vesc-trampa-rx' && data instanceof vesc_trampa.RxEnvelope)
+    || (type === 'vesc-trampa' && data instanceof vesc_trampa.InferenceState);
 
-  if (isUsbVideo || isHikmicroThermal || isSt3215 || isSt3215Tx || isMirroring || isVescTrampaTx || isSysinfo || isArduinoNiclaSenseEnv || isIna226 || isAirGradient || isVictronSmartSolar || isYahboomDogzillaLite || isNormvla) {
+  if (isUsbVideo || isUsbVideoTx || isHikmicroThermal || isSt3215 || isSt3215Tx || isMirroring || isVescTrampaTx || isSysinfo || isArduinoNiclaSenseEnv || isArduinoNiclaSenseMe || isIna226 || isAirGradient || isVictronSmartSolar || isYahboomDogzillaLite || isNormvla) {
     return ['visual', 'json', 'raw'];
   }
 
   if (isVescTrampa) {
-    return ['json', 'raw'];
+    return ['visual', 'json', 'raw'];
   }
 
   return ['json', 'raw'];
@@ -149,11 +157,39 @@ export default function ExpandedView({ data, type, rawData, queueId, entryId }: 
   const rawPayload = rawData ?? (data instanceof Uint8Array ? data : null);
 
   const renderVisual = () => {
+    if ((type === 'vesc-trampa' && data instanceof vesc_trampa.InferenceState)
+      || (type === 'vesc-trampa-rx' && data instanceof vesc_trampa.RxEnvelope)) {
+      return <VescTrampaExpanded data={data} />;
+    }
     if (type === 'usbvideo' && data instanceof usbvideo.RxEnvelope) {
-      return <UsbVideoExpanded data={data} onImageClick={(src, alt) => setFullscreenImage({ src, alt })} />;
+      return <UsbVideoExpanded data={data} queueId={queueId} entryId={entryId} onImageClick={(src, alt) => setFullscreenImage({ src, alt })} />;
+    }
+    if (type === 'usbvideo-tx' && data instanceof usbvideo.TxEnvelope) {
+      const setFormat = data.command?.setFormat;
+      const mode = setFormat?.mode === usbvideo.SetFormatMode.SET_FORMAT_MODE_MANUAL
+        ? 'manual'
+        : setFormat?.mode === usbvideo.SetFormatMode.SET_FORMAT_MODE_NONE
+          ? 'none'
+          : 'auto';
+      const format = setFormat?.format;
+      return (
+        <div className="space-y-2">
+          <div className="text-xs text-text-label">
+            Camera: {data.targetCameraUniqueId || 'N/A'}
+          </div>
+          <div className="bg-surface-primary p-2 rounded text-xs">
+            <div className="text-accent-data mb-1">Set Format: {mode}</div>
+            {format && (
+              <div className="text-text-secondary">
+                {format.width}x{format.height} @ {format.framesPerSecond?.toFixed(2) ?? '0.00'} FPS
+              </div>
+            )}
+          </div>
+        </div>
+      );
     }
     if (type === 'hikmicro-thermal' && data instanceof hikmicro.RxEnvelope) {
-      return <HikmicroThermalLiveView data={data} />;
+      return <HikmicroThermalLiveView data={data} mode="history" />;
     }
     if (type === 'yahboom_dogzilla_lite' && data instanceof yahboom_dogzilla_lite.InferenceState) {
       return <YahboomDogzillaLiteExpanded data={data} />;
@@ -169,6 +205,9 @@ export default function ExpandedView({ data, type, rawData, queueId, entryId }: 
     }
     if (type === 'arduino-nicla-sense-env' && data instanceof arduino_nicla_sense_env.RxEnvelope) {
       return <ArduinoNiclaSenseEnvExpanded data={data} />;
+    }
+    if (type === 'arduino-nicla-sense-me' && data instanceof arduino_nicla_sense_me.RxEnvelope) {
+      return <ArduinoNiclaSenseMeExpanded data={data} />;
     }
     if (type === 'ina226' && data instanceof ina226.RxEnvelope) {
       return <Ina226Expanded data={data} />;
@@ -273,12 +312,14 @@ export default function ExpandedView({ data, type, rawData, queueId, entryId }: 
           <div className="text-xs text-text-label">
             UUID: {data.targetBoardUuid ? Array.from(data.targetBoardUuid).map((byte) => byte.toString(16).padStart(2, '0')).join('') : 'N/A'}
           </div>
-          {data.boardCommand && (
+          {(data.boardCommands?.length ?? 0) > 0 && (
             <div className="bg-surface-primary p-2 rounded text-xs">
-              <div className="text-accent-data mb-1">Board Command:</div>
-              <div className="text-text-secondary">
-                Payload: {data.boardCommand.payload?.length ?? 0} bytes, Response: {data.boardCommand.responseExpected ? 'yes' : 'no'}
-              </div>
+              <div className="text-accent-data mb-1">Board Commands:</div>
+              {data.boardCommands?.map((command, index) => (
+                <div key={`${index}-${command.durationMs ?? 0}`} className="text-text-secondary">
+                  #{index + 1}: Payload {command.payload?.length ?? 0} bytes, Duration {command.durationMs ?? 0}ms, Response {command.responseExpected ? 'yes' : 'no'}
+                </div>
+              ))}
             </div>
           )}
         </div>
@@ -295,12 +336,46 @@ export default function ExpandedView({ data, type, rawData, queueId, entryId }: 
   };
 
   const renderJson = () => {
+    if (type === 'dmesg' && data instanceof dmesg.RxEnvelope) {
+      const dmesgData = dmesg.RxEnvelope.toObject(data, {
+        longs: String,
+        enums: String,
+        bytes: String,
+        defaults: true
+      });
+
+      return (
+        <div>
+          <div className="text-xs text-text-label mb-1">dmesg RxEnvelope JSON:</div>
+          <div className="bg-surface-primary p-2 rounded text-xs font-mono text-accent-data overflow-x-auto max-h-64 overflow-y-auto">
+            <pre>{JSON.stringify(dmesgData, null, 2)}</pre>
+          </div>
+        </div>
+      );
+    }
     if (type === 'usbvideo' && data instanceof usbvideo.RxEnvelope) {
       return (
         <div>
           <div className="text-xs text-text-label mb-1">USB Video RxEnvelope JSON (cropped data):</div>
           <div className="bg-surface-primary p-2 rounded text-xs font-mono text-accent-warning overflow-x-auto max-h-64 overflow-y-auto">
             <pre>{createCroppedJson(data)}</pre>
+          </div>
+        </div>
+      );
+    }
+    if (type === 'usbvideo-tx' && data instanceof usbvideo.TxEnvelope) {
+      const txData = usbvideo.TxEnvelope.toObject(data, {
+        longs: String,
+        enums: String,
+        bytes: String,
+        defaults: true
+      });
+
+      return (
+        <div>
+          <div className="text-xs text-text-label mb-1">USB Video TxEnvelope JSON:</div>
+          <div className="bg-surface-primary p-2 rounded text-xs font-mono text-accent-data overflow-x-auto max-h-64 overflow-y-auto">
+            <pre>{JSON.stringify(txData, null, 2)}</pre>
           </div>
         </div>
       );
@@ -366,6 +441,23 @@ export default function ExpandedView({ data, type, rawData, queueId, entryId }: 
           <div className="text-xs text-text-label mb-1">Arduino Nicla Sense Env RxEnvelope JSON:</div>
           <div className="bg-surface-primary p-2 rounded text-xs font-mono text-accent-data overflow-x-auto max-h-64 overflow-y-auto">
             <pre>{JSON.stringify(niclaData, null, 2)}</pre>
+          </div>
+        </div>
+      );
+    }
+    if (type === 'arduino-nicla-sense-me' && data instanceof arduino_nicla_sense_me.RxEnvelope) {
+      const niclaMeData = arduino_nicla_sense_me.RxEnvelope.toObject(data, {
+        longs: String,
+        enums: String,
+        bytes: String,
+        defaults: true
+      });
+
+      return (
+        <div>
+          <div className="text-xs text-text-label mb-1">Arduino Nicla Sense ME RxEnvelope JSON:</div>
+          <div className="bg-surface-primary p-2 rounded text-xs font-mono text-accent-data overflow-x-auto max-h-64 overflow-y-auto">
+            <pre>{JSON.stringify(niclaMeData, null, 2)}</pre>
           </div>
         </div>
       );
@@ -456,17 +548,27 @@ export default function ExpandedView({ data, type, rawData, queueId, entryId }: 
         </div>
       );
     }
-    if (type === 'vesc-trampa-rx' && data instanceof vesc_trampa.RxEnvelope) {
-      const vescData = vesc_trampa.RxEnvelope.toObject(data, {
+    if ((type === 'vesc-trampa' && data instanceof vesc_trampa.InferenceState)
+      || (type === 'vesc-trampa-rx' && data instanceof vesc_trampa.RxEnvelope)) {
+      const options = {
         longs: String,
         enums: String,
         bytes: String,
         defaults: true
-      });
+      };
+      const vescData = data instanceof vesc_trampa.InferenceState
+        ? { ...vesc_trampa.InferenceState.toObject(data, options), boards: data.boards.map(board => ({
+          ...vesc_trampa.InferenceState.BoardState.toObject(vesc_trampa.InferenceState.BoardState.create(board), options),
+          decodedValues: parseVescTrampaValuesPayload(board.valuesPayload),
+        })) }
+        : { ...vesc_trampa.RxEnvelope.toObject(data, options),
+          ...([4, 50].includes(data.boardPacket?.payload?.[0] ?? -1)
+            ? { decodedValues: parseVescTrampaValuesPayload(data.boardPacket?.payload) } : {}),
+        };
 
       return (
         <div>
-          <div className="text-xs text-text-label mb-1">VESC Trampa RxEnvelope JSON:</div>
+          <div className="text-xs text-text-label mb-1">VESC Trampa {data instanceof vesc_trampa.InferenceState ? 'InferenceState' : 'RxEnvelope'} JSON:</div>
           <div className="bg-surface-primary p-2 rounded text-xs font-mono text-accent-data overflow-x-auto max-h-64 overflow-y-auto">
             <pre>{JSON.stringify(vescData, null, 2)}</pre>
           </div>

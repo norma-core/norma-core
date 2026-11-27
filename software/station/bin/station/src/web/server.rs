@@ -7,7 +7,6 @@ use hyper_util::server::conn::auto;
 use normfs::NormFS;
 use rust_embed::RustEmbed;
 use std::error::Error;
-use std::net::SocketAddr;
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
@@ -194,7 +193,12 @@ impl WebServer {
                 || asset_path.ends_with(".urdf.gz")
                 || asset_path == "logo.svg";
 
-            let cache_header = if has_js_hash || is_static_asset {
+            // libav.js files carry their version in the name; its loader does not.
+            let is_versioned_libav = asset_path
+                .strip_prefix("libav/libav-")
+                .is_some_and(|rest| rest.starts_with(|c: char| c.is_ascii_digit()));
+
+            let cache_header = if has_js_hash || is_static_asset || is_versioned_libav {
                 "public, max-age=31536000, immutable"
             } else {
                 "no-store, no-cache, must-revalidate"
@@ -232,13 +236,12 @@ impl WebServer {
 }
 
 pub async fn start_server(
-    addr: SocketAddr,
+    listener: TcpListener,
     normfs: Arc<NormFS>,
     shutdown: Arc<AtomicBool>,
     static_path_override: Option<PathBuf>,
 ) -> Result<(), Box<dyn Error + Send + Sync>> {
-    let listener = TcpListener::bind(addr).await?;
-    log::info!("WebSocket server listening on {}", addr);
+    log::info!("WebSocket server listening on {}", listener.local_addr()?);
     let server = Arc::new(WebServer {
         normfs,
         static_path_override,
@@ -257,6 +260,11 @@ pub async fn start_server(
             }
             res = listener.accept() => {
                 if let Ok((stream, _)) = res {
+                    // Replies are small and back to back; Nagle would hold each one
+                    // until the previous one is ACKed.
+                    if let Err(e) = stream.set_nodelay(true) {
+                        log::warn!("failed to set TCP_NODELAY: {e}");
+                    }
                     let server = server.clone();
                     let hyper_service =
                         hyper::service::service_fn(move |req: Request<Incoming>| server.clone().handle_client(req));

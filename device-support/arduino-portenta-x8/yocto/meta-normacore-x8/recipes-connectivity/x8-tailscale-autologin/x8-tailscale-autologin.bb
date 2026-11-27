@@ -14,7 +14,7 @@ X8_TAILSCALE_LOGIN_SERVER ??= ""
 X8_TAILSCALE_HOSTNAME ??= ""
 X8_TAILSCALE_EXTRA_ARGS ??= ""
 
-RDEPENDS:${PN} += "busybox tailscale tailscaled-init"
+RDEPENDS:${PN} += "busybox chrony chronyc x8-timesync tailscale tailscaled-init"
 
 CONFFILES:${PN} += "${sysconfdir}/default/x8-tailscale-autologin"
 

@@ -10,9 +10,10 @@ import { motors_mirroring, st3215, usbvideo } from '@/api/proto.js';
 import { serverToLocal } from '@/api/timestamp-utils';
 import { getLatencyBgColor, getLatencyTextColor } from '@/utils/color-utils';
 import CameraViewer from '@/usbvideo/CameraViewer';
+import { isVideoSourceFresh } from '@/usbvideo/camera-source';
 import RobotCameraView from '@/usbvideo/RobotCameraView';
 import BusWebGLRenderer from '@/st3215/BusWebGLRenderer';
-import CameraHudControls from '@/usbvideo/CameraHudControls';
+import CameraHudControls, { type CameraLayoutMode } from '@/usbvideo/CameraHudControls';
 import MotorDataTable from '@/st3215/MotorDataTable';
 import { ADDR_GOAL_POSITION, getMotorPosition } from '@/st3215/motor-parser';
 
@@ -27,14 +28,12 @@ interface LatencyStats {
   max: number;
 }
 
-const STALE_CAMERA_MAX_AGE_MS = 60_000;
 const MIN_CALIBRATED_RANGE = 100;
 const WEB_CONTROL_STORAGE_TTL_MS = 60_000;
 const WEB_CONTROL_MIRROR_IGNORE_AFTER_LOCAL_REQUEST_MS = 5_000;
 const WEB_CONTROL_MIRROR_CONFIRM_MS = 800;
 
 type RobotViewMode = 'model' | 'camera';
-type CameraLayoutMode = 'pip' | 'side-by-side' | 'stacked';
 type CameraFitMode = 'contain' | 'cover';
 
 type ActiveVideoSource = {
@@ -86,20 +85,8 @@ const BusCard: React.FC<BusCardProps> = ({
   const activeVideoSources = useMemo(() => {
     const nowMs = Date.now();
 
-    const isFresh = (entry: FrameEntry<usbvideo.IRxEnvelope>) => {
-      const monotonicStampNs = entry.data.stamp?.monotonicStampNs;
-      if (!monotonicStampNs) {
-        return true;
-      }
-
-      const localStampNs = serverToLocal(Long.fromValue(monotonicStampNs));
-      const ageMs = nowMs - localStampNs.toNumber() / 1e6;
-
-      return ageMs <= STALE_CAMERA_MAX_AGE_MS;
-    };
-
     const sources: ActiveVideoSource[] = [
-      ...(videoSources ?? []).filter(isFresh).map((entry) => ({
+      ...(videoSources ?? []).filter((entry) => isVideoSourceFresh(entry, nowMs)).map((entry) => ({
         id: entry.data.camera?.uniqueId || entry.queueId,
         label: `${entry.data.camera?.deviceNumber ?? 'USB'} (${entry.data.camera?.uniqueId ?? 'unknown'})`,
         shortLabel: entry.data.camera?.deviceNumber !== undefined
@@ -603,10 +590,7 @@ const BusCard: React.FC<BusCardProps> = ({
               showMotorData={showCameraMotorData}
               isFullscreen={isCameraFullscreen}
               canSwapCameras={Boolean(primaryVideoSourceId && secondaryVideoSourceId)}
-              onSetPipLayout={() => setCameraLayout('pip')}
-              onToggleSplitLayout={() =>
-                setCameraLayout((layout) => (layout === 'side-by-side' ? 'stacked' : 'side-by-side'))
-              }
+              onCameraLayoutChange={setCameraLayout}
               onSwapCameras={handleSwapVideoSources}
               onToggleMotorData={() => setShowCameraMotorData((prev) => !prev)}
               onToggleFullscreen={toggleCameraFullscreen}

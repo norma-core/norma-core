@@ -25,6 +25,8 @@ export function getQueueType(queueType: drivers.QueueDataType): string | undefin
   switch (queueType) {
     case drivers.QueueDataType.QDT_USB_VIDEO_FRAMES:
       return 'usbvideo';
+    case drivers.QueueDataType.QDT_USB_VIDEO_TX:
+      return 'usbvideo-tx';
     case drivers.QueueDataType.QDT_HIKMICRO_THERMAL:
       return 'hikmicro-thermal';
     case drivers.QueueDataType.QDT_ST3215_INFERENCE:
@@ -45,12 +47,16 @@ export function getQueueType(queueType: drivers.QueueDataType): string | undefin
       return 'yahboom_dogzilla_lite';
     case drivers.QueueDataType.QDT_ARDUINO_NICLA_SENSE_ENV_RX:
       return 'arduino-nicla-sense-env';
+    case drivers.QueueDataType.QDT_ARDUINO_NICLA_SENSE_ME_RX:
+      return 'arduino-nicla-sense-me';
     case drivers.QueueDataType.QDT_INA226_RX:
       return 'ina226';
     case drivers.QueueDataType.QDT_AIRGRADIENT_OPEN_AIR_O_1PST_RX:
       return 'airgradient-open-air-o-1pst';
     case drivers.QueueDataType.QDT_VICTRON_SMARTSOLAR_MPPT_RX:
       return 'victron-smartsolar-mppt';
+    case drivers.QueueDataType.QDT_DMESG_RX:
+      return 'dmesg';
     default:
       return undefined;
   }

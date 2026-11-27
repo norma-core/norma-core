@@ -2,7 +2,7 @@ import { memo, useEffect, useMemo, useRef, useState, type ReactNode } from 'reac
 import { Scan } from 'lucide-react';
 import { commandManager } from '@/api/commands.js';
 import { yahboom_dogzilla_lite } from '@/api/proto.js';
-import CameraHudControls from '@/usbvideo/CameraHudControls';
+import CameraHudControls, { type CameraLayoutMode } from '@/usbvideo/CameraHudControls';
 import YahboomDogzillaLiteDesktopActionPanel from '@/devices/yahboom-dogzilla-lite/ui/YahboomDogzillaLiteDesktopActionPanel';
 import YahboomDogzillaLiteDesktopMovementPanel from '@/devices/yahboom-dogzilla-lite/ui/YahboomDogzillaLiteDesktopMovementPanel';
 import type { YahboomDogzillaLiteViewMode } from '@/devices/yahboom-dogzilla-lite/ui/YahboomDogzillaLiteViewModeSwitch';
@@ -61,7 +61,6 @@ const formatAcceleration = (value: number | null | undefined) => {
   return formattedValue === '-0.0' ? '0.0' : formattedValue;
 };
 
-type CameraLayoutMode = 'pip' | 'side-by-side' | 'stacked';
 type CameraFitMode = 'contain' | 'cover';
 
 interface YahboomDogzillaLiteDesktopDashboardProps {
@@ -75,8 +74,7 @@ interface YahboomDogzillaLiteDesktopDashboardProps {
   secondaryCameraFit?: CameraFitMode;
   onPrimaryCameraFitToggle?: () => void;
   onSecondaryCameraFitToggle?: () => void;
-  onSetPipLayout?: () => void;
-  onToggleSplitLayout?: () => void;
+  onCameraLayoutChange?: (layout: CameraLayoutMode) => void;
   onSwapCameras?: () => void;
   onToggleFullscreen?: () => void;
 }
@@ -279,8 +277,7 @@ const YahboomDogzillaLiteDesktopDashboard = memo(function YahboomDogzillaLiteDes
   secondaryCameraFit = 'contain',
   onPrimaryCameraFitToggle = noop,
   onSecondaryCameraFitToggle = noop,
-  onSetPipLayout = noop,
-  onToggleSplitLayout = noop,
+  onCameraLayoutChange = noop,
   onSwapCameras = noop,
   onToggleFullscreen = noop
 }: YahboomDogzillaLiteDesktopDashboardProps) {
@@ -669,8 +666,7 @@ const YahboomDogzillaLiteDesktopDashboard = memo(function YahboomDogzillaLiteDes
       showMotorData={false}
       isFullscreen={mainViewMode === 'fullscreenVideo'}
       canSwapCameras={Boolean(primaryCameraSourceId && secondaryCameraSourceId)}
-      onSetPipLayout={onSetPipLayout}
-      onToggleSplitLayout={onToggleSplitLayout}
+      onCameraLayoutChange={onCameraLayoutChange}
       onSwapCameras={onSwapCameras}
       onToggleMotorData={noop}
       onToggleFullscreen={onToggleFullscreen}

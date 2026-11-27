@@ -11,8 +11,11 @@ pub mod usbvideo_proto {
     }
 }
 
+pub mod codec;
 mod converters;
 mod state;
+
+pub use state::StateTracker;
 
 pub mod pipeline;
 
@@ -205,6 +208,12 @@ pub struct USBVideoConfig {
 
     /// Drop this many frames after each frame that is kept. `0` keeps every frame.
     pub frame_skip: u32,
+
+    /// How kept frames are stored.
+    pub codec: codec::VideoCodec,
+
+    /// How far apart VP8 keyframes are, at most.
+    pub keyframe_interval: std::time::Duration,
 }
 
 impl Default for USBVideoConfig {
@@ -213,6 +222,8 @@ impl Default for USBVideoConfig {
             resize_target: 224,
             formats: Vec::new(),
             frame_skip: 0,
+            codec: codec::VideoCodec::Jpeg,
+            keyframe_interval: codec::KEYFRAME_INTERVAL,
         }
     }
 }

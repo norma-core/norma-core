@@ -37,6 +37,7 @@ impl Default for Config {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(deny_unknown_fields)]
 pub struct CloudOffloadConfig {
     /// Cloud storage bucket name
     pub bucket: String,
@@ -52,6 +53,10 @@ pub struct CloudOffloadConfig {
 
     /// Optional endpoint URL for S3-compatible services (e.g., MinIO)
     pub endpoint: Option<String>,
+
+    /// Station queue rule patterns whose queues are not uploaded
+    #[serde(default)]
+    pub exclude: Vec<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -63,6 +68,14 @@ pub struct Drivers {
     /// Trampa VESC serial board configuration
     #[serde(rename = "vesc-trampa", skip_serializing_if = "Option::is_none")]
     pub vesc_trampa: Option<VescTrampaConfig>,
+
+    /// Generic Linux PWM output configuration
+    #[serde(
+        rename = "pwm-output",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub pwm_output: Option<PwmOutputConfig>,
 
     /// Enable or disable system info monitoring
     #[serde(rename = "system-info")]
@@ -89,6 +102,13 @@ pub struct Drivers {
     )]
     pub arduino_nicla_sense_env: Option<ArduinoNiclaSenseEnvConfig>,
 
+    #[serde(
+        rename = "arduino-nicla-sense-me",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub arduino_nicla_sense_me: Option<ArduinoNiclaSenseMeConfig>,
+
     #[serde(rename = "ina226", skip_serializing_if = "Option::is_none")]
     pub ina226: Option<Ina226Config>,
 
@@ -105,6 +125,9 @@ pub struct Drivers {
         skip_serializing_if = "Option::is_none"
     )]
     pub victron_smartsolar_mppt: Option<VictronSmartSolarMpptConfig>,
+
+    #[serde(rename = "dmesg", default, skip_serializing_if = "Option::is_none")]
+    pub dmesg: Option<DmesgConfig>,
 }
 
 /// ST3215 servo bus configuration
@@ -195,6 +218,38 @@ impl Default for VescTrampaConfig {
     }
 }
 
+/// Generic Linux PWM output configuration.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct PwmOutputConfig {
+    #[serde(default)]
+    pub enabled: bool,
+
+    #[serde(rename = "device-path", default = "default_pwm_output_device_path")]
+    pub device_path: PathBuf,
+
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub outputs: Vec<PwmOutputDeviceConfig>,
+}
+
+impl Default for PwmOutputConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            device_path: default_pwm_output_device_path(),
+            outputs: Vec::new(),
+        }
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct PwmOutputDeviceConfig {
+    pub id: String,
+}
+
+fn default_pwm_output_device_path() -> PathBuf {
+    PathBuf::from("/dev/x8h7_ui")
+}
+
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Inference {
     /// Queue ID for inference data (e.g., "inference/normvla")
@@ -273,6 +328,33 @@ pub struct UsbVideoConfig {
     /// `frame_skip + 1` frames is recorded. Default 0 keeps every frame.
     #[serde(rename = "frame-skip", default)]
     pub frame_skip: u32,
+
+    /// How kept frames are stored: `vp8` (default), one VP8 frame per entry
+    /// with a keyframe every `keyframe-interval`, or `jpeg`, one JPEG per entry.
+    #[serde(default)]
+    pub codec: UsbVideoCodec,
+
+    /// Longest gap between VP8 keyframes, e.g. `5s`. Default `1s`, at most
+    /// `5s`. A longer one stores less but makes a jump to a frame decode more
+    /// of its chain.
+    #[serde(
+        rename = "keyframe-interval",
+        with = "humantime_serde",
+        default = "default_usb_video_keyframe_interval"
+    )]
+    pub keyframe_interval: std::time::Duration,
+}
+
+fn default_usb_video_keyframe_interval() -> std::time::Duration {
+    std::time::Duration::from_secs(1)
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone, Copy, Default, PartialEq, Eq)]
+#[serde(rename_all = "lowercase")]
+pub enum UsbVideoCodec {
+    Jpeg,
+    #[default]
+    Vp8,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, Default, PartialEq, Eq)]
@@ -294,6 +376,8 @@ impl Default for UsbVideoConfig {
             resize_target: 224,
             formats: Vec::new(),
             frame_skip: 0,
+            codec: UsbVideoCodec::Vp8,
+            keyframe_interval: default_usb_video_keyframe_interval(),
         }
     }
 }
@@ -366,6 +450,17 @@ pub struct Ov5647Config {
 
     #[serde(default = "default_ov5647_fps", rename = "frames-per-second")]
     pub frames_per_second: u16,
+
+    /// Same as `usb-video`: `vp8` (default) or `jpeg`.
+    #[serde(default)]
+    pub codec: UsbVideoCodec,
+
+    #[serde(
+        rename = "keyframe-interval",
+        with = "humantime_serde",
+        default = "default_usb_video_keyframe_interval"
+    )]
+    pub keyframe_interval: std::time::Duration,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -405,6 +500,15 @@ impl Default for ArduinoNiclaSenseEnvConfig {
             poll_interval: default_arduino_nicla_sense_env_poll_interval(),
         }
     }
+}
+
+/// Boards are not configured: the driver autodetects every Nicla Sense ME
+/// on USB (vid 2341 pid 0060) and streams each into its own queue named by
+/// the board's serial number.
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, Default)]
+pub struct ArduinoNiclaSenseMeConfig {
+    #[serde(default)]
+    pub enabled: bool,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -502,6 +606,12 @@ impl Default for VictronSmartSolarMpptConfig {
     }
 }
 
+#[derive(Debug, Serialize, Deserialize, Clone, Default)]
+pub struct DmesgConfig {
+    #[serde(default)]
+    pub enabled: bool,
+}
+
 fn default_ov5647_dimension() -> String {
     "320x240".to_string()
 }
@@ -530,15 +640,18 @@ impl Default for Drivers {
         Self {
             st3215: Some(St3215Config::default()),
             vesc_trampa: Some(VescTrampaConfig::default()),
+            pwm_output: None,
             system_info: true,
             usb_video: Some(UsbVideoConfig::default()),
             hikmicro_thermal: None,
             yahboom_dogzilla_lite: None,
             ov5647: None,
             arduino_nicla_sense_env: None,
+            arduino_nicla_sense_me: None,
             ina226: None,
             airgradient_open_air_o_1pst: None,
             victron_smartsolar_mppt: None,
+            dmesg: None,
         }
     }
 }
@@ -574,6 +687,7 @@ impl Config {
 #[cfg(test)]
 mod config_tests {
     use super::Config;
+    use std::path::PathBuf;
 
     const MINIMAL_CONFIG: &str = "drivers:\n  system-info: true\n";
 
@@ -626,11 +740,44 @@ mod config_tests {
         assert_eq!(victron.read_timeout, std::time::Duration::from_secs(30));
         assert_eq!(cfg.inference.as_ref().map(Vec::len), Some(0));
     }
+
+    #[test]
+    fn parses_pwm_output_config() {
+        let cfg: Config = serde_yaml::from_str(
+            "drivers:\n  system-info: true\n  pwm-output:\n    enabled: true\n    device-path: /dev/x8h7_ui\n    outputs:\n      - id: steering\ninference:\n",
+        )
+        .unwrap();
+        let pwm_output = cfg.drivers.pwm_output.unwrap();
+        assert!(pwm_output.enabled);
+        assert_eq!(pwm_output.device_path, PathBuf::from("/dev/x8h7_ui"));
+        assert_eq!(pwm_output.outputs.len(), 1);
+        let steering = &pwm_output.outputs[0];
+        assert_eq!(steering.id, "steering");
+        assert_eq!(cfg.inference.as_ref().map(Vec::len), Some(0));
+    }
+
+    #[test]
+    fn parses_cloud_offload_exclude() {
+        let parse = |yaml: &str| {
+            serde_yaml::from_str::<Config>(&format!(
+                "drivers:\n  system-info: true\ncloud-offload:\n  bucket: \"\"\n  region: \"\"\n  access_key_id: \"\"\n  secret_access_key: \"\"\n{yaml}"
+            ))
+        };
+        let cloud = |yaml: &str| parse(yaml).unwrap().cloud_offload.unwrap();
+        assert!(cloud("").exclude.is_empty());
+        for typo in ["  exlude: []\n", "  local-only: []\n"] {
+            assert!(parse(typo).is_err(), "{typo}");
+        }
+        assert_eq!(
+            cloud("  exclude:\n    - \"*video/*\"\n    - \"*/hikmicro-thermal/*\"\n").exclude,
+            ["*video/*", "*/hikmicro-thermal/*"]
+        );
+    }
 }
 
 #[cfg(test)]
 mod usb_video_config_tests {
-    use super::{UsbVideoConfig, UsbVideoFormatConfig};
+    use super::{UsbVideoCodec, UsbVideoConfig, UsbVideoFormatConfig};
 
     #[test]
     fn test_defaults_when_only_enabled_is_given() {
@@ -652,6 +799,15 @@ mod usb_video_config_tests {
             }]
         );
         assert_eq!(cfg.frame_skip, 2);
+    }
+
+    #[test]
+    fn test_codec_defaults_to_vp8_and_parses_jpeg() {
+        let cfg: UsbVideoConfig = serde_yaml::from_str("enabled: true\n").unwrap();
+        assert_eq!(cfg.codec, UsbVideoCodec::Vp8);
+        let cfg: UsbVideoConfig = serde_yaml::from_str("enabled: true\ncodec: jpeg\n").unwrap();
+        assert_eq!(cfg.codec, UsbVideoCodec::Jpeg);
+        assert!(serde_yaml::from_str::<UsbVideoConfig>("enabled: true\ncodec: h264\n").is_err());
     }
 
     #[test]
@@ -698,5 +854,40 @@ mod hikmicro_thermal_config_tests {
         let cfg: HikmicroThermalConfig = serde_yaml::from_str(yaml).unwrap();
         assert_eq!(cfg.frame_timeout, std::time::Duration::from_secs(2));
         assert_eq!(cfg.frame_skip, 3);
+    }
+}
+
+#[cfg(test)]
+mod arduino_nicla_sense_me_tests {
+    use super::*;
+
+    #[test]
+    fn parses_arduino_nicla_sense_me_drivers_block() {
+        // Deserialize the Drivers struct directly so the test doesn't depend on
+        // unrelated required fields of the top-level Config.
+        let yaml = r#"
+system-info: false
+arduino-nicla-sense-me:
+  enabled: true
+"#;
+        let drivers: Drivers = serde_yaml::from_str(yaml).expect("drivers block parses");
+        let me = drivers
+            .arduino_nicla_sense_me
+            .expect("nicla sense me block present");
+        assert!(me.enabled);
+        assert_eq!(me, ArduinoNiclaSenseMeConfig { enabled: true });
+    }
+
+    #[test]
+    fn arduino_nicla_sense_me_defaults_to_disabled() {
+        let yaml = r#"
+system-info: false
+arduino-nicla-sense-me: {}
+"#;
+        let drivers: Drivers = serde_yaml::from_str(yaml).expect("drivers block parses");
+        assert_eq!(
+            drivers.arduino_nicla_sense_me,
+            Some(ArduinoNiclaSenseMeConfig { enabled: false })
+        );
     }
 }

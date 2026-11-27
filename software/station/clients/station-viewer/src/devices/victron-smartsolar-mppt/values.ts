@@ -245,9 +245,6 @@ export const EMPTY_STATE: VictronState = {
   hexRegs: new Map(),
 };
 
-// TEXT blocks and HEX frames arrive in separate envelopes, so the device state is
-// the accumulation of both: the newest TEXT block plus the newest value seen for
-// each register.
 export function applyEnvelope(
   state: VictronState,
   envelope: victron_smartsolar_mppt.IRxEnvelope,
@@ -255,6 +252,24 @@ export function applyEnvelope(
   const signal = envelope.signalType ?? 0;
   const textBytes = envelope.data instanceof Uint8Array ? envelope.data : null;
   const hexFrame = envelope.hexFrame instanceof Uint8Array ? envelope.hexFrame : null;
+  const snapshot = envelope.hexFrames;
+
+  if (snapshot && snapshot.length > 0) {
+    const hexRegs = new Map<number, Uint8Array>();
+    for (const frame of snapshot) {
+      const parsed = parseVeDirectHexFrame(frame);
+      if (parsed) {
+        hexRegs.set(parsed.register, parsed.value);
+      }
+    }
+    return {
+      textValues:
+        textBytes && textBytes.length > 0
+          ? parseVeDirectTextBlock(textBytes)
+          : state.textValues,
+      hexRegs,
+    };
+  }
 
   if (
     signal === victron_smartsolar_mppt.VictronSignalType.VICTRON_TEXT_BLOCK ||

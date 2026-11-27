@@ -15,8 +15,28 @@ function signalMetrics(signal: sysinfo.ICellularSignal): string {
     .join(', ');
 }
 
+function throttleState(now?: boolean | null, sinceBoot?: boolean | null): { label: string; className: string } {
+  if (now) return { label: 'now', className: 'text-accent-critical' };
+  if (sinceBoot) return { label: 'boot', className: 'text-accent-danger' };
+  return { label: '—', className: 'text-text-label' };
+}
+
 export default function SysinfoGrid({ data }: SysinfoGridProps) {
   const cellularModems = data.data?.cellularModems || [];
+  const processes = data.data?.processes || [];
+  const topProcesses = [...processes]
+    .sort((a, b) => (b.cpuUsage || 0) - (a.cpuUsage || 0))
+    .slice(0, 10);
+  const throttling = data.data?.throttling;
+  const rpi = throttling?.rpi;
+  const rpiFlags = rpi
+    ? [
+        { label: 'Under-voltage', now: rpi.underVoltage, sinceBoot: rpi.underVoltageSinceBoot },
+        { label: 'Freq capped', now: rpi.armFrequencyCapped, sinceBoot: rpi.armFrequencyCappedSinceBoot },
+        { label: 'Throttled', now: rpi.throttled, sinceBoot: rpi.throttledSinceBoot },
+        { label: 'Soft temp limit', now: rpi.softTempLimit, sinceBoot: rpi.softTempLimitSinceBoot },
+      ]
+    : [];
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 min-w-[200px]">
@@ -59,6 +79,17 @@ export default function SysinfoGrid({ data }: SysinfoGridProps) {
       </div>
 
       <div className="bg-surface-primary rounded p-2 max-h-48 overflow-y-auto">
+        <div className="text-xs text-text-label border-b border-border-default pb-1 mb-1">Processes ({processes.length})</div>
+        {topProcesses.map((process) => (
+          <div key={process.pid} className="flex justify-between gap-2 text-xs">
+            <span className="text-accent-secondary truncate flex-1" title={process.exe || process.name || ''}>{process.name}</span>
+            <span className="text-accent-data whitespace-nowrap text-right w-14">{(process.cpuUsage || 0).toFixed(1)}%</span>
+            <span className="text-text-label whitespace-nowrap text-right w-16">{(Number(process.memoryBytes || 0) / (1024 * 1024)).toFixed(0)}MB</span>
+          </div>
+        ))}
+      </div>
+
+      <div className="bg-surface-primary rounded p-2 max-h-48 overflow-y-auto">
         <div className="text-xs text-text-label border-b border-border-default pb-1 mb-1">Disks ({data.data?.disks?.length || 0})</div>
         {data.data?.disks?.map((disk, idx) => (
           <div key={idx} className="text-xs mb-1">
@@ -90,6 +121,38 @@ export default function SysinfoGrid({ data }: SysinfoGridProps) {
           <div key={idx} className="flex justify-between text-xs">
             <span className="text-text-secondary">{temp.name || temp.id}</span>
             <span className={temp.value && temp.critical && temp.value > temp.critical ? "text-accent-critical" : "text-accent-danger"}>{temp.value?.toFixed(1)}°C</span>
+          </div>
+        ))}
+      </div>
+
+      <div className="bg-surface-primary rounded p-2 max-h-48 overflow-y-auto">
+        <div className="text-xs text-text-label border-b border-border-default pb-1 mb-1" title={rpi ? `get_throttled: 0x${(rpi.raw || 0).toString(16)}` : ''}>Throttling</div>
+        {!throttling && <div className="text-[10px] text-text-muted">unavailable</div>}
+        {rpiFlags.map((flag) => {
+          const state = throttleState(flag.now, flag.sinceBoot);
+          return (
+            <div key={flag.label} className="flex justify-between gap-2 text-xs">
+              <span className="text-text-secondary truncate flex-1">{flag.label}</span>
+              <span className={`whitespace-nowrap text-right w-12 ${state.className}`}>{state.label}</span>
+            </div>
+          );
+        })}
+        {throttling && (
+          <div className="flex justify-between gap-2 text-xs">
+            <span className="text-text-secondary truncate flex-1">Thermal</span>
+            <span className={`whitespace-nowrap text-right w-12 ${throttling.thermallyThrottled ? 'text-accent-critical' : 'text-text-label'}`}>{throttling.thermallyThrottled ? 'now' : '—'}</span>
+          </div>
+        )}
+        {throttling?.cpufreqPolicies?.map((policy) => (
+          <div key={policy.name} className="flex justify-between gap-2 text-xs">
+            <span className="text-text-secondary truncate flex-1" title={policy.scalingGovernor || ''}>{policy.name}</span>
+            <span className="text-accent-data whitespace-nowrap text-right w-16">{(Number(policy.scalingCurFreqKhz || 0) / 1000).toFixed(0)}MHz</span>
+          </div>
+        ))}
+        {throttling?.coolingDevices?.map((device) => (
+          <div key={device.name} className="flex justify-between gap-2 text-xs">
+            <span className="text-text-secondary truncate flex-1" title={device.name || ''}>{device.type}</span>
+            <span className={`whitespace-nowrap text-right w-12 ${Number(device.curState || 0) > 0 ? 'text-accent-danger' : 'text-text-label'}`}>{Number(device.curState || 0)}/{Number(device.maxState || 0)}</span>
           </div>
         ))}
       </div>

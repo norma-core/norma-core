@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import DeviceStatusBadge from '@/components/DeviceStatusBadge';
 
 interface DeviceWidgetShellProps {
   title: string;
@@ -21,9 +22,9 @@ function DeviceWidgetShell({
           <div className="truncate font-mono text-[11px] text-text-muted" title={subtitle}>{subtitle}</div>
         </div>
         {error && (
-          <span className="rounded border border-accent-critical px-1.5 py-0.5 text-[10px] font-semibold uppercase text-accent-critical">
+          <DeviceStatusBadge tone="critical">
             Error
-          </span>
+          </DeviceStatusBadge>
         )}
       </div>
       {children}

@@ -16,6 +16,7 @@
 
 import { normfs } from "./proto.js";
 import webSocketManager from "./websocket.js";
+import { ACCEPT_ENCODINGS, decodeEntryData } from "./wire-encoding.js";
 import Long from "long";
 
 function longToNumber(val: number | Long | null | undefined): number {
@@ -39,6 +40,7 @@ export const ErrConnectionClosed = new Error("connection closed while waiting fo
 export const ErrInvalidResponse = new Error("invalid or unexpected response from server");
 export const ErrServerSide = new Error("server returned an error");
 export const ErrQueueNotFound = new Error("queue not found on server");
+export const ErrEntryNotFound = new Error("Entry not found");
 export const ErrReadStreamClosed = new Error("read stream closed by server or connection error");
 
 export interface StreamEntry {
@@ -129,7 +131,7 @@ export class NormFsClient extends EventTarget {
                         break;
                     case normfs.ReadResponse.Result.RR_NOT_FOUND:
                         clearTimeout(stream.timeout);
-                        stream.emitter.dispatchEvent(new CustomEvent('error', { detail: new Error("Entry not found") }));
+                        stream.emitter.dispatchEvent(new CustomEvent('error', { detail: ErrEntryNotFound }));
                         this.pendingReads.delete(readId);
                         break;
                     case normfs.ReadResponse.Result.RR_SERVER_ERROR:
@@ -137,10 +139,22 @@ export class NormFsClient extends EventTarget {
                         stream.emitter.dispatchEvent(new CustomEvent('error', { detail: ErrServerSide }));
                         this.pendingReads.delete(readId);
                         break;
-                    default:
+                    default: {
                         // This is a data packet
+                        let data: Uint8Array;
+                        try {
+                            data = decodeEntryData(response.read);
+                        } catch (e) {
+                            clearTimeout(stream.timeout);
+                            stream.emitter.dispatchEvent(new CustomEvent('error', { detail: e }));
+                            this.pendingReads.delete(readId);
+                            break;
+                        }
+                        response.read.data = data;
+                        response.read.encoding = normfs.Encoding.ENC_NONE;
                         stream.emitter.dispatchEvent(new CustomEvent('data', { detail: response.read }));
                         break;
+                    }
                 }
             }
         }
@@ -236,6 +250,7 @@ export class NormFsClient extends EventTarget {
                 offset: { id: { raw: offset }, type: offsetType },
                 limit: Long.fromNumber(limit),
                 step: Long.fromNumber(step),
+                acceptEncodings: ACCEPT_ENCODINGS,
             },
         };
 
@@ -277,7 +292,7 @@ export class NormFsClient extends EventTarget {
     
             const onEnd = () => {
                 if (!dataReceived) {
-                    reject(new Error("Entry not found"));
+                    reject(ErrEntryNotFound);
                 }
                 cleanup();
             };
@@ -294,9 +309,46 @@ export class NormFsClient extends EventTarget {
         });
     }
 
+    /** Up to `limit` consecutive entries from `entryId`, in order. */
+    public readRange(queueID: string, entryId: Uint8Array, limit: number): Promise<StreamEntry[]> {
+        return new Promise((resolve, reject) => {
+            const stream = this.read(queueID, entryId, normfs.OffsetType.OT_ABSOLUTE, limit);
+            const entries: StreamEntry[] = [];
+
+            const onData = (event: Event) => {
+                const readResponse = (event as CustomEvent).detail as normfs.IReadResponse;
+                if (readResponse.data && readResponse.id?.raw) {
+                    entries.push({ id: readResponse.id.raw as Uint8Array, data: readResponse.data });
+                }
+            };
+
+            const onError = (event: Event) => {
+                reject((event as CustomEvent).detail);
+                cleanup();
+            };
+
+            const onEnd = () => {
+                resolve(entries);
+                cleanup();
+            };
+
+            const cleanup = () => {
+                stream.removeEventListener('data', onData);
+                stream.removeEventListener('error', onError);
+                stream.removeEventListener('end', onEnd);
+            };
+
+            stream.addEventListener('data', onData);
+            stream.addEventListener('error', onError, { once: true });
+            stream.addEventListener('end', onEnd, { once: true });
+        });
+    }
+
     public readLastEntry(queueID: string): Promise<StreamEntry> {
         return new Promise((resolve, reject) => {
-            const offset = Long.fromNumber(1).toBytesLE();
+            // NormFS computes last_id - offset. Zero reads the actual tail;
+            // one can miss immediately after older entries leave memory.
+            const offset = Long.ZERO.toBytesLE();
             const stream = this.read(queueID, new Uint8Array(offset), normfs.OffsetType.OT_SHIFT_FROM_TAIL, 1);
             let dataReceived = false;
 

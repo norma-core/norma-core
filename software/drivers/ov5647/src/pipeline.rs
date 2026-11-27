@@ -12,6 +12,8 @@ use crate::config::{CaptureConfig, Quality};
 use crate::error::Ov5647Error;
 use crate::frame2tensor;
 use crate::state::StateTracker;
+use bytes::Bytes;
+use usbvideo::codec::VideoCodec;
 use usbvideo::usbvideo_proto::{
     frame::FrameStamp,
     usbvideo::{Camera, CameraFormat},
@@ -48,7 +50,21 @@ impl<K: StationEngine + Send + Sync + 'static> Ov5647Manager<K> {
         height: u32,
         fps: u32,
         queue_id: String,
+        codec: VideoCodec,
+        keyframe_interval: Duration,
     ) -> Result<Ov5647Handle, Ov5647Error> {
+        let vp8 = (codec == VideoCodec::Vp8).then(|| {
+            Arc::new(usbvideo::StateTracker::new(
+                normfs.clone(),
+                engine.clone(),
+                usbvideo::USBVideoConfig {
+                    resize_target: 0,
+                    codec,
+                    keyframe_interval,
+                    ..Default::default()
+                },
+            ))
+        });
         let tracker = Arc::new(StateTracker::new(engine.clone(), normfs.clone(), queue_id));
         tracker.start_queue().await;
 
@@ -69,7 +85,7 @@ impl<K: StationEngine + Send + Sync + 'static> Ov5647Manager<K> {
             };
 
             rt.block_on(async move {
-                watch_camera(tracker_task, width, height, fps, worker_stopped).await;
+                watch_camera(tracker_task, vp8, width, height, fps, worker_stopped).await;
             });
         });
 
@@ -86,12 +102,14 @@ impl<K: StationEngine + Send + Sync + 'static> Ov5647Manager<K> {
 
 async fn watch_camera<K: StationEngine + Send + Sync + 'static>(
     tracker: Arc<StateTracker<K>>,
+    vp8: Option<Arc<usbvideo::StateTracker<K>>>,
     width: u32,
     height: u32,
     fps: u32,
     stopped: Arc<AtomicBool>,
 ) {
     let poll_interval = Duration::from_secs(1);
+    let mut registered = true;
 
     loop {
         if stopped.load(Ordering::Acquire) {
@@ -103,6 +121,10 @@ async fn watch_camera<K: StationEngine + Send + Sync + 'static>(
             Ok(camera) => {
                 let camera_id = camera.id().await;
                 log::info!("OV5647 camera connected (id={})", camera_id);
+                if !registered {
+                    tracker.register();
+                    registered = true;
+                }
 
                 let camera_info = Camera {
                     manufacturer: "Raspberry Pi".to_string(),
@@ -115,6 +137,7 @@ async fn watch_camera<K: StationEngine + Send + Sync + 'static>(
                 let session_camera_info = run_capture_session(
                     &camera,
                     &tracker,
+                    vp8.as_deref(),
                     &camera_info,
                     width,
                     height,
@@ -123,7 +146,12 @@ async fn watch_camera<K: StationEngine + Send + Sync + 'static>(
                 )
                 .await;
 
-                tracker.enqueue_device_disconnected(&session_camera_info);
+                tracker
+                    .enqueue_device_disconnected(&session_camera_info)
+                    .await;
+                // The queue stays open, but its last entry is the disconnect, not a frame.
+                tracker.unregister();
+                registered = false;
 
                 log::info!("OV5647 camera disconnected (id={})", camera_id);
             }
@@ -139,6 +167,7 @@ async fn watch_camera<K: StationEngine + Send + Sync + 'static>(
 async fn run_capture_session<K: StationEngine + Send + Sync + 'static>(
     camera: &Ov5647Camera,
     tracker: &Arc<StateTracker<K>>,
+    vp8: Option<&usbvideo::StateTracker<K>>,
     camera_info: &Camera,
     width: u32,
     height: u32,
@@ -156,10 +185,12 @@ async fn run_capture_session<K: StationEngine + Send + Sync + 'static>(
         Ok(s) => s,
         Err(e) => {
             log::error!("OV5647 failed to create capture session: {}", e);
-            tracker.enqueue_error(
-                camera_info,
-                format!("Failed to create capture session: {}", e),
-            );
+            tracker
+                .enqueue_error(
+                    camera_info,
+                    format!("Failed to create capture session: {}", e),
+                )
+                .await;
             return camera_info.clone();
         }
     };
@@ -215,8 +246,23 @@ async fn run_capture_session<K: StationEngine + Send + Sync + 'static>(
         actual_fourcc
     );
 
-    tracker.enqueue_device_connected(&actual_camera_info, supported_formats);
-    tracker.enqueue_recording_start(&actual_camera_info, &active_format);
+    if let Some(vp8) = vp8 {
+        vp8.set_camera_formats(
+            actual_camera_info.unique_id.clone(),
+            supported_formats.clone(),
+        );
+        vp8.reset_encoder(&actual_camera_info.unique_id);
+        if actual_format != PixelFormat::Yuv420 {
+            log::warn!("OV5647 VP8 needs I420, got {}; writing JPEG", actual_fourcc);
+        }
+    }
+
+    tracker
+        .enqueue_device_connected(&actual_camera_info, supported_formats)
+        .await;
+    tracker
+        .enqueue_recording_start(&actual_camera_info, &active_format)
+        .await;
 
     let frame_interval = Duration::from_secs_f64(1.0 / fps as f64);
     let capture_timeout = Duration::from_secs(5);
@@ -230,7 +276,12 @@ async fn run_capture_session<K: StationEngine + Send + Sync + 'static>(
             break;
         }
 
-        match session.capture_with_timeout(capture_timeout).await {
+        let captured = if vp8.is_some() {
+            session.capture_raw_with_timeout(capture_timeout).await
+        } else {
+            session.capture_with_timeout(capture_timeout).await
+        };
+        match captured {
             Ok(image) => {
                 log::trace!(
                     "OV5647 captured frame (sequence={}, timestamp_ns={}, bytes={})",
@@ -239,37 +290,51 @@ async fn run_capture_session<K: StationEngine + Send + Sync + 'static>(
                     image.data.len()
                 );
 
-                let frame_data = crate::buffer::FrameData {
-                    buffer: image.data.clone(),
-                    format: image.format,
-                    width: image.width,
-                    height: image.height,
-                    stride: image.stride,
-                    timestamp_ns: image.timestamp_ns,
-                    sequence: image.sequence,
+                let stamp = FrameStamp {
+                    monotonic_stamp_ns: normfs_time::monotonic_stamp_ns(),
+                    local_stamp_ns: normfs_time::local_stamp_ns(),
+                    app_start_id: normfs_time::app_start_id(),
+                    index: frame_index,
                 };
 
-                match frame2tensor::convert_frame(&frame_data, Quality::HIGH) {
-                    Ok(converted) => {
-                        let stamp = FrameStamp {
-                            monotonic_stamp_ns: systime::get_monotonic_stamp_ns(),
-                            local_stamp_ns: systime::get_local_stamp_ns(),
-                            app_start_id: systime::get_app_start_id(),
-                            index: frame_index,
-                        };
+                if let Some(vp8) = vp8.filter(|_| image.format == PixelFormat::Yuv420) {
+                    vp8.enqueue_frame(
+                        tracker.queue_id(),
+                        usbvideo::FourCCFormat::Yuv420,
+                        &actual_camera_info,
+                        stamp,
+                        vp8.format_revision(&actual_camera_info.unique_id),
+                        image.width,
+                        image.height,
+                        packed_i420(&image.data, image.width, image.height, image.stride),
+                    );
+                    frame_index += 1;
+                } else {
+                    let frame_data = crate::buffer::FrameData {
+                        buffer: image.data.clone(),
+                        format: image.format,
+                        width: image.width,
+                        height: image.height,
+                        stride: image.stride,
+                        timestamp_ns: image.timestamp_ns,
+                        sequence: image.sequence,
+                    };
 
-                        tracker.enqueue_frame(
-                            &actual_camera_info,
-                            stamp,
-                            image.width,
-                            image.height,
-                            converted.jpeg,
-                        );
+                    match frame2tensor::convert_frame(&frame_data, Quality::HIGH) {
+                        Ok(converted) => {
+                            tracker.enqueue_frame(
+                                &actual_camera_info,
+                                stamp,
+                                image.width,
+                                image.height,
+                                converted.jpeg,
+                            );
 
-                        frame_index += 1;
-                    }
-                    Err(e) => {
-                        log::warn!("OV5647 frame conversion failed: {}", e);
+                            frame_index += 1;
+                        }
+                        Err(e) => {
+                            log::warn!("OV5647 frame conversion failed: {}", e);
+                        }
                     }
                 }
             }
@@ -279,7 +344,9 @@ async fn run_capture_session<K: StationEngine + Send + Sync + 'static>(
             }
             Err(e) => {
                 log::error!("OV5647 capture error: {}", e);
-                tracker.enqueue_error(&actual_camera_info, format!("Capture error: {}", e));
+                tracker
+                    .enqueue_error(&actual_camera_info, format!("Capture error: {}", e))
+                    .await;
                 end_reason = "capture_error";
                 break;
             }
@@ -296,7 +363,7 @@ async fn run_capture_session<K: StationEngine + Send + Sync + 'static>(
         end_reason = "stop_error";
     }
 
-    tracker.enqueue_recording_end(&actual_camera_info);
+    tracker.enqueue_recording_end(&actual_camera_info).await;
 
     log::info!(
         "OV5647 capture session ended (id={}, reason={}, frames={})",
@@ -306,6 +373,26 @@ async fn run_capture_session<K: StationEngine + Send + Sync + 'static>(
     );
 
     actual_camera_info
+}
+
+/// I420 without the row padding libcamera adds.
+fn packed_i420(data: &[u8], width: u32, height: u32, stride: u32) -> Bytes {
+    let (w, h, stride) = (width as usize, height as usize, stride as usize);
+    let (cw, ch, cstride) = (w.div_ceil(2), h.div_ceil(2), stride.div_ceil(2));
+    let size = stride * h + cstride * ch * 2;
+    if stride == w || data.len() < size {
+        return Bytes::copy_from_slice(&data[..data.len().min(size)]);
+    }
+    let mut out = Vec::with_capacity(w * h + cw * ch * 2);
+    for row in 0..h {
+        out.extend_from_slice(&data[row * stride..][..w]);
+    }
+    for plane in [stride * h, stride * h + cstride * ch] {
+        for row in 0..ch {
+            out.extend_from_slice(&data[plane + row * cstride..][..cw]);
+        }
+    }
+    Bytes::from(out)
 }
 
 fn fourcc_to_u32(value: &str) -> u32 {

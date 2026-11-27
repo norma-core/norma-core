@@ -17,6 +17,9 @@ export interface LiveDeviceAdapter {
   order: number;
   slot: LiveDeviceSlot;
   isRealtime: boolean;
+  ownsCameras: boolean;
+  isImmersive: boolean;
+  replaces: readonly string[];
   resolve: (frame: Frame) => readonly LiveDeviceContent[];
 }
 
@@ -26,6 +29,9 @@ interface LiveDeviceDefinition<Props extends object> {
   order: number;
   slot?: LiveDeviceSlot;
   isRealtime?: boolean;
+  ownsCameras?: boolean;
+  isImmersive?: boolean;
+  replaces?: readonly string[];
   loadView: LazyViewLoader<Props>;
 }
 
@@ -65,6 +71,9 @@ function defineLiveDevice<Props extends object>(
     order: definition.order,
     slot: definition.slot ?? 'primary',
     isRealtime: definition.isRealtime ?? false,
+    ownsCameras: definition.ownsCameras ?? false,
+    isImmersive: definition.isImmersive ?? false,
+    replaces: definition.replaces ?? [],
     resolve: (frame) => select(frame).map(({ key, props }) => ({
       key,
       content: createElement<Props>(TypedView, props),

@@ -1,4 +1,4 @@
-import { st3215, drivers, commands, motors_mirroring, inference_tags, vesc_trampa, yahboom_dogzilla_lite } from "./proto.js";
+import { st3215, drivers, commands, motors_mirroring, inference_tags, vesc_trampa, pwm_output, yahboom_dogzilla_lite, usbvideo } from "./proto.js";
 import webSocketManager from "./websocket.js";
 
 function commandIdToBytes(id: number): Uint8Array {
@@ -64,6 +64,16 @@ export class CommandManager {
     public async sendVescTrampaCommand(command: vesc_trampa.ICommand): Promise<void> {
         const body = vesc_trampa.Command.encode(command).finish();
         await this.sendCommand(drivers.StationCommandType.STC_VESC_TRAMPA_COMMAND, body);
+    }
+
+    public async sendPwmOutputCommand(command: pwm_output.ICommand): Promise<void> {
+        const body = pwm_output.Command.encode(command).finish();
+        await this.sendCommand(drivers.StationCommandType.STC_PWM_OUTPUT_COMMAND, body);
+    }
+
+    public async sendUsbVideoCommand(command: usbvideo.ICommand): Promise<void> {
+        const body = usbvideo.Command.encode(command).finish();
+        await this.sendCommand(drivers.StationCommandType.STC_USB_VIDEO_COMMAND, body);
     }
     
     public async sendYahboomDogzillaLiteCommand(command: yahboom_dogzilla_lite.ICommand): Promise<void> {

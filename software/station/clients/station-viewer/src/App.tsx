@@ -10,11 +10,12 @@ const HomePage = lazy(() => import('./pages/HomePage'));
 const HistoryPage = lazy(() => import('./pages/HistoryPage'));
 const St3215MotorConfigPage = lazy(() => import('./pages/St3215MotorConfigPage'));
 const St3215BusCalibrationPage = lazy(() => import('./pages/St3215BusCalibrationPage'));
+const ThermalHudPreviewPage = lazy(() => import('./devices/hikmicro-thermal/hud/ThermalHudPreviewPage'));
 
 function App() {
   return (
     <Router>
-      <Suspense fallback={<div className="min-h-screen bg-surface-base flex items-center justify-center text-accent-data font-mono">Loading...</div>}>
+      <Suspense fallback={<div className="min-h-dvh bg-surface-base flex items-center justify-center text-accent-data font-mono">Loading...</div>}>
         <Routes>
           <Route element={<MainLayout />}>
             <Route path="/" element={<HomePage />} />
@@ -22,6 +23,7 @@ function App() {
           </Route>
           <Route path="/st3215-bus-calibration" element={<St3215BusCalibrationPage />} />
           <Route path="/st3215-bind-motors" element={<St3215MotorConfigPage />} />
+          <Route path="/thermal-hud" element={<ThermalHudPreviewPage />} />
         </Routes>
       </Suspense>
     </Router>

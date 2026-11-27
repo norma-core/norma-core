@@ -1,6 +1,6 @@
 {
   "name": "@normacore/station-viewer",
-  "version": "0.1.0-beta.10",
+  "version": "0.1.0-beta.11",
   "description": "Web interface for NormaCore.Dev station - physical operations platform",
   "license": "MIT",
   "repository": {
@@ -10,9 +10,10 @@
   },
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "npm run build:hashes && npm run build:proto && tsc -b && vite build",
+    "dev": "npm run build:libav && vite",
+    "build": "npm run build:hashes && npm run build:libav && npm run build:proto && tsc -b && vite build",
     "build:hashes": "node scripts/generate-asset-hashes.mjs",
+    "build:libav": "node scripts/copy-libav.mjs",
     "lint": "oxlint",
     "preview": "vite preview",
     "build:proto": "cross-env sh scripts/protobuf.sh",
@@ -21,7 +22,11 @@
     "type-check": "tsc -b"
   },
   "dependencies": {
+    "@fontsource/share-tech-mono": "5.3.0",
+    "@libav.js/variant-webm": "6.10.9",
     "@types/three": "^0.184.0",
+    "fzstd": "0.1.1",
+    "libavjs-webcodecs-polyfill": "0.5.5",
     "long": "^5.2.3",
     "lucide-react": "^0.552.0",
     "nosleep.js": "^0.12.0",

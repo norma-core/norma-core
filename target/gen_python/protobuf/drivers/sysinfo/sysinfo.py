@@ -178,7 +178,11 @@ class EnvelopeData:
     cpu: list[CPU | None] | None = None
     disks: list[Disk | None] | None = None
     networks: list[Network | None] | None = None
+    processes: list[ProcessInfo | None] | None = None
     temperatures: list[TemperatureSensor | None] | None = None
+    power_sources: list[PowerSource | None] | None = None
+    throttling: typing.Optional[ThrottlingState] = None
+    cellular_modems: list[CellularModem | None] | None = None
 
     def calc_protobuf_size(self) -> int:
         res = 0
@@ -252,8 +256,39 @@ class EnvelopeData:
                 else:
                     res += 1
         
+        if self.processes is not None:
+            for v in self.processes:
+                res += 1
+                if v is not None:
+                    size = v.calc_protobuf_size()
+                    res += (((size | 1).bit_length() + 6) // 7) + size
+                else:
+                    res += 1
+        
         if self.temperatures is not None:
             for v in self.temperatures:
+                res += 2
+                if v is not None:
+                    size = v.calc_protobuf_size()
+                    res += (((size | 1).bit_length() + 6) // 7) + size
+                else:
+                    res += 1
+        
+        if self.power_sources is not None:
+            for v in self.power_sources:
+                res += 2
+                if v is not None:
+                    size = v.calc_protobuf_size()
+                    res += (((size | 1).bit_length() + 6) // 7) + size
+                else:
+                    res += 1
+        
+        if self.throttling is not None:
+            size = self.throttling.calc_protobuf_size()
+            if size > 0:
+                res += 2 + (((size | 1).bit_length() + 6) // 7) + size
+        if self.cellular_modems is not None:
+            for v in self.cellular_modems:
                 res += 2
                 if v is not None:
                     size = v.calc_protobuf_size()
@@ -339,6 +374,15 @@ class EnvelopeData:
                 else:
                     target.append_bytes_size_with_tag(b'j', 0)
         
+        if self.processes is not None:
+            for v in self.processes:
+                if v is not None:
+                    size = v.calc_protobuf_size()
+                    target.append_bytes_size_with_tag(b'z', size)
+                    v.encode_to(target)
+                else:
+                    target.append_bytes_size_with_tag(b'z', 0)
+        
         if self.temperatures is not None:
             for v in self.temperatures:
                 if v is not None:
@@ -347,6 +391,29 @@ class EnvelopeData:
                     v.encode_to(target)
                 else:
                     target.append_bytes_size_with_tag(b'\xa2\x01', 0)
+        
+        if self.power_sources is not None:
+            for v in self.power_sources:
+                if v is not None:
+                    size = v.calc_protobuf_size()
+                    target.append_bytes_size_with_tag(b'\xaa\x01', size)
+                    v.encode_to(target)
+                else:
+                    target.append_bytes_size_with_tag(b'\xaa\x01', 0)
+        
+        if self.throttling is not None:
+            size = self.throttling.calc_protobuf_size()
+            if size > 0:
+                target.append_bytes_size_with_tag(b'\xb2\x01', size)
+                self.throttling.encode_to(target)
+        if self.cellular_modems is not None:
+            for v in self.cellular_modems:
+                if v is not None:
+                    size = v.calc_protobuf_size()
+                    target.append_bytes_size_with_tag(b'\xf2\x01', size)
+                    v.encode_to(target)
+                else:
+                    target.append_bytes_size_with_tag(b'\xf2\x01', 0)
         
 
 
@@ -365,7 +432,11 @@ class EnvelopeDataReader:
         self._cpu_bufs: list[memoryview] | None = None
         self._disks_bufs: list[memoryview] | None = None
         self._networks_bufs: list[memoryview] | None = None
+        self._processes_bufs: list[memoryview] | None = None
         self._temperatures_bufs: list[memoryview] | None = None
+        self._power_sources_bufs: list[memoryview] | None = None
+        self._throttling_buf: typing.Optional[memoryview] = None
+        self._cellular_modems_bufs: list[memoryview] | None = None
 
         if not src:
             return
@@ -439,12 +510,37 @@ class EnvelopeDataReader:
                         self._networks_bufs = []
                     self._networks_bufs.append(result.value)
             
+                case 15:
+                    result = self._buf.read_bytes_view(offset)
+                    offset += result.size
+                    if self._processes_bufs is None:
+                        self._processes_bufs = []
+                    self._processes_bufs.append(result.value)
+            
                 case 20:
                     result = self._buf.read_bytes_view(offset)
                     offset += result.size
                     if self._temperatures_bufs is None:
                         self._temperatures_bufs = []
                     self._temperatures_bufs.append(result.value)
+            
+                case 21:
+                    result = self._buf.read_bytes_view(offset)
+                    offset += result.size
+                    if self._power_sources_bufs is None:
+                        self._power_sources_bufs = []
+                    self._power_sources_bufs.append(result.value)
+            
+                case 22:
+                    result = self._buf.read_bytes_view(offset)
+                    offset += result.size
+                    self._throttling_buf = result.value
+                case 30:
+                    result = self._buf.read_bytes_view(offset)
+                    offset += result.size
+                    if self._cellular_modems_bufs is None:
+                        self._cellular_modems_bufs = []
+                    self._cellular_modems_bufs.append(result.value)
             
                 case _:
                     offset = self._buf.skip_data(offset, tag.wire)
@@ -520,11 +616,43 @@ class EnvelopeDataReader:
         return []
     
 
+    def get_processes(self) -> list[ProcessInfoReader]:
+        if self._processes_bufs is not None:
+            result: list[ProcessInfoReader] = []
+            for buf in self._processes_bufs:
+                result.append(ProcessInfoReader(buf))
+            return result
+        return []
+    
+
     def get_temperatures(self) -> list[TemperatureSensorReader]:
         if self._temperatures_bufs is not None:
             result: list[TemperatureSensorReader] = []
             for buf in self._temperatures_bufs:
                 result.append(TemperatureSensorReader(buf))
+            return result
+        return []
+    
+
+    def get_power_sources(self) -> list[PowerSourceReader]:
+        if self._power_sources_bufs is not None:
+            result: list[PowerSourceReader] = []
+            for buf in self._power_sources_bufs:
+                result.append(PowerSourceReader(buf))
+            return result
+        return []
+    
+
+    def get_throttling(self) -> ThrottlingStateReader:
+        if self._throttling_buf is not None:
+            return ThrottlingStateReader(self._throttling_buf)
+        return ThrottlingStateReader(b'')
+
+    def get_cellular_modems(self) -> list[CellularModemReader]:
+        if self._cellular_modems_bufs is not None:
+            result: list[CellularModemReader] = []
+            for buf in self._cellular_modems_bufs:
+                result.append(CellularModemReader(buf))
             return result
         return []
     
@@ -1438,6 +1566,363 @@ class NetworkReader:
 
 
 @dataclasses.dataclass
+class ProcessInfo:
+    # fields
+    pid: int = 0
+    parent_pid: int = 0
+    name: typing.Optional[bytes] = None
+    exe: typing.Optional[bytes] = None
+    cmd: typing.Optional[list[typing.Optional[bytes]]] = None
+    cwd: typing.Optional[bytes] = None
+    kind: typing.Optional[bytes] = None
+    status: typing.Optional[bytes] = None
+    user_name: typing.Optional[bytes] = None
+    uid: int = 0
+    gid: int = 0
+    session_id: int = 0
+    start_time_epoch_seconds: int = 0
+    run_time_seconds: int = 0
+    thread_count: int = 0
+    cpu_usage: float = 0.0
+    memory_bytes: int = 0
+    virtual_memory_bytes: int = 0
+    accumulated_cpu_time_ms: int = 0
+    total_read_bytes: int = 0
+    total_written_bytes: int = 0
+    read_bytes: int = 0
+    written_bytes: int = 0
+
+    def calc_protobuf_size(self) -> int:
+        res = 0
+        if self.pid != 0:
+            res += 1 + gremlin.sizes.size_varint(self.pid)
+        if self.parent_pid != 0:
+            res += 1 + gremlin.sizes.size_i64(self.parent_pid)
+        if self.name is not None and len(self.name) > 0:
+            bytes_len = len(self.name)
+            bytes_len_size = ((bytes_len | 1).bit_length() + 6) // 7
+            res += 1 + bytes_len_size + bytes_len
+        if self.exe is not None and len(self.exe) > 0:
+            bytes_len = len(self.exe)
+            bytes_len_size = ((bytes_len | 1).bit_length() + 6) // 7
+            res += 1 + bytes_len_size + bytes_len
+        if self.cmd:
+            for v in self.cmd:
+                res += 1
+                if v is not None:
+                    res += (((len(v) | 1).bit_length() + 6) // 7) + len(v)
+                else:
+                    res += 1
+        if self.cwd is not None and len(self.cwd) > 0:
+            bytes_len = len(self.cwd)
+            bytes_len_size = ((bytes_len | 1).bit_length() + 6) // 7
+            res += 1 + bytes_len_size + bytes_len
+        if self.kind is not None and len(self.kind) > 0:
+            bytes_len = len(self.kind)
+            bytes_len_size = ((bytes_len | 1).bit_length() + 6) // 7
+            res += 1 + bytes_len_size + bytes_len
+        if self.status is not None and len(self.status) > 0:
+            bytes_len = len(self.status)
+            bytes_len_size = ((bytes_len | 1).bit_length() + 6) // 7
+            res += 1 + bytes_len_size + bytes_len
+        if self.user_name is not None and len(self.user_name) > 0:
+            bytes_len = len(self.user_name)
+            bytes_len_size = ((bytes_len | 1).bit_length() + 6) // 7
+            res += 1 + bytes_len_size + bytes_len
+        if self.uid != 0:
+            res += 1 + gremlin.sizes.size_i64(self.uid)
+        if self.gid != 0:
+            res += 1 + gremlin.sizes.size_i64(self.gid)
+        if self.session_id != 0:
+            res += 1 + gremlin.sizes.size_i64(self.session_id)
+        if self.start_time_epoch_seconds != 0:
+            res += 1 + gremlin.sizes.size_varint(self.start_time_epoch_seconds)
+        if self.run_time_seconds != 0:
+            res += 1 + gremlin.sizes.size_varint(self.run_time_seconds)
+        if self.thread_count != 0:
+            res += 1 + gremlin.sizes.size_varint(self.thread_count)
+        if self.cpu_usage != 0.0:
+            res += 6
+        if self.memory_bytes != 0:
+            res += 2 + gremlin.sizes.size_varint(self.memory_bytes)
+        if self.virtual_memory_bytes != 0:
+            res += 2 + gremlin.sizes.size_varint(self.virtual_memory_bytes)
+        if self.accumulated_cpu_time_ms != 0:
+            res += 2 + gremlin.sizes.size_varint(self.accumulated_cpu_time_ms)
+        if self.total_read_bytes != 0:
+            res += 2 + gremlin.sizes.size_varint(self.total_read_bytes)
+        if self.total_written_bytes != 0:
+            res += 2 + gremlin.sizes.size_varint(self.total_written_bytes)
+        if self.read_bytes != 0:
+            res += 2 + gremlin.sizes.size_varint(self.read_bytes)
+        if self.written_bytes != 0:
+            res += 2 + gremlin.sizes.size_varint(self.written_bytes)
+        return res
+
+    def encode(self) -> bytes:
+        size = self.calc_protobuf_size()
+        if size == 0:
+            return b''
+        buf = bytearray(size)
+        writer = gremlin.Writer(buf)
+        self.encode_to(writer)
+        return bytes(buf)
+
+    def encode_to(self, target: typing.Union[gremlin.Writer, gremlin.StreamingWriter]):
+        if self.pid != 0:
+            target.append_uint32(b'\x08', self.pid)
+        if self.parent_pid != 0:
+            target.append_int64(b'\x10', self.parent_pid)
+        if self.name is not None and len(self.name) > 0:
+            target.append_bytes(b'\x1a', self.name.encode('utf-8'))
+        if self.exe is not None and len(self.exe) > 0:
+            target.append_bytes(b'"', self.exe.encode('utf-8'))
+        if self.cmd:
+            for v in self.cmd:
+                if v is not None:
+                    target.append_bytes(b'*', v.encode('utf-8'))
+                else:
+                    target.append_bytes_size_with_tag(b'*', 0)
+        if self.cwd is not None and len(self.cwd) > 0:
+            target.append_bytes(b'2', self.cwd.encode('utf-8'))
+        if self.kind is not None and len(self.kind) > 0:
+            target.append_bytes(b':', self.kind.encode('utf-8'))
+        if self.status is not None and len(self.status) > 0:
+            target.append_bytes(b'B', self.status.encode('utf-8'))
+        if self.user_name is not None and len(self.user_name) > 0:
+            target.append_bytes(b'J', self.user_name.encode('utf-8'))
+        if self.uid != 0:
+            target.append_int64(b'P', self.uid)
+        if self.gid != 0:
+            target.append_int64(b'X', self.gid)
+        if self.session_id != 0:
+            target.append_int64(b'`', self.session_id)
+        if self.start_time_epoch_seconds != 0:
+            target.append_uint64(b'h', self.start_time_epoch_seconds)
+        if self.run_time_seconds != 0:
+            target.append_uint64(b'p', self.run_time_seconds)
+        if self.thread_count != 0:
+            target.append_uint32(b'x', self.thread_count)
+        if self.cpu_usage != 0.0:
+            target.append_float32(b'\xa5\x01', self.cpu_usage)
+        if self.memory_bytes != 0:
+            target.append_uint64(b'\xa8\x01', self.memory_bytes)
+        if self.virtual_memory_bytes != 0:
+            target.append_uint64(b'\xb0\x01', self.virtual_memory_bytes)
+        if self.accumulated_cpu_time_ms != 0:
+            target.append_uint64(b'\xb8\x01', self.accumulated_cpu_time_ms)
+        if self.total_read_bytes != 0:
+            target.append_uint64(b'\xf0\x01', self.total_read_bytes)
+        if self.total_written_bytes != 0:
+            target.append_uint64(b'\xf8\x01', self.total_written_bytes)
+        if self.read_bytes != 0:
+            target.append_uint64(b'\x80\x02', self.read_bytes)
+        if self.written_bytes != 0:
+            target.append_uint64(b'\x88\x02', self.written_bytes)
+
+
+class ProcessInfoReader:
+    def __init__(self, src: memoryview):
+        self._pid: int = 0
+        self._parent_pid: int = 0
+        self._name: typing.Optional[str] = None
+        self._exe: typing.Optional[str] = None
+        self._cmd: typing.Optional[list[str]] = None
+        self._cwd: typing.Optional[str] = None
+        self._kind: typing.Optional[str] = None
+        self._status: typing.Optional[str] = None
+        self._user_name: typing.Optional[str] = None
+        self._uid: int = 0
+        self._gid: int = 0
+        self._session_id: int = 0
+        self._start_time_epoch_seconds: int = 0
+        self._run_time_seconds: int = 0
+        self._thread_count: int = 0
+        self._cpu_usage: float = 0.0
+        self._memory_bytes: int = 0
+        self._virtual_memory_bytes: int = 0
+        self._accumulated_cpu_time_ms: int = 0
+        self._total_read_bytes: int = 0
+        self._total_written_bytes: int = 0
+        self._read_bytes: int = 0
+        self._written_bytes: int = 0
+
+        if not src:
+            return
+        self._buf = gremlin.Reader(src)
+        offset = 0
+        while offset < len(src):
+            tag = self._buf.read_tag_at(offset)
+            offset += tag.size
+            match tag.number:
+                case 1:
+                    result = self._buf.read_uint32(offset)
+                    offset += result.size
+                    self._pid = result.value
+                case 2:
+                    result = self._buf.read_int64(offset)
+                    offset += result.size
+                    self._parent_pid = result.value
+                case 3:
+                    result = self._buf.read_bytes_view(offset)
+                    offset += result.size
+                    self._name = result.value.tobytes().decode('utf-8')
+                case 4:
+                    result = self._buf.read_bytes_view(offset)
+                    offset += result.size
+                    self._exe = result.value.tobytes().decode('utf-8')
+                case 5:
+                    result =  self._buf.read_bytes_view(offset)
+                    offset += result.size
+                    if self._cmd is None:
+                        self._cmd = []
+                    self._cmd.append(result.value.tobytes().decode('utf-8'))
+                case 6:
+                    result = self._buf.read_bytes_view(offset)
+                    offset += result.size
+                    self._cwd = result.value.tobytes().decode('utf-8')
+                case 7:
+                    result = self._buf.read_bytes_view(offset)
+                    offset += result.size
+                    self._kind = result.value.tobytes().decode('utf-8')
+                case 8:
+                    result = self._buf.read_bytes_view(offset)
+                    offset += result.size
+                    self._status = result.value.tobytes().decode('utf-8')
+                case 9:
+                    result = self._buf.read_bytes_view(offset)
+                    offset += result.size
+                    self._user_name = result.value.tobytes().decode('utf-8')
+                case 10:
+                    result = self._buf.read_int64(offset)
+                    offset += result.size
+                    self._uid = result.value
+                case 11:
+                    result = self._buf.read_int64(offset)
+                    offset += result.size
+                    self._gid = result.value
+                case 12:
+                    result = self._buf.read_int64(offset)
+                    offset += result.size
+                    self._session_id = result.value
+                case 13:
+                    result = self._buf.read_uint64(offset)
+                    offset += result.size
+                    self._start_time_epoch_seconds = result.value
+                case 14:
+                    result = self._buf.read_uint64(offset)
+                    offset += result.size
+                    self._run_time_seconds = result.value
+                case 15:
+                    result = self._buf.read_uint32(offset)
+                    offset += result.size
+                    self._thread_count = result.value
+                case 20:
+                    result = self._buf.read_float32(offset)
+                    offset += result.size
+                    self._cpu_usage = result.value
+                case 21:
+                    result = self._buf.read_uint64(offset)
+                    offset += result.size
+                    self._memory_bytes = result.value
+                case 22:
+                    result = self._buf.read_uint64(offset)
+                    offset += result.size
+                    self._virtual_memory_bytes = result.value
+                case 23:
+                    result = self._buf.read_uint64(offset)
+                    offset += result.size
+                    self._accumulated_cpu_time_ms = result.value
+                case 30:
+                    result = self._buf.read_uint64(offset)
+                    offset += result.size
+                    self._total_read_bytes = result.value
+                case 31:
+                    result = self._buf.read_uint64(offset)
+                    offset += result.size
+                    self._total_written_bytes = result.value
+                case 32:
+                    result = self._buf.read_uint64(offset)
+                    offset += result.size
+                    self._read_bytes = result.value
+                case 33:
+                    result = self._buf.read_uint64(offset)
+                    offset += result.size
+                    self._written_bytes = result.value
+                case _:
+                    offset = self._buf.skip_data(offset, tag.wire)
+
+    def get_pid(self) -> int:
+        return self._pid
+
+    def get_parent_pid(self) -> int:
+        return self._parent_pid
+
+    def get_name(self) -> str:
+        return self._name if self._name is not None else ''
+
+    def get_exe(self) -> str:
+        return self._exe if self._exe is not None else ''
+
+    def get_cmd(self) -> list[str]:
+        return self._cmd if self._cmd is not None else []
+
+    def get_cwd(self) -> str:
+        return self._cwd if self._cwd is not None else ''
+
+    def get_kind(self) -> str:
+        return self._kind if self._kind is not None else ''
+
+    def get_status(self) -> str:
+        return self._status if self._status is not None else ''
+
+    def get_user_name(self) -> str:
+        return self._user_name if self._user_name is not None else ''
+
+    def get_uid(self) -> int:
+        return self._uid
+
+    def get_gid(self) -> int:
+        return self._gid
+
+    def get_session_id(self) -> int:
+        return self._session_id
+
+    def get_start_time_epoch_seconds(self) -> int:
+        return self._start_time_epoch_seconds
+
+    def get_run_time_seconds(self) -> int:
+        return self._run_time_seconds
+
+    def get_thread_count(self) -> int:
+        return self._thread_count
+
+    def get_cpu_usage(self) -> float:
+        return self._cpu_usage
+
+    def get_memory_bytes(self) -> int:
+        return self._memory_bytes
+
+    def get_virtual_memory_bytes(self) -> int:
+        return self._virtual_memory_bytes
+
+    def get_accumulated_cpu_time_ms(self) -> int:
+        return self._accumulated_cpu_time_ms
+
+    def get_total_read_bytes(self) -> int:
+        return self._total_read_bytes
+
+    def get_total_written_bytes(self) -> int:
+        return self._total_written_bytes
+
+    def get_read_bytes(self) -> int:
+        return self._read_bytes
+
+    def get_written_bytes(self) -> int:
+        return self._written_bytes
+
+
+@dataclasses.dataclass
 class TemperatureSensor:
     # fields
     id: typing.Optional[bytes] = None
@@ -1539,5 +2024,2122 @@ class TemperatureSensorReader:
 
     def get_critical(self) -> float:
         return self._critical
+
+
+@dataclasses.dataclass
+class PowerSourceAttribute:
+    # fields
+    key: typing.Optional[bytes] = None
+    value: typing.Optional[bytes] = None
+
+    def calc_protobuf_size(self) -> int:
+        res = 0
+        if self.key is not None and len(self.key) > 0:
+            bytes_len = len(self.key)
+            bytes_len_size = ((bytes_len | 1).bit_length() + 6) // 7
+            res += 1 + bytes_len_size + bytes_len
+        if self.value is not None and len(self.value) > 0:
+            bytes_len = len(self.value)
+            bytes_len_size = ((bytes_len | 1).bit_length() + 6) // 7
+            res += 1 + bytes_len_size + bytes_len
+        return res
+
+    def encode(self) -> bytes:
+        size = self.calc_protobuf_size()
+        if size == 0:
+            return b''
+        buf = bytearray(size)
+        writer = gremlin.Writer(buf)
+        self.encode_to(writer)
+        return bytes(buf)
+
+    def encode_to(self, target: typing.Union[gremlin.Writer, gremlin.StreamingWriter]):
+        if self.key is not None and len(self.key) > 0:
+            target.append_bytes(b'\n', self.key.encode('utf-8'))
+        if self.value is not None and len(self.value) > 0:
+            target.append_bytes(b'\x12', self.value.encode('utf-8'))
+
+
+class PowerSourceAttributeReader:
+    def __init__(self, src: memoryview):
+        self._key: typing.Optional[str] = None
+        self._value: typing.Optional[str] = None
+
+        if not src:
+            return
+        self._buf = gremlin.Reader(src)
+        offset = 0
+        while offset < len(src):
+            tag = self._buf.read_tag_at(offset)
+            offset += tag.size
+            match tag.number:
+                case 1:
+                    result = self._buf.read_bytes_view(offset)
+                    offset += result.size
+                    self._key = result.value.tobytes().decode('utf-8')
+                case 2:
+                    result = self._buf.read_bytes_view(offset)
+                    offset += result.size
+                    self._value = result.value.tobytes().decode('utf-8')
+                case _:
+                    offset = self._buf.skip_data(offset, tag.wire)
+
+    def get_key(self) -> str:
+        return self._key if self._key is not None else ''
+
+    def get_value(self) -> str:
+        return self._value if self._value is not None else ''
+
+
+@dataclasses.dataclass
+class PowerSource:
+    # fields
+    name: typing.Optional[bytes] = None
+    attributes: list[PowerSourceAttribute | None] | None = None
+
+    def calc_protobuf_size(self) -> int:
+        res = 0
+        if self.name is not None and len(self.name) > 0:
+            bytes_len = len(self.name)
+            bytes_len_size = ((bytes_len | 1).bit_length() + 6) // 7
+            res += 1 + bytes_len_size + bytes_len
+        if self.attributes is not None:
+            for v in self.attributes:
+                res += 1
+                if v is not None:
+                    size = v.calc_protobuf_size()
+                    res += (((size | 1).bit_length() + 6) // 7) + size
+                else:
+                    res += 1
+        
+        return res
+
+    def encode(self) -> bytes:
+        size = self.calc_protobuf_size()
+        if size == 0:
+            return b''
+        buf = bytearray(size)
+        writer = gremlin.Writer(buf)
+        self.encode_to(writer)
+        return bytes(buf)
+
+    def encode_to(self, target: typing.Union[gremlin.Writer, gremlin.StreamingWriter]):
+        if self.name is not None and len(self.name) > 0:
+            target.append_bytes(b'\n', self.name.encode('utf-8'))
+        if self.attributes is not None:
+            for v in self.attributes:
+                if v is not None:
+                    size = v.calc_protobuf_size()
+                    target.append_bytes_size_with_tag(b'R', size)
+                    v.encode_to(target)
+                else:
+                    target.append_bytes_size_with_tag(b'R', 0)
+        
+
+
+class PowerSourceReader:
+    def __init__(self, src: memoryview):
+        self._name: typing.Optional[str] = None
+        self._attributes_bufs: list[memoryview] | None = None
+
+        if not src:
+            return
+        self._buf = gremlin.Reader(src)
+        offset = 0
+        while offset < len(src):
+            tag = self._buf.read_tag_at(offset)
+            offset += tag.size
+            match tag.number:
+                case 1:
+                    result = self._buf.read_bytes_view(offset)
+                    offset += result.size
+                    self._name = result.value.tobytes().decode('utf-8')
+                case 10:
+                    result = self._buf.read_bytes_view(offset)
+                    offset += result.size
+                    if self._attributes_bufs is None:
+                        self._attributes_bufs = []
+                    self._attributes_bufs.append(result.value)
+            
+                case _:
+                    offset = self._buf.skip_data(offset, tag.wire)
+
+    def get_name(self) -> str:
+        return self._name if self._name is not None else ''
+
+    def get_attributes(self) -> list[PowerSourceAttributeReader]:
+        if self._attributes_bufs is not None:
+            result: list[PowerSourceAttributeReader] = []
+            for buf in self._attributes_bufs:
+                result.append(PowerSourceAttributeReader(buf))
+            return result
+        return []
+    
+
+
+@dataclasses.dataclass
+class RpiThrottling:
+    # fields
+    raw: int = 0
+    under_voltage: bool = False
+    arm_frequency_capped: bool = False
+    throttled: bool = False
+    soft_temp_limit: bool = False
+    under_voltage_since_boot: bool = False
+    arm_frequency_capped_since_boot: bool = False
+    throttled_since_boot: bool = False
+    soft_temp_limit_since_boot: bool = False
+
+    def calc_protobuf_size(self) -> int:
+        res = 0
+        if self.raw != 0:
+            res += 1 + gremlin.sizes.size_varint(self.raw)
+        if self.under_voltage:
+            res += 2
+        if self.arm_frequency_capped:
+            res += 2
+        if self.throttled:
+            res += 2
+        if self.soft_temp_limit:
+            res += 2
+        if self.under_voltage_since_boot:
+            res += 3
+        if self.arm_frequency_capped_since_boot:
+            res += 3
+        if self.throttled_since_boot:
+            res += 3
+        if self.soft_temp_limit_since_boot:
+            res += 3
+        return res
+
+    def encode(self) -> bytes:
+        size = self.calc_protobuf_size()
+        if size == 0:
+            return b''
+        buf = bytearray(size)
+        writer = gremlin.Writer(buf)
+        self.encode_to(writer)
+        return bytes(buf)
+
+    def encode_to(self, target: typing.Union[gremlin.Writer, gremlin.StreamingWriter]):
+        if self.raw != 0:
+            target.append_uint32(b'\x08', self.raw)
+        if self.under_voltage:
+            target.append_bool(b'P', self.under_voltage)
+        if self.arm_frequency_capped:
+            target.append_bool(b'X', self.arm_frequency_capped)
+        if self.throttled:
+            target.append_bool(b'`', self.throttled)
+        if self.soft_temp_limit:
+            target.append_bool(b'h', self.soft_temp_limit)
+        if self.under_voltage_since_boot:
+            target.append_bool(b'\xa0\x01', self.under_voltage_since_boot)
+        if self.arm_frequency_capped_since_boot:
+            target.append_bool(b'\xa8\x01', self.arm_frequency_capped_since_boot)
+        if self.throttled_since_boot:
+            target.append_bool(b'\xb0\x01', self.throttled_since_boot)
+        if self.soft_temp_limit_since_boot:
+            target.append_bool(b'\xb8\x01', self.soft_temp_limit_since_boot)
+
+
+class RpiThrottlingReader:
+    def __init__(self, src: memoryview):
+        self._raw: int = 0
+        self._under_voltage: bool = False
+        self._arm_frequency_capped: bool = False
+        self._throttled: bool = False
+        self._soft_temp_limit: bool = False
+        self._under_voltage_since_boot: bool = False
+        self._arm_frequency_capped_since_boot: bool = False
+        self._throttled_since_boot: bool = False
+        self._soft_temp_limit_since_boot: bool = False
+
+        if not src:
+            return
+        self._buf = gremlin.Reader(src)
+        offset = 0
+        while offset < len(src):
+            tag = self._buf.read_tag_at(offset)
+            offset += tag.size
+            match tag.number:
+                case 1:
+                    result = self._buf.read_uint32(offset)
+                    offset += result.size
+                    self._raw = result.value
+                case 10:
+                    result = self._buf.read_bool(offset)
+                    offset += result.size
+                    self._under_voltage = result.value
+                case 11:
+                    result = self._buf.read_bool(offset)
+                    offset += result.size
+                    self._arm_frequency_capped = result.value
+                case 12:
+                    result = self._buf.read_bool(offset)
+                    offset += result.size
+                    self._throttled = result.value
+                case 13:
+                    result = self._buf.read_bool(offset)
+                    offset += result.size
+                    self._soft_temp_limit = result.value
+                case 20:
+                    result = self._buf.read_bool(offset)
+                    offset += result.size
+                    self._under_voltage_since_boot = result.value
+                case 21:
+                    result = self._buf.read_bool(offset)
+                    offset += result.size
+                    self._arm_frequency_capped_since_boot = result.value
+                case 22:
+                    result = self._buf.read_bool(offset)
+                    offset += result.size
+                    self._throttled_since_boot = result.value
+                case 23:
+                    result = self._buf.read_bool(offset)
+                    offset += result.size
+                    self._soft_temp_limit_since_boot = result.value
+                case _:
+                    offset = self._buf.skip_data(offset, tag.wire)
+
+    def get_raw(self) -> int:
+        return self._raw
+
+    def get_under_voltage(self) -> bool:
+        return self._under_voltage
+
+    def get_arm_frequency_capped(self) -> bool:
+        return self._arm_frequency_capped
+
+    def get_throttled(self) -> bool:
+        return self._throttled
+
+    def get_soft_temp_limit(self) -> bool:
+        return self._soft_temp_limit
+
+    def get_under_voltage_since_boot(self) -> bool:
+        return self._under_voltage_since_boot
+
+    def get_arm_frequency_capped_since_boot(self) -> bool:
+        return self._arm_frequency_capped_since_boot
+
+    def get_throttled_since_boot(self) -> bool:
+        return self._throttled_since_boot
+
+    def get_soft_temp_limit_since_boot(self) -> bool:
+        return self._soft_temp_limit_since_boot
+
+
+@dataclasses.dataclass
+class CoolingDevice:
+    # fields
+    name: typing.Optional[bytes] = None
+    type: typing.Optional[bytes] = None
+    cur_state: int = 0
+    max_state: int = 0
+
+    def calc_protobuf_size(self) -> int:
+        res = 0
+        if self.name is not None and len(self.name) > 0:
+            bytes_len = len(self.name)
+            bytes_len_size = ((bytes_len | 1).bit_length() + 6) // 7
+            res += 1 + bytes_len_size + bytes_len
+        if self.type is not None and len(self.type) > 0:
+            bytes_len = len(self.type)
+            bytes_len_size = ((bytes_len | 1).bit_length() + 6) // 7
+            res += 1 + bytes_len_size + bytes_len
+        if self.cur_state != 0:
+            res += 1 + gremlin.sizes.size_varint(self.cur_state)
+        if self.max_state != 0:
+            res += 1 + gremlin.sizes.size_varint(self.max_state)
+        return res
+
+    def encode(self) -> bytes:
+        size = self.calc_protobuf_size()
+        if size == 0:
+            return b''
+        buf = bytearray(size)
+        writer = gremlin.Writer(buf)
+        self.encode_to(writer)
+        return bytes(buf)
+
+    def encode_to(self, target: typing.Union[gremlin.Writer, gremlin.StreamingWriter]):
+        if self.name is not None and len(self.name) > 0:
+            target.append_bytes(b'\n', self.name.encode('utf-8'))
+        if self.type is not None and len(self.type) > 0:
+            target.append_bytes(b'\x12', self.type.encode('utf-8'))
+        if self.cur_state != 0:
+            target.append_uint64(b'P', self.cur_state)
+        if self.max_state != 0:
+            target.append_uint64(b'X', self.max_state)
+
+
+class CoolingDeviceReader:
+    def __init__(self, src: memoryview):
+        self._name: typing.Optional[str] = None
+        self._type: typing.Optional[str] = None
+        self._cur_state: int = 0
+        self._max_state: int = 0
+
+        if not src:
+            return
+        self._buf = gremlin.Reader(src)
+        offset = 0
+        while offset < len(src):
+            tag = self._buf.read_tag_at(offset)
+            offset += tag.size
+            match tag.number:
+                case 1:
+                    result = self._buf.read_bytes_view(offset)
+                    offset += result.size
+                    self._name = result.value.tobytes().decode('utf-8')
+                case 2:
+                    result = self._buf.read_bytes_view(offset)
+                    offset += result.size
+                    self._type = result.value.tobytes().decode('utf-8')
+                case 10:
+                    result = self._buf.read_uint64(offset)
+                    offset += result.size
+                    self._cur_state = result.value
+                case 11:
+                    result = self._buf.read_uint64(offset)
+                    offset += result.size
+                    self._max_state = result.value
+                case _:
+                    offset = self._buf.skip_data(offset, tag.wire)
+
+    def get_name(self) -> str:
+        return self._name if self._name is not None else ''
+
+    def get_type(self) -> str:
+        return self._type if self._type is not None else ''
+
+    def get_cur_state(self) -> int:
+        return self._cur_state
+
+    def get_max_state(self) -> int:
+        return self._max_state
+
+
+@dataclasses.dataclass
+class CpuFreqPolicy:
+    # fields
+    name: typing.Optional[bytes] = None
+    scaling_governor: typing.Optional[bytes] = None
+    scaling_cur_freq_khz: int = 0
+    scaling_min_freq_khz: int = 0
+    scaling_max_freq_khz: int = 0
+    cpuinfo_min_freq_khz: int = 0
+    cpuinfo_max_freq_khz: int = 0
+
+    def calc_protobuf_size(self) -> int:
+        res = 0
+        if self.name is not None and len(self.name) > 0:
+            bytes_len = len(self.name)
+            bytes_len_size = ((bytes_len | 1).bit_length() + 6) // 7
+            res += 1 + bytes_len_size + bytes_len
+        if self.scaling_governor is not None and len(self.scaling_governor) > 0:
+            bytes_len = len(self.scaling_governor)
+            bytes_len_size = ((bytes_len | 1).bit_length() + 6) // 7
+            res += 1 + bytes_len_size + bytes_len
+        if self.scaling_cur_freq_khz != 0:
+            res += 1 + gremlin.sizes.size_varint(self.scaling_cur_freq_khz)
+        if self.scaling_min_freq_khz != 0:
+            res += 1 + gremlin.sizes.size_varint(self.scaling_min_freq_khz)
+        if self.scaling_max_freq_khz != 0:
+            res += 1 + gremlin.sizes.size_varint(self.scaling_max_freq_khz)
+        if self.cpuinfo_min_freq_khz != 0:
+            res += 1 + gremlin.sizes.size_varint(self.cpuinfo_min_freq_khz)
+        if self.cpuinfo_max_freq_khz != 0:
+            res += 1 + gremlin.sizes.size_varint(self.cpuinfo_max_freq_khz)
+        return res
+
+    def encode(self) -> bytes:
+        size = self.calc_protobuf_size()
+        if size == 0:
+            return b''
+        buf = bytearray(size)
+        writer = gremlin.Writer(buf)
+        self.encode_to(writer)
+        return bytes(buf)
+
+    def encode_to(self, target: typing.Union[gremlin.Writer, gremlin.StreamingWriter]):
+        if self.name is not None and len(self.name) > 0:
+            target.append_bytes(b'\n', self.name.encode('utf-8'))
+        if self.scaling_governor is not None and len(self.scaling_governor) > 0:
+            target.append_bytes(b'\x12', self.scaling_governor.encode('utf-8'))
+        if self.scaling_cur_freq_khz != 0:
+            target.append_uint64(b'P', self.scaling_cur_freq_khz)
+        if self.scaling_min_freq_khz != 0:
+            target.append_uint64(b'X', self.scaling_min_freq_khz)
+        if self.scaling_max_freq_khz != 0:
+            target.append_uint64(b'`', self.scaling_max_freq_khz)
+        if self.cpuinfo_min_freq_khz != 0:
+            target.append_uint64(b'h', self.cpuinfo_min_freq_khz)
+        if self.cpuinfo_max_freq_khz != 0:
+            target.append_uint64(b'p', self.cpuinfo_max_freq_khz)
+
+
+class CpuFreqPolicyReader:
+    def __init__(self, src: memoryview):
+        self._name: typing.Optional[str] = None
+        self._scaling_governor: typing.Optional[str] = None
+        self._scaling_cur_freq_khz: int = 0
+        self._scaling_min_freq_khz: int = 0
+        self._scaling_max_freq_khz: int = 0
+        self._cpuinfo_min_freq_khz: int = 0
+        self._cpuinfo_max_freq_khz: int = 0
+
+        if not src:
+            return
+        self._buf = gremlin.Reader(src)
+        offset = 0
+        while offset < len(src):
+            tag = self._buf.read_tag_at(offset)
+            offset += tag.size
+            match tag.number:
+                case 1:
+                    result = self._buf.read_bytes_view(offset)
+                    offset += result.size
+                    self._name = result.value.tobytes().decode('utf-8')
+                case 2:
+                    result = self._buf.read_bytes_view(offset)
+                    offset += result.size
+                    self._scaling_governor = result.value.tobytes().decode('utf-8')
+                case 10:
+                    result = self._buf.read_uint64(offset)
+                    offset += result.size
+                    self._scaling_cur_freq_khz = result.value
+                case 11:
+                    result = self._buf.read_uint64(offset)
+                    offset += result.size
+                    self._scaling_min_freq_khz = result.value
+                case 12:
+                    result = self._buf.read_uint64(offset)
+                    offset += result.size
+                    self._scaling_max_freq_khz = result.value
+                case 13:
+                    result = self._buf.read_uint64(offset)
+                    offset += result.size
+                    self._cpuinfo_min_freq_khz = result.value
+                case 14:
+                    result = self._buf.read_uint64(offset)
+                    offset += result.size
+                    self._cpuinfo_max_freq_khz = result.value
+                case _:
+                    offset = self._buf.skip_data(offset, tag.wire)
+
+    def get_name(self) -> str:
+        return self._name if self._name is not None else ''
+
+    def get_scaling_governor(self) -> str:
+        return self._scaling_governor if self._scaling_governor is not None else ''
+
+    def get_scaling_cur_freq_khz(self) -> int:
+        return self._scaling_cur_freq_khz
+
+    def get_scaling_min_freq_khz(self) -> int:
+        return self._scaling_min_freq_khz
+
+    def get_scaling_max_freq_khz(self) -> int:
+        return self._scaling_max_freq_khz
+
+    def get_cpuinfo_min_freq_khz(self) -> int:
+        return self._cpuinfo_min_freq_khz
+
+    def get_cpuinfo_max_freq_khz(self) -> int:
+        return self._cpuinfo_max_freq_khz
+
+
+@dataclasses.dataclass
+class ThrottlingState:
+    # fields
+    rpi: typing.Optional[RpiThrottling] = None
+    thermally_throttled: bool = False
+    cooling_devices: list[CoolingDevice | None] | None = None
+    cpufreq_policies: list[CpuFreqPolicy | None] | None = None
+
+    def calc_protobuf_size(self) -> int:
+        res = 0
+        if self.rpi is not None:
+            size = self.rpi.calc_protobuf_size()
+            if size > 0:
+                res += 1 + (((size | 1).bit_length() + 6) // 7) + size
+        if self.thermally_throttled:
+            res += 2
+        if self.cooling_devices is not None:
+            for v in self.cooling_devices:
+                res += 1
+                if v is not None:
+                    size = v.calc_protobuf_size()
+                    res += (((size | 1).bit_length() + 6) // 7) + size
+                else:
+                    res += 1
+        
+        if self.cpufreq_policies is not None:
+            for v in self.cpufreq_policies:
+                res += 1
+                if v is not None:
+                    size = v.calc_protobuf_size()
+                    res += (((size | 1).bit_length() + 6) // 7) + size
+                else:
+                    res += 1
+        
+        return res
+
+    def encode(self) -> bytes:
+        size = self.calc_protobuf_size()
+        if size == 0:
+            return b''
+        buf = bytearray(size)
+        writer = gremlin.Writer(buf)
+        self.encode_to(writer)
+        return bytes(buf)
+
+    def encode_to(self, target: typing.Union[gremlin.Writer, gremlin.StreamingWriter]):
+        if self.rpi is not None:
+            size = self.rpi.calc_protobuf_size()
+            if size > 0:
+                target.append_bytes_size_with_tag(b'\n', size)
+                self.rpi.encode_to(target)
+        if self.thermally_throttled:
+            target.append_bool(b'\x10', self.thermally_throttled)
+        if self.cooling_devices is not None:
+            for v in self.cooling_devices:
+                if v is not None:
+                    size = v.calc_protobuf_size()
+                    target.append_bytes_size_with_tag(b'R', size)
+                    v.encode_to(target)
+                else:
+                    target.append_bytes_size_with_tag(b'R', 0)
+        
+        if self.cpufreq_policies is not None:
+            for v in self.cpufreq_policies:
+                if v is not None:
+                    size = v.calc_protobuf_size()
+                    target.append_bytes_size_with_tag(b'Z', size)
+                    v.encode_to(target)
+                else:
+                    target.append_bytes_size_with_tag(b'Z', 0)
+        
+
+
+class ThrottlingStateReader:
+    def __init__(self, src: memoryview):
+        self._rpi_buf: typing.Optional[memoryview] = None
+        self._thermally_throttled: bool = False
+        self._cooling_devices_bufs: list[memoryview] | None = None
+        self._cpufreq_policies_bufs: list[memoryview] | None = None
+
+        if not src:
+            return
+        self._buf = gremlin.Reader(src)
+        offset = 0
+        while offset < len(src):
+            tag = self._buf.read_tag_at(offset)
+            offset += tag.size
+            match tag.number:
+                case 1:
+                    result = self._buf.read_bytes_view(offset)
+                    offset += result.size
+                    self._rpi_buf = result.value
+                case 2:
+                    result = self._buf.read_bool(offset)
+                    offset += result.size
+                    self._thermally_throttled = result.value
+                case 10:
+                    result = self._buf.read_bytes_view(offset)
+                    offset += result.size
+                    if self._cooling_devices_bufs is None:
+                        self._cooling_devices_bufs = []
+                    self._cooling_devices_bufs.append(result.value)
+            
+                case 11:
+                    result = self._buf.read_bytes_view(offset)
+                    offset += result.size
+                    if self._cpufreq_policies_bufs is None:
+                        self._cpufreq_policies_bufs = []
+                    self._cpufreq_policies_bufs.append(result.value)
+            
+                case _:
+                    offset = self._buf.skip_data(offset, tag.wire)
+
+    def get_rpi(self) -> RpiThrottlingReader:
+        if self._rpi_buf is not None:
+            return RpiThrottlingReader(self._rpi_buf)
+        return RpiThrottlingReader(b'')
+
+    def get_thermally_throttled(self) -> bool:
+        return self._thermally_throttled
+
+    def get_cooling_devices(self) -> list[CoolingDeviceReader]:
+        if self._cooling_devices_bufs is not None:
+            result: list[CoolingDeviceReader] = []
+            for buf in self._cooling_devices_bufs:
+                result.append(CoolingDeviceReader(buf))
+            return result
+        return []
+    
+
+    def get_cpufreq_policies(self) -> list[CpuFreqPolicyReader]:
+        if self._cpufreq_policies_bufs is not None:
+            result: list[CpuFreqPolicyReader] = []
+            for buf in self._cpufreq_policies_bufs:
+                result.append(CpuFreqPolicyReader(buf))
+            return result
+        return []
+    
+
+
+@dataclasses.dataclass
+class CellularAttribute:
+    # fields
+    key: typing.Optional[bytes] = None
+    value: typing.Optional[bytes] = None
+
+    def calc_protobuf_size(self) -> int:
+        res = 0
+        if self.key is not None and len(self.key) > 0:
+            bytes_len = len(self.key)
+            bytes_len_size = ((bytes_len | 1).bit_length() + 6) // 7
+            res += 1 + bytes_len_size + bytes_len
+        if self.value is not None and len(self.value) > 0:
+            bytes_len = len(self.value)
+            bytes_len_size = ((bytes_len | 1).bit_length() + 6) // 7
+            res += 1 + bytes_len_size + bytes_len
+        return res
+
+    def encode(self) -> bytes:
+        size = self.calc_protobuf_size()
+        if size == 0:
+            return b''
+        buf = bytearray(size)
+        writer = gremlin.Writer(buf)
+        self.encode_to(writer)
+        return bytes(buf)
+
+    def encode_to(self, target: typing.Union[gremlin.Writer, gremlin.StreamingWriter]):
+        if self.key is not None and len(self.key) > 0:
+            target.append_bytes(b'\n', self.key.encode('utf-8'))
+        if self.value is not None and len(self.value) > 0:
+            target.append_bytes(b'\x12', self.value.encode('utf-8'))
+
+
+class CellularAttributeReader:
+    def __init__(self, src: memoryview):
+        self._key: typing.Optional[str] = None
+        self._value: typing.Optional[str] = None
+
+        if not src:
+            return
+        self._buf = gremlin.Reader(src)
+        offset = 0
+        while offset < len(src):
+            tag = self._buf.read_tag_at(offset)
+            offset += tag.size
+            match tag.number:
+                case 1:
+                    result = self._buf.read_bytes_view(offset)
+                    offset += result.size
+                    self._key = result.value.tobytes().decode('utf-8')
+                case 2:
+                    result = self._buf.read_bytes_view(offset)
+                    offset += result.size
+                    self._value = result.value.tobytes().decode('utf-8')
+                case _:
+                    offset = self._buf.skip_data(offset, tag.wire)
+
+    def get_key(self) -> str:
+        return self._key if self._key is not None else ''
+
+    def get_value(self) -> str:
+        return self._value if self._value is not None else ''
+
+
+@dataclasses.dataclass
+class CellularError:
+    # fields
+    monotonic_stamp_ns: int = 0
+    local_stamp_ns: int = 0
+    app_start_id: int = 0
+    scope: typing.Optional[bytes] = None
+    path: typing.Optional[bytes] = None
+    message: typing.Optional[bytes] = None
+    exit_code: int = 0
+    timed_out: bool = False
+
+    def calc_protobuf_size(self) -> int:
+        res = 0
+        if self.monotonic_stamp_ns != 0:
+            res += 1 + gremlin.sizes.size_varint(self.monotonic_stamp_ns)
+        if self.local_stamp_ns != 0:
+            res += 1 + gremlin.sizes.size_varint(self.local_stamp_ns)
+        if self.app_start_id != 0:
+            res += 1 + gremlin.sizes.size_varint(self.app_start_id)
+        if self.scope is not None and len(self.scope) > 0:
+            bytes_len = len(self.scope)
+            bytes_len_size = ((bytes_len | 1).bit_length() + 6) // 7
+            res += 1 + bytes_len_size + bytes_len
+        if self.path is not None and len(self.path) > 0:
+            bytes_len = len(self.path)
+            bytes_len_size = ((bytes_len | 1).bit_length() + 6) // 7
+            res += 1 + bytes_len_size + bytes_len
+        if self.message is not None and len(self.message) > 0:
+            bytes_len = len(self.message)
+            bytes_len_size = ((bytes_len | 1).bit_length() + 6) // 7
+            res += 1 + bytes_len_size + bytes_len
+        if self.exit_code != 0:
+            res += 1 + gremlin.sizes.size_i32(self.exit_code)
+        if self.timed_out:
+            res += 2
+        return res
+
+    def encode(self) -> bytes:
+        size = self.calc_protobuf_size()
+        if size == 0:
+            return b''
+        buf = bytearray(size)
+        writer = gremlin.Writer(buf)
+        self.encode_to(writer)
+        return bytes(buf)
+
+    def encode_to(self, target: typing.Union[gremlin.Writer, gremlin.StreamingWriter]):
+        if self.monotonic_stamp_ns != 0:
+            target.append_uint64(b'\x08', self.monotonic_stamp_ns)
+        if self.local_stamp_ns != 0:
+            target.append_uint64(b'\x10', self.local_stamp_ns)
+        if self.app_start_id != 0:
+            target.append_uint64(b'\x18', self.app_start_id)
+        if self.scope is not None and len(self.scope) > 0:
+            target.append_bytes(b'R', self.scope.encode('utf-8'))
+        if self.path is not None and len(self.path) > 0:
+            target.append_bytes(b'Z', self.path.encode('utf-8'))
+        if self.message is not None and len(self.message) > 0:
+            target.append_bytes(b'b', self.message.encode('utf-8'))
+        if self.exit_code != 0:
+            target.append_int32(b'h', self.exit_code)
+        if self.timed_out:
+            target.append_bool(b'p', self.timed_out)
+
+
+class CellularErrorReader:
+    def __init__(self, src: memoryview):
+        self._monotonic_stamp_ns: int = 0
+        self._local_stamp_ns: int = 0
+        self._app_start_id: int = 0
+        self._scope: typing.Optional[str] = None
+        self._path: typing.Optional[str] = None
+        self._message: typing.Optional[str] = None
+        self._exit_code: int = 0
+        self._timed_out: bool = False
+
+        if not src:
+            return
+        self._buf = gremlin.Reader(src)
+        offset = 0
+        while offset < len(src):
+            tag = self._buf.read_tag_at(offset)
+            offset += tag.size
+            match tag.number:
+                case 1:
+                    result = self._buf.read_uint64(offset)
+                    offset += result.size
+                    self._monotonic_stamp_ns = result.value
+                case 2:
+                    result = self._buf.read_uint64(offset)
+                    offset += result.size
+                    self._local_stamp_ns = result.value
+                case 3:
+                    result = self._buf.read_uint64(offset)
+                    offset += result.size
+                    self._app_start_id = result.value
+                case 10:
+                    result = self._buf.read_bytes_view(offset)
+                    offset += result.size
+                    self._scope = result.value.tobytes().decode('utf-8')
+                case 11:
+                    result = self._buf.read_bytes_view(offset)
+                    offset += result.size
+                    self._path = result.value.tobytes().decode('utf-8')
+                case 12:
+                    result = self._buf.read_bytes_view(offset)
+                    offset += result.size
+                    self._message = result.value.tobytes().decode('utf-8')
+                case 13:
+                    result = self._buf.read_int32(offset)
+                    offset += result.size
+                    self._exit_code = result.value
+                case 14:
+                    result = self._buf.read_bool(offset)
+                    offset += result.size
+                    self._timed_out = result.value
+                case _:
+                    offset = self._buf.skip_data(offset, tag.wire)
+
+    def get_monotonic_stamp_ns(self) -> int:
+        return self._monotonic_stamp_ns
+
+    def get_local_stamp_ns(self) -> int:
+        return self._local_stamp_ns
+
+    def get_app_start_id(self) -> int:
+        return self._app_start_id
+
+    def get_scope(self) -> str:
+        return self._scope if self._scope is not None else ''
+
+    def get_path(self) -> str:
+        return self._path if self._path is not None else ''
+
+    def get_message(self) -> str:
+        return self._message if self._message is not None else ''
+
+    def get_exit_code(self) -> int:
+        return self._exit_code
+
+    def get_timed_out(self) -> bool:
+        return self._timed_out
+
+
+@dataclasses.dataclass
+class CellularIpConfig:
+    # fields
+    family: typing.Optional[bytes] = None
+    method: typing.Optional[bytes] = None
+    address: typing.Optional[bytes] = None
+    prefix: int = 0
+    gateway: typing.Optional[bytes] = None
+    dns: typing.Optional[list[typing.Optional[bytes]]] = None
+    attributes: list[CellularAttribute | None] | None = None
+
+    def calc_protobuf_size(self) -> int:
+        res = 0
+        if self.family is not None and len(self.family) > 0:
+            bytes_len = len(self.family)
+            bytes_len_size = ((bytes_len | 1).bit_length() + 6) // 7
+            res += 1 + bytes_len_size + bytes_len
+        if self.method is not None and len(self.method) > 0:
+            bytes_len = len(self.method)
+            bytes_len_size = ((bytes_len | 1).bit_length() + 6) // 7
+            res += 1 + bytes_len_size + bytes_len
+        if self.address is not None and len(self.address) > 0:
+            bytes_len = len(self.address)
+            bytes_len_size = ((bytes_len | 1).bit_length() + 6) // 7
+            res += 1 + bytes_len_size + bytes_len
+        if self.prefix != 0:
+            res += 1 + gremlin.sizes.size_varint(self.prefix)
+        if self.gateway is not None and len(self.gateway) > 0:
+            bytes_len = len(self.gateway)
+            bytes_len_size = ((bytes_len | 1).bit_length() + 6) // 7
+            res += 1 + bytes_len_size + bytes_len
+        if self.dns:
+            for v in self.dns:
+                res += 1
+                if v is not None:
+                    res += (((len(v) | 1).bit_length() + 6) // 7) + len(v)
+                else:
+                    res += 1
+        if self.attributes is not None:
+            for v in self.attributes:
+                res += 2
+                if v is not None:
+                    size = v.calc_protobuf_size()
+                    res += (((size | 1).bit_length() + 6) // 7) + size
+                else:
+                    res += 1
+        
+        return res
+
+    def encode(self) -> bytes:
+        size = self.calc_protobuf_size()
+        if size == 0:
+            return b''
+        buf = bytearray(size)
+        writer = gremlin.Writer(buf)
+        self.encode_to(writer)
+        return bytes(buf)
+
+    def encode_to(self, target: typing.Union[gremlin.Writer, gremlin.StreamingWriter]):
+        if self.family is not None and len(self.family) > 0:
+            target.append_bytes(b'\n', self.family.encode('utf-8'))
+        if self.method is not None and len(self.method) > 0:
+            target.append_bytes(b'\x12', self.method.encode('utf-8'))
+        if self.address is not None and len(self.address) > 0:
+            target.append_bytes(b'\x1a', self.address.encode('utf-8'))
+        if self.prefix != 0:
+            target.append_uint32(b' ', self.prefix)
+        if self.gateway is not None and len(self.gateway) > 0:
+            target.append_bytes(b'*', self.gateway.encode('utf-8'))
+        if self.dns:
+            for v in self.dns:
+                if v is not None:
+                    target.append_bytes(b'2', v.encode('utf-8'))
+                else:
+                    target.append_bytes_size_with_tag(b'2', 0)
+        if self.attributes is not None:
+            for v in self.attributes:
+                if v is not None:
+                    size = v.calc_protobuf_size()
+                    target.append_bytes_size_with_tag(b'\xa2\x06', size)
+                    v.encode_to(target)
+                else:
+                    target.append_bytes_size_with_tag(b'\xa2\x06', 0)
+        
+
+
+class CellularIpConfigReader:
+    def __init__(self, src: memoryview):
+        self._family: typing.Optional[str] = None
+        self._method: typing.Optional[str] = None
+        self._address: typing.Optional[str] = None
+        self._prefix: int = 0
+        self._gateway: typing.Optional[str] = None
+        self._dns: typing.Optional[list[str]] = None
+        self._attributes_bufs: list[memoryview] | None = None
+
+        if not src:
+            return
+        self._buf = gremlin.Reader(src)
+        offset = 0
+        while offset < len(src):
+            tag = self._buf.read_tag_at(offset)
+            offset += tag.size
+            match tag.number:
+                case 1:
+                    result = self._buf.read_bytes_view(offset)
+                    offset += result.size
+                    self._family = result.value.tobytes().decode('utf-8')
+                case 2:
+                    result = self._buf.read_bytes_view(offset)
+                    offset += result.size
+                    self._method = result.value.tobytes().decode('utf-8')
+                case 3:
+                    result = self._buf.read_bytes_view(offset)
+                    offset += result.size
+                    self._address = result.value.tobytes().decode('utf-8')
+                case 4:
+                    result = self._buf.read_uint32(offset)
+                    offset += result.size
+                    self._prefix = result.value
+                case 5:
+                    result = self._buf.read_bytes_view(offset)
+                    offset += result.size
+                    self._gateway = result.value.tobytes().decode('utf-8')
+                case 6:
+                    result =  self._buf.read_bytes_view(offset)
+                    offset += result.size
+                    if self._dns is None:
+                        self._dns = []
+                    self._dns.append(result.value.tobytes().decode('utf-8'))
+                case 100:
+                    result = self._buf.read_bytes_view(offset)
+                    offset += result.size
+                    if self._attributes_bufs is None:
+                        self._attributes_bufs = []
+                    self._attributes_bufs.append(result.value)
+            
+                case _:
+                    offset = self._buf.skip_data(offset, tag.wire)
+
+    def get_family(self) -> str:
+        return self._family if self._family is not None else ''
+
+    def get_method(self) -> str:
+        return self._method if self._method is not None else ''
+
+    def get_address(self) -> str:
+        return self._address if self._address is not None else ''
+
+    def get_prefix(self) -> int:
+        return self._prefix
+
+    def get_gateway(self) -> str:
+        return self._gateway if self._gateway is not None else ''
+
+    def get_dns(self) -> list[str]:
+        return self._dns if self._dns is not None else []
+
+    def get_attributes(self) -> list[CellularAttributeReader]:
+        if self._attributes_bufs is not None:
+            result: list[CellularAttributeReader] = []
+            for buf in self._attributes_bufs:
+                result.append(CellularAttributeReader(buf))
+            return result
+        return []
+    
+
+
+@dataclasses.dataclass
+class CellularBearer:
+    # fields
+    monotonic_stamp_ns: int = 0
+    local_stamp_ns: int = 0
+    app_start_id: int = 0
+    path: typing.Optional[bytes] = None
+    bearer_id: typing.Optional[bytes] = None
+    type: typing.Optional[bytes] = None
+    connected: bool = False
+    suspended: bool = False
+    multiplexed: bool = False
+    interface: typing.Optional[bytes] = None
+    ip_timeout_seconds: int = 0
+    profile_id: int = 0
+    apn: typing.Optional[bytes] = None
+    apn_type: typing.Optional[bytes] = None
+    roaming: typing.Optional[bytes] = None
+    ip: list[CellularIpConfig | None] | None = None
+    attributes: list[CellularAttribute | None] | None = None
+
+    def calc_protobuf_size(self) -> int:
+        res = 0
+        if self.monotonic_stamp_ns != 0:
+            res += 1 + gremlin.sizes.size_varint(self.monotonic_stamp_ns)
+        if self.local_stamp_ns != 0:
+            res += 1 + gremlin.sizes.size_varint(self.local_stamp_ns)
+        if self.app_start_id != 0:
+            res += 1 + gremlin.sizes.size_varint(self.app_start_id)
+        if self.path is not None and len(self.path) > 0:
+            bytes_len = len(self.path)
+            bytes_len_size = ((bytes_len | 1).bit_length() + 6) // 7
+            res += 1 + bytes_len_size + bytes_len
+        if self.bearer_id is not None and len(self.bearer_id) > 0:
+            bytes_len = len(self.bearer_id)
+            bytes_len_size = ((bytes_len | 1).bit_length() + 6) // 7
+            res += 1 + bytes_len_size + bytes_len
+        if self.type is not None and len(self.type) > 0:
+            bytes_len = len(self.type)
+            bytes_len_size = ((bytes_len | 1).bit_length() + 6) // 7
+            res += 1 + bytes_len_size + bytes_len
+        if self.connected:
+            res += 2
+        if self.suspended:
+            res += 2
+        if self.multiplexed:
+            res += 2
+        if self.interface is not None and len(self.interface) > 0:
+            bytes_len = len(self.interface)
+            bytes_len_size = ((bytes_len | 1).bit_length() + 6) // 7
+            res += 2 + bytes_len_size + bytes_len
+        if self.ip_timeout_seconds != 0:
+            res += 2 + gremlin.sizes.size_varint(self.ip_timeout_seconds)
+        if self.profile_id != 0:
+            res += 2 + gremlin.sizes.size_i32(self.profile_id)
+        if self.apn is not None and len(self.apn) > 0:
+            bytes_len = len(self.apn)
+            bytes_len_size = ((bytes_len | 1).bit_length() + 6) // 7
+            res += 2 + bytes_len_size + bytes_len
+        if self.apn_type is not None and len(self.apn_type) > 0:
+            bytes_len = len(self.apn_type)
+            bytes_len_size = ((bytes_len | 1).bit_length() + 6) // 7
+            res += 2 + bytes_len_size + bytes_len
+        if self.roaming is not None and len(self.roaming) > 0:
+            bytes_len = len(self.roaming)
+            bytes_len_size = ((bytes_len | 1).bit_length() + 6) // 7
+            res += 2 + bytes_len_size + bytes_len
+        if self.ip is not None:
+            for v in self.ip:
+                res += 2
+                if v is not None:
+                    size = v.calc_protobuf_size()
+                    res += (((size | 1).bit_length() + 6) // 7) + size
+                else:
+                    res += 1
+        
+        if self.attributes is not None:
+            for v in self.attributes:
+                res += 2
+                if v is not None:
+                    size = v.calc_protobuf_size()
+                    res += (((size | 1).bit_length() + 6) // 7) + size
+                else:
+                    res += 1
+        
+        return res
+
+    def encode(self) -> bytes:
+        size = self.calc_protobuf_size()
+        if size == 0:
+            return b''
+        buf = bytearray(size)
+        writer = gremlin.Writer(buf)
+        self.encode_to(writer)
+        return bytes(buf)
+
+    def encode_to(self, target: typing.Union[gremlin.Writer, gremlin.StreamingWriter]):
+        if self.monotonic_stamp_ns != 0:
+            target.append_uint64(b'\x08', self.monotonic_stamp_ns)
+        if self.local_stamp_ns != 0:
+            target.append_uint64(b'\x10', self.local_stamp_ns)
+        if self.app_start_id != 0:
+            target.append_uint64(b'\x18', self.app_start_id)
+        if self.path is not None and len(self.path) > 0:
+            target.append_bytes(b'R', self.path.encode('utf-8'))
+        if self.bearer_id is not None and len(self.bearer_id) > 0:
+            target.append_bytes(b'Z', self.bearer_id.encode('utf-8'))
+        if self.type is not None and len(self.type) > 0:
+            target.append_bytes(b'b', self.type.encode('utf-8'))
+        if self.connected:
+            target.append_bool(b'h', self.connected)
+        if self.suspended:
+            target.append_bool(b'p', self.suspended)
+        if self.multiplexed:
+            target.append_bool(b'x', self.multiplexed)
+        if self.interface is not None and len(self.interface) > 0:
+            target.append_bytes(b'\x82\x01', self.interface.encode('utf-8'))
+        if self.ip_timeout_seconds != 0:
+            target.append_uint32(b'\x88\x01', self.ip_timeout_seconds)
+        if self.profile_id != 0:
+            target.append_int32(b'\x90\x01', self.profile_id)
+        if self.apn is not None and len(self.apn) > 0:
+            target.append_bytes(b'\xa2\x01', self.apn.encode('utf-8'))
+        if self.apn_type is not None and len(self.apn_type) > 0:
+            target.append_bytes(b'\xaa\x01', self.apn_type.encode('utf-8'))
+        if self.roaming is not None and len(self.roaming) > 0:
+            target.append_bytes(b'\xb2\x01', self.roaming.encode('utf-8'))
+        if self.ip is not None:
+            for v in self.ip:
+                if v is not None:
+                    size = v.calc_protobuf_size()
+                    target.append_bytes_size_with_tag(b'\xf2\x01', size)
+                    v.encode_to(target)
+                else:
+                    target.append_bytes_size_with_tag(b'\xf2\x01', 0)
+        
+        if self.attributes is not None:
+            for v in self.attributes:
+                if v is not None:
+                    size = v.calc_protobuf_size()
+                    target.append_bytes_size_with_tag(b'\xa2\x06', size)
+                    v.encode_to(target)
+                else:
+                    target.append_bytes_size_with_tag(b'\xa2\x06', 0)
+        
+
+
+class CellularBearerReader:
+    def __init__(self, src: memoryview):
+        self._monotonic_stamp_ns: int = 0
+        self._local_stamp_ns: int = 0
+        self._app_start_id: int = 0
+        self._path: typing.Optional[str] = None
+        self._bearer_id: typing.Optional[str] = None
+        self._type: typing.Optional[str] = None
+        self._connected: bool = False
+        self._suspended: bool = False
+        self._multiplexed: bool = False
+        self._interface: typing.Optional[str] = None
+        self._ip_timeout_seconds: int = 0
+        self._profile_id: int = 0
+        self._apn: typing.Optional[str] = None
+        self._apn_type: typing.Optional[str] = None
+        self._roaming: typing.Optional[str] = None
+        self._ip_bufs: list[memoryview] | None = None
+        self._attributes_bufs: list[memoryview] | None = None
+
+        if not src:
+            return
+        self._buf = gremlin.Reader(src)
+        offset = 0
+        while offset < len(src):
+            tag = self._buf.read_tag_at(offset)
+            offset += tag.size
+            match tag.number:
+                case 1:
+                    result = self._buf.read_uint64(offset)
+                    offset += result.size
+                    self._monotonic_stamp_ns = result.value
+                case 2:
+                    result = self._buf.read_uint64(offset)
+                    offset += result.size
+                    self._local_stamp_ns = result.value
+                case 3:
+                    result = self._buf.read_uint64(offset)
+                    offset += result.size
+                    self._app_start_id = result.value
+                case 10:
+                    result = self._buf.read_bytes_view(offset)
+                    offset += result.size
+                    self._path = result.value.tobytes().decode('utf-8')
+                case 11:
+                    result = self._buf.read_bytes_view(offset)
+                    offset += result.size
+                    self._bearer_id = result.value.tobytes().decode('utf-8')
+                case 12:
+                    result = self._buf.read_bytes_view(offset)
+                    offset += result.size
+                    self._type = result.value.tobytes().decode('utf-8')
+                case 13:
+                    result = self._buf.read_bool(offset)
+                    offset += result.size
+                    self._connected = result.value
+                case 14:
+                    result = self._buf.read_bool(offset)
+                    offset += result.size
+                    self._suspended = result.value
+                case 15:
+                    result = self._buf.read_bool(offset)
+                    offset += result.size
+                    self._multiplexed = result.value
+                case 16:
+                    result = self._buf.read_bytes_view(offset)
+                    offset += result.size
+                    self._interface = result.value.tobytes().decode('utf-8')
+                case 17:
+                    result = self._buf.read_uint32(offset)
+                    offset += result.size
+                    self._ip_timeout_seconds = result.value
+                case 18:
+                    result = self._buf.read_int32(offset)
+                    offset += result.size
+                    self._profile_id = result.value
+                case 20:
+                    result = self._buf.read_bytes_view(offset)
+                    offset += result.size
+                    self._apn = result.value.tobytes().decode('utf-8')
+                case 21:
+                    result = self._buf.read_bytes_view(offset)
+                    offset += result.size
+                    self._apn_type = result.value.tobytes().decode('utf-8')
+                case 22:
+                    result = self._buf.read_bytes_view(offset)
+                    offset += result.size
+                    self._roaming = result.value.tobytes().decode('utf-8')
+                case 30:
+                    result = self._buf.read_bytes_view(offset)
+                    offset += result.size
+                    if self._ip_bufs is None:
+                        self._ip_bufs = []
+                    self._ip_bufs.append(result.value)
+            
+                case 100:
+                    result = self._buf.read_bytes_view(offset)
+                    offset += result.size
+                    if self._attributes_bufs is None:
+                        self._attributes_bufs = []
+                    self._attributes_bufs.append(result.value)
+            
+                case _:
+                    offset = self._buf.skip_data(offset, tag.wire)
+
+    def get_monotonic_stamp_ns(self) -> int:
+        return self._monotonic_stamp_ns
+
+    def get_local_stamp_ns(self) -> int:
+        return self._local_stamp_ns
+
+    def get_app_start_id(self) -> int:
+        return self._app_start_id
+
+    def get_path(self) -> str:
+        return self._path if self._path is not None else ''
+
+    def get_bearer_id(self) -> str:
+        return self._bearer_id if self._bearer_id is not None else ''
+
+    def get_type(self) -> str:
+        return self._type if self._type is not None else ''
+
+    def get_connected(self) -> bool:
+        return self._connected
+
+    def get_suspended(self) -> bool:
+        return self._suspended
+
+    def get_multiplexed(self) -> bool:
+        return self._multiplexed
+
+    def get_interface(self) -> str:
+        return self._interface if self._interface is not None else ''
+
+    def get_ip_timeout_seconds(self) -> int:
+        return self._ip_timeout_seconds
+
+    def get_profile_id(self) -> int:
+        return self._profile_id
+
+    def get_apn(self) -> str:
+        return self._apn if self._apn is not None else ''
+
+    def get_apn_type(self) -> str:
+        return self._apn_type if self._apn_type is not None else ''
+
+    def get_roaming(self) -> str:
+        return self._roaming if self._roaming is not None else ''
+
+    def get_ip(self) -> list[CellularIpConfigReader]:
+        if self._ip_bufs is not None:
+            result: list[CellularIpConfigReader] = []
+            for buf in self._ip_bufs:
+                result.append(CellularIpConfigReader(buf))
+            return result
+        return []
+    
+
+    def get_attributes(self) -> list[CellularAttributeReader]:
+        if self._attributes_bufs is not None:
+            result: list[CellularAttributeReader] = []
+            for buf in self._attributes_bufs:
+                result.append(CellularAttributeReader(buf))
+            return result
+        return []
+    
+
+
+@dataclasses.dataclass
+class CellularSignal:
+    # fields
+    monotonic_stamp_ns: int = 0
+    local_stamp_ns: int = 0
+    app_start_id: int = 0
+    access_tech: typing.Optional[bytes] = None
+    metrics: list[CellularAttribute | None] | None = None
+
+    def calc_protobuf_size(self) -> int:
+        res = 0
+        if self.monotonic_stamp_ns != 0:
+            res += 1 + gremlin.sizes.size_varint(self.monotonic_stamp_ns)
+        if self.local_stamp_ns != 0:
+            res += 1 + gremlin.sizes.size_varint(self.local_stamp_ns)
+        if self.app_start_id != 0:
+            res += 1 + gremlin.sizes.size_varint(self.app_start_id)
+        if self.access_tech is not None and len(self.access_tech) > 0:
+            bytes_len = len(self.access_tech)
+            bytes_len_size = ((bytes_len | 1).bit_length() + 6) // 7
+            res += 1 + bytes_len_size + bytes_len
+        if self.metrics is not None:
+            for v in self.metrics:
+                res += 2
+                if v is not None:
+                    size = v.calc_protobuf_size()
+                    res += (((size | 1).bit_length() + 6) // 7) + size
+                else:
+                    res += 1
+        
+        return res
+
+    def encode(self) -> bytes:
+        size = self.calc_protobuf_size()
+        if size == 0:
+            return b''
+        buf = bytearray(size)
+        writer = gremlin.Writer(buf)
+        self.encode_to(writer)
+        return bytes(buf)
+
+    def encode_to(self, target: typing.Union[gremlin.Writer, gremlin.StreamingWriter]):
+        if self.monotonic_stamp_ns != 0:
+            target.append_uint64(b'\x08', self.monotonic_stamp_ns)
+        if self.local_stamp_ns != 0:
+            target.append_uint64(b'\x10', self.local_stamp_ns)
+        if self.app_start_id != 0:
+            target.append_uint64(b'\x18', self.app_start_id)
+        if self.access_tech is not None and len(self.access_tech) > 0:
+            target.append_bytes(b'R', self.access_tech.encode('utf-8'))
+        if self.metrics is not None:
+            for v in self.metrics:
+                if v is not None:
+                    size = v.calc_protobuf_size()
+                    target.append_bytes_size_with_tag(b'\xa2\x01', size)
+                    v.encode_to(target)
+                else:
+                    target.append_bytes_size_with_tag(b'\xa2\x01', 0)
+        
+
+
+class CellularSignalReader:
+    def __init__(self, src: memoryview):
+        self._monotonic_stamp_ns: int = 0
+        self._local_stamp_ns: int = 0
+        self._app_start_id: int = 0
+        self._access_tech: typing.Optional[str] = None
+        self._metrics_bufs: list[memoryview] | None = None
+
+        if not src:
+            return
+        self._buf = gremlin.Reader(src)
+        offset = 0
+        while offset < len(src):
+            tag = self._buf.read_tag_at(offset)
+            offset += tag.size
+            match tag.number:
+                case 1:
+                    result = self._buf.read_uint64(offset)
+                    offset += result.size
+                    self._monotonic_stamp_ns = result.value
+                case 2:
+                    result = self._buf.read_uint64(offset)
+                    offset += result.size
+                    self._local_stamp_ns = result.value
+                case 3:
+                    result = self._buf.read_uint64(offset)
+                    offset += result.size
+                    self._app_start_id = result.value
+                case 10:
+                    result = self._buf.read_bytes_view(offset)
+                    offset += result.size
+                    self._access_tech = result.value.tobytes().decode('utf-8')
+                case 20:
+                    result = self._buf.read_bytes_view(offset)
+                    offset += result.size
+                    if self._metrics_bufs is None:
+                        self._metrics_bufs = []
+                    self._metrics_bufs.append(result.value)
+            
+                case _:
+                    offset = self._buf.skip_data(offset, tag.wire)
+
+    def get_monotonic_stamp_ns(self) -> int:
+        return self._monotonic_stamp_ns
+
+    def get_local_stamp_ns(self) -> int:
+        return self._local_stamp_ns
+
+    def get_app_start_id(self) -> int:
+        return self._app_start_id
+
+    def get_access_tech(self) -> str:
+        return self._access_tech if self._access_tech is not None else ''
+
+    def get_metrics(self) -> list[CellularAttributeReader]:
+        if self._metrics_bufs is not None:
+            result: list[CellularAttributeReader] = []
+            for buf in self._metrics_bufs:
+                result.append(CellularAttributeReader(buf))
+            return result
+        return []
+    
+
+
+@dataclasses.dataclass
+class CellularModem:
+    # fields
+    monotonic_stamp_ns: int = 0
+    local_stamp_ns: int = 0
+    app_start_id: int = 0
+    path: typing.Optional[bytes] = None
+    modem_id: typing.Optional[bytes] = None
+    manufacturer: typing.Optional[bytes] = None
+    model: typing.Optional[bytes] = None
+    firmware_revision: typing.Optional[bytes] = None
+    hardware_revision: typing.Optional[bytes] = None
+    carrier_config: typing.Optional[bytes] = None
+    equipment_id: typing.Optional[bytes] = None
+    device_id: typing.Optional[bytes] = None
+    device: typing.Optional[bytes] = None
+    physdev: typing.Optional[bytes] = None
+    drivers: typing.Optional[bytes] = None
+    plugin: typing.Optional[bytes] = None
+    primary_port: typing.Optional[bytes] = None
+    ports: typing.Optional[bytes] = None
+    state: typing.Optional[bytes] = None
+    failed_reason: typing.Optional[bytes] = None
+    power_state: typing.Optional[bytes] = None
+    access_tech: typing.Optional[bytes] = None
+    signal_quality_percent: int = 0
+    signal_quality_recent: bool = False
+    imei: typing.Optional[bytes] = None
+    operator_id: typing.Optional[bytes] = None
+    operator_name: typing.Optional[bytes] = None
+    registration: typing.Optional[bytes] = None
+    packet_service_state: typing.Optional[bytes] = None
+    primary_sim_path: typing.Optional[bytes] = None
+    own_numbers: typing.Optional[bytes] = None
+    bearers: list[CellularBearer | None] | None = None
+    signals: list[CellularSignal | None] | None = None
+    attributes: list[CellularAttribute | None] | None = None
+    errors: list[CellularError | None] | None = None
+
+    def calc_protobuf_size(self) -> int:
+        res = 0
+        if self.monotonic_stamp_ns != 0:
+            res += 1 + gremlin.sizes.size_varint(self.monotonic_stamp_ns)
+        if self.local_stamp_ns != 0:
+            res += 1 + gremlin.sizes.size_varint(self.local_stamp_ns)
+        if self.app_start_id != 0:
+            res += 1 + gremlin.sizes.size_varint(self.app_start_id)
+        if self.path is not None and len(self.path) > 0:
+            bytes_len = len(self.path)
+            bytes_len_size = ((bytes_len | 1).bit_length() + 6) // 7
+            res += 1 + bytes_len_size + bytes_len
+        if self.modem_id is not None and len(self.modem_id) > 0:
+            bytes_len = len(self.modem_id)
+            bytes_len_size = ((bytes_len | 1).bit_length() + 6) // 7
+            res += 1 + bytes_len_size + bytes_len
+        if self.manufacturer is not None and len(self.manufacturer) > 0:
+            bytes_len = len(self.manufacturer)
+            bytes_len_size = ((bytes_len | 1).bit_length() + 6) // 7
+            res += 1 + bytes_len_size + bytes_len
+        if self.model is not None and len(self.model) > 0:
+            bytes_len = len(self.model)
+            bytes_len_size = ((bytes_len | 1).bit_length() + 6) // 7
+            res += 1 + bytes_len_size + bytes_len
+        if self.firmware_revision is not None and len(self.firmware_revision) > 0:
+            bytes_len = len(self.firmware_revision)
+            bytes_len_size = ((bytes_len | 1).bit_length() + 6) // 7
+            res += 1 + bytes_len_size + bytes_len
+        if self.hardware_revision is not None and len(self.hardware_revision) > 0:
+            bytes_len = len(self.hardware_revision)
+            bytes_len_size = ((bytes_len | 1).bit_length() + 6) // 7
+            res += 1 + bytes_len_size + bytes_len
+        if self.carrier_config is not None and len(self.carrier_config) > 0:
+            bytes_len = len(self.carrier_config)
+            bytes_len_size = ((bytes_len | 1).bit_length() + 6) // 7
+            res += 2 + bytes_len_size + bytes_len
+        if self.equipment_id is not None and len(self.equipment_id) > 0:
+            bytes_len = len(self.equipment_id)
+            bytes_len_size = ((bytes_len | 1).bit_length() + 6) // 7
+            res += 2 + bytes_len_size + bytes_len
+        if self.device_id is not None and len(self.device_id) > 0:
+            bytes_len = len(self.device_id)
+            bytes_len_size = ((bytes_len | 1).bit_length() + 6) // 7
+            res += 2 + bytes_len_size + bytes_len
+        if self.device is not None and len(self.device) > 0:
+            bytes_len = len(self.device)
+            bytes_len_size = ((bytes_len | 1).bit_length() + 6) // 7
+            res += 2 + bytes_len_size + bytes_len
+        if self.physdev is not None and len(self.physdev) > 0:
+            bytes_len = len(self.physdev)
+            bytes_len_size = ((bytes_len | 1).bit_length() + 6) // 7
+            res += 2 + bytes_len_size + bytes_len
+        if self.drivers is not None and len(self.drivers) > 0:
+            bytes_len = len(self.drivers)
+            bytes_len_size = ((bytes_len | 1).bit_length() + 6) // 7
+            res += 2 + bytes_len_size + bytes_len
+        if self.plugin is not None and len(self.plugin) > 0:
+            bytes_len = len(self.plugin)
+            bytes_len_size = ((bytes_len | 1).bit_length() + 6) // 7
+            res += 2 + bytes_len_size + bytes_len
+        if self.primary_port is not None and len(self.primary_port) > 0:
+            bytes_len = len(self.primary_port)
+            bytes_len_size = ((bytes_len | 1).bit_length() + 6) // 7
+            res += 2 + bytes_len_size + bytes_len
+        if self.ports is not None and len(self.ports) > 0:
+            bytes_len = len(self.ports)
+            bytes_len_size = ((bytes_len | 1).bit_length() + 6) // 7
+            res += 2 + bytes_len_size + bytes_len
+        if self.state is not None and len(self.state) > 0:
+            bytes_len = len(self.state)
+            bytes_len_size = ((bytes_len | 1).bit_length() + 6) // 7
+            res += 2 + bytes_len_size + bytes_len
+        if self.failed_reason is not None and len(self.failed_reason) > 0:
+            bytes_len = len(self.failed_reason)
+            bytes_len_size = ((bytes_len | 1).bit_length() + 6) // 7
+            res += 2 + bytes_len_size + bytes_len
+        if self.power_state is not None and len(self.power_state) > 0:
+            bytes_len = len(self.power_state)
+            bytes_len_size = ((bytes_len | 1).bit_length() + 6) // 7
+            res += 2 + bytes_len_size + bytes_len
+        if self.access_tech is not None and len(self.access_tech) > 0:
+            bytes_len = len(self.access_tech)
+            bytes_len_size = ((bytes_len | 1).bit_length() + 6) // 7
+            res += 2 + bytes_len_size + bytes_len
+        if self.signal_quality_percent != 0:
+            res += 2 + gremlin.sizes.size_varint(self.signal_quality_percent)
+        if self.signal_quality_recent:
+            res += 3
+        if self.imei is not None and len(self.imei) > 0:
+            bytes_len = len(self.imei)
+            bytes_len_size = ((bytes_len | 1).bit_length() + 6) // 7
+            res += 2 + bytes_len_size + bytes_len
+        if self.operator_id is not None and len(self.operator_id) > 0:
+            bytes_len = len(self.operator_id)
+            bytes_len_size = ((bytes_len | 1).bit_length() + 6) // 7
+            res += 2 + bytes_len_size + bytes_len
+        if self.operator_name is not None and len(self.operator_name) > 0:
+            bytes_len = len(self.operator_name)
+            bytes_len_size = ((bytes_len | 1).bit_length() + 6) // 7
+            res += 2 + bytes_len_size + bytes_len
+        if self.registration is not None and len(self.registration) > 0:
+            bytes_len = len(self.registration)
+            bytes_len_size = ((bytes_len | 1).bit_length() + 6) // 7
+            res += 2 + bytes_len_size + bytes_len
+        if self.packet_service_state is not None and len(self.packet_service_state) > 0:
+            bytes_len = len(self.packet_service_state)
+            bytes_len_size = ((bytes_len | 1).bit_length() + 6) // 7
+            res += 2 + bytes_len_size + bytes_len
+        if self.primary_sim_path is not None and len(self.primary_sim_path) > 0:
+            bytes_len = len(self.primary_sim_path)
+            bytes_len_size = ((bytes_len | 1).bit_length() + 6) // 7
+            res += 2 + bytes_len_size + bytes_len
+        if self.own_numbers is not None and len(self.own_numbers) > 0:
+            bytes_len = len(self.own_numbers)
+            bytes_len_size = ((bytes_len | 1).bit_length() + 6) // 7
+            res += 2 + bytes_len_size + bytes_len
+        if self.bearers is not None:
+            for v in self.bearers:
+                res += 2
+                if v is not None:
+                    size = v.calc_protobuf_size()
+                    res += (((size | 1).bit_length() + 6) // 7) + size
+                else:
+                    res += 1
+        
+        if self.signals is not None:
+            for v in self.signals:
+                res += 2
+                if v is not None:
+                    size = v.calc_protobuf_size()
+                    res += (((size | 1).bit_length() + 6) // 7) + size
+                else:
+                    res += 1
+        
+        if self.attributes is not None:
+            for v in self.attributes:
+                res += 2
+                if v is not None:
+                    size = v.calc_protobuf_size()
+                    res += (((size | 1).bit_length() + 6) // 7) + size
+                else:
+                    res += 1
+        
+        if self.errors is not None:
+            for v in self.errors:
+                res += 2
+                if v is not None:
+                    size = v.calc_protobuf_size()
+                    res += (((size | 1).bit_length() + 6) // 7) + size
+                else:
+                    res += 1
+        
+        return res
+
+    def encode(self) -> bytes:
+        size = self.calc_protobuf_size()
+        if size == 0:
+            return b''
+        buf = bytearray(size)
+        writer = gremlin.Writer(buf)
+        self.encode_to(writer)
+        return bytes(buf)
+
+    def encode_to(self, target: typing.Union[gremlin.Writer, gremlin.StreamingWriter]):
+        if self.monotonic_stamp_ns != 0:
+            target.append_uint64(b'\x08', self.monotonic_stamp_ns)
+        if self.local_stamp_ns != 0:
+            target.append_uint64(b'\x10', self.local_stamp_ns)
+        if self.app_start_id != 0:
+            target.append_uint64(b'\x18', self.app_start_id)
+        if self.path is not None and len(self.path) > 0:
+            target.append_bytes(b'R', self.path.encode('utf-8'))
+        if self.modem_id is not None and len(self.modem_id) > 0:
+            target.append_bytes(b'Z', self.modem_id.encode('utf-8'))
+        if self.manufacturer is not None and len(self.manufacturer) > 0:
+            target.append_bytes(b'b', self.manufacturer.encode('utf-8'))
+        if self.model is not None and len(self.model) > 0:
+            target.append_bytes(b'j', self.model.encode('utf-8'))
+        if self.firmware_revision is not None and len(self.firmware_revision) > 0:
+            target.append_bytes(b'r', self.firmware_revision.encode('utf-8'))
+        if self.hardware_revision is not None and len(self.hardware_revision) > 0:
+            target.append_bytes(b'z', self.hardware_revision.encode('utf-8'))
+        if self.carrier_config is not None and len(self.carrier_config) > 0:
+            target.append_bytes(b'\x82\x01', self.carrier_config.encode('utf-8'))
+        if self.equipment_id is not None and len(self.equipment_id) > 0:
+            target.append_bytes(b'\x8a\x01', self.equipment_id.encode('utf-8'))
+        if self.device_id is not None and len(self.device_id) > 0:
+            target.append_bytes(b'\x92\x01', self.device_id.encode('utf-8'))
+        if self.device is not None and len(self.device) > 0:
+            target.append_bytes(b'\xa2\x01', self.device.encode('utf-8'))
+        if self.physdev is not None and len(self.physdev) > 0:
+            target.append_bytes(b'\xaa\x01', self.physdev.encode('utf-8'))
+        if self.drivers is not None and len(self.drivers) > 0:
+            target.append_bytes(b'\xb2\x01', self.drivers.encode('utf-8'))
+        if self.plugin is not None and len(self.plugin) > 0:
+            target.append_bytes(b'\xba\x01', self.plugin.encode('utf-8'))
+        if self.primary_port is not None and len(self.primary_port) > 0:
+            target.append_bytes(b'\xc2\x01', self.primary_port.encode('utf-8'))
+        if self.ports is not None and len(self.ports) > 0:
+            target.append_bytes(b'\xca\x01', self.ports.encode('utf-8'))
+        if self.state is not None and len(self.state) > 0:
+            target.append_bytes(b'\xf2\x01', self.state.encode('utf-8'))
+        if self.failed_reason is not None and len(self.failed_reason) > 0:
+            target.append_bytes(b'\xfa\x01', self.failed_reason.encode('utf-8'))
+        if self.power_state is not None and len(self.power_state) > 0:
+            target.append_bytes(b'\x82\x02', self.power_state.encode('utf-8'))
+        if self.access_tech is not None and len(self.access_tech) > 0:
+            target.append_bytes(b'\x8a\x02', self.access_tech.encode('utf-8'))
+        if self.signal_quality_percent != 0:
+            target.append_uint32(b'\x90\x02', self.signal_quality_percent)
+        if self.signal_quality_recent:
+            target.append_bool(b'\x98\x02', self.signal_quality_recent)
+        if self.imei is not None and len(self.imei) > 0:
+            target.append_bytes(b'\xc2\x02', self.imei.encode('utf-8'))
+        if self.operator_id is not None and len(self.operator_id) > 0:
+            target.append_bytes(b'\xca\x02', self.operator_id.encode('utf-8'))
+        if self.operator_name is not None and len(self.operator_name) > 0:
+            target.append_bytes(b'\xd2\x02', self.operator_name.encode('utf-8'))
+        if self.registration is not None and len(self.registration) > 0:
+            target.append_bytes(b'\xda\x02', self.registration.encode('utf-8'))
+        if self.packet_service_state is not None and len(self.packet_service_state) > 0:
+            target.append_bytes(b'\xe2\x02', self.packet_service_state.encode('utf-8'))
+        if self.primary_sim_path is not None and len(self.primary_sim_path) > 0:
+            target.append_bytes(b'\xea\x02', self.primary_sim_path.encode('utf-8'))
+        if self.own_numbers is not None and len(self.own_numbers) > 0:
+            target.append_bytes(b'\xf2\x02', self.own_numbers.encode('utf-8'))
+        if self.bearers is not None:
+            for v in self.bearers:
+                if v is not None:
+                    size = v.calc_protobuf_size()
+                    target.append_bytes_size_with_tag(b'\xe2\x03', size)
+                    v.encode_to(target)
+                else:
+                    target.append_bytes_size_with_tag(b'\xe2\x03', 0)
+        
+        if self.signals is not None:
+            for v in self.signals:
+                if v is not None:
+                    size = v.calc_protobuf_size()
+                    target.append_bytes_size_with_tag(b'\xea\x03', size)
+                    v.encode_to(target)
+                else:
+                    target.append_bytes_size_with_tag(b'\xea\x03', 0)
+        
+        if self.attributes is not None:
+            for v in self.attributes:
+                if v is not None:
+                    size = v.calc_protobuf_size()
+                    target.append_bytes_size_with_tag(b'\xa2\x06', size)
+                    v.encode_to(target)
+                else:
+                    target.append_bytes_size_with_tag(b'\xa2\x06', 0)
+        
+        if self.errors is not None:
+            for v in self.errors:
+                if v is not None:
+                    size = v.calc_protobuf_size()
+                    target.append_bytes_size_with_tag(b'\xaa\x06', size)
+                    v.encode_to(target)
+                else:
+                    target.append_bytes_size_with_tag(b'\xaa\x06', 0)
+        
+
+
+class CellularModemReader:
+    def __init__(self, src: memoryview):
+        self._monotonic_stamp_ns: int = 0
+        self._local_stamp_ns: int = 0
+        self._app_start_id: int = 0
+        self._path: typing.Optional[str] = None
+        self._modem_id: typing.Optional[str] = None
+        self._manufacturer: typing.Optional[str] = None
+        self._model: typing.Optional[str] = None
+        self._firmware_revision: typing.Optional[str] = None
+        self._hardware_revision: typing.Optional[str] = None
+        self._carrier_config: typing.Optional[str] = None
+        self._equipment_id: typing.Optional[str] = None
+        self._device_id: typing.Optional[str] = None
+        self._device: typing.Optional[str] = None
+        self._physdev: typing.Optional[str] = None
+        self._drivers: typing.Optional[str] = None
+        self._plugin: typing.Optional[str] = None
+        self._primary_port: typing.Optional[str] = None
+        self._ports: typing.Optional[str] = None
+        self._state: typing.Optional[str] = None
+        self._failed_reason: typing.Optional[str] = None
+        self._power_state: typing.Optional[str] = None
+        self._access_tech: typing.Optional[str] = None
+        self._signal_quality_percent: int = 0
+        self._signal_quality_recent: bool = False
+        self._imei: typing.Optional[str] = None
+        self._operator_id: typing.Optional[str] = None
+        self._operator_name: typing.Optional[str] = None
+        self._registration: typing.Optional[str] = None
+        self._packet_service_state: typing.Optional[str] = None
+        self._primary_sim_path: typing.Optional[str] = None
+        self._own_numbers: typing.Optional[str] = None
+        self._bearers_bufs: list[memoryview] | None = None
+        self._signals_bufs: list[memoryview] | None = None
+        self._attributes_bufs: list[memoryview] | None = None
+        self._errors_bufs: list[memoryview] | None = None
+
+        if not src:
+            return
+        self._buf = gremlin.Reader(src)
+        offset = 0
+        while offset < len(src):
+            tag = self._buf.read_tag_at(offset)
+            offset += tag.size
+            match tag.number:
+                case 1:
+                    result = self._buf.read_uint64(offset)
+                    offset += result.size
+                    self._monotonic_stamp_ns = result.value
+                case 2:
+                    result = self._buf.read_uint64(offset)
+                    offset += result.size
+                    self._local_stamp_ns = result.value
+                case 3:
+                    result = self._buf.read_uint64(offset)
+                    offset += result.size
+                    self._app_start_id = result.value
+                case 10:
+                    result = self._buf.read_bytes_view(offset)
+                    offset += result.size
+                    self._path = result.value.tobytes().decode('utf-8')
+                case 11:
+                    result = self._buf.read_bytes_view(offset)
+                    offset += result.size
+                    self._modem_id = result.value.tobytes().decode('utf-8')
+                case 12:
+                    result = self._buf.read_bytes_view(offset)
+                    offset += result.size
+                    self._manufacturer = result.value.tobytes().decode('utf-8')
+                case 13:
+                    result = self._buf.read_bytes_view(offset)
+                    offset += result.size
+                    self._model = result.value.tobytes().decode('utf-8')
+                case 14:
+                    result = self._buf.read_bytes_view(offset)
+                    offset += result.size
+                    self._firmware_revision = result.value.tobytes().decode('utf-8')
+                case 15:
+                    result = self._buf.read_bytes_view(offset)
+                    offset += result.size
+                    self._hardware_revision = result.value.tobytes().decode('utf-8')
+                case 16:
+                    result = self._buf.read_bytes_view(offset)
+                    offset += result.size
+                    self._carrier_config = result.value.tobytes().decode('utf-8')
+                case 17:
+                    result = self._buf.read_bytes_view(offset)
+                    offset += result.size
+                    self._equipment_id = result.value.tobytes().decode('utf-8')
+                case 18:
+                    result = self._buf.read_bytes_view(offset)
+                    offset += result.size
+                    self._device_id = result.value.tobytes().decode('utf-8')
+                case 20:
+                    result = self._buf.read_bytes_view(offset)
+                    offset += result.size
+                    self._device = result.value.tobytes().decode('utf-8')
+                case 21:
+                    result = self._buf.read_bytes_view(offset)
+                    offset += result.size
+                    self._physdev = result.value.tobytes().decode('utf-8')
+                case 22:
+                    result = self._buf.read_bytes_view(offset)
+                    offset += result.size
+                    self._drivers = result.value.tobytes().decode('utf-8')
+                case 23:
+                    result = self._buf.read_bytes_view(offset)
+                    offset += result.size
+                    self._plugin = result.value.tobytes().decode('utf-8')
+                case 24:
+                    result = self._buf.read_bytes_view(offset)
+                    offset += result.size
+                    self._primary_port = result.value.tobytes().decode('utf-8')
+                case 25:
+                    result = self._buf.read_bytes_view(offset)
+                    offset += result.size
+                    self._ports = result.value.tobytes().decode('utf-8')
+                case 30:
+                    result = self._buf.read_bytes_view(offset)
+                    offset += result.size
+                    self._state = result.value.tobytes().decode('utf-8')
+                case 31:
+                    result = self._buf.read_bytes_view(offset)
+                    offset += result.size
+                    self._failed_reason = result.value.tobytes().decode('utf-8')
+                case 32:
+                    result = self._buf.read_bytes_view(offset)
+                    offset += result.size
+                    self._power_state = result.value.tobytes().decode('utf-8')
+                case 33:
+                    result = self._buf.read_bytes_view(offset)
+                    offset += result.size
+                    self._access_tech = result.value.tobytes().decode('utf-8')
+                case 34:
+                    result = self._buf.read_uint32(offset)
+                    offset += result.size
+                    self._signal_quality_percent = result.value
+                case 35:
+                    result = self._buf.read_bool(offset)
+                    offset += result.size
+                    self._signal_quality_recent = result.value
+                case 40:
+                    result = self._buf.read_bytes_view(offset)
+                    offset += result.size
+                    self._imei = result.value.tobytes().decode('utf-8')
+                case 41:
+                    result = self._buf.read_bytes_view(offset)
+                    offset += result.size
+                    self._operator_id = result.value.tobytes().decode('utf-8')
+                case 42:
+                    result = self._buf.read_bytes_view(offset)
+                    offset += result.size
+                    self._operator_name = result.value.tobytes().decode('utf-8')
+                case 43:
+                    result = self._buf.read_bytes_view(offset)
+                    offset += result.size
+                    self._registration = result.value.tobytes().decode('utf-8')
+                case 44:
+                    result = self._buf.read_bytes_view(offset)
+                    offset += result.size
+                    self._packet_service_state = result.value.tobytes().decode('utf-8')
+                case 45:
+                    result = self._buf.read_bytes_view(offset)
+                    offset += result.size
+                    self._primary_sim_path = result.value.tobytes().decode('utf-8')
+                case 46:
+                    result = self._buf.read_bytes_view(offset)
+                    offset += result.size
+                    self._own_numbers = result.value.tobytes().decode('utf-8')
+                case 60:
+                    result = self._buf.read_bytes_view(offset)
+                    offset += result.size
+                    if self._bearers_bufs is None:
+                        self._bearers_bufs = []
+                    self._bearers_bufs.append(result.value)
+            
+                case 61:
+                    result = self._buf.read_bytes_view(offset)
+                    offset += result.size
+                    if self._signals_bufs is None:
+                        self._signals_bufs = []
+                    self._signals_bufs.append(result.value)
+            
+                case 100:
+                    result = self._buf.read_bytes_view(offset)
+                    offset += result.size
+                    if self._attributes_bufs is None:
+                        self._attributes_bufs = []
+                    self._attributes_bufs.append(result.value)
+            
+                case 101:
+                    result = self._buf.read_bytes_view(offset)
+                    offset += result.size
+                    if self._errors_bufs is None:
+                        self._errors_bufs = []
+                    self._errors_bufs.append(result.value)
+            
+                case _:
+                    offset = self._buf.skip_data(offset, tag.wire)
+
+    def get_monotonic_stamp_ns(self) -> int:
+        return self._monotonic_stamp_ns
+
+    def get_local_stamp_ns(self) -> int:
+        return self._local_stamp_ns
+
+    def get_app_start_id(self) -> int:
+        return self._app_start_id
+
+    def get_path(self) -> str:
+        return self._path if self._path is not None else ''
+
+    def get_modem_id(self) -> str:
+        return self._modem_id if self._modem_id is not None else ''
+
+    def get_manufacturer(self) -> str:
+        return self._manufacturer if self._manufacturer is not None else ''
+
+    def get_model(self) -> str:
+        return self._model if self._model is not None else ''
+
+    def get_firmware_revision(self) -> str:
+        return self._firmware_revision if self._firmware_revision is not None else ''
+
+    def get_hardware_revision(self) -> str:
+        return self._hardware_revision if self._hardware_revision is not None else ''
+
+    def get_carrier_config(self) -> str:
+        return self._carrier_config if self._carrier_config is not None else ''
+
+    def get_equipment_id(self) -> str:
+        return self._equipment_id if self._equipment_id is not None else ''
+
+    def get_device_id(self) -> str:
+        return self._device_id if self._device_id is not None else ''
+
+    def get_device(self) -> str:
+        return self._device if self._device is not None else ''
+
+    def get_physdev(self) -> str:
+        return self._physdev if self._physdev is not None else ''
+
+    def get_drivers(self) -> str:
+        return self._drivers if self._drivers is not None else ''
+
+    def get_plugin(self) -> str:
+        return self._plugin if self._plugin is not None else ''
+
+    def get_primary_port(self) -> str:
+        return self._primary_port if self._primary_port is not None else ''
+
+    def get_ports(self) -> str:
+        return self._ports if self._ports is not None else ''
+
+    def get_state(self) -> str:
+        return self._state if self._state is not None else ''
+
+    def get_failed_reason(self) -> str:
+        return self._failed_reason if self._failed_reason is not None else ''
+
+    def get_power_state(self) -> str:
+        return self._power_state if self._power_state is not None else ''
+
+    def get_access_tech(self) -> str:
+        return self._access_tech if self._access_tech is not None else ''
+
+    def get_signal_quality_percent(self) -> int:
+        return self._signal_quality_percent
+
+    def get_signal_quality_recent(self) -> bool:
+        return self._signal_quality_recent
+
+    def get_imei(self) -> str:
+        return self._imei if self._imei is not None else ''
+
+    def get_operator_id(self) -> str:
+        return self._operator_id if self._operator_id is not None else ''
+
+    def get_operator_name(self) -> str:
+        return self._operator_name if self._operator_name is not None else ''
+
+    def get_registration(self) -> str:
+        return self._registration if self._registration is not None else ''
+
+    def get_packet_service_state(self) -> str:
+        return self._packet_service_state if self._packet_service_state is not None else ''
+
+    def get_primary_sim_path(self) -> str:
+        return self._primary_sim_path if self._primary_sim_path is not None else ''
+
+    def get_own_numbers(self) -> str:
+        return self._own_numbers if self._own_numbers is not None else ''
+
+    def get_bearers(self) -> list[CellularBearerReader]:
+        if self._bearers_bufs is not None:
+            result: list[CellularBearerReader] = []
+            for buf in self._bearers_bufs:
+                result.append(CellularBearerReader(buf))
+            return result
+        return []
+    
+
+    def get_signals(self) -> list[CellularSignalReader]:
+        if self._signals_bufs is not None:
+            result: list[CellularSignalReader] = []
+            for buf in self._signals_bufs:
+                result.append(CellularSignalReader(buf))
+            return result
+        return []
+    
+
+    def get_attributes(self) -> list[CellularAttributeReader]:
+        if self._attributes_bufs is not None:
+            result: list[CellularAttributeReader] = []
+            for buf in self._attributes_bufs:
+                result.append(CellularAttributeReader(buf))
+            return result
+        return []
+    
+
+    def get_errors(self) -> list[CellularErrorReader]:
+        if self._errors_bufs is not None:
+            result: list[CellularErrorReader] = []
+            for buf in self._errors_bufs:
+                result.append(CellularErrorReader(buf))
+            return result
+        return []
+    
 
 

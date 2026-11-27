@@ -1,0 +1,97 @@
+#!/bin/sh
+
+### BEGIN INIT INFO
+# Provides:          station
+# Required-Start:    $remote_fs $network x8h7-init
+# Required-Stop:     $remote_fs $network
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: NormaCore Station supervisor
+### END INIT INFO
+
+CONFIG=/etc/default/station
+SUPERVISOR=/opt/station/station-supervisor
+PIDFILE=/run/station-supervisor.pid
+STOPFILE=/run/station.stop
+CHILD_PIDFILE=/run/station.pid
+# Above the supervisor's 90s bound on station's close.
+STOP_TIMEOUT_SEC=100
+
+STATION_ENABLED="1"
+STATION_BINARY="/opt/station/station"
+
+[ -f "$CONFIG" ] && . "$CONFIG"
+
+case "$1" in
+    start)
+        if [ "$STATION_ENABLED" = "0" ] || [ "$STATION_ENABLED" = "false" ]; then
+            echo "station disabled in $CONFIG"
+            exit 0
+        fi
+
+        [ -x "$SUPERVISOR" ] || {
+            echo "station supervisor not found"
+            exit 1
+        }
+        [ -x "$STATION_BINARY" ] || {
+            echo "station binary not found: $STATION_BINARY"
+            exit 1
+        }
+
+        if [ -f "$PIDFILE" ] && kill -0 "$(cat "$PIDFILE")" 2>/dev/null; then
+            echo "station already running"
+            exit 0
+        fi
+
+        mkdir -p /run
+        rm -f "$STOPFILE"
+        echo "Starting station"
+        start-stop-daemon -S -b -m -p "$PIDFILE" -x "$SUPERVISOR"
+        ;;
+
+    stop)
+        echo "Stopping station"
+        mkdir -p /run
+        touch "$STOPFILE"
+        supervisor_pid="$(cat "$PIDFILE" 2>/dev/null)"
+        if [ -n "$supervisor_pid" ] && kill "$supervisor_pid" 2>/dev/null; then
+            # Return only once station has closed, so a reboot does not cut
+            # its uploads and a restart does not run two on one data folder.
+            waited=0
+            while kill -0 "$supervisor_pid" 2>/dev/null && [ "$waited" -lt "$STOP_TIMEOUT_SEC" ]; do
+                sleep 1
+                waited=$((waited + 1))
+            done
+            if kill -0 "$supervisor_pid" 2>/dev/null; then
+                echo "station did not stop in ${STOP_TIMEOUT_SEC}s; killing it"
+                child_pid="$(cat "$CHILD_PIDFILE" 2>/dev/null)"
+                [ -n "$child_pid" ] && kill -KILL "$child_pid" 2>/dev/null
+                kill -KILL "$supervisor_pid" 2>/dev/null
+                rm -f "$CHILD_PIDFILE" "$STOPFILE"
+            fi
+        fi
+        rm -f "$PIDFILE"
+        ;;
+
+    restart)
+        "$0" stop
+        sleep 1
+        "$0" start
+        ;;
+
+    status)
+        if [ -f "$PIDFILE" ] && kill -0 "$(cat "$PIDFILE")" 2>/dev/null; then
+            echo "station running"
+            exit 0
+        fi
+        echo "station not running"
+        exit 3
+        ;;
+
+    *)
+        echo "Usage: $0 {start|stop|restart|status}"
+        exit 1
+        ;;
+esac
+
+exit 0

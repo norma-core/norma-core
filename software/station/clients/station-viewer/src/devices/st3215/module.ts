@@ -6,6 +6,7 @@ export default customLive<BusViewerProps>({
   label: 'ST3215',
   order: 10,
   isRealtime: true,
+  ownsCameras: true,
   select: (frame) => {
     const inferenceState = frame.st3215?.data;
     if (!inferenceState?.buses?.length) {

@@ -5,6 +5,7 @@ export default customLive<YahboomDogzillaLiteDeviceViewerProps>({
   id: 'yahboom-dogzilla-lite',
   label: 'Yahboom Dogzilla Lite',
   order: 20,
+  ownsCameras: true,
   select: (frame) => {
     const inferenceState = frame.yahboom_dogzilla_lite?.data;
     if (!inferenceState?.devices?.length) {

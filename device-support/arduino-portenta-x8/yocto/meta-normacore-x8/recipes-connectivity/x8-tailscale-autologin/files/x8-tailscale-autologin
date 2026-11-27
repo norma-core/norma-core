@@ -2,7 +2,7 @@
 
 ### BEGIN INIT INFO
 # Provides:          x8-tailscale-autologin
-# Required-Start:    $network tailscaled
+# Required-Start:    $network chronyd tailscaled
 # Required-Stop:
 # Default-Start:     2 3 4 5
 # Default-Stop:
@@ -33,6 +33,13 @@ disable_service() {
 
 already_authenticated() {
     tailscale status >/dev/null 2>&1
+}
+
+wait_for_time_sync() {
+    # A plausible RTC date alone does not establish that the clock is synced.
+    # x8-timesync refreshes sources when networking comes up. This background
+    # worker waits for sync with less than one second of outstanding correction.
+    chronyc -n waitsync 15 1 0 2 >> "$LOG" 2>&1
 }
 
 wait_for_tailscaled() {
@@ -85,6 +92,12 @@ run_worker() {
             continue
         fi
 
+        if ! wait_for_time_sync; then
+            log "time not synchronized yet; login deferred, retrying in ${RETRY_DELAY_SEC}s"
+            sleep "$RETRY_DELAY_SEC"
+            continue
+        fi
+
         set -- up --authkey="$X8_TAILSCALE_AUTHKEY" --accept-dns=false
 
         if [ -n "$X8_TAILSCALE_LOGIN_SERVER" ]; then
@@ -99,6 +112,9 @@ run_worker() {
             # shellcheck disable=SC2086
             set -- "$@" $X8_TAILSCALE_EXTRA_ARGS
         fi
+
+        # Bound each attempt so a control-server outage does not stall retries.
+        set -- "$@" --timeout=30s
 
         log "running tailscale up"
         if tailscale "$@" >> "$LOG" 2>&1; then
@@ -144,6 +160,8 @@ case "$1" in
         ;;
 
     restart)
+        "$0" stop
+        sleep 1
         "$0" start
         ;;
 

@@ -4,10 +4,11 @@ use bytes::Bytes;
 use normfs::NormFS;
 use prost::Message;
 use station_iface::iface_proto::{commands::StationCommandsPack, drivers::StationCommandType};
+use station_iface::{Backpressure, try_enqueue_with};
 
 use crate::station_proto::inference_tags::{Command, CommandType, RxEnvelope};
 
-const QUEUE_ID: &str = "inference-tags/rx";
+pub(crate) const QUEUE_ID: &str = "inference-tags/rx";
 
 pub async fn start(normfs: Arc<NormFS>) -> Result<(), normfs::Error> {
     let tags_queue_id = normfs.resolve(QUEUE_ID);
@@ -55,6 +56,7 @@ pub async fn start(normfs: Arc<NormFS>) -> Result<(), normfs::Error> {
     Ok(())
 }
 
+/// Called from a subscriber callback; must not block.
 fn publish(
     normfs: &Arc<NormFS>,
     queue_id: &normfs::QueueId,
@@ -63,14 +65,19 @@ fn publish(
     tag: String,
 ) {
     let envelope = RxEnvelope {
-        monotonic_stamp_ns: systime::get_monotonic_stamp_ns(),
-        local_stamp_ns: systime::get_local_stamp_ns(),
-        app_start_id: systime::get_app_start_id(),
+        monotonic_stamp_ns: normfs_time::monotonic_stamp_ns(),
+        local_stamp_ns: normfs_time::local_stamp_ns(),
+        app_start_id: normfs_time::app_start_id(),
         r#type: cmd_type as i32,
         inference_queue_ptr,
         tag,
     };
-    if let Err(e) = normfs.enqueue(queue_id, Bytes::from(envelope.encode_to_vec())) {
+    if let Err(e) = try_enqueue_with(
+        normfs,
+        queue_id,
+        Bytes::from(envelope.encode_to_vec()),
+        Backpressure::Keep,
+    ) {
         log::error!("Failed to publish inference tag: {:?}", e);
     }
 }

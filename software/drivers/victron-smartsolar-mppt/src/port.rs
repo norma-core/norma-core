@@ -9,6 +9,8 @@ use normfs::{NormFS, QueueId};
 use prost::Message;
 use station_iface::StationEngine;
 use station_iface::iface_proto::drivers::QueueDataType;
+use station_iface::{Backpressure, enqueue_with};
+use std::collections::BTreeMap;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader, ReadHalf, WriteHalf};
@@ -106,21 +108,32 @@ impl<T: StationEngine> VictronPort<T> {
             VictronSignalType::VictronConnected,
             Some(&probe_block),
             None,
+            Vec::new(),
             String::new(),
-        );
+        )
+        .await;
         self.publish(
             &rx_queue_id,
             &device,
             VictronSignalType::VictronTextBlock,
             Some(&probe_block),
             None,
+            Vec::new(),
             String::new(),
-        );
+        )
+        .await;
 
         let poller: JoinHandle<()> = tokio::spawn(run_hex_poller(write_half));
 
         let reason = self
-            .read_loop(&mut reader, &mut demux, &rx_queue_id, &device, leftover)
+            .read_loop(
+                &mut reader,
+                &mut demux,
+                &rx_queue_id,
+                &device,
+                leftover,
+                probe_block,
+            )
             .await;
 
         poller.abort();
@@ -134,8 +147,13 @@ impl<T: StationEngine> VictronPort<T> {
             VictronSignalType::VictronDisconnected,
             None,
             None,
+            Vec::new(),
             reason,
-        );
+        )
+        .await;
+        if let Err(err) = self.normfs.close_queue(&rx_queue_id).await {
+            error!("Failed to close Victron queue {}: {}", rx_queue_id, err);
+        }
         Ok(())
     }
 
@@ -230,12 +248,15 @@ impl<T: StationEngine> VictronPort<T> {
         rx_queue_id: &QueueId,
         device: &Arc<VictronDevice>,
         leftover: Vec<u8>,
+        probe_block: Vec<u8>,
     ) -> String {
         let mut malformed_count: u64 = 0;
         let mut last_malformed_log: Option<Instant> = None;
         let mut last_valid = Instant::now();
         let mut fault_reported = false;
         let mut carry = leftover;
+        let mut last_text = Some(probe_block);
+        let mut regs: BTreeMap<u16, Bytes> = BTreeMap::new();
 
         loop {
             let bytes = if !carry.is_empty() {
@@ -262,26 +283,38 @@ impl<T: StationEngine> VictronPort<T> {
                     Some(DemuxEvent::TextBlock(block)) => {
                         last_valid = Instant::now();
                         fault_reported = false;
+                        last_text = Some(block);
                         self.publish(
                             rx_queue_id,
                             device,
                             VictronSignalType::VictronTextBlock,
-                            Some(&block),
+                            last_text.as_deref(),
                             None,
+                            regs.values().cloned().collect(),
                             String::new(),
-                        );
+                        )
+                        .await;
                     }
                     Some(DemuxEvent::HexFrame(frame)) => {
                         last_valid = Instant::now();
                         fault_reported = false;
+                        let frame = Bytes::from(frame);
+                        if let Some((response, register, flags)) = hex::frame_header(&frame) {
+                            let answered = response == hex::RSP_GET || response == hex::RSP_ASYNC;
+                            if answered && flags == 0 {
+                                regs.insert(register, frame.clone());
+                            }
+                        }
                         self.publish(
                             rx_queue_id,
                             device,
                             VictronSignalType::VictronHexFrame,
-                            None,
+                            last_text.as_deref(),
                             Some(frame),
+                            regs.values().cloned().collect(),
                             String::new(),
-                        );
+                        )
+                        .await;
                     }
                     Some(DemuxEvent::TextBlockBad) | Some(DemuxEvent::HexFrameBad) => {
                         note_malformed(&mut malformed_count, &mut last_malformed_log);
@@ -297,30 +330,34 @@ impl<T: StationEngine> VictronPort<T> {
                     VictronSignalType::VictronError,
                     None,
                     None,
+                    Vec::new(),
                     format!("no valid VE.Direct frame for {:?}", last_valid.elapsed()),
-                );
+                )
+                .await;
                 fault_reported = true;
             }
         }
     }
 
-    fn publish(
+    async fn publish(
         &self,
         rx_queue_id: &QueueId,
         device: &VictronDevice,
         signal_type: VictronSignalType,
         data: Option<&[u8]>,
-        hex_frame: Option<Vec<u8>>,
+        hex_frame: Option<Bytes>,
+        hex_frames: Vec<Bytes>,
         error: String,
     ) {
         let envelope = RxEnvelope {
-            monotonic_stamp_ns: systime::get_monotonic_stamp_ns(),
-            local_stamp_ns: systime::get_local_stamp_ns(),
-            app_start_id: systime::get_app_start_id(),
+            monotonic_stamp_ns: normfs_time::monotonic_stamp_ns(),
+            local_stamp_ns: normfs_time::local_stamp_ns(),
+            app_start_id: normfs_time::app_start_id(),
             signal_type: signal_type as i32,
             device: Some(device.clone()),
             data: data.map(Bytes::copy_from_slice).unwrap_or_default(),
-            hex_frame: hex_frame.map(Bytes::from).unwrap_or_default(),
+            hex_frame: hex_frame.unwrap_or_default(),
+            hex_frames,
             error,
         };
 
@@ -329,7 +366,16 @@ impl<T: StationEngine> VictronPort<T> {
             error!("Failed to encode Victron SmartSolar MPPT envelope: {err}");
             return;
         }
-        if let Err(err) = self.normfs.enqueue(rx_queue_id, Bytes::from(buffer)) {
+        let policy = if matches!(
+            signal_type,
+            VictronSignalType::VictronTextBlock | VictronSignalType::VictronHexFrame
+        ) {
+            Backpressure::Skip
+        } else {
+            Backpressure::Keep
+        };
+        if let Err(err) = enqueue_with(&self.normfs, rx_queue_id, Bytes::from(buffer), policy).await
+        {
             error!("Failed to enqueue Victron SmartSolar MPPT envelope: {err}");
         }
     }

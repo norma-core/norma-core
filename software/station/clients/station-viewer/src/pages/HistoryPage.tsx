@@ -2,11 +2,19 @@ import { useEffect, useRef } from 'react';
 import Long from 'long';
 import webSocketManager from '@/api/websocket';
 import { getQueueType } from '@/api/queue-utils';
-import { formatPtrBytes } from '@/utils/format-bytes';
+import DatasetExportHelper from '@/components/history/DatasetExportHelper';
 import HistoryElement from '@/components/history/HistoryElement';
 import Timeline from '@/components/Timeline';
 import TimelineControls from '@/components/TimelineControls';
-import { useFrameData, useTimelineState, useKeyboardNavigation, useStartupMarkers, useInferenceTags, TimelineControlsRef } from '@/hooks';
+import {
+  useFrameData,
+  useInferenceTags,
+  useKeyboardNavigation,
+  useStartupMarkers,
+  useTimelineState,
+  type TimelineControlsRef,
+} from '@/hooks';
+import { formatPtrBytes } from '@/utils/format-bytes';
 
 export const MAX_INITIAL_ENTRIES = 500000;
 
@@ -50,27 +58,33 @@ function HistoryPage() {
   const vescTrampaCount = parsedFrame?.vescTrampa ? 1 : 0;
   const vescTrampaRxCount = parsedFrame?.vescTrampaRx ? 1 : 0;
   const vescTrampaTxCount = parsedFrame?.vescTrampaTx ? 1 : 0;
+  const usbVideoTxCount = parsedFrame?.usbVideoTx ? 1 : 0;
   const mirroringCount = parsedFrame?.mirroring ? 1 : 0;
   const sysinfoCount = parsedFrame?.sysinfo ? 1 : 0;
   const arduinoNiclaSenseEnvCount = parsedFrame?.arduinoNiclaSenseEnv ? 1 : 0;
+  const arduinoNiclaSenseMeCount = parsedFrame?.arduinoNiclaSenseMe?.length ?? 0;
   const ina226Count = parsedFrame?.ina226?.length ?? 0;
   const airgradientOpenAirCount = parsedFrame?.airgradientOpenAir?.length ?? 0;
   const victronSmartSolarCount = parsedFrame?.victronSmartSolar?.length ?? 0;
+  const dmesgCount = parsedFrame?.dmesg ? 1 : 0;
   const yahboomDogzillaLiteCount = parsedFrame?.yahboom_dogzilla_lite ? 1 : 0;
   const normvlaCount = parsedFrame?.normvla ? 1 : 0;
   const st3215TxCount = parsedFrame?.st3215Tx ? 1 : 0;
   const vescTrampaIndex = st3215Count;
   const vescTrampaRxIndex = vescTrampaIndex + vescTrampaCount;
   const vescTrampaTxIndex = vescTrampaRxIndex + vescTrampaRxCount;
-  const videoQueuesIndex = vescTrampaTxIndex + vescTrampaTxCount;
+  const usbVideoTxIndex = vescTrampaTxIndex + vescTrampaTxCount;
+  const videoQueuesIndex = usbVideoTxIndex + usbVideoTxCount;
   const hikmicroThermalIndex = videoQueuesIndex + videoQueueCount;
   const mirroringIndex = hikmicroThermalIndex + hikmicroThermalCount;
   const sysinfoIndex = mirroringIndex + mirroringCount;
   const arduinoNiclaSenseEnvIndex = sysinfoIndex + sysinfoCount;
-  const ina226Index = arduinoNiclaSenseEnvIndex + arduinoNiclaSenseEnvCount;
+  const arduinoNiclaSenseMeIndex = arduinoNiclaSenseEnvIndex + arduinoNiclaSenseEnvCount;
+  const ina226Index = arduinoNiclaSenseMeIndex + arduinoNiclaSenseMeCount;
   const airgradientOpenAirIndex = ina226Index + ina226Count;
   const victronSmartSolarIndex = airgradientOpenAirIndex + airgradientOpenAirCount;
-  const yahboomDogzillaLiteIndex = victronSmartSolarIndex + victronSmartSolarCount;
+  const dmesgIndex = victronSmartSolarIndex + victronSmartSolarCount;
+  const yahboomDogzillaLiteIndex = dmesgIndex + dmesgCount;
   const normvlaIndex = yahboomDogzillaLiteIndex + yahboomDogzillaLiteCount;
   const st3215TxIndex = normvlaIndex + normvlaCount;
   const otherEntriesIndex = st3215TxIndex + st3215TxCount;
@@ -107,8 +121,11 @@ function HistoryPage() {
         {!timelineState.isLoading && !timelineState.error && (
           <>
             <Timeline state={timelineState} actions={timelineActions} startups={startups} tags={tags} />
-            <div className="mt-3">
-              <TimelineControls ref={timelineControlsRef} state={timelineState} actions={timelineActions} />
+            <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="max-w-full overflow-x-auto pb-1">
+                <TimelineControls ref={timelineControlsRef} state={timelineState} actions={timelineActions} />
+              </div>
+              <DatasetExportHelper tags={tags} />
             </div>
           </>
         )}
@@ -287,6 +304,17 @@ function HistoryPage() {
                             </div>
                           </div>
                         )}
+                        {parsedFrame.arduinoNiclaSenseMe?.map((entry) => (
+                          <div key={entry.queueId} className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <span className="text-accent-warning font-mono">{entry.queueId}</span>
+                              <span className="text-accent-info text-xs px-1 py-0.5 bg-accent-info/10 rounded">NICLA ME</span>
+                            </div>
+                            <div className="text-text-label font-mono">
+                              {formatPtrBytes(entry.ptr)}
+                            </div>
+                          </div>
+                        ))}
                         {parsedFrame.ina226?.map((entry) => (
                           <div key={entry.queueId} className="flex items-center justify-between">
                             <div className="flex items-center gap-3">
@@ -408,6 +436,21 @@ function HistoryPage() {
                       dataQueueId={parsedFrame.vescTrampaTx.queueId}
                     />
                   )}
+                  {parsedFrame.usbVideoTx && (
+                    <HistoryElement
+                      element={{
+                        queueId: parsedFrame.usbVideoTx.queueId,
+                        entryId: parsedFrame.usbVideoTx.ptr,
+                        data: parsedFrame.usbVideoTx.data,
+                        rawData: parsedFrame.usbVideoTx.rawData ?? null,
+                        type: getQueueType(parsedFrame.usbVideoTx.queueType),
+                        queueType: parsedFrame.usbVideoTx.queueType,
+                      }}
+                      index={usbVideoTxIndex}
+                      dataQueueType="usbvideo-tx"
+                      dataQueueId={parsedFrame.usbVideoTx.queueId}
+                    />
+                  )}
                   {parsedFrame.videoQueues?.map((video, idx) => (
                     <HistoryElement
                       key={video.queueId}
@@ -485,6 +528,22 @@ function HistoryPage() {
                       dataQueueId={parsedFrame.arduinoNiclaSenseEnv.queueId}
                     />
                   )}
+                  {parsedFrame.arduinoNiclaSenseMe?.map((entry, idx) => (
+                    <HistoryElement
+                      key={entry.queueId}
+                      element={{
+                        queueId: entry.queueId,
+                        entryId: entry.ptr,
+                        data: entry.data,
+                        rawData: entry.rawData ?? null,
+                        type: getQueueType(entry.queueType),
+                        queueType: entry.queueType,
+                      }}
+                      index={arduinoNiclaSenseMeIndex + idx}
+                      dataQueueType="arduino-nicla-sense-me"
+                      dataQueueId={entry.queueId}
+                    />
+                  ))}
                   {parsedFrame.ina226?.map((entry, idx) => (
                     <HistoryElement
                       key={entry.queueId}
@@ -533,6 +592,21 @@ function HistoryPage() {
                       dataQueueId={entry.queueId}
                     />
                   ))}
+                  {parsedFrame.dmesg && (
+                    <HistoryElement
+                      element={{
+                        queueId: parsedFrame.dmesg.queueId,
+                        entryId: parsedFrame.dmesg.ptr,
+                        data: parsedFrame.dmesg.data,
+                        rawData: parsedFrame.dmesg.rawData ?? null,
+                        type: getQueueType(parsedFrame.dmesg.queueType),
+                        queueType: parsedFrame.dmesg.queueType,
+                      }}
+                      index={dmesgIndex}
+                      dataQueueType="dmesg"
+                      dataQueueId={parsedFrame.dmesg.queueId}
+                    />
+                  )}
                   {parsedFrame.yahboom_dogzilla_lite && (
                     <HistoryElement
                       element={{

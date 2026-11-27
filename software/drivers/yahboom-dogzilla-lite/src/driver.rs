@@ -46,11 +46,16 @@ impl YahboomDogzillaLiteDriver {
         let tx_queue_id = normfs.resolve(TX_QUEUE_ID);
         let inference_queue_id = normfs.resolve(INFERENCE_QUEUE_ID);
 
-        normfs.ensure_queue_exists_for_write(&rx_queue_id).await?;
-        normfs.ensure_queue_exists_for_write(&tx_queue_id).await?;
-        normfs
-            .ensure_queue_exists_for_write(&inference_queue_id)
-            .await?;
+        let com = Arc::new(
+            YahboomDogzillaLiteCommunicator::new(
+                normfs.clone(),
+                rx_queue_id.clone(),
+                tx_queue_id.clone(),
+                inference_queue_id.clone(),
+                station_engine.snapshot_gate(),
+            )
+            .await?,
+        );
 
         station_engine.register_queue(&rx_queue_id, QueueDataType::QdtYahboomDogzillaLiteSerialRx, vec![]);
         station_engine.register_queue(&tx_queue_id, QueueDataType::QdtYahboomDogzillaLiteSerialTx, vec![]);
@@ -59,13 +64,6 @@ impl YahboomDogzillaLiteDriver {
             QueueDataType::QdtYahboomDogzillaLiteInference,
             vec![],
         );
-
-        let com = Arc::new(YahboomDogzillaLiteCommunicator::new(
-            normfs.clone(),
-            rx_queue_id,
-            tx_queue_id.clone(),
-            inference_queue_id,
-        ));
 
         let com_for_commands = com.clone();
         let commands_queue_id = normfs.resolve("commands");
@@ -92,9 +90,9 @@ impl YahboomDogzillaLiteDriver {
 
                         let envelope = TxEnvelope {
                             command_id: cmd.command_id.to_vec(),
-                            monotonic_stamp_ns: systime::get_monotonic_stamp_ns(),
-                            local_stamp_ns: systime::get_local_stamp_ns(),
-                            app_start_id: systime::get_app_start_id(),
+                            monotonic_stamp_ns: normfs_time::monotonic_stamp_ns(),
+                            local_stamp_ns: normfs_time::local_stamp_ns(),
+                            app_start_id: normfs_time::app_start_id(),
                             target_device_serial: command.target_device_serial.clone(),
                             command: Some(command),
                         };
@@ -287,9 +285,9 @@ impl YahboomDogzillaLiteDriver {
 
     fn send_device_connect_signal(comm: &YahboomDogzillaLiteCommunicator, device_info: &YahboomDogzillaLiteDevice) {
         let envelope = RxEnvelope {
-            monotonic_stamp_ns: systime::get_monotonic_stamp_ns(),
-            local_stamp_ns: systime::get_local_stamp_ns(),
-            app_start_id: systime::get_app_start_id(),
+            monotonic_stamp_ns: normfs_time::monotonic_stamp_ns(),
+            local_stamp_ns: normfs_time::local_stamp_ns(),
+            app_start_id: normfs_time::app_start_id(),
             signal_type: YahboomDogzillaLiteSignalType::YahboomDogzillaLiteConnected as i32,
             device: Some(device_info.clone()),
             ..Default::default()
@@ -302,9 +300,9 @@ impl YahboomDogzillaLiteDriver {
 
     fn send_device_disconnect_signal(comm: &YahboomDogzillaLiteCommunicator, device_info: &YahboomDogzillaLiteDevice) {
         let envelope = RxEnvelope {
-            monotonic_stamp_ns: systime::get_monotonic_stamp_ns(),
-            local_stamp_ns: systime::get_local_stamp_ns(),
-            app_start_id: systime::get_app_start_id(),
+            monotonic_stamp_ns: normfs_time::monotonic_stamp_ns(),
+            local_stamp_ns: normfs_time::local_stamp_ns(),
+            app_start_id: normfs_time::app_start_id(),
             signal_type: YahboomDogzillaLiteSignalType::YahboomDogzillaLiteDisconnected as i32,
             device: Some(device_info.clone()),
             ..Default::default()

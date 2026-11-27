@@ -1,10 +1,14 @@
 import Long from "long";
+import { LiveQueuePolicy } from "@/api/live-queue-policy";
 import { commandManager, type CommandManager } from "@/api/commands.js";
 import { parseFrame, type Frame } from "@/api/frame-parser.js";
 import { NormFsClient } from "@/api/normfs.js";
 import { normfs, inference } from "@/api/proto.js";
 import { timeSyncManager } from "@/api/time-sync.js";
 import { WS_EVENTS } from "@/api/websocket-events.js";
+import { createLiveCameraMetadataEnvelope, shouldLoadLiveCameraFrame } from "@/usbvideo/live-camera-store.js";
+import { resolveCaptureSession } from "@/usbvideo/capture-session.js";
+import { getLiveVideoEnvelope, isLiveVideoFollowing, syncLiveVideoStreams } from "@/usbvideo/live-video-stream.js";
 
 export const ErrConnectionNotOpen = new Error("WebSocket: Connection not open.");
 
@@ -38,6 +42,7 @@ class WebSocketManager extends EventTarget {
   private historyModeLeases = new Set<symbol>();
   private acquisitionGeneration = 0;
   private pollingResumeTimeout: number | null = null;
+  private liveQueuePolicy = new LiveQueuePolicy();
   private lastProcessedEntryId: number | null = null;
 
   private liveSnapshot: LiveSnapshot = {
@@ -108,7 +113,7 @@ class WebSocketManager extends EventTarget {
     const acquisitionGeneration = this.acquisitionGeneration;
 
     try {
-      // Read the latest entry directly: backward from offset 1, limit 1
+      // Read the latest entry directly: offset 0 from the tail, limit 1.
       const entry = await this.normFs.readLastEntry('inference-states');
       const entryId = Long.fromBytesLE(Array.from(entry.id)).toNumber();
 
@@ -119,13 +124,34 @@ class WebSocketManager extends EventTarget {
         let previousFrame: Frame | undefined;
         if (this.lastProcessedEntryId !== null && this.liveSnapshot.frame !== null) {
           previousFrame = this.liveSnapshot.frame;
+          if (inferenceRx.appStartId?.toString() !== previousFrame.appStartId?.toString()) previousFrame = undefined;
         }
+        const selection = this.liveQueuePolicy.select(inferenceRx, Date.now());
         const frame = await parseFrame(inferenceRx, entry.id, this.normFs, previousFrame, {
+          queueAllowlist: selection.queues,
+          shouldReadQueue: selection.shouldRead,
           retainRawData: false,
+          thermalDiscoveryOnly: true,
+          shouldLoadVideoFrame: (queueId, previousEnvelope) =>
+            !isLiveVideoFollowing(queueId) && shouldLoadLiveCameraFrame(queueId, previousEnvelope),
           shouldPublishVideoFrames: () =>
             this.isLiveMode() && acquisitionGeneration === this.acquisitionGeneration,
         });
 
+        if (!this.isLiveMode() || acquisitionGeneration !== this.acquisitionGeneration) {
+          return;
+        }
+
+        // A followed camera's frames are not read here, so its metadata comes from its stream.
+        // A stream resumed past its session record has not seen it, so that is read here.
+        await Promise.all((frame.videoQueues ?? []).map(async (video) => {
+          const envelope = getLiveVideoEnvelope(video.queueId);
+          if (envelope) {
+            video.data = createLiveCameraMetadataEnvelope(
+              await resolveCaptureSession(this.normFs, video.queueId, envelope),
+            );
+          }
+        }));
         if (!this.isLiveMode() || acquisitionGeneration !== this.acquisitionGeneration) {
           return;
         }
@@ -140,6 +166,9 @@ class WebSocketManager extends EventTarget {
       // Silently ignore if queue is empty (not yet populated)
     } finally {
       this.isPolling = false;
+      if (this.isLiveMode() && acquisitionGeneration === this.acquisitionGeneration) {
+        syncLiveVideoStreams(this.url, this.liveSnapshot.frame?.videoQueues ?? []);
+      }
     }
   }
 
@@ -206,6 +235,7 @@ class WebSocketManager extends EventTarget {
       this.acquisitionGeneration += 1;
       this.cancelScheduledPollingResume();
       this.stopPolling();
+      syncLiveVideoStreams(this.url, []);
       this.emitStats();
     }
 
@@ -323,6 +353,7 @@ class WebSocketManager extends EventTarget {
       console.log("WebSocket: Connection closed.", event);
       this.acquisitionGeneration += 1;
       this.lastProcessedEntryId = null;
+      this.liveQueuePolicy.reset();
       this.frameTimestamps = [];
       this.normFs.onClose();
 
@@ -332,6 +363,7 @@ class WebSocketManager extends EventTarget {
       // Stop polling
       this.cancelScheduledPollingResume();
       this.stopPolling();
+      syncLiveVideoStreams(this.url, []);
 
       this.emitStats({ status: 'disconnected', connectedAt: null });
       this.reconnect();

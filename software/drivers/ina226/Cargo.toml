@@ -10,7 +10,7 @@ i2c-async = { path = "../../../shared/i2c-async" }
 log = { workspace = true }
 normfs = { workspace = true }
 station_iface = { path = "../../station/shared/station-iface" }
-systime = { path = "../../station/shared/systime-rs" }
+normfs-time = { workspace = true }
 tokio = { workspace = true }
 
 [build-dependencies]

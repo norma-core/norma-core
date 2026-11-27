@@ -8,6 +8,11 @@ message FramesPack {
     repeated FrameStamp stamps = 10;
     bytes linear_data = 11; // if frames are equal-size, like NCHW
     repeated bytes frames_data = 12;
+
+    // FF_VP8 only. A frame decodes from the keyframe entry of its chain
+    // onwards, so each entry names that entry; empty on the keyframe itself.
+    bool  keyframe     = 13;
+    bytes keyframe_ptr = 14;
 }
 
 message FrameStamp {
@@ -20,6 +25,7 @@ message FrameStamp {
 enum FrameFormatKind {
     FF_NCHW = 0; // 1-byte u8, all Red channel come first, then all Green, then all Blue
     FF_JPEG = 1;
+    FF_VP8  = 2; // one frame per entry, no altref: decode order is display order
 }
 
 message FrameFormat {

@@ -10,6 +10,7 @@ then adds the Arduino, Tailscale, and NormaCore layers on top.
 
 - [Image Profile](#image-profile-)
 - [Max Carrier Setup](#max-carrier-setup-)
+- [M4 PWM Firmware](#m4-pwm-firmware-)
 - [Cellular Modem Support](#cellular-modem-support-)
 - [Hardware Network Watchdog](#hardware-network-watchdog-)
 - [SD Card Automount](#sd-card-automount-)
@@ -18,6 +19,7 @@ then adds the Arduino, Tailscale, and NormaCore layers on top.
 - [2. Add Arduino, Tailscale, And NormaCore](#2-add-arduino-tailscale-and-normacore-)
 - [3. Create The Build Directory](#3-create-the-build-directory-)
 - [4. Add Local Access Credentials](#4-add-local-access-credentials-)
+- [Wi-Fi Configuration](#wi-fi-configuration)
 - [5. Build The Image](#5-build-the-image-)
 - [6. Prepare Files For UUU Flashing](#6-prepare-files-for-uuu-flashing-)
 - [7. Flash Explicitly](#7-flash-explicitly-)
@@ -44,6 +46,8 @@ The target image includes:
 - Default hostname `rover-alpha`; override with `X8_HOSTNAME` in
   `conf/local.conf`.
 - Max Carrier boot overlay selection and Portenta X8/H7 support packages.
+- NormaCore PWM output firmware for the STM32H7 M4 core, installed from a
+  required prebuilt ELF artifact at `/opt/x8-firmware/m4-user-sketch.elf`.
 - Wi-Fi, Bluetooth, ALSA audio, V4L2, CAN, I2C, GPIO, USB, PCI, PPP, QMI,
   MBIM, and serial-console tools.
 - Removable SD-card automounting at `/media/sdcard`.
@@ -88,6 +92,40 @@ servers. That can break ordinary name resolution and NTP before Tailscale DNS is
 usable. The expected resolver file is managed by `x8-clean` and includes public
 fallback resolvers.
 
+## Clock Bootstrap And First Login
+
+The image seeds `/etc/timestamp` with its build time in UTC so a missing or stale
+RTC does not send the board back to Yocto's generic 2018 date. To reproduce a
+release, pin `X8_INITIAL_TIMESTAMP = "YYYYMMDDHHMMSS"` in `conf/local.conf`.
+This timestamp is only a boot fallback; network time still comes from Chrony.
+
+`x8-timesync` runs in the background after Chrony and cellular startup. Until
+Chrony synchronizes, it waits for a default route, refreshes NTP source DNS,
+brings sources online, and requests a burst of measurements. This recovers from
+DNS failures before a slow cellular connection becomes available. It uses
+Chrony only, without starting another NTP daemon. Once synchronized, it saves
+the UTC time in `/etc/timestamp` hourly and attempts an immediate RTC update.
+The saved timestamp also works on boards without a usable RTC.
+
+First-boot Tailscale registration waits for Chrony synchronization with less
+than one second of remaining correction. Each login attempt has a 30-second
+timeout and failures retry after 30 seconds. These waits run in a background
+worker and do not block the serial console or Station startup. Provisioning
+does not add a tag argument; leave `X8_TAILSCALE_EXTRA_ARGS` empty for untagged
+Headscale registration. An auth key created on the server must also be untagged.
+
+On the board, inspect synchronization and registration with:
+
+```sh
+date -u
+chronyc tracking
+chronyc -n sources
+cat /run/x8-time-sync.status
+tail -n 60 /var/log/x8-timesync.log
+tail -n 60 /var/log/x8-tailscale-autologin.log
+tailscale status
+```
+
 ## Max Carrier Setup 🔌
 
 This image targets Portenta X8 on the Portenta Max Carrier. Before relying on
@@ -98,6 +136,39 @@ Ethernet, set the Max Carrier Ethernet DIP switches to the Portenta X8 mode:
 Arduino documents this as Ethernet enabled for Portenta X8. See the
 [Portenta Max Carrier user manual](https://docs.arduino.cc/tutorials/portenta-max-carrier/user-manual/)
 for the carrier DIP switch table.
+
+## M4 PWM Firmware 🧩
+
+Build the NormaCore PWM output sketch for the STM32H7 M4 core outside Yocto:
+
+```sh
+mkdir -p target/arduino-portenta-x8/pwm-output-m4
+arduino-cli compile \
+  --fqbn arduino:mbed_portenta:portenta_x8 \
+  --output-dir target/arduino-portenta-x8/pwm-output-m4 \
+  software/drivers/pwm-output/firmware/pwm_output_m4
+```
+
+The Yocto recipe defaults to this artifact path:
+
+```bitbake
+X8_M4_USER_SKETCH_ELF ??= "${NORMACORE_REPO_ROOT}/target/arduino-portenta-x8/pwm-output-m4/pwm_output_m4.ino.elf"
+```
+
+The image build fails if that ELF is missing. Override `X8_M4_USER_SKETCH_ELF`
+only when using a different artifact path. The ELF is installed into the target
+image as:
+
+```text
+/opt/x8-firmware/m4-user-sketch.elf
+```
+
+`x8h7-init` flashes this file once on first boot, before loading the post-H7 IO
+kernel modules, and writes:
+
+```text
+/var/lib/x8h7-init/m4-user-sketch.done
+```
 
 ## Cellular Modem Support 📡
 
@@ -131,6 +202,70 @@ Leaving both APNs empty keeps the service installed but inactive at boot.
 The image includes ModemManager plus QMI/MBIM tools, but it does not include
 NetworkManager. Modem detection and inspection are available through
 ModemManager, while connection policy is handled by `x8-cellulard`.
+
+## Station Service 🛰️
+
+The image installs the prebuilt ARM64 Station binary from:
+
+```text
+target/aarch64-unknown-linux-gnu/release/station
+```
+
+If that binary is missing, the image build fails and asks to build it from the
+Station source folder:
+
+```sh
+cd software/station/bin/station
+make build-arm64
+```
+
+Station is installed at `/opt/station/station` and run by a SysV supervisor with
+TCP/Web, `--max-memory-usage=128M` and `--normfs-persistence-mode=cloud-only`:
+queues go from memory to the bucket in the config's `cloud-offload` section, and
+the eMMC holds only NormFS's own `normfs/system` queue, capped by
+`--max-queue-disk-size=64M` (`--normfs-file-size=4M` meets NormFS's 3x rule).
+
+`exclude` keeps camera and thermal frames (`*video/*`, `*/hikmicro-thermal/*`),
+more than LTE carries, and the commands and tx queues (`*/commands`,
+`*/vesc-trampa/tx`, `*/pwm-output/tx`, `*/usbvideo/tx`) in memory only, so
+driving never waits for the bucket and command logs are not uploaded. Uploaded
+are the rx telemetry, `vesc-trampa/inference`, `inference-states`,
+`inference-tags/rx`, `main`, `startups` and `normfs/system`, at least once a
+minute.
+
+In an outage an uploaded queue holds its pages in RAM; once they are all
+waiting, new records are dropped (periodic ones at once, others after at most 5
+s) until the link is back, while driving goes on. Until NormFS 0.4.2, with a
+bucket set, station starts only with the bucket reachable and accepting its
+keys, and a device queue reopened in an outage (an AirGradient or Victron
+reconnect) waits for the link; an endpoint that drops packets holds a start for
+the TCP connect timeout (about 2 minutes) and an upload for 300 s, and a stop
+without network takes the supervisor's 90 s and loses the open pages.
+
+`pwm-output` logs an error per command while its rx queue is full, and
+vesc-trampa logs dropped records, so once a minute the supervisor copies a
+`/var/log/station.log` (tmpfs) over 10 MB to `station.log.1` and empties it.
+
+The image ships `/etc/default/station` (mode 0600) with empty `AWS_S3_BUCKET`,
+`AWS_REGION`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` and
+`AWS_ENDPOINT_URL` (required, also for AWS); until they are set station keeps
+queues in memory and records nothing. It and `station.yaml` are conffiles: an
+upgraded rover keeps edited copies, ignores an old
+`STATION_NORMFS_PERSISTENCE_MODE`, and needs the `AWS_*` entries, `chmod 600`
+and the new `cloud-offload` section added by hand.
+
+The default config and data paths are:
+
+```text
+/opt/station/station.yaml
+/opt/station/station_data
+```
+
+Private Station identity data can be provided by placing the seed at
+`bld-x8/conf/station.crypto_seed`. If that file exists, it is copied into the
+image as `/opt/station/station_data/.crypto_seed`. If it does not exist, the
+image does not install a seed and Station creates a new NormFS identity on first
+boot.
 
 ## Hardware Network Watchdog ⏱️
 
@@ -182,15 +317,22 @@ whole card device is mounted.
 
 ## eMMC Root Filesystem Size 💽
 
-Portenta X8 has a 16 GB onboard eMMC. The image uses a fixed 14336 MiB rootfs
-partition in the generated `.wic` so the flashed system has a large rootfs
-available immediately, without first-boot partition resizing.
+Portenta X8 has a 16 GB onboard eMMC. The generated `.wic` keeps the flashed
+rootfs partition compact by default:
 
-Arduino's stock `lmp-factory-image-portenta-x8.wic.gz` reference image uses a
-smaller root partition of about 2.9 GiB. NormaCore intentionally uses the larger
-fixed partition because this image is flashed directly to the X8 eMMC, while
-keeping enough margin for the capacity exposed by Arduino's mfgtool fastboot
-target.
+```bitbake
+X8_ROOTFS_FLASH_SIZE_MB ??= "3072"
+```
+
+This avoids decompressing and flashing a 14 GiB image mostly filled with zeroed
+ext4 free space. On first boot, `x8-grow-rootfs` expands the root partition and
+online ext4 filesystem to the rest of the eMMC, writes
+`/var/lib/x8-grow-rootfs.done`, and removes itself from SysV autostart.
+
+If the kernel cannot reread the mounted root partition table immediately after
+the partition is expanded, `resize2fs` may fail on that boot. In that case the
+service stays enabled and retries on the next boot, when the kernel sees the new
+partition size from startup.
 
 ## Start Here 📍
 
@@ -368,6 +510,83 @@ EOF
 ```
 
 The files above live in the build directory and must not be committed.
+
+## Wi-Fi Configuration
+
+Set `X8_WIFI_NETWORKS` to a JSON list of saved WPA/WPA2-Personal networks. Each
+entry takes an SSID and its plain-text password; the build derives a PSK for
+that SSID. At boot, `wpa_supplicant` selects an available configured network and
+DHCP supplies its address. Higher `priority` values prefer a network when
+several are available. Ethernet remains enabled.
+
+For environment-based configuration, run this **inside Docker, in the same
+shell that runs BitBake** (replace the example credentials):
+
+```bash
+export BB_ENV_PASSTHROUGH_ADDITIONS="${BB_ENV_PASSTHROUGH_ADDITIONS:-} X8_WIFI_NETWORKS X8_WIFI_COUNTRY X8_WIFI_INTERFACE"
+export X8_WIFI_NETWORKS='[{"ssid":"Home","password":"home-password","priority":20},{"ssid":"Phone","password":"phone-password","priority":10}]'
+export X8_WIFI_COUNTRY=ES
+bitbake x8-normacore
+unset X8_WIFI_NETWORKS
+```
+
+For passwords containing shell quotes, or to keep credentials out of shell
+history, save the JSON list in a private file and load it with
+`export X8_WIFI_NETWORKS="$(cat /path/to/private-wifi.json)"` instead.
+
+Alternatively, use `conf/local-wifi.inc`, like the root access credential files:
+
+```bitbake
+X8_WIFI_NETWORKS = '[{"ssid":"Home","password":"home-password","priority":20},{"ssid":"Phone","password":"phone-password","priority":10,"hidden":true}]'
+X8_WIFI_COUNTRY = "ES"
+```
+
+Add as many entries as needed. The updated build template includes this file.
+For an existing build directory, add `include conf/local-wifi.inc` to
+`conf/local.conf`. Keep it outside this repository and restrict it with
+`chmod 600 conf/local-wifi.inc`. Explicit assignments in local configuration
+take precedence over environment values. Credentials in local configuration are
+read without expanding `${...}` variable references. When passing JSON through
+the environment, encode a literal `$` as `\u0024` if it starts a `${...}` sequence,
+to avoid BitBake expanding it while importing environment variables.
+
+| Variable | Default | Meaning |
+| --- | --- | --- |
+| `X8_WIFI_NETWORKS` | empty | JSON list; empty or `[]` leaves Wi-Fi unconfigured |
+| `X8_WIFI_COUNTRY` | empty | Optional uppercase two-letter regulatory country code, e.g. `ES` |
+| `X8_WIFI_INTERFACE` | `wlan0` | Wireless interface name |
+
+Each network accepts these fields:
+
+| Field | Default | Meaning |
+| --- | --- | --- |
+| `ssid` | required | Network name, 1–32 UTF-8 bytes |
+| `password` | required | Plain-text password, 8–63 printable ASCII characters; a 64-digit hexadecimal PSK is also accepted |
+| `hidden` | `false` | Set to `true` to probe for a hidden SSID |
+| `priority` | `0` | Nonnegative integer; higher values are preferred |
+
+Open networks, enterprise authentication, and WPA3-only networks are not
+supported by this provisioning configuration. Malformed settings fail the build
+without printing credentials.
+
+The build installs `/etc/wpa_supplicant/x8.conf` with mode `0600`, containing
+hex-encoded SSIDs and derived PSKs, and adds a DHCP stanza to
+`/etc/network/interfaces` with the `nl80211` driver. The upstream ifupdown hooks
+start and stop the supplicant. Credentials remain sensitive in local config,
+build artifacts, and the resulting image; derived PSKs also grant network access.
+
+An ifupdown hook runs `wpa_cli` as an event listener while Wi-Fi is enabled.
+On disconnect it releases the Wi-Fi DHCP lease and clears Wi-Fi IPv4 routes;
+on connection it releases any previous lease and starts fresh DHCP discovery.
+This also handles switching between saved networks with different subnets.
+The existing ifupdown DHCP client is reused, and cellular stays running.
+
+After flashing and booting, check the connection on the board:
+
+```sh
+ip addr show wlan0
+iw dev wlan0 link
+```
 
 ## 5. Build The Image 🧱
 

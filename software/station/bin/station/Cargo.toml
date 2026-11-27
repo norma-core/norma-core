@@ -5,7 +5,7 @@ edition = "2024"
 
 [features]
 default = ["arduino", "ina226"]
-arduino = ["dep:arduino-nicla-sense-env"]
+arduino = ["dep:arduino-nicla-sense-env", "dep:arduino-nicla-sense-me"]
 ina226 = ["dep:ina226"]
 ov5647 = ["dep:ov5647"]
 yahboom-dogzilla-lite = ["dep:yahboom-dogzilla-lite"]
@@ -13,17 +13,20 @@ yahboom-dogzilla-lite = ["dep:yahboom-dogzilla-lite"]
 [dependencies]
 prost = { workspace = true }
 normfs = { workspace = true, features = ["websocket"] }
-normfs-types = "0.2.0-beta.1"
+normfs-types = { workspace = true }
 clap = { version = "4.5", features = ["derive"] }
 tokio = { workspace = true }
 station_iface = { path = "../../shared/station-iface" }
 st3215 = { path = "../../../drivers/st3215" }
 vesc-trampa = { path = "../../../drivers/vesc-trampa" }
 airgradient-open-air-o-1pst = { path = "../../../drivers/airgradient-open-air-o-1pst" }
+arduino-nicla-sense-me = { path = "../../../drivers/arduino-nicla-sense-me", optional = true }
 victron-smartsolar-mppt = { path = "../../../drivers/victron-smartsolar-mppt" }
+pwm-output = { path = "../../../drivers/pwm-output" }
+dmesg = { path = "../../../drivers/dmesg" }
 yahboom-dogzilla-lite = { path = "../../../drivers/yahboom-dogzilla-lite", optional = true }
 ov5647 = { path = "../../../drivers/ov5647", optional = true }
-systime = { path = "../../shared/systime-rs" }
+normfs-time = { workspace = true }
 usbvideo = { path = "../../../drivers/usbvideo" }
 sysinfod = { path = "../../../drivers/sysinfod" }
 motors-mirroring = { path = "../../../drivers/motors-mirroring" }

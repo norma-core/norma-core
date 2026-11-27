@@ -1,20 +1,33 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { usbvideo } from '@/api/proto.js';
 import { formatTimestamp, createJpegBlobUrl } from '@/components/history/history-utils';
+import { useUsbVideoPicture } from '@/hooks';
+import VideoPictureCanvas from '@/usbvideo/VideoPictureCanvas';
+import { canvasToJpegUrl } from '@/usbvideo/vp8-frames';
 
 interface UsbVideoExpandedProps {
   data: usbvideo.RxEnvelope;
+  queueId?: string;
+  entryId?: Uint8Array;
   onImageClick?: (src: string, alt: string) => void;
 }
 
-export default function UsbVideoExpanded({ data, onImageClick }: UsbVideoExpandedProps) {
+export default function UsbVideoExpanded({ data, queueId, entryId, onImageClick }: UsbVideoExpandedProps) {
+  const picture = useUsbVideoPicture(queueId, entryId, data);
+  const fullscreenUrlRef = useRef<string | null>(null);
   const firstFrameData = data.frames?.framesData?.[0];
   const firstFrameUrl = useMemo(() => {
-    if (!firstFrameData || firstFrameData.length === 0) {
+    if (picture !== undefined || !firstFrameData || firstFrameData.length === 0) {
       return null;
     }
     return createJpegBlobUrl(firstFrameData);
-  }, [firstFrameData]);
+  }, [picture, firstFrameData]);
+
+  useEffect(() => () => {
+    if (fullscreenUrlRef.current) {
+      URL.revokeObjectURL(fullscreenUrlRef.current);
+    }
+  }, []);
 
   useEffect(() => {
     return () => {
@@ -63,7 +76,27 @@ export default function UsbVideoExpanded({ data, onImageClick }: UsbVideoExpande
         <div>
           <div className="text-xs text-text-label mb-1">First Frame Image:</div>
           <div className="bg-surface-primary p-2 rounded">
-            {firstFrameUrl ? (
+            {picture instanceof ImageBitmap ? (
+              <VideoPictureCanvas
+                picture={picture}
+                className="max-w-full max-h-48 object-contain rounded cursor-pointer hover:border-accent-info border border-transparent transition-colors"
+                // The fullscreen viewer takes a URL; JPEG is made only for it, from the
+                // canvas, since the hook may already have closed the bitmap drawn there.
+                onClick={(event) => {
+                  canvasToJpegUrl(event.currentTarget).then((url) => {
+                    if (fullscreenUrlRef.current) {
+                      URL.revokeObjectURL(fullscreenUrlRef.current);
+                    }
+                    fullscreenUrlRef.current = url;
+                    onImageClick?.(url, 'First frame');
+                  }).catch((error) => console.error('Failed to open the frame fullscreen:', error));
+                }}
+              />
+            ) : picture === 'decoding' ? (
+              <div className="text-text-label text-xs">Decoding frame...</div>
+            ) : picture === 'missing' ? (
+              <div className="text-accent-critical text-xs">Frame not available</div>
+            ) : firstFrameUrl ? (
               <img
                 src={firstFrameUrl}
                 alt="First frame"

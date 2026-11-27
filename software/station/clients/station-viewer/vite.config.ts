@@ -58,6 +58,7 @@ const stationVersion = `${resolveWorkspaceVersion()} (${resolveGitHash()})`;
 export default defineConfig({
   // Required for loading the built viewer from Electron via file://.
   base: './',
+  worker: { format: 'es' },
   define: {
     __STATION_VERSION__: JSON.stringify(stationVersion),
   },
@@ -89,7 +90,7 @@ export default defineConfig({
       algorithm: 'gzip',
       ext: '.gz',
       threshold: 1024,
-      filter: /\.(js|mjs|json|css|html|urdf|stl)$/i,
+      filter: /\.(js|mjs|json|css|html|urdf|stl|wasm)$/i,
     }),
     react(),
     tailwindcss(),

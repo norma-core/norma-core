@@ -1,6 +1,6 @@
 import Long from 'long';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { drivers, inference, normfs, sysinfo } from '@/api/proto.js';
+import { drivers, hikmicro, inference, normfs, sysinfo, vesc_trampa, pwm_output, victron_smartsolar_mppt, arduino_nicla_sense_me } from '@/api/proto.js';
 
 type WebSocketManager = (typeof import('@/api/websocket'))['default'];
 type MessageHandler = (event: MessageEvent<ArrayBuffer>) => void | Promise<void>;
@@ -8,6 +8,8 @@ type MessageHandler = (event: MessageEvent<ArrayBuffer>) => void | Promise<void>
 interface QueuedReadResponse {
   entryId: number;
   data: Uint8Array;
+  result?: normfs.ReadResponse.Result;
+  onlyLatestAvailable?: boolean;
 }
 
 const sockets: FakeWebSocket[] = [];
@@ -16,6 +18,7 @@ class FakeWebSocket {
   static readonly OPEN = 1;
   static readonly CLOSED = 3;
 
+  reads: string[] = [];
   readyState = 0;
   binaryType: BinaryType = 'arraybuffer';
   onopen: (() => void) | null = null;
@@ -42,6 +45,7 @@ class FakeWebSocket {
       return;
     }
 
+    this.reads.push(queueId);
     const responses = this.queuedReadResponses.get(queueId);
     if (!responses || responses.length === 0) {
       return;
@@ -55,8 +59,12 @@ class FakeWebSocket {
     }
 
     const readId = Long.fromValue(readIdValue).toNumber();
+    // NormFS offsets are zero-based: offset 1 misses if only the tail remains.
+    const missedTail = response.onlyLatestAvailable
+      && read.offset?.type === normfs.OffsetType.OT_SHIFT_FROM_TAIL
+      && Long.fromBytesLE(Array.from(read.offset.id?.raw ?? [])).greaterThan(0);
     queueMicrotask(() => {
-      void this.receive(createReadResponse(readId, response.entryId, response.data));
+      void this.receive(createReadResponse(readId, response.entryId, response.data, missedTail ? normfs.ReadResponse.Result.RR_NOT_FOUND : response.result));
     });
   }
 
@@ -92,11 +100,11 @@ function getSocket(): FakeWebSocket {
   return socket;
 }
 
-function createReadResponse(readId: number, entryId: number, data: Uint8Array): Uint8Array {
+function createReadResponse(readId: number, entryId: number, data: Uint8Array, result = normfs.ReadResponse.Result.RR_ENTRY): Uint8Array {
   return normfs.ServerResponse.encode({
     read: {
       readId: Long.fromNumber(readId),
-      result: normfs.ReadResponse.Result.RR_ENTRY,
+      result,
       id: { raw: Uint8Array.of(entryId) },
       data,
     },
@@ -150,6 +158,115 @@ describe('WebSocketManager state', () => {
   afterEach(() => {
     vi.useRealTimers();
     vi.unstubAllGlobals();
+  });
+
+  it('opens rover mode without reading diagnostics or unselected camera/IMU queues, but history can still read them', async () => {
+    vi.useFakeTimers();
+    const { default: manager } = await import('@/api/websocket');
+    const socket = getSocket();
+    const Q = drivers.QueueDataType;
+    const entries = [
+      ['vesc', Q.QDT_VESC_TRAMPA_INFERENCE], ['pwm', Q.QDT_PWM_OUTPUT_RX],
+      ['camera-a', Q.QDT_USB_VIDEO_FRAMES], ['camera-b', Q.QDT_USB_VIDEO_FRAMES],
+      ['imu-a', Q.QDT_ARDUINO_NICLA_SENSE_ME_RX], ['imu-b', Q.QDT_ARDUINO_NICLA_SENSE_ME_RX],
+      ['sysinfo', Q.QDT_SYSTEM], ['tx', Q.QDT_PWM_OUTPUT_TX],
+      ['power', Q.QDT_VICTRON_SMARTSOLAR_MPPT_RX], ['power-unused', Q.QDT_VICTRON_SMARTSOLAR_MPPT_RX], ['thermal', Q.QDT_HIKMICRO_THERMAL],
+    ].map(([queue, type]) => ({ queue: queue as string, type: type as drivers.QueueDataType, ptr: Uint8Array.of(1) }));
+    queueFrame(socket, 1, entries);
+    for (const queue of ['vesc','camera-a','imu-a','power']) socket.queueReadResponse(queue, { entryId: 1, data: new Uint8Array() });
+    socket.open();
+    await vi.advanceTimersByTimeAsync(10);
+    expect(manager.getLiveSnapshot().latestEntryId).toBe(1);
+    expect(socket.reads).toEqual(['inference-states','vesc','camera-a','imu-a','power']);
+    const release = manager.acquireHistoryMode();
+    queueFrame(socket, 2, [
+      { queue: 'sysinfo', type: Q.QDT_SYSTEM, ptr: Uint8Array.of(2) },
+      { queue: 'pwm', type: Q.QDT_PWM_OUTPUT_RX, ptr: Uint8Array.of(2) },
+    ]);
+    socket.queueReadResponse('sysinfo', { entryId: 2, data: createSysinfoData('diagnostics') });
+    socket.queueReadResponse('pwm', { entryId: 2, data: pwm_output.RxEnvelope.encode({ device: { id: 'cameras' } }).finish() });
+    const history = await manager.getFrame(Uint8Array.of(2));
+    expect(history.sysinfo?.data.data?.hostname).toBe('diagnostics');
+    expect(history.pwmOutputRx?.data.device?.id).toBe('cameras');
+    socket.disconnect(); release();
+  });
+
+  it('coalesces rover IMU reads before download without marking skipped pointers as fetched', async () => {
+    vi.useFakeTimers();
+    Object.assign(window, { setInterval, clearInterval, setTimeout, clearTimeout });
+    const { default: manager } = await import('@/api/websocket');
+    const socket = getSocket();
+    const Q = drivers.QueueDataType;
+    for (let i = 1; i <= 6; i++) queueFrame(socket, i, [
+      { queue: 'vesc', type: Q.QDT_VESC_TRAMPA_INFERENCE, ptr: Uint8Array.of(1) },
+      { queue: 'pwm', type: Q.QDT_PWM_OUTPUT_RX, ptr: Uint8Array.of(1) },
+      { queue: 'imu', type: Q.QDT_ARDUINO_NICLA_SENSE_ME_RX, ptr: Uint8Array.of(i) },
+    ]);
+    socket.queueReadResponse('vesc', { entryId: 1, data: vesc_trampa.InferenceState.encode({}).finish() });
+    for (const i of [1,6]) socket.queueReadResponse('imu', { entryId: i, data: arduino_nicla_sense_me.RxEnvelope.encode({ data: Uint8Array.of(i) }).finish() });
+    socket.open();
+    await vi.advanceTimersByTimeAsync(85);
+    expect(manager.getLiveSnapshot().frame?.arduinoNiclaSenseMe?.[0]?.ptr).toEqual(Uint8Array.of(1));
+    expect(socket.reads.filter(q => q === 'imu')).toHaveLength(1);
+    await vi.advanceTimersByTimeAsync(20);
+    expect(manager.getLiveSnapshot().frame?.arduinoNiclaSenseMe?.[0]?.data.data).toEqual(Uint8Array.of(6));
+    expect(socket.reads.filter(q => q === 'imu')).toHaveLength(2);
+    socket.disconnect();
+  });
+
+  it('reads the Victron power queue at most once per second and preserves skipped pointers', async () => {
+    vi.useFakeTimers();
+    Object.assign(window, { setInterval, clearInterval, setTimeout, clearTimeout });
+    const { default: manager } = await import('@/api/websocket');
+    const socket = getSocket();
+    const Q = drivers.QueueDataType;
+    for (let i = 1; i <= 56; i++) queueFrame(socket, i, [
+      { queue: 'vesc', type: Q.QDT_VESC_TRAMPA_INFERENCE, ptr: Uint8Array.of(1) },
+      { queue: 'pwm', type: Q.QDT_PWM_OUTPUT_RX, ptr: Uint8Array.of(1) },
+      { queue: 'power', type: Q.QDT_VICTRON_SMARTSOLAR_MPPT_RX, ptr: Uint8Array.of(i) },
+    ]);
+    socket.queueReadResponse('vesc', { entryId: 1, data: vesc_trampa.InferenceState.encode({}).finish() });
+    for (const i of [1,51]) socket.queueReadResponse('power', { entryId: i,
+      data: victron_smartsolar_mppt.RxEnvelope.encode({ data: Uint8Array.of(i) }).finish() });
+    socket.open();
+    await vi.advanceTimersByTimeAsync(950);
+    expect(socket.reads.filter(q => q === 'power')).toHaveLength(1);
+    expect(manager.getLiveSnapshot().frame?.victronSmartSolar?.[0]?.ptr).toEqual(Uint8Array.of(1));
+    await vi.advanceTimersByTimeAsync(100);
+    expect(socket.reads.filter(q => q === 'power')).toHaveLength(2);
+    expect(manager.getLiveSnapshot().frame?.victronSmartSolar?.[0]?.data.data).toEqual(Uint8Array.of(51));
+    socket.disconnect();
+  });
+
+  it('publishes thermal discovery without waiting for an unresponsive camera queue', async () => {
+    vi.useFakeTimers();
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    const { default: manager } = await import('@/api/websocket');
+    const socket = getSocket();
+    const queue = 'hikmicro-thermal/EA2976465';
+    queueFrame(socket, 40, [{ queue, ptr: Uint8Array.of(9), type: drivers.QueueDataType.QDT_HIKMICRO_THERMAL }]);
+    // No thermal response: unrelated live state must still publish.
+    socket.open();
+    await vi.advanceTimersByTimeAsync(10);
+    expect(manager.getLiveSnapshot().frame?.hikmicroThermal?.[0]?.queueId).toBe(queue);
+    socket.disconnect();
+  });
+
+  it('does not substitute a different thermal entry when reading history', async () => {
+    vi.useFakeTimers();
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const { default: manager } = await import('@/api/websocket');
+    manager.acquireHistoryMode();
+    const socket = getSocket();
+    socket.open();
+    const queue = 'hikmicro-thermal/EA2976465';
+    queueFrame(socket, 40, [{ queue, ptr: Uint8Array.of(9), type: drivers.QueueDataType.QDT_HIKMICRO_THERMAL }]);
+    socket.queueReadResponse(queue, { entryId: 9, data: new Uint8Array(), result: normfs.ReadResponse.Result.RR_NOT_FOUND });
+    socket.queueReadResponse(queue, { entryId: 10, data: hikmicro.RxEnvelope.encode({ frames: { sequence: 123 } }).finish() });
+    const frame = await manager.getFrame(Uint8Array.of(40));
+    expect(frame.hikmicroThermal).toEqual([]);
+    socket.disconnect();
   });
 
   it('reports a malformed packet as one atomic statistics update', async () => {

@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+package dmesg;
+
+enum DmesgSignalType {
+    DMESG_SIGNAL_TYPE_UNSPECIFIED = 0;
+    DMESG_STARTED                 = 1;
+    DMESG_MESSAGES                = 2;
+    DMESG_BACKLOG_COMPLETE        = 3;
+    DMESG_GAP                     = 4;
+    DMESG_SOURCE_UNAVAILABLE      = 5;
+    DMESG_ERROR                   = 6;
+}
+
+message RxEnvelope {
+    uint64 monotonic_stamp_ns = 1;
+    uint64 local_stamp_ns     = 2;
+    uint64 app_start_id       = 3;
+
+    DmesgSignalType signal_type = 10;
+
+    repeated string records = 11;
+
+    bool from_backlog = 12;
+
+    uint64 dropped_records = 13;
+
+    string error = 50;
+}

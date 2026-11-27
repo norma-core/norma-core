@@ -21,6 +21,7 @@ import {
 import { formatVescTrampaUuid, longToNumber, shortVescTrampaUuid } from '../utils';
 
 const CURRENT_HOLD_SEND_INTERVAL_MS = 50;
+const CURRENT_COMMAND_DURATION_MS = 2_500;
 
 interface MetricCellProps {
   label: string;
@@ -105,7 +106,10 @@ const VescTrampaCard = ({ boardState, boardIndex }: VescTrampaCardProps) => {
   const sendCurrent = async (currentA: number) => {
     if (!canSendCommand) return;
     try {
-      await setVescTrampaCurrent(boardUuid, currentA);
+      await setVescTrampaCurrent(boardUuid, currentA, {
+        durationMs: currentA === 0 ? 0 : CURRENT_COMMAND_DURATION_MS,
+        finalCurrentA: 0,
+      });
     } catch (error) {
       console.error('Failed to set VESC Trampa current:', error);
     }

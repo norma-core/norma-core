@@ -4,10 +4,10 @@ import { Scan } from 'lucide-react';
 import { st3215 } from '@/api/proto.js';
 import CameraMotorStrip from '@/st3215/CameraMotorStrip';
 import MotorDataTable from '@/st3215/MotorDataTable';
+import type { CameraLayoutMode } from '@/usbvideo/CameraLayoutControls';
 import CameraViewer from '@/usbvideo/CameraViewer';
 
 type CameraFitMode = 'contain' | 'cover';
-type CameraLayoutMode = 'pip' | 'side-by-side' | 'stacked';
 type MotorStripPlacement = 'none' | 'bottom';
 
 interface RobotCameraViewProps {

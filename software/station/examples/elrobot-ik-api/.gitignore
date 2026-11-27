@@ -1,0 +1,4 @@
+# Produced by hatch_build.py at build time (uv sync): the ElRobot model copied from
+# hardware/elrobot/simulation and the protobuf stubs generated from protobufs/.
+src/elrobot_ik/urdf/
+src/elrobot_ik/station/proto/**/*_pb2.py

@@ -6,6 +6,7 @@ use station_iface::iface_proto::{
     drivers::QueueDataType,
     envelope::{QueueData, QueueOpt, RootQueueEnvelope, RootQueueEnvelopeType},
 };
+use station_iface::{Backpressure, STARTUP_WRITE_TIMEOUT, try_enqueue_with};
 use std::sync::Arc;
 
 pub const MAIN_QUEUE_ID: &str = "main";
@@ -28,9 +29,14 @@ impl MainQueue {
         })
     }
 
-    pub fn send_app_start(&self) -> Result<()> {
+    pub async fn send_app_start(&self) -> Result<()> {
         let envelope = self.create_envelope(RootQueueEnvelopeType::RqetAppStart, None);
-        self.send_envelope(envelope)
+        let mut buf = Vec::new();
+        envelope.encode(&mut buf)?;
+        self.normfs
+            .enqueue_timeout(&self.queue_id, Bytes::from(buf), STARTUP_WRITE_TIMEOUT)
+            .await?;
+        Ok(())
     }
 
     pub fn send_queue_start(
@@ -57,19 +63,25 @@ impl MainQueue {
     ) -> RootQueueEnvelope {
         RootQueueEnvelope {
             r#type: envelope_type as i32,
-            monotonic_stamp_ns: systime::get_monotonic_stamp_ns(),
-            local_stamp_ns: systime::get_local_stamp_ns(),
-            app_start_id: systime::get_app_start_id(),
+            monotonic_stamp_ns: normfs_time::monotonic_stamp_ns(),
+            local_stamp_ns: normfs_time::local_stamp_ns(),
+            app_start_id: normfs_time::app_start_id(),
             station_uuid: self.station_uuid.clone(),
             queue,
         }
     }
 
+    /// Called from the synchronous `register_queue`; must not block.
     fn send_envelope(&self, envelope: RootQueueEnvelope) -> Result<()> {
         let mut buf = Vec::new();
         envelope.encode(&mut buf)?;
 
-        self.normfs.enqueue(&self.queue_id, Bytes::from(buf))?;
+        try_enqueue_with(
+            &self.normfs,
+            &self.queue_id,
+            Bytes::from(buf),
+            Backpressure::Keep,
+        )?;
 
         Ok(())
     }

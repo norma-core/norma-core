@@ -4,9 +4,9 @@ Physical operations platform for robotics - real-time data collection, inference
 
 ## 📥 Download
 
-**Latest Release: [v0.1.0-beta.10](https://github.com/norma-core/norma-core/releases/tag/v0.1.0-beta.10)**
+**Latest Release: [GitHub Releases](https://github.com/norma-core/norma-core/releases/latest)**
 
-Download pre-built binaries from the [releases page](https://github.com/norma-core/norma-core/releases/tag/v0.1.0-beta.10):
+Download pre-built binaries from the [latest release page](https://github.com/norma-core/norma-core/releases/latest):
 
 - **macOS ARM64** (Apple Silicon): `station-macos-arm64.dmg` - Desktop app with bundled station binary
 - **macOS ARM64** (Apple Silicon): `station-macos-arm64.zip` - Command-line binaries archive
@@ -154,6 +154,7 @@ asyncio.run(main())
 |  | Yahboom ROSMASTER X3 | 📋 Planned |
 | **Sensors** | [AirGradient Open Air O-1PST](../../../drivers/airgradient-open-air-o-1pst) | ✅ Supported |
 |  | [Arduino Nicla Sense Env](../../../drivers/arduino-nicla-sense-env) | ✅ Linux supported |
+|  | [Arduino Nicla Sense ME](../../../drivers/arduino-nicla-sense-me) | ✅ Supported |
 |  | [INA226 power/current monitor](../../../drivers/ina226) | ✅ Linux supported |
 |  | [HIKMICRO thermal sensors](../../../drivers/hikmicro-thermal) | ✅ Linux supported |
 | **Cameras & Devices** | [UVC USB cameras](../../../drivers/usbvideo) | ✅ Supported |
@@ -247,6 +248,8 @@ drivers:
     resolution: auto      # Capture format: "auto" or "<width>x<height>", e.g. "1280x720"
     resize_target: 224    # Resize shortest dimension of stored frames to 224px
     frame-skip: 0         # Drop N frames after each kept frame; 0 records every frame
+    codec: vp8            # How kept frames are stored: "vp8" or "jpeg"
+    keyframe-interval: 1s # vp8 only: longest gap between keyframes, up to 5s
 ```
 
 `resolution` chooses which camera format to open. With `auto` the best available
@@ -262,6 +265,16 @@ before any image conversion, so this reduces CPU load. Note that the live camera
 view in `station-viewer` reads the same queue as the recorder, so `frame-skip`
 also thins the live preview by the same factor.
 
+`codec` picks how each kept frame is stored. `jpeg` (the default) writes one
+JPEG per entry. `vp8` writes one VP8 frame per entry with a keyframe every
+`keyframe-interval` (default `1s`); each entry points at its keyframe, so a frame
+is read by id from that keyframe forward. VP8 entries take about a quarter of the
+space; normvla still gets JPEG, and station-viewer decodes them in the browser.
+A longer `keyframe-interval` stores less, since a keyframe is several times the
+size of the frames after it, but a jump to a frame decodes more of its chain.
+Values above `5s` are taken as `5s`, so the viewer can still decode a chain in
+time. Each file still opens on a keyframe.
+
 ```yaml
 # ML inference integration
 inference:
@@ -272,14 +285,39 @@ inference:
     st3215-bus: "auto"  # Auto-detect or specify bus ID
     update-interval: "100ms"
 
-# Optional: S3-compatible cloud offload
+# Optional: S3-compatible cloud offload, on once a bucket is set here or in the
+# environment. Without a bucket station warns once and keeps queues on disk
+# (durable) or in memory only (cloud-only); a bucket without an endpoint is an
+# error. Durable mode starts without a network and uploads once the link is up;
+# cloud-only with a bucket also needs it reachable and accepting its keys at
+# startup, as opening a queue lists it (until NormFS 0.4.2). cloud-only uploads
+# the open pages every minute, so a slow queue lands within a minute rather than
+# once a 4 MiB page fills; there --max-queue-disk-size bounds NormFS's own
+# normfs/system, the one queue it keeps on disk. --normfs-persistence-mode
+# memory-only keeps every queue but normfs/system in memory and ignores this
+# section, exclude included, so the bucket can be turned off for a run without
+# editing it.
 cloud-offload:
   bucket: "my-robot-data"  # leave empty to use env: AWS_S3_BUCKET
   region: "us-east-1"  # leave empty to use env: AWS_REGION
   access_key_id: "YOUR_KEY"  # leave empty to use env: AWS_ACCESS_KEY_ID
   secret_access_key: "YOUR_SECRET"  # leave empty to use env: AWS_SECRET_ACCESS_KEY
-  endpoint: "https://s3.amazonaws.com"  # Optional for MinIO/R2, leave empty to use env: AWS_ENDPOINT_URL
+  endpoint: "https://s3.amazonaws.com"  # Required (also for AWS), leave empty to use env: AWS_ENDPOINT_URL
+  exclude:  # Optional: queues kept off the bucket
+    - "*video/*"
+    - "*/hikmicro-thermal/*"
 ```
+
+`exclude` lists queues that are not uploaded. Each entry must be one of the
+patterns in station's queue rules (`queue_settings` in `src/main.rs`), such as
+`*video/*` (camera frames, but not `usbvideo/tx`) or `*/hikmicro-thermal/*`; any
+other entry stops station with an error naming it. The queues of a listed
+pattern keep their page settings. In durable mode they stay on the local disk,
+capped by `--max-queue-disk-size` like queues without a bucket, so their oldest
+files are deleted. In cloud-only mode they are kept in memory only: the live
+view works, nothing is stored or uploaded. Use it for queues too large for the
+uplink, such as camera and thermal frames on LTE, and for the commands and tx
+queues, so that driving never waits for the bucket.
 
 ## 🌐 Web Interface
 

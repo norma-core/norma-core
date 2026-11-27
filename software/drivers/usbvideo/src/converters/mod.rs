@@ -1,10 +1,10 @@
+pub mod mjpeg;
+mod resize;
+mod rgb;
 mod yuv2;
 mod yuv420;
 mod yuv420v;
-mod rgb;
 mod yuv_tables;
-pub mod mjpeg;
-mod resize;
 
 use bytes::Bytes;
 use log::debug;
@@ -20,6 +20,12 @@ pub struct ConvertResult {
     pub height: u32,
 }
 
+pub struct RgbFrame {
+    pub rgb: Bytes,
+    pub width: u32,
+    pub height: u32,
+}
+
 /// Process frame conversion based on format with optional resizing
 /// resize_target: Target size for shortest dimension (e.g., 224). Set to 0 to disable resizing.
 pub fn convert_frame(
@@ -29,6 +35,24 @@ pub fn convert_frame(
     data: Bytes,
     resize_target: u32,
 ) -> Result<ConvertResult, String> {
+    let frame = convert_frame_to_rgb(width, height, format, data, resize_target)?;
+    let jpeg_data = convert_rgb_to_jpeg(frame.width as u16, frame.height as u16, frame.rgb, 90)?;
+
+    Ok(ConvertResult {
+        jpeg: jpeg_data,
+        width: frame.width,
+        height: frame.height,
+    })
+}
+
+/// Steps 1 and 2 of [`convert_frame`]: the frame as RGB at its stored size.
+pub fn convert_frame_to_rgb(
+    width: u16,
+    height: u16,
+    format: FourCCFormat,
+    data: Bytes,
+    resize_target: u32,
+) -> Result<RgbFrame, String> {
     let stamp = std::time::Instant::now();
 
     // Step 1: Convert to RGB
@@ -47,17 +71,15 @@ pub fn convert_frame(
             FourCCFormat::Abgr => rgb::convert_rgb_to_rgb(width, height, format, data),
             FourCCFormat::Mjpeg => mjpeg::convert_mjpeg_to_rgb(width, height, &data),
         }?
-    }.freeze();
+    }
+    .freeze();
 
     debug!("Conversion from {:?} took {:?}", format, stamp.elapsed());
 
     // Step 2: Resize if needed
     let (final_width, final_height, final_rgb) = if resize_target > 0 {
-        let (new_width, new_height) = calculate_resize_dimensions(
-            width as u32,
-            height as u32,
-            resize_target,
-        );
+        let (new_width, new_height) =
+            calculate_resize_dimensions(width as u32, height as u32, resize_target);
 
         if new_width != width as u32 || new_height != height as u32 {
             debug!(
@@ -81,16 +103,8 @@ pub fn convert_frame(
         (width as u32, height as u32, rgb_data)
     };
 
-    // Step 3: Convert to JPEG and tensor
-    let jpeg_data = convert_rgb_to_jpeg(
-        final_width as u16,
-        final_height as u16,
-        final_rgb,
-        90,
-    )?;
-
-    Ok(ConvertResult {
-        jpeg: jpeg_data,
+    Ok(RgbFrame {
+        rgb: final_rgb,
         width: final_width,
         height: final_height,
     })
@@ -104,21 +118,39 @@ mod tests {
     fn test_fourcc_format_from_bytes() {
         assert_eq!(FourCCFormat::from_fourcc(b"YUY2"), Some(FourCCFormat::Yuv2));
         assert_eq!(FourCCFormat::from_fourcc(b"YUYV"), Some(FourCCFormat::Yuv2));
-        assert_eq!(FourCCFormat::from_fourcc(b"420v"), Some(FourCCFormat::Yuv420v));
-        assert_eq!(FourCCFormat::from_fourcc(b"I420"), Some(FourCCFormat::Yuv420));
-        assert_eq!(FourCCFormat::from_fourcc(b"YV12"), Some(FourCCFormat::Yuv420));
+        assert_eq!(
+            FourCCFormat::from_fourcc(b"420v"),
+            Some(FourCCFormat::Yuv420v)
+        );
+        assert_eq!(
+            FourCCFormat::from_fourcc(b"I420"),
+            Some(FourCCFormat::Yuv420)
+        );
+        assert_eq!(
+            FourCCFormat::from_fourcc(b"YV12"),
+            Some(FourCCFormat::Yuv420)
+        );
         assert_eq!(FourCCFormat::from_fourcc(b"RGB3"), Some(FourCCFormat::Rgb));
         assert_eq!(FourCCFormat::from_fourcc(b"BGR3"), Some(FourCCFormat::Bgr));
         assert_eq!(FourCCFormat::from_fourcc(b"RGBA"), Some(FourCCFormat::Rgba));
         assert_eq!(FourCCFormat::from_fourcc(b"BGRA"), Some(FourCCFormat::Bgra));
-        assert_eq!(FourCCFormat::from_fourcc(b"MJPG"), Some(FourCCFormat::Mjpeg));
-        assert_eq!(FourCCFormat::from_fourcc(b"JPEG"), Some(FourCCFormat::Mjpeg));
+        assert_eq!(
+            FourCCFormat::from_fourcc(b"MJPG"),
+            Some(FourCCFormat::Mjpeg)
+        );
+        assert_eq!(
+            FourCCFormat::from_fourcc(b"JPEG"),
+            Some(FourCCFormat::Mjpeg)
+        );
         assert_eq!(FourCCFormat::from_fourcc(b"XXXX"), None);
     }
 
     #[test]
     fn test_fourcc_format_from_u32() {
         let yuy2_u32 = u32::from_be_bytes(*b"YUY2");
-        assert_eq!(FourCCFormat::from_fourcc_u32(yuy2_u32), Some(FourCCFormat::Yuv2));
+        assert_eq!(
+            FourCCFormat::from_fourcc_u32(yuy2_u32),
+            Some(FourCCFormat::Yuv2)
+        );
     }
 }

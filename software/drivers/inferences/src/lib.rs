@@ -49,20 +49,40 @@ impl ShmWriter {
         let buffer_size = total_size / BUFFER_COUNT;
         let max_data_size = buffer_size - HEADER_SIZE;
 
-        let file = std::fs::OpenOptions::new()
+        let with_path = |e: std::io::Error| {
+            normfs::Error::Io(std::io::Error::new(
+                e.kind(),
+                format!("inference shm {}: {e}", shm_path.display()),
+            ))
+        };
+        log::info!(
+            "Opening inference shm {} ({}MB)",
+            shm_path.display(),
+            shm_size_mb
+        );
+        // No O_CREAT on an existing file: fs.protected_regular refuses that
+        // for another user's file in /dev/shm, even for root.
+        let file = match std::fs::OpenOptions::new()
             .read(true)
             .write(true)
-            .create(true)
             .open(shm_path)
-            .map_err(|e| normfs::Error::Io(e))?;
+        {
+            Ok(file) => file,
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => std::fs::OpenOptions::new()
+                .read(true)
+                .write(true)
+                .create_new(true)
+                .open(shm_path)
+                .map_err(with_path)?,
+            Err(e) => return Err(with_path(e)),
+        };
 
-        file.set_len(total_size as u64)
-            .map_err(|e| normfs::Error::Io(e))?;
+        file.set_len(total_size as u64).map_err(with_path)?;
 
         log::info!("Starting inference shared memory writer at {:?} ({}MB, {} buffers, {} bytes per buffer)",
             shm_path, shm_size_mb, BUFFER_COUNT, max_data_size);
 
-        let mut mmap = unsafe { MmapMut::map_mut(&file).map_err(|e| normfs::Error::Io(e))? };
+        let mut mmap = unsafe { MmapMut::map_mut(&file).map_err(with_path)? };
 
         // Initialize all buffer headers with MAX sequence
         for i in 0..BUFFER_COUNT {

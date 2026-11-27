@@ -1,9 +1,12 @@
 use crate::queues::MainQueue;
-use clap::Parser;
-use normfs::{CloudSettings, NormFS, NormFsSettings, QueueConfig, QueueSettings};
+use clap::{Parser, ValueEnum};
+use normfs::{
+    CloudSettings, NormFS, NormFsSettings, Persist, PoolKind, QueueConfig, QueueSettings,
+};
 use normfs_types::{CompressionType, EncryptionType};
 use parking_lot::Mutex;
 use station_iface::StationEngine;
+use std::collections::BTreeSet;
 use std::io;
 use std::net::SocketAddr;
 use std::path::PathBuf;
@@ -39,6 +42,44 @@ mod web;
 
 const VERSION: &str = concat!(env!("CARGO_PKG_VERSION"), " (", env!("GIT_HASH"), ")");
 
+#[derive(Clone, Copy, Debug, ValueEnum)]
+#[clap(rename_all = "kebab-case")]
+enum NormFsPersistenceMode {
+    Durable,
+    CloudOnly,
+    MemoryOnly,
+}
+
+impl NormFsPersistenceMode {
+    /// Persistence for most queues, then for the video and thermal ones.
+    /// Video and thermal frames skip the WAL: a crash loses at most the open
+    /// page of frames, and the WAL would double their disk writes. cloud-only
+    /// without a bucket, and memory-only always, keep every queue in memory.
+    fn persist(self, cloud: bool) -> (Persist, Persist) {
+        match self {
+            Self::Durable => (
+                Persist {
+                    cloud,
+                    ..Persist::WAL_STORE
+                },
+                Persist {
+                    cloud,
+                    ..Persist::STORE
+                },
+            ),
+            Self::CloudOnly if cloud => (Persist::CLOUD, Persist::CLOUD),
+            Self::CloudOnly | Self::MemoryOnly => (Persist::MEMORY, Persist::MEMORY),
+        }
+    }
+}
+
+/// Page size of the active pool, and with it the largest record.
+const ACTIVE_PAGE_SIZE: usize = 4 * 1024 * 1024;
+/// How long a record can sit in memory before the WAL writes it. A full page
+/// and the close write at once.
+const WAL_WRITE_INTERVAL: std::time::Duration = std::time::Duration::from_secs(2);
+const CLOUD_FLUSH_INTERVAL: std::time::Duration = std::time::Duration::from_secs(60);
+
 /// NormaCore.Dev station: physical operations platform
 #[derive(Parser, Debug)]
 #[command(name = "NormaCore.Dev station", author, version = VERSION, about, long_about = None)]
@@ -52,12 +93,16 @@ struct Args {
     max_memory_usage: usize,
 
     /// Maximum NormFS WAL file size before rotation, e.g. `128M`, `1G`, or a plain byte count
-    #[arg(long, default_value = "128M", value_parser = size::parse_size::<usize>)]
+    #[arg(long, default_value = "4M", value_parser = size::parse_size::<usize>)]
     normfs_file_size: usize,
 
     /// Base folder for normfs storage
     #[arg(long, default_value = "./station_data")]
     normfs_base_folder: PathBuf,
+
+    /// NormFS persistence mode: durable writes WAL/store files (video and thermal store only); cloud-only sends every queue's pages straight to the configured bucket, or keeps them in memory without one; memory-only keeps every queue in memory (NormFS's own normfs/system aside) and ignores cloud-offload
+    #[arg(long, value_enum, default_value = "durable")]
+    normfs_persistence_mode: NormFsPersistenceMode,
 
     /// Path to configuration file
     #[arg(short, long, default_value = "station.yaml")]
@@ -114,6 +159,27 @@ fn validate_normfs_file_size(args: &Args) -> Result<(), io::Error> {
     Ok(())
 }
 
+const BIND_ATTEMPTS: u32 = 30;
+const BIND_RETRY_INTERVAL: std::time::Duration = std::time::Duration::from_millis(100);
+
+/// Retries `AddrInUse`; macOS refuses a just-closed port briefly.
+async fn bind_retrying<T, F, Fut>(what: &str, addr: SocketAddr, mut bind: F) -> Result<T, String>
+where
+    F: FnMut() -> Fut,
+    Fut: std::future::Future<Output = std::io::Result<T>>,
+{
+    for attempt in 1..=BIND_ATTEMPTS {
+        match bind().await {
+            Ok(bound) => return Ok(bound),
+            Err(e) if e.kind() == io::ErrorKind::AddrInUse && attempt < BIND_ATTEMPTS => {
+                tokio::time::sleep(BIND_RETRY_INTERVAL).await;
+            }
+            Err(e) => return Err(format!("{what} cannot bind {addr}: {e}")),
+        }
+    }
+    unreachable!("the last attempt returns")
+}
+
 /// Rejects the CLI value up front (clap fails `Args::parse()` with a clear
 /// message) rather than letting a typo'd `--static-path` silently fall back
 /// to embedded assets on every request.
@@ -131,6 +197,8 @@ struct Station {
     base_path: PathBuf,
 
     engine: Arc<Engine>,
+    flush_to_cloud: bool,
+    cloud_flush: parking_lot::Mutex<Option<tokio::task::JoinHandle<()>>>,
 
     #[cfg(target_os = "macos")]
     usbvideo_instances: parking_lot::Mutex<
@@ -151,6 +219,181 @@ struct Station {
 struct Engine {
     main_queue: Option<MainQueue>,
     inference: Mutex<Option<inference::Inference>>,
+    queues: parking_lot::Mutex<BTreeSet<normfs::QueueId>>,
+    snapshot_gate: station_iface::SnapshotGate,
+}
+
+/// A cloud-offload section with a bucket turns uploads on; its empty fields
+/// fall back to the AWS_* variables. None without a bucket, so an image that
+/// ships an empty section still starts; a bucket without an endpoint is an
+/// error, not uploads that can never land.
+fn cloud_settings(
+    config: &station_iface::config::CloudOffloadConfig,
+) -> Result<Option<CloudSettings>, String> {
+    let get_or_env = |config_val: &str, env_var: &str| -> String {
+        if config_val.is_empty() {
+            std::env::var(env_var).unwrap_or_default()
+        } else {
+            config_val.to_string()
+        }
+    };
+
+    let bucket = get_or_env(&config.bucket, "AWS_S3_BUCKET");
+    if bucket.is_empty() {
+        return Ok(None);
+    }
+    let endpoint = get_or_env(
+        config.endpoint.as_deref().unwrap_or_default(),
+        "AWS_ENDPOINT_URL",
+    );
+    if endpoint.is_empty() {
+        return Err(
+            "cloud-offload needs an endpoint: set cloud-offload.endpoint or AWS_ENDPOINT_URL"
+                .into(),
+        );
+    }
+
+    log::info!("Cloud offload enabled for bucket: {}", bucket);
+    Ok(Some(CloudSettings {
+        endpoint,
+        bucket,
+        region: get_or_env(&config.region, "AWS_REGION"),
+        access_key: get_or_env(&config.access_key_id, "AWS_ACCESS_KEY_ID"),
+        secret_key: get_or_env(&config.secret_access_key, "AWS_SECRET_ACCESS_KEY"),
+        prefix: String::new(), // NormFS will use instance_id as prefix automatically
+    }))
+}
+
+/// The bucket settings, and a warning to log once when there is no bucket, so an
+/// image that ships without keys still starts.
+fn offload_settings(
+    mode: NormFsPersistenceMode,
+    config: Option<&station_iface::config::CloudOffloadConfig>,
+) -> Result<(Option<CloudSettings>, Option<&'static str>), String> {
+    if let NormFsPersistenceMode::MemoryOnly = mode {
+        return Ok((
+            None,
+            config.map(|_| "memory-only; cloud-offload is ignored"),
+        ));
+    }
+    let cloud = match config {
+        Some(config) => cloud_settings(config)?,
+        None => None,
+    };
+    let warning = match (mode, &cloud, config) {
+        (_, Some(_), _) | (NormFsPersistenceMode::Durable, None, None) => None,
+        (NormFsPersistenceMode::Durable, None, Some(_)) => {
+            Some("cloud-offload has no bucket; queues stay on disk only")
+        }
+        (NormFsPersistenceMode::CloudOnly, None, Some(_)) => {
+            Some("cloud-offload has no bucket; queues stay in memory only")
+        }
+        (NormFsPersistenceMode::CloudOnly, None, None) => {
+            Some("no cloud-offload section; queues stay in memory only")
+        }
+        (NormFsPersistenceMode::MemoryOnly, ..) => None,
+    };
+    Ok((cloud, warning))
+}
+
+/// Queues of the rules named in `exclude` stay off the bucket: stored locally in durable,
+/// kept in memory only in cloud-only. Only whole rules can be named: NormFS takes the
+/// first matching pattern, so any other glob would split a rule.
+fn queue_settings(
+    persist: Persist,
+    frames_persist: Persist,
+    exclude: &[String],
+) -> Result<QueueSettings, Box<dyn std::error::Error>> {
+    use CompressionType::{None as Raw, Zstd};
+    use PoolKind::{Active, Passive};
+
+    // Matched against the absolute id `/<instance_id>/<path>`, first match wins, so every
+    // pattern starts with `*`. Active pages are `ACTIVE_PAGE_SIZE`, passive 32 KiB.
+    let rules = [
+        // (pattern, pool, compression, fsync, frames)
+        // Before `*video/*`, which would match it.
+        ("*/usbvideo/tx", Passive, Zstd, true, false),
+        // Before `*/hikmicro-thermal/*`. Frames refer to these per-session records, so they
+        // keep their own pages and are still uploaded when the frames rule is excluded.
+        (
+            "*/hikmicro-thermal/device-info/*",
+            Passive,
+            Zstd,
+            true,
+            false,
+        ),
+        // Wide records.
+        ("*video/*", Active, Raw, false, true),
+        ("*/hikmicro-thermal/*", Active, Raw, false, true),
+        ("*dmesg/*", Active, Zstd, false, false),
+        ("*/inference-states", Active, Zstd, false, false),
+        ("*/inference/*", Active, Raw, false, false),
+        ("*/*/inference", Active, Raw, false, false),
+        ("*/system/rx", Active, Zstd, true, false),
+        ("*/st3215/meta", Active, Zstd, true, false),
+        // Streams.
+        ("*/st3215/rx", Active, Zstd, true, false),
+        ("*/st3215/tx", Active, Zstd, true, false),
+        ("*/vesc-trampa/rx", Active, Zstd, true, false),
+        ("*/vesc-trampa/tx", Active, Zstd, true, false),
+        ("*/yahboom-dogzilla-lite/rx", Active, Zstd, true, false),
+        ("*/yahboom-dogzilla-lite/tx", Active, Zstd, true, false),
+        ("*/pwm-output/rx", Active, Zstd, true, false),
+        ("*/pwm-output/tx", Active, Zstd, true, false),
+        ("*/commands", Active, Zstd, true, false),
+        // 1 Hz sensors.
+        ("*/arduino-nicla-sense-env/rx", Active, Zstd, true, false),
+        ("*/ina226/*/rx", Active, Zstd, true, false),
+        (
+            "*/airgradient-open-air-o-1pst/*/rx",
+            Active,
+            Zstd,
+            true,
+            false,
+        ),
+        ("*/victron-smartsolar-mppt/*/rx", Active, Zstd, true, false),
+        // Rare records.
+        ("*/main", Passive, Zstd, true, false),
+        ("*/startups", Passive, Zstd, true, false),
+        ("*/inference-tags/rx", Passive, Zstd, true, false),
+        ("*/motors_mirroring/modes", Passive, Zstd, true, false),
+    ];
+
+    if let Some(glob) = exclude
+        .iter()
+        .find(|glob| !rules.iter().any(|rule| rule.0 == glob.as_str()))
+    {
+        let patterns: Vec<_> = rules.iter().map(|rule| rule.0).collect();
+        return Err(format!(
+            "cloud-offload.exclude: '{glob}' is not one of station's queue patterns: {}",
+            patterns.join(", ")
+        )
+        .into());
+    }
+
+    let patterns = rules
+        .iter()
+        .map(|&(pattern, pool, compression_type, enable_fsync, frames)| {
+            let mut persist = if frames { frames_persist } else { persist };
+            if exclude.iter().any(|glob| glob == pattern) {
+                persist.cloud = false;
+            }
+            let config = QueueConfig {
+                compression_type,
+                enable_fsync,
+                encryption_type: EncryptionType::Aes,
+                pool,
+                persist,
+            };
+            (pattern.to_string(), config)
+        })
+        .collect();
+    let default = QueueConfig {
+        persist,
+        ..QueueConfig::active() // 4 MiB pages for queues not listed above
+    };
+
+    QueueSettings::new(patterns, default).map_err(Into::into)
 }
 
 impl station_iface::StationEngine for Engine {
@@ -160,6 +403,7 @@ impl station_iface::StationEngine for Engine {
         queue_data_type: station_iface::iface_proto::drivers::QueueDataType,
         opts: Vec<station_iface::iface_proto::envelope::QueueOpt>,
     ) {
+        self.queues.lock().insert(queue_id.clone());
         if let Some(main_queue) = &self.main_queue {
             let _ = main_queue.send_queue_start(queue_id, queue_data_type, opts);
         }
@@ -169,17 +413,25 @@ impl station_iface::StationEngine for Engine {
             inference.register_queue(queue_id, queue_data_type as i32);
         }
     }
+
+    fn unregister_queue(&self, queue_id: &normfs::QueueId) {
+        if let Some(inference) = self.inference.lock().as_ref() {
+            inference.unregister_queue(queue_id);
+        }
+    }
+
+    fn snapshot_gate(&self) -> station_iface::SnapshotGate {
+        self.snapshot_gate.clone()
+    }
 }
 
 impl Station {
     async fn new(args: &Args) -> Result<Self, Box<dyn std::error::Error>> {
-        env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info")).init();
-
         // Create station_data directory if it doesn't exist
         std::fs::create_dir_all(&args.normfs_base_folder)?;
 
         // Generate app_start_id based on current timestamp
-        let app_start_id = systime::get_app_start_id();
+        let app_start_id = normfs_time::app_start_id();
 
         log::info!("App Start ID: {}", app_start_id);
 
@@ -187,9 +439,9 @@ impl Station {
         let config = station_iface::config::Config::load_or_default(&args.config)?;
         log::info!("Loaded configuration from: {:?}", args.config);
 
-        let normfs = Self::initialize_normfs(args, &config).await?;
+        let (normfs, flush_to_cloud) = Self::initialize_normfs(args, &config).await?;
 
-        log::info!("Instance ID: {}", normfs.get_instance_id());
+        log::info!("Station ID: {}", normfs.get_instance_id());
 
         Ok(Station {
             normfs,
@@ -198,7 +450,11 @@ impl Station {
             engine: Arc::new(Engine {
                 main_queue: None,
                 inference: Mutex::new(None),
+                queues: parking_lot::Mutex::new(BTreeSet::new()),
+                snapshot_gate: station_iface::SnapshotGate::default(),
             }),
+            flush_to_cloud,
+            cloud_flush: parking_lot::Mutex::new(None),
             usbvideo_instances: parking_lot::Mutex::new(Vec::new()),
             #[cfg(target_os = "linux")]
             hikmicro_thermal_handle: Mutex::new(None),
@@ -210,92 +466,55 @@ impl Station {
     async fn initialize_normfs(
         args: &Args,
         config: &station_iface::config::Config,
-    ) -> Result<Arc<NormFS>, Box<dyn std::error::Error>> {
-        validate_normfs_file_size(args)?;
+    ) -> Result<(Arc<NormFS>, bool), Box<dyn std::error::Error>> {
+        if matches!(args.normfs_persistence_mode, NormFsPersistenceMode::Durable) {
+            validate_normfs_file_size(args)?;
+        }
 
         let mut settings = NormFsSettings {
+            // cloud-only keeps one queue on disk: NormFS's own normfs/system.
             max_disk_usage_per_queue: Some(args.max_queue_disk_size),
             max_memory_usage: args.max_memory_usage,
+            mem_page_size: ACTIVE_PAGE_SIZE,
             ..Default::default()
         };
         settings.wal_settings.max_file_size = args.normfs_file_size;
+        settings.wal_settings.write_interval = WAL_WRITE_INTERVAL;
         settings.wal_settings.write_buffer_size = settings
             .wal_settings
             .write_buffer_size
             .min(args.normfs_file_size);
 
-        // Configure queue-specific settings
-        settings.queue_settings = QueueSettings::new(
-            vec![
-                (
-                    "*video/*".to_string(),
-                    QueueConfig {
-                        compression_type: CompressionType::None,
-                        enable_fsync: false,
-                        encryption_type: EncryptionType::Aes,
-                    },
-                ),
-                (
-                    "*inference-queues/*".to_string(),
-                    QueueConfig {
-                        compression_type: CompressionType::None,
-                        enable_fsync: false,
-                        encryption_type: EncryptionType::Aes,
-                    },
-                ),
-                (
-                    "hikmicro-thermal/*".to_string(),
-                    QueueConfig {
-                        compression_type: CompressionType::Zstd,
-                        enable_fsync: false,
-                        encryption_type: EncryptionType::Aes,
-                    },
-                ),
-            ],
-            QueueConfig::default(), // default config for all other queues
-        )?;
-
-        // Configure Cloud settings if provided
-        if let Some(cloud_config) = &config.cloud_offload {
-            let get_or_env = |config_val: &str, env_var: &str| -> String {
-                if config_val.is_empty() {
-                    std::env::var(env_var).unwrap_or_default()
-                } else {
-                    config_val.to_string()
-                }
-            };
-
-            let bucket = get_or_env(&cloud_config.bucket, "AWS_S3_BUCKET");
-            let region = get_or_env(&cloud_config.region, "AWS_REGION");
-            let access_key = get_or_env(&cloud_config.access_key_id, "AWS_ACCESS_KEY_ID");
-            let secret_key = get_or_env(&cloud_config.secret_access_key, "AWS_SECRET_ACCESS_KEY");
-            let endpoint = cloud_config
-                .endpoint
-                .clone()
-                .or_else(|| std::env::var("AWS_ENDPOINT_URL").ok())
-                .unwrap_or_default();
-
-            settings.cloud_settings = Some(CloudSettings {
-                endpoint,
-                bucket: bucket.clone(),
-                region,
-                access_key,
-                secret_key,
-                prefix: String::new(), // NormFS will use instance_id as prefix automatically
-            });
-
-            log::info!("Cloud offload enabled for bucket: {}", bucket);
+        let (cloud_settings, warning) =
+            offload_settings(args.normfs_persistence_mode, config.cloud_offload.as_ref())?;
+        if let Some(warning) = warning {
+            log::warn!("{warning}");
         }
+        settings.cloud_settings = cloud_settings;
+        let exclude = match (args.normfs_persistence_mode, &config.cloud_offload) {
+            (NormFsPersistenceMode::MemoryOnly, _) | (_, None) => &[][..],
+            (_, Some(cloud)) => &cloud.exclude[..],
+        };
+        let cloud = settings.cloud_settings.is_some();
+        let (persist, frames_persist) = args.normfs_persistence_mode.persist(cloud);
+        settings.queue_settings = queue_settings(persist, frames_persist, exclude)?;
 
         let normfs = NormFS::new(args.normfs_base_folder.clone(), settings).await?;
 
-        Ok(Arc::new(normfs))
+        let flush = cloud
+            && matches!(
+                args.normfs_persistence_mode,
+                NormFsPersistenceMode::CloudOnly
+            );
+        Ok((Arc::new(normfs), flush))
     }
 
     async fn start_main_queue(&mut self) -> Result<(), Box<dyn std::error::Error>> {
         let main_queue =
             MainQueue::new(self.normfs.clone(), self.normfs.get_instance_id_bytes()).await?;
-        main_queue.send_app_start().unwrap();
+        if let Err(e) = main_queue.send_app_start().await {
+            log::error!("Failed to record the app start: {}", e);
+        }
 
         if let Some(engine) = Arc::get_mut(&mut self.engine) {
             engine.main_queue = Some(main_queue);
@@ -361,6 +580,35 @@ impl Station {
             .is_some_and(|config| config.enabled)
         {
             log::warn!("Arduino Nicla Sense Env driver requested but is Linux-only");
+        }
+
+        #[cfg(feature = "arduino")]
+        if let Some(arduino_nicla_sense_me_config) = &self.config.drivers.arduino_nicla_sense_me {
+            if arduino_nicla_sense_me_config.enabled {
+                if let Err(error) = arduino_nicla_sense_me::start_arduino_nicla_sense_me_driver(
+                    self.normfs.clone(),
+                    self.engine.clone(),
+                )
+                .await
+                {
+                    log::error!("Failed to start Arduino Nicla Sense ME driver: {}", error);
+                }
+            } else {
+                log::info!("Arduino Nicla Sense ME driver disabled by configuration");
+            }
+        }
+
+        #[cfg(not(feature = "arduino"))]
+        if self
+            .config
+            .drivers
+            .arduino_nicla_sense_me
+            .as_ref()
+            .is_some_and(|config| config.enabled)
+        {
+            log::warn!(
+                "Arduino Nicla Sense ME driver requested but not compiled (missing 'arduino' feature)"
+            );
         }
 
         #[cfg(all(target_os = "linux", feature = "ina226"))]
@@ -449,6 +697,33 @@ impl Station {
             }
         }
 
+        if let Some(pwm_output_config) = &self.config.drivers.pwm_output {
+            if pwm_output_config.enabled {
+                let config = pwm_output::PwmOutputDriverConfig {
+                    device_path: pwm_output_config.device_path.clone(),
+                    outputs: pwm_output_config
+                        .outputs
+                        .iter()
+                        .map(|output| pwm_output::PwmOutputDeviceConfig {
+                            id: output.id.clone(),
+                        })
+                        .collect(),
+                };
+
+                if let Err(e) = pwm_output::start_pwm_output_driver(
+                    self.normfs.clone(),
+                    self.engine.clone(),
+                    config,
+                )
+                .await
+                {
+                    log::error!("Failed to start PWM output driver: {}", e);
+                }
+            } else {
+                log::info!("PWM output driver disabled by configuration");
+            }
+        }
+
         if let Some(airgradient_config) = &self.config.drivers.airgradient_open_air_o_1pst {
             if airgradient_config.enabled {
                 let config = airgradient_open_air_o_1pst::AirGradientOpenAirO1pstDriverConfig {
@@ -476,18 +751,29 @@ impl Station {
                     read_timeout: victron_config.read_timeout,
                 };
 
-                if let Err(e) =
-                    victron_smartsolar_mppt::start_victron_smartsolar_mppt_driver(
-                        self.normfs.clone(),
-                        self.engine.clone(),
-                        config,
-                    )
-                    .await
+                if let Err(e) = victron_smartsolar_mppt::start_victron_smartsolar_mppt_driver(
+                    self.normfs.clone(),
+                    self.engine.clone(),
+                    config,
+                )
+                .await
                 {
                     log::error!("Failed to start Victron SmartSolar MPPT driver: {}", e);
                 }
             } else {
                 log::info!("Victron SmartSolar MPPT driver disabled by configuration");
+            }
+        }
+
+        if let Some(dmesg_config) = &self.config.drivers.dmesg {
+            if dmesg_config.enabled {
+                if let Err(e) =
+                    dmesg::start_dmesg_driver(self.normfs.clone(), self.engine.clone()).await
+                {
+                    log::error!("Failed to start dmesg driver: {}", e);
+                }
+            } else {
+                log::info!("dmesg driver disabled by configuration");
             }
         }
 
@@ -510,6 +796,18 @@ impl Station {
                         .map(|format| format.format.as_str()),
                 ) {
                     Ok(formats) => {
+                        if usb_video.keyframe_interval.is_zero() {
+                            log::warn!("usb-video keyframe-interval 0s; using the default");
+                        } else if usb_video.keyframe_interval
+                            > usbvideo::codec::KEYFRAME_INTERVAL_MAX
+                        {
+                            log::warn!(
+                                "usb-video keyframe-interval {:?} is above {:?}; using {:?}",
+                                usb_video.keyframe_interval,
+                                usbvideo::codec::KEYFRAME_INTERVAL_MAX,
+                                usbvideo::codec::KEYFRAME_INTERVAL_MAX
+                            );
+                        }
                         let usb_instance = usbvideo::start_usbvideo(
                             self.normfs.clone(),
                             self.engine.clone(),
@@ -518,6 +816,15 @@ impl Station {
                                 resize_target: usb_video.resize_target,
                                 formats,
                                 frame_skip: usb_video.frame_skip,
+                                codec: match usb_video.codec {
+                                    station_iface::config::UsbVideoCodec::Jpeg => {
+                                        usbvideo::codec::VideoCodec::Jpeg
+                                    }
+                                    station_iface::config::UsbVideoCodec::Vp8 => {
+                                        usbvideo::codec::VideoCodec::Vp8
+                                    }
+                                },
+                                keyframe_interval: usb_video.keyframe_interval,
                             },
                         )
                         .await;
@@ -646,6 +953,15 @@ impl Station {
                     height,
                     ov5647_config.frames_per_second as u32,
                     "video/ov5647",
+                    match ov5647_config.codec {
+                        station_iface::config::UsbVideoCodec::Jpeg => {
+                            usbvideo::codec::VideoCodec::Jpeg
+                        }
+                        station_iface::config::UsbVideoCodec::Vp8 => {
+                            usbvideo::codec::VideoCodec::Vp8
+                        }
+                    },
+                    ov5647_config.keyframe_interval,
                 )
                 .await
                 {
@@ -704,7 +1020,10 @@ impl Station {
         &self,
         addr: SocketAddr,
     ) -> Result<tokio::task::JoinHandle<()>, Box<dyn std::error::Error>> {
-        let server = normfs::server::Server::new(addr, self.normfs.clone()).await?;
+        let server = bind_retrying("NormFS TCP", addr, || {
+            normfs::server::Server::new(addr, self.normfs.clone())
+        })
+        .await?;
         log::info!("NormFS server listening on {}", addr);
 
         Ok(tokio::spawn(async move {
@@ -739,12 +1058,51 @@ impl Station {
             log::info!("OV5647 driver stopped");
         }
 
-        log::info!("Closing NormFS (writing WAL)...");
+        if let Some(flush) = self.cloud_flush.lock().take() {
+            flush.abort();
+        }
+
+        log::info!("Closing NormFS...");
 
         self.normfs.close().await?;
         log::info!("NormFS closed successfully");
 
         Ok(())
+    }
+
+    /// A page goes to the bucket once it is full, which takes a slow queue hours, all of it
+    /// lost on a power cut. Every CLOUD_FLUSH_INTERVAL the open pages go up as they are;
+    /// a queue with nothing new since sends nothing. One at a time: in an outage a flush
+    /// waits for the bucket, and the next round could not land anyway.
+    fn start_cloud_flush(&self) {
+        if !self.flush_to_cloud {
+            return;
+        }
+        let normfs = self.normfs.clone();
+        let engine = self.engine.clone();
+        let own = [
+            queues::MAIN_QUEUE_ID,
+            inference::QUEUE_ID,
+            inference::STARTUPS_QUEUE_ID,
+            tags::QUEUE_ID,
+        ]
+        .map(|queue| normfs.resolve(queue));
+        *self.cloud_flush.lock() = Some(tokio::spawn(async move {
+            let mut interval = tokio::time::interval(CLOUD_FLUSH_INTERVAL);
+            // A round held up by an outage is not followed by a burst of rounds.
+            interval.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Delay);
+            interval.tick().await;
+            loop {
+                interval.tick().await;
+                let mut queues = engine.queues.lock().clone();
+                queues.extend(own.iter().cloned());
+                for queue in queues {
+                    if let Err(e) = normfs.flush_queue(&queue).await {
+                        log::debug!("Flushing {queue} to the bucket: {e}");
+                    }
+                }
+            }
+        }));
     }
 
     async fn start_commands_queue(&self) -> Result<(), Box<dyn std::error::Error>> {
@@ -761,12 +1119,19 @@ impl Station {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info")).init();
     let args = Args::parse();
+    let stop = listen_for_shutdown();
 
+    log::info!("Station {}", VERSION);
     log::info!("TCP address: {:?}", args.tcp);
     log::info!("Max queue disk size: {} bytes", args.max_queue_disk_size);
     log::info!("NormFS file size: {} bytes", args.normfs_file_size);
     log::info!("NormFS base folder: {:?}", args.normfs_base_folder);
+    log::info!(
+        "NormFS persistence mode: {:?}",
+        args.normfs_persistence_mode
+    );
     log::info!("Configuration file: {:?}", args.config);
     if let Some(path) = &args.static_path {
         log::info!("Static asset override directory: {:?}", path);
@@ -774,64 +1139,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let mut station = Station::new(&args).await?;
 
-    station.start_main_queue().await?;
-    log::info!("Main queue started");
-
-    inference::Inference::start_queue(&station.normfs).await?;
-    log::info!("Inference queue started");
-
-    station.start_commands_queue().await?;
-
-    tags::start(station.normfs.clone()).await?;
-
-    let inference = inference::Inference::start(station.normfs.clone());
-    *station.engine.inference.lock() = Some(inference);
-
-    station.start_drivers().await?;
-    log::info!("Drivers started");
-
-    let mut server_handle: Option<tokio::task::JoinHandle<()>> = None;
-    if let Some(tcp_addr_str) = args.tcp {
-        let tcp_addr: SocketAddr = tcp_addr_str
-            .parse()
-            .or_else(|_| format!("0.0.0.0:{}", tcp_addr_str).parse())
-            .map_err(|e| format!("Invalid address '{}': {}", tcp_addr_str, e))?;
-
-        if let Err(e) = tokio::net::TcpListener::bind(tcp_addr).await {
-            panic!("NormFS TCP port {} is busy: {}", tcp_addr.port(), e);
-        }
-
-        server_handle = Some(station.start_server(tcp_addr).await?);
-    }
-
-    let web_shutdown = Arc::new(AtomicBool::new(false));
-    let mut web_server_handle: Option<tokio::task::JoinHandle<()>> = None;
-    if let Some(web_addr_str) = args.web {
-        let web_addr: SocketAddr = web_addr_str
-            .parse()
-            .or_else(|_| format!("0.0.0.0:{}", web_addr_str).parse())
-            .map_err(|e| format!("Invalid address '{}': {}", web_addr_str, e))?;
-
-        if let Err(e) = tokio::net::TcpListener::bind(web_addr).await {
-            panic!("Web server port {} is busy: {}", web_addr.port(), e);
-        }
-
-        let normfs_clone = station.normfs.clone();
-        let web_shutdown_clone = web_shutdown.clone();
-        let static_path = args.static_path.clone();
-        web_server_handle = Some(tokio::spawn(async move {
-            if let Err(e) = web::server::start_server(
-                web_addr,
-                normfs_clone,
-                web_shutdown_clone,
-                static_path,
-            )
-            .await
-            {
-                log::error!("Web server error: {}", e);
+    let services = match start_station(&mut station, &args).await {
+        Ok(services) => services,
+        Err(e) => {
+            return Err(match shutdown_station(&station, None).await {
+                Ok(()) => format!("Startup failed: {e}"),
+                Err(close) => format!("Startup failed: {e}; closing station also failed: {close}"),
             }
-        }));
-    }
+            .into());
+        }
+    };
 
     // On macOS, periodically tick the main run loop for AVFoundation notifications
     // This MUST run on the main thread, so we use select! instead of spawn
@@ -844,7 +1161,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     // Runs on main thread - tick the run loop
                     usbvideo::process_main_run_loop();
                 }
-                _ = tokio::signal::ctrl_c() => {
+                _ = stop.notified() => {
                     log::info!("\nShutting down...");
                     break;
                 }
@@ -854,33 +1171,416 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     #[cfg(not(target_os = "macos"))]
     {
-        tokio::signal::ctrl_c().await?;
+        stop.notified().await;
         log::info!("\nShutting down...");
     }
 
-    if let Some(handle) = web_server_handle {
-        log::info!("Shutting down web server...");
-        web_shutdown.store(true, Ordering::Relaxed);
-        if let Err(e) = handle.await {
-            log::error!("Web server shutdown error: {}", e);
-        } else {
-            log::info!("Web server shut down.");
+    shutdown_station(&station, Some(services)).await?;
+    log::info!("Data persisted at: {:?}", args.normfs_base_folder);
+
+    Ok(())
+}
+
+/// Registered before startup, so a SIGTERM (the rover's supervisor) or ctrl-c during it
+/// stops station cleanly once startup ends; a second one exits at once.
+fn listen_for_shutdown() -> Arc<tokio::sync::Notify> {
+    let stop = Arc::new(tokio::sync::Notify::new());
+    let notify = stop.clone();
+    #[cfg(unix)]
+    let signals = {
+        use tokio::signal::unix::{SignalKind, signal};
+        signal(SignalKind::interrupt()).and_then(|i| Ok((i, signal(SignalKind::terminate())?)))
+    };
+    tokio::spawn(async move {
+        #[cfg(unix)]
+        let (mut interrupt, mut terminate) = match signals {
+            Ok(signals) => signals,
+            Err(e) => {
+                log::error!("Cannot listen for shutdown signals, shutting down: {e}");
+                notify.notify_one();
+                return;
+            }
+        };
+        let mut received = 0;
+        loop {
+            #[cfg(unix)]
+            tokio::select! {
+                _ = interrupt.recv() => {}
+                _ = terminate.recv() => {}
+            }
+            #[cfg(not(unix))]
+            if let Err(e) = tokio::signal::ctrl_c().await {
+                log::error!("Cannot listen for ctrl-c, shutting down: {e}");
+                notify.notify_one();
+                return;
+            }
+            received += 1;
+            if received > 1 {
+                log::warn!("Second shutdown signal, exiting without waiting for NormFS to close");
+                std::process::exit(1);
+            }
+            notify.notify_one();
         }
+    });
+    stop
+}
+
+struct Services {
+    server: Option<tokio::task::JoinHandle<()>>,
+    web: Option<tokio::task::JoinHandle<()>>,
+    web_shutdown: Arc<AtomicBool>,
+}
+
+/// Everything after NormFS is open, so a failure still goes through shutdown_station.
+async fn start_station(
+    station: &mut Station,
+    args: &Args,
+) -> Result<Services, Box<dyn std::error::Error>> {
+    station.start_main_queue().await?;
+    log::info!("Main queue started");
+
+    inference::Inference::start_queue(&station.normfs).await?;
+    log::info!("Inference queue started");
+
+    station.start_commands_queue().await?;
+
+    tags::start(station.normfs.clone()).await?;
+
+    let inference =
+        inference::Inference::start(station.normfs.clone(), station.engine.snapshot_gate.clone())
+            .await;
+    *station.engine.inference.lock() = Some(inference);
+
+    station.start_cloud_flush();
+
+    start_services(station, args).await
+}
+
+async fn start_services(
+    station: &Station,
+    args: &Args,
+) -> Result<Services, Box<dyn std::error::Error>> {
+    station.start_drivers().await?;
+    log::info!("Drivers started");
+
+    let mut server_handle: Option<tokio::task::JoinHandle<()>> = None;
+    if let Some(tcp_addr_str) = args.tcp.as_deref() {
+        let tcp_addr: SocketAddr = tcp_addr_str
+            .parse()
+            .or_else(|_| format!("0.0.0.0:{}", tcp_addr_str).parse())
+            .map_err(|e| format!("Invalid address '{}': {}", tcp_addr_str, e))?;
+
+        server_handle = Some(station.start_server(tcp_addr).await?);
     }
 
-    if let Some(handle) = server_handle {
-        log::info!("Shutting down TCP server...");
-        handle.abort();
-        log::info!("TCP server shut down.");
+    let web_shutdown = Arc::new(AtomicBool::new(false));
+    let mut web_server_handle: Option<tokio::task::JoinHandle<()>> = None;
+    if let Some(web_addr_str) = args.web.as_deref() {
+        let web_addr: SocketAddr = web_addr_str
+            .parse()
+            .or_else(|_| format!("0.0.0.0:{}", web_addr_str).parse())
+            .map_err(|e| format!("Invalid address '{}': {}", web_addr_str, e))?;
+
+        let listener = bind_retrying("Web server", web_addr, || {
+            tokio::net::TcpListener::bind(web_addr)
+        })
+        .await?;
+
+        let normfs_clone = station.normfs.clone();
+        let web_shutdown_clone = web_shutdown.clone();
+        let static_path = args.static_path.clone();
+        web_server_handle = Some(tokio::spawn(async move {
+            if let Err(e) =
+                web::server::start_server(listener, normfs_clone, web_shutdown_clone, static_path)
+                    .await
+            {
+                log::error!("Web server error: {}", e);
+            }
+        }));
+    }
+
+    Ok(Services {
+        server: server_handle,
+        web: web_server_handle,
+        web_shutdown,
+    })
+}
+
+/// Also the exit path of a failed startup.
+async fn shutdown_station(
+    station: &Station,
+    services: Option<Services>,
+) -> Result<(), Box<dyn std::error::Error>> {
+    if let Some(services) = services {
+        if let Some(handle) = services.web {
+            log::info!("Shutting down web server...");
+            services.web_shutdown.store(true, Ordering::Relaxed);
+            if let Err(e) = handle.await {
+                log::error!("Web server shutdown error: {}", e);
+            } else {
+                log::info!("Web server shut down.");
+            }
+        }
+
+        if let Some(handle) = services.server {
+            log::info!("Shutting down TCP server...");
+            handle.abort();
+            log::info!("TCP server shut down.");
+        }
     }
 
     if let Some(inference) = station.engine.inference.lock().as_ref() {
         inference.shutdown();
     }
 
-    station.shutdown().await?;
+    station.shutdown().await
+}
 
-    log::info!("Data persisted at: {:?}", args.normfs_base_folder);
+#[cfg(test)]
+mod tests {
+    use super::*;
 
-    Ok(())
+    fn pool_for(queue_path: &str) -> PoolKind {
+        let (persist, frames) = NormFsPersistenceMode::Durable.persist(false);
+        queue_settings(persist, frames, &[])
+            .unwrap()
+            .get_config(queue_path)
+            .pool
+    }
+
+    fn persist_for(mode: NormFsPersistenceMode, cloud: bool, queue_path: &str) -> Persist {
+        let (persist, frames) = mode.persist(cloud);
+        queue_settings(persist, frames, &[])
+            .unwrap()
+            .get_config(queue_path)
+            .persist
+    }
+
+    #[test]
+    fn durable_video_and_thermal_skip_the_wal() {
+        for queue in [
+            "/inst123/usbvideo/9f86d081884c7d65",
+            "/inst123/video/ov5647",
+            "/inst123/hikmicro-thermal/E12345",
+        ] {
+            let persist = persist_for(NormFsPersistenceMode::Durable, true, queue);
+            assert_eq!(
+                persist,
+                Persist {
+                    cloud: true,
+                    ..Persist::STORE
+                },
+                "{queue}"
+            );
+        }
+        for queue in [
+            "/inst123/usbvideo/tx",
+            "/inst123/hikmicro-thermal/device-info/E12345",
+            "/inst123/st3215/rx",
+            "/inst123/new-driver/rx",
+        ] {
+            let persist = persist_for(NormFsPersistenceMode::Durable, true, queue);
+            assert_eq!(
+                persist,
+                Persist {
+                    cloud: true,
+                    ..Persist::WAL_STORE
+                },
+                "{queue}"
+            );
+        }
+    }
+
+    #[test]
+    fn cloud_only_applies_to_every_queue() {
+        for queue in [
+            "/inst123/usbvideo/9f86d081884c7d65",
+            "/inst123/hikmicro-thermal/E12345",
+            "/inst123/main",
+            "/inst123/new-driver/rx",
+        ] {
+            assert_eq!(
+                persist_for(NormFsPersistenceMode::CloudOnly, true, queue),
+                Persist::CLOUD,
+                "{queue}"
+            );
+        }
+    }
+
+    #[test]
+    fn cloud_only_without_a_bucket_keeps_queues_in_memory() {
+        let empty = station_iface::config::CloudOffloadConfig {
+            bucket: String::new(),
+            region: String::new(),
+            access_key_id: String::new(),
+            secret_access_key: String::new(),
+            endpoint: None,
+            exclude: Vec::new(),
+        };
+        for (config, expected) in [
+            (
+                Some(&empty),
+                "cloud-offload has no bucket; queues stay in memory only",
+            ),
+            (None, "no cloud-offload section; queues stay in memory only"),
+        ] {
+            let (cloud, warning) =
+                offload_settings(NormFsPersistenceMode::CloudOnly, config).unwrap();
+            assert!(cloud.is_none());
+            assert_eq!(warning, Some(expected));
+        }
+        let (_, warning) = offload_settings(NormFsPersistenceMode::Durable, None).unwrap();
+        assert_eq!(warning, None);
+        for queue in [
+            "/inst123/usbvideo/9f86d081884c7d65",
+            "/inst123/main",
+            "/inst123/new-driver/rx",
+        ] {
+            assert_eq!(
+                persist_for(NormFsPersistenceMode::CloudOnly, false, queue),
+                Persist::MEMORY,
+                "{queue}"
+            );
+        }
+    }
+
+    #[test]
+    fn memory_only_keeps_every_queue_in_memory_and_ignores_the_bucket() {
+        let config = station_iface::config::CloudOffloadConfig {
+            bucket: "rovers".into(),
+            region: "eu-west1".into(),
+            access_key_id: String::new(),
+            secret_access_key: String::new(),
+            endpoint: None,
+            exclude: Vec::new(),
+        };
+        let (cloud, warning) =
+            offload_settings(NormFsPersistenceMode::MemoryOnly, Some(&config)).unwrap();
+        assert!(cloud.is_none());
+        assert_eq!(warning, Some("memory-only; cloud-offload is ignored"));
+        let (_, warning) = offload_settings(NormFsPersistenceMode::MemoryOnly, None).unwrap();
+        assert_eq!(warning, None);
+        for queue in [
+            "/inst123/usbvideo/9f86d081884c7d65",
+            "/inst123/hikmicro-thermal/E12345",
+            "/inst123/main",
+            "/inst123/new-driver/rx",
+        ] {
+            assert_eq!(
+                persist_for(NormFsPersistenceMode::MemoryOnly, false, queue),
+                Persist::MEMORY,
+                "{queue}"
+            );
+        }
+    }
+
+    #[test]
+    fn wide_records_and_streams_draw_from_the_active_arena() {
+        for queue in [
+            "/inst123/usbvideo/9f86d081884c7d65",
+            "/inst123/video/ov5647",
+            "/inst123/hikmicro-thermal/E12345",
+            "/inst123/dmesg/rx",
+            "/inst123/system/rx",
+            "/inst123/st3215/meta",
+            "/inst123/inference-states",
+            "/inst123/inference/normvla",
+            "/inst123/inference/mirroring",
+            "/inst123/st3215/inference",
+            "/inst123/vesc-trampa/inference",
+            "/inst123/yahboom-dogzilla-lite/inference",
+            "/inst123/st3215/rx",
+            "/inst123/st3215/tx",
+            "/inst123/vesc-trampa/rx",
+            "/inst123/vesc-trampa/tx",
+            "/inst123/yahboom-dogzilla-lite/rx",
+            "/inst123/yahboom-dogzilla-lite/tx",
+            "/inst123/pwm-output/rx",
+            "/inst123/pwm-output/tx",
+            "/inst123/commands",
+            "/inst123/arduino-nicla-sense-env/rx",
+            "/inst123/ina226/i2c-1-0x40/rx",
+            "/inst123/airgradient-open-air-o-1pst/usb-1-2/rx",
+            "/inst123/victron-smartsolar-mppt/HQ2222ABCDE/rx",
+        ] {
+            assert_eq!(pool_for(queue), PoolKind::Active, "{queue}");
+        }
+    }
+
+    #[test]
+    fn rare_queues_stay_on_the_passive_arena() {
+        for queue in [
+            "/inst123/main",
+            "/inst123/startups",
+            "/inst123/inference-tags/rx",
+            "/inst123/motors_mirroring/modes",
+            "/inst123/usbvideo/tx",
+            "/inst123/hikmicro-thermal/device-info/E12345",
+        ] {
+            assert_eq!(pool_for(queue), PoolKind::Passive, "{queue}");
+        }
+    }
+
+    #[test]
+    fn excluded_rules_stay_off_the_bucket() {
+        let exclude = ["*video/*".to_string(), "*/hikmicro-thermal/*".to_string()];
+        let excluded = [
+            "/inst123/usbvideo/9f86d081884c7d65",
+            "/inst123/video/ov5647",
+            "/inst123/hikmicro-thermal/E12345",
+        ];
+        let uploaded = [
+            "/inst123/usbvideo/tx",
+            "/inst123/hikmicro-thermal/device-info/E12345",
+            "/inst123/vesc-trampa/rx",
+            "/inst123/main",
+            "/inst123/new-driver/rx",
+        ];
+        for (mode, kept) in [
+            (NormFsPersistenceMode::Durable, Persist::STORE),
+            (NormFsPersistenceMode::CloudOnly, Persist::MEMORY),
+        ] {
+            let (persist, frames) = mode.persist(true);
+            let settings = queue_settings(persist, frames, &exclude).unwrap();
+            let unlisted = queue_settings(persist, frames, &[]).unwrap();
+            for queue in excluded {
+                let config = settings.get_config(queue);
+                assert_eq!(config.persist, kept, "{mode:?} {queue}");
+                assert_eq!(config.pool, unlisted.get_config(queue).pool, "{queue}");
+            }
+            for queue in uploaded {
+                let config = settings.get_config(queue);
+                assert_eq!(
+                    config.persist,
+                    unlisted.get_config(queue).persist,
+                    "{queue}"
+                );
+                assert!(config.persist.cloud, "{mode:?} {queue}");
+            }
+        }
+    }
+
+    #[test]
+    fn exclude_rejects_anything_but_a_rule_pattern() {
+        let (persist, frames) = NormFsPersistenceMode::Durable.persist(true);
+        for glob in ["*/rx", "?/main", "*/usbvideo/*", "[video", ""] {
+            let Err(err) = queue_settings(persist, frames, &[glob.to_string()]) else {
+                panic!("{glob:?} accepted");
+            };
+            assert!(
+                err.to_string()
+                    .starts_with(&format!("cloud-offload.exclude: '{glob}' ")),
+                "{err}"
+            );
+        }
+    }
+
+    /// A configured inference queue id, or a driver added later, must not be
+    /// capped at 32 KiB records for not being listed.
+    #[test]
+    fn a_queue_the_list_does_not_know_gets_active_pages() {
+        for queue in ["/inst123/datasets/normvla", "/inst123/new-driver/rx"] {
+            assert_eq!(pool_for(queue), PoolKind::Active, "{queue}");
+        }
+    }
 }
