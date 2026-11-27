@@ -22,6 +22,7 @@ use tokio_serial::SerialPortInfo;
 
 pub const ST3215_TIMEOUT_MS: u64 = 20;
 pub const ST3215_COMMAND_TIMEOUT_MS: u64 = 20;
+pub const ST3215_EEPROM_TIMEOUT_MS: u64 = 60;
 pub const ST3215_SLOW_READ_WARN_MS: u128 = 10;
 
 const NO_COMMAND_SEARCH_DELAY_MS: u64 = 500;
@@ -684,7 +685,7 @@ impl St3215Port {
 
             // Use async_readwrite which handles response type validation
             let response = request
-                .async_readwrite(port, ST3215_COMMAND_TIMEOUT_MS)
+                .async_readwrite(port, ST3215_EEPROM_TIMEOUT_MS)
                 .await?;
             info!(
                 "ST3215 Write command completed - Motor: {}, Response: {:?}",
@@ -724,7 +725,7 @@ impl St3215Port {
 
             // Use async_readwrite which handles response type validation
             let response = request
-                .async_readwrite(port, ST3215_COMMAND_TIMEOUT_MS)
+                .async_readwrite(port, ST3215_EEPROM_TIMEOUT_MS)
                 .await?;
             info!(
                 "ST3215 Action command completed - Motor: {}, Response: {:?}",
@@ -773,7 +774,7 @@ impl St3215Port {
             // Write Reset and read its ack in a single round-trip — sharing the timeout
             // window keeps the request/response pairing intact.
             let response = request
-                .async_readwrite(port, ST3215_COMMAND_TIMEOUT_MS)
+                .async_readwrite(port, ST3215_EEPROM_TIMEOUT_MS)
                 .await?;
             info!(
                 "ST3215 Reset command completed - Motor: {}, Response: {:?}",
@@ -868,7 +869,7 @@ impl St3215Port {
             for motor_id in 1..=max_motors_cnt {
                 // Send hardware reset without unlocking EEPROM
                 let reset_req = protocol::ST3215Request::Reset { motor: motor_id };
-                if let Err(e) = reset_req.async_readwrite(port, ST3215_COMMAND_TIMEOUT_MS).await {
+                if let Err(e) = reset_req.async_readwrite(port, ST3215_EEPROM_TIMEOUT_MS).await {
                     warn!("Failed to send reset to motor {}: {}", motor_id, e);
                 } else {
                     info!("FreezeCalibration: Hardware reset completed for motor {}", motor_id);
@@ -971,7 +972,7 @@ impl St3215Port {
 
             let action_req = protocol::ST3215Request::Action { motor: motor_id };
             if let Err(e) = action_req
-                .async_readwrite(port, ST3215_COMMAND_TIMEOUT_MS)
+                .async_readwrite(port, ST3215_EEPROM_TIMEOUT_MS)
                 .await
             {
                 warn!(
@@ -1060,7 +1061,7 @@ impl St3215Port {
 
             let action_req = protocol::ST3215Request::Action { motor: motor_id };
             if let Err(e) = action_req
-                .async_readwrite(port, ST3215_COMMAND_TIMEOUT_MS)
+                .async_readwrite(port, ST3215_EEPROM_TIMEOUT_MS)
                 .await
             {
                 warn!(
@@ -1137,21 +1138,21 @@ impl St3215Port {
         // action
         let action_req = protocol::ST3215Request::Action { motor: motor_id };
         action_req
-            .async_readwrite(port, ST3215_COMMAND_TIMEOUT_MS)
+            .async_readwrite(port, ST3215_EEPROM_TIMEOUT_MS)
             .await?;
 
         // Step 2: Reset
         info!("ResetCalibration: Resetting motor {}", motor_id);
         let reset_req = protocol::ST3215Request::Reset { motor: motor_id };
         reset_req
-            .async_readwrite(port, ST3215_COMMAND_TIMEOUT_MS)
+            .async_readwrite(port, ST3215_EEPROM_TIMEOUT_MS)
             .await?;
         info!("ResetCalibration: Motor {} reset", motor_id);
 
         // action
         let action_req = protocol::ST3215Request::Action { motor: motor_id };
         action_req
-            .async_readwrite(port, ST3215_COMMAND_TIMEOUT_MS)
+            .async_readwrite(port, ST3215_EEPROM_TIMEOUT_MS)
             .await?;
 
         // write zero offset
@@ -1180,7 +1181,7 @@ impl St3215Port {
         info!("ResetCalibration: Triggering action for motor {}", motor_id);
         let action_req = protocol::ST3215Request::Action { motor: motor_id };
         action_req
-            .async_readwrite(port, ST3215_COMMAND_TIMEOUT_MS)
+            .async_readwrite(port, ST3215_EEPROM_TIMEOUT_MS)
             .await?;
         info!("ResetCalibration: Action triggered for motor {}", motor_id);
 
@@ -1365,7 +1366,7 @@ impl St3215Port {
         );
         let action_req = protocol::ST3215Request::Action { motor: motor_id };
         action_req
-            .async_readwrite(port, ST3215_COMMAND_TIMEOUT_MS)
+            .async_readwrite(port, ST3215_EEPROM_TIMEOUT_MS)
             .await?;
         info!("FreezeCalibration: Action triggered for motor {}", motor_id);
 
